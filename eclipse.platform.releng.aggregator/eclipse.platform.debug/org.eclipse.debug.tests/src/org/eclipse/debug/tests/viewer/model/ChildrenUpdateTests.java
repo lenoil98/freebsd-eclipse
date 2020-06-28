@@ -13,6 +13,10 @@
  *******************************************************************************/
 package org.eclipse.debug.tests.viewer.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.eclipse.debug.internal.ui.DebugUIPlugin;
 import org.eclipse.debug.internal.ui.viewers.model.ChildrenUpdate;
 import org.eclipse.debug.internal.ui.viewers.model.IInternalTreeModelViewer;
@@ -34,6 +38,7 @@ import org.eclipse.jface.viewers.ViewerLabel;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
+import org.junit.Test;
 
 /**
  * Tests coalescing of children update requests.
@@ -76,33 +81,33 @@ public class ChildrenUpdateTests extends AbstractDebugTest {
 				public void removeModelChangedListener(IModelChangedListener listener) {}
 				@Override
 				public void removeLabelUpdateListener(ILabelUpdateListener listener) {}
-                @Override
+				@Override
 				public void addViewerUpdateListener(IViewerUpdateListener listener) {}
-                @Override
+				@Override
 				public void addStateUpdateListener(IStateUpdateListener listener) {}
-                @Override
+				@Override
 				public void addModelChangedListener(IModelChangedListener listener) {}
-                @Override
+				@Override
 				public void addLabelUpdateListener(ILabelUpdateListener listener) {}
-                @Override
+				@Override
 				public void update(Object element) {}
-                @Override
+				@Override
 				public void setHasChildren(Object elementOrTreePath, boolean hasChildren) {}
-                @Override
+				@Override
 				public void setExpandedState(Object elementOrTreePath, boolean expanded) {}
-                @Override
+				@Override
 				public void setChildCount(Object elementOrTreePath, int count) {}
-                @Override
+				@Override
 				public void reveal(TreePath path, int index) {}
-                @Override
+				@Override
 				public void replace(Object parentOrTreePath, int index, Object element) {}
-                @Override
+				@Override
 				public void remove(Object parentOrTreePath, int index) {}
-                @Override
+				@Override
 				public void remove(Object elementOrTreePath) {}
-                @Override
+				@Override
 				public void refresh() {}
-                @Override
+				@Override
 				public void refresh(Object element) {}
 
 				@Override
@@ -171,10 +176,10 @@ public class ChildrenUpdateTests extends AbstractDebugTest {
 					return null;
 				}
 
-                @Override
+				@Override
 				public boolean getHasChildren(Object elementOrTreePath) {
-                    return false;
-                }
+					return false;
+				}
 
 				@Override
 				public int getChildCount(TreePath path) {
@@ -194,46 +199,39 @@ public class ChildrenUpdateTests extends AbstractDebugTest {
 				public void autoExpand(TreePath elementPath) {
 				}
 
-                @Override
+				@Override
 				public boolean getElementChildrenRealized(TreePath parentPath) {
-                    return false;
-                }
+					return false;
+				}
 
-                @Override
+				@Override
 				public boolean getElementChecked(TreePath path) {
-                    return false;
-                }
+					return false;
+				}
 
-                @Override
+				@Override
 				public boolean getElementGrayed(TreePath path) {
-                    return false;
-                }
+					return false;
+				}
 
-                @Override
+				@Override
 				public void setElementChecked(TreePath path, boolean checked, boolean grayed) {
-                }
+				}
 
-                @Override
+				@Override
 				public TreePath[] getElementPaths(Object element) {
-                    return null;
-                }
-                @Override
+					return null;
+				}
+				@Override
 				public void setElementData(TreePath path, int numColumns, String[] labels, ImageDescriptor[] images,
-                    FontData[] fontDatas, RGB[] foregrounds, RGB[] backgrounds) {
-                }
-                @Override
+					FontData[] fontDatas, RGB[] foregrounds, RGB[] backgrounds) {
+				}
+				@Override
 				public String[] getVisibleColumns() {
-                    return null;
-                }
+					return null;
+				}
 			};
 		}
-	}
-
-	/**
-	 * @param name
-	 */
-	public ChildrenUpdateTests(String name) {
-		super(name);
 	}
 
 	protected TreeModelContentProvider getContentProvider() {
@@ -243,6 +241,7 @@ public class ChildrenUpdateTests extends AbstractDebugTest {
 	/**
 	 * Tests coalescing of requests
 	 */
+	@Test
 	public void testCoalesce () {
 		Object element = new Object();
 		TreeModelContentProvider cp = getContentProvider();

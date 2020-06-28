@@ -122,7 +122,7 @@ public class CommonViewer extends TreeViewer {
 	/**
 	 * Sets the {@link ICommonViewerMapper} to work with this viewer.
 	 *
-	 * @param mapper
+	 * @param mapper the mapper
 	 * @since 3.4
 	 */
 	public void setMapper(ICommonViewerMapper mapper) {
@@ -218,7 +218,7 @@ public class CommonViewer extends TreeViewer {
 
 		Object[] changed = event.getElements();
 		if (changed != null) {
-			List<Object> others = new ArrayList<Object>();
+			List<Object> others = new ArrayList<>();
 			for (Object changedElement : changed) {
 				if (changedElement == null)
 					continue;
@@ -289,7 +289,7 @@ public class CommonViewer extends TreeViewer {
 	}
 
 	@Override
-	public void add(Object parentElement, Object[] childElements) {
+	public void add(Object parentElement, Object... childElements) {
 		NavigatorPipelineService pipeDream = (NavigatorPipelineService) contentService
 				.getPipelineService();
 
@@ -314,7 +314,7 @@ public class CommonViewer extends TreeViewer {
 	 * @see org.eclipse.jface.viewers.AbstractTreeViewer#remove(java.lang.Object[])
 	 */
 	@Override
-	public void remove(Object[] elements) {
+	public void remove(Object... elements) {
 		NavigatorPipelineService pipeDream = (NavigatorPipelineService) contentService
 				.getPipelineService();
 
@@ -375,22 +375,22 @@ public class CommonViewer extends TreeViewer {
 		}
 	}
 
-    @Override
+	@Override
 	protected void hookControl(Control control) {
-    	super.hookControl(control);
-        // FIXME - This caching thing should not be here; it's brittle.
-        // The underlying problem of over-calling of getSelection() should
-        // be addressed instead (see bugs 144294 and 140032)
-        // The DragStart event will come before the SelectionEvent on
-        // some platforms (GTK).  Since DragStart can turn around and
-        // call getSelection(), we need to clear the cache.
-        control.addMouseListener(new MouseAdapter() {
-            @Override
+		super.hookControl(control);
+		// FIXME - This caching thing should not be here; it's brittle.
+		// The underlying problem of over-calling of getSelection() should
+		// be addressed instead (see bugs 144294 and 140032)
+		// The DragStart event will come before the SelectionEvent on
+		// some platforms (GTK).  Since DragStart can turn around and
+		// call getSelection(), we need to clear the cache.
+		control.addMouseListener(new MouseAdapter() {
+			@Override
 			public void mouseDown(MouseEvent e) {
-            	clearSelectionCache();
-            }
-        });
-    }
+				clearSelectionCache();
+			}
+		});
+	}
 
 
 	/**
@@ -521,7 +521,7 @@ public class CommonViewer extends TreeViewer {
 
 	@Override
 	public String toString() {
-		return contentService.toString() + " Viewer"; //$NON-NLS-1$
+		return contentService + " Viewer"; //$NON-NLS-1$
 	}
 
 	@Override
@@ -537,11 +537,11 @@ public class CommonViewer extends TreeViewer {
 	 * @nooverride This method is not intended to be re-implemented or extended by clients.
 	 * @since 3.4
 	 */
-    public void createFrameList() {
-        CommonNavigatorFrameSource frameSource = new CommonNavigatorFrameSource(commonNavigator);
-        frameList = new FrameList(frameSource);
-        frameSource.connectTo(frameList);
-    }
+	public void createFrameList() {
+		CommonNavigatorFrameSource frameSource = new CommonNavigatorFrameSource(commonNavigator);
+		frameList = new FrameList(frameSource);
+		frameSource.connectTo(frameList);
+	}
 
 	/**
 	 * @return a FrameList
@@ -549,9 +549,9 @@ public class CommonViewer extends TreeViewer {
 	 * @nooverride This method is not intended to be re-implemented or extended by clients.
 	 * @since 3.4
 	 */
-    public FrameList getFrameList() {
-        return frameList;
-    }
+	public FrameList getFrameList() {
+		return frameList;
+	}
 
 
 }

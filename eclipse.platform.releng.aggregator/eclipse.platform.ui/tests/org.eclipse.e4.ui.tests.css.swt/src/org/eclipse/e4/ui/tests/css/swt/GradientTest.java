@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2009, 2014 IBM Corporation and others.
  *
- * This
- * program and the accompanying materials are made available under the terms of
- * the Eclipse Public License 2.0 which accompanies this distribution, and is
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -188,10 +188,7 @@ public class GradientTest extends CSSSWTTestCase {
 			Field field = folder.getClass().getDeclaredField("selectionGradientColors");
 			field.setAccessible(true);
 			return ((Color[]) field.get(folder))[i];
-		} catch (NoSuchFieldException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
+		} catch (NoSuchFieldException | IllegalAccessException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -204,10 +201,7 @@ public class GradientTest extends CSSSWTTestCase {
 			Field field = folder.getClass().getDeclaredField("selectionGradientPercents");
 			field.setAccessible(true);
 			return (int[]) field.get(folder);
-		} catch (NoSuchFieldException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
+		} catch (NoSuchFieldException | IllegalAccessException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

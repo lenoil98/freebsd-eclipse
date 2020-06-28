@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2016 IBM Corporation and others.
+ * Copyright (c) 2012, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -44,7 +44,7 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 	 */
 	public static enum StartOptions {
 		/**
-		 * The module start operation is transient and the persistent 
+		 * The module start operation is transient and the persistent
 		 * autostart or activation policy setting of the module is not modified.
 		 */
 		TRANSIENT,
@@ -87,7 +87,7 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 	 */
 	public static enum StopOptions {
 		/**
-		 * The module stop operation is transient and the persistent 
+		 * The module stop operation is transient and the persistent
 		 * autostart setting of the module is not modified.
 		 */
 		TRANSIENT;
@@ -151,7 +151,12 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 		/**
 		 * The module has been set to use its activation policy.
 		 */
-		USE_ACTIVATION_POLICY
+		USE_ACTIVATION_POLICY,
+		/**
+		 * The module has been set for parallel activation from start-level
+		 * @since 3.15
+		 */
+		PARALLEL_ACTIVATION
 	}
 
 	/**
@@ -345,7 +350,7 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 			throw new BundleException(Msg.Module_LockError + exceptonInfo, BundleException.STATECHANGE_ERROR, cause);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			throw new BundleException(Msg.Module_LockError + toString() + " " + transitionEvent, BundleException.STATECHANGE_ERROR, e); //$NON-NLS-1$
+			throw new BundleException(Msg.Module_LockError + toString() + ' ' + transitionEvent, BundleException.STATECHANGE_ERROR, e);
 		} finally {
 			if (previousInterruption) {
 				Thread.currentThread().interrupt();
@@ -374,7 +379,7 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 	}
 
 	/**
-	 * Returns the thread that currently owns the state change lock for this module, or 
+	 * Returns the thread that currently owns the state change lock for this module, or
 	 * <code>null</code> if not owned.
 	 * @return the owner, or <code>null</code> if not owned.
 	 */
@@ -388,7 +393,12 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 	 * @throws BundleException if an errors occurs while starting
 	 */
 	public void start(StartOptions... options) throws BundleException {
-		revisions.getContainer().checkAdminPermission(getBundle(), AdminPermission.EXECUTE);
+		ModuleContainer container = getContainer();
+		long startTime = 0;
+		if (container.DEBUG_BUNDLE_START_TIME) {
+			startTime = System.nanoTime();
+		}
+		container.checkAdminPermission(getBundle(), AdminPermission.EXECUTE);
 		if (options == null) {
 			options = new StartOptions[0];
 		}
@@ -415,10 +425,11 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 			}
 			checkFragment();
 			persistStartOptions(options);
-			if (getStartLevel() > getRevisions().getContainer().getStartLevel()) {
+			if (getStartLevel() > container.getStartLevel()) {
 				if (StartOptions.TRANSIENT.isContained(options)) {
 					// it is an error to attempt to transient start a bundle without its start level met
-					throw new BundleException(Msg.Module_Transient_StartError, BundleException.START_TRANSIENT_ERROR);
+					throw new BundleException(Msg.Module_Transient_StartError + ' ' + this,
+							BundleException.START_TRANSIENT_ERROR);
 				}
 				// Do nothing; start level is not met
 				return;
@@ -432,7 +443,7 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 				unlockStateChange(ModuleEvent.STARTED);
 				lockedStarted = false;
 				try {
-					report = getRevisions().getContainer().resolve(Collections.singletonList(this), true);
+					report = container.resolve(Collections.singletonList(this), true);
 				} finally {
 					lockStateChange(ModuleEvent.STARTED);
 					lockedStarted = true;
@@ -473,6 +484,10 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 			if (!EnumSet.of(ModuleEvent.STARTED, ModuleEvent.LAZY_ACTIVATION, ModuleEvent.STOPPED).contains(event))
 				throw new IllegalStateException("Wrong event type: " + event); //$NON-NLS-1$
 			publishEvent(event);
+			// only print bundleTime information if we actually fired an event for this bundle
+			if (container.DEBUG_BUNDLE_START_TIME) {
+				Debug.println(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) + " ms for total start time event " + event + " - " + this); //$NON-NLS-1$ //$NON-NLS-2$
+			}
 		}
 
 		if (startError != null) {
@@ -525,7 +540,8 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 	private void checkFragment() throws BundleException {
 		ModuleRevision current = getCurrentRevision();
 		if ((current.getTypes() & BundleRevision.TYPE_FRAGMENT) != 0) {
-			throw new BundleException(Msg.Module_Fragment_InvalidOperation, BundleException.INVALID_OPERATION);
+			throw new BundleException(Msg.Module_Fragment_InvalidOperation + ' ' + this,
+					BundleException.INVALID_OPERATION);
 		}
 	}
 
@@ -541,7 +557,7 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 
 	final void checkValid() {
 		if (getState().equals(State.UNINSTALLED))
-			throw new IllegalStateException(Msg.Module_UninstalledError);
+			throw new IllegalStateException(Msg.Module_UninstalledError + ' ' + this);
 	}
 
 	private ModuleEvent doStart(StartOptions... options) throws BundleException {
@@ -595,7 +611,7 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 			publishEvent(ModuleEvent.STOPPING);
 			if (t instanceof BundleException)
 				throw (BundleException) t;
-			throw new BundleException(Msg.Module_StartError, BundleException.ACTIVATOR_ERROR, t);
+			throw new BundleException(Msg.Module_StartError + ' ' + this, BundleException.ACTIVATOR_ERROR, t);
 		}
 	}
 
@@ -646,7 +662,7 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 		} catch (Throwable t) {
 			if (t instanceof BundleException)
 				throw (BundleException) t;
-			throw new BundleException(Msg.Module_StopError, BundleException.ACTIVATOR_ERROR, t);
+			throw new BundleException(Msg.Module_StopError + ' ' + this, BundleException.ACTIVATOR_ERROR, t);
 		} finally {
 			// must always set the state to stopped
 			setState(State.RESOLVED);
@@ -684,8 +700,34 @@ public abstract class Module implements BundleReference, BundleStartLevel, Compa
 	private void persistStopOptions(StopOptions... options) {
 		if (StopOptions.TRANSIENT.isContained(options))
 			return;
-		settings.clear();
+		settings.remove(Settings.USE_ACTIVATION_POLICY);
+		settings.remove(Settings.AUTO_START);
 		revisions.getContainer().moduleDatabase.persistSettings(settings, this);
+	}
+
+	/**
+	 * Set if this module should be activated in parallel with other modules that have
+	 * the same {@link #getStartLevel() start level}.
+	 * @param parallelActivation true if the module should be started in parallel; false otherwise
+	 * @since 3.15
+	 */
+	public void setParallelActivation(boolean parallelActivation) {
+		if (parallelActivation) {
+			settings.add(Settings.PARALLEL_ACTIVATION);
+		} else {
+			settings.remove(Settings.PARALLEL_ACTIVATION);
+		}
+		revisions.getContainer().moduleDatabase.persistSettings(settings, this);
+	}
+
+	/**
+	 * Returns if this module should be activated in parallel with other modules that have
+	 * the same {@link #getStartLevel() start level}.
+	 * @return true if the module should be started in parallel; false otherwise
+	 * @since 3.15
+	 */
+	public boolean isParallelActivated() {
+		return settings.contains(Settings.PARALLEL_ACTIVATION);
 	}
 
 	/**

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,9 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.refactoring.infra;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -20,15 +23,13 @@ import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.junit.Assert;
-
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaModelException;
 
-import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
+import org.eclipse.jdt.ui.tests.refactoring.GenericRefactoringTest;
 
 public class ZipTools {
 
@@ -73,23 +74,20 @@ public class ZipTools {
 					ICompilationUnit cu= pack.getCompilationUnit(sourceFileName);
 					String cuContents= cu.getSource();
 
-					RefactoringTest.assertEqualLines(packageName + "/" + sourceFileName, zipContents, cuContents);
+					GenericRefactoringTest.assertEqualLines(packageName + "/" + sourceFileName, zipContents, cuContents);
 				} else {
 					//TODO: compare binary files
 				}
 			}
 
-			IJavaElement[] packageFragments= src.getChildren();
-			for (int i= 0; i < packageFragments.length; i++) {
-				IPackageFragment packageFragment= (IPackageFragment) packageFragments[i];
-				ICompilationUnit[] cus= packageFragment.getCompilationUnits();
-				for (int j= 0; j < cus.length; j++) {
-					ICompilationUnit cu= cus[j];
+			for (IJavaElement javaelement : src.getChildren()) {
+				IPackageFragment packageFragment= (IPackageFragment) javaelement;
+				for (ICompilationUnit cu : packageFragment.getCompilationUnits()) {
 					String cuDescr= packageFragment.getElementName() + "/" + cu.getElementName();
-					Assert.assertTrue(cuDescr, zipCus.remove(cuDescr));
+					assertTrue(cuDescr, zipCus.remove(cuDescr));
 				}
 			}
-			Assert.assertEquals(zipCus.toString(), 0, zipCus.size());
+			assertEquals(zipCus.toString(), 0, zipCus.size());
 
 		} finally {
 			zipInputStream.close();

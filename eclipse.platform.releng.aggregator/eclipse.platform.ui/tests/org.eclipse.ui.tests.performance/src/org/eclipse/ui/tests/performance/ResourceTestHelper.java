@@ -20,7 +20,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
@@ -66,7 +65,7 @@ public class ResourceTestHelper {
 		return FileTool.readToBuilder(new InputStreamReader(getRoot().getFile(new Path(src)).getContents()));
 	}
 
-	public static void write(String dest, final String content) throws IOException, CoreException {
+	public static void write(String dest, final String content) throws CoreException {
 		InputStream stream= new InputStream() {
 			private Reader fReader= new StringReader(content);
 			@Override
@@ -100,15 +99,15 @@ public class ResourceTestHelper {
 
 	private static void replacePositions(StringBuilder c, int origLength, String string, List<Integer> positions) {
 		int offset= 0;
-		for (Iterator<Integer> iter = positions.iterator(); iter.hasNext();) {
-			int position= iter.next().intValue();
+		for (Integer integer : positions) {
+			int position= integer.intValue();
 			c.replace(offset + position, offset + position + origLength, string);
 			offset += string.length() - origLength;
 		}
 	}
 
 	private static List<Integer> identifierPositions(StringBuilder buffer, String identifier) {
-		List<Integer> positions = new ArrayList<Integer>();
+		List<Integer> positions = new ArrayList<>();
 		int i= -1;
 		while (true) {
 			i= buffer.indexOf(identifier, i + 1);

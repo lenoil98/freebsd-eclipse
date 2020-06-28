@@ -27,13 +27,11 @@ public class MoeResourceMapping extends ModelResourceMapping {
 		super(file);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.mapping.ResourceMapping#getTraversals(org.eclipse.core.resources.mapping.ResourceMappingContext, org.eclipse.core.runtime.IProgressMonitor)
-	 */
+	@Override
 	public ResourceTraversal[] getTraversals(ResourceMappingContext context,
 			IProgressMonitor monitor) {
-		return new ResourceTraversal[] { 
-				new ResourceTraversal(new IResource[] { 
+		return new ResourceTraversal[] {
+				new ResourceTraversal(new IResource[] {
 						getResource()
 				}, IResource.DEPTH_ZERO, IResource.NONE)
 			};
@@ -42,10 +40,8 @@ public class MoeResourceMapping extends ModelResourceMapping {
 	private IResource getResource() {
 		return ((ModelResource)getModelObject()).getResource();
 	}
-	
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.mapping.ResourceMapping#contains(org.eclipse.core.resources.mapping.ResourceMapping)
-	 */
+
+	@Override
 	public boolean contains(ResourceMapping mapping) {
 		if (mapping.equals(this))
 			return true;

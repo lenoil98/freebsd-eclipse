@@ -20,25 +20,23 @@ import org.eclipse.debug.internal.ui.viewers.model.provisional.TreeModelViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.junit.Test;
 
 /**
  * @since 3.6
  */
 public class JFaceViewerDeltaTests extends DeltaTests {
 
-    public JFaceViewerDeltaTests(String name) {
-        super(name);
-    }
-
-    @Override
+	@Override
 	protected IInternalTreeModelViewer createViewer(Display display, Shell shell) {
 		return new TreeModelViewer(fShell, SWT.VIRTUAL, new PresentationContext("TestViewer")); //$NON-NLS-1$
-    }
+	}
 
-    /**
-     * TODO: remove this method when bug 292322 gets fixed in TreeViewer
-     */
-    @Override
+	/**
+	 * TODO: remove this method when bug 292322 gets fixed in TreeViewer
+	 */
+	@Override
+	@Test
 	public void testBug292322() {
-    }
+	}
 }

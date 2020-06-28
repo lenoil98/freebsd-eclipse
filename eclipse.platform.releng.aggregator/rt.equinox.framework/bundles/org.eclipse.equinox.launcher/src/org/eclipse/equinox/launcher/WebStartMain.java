@@ -23,23 +23,23 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipFile;
 
 /**
- * The launcher to start eclipse using webstart. To use this launcher, the client 
+ * The launcher to start eclipse using webstart. To use this launcher, the client
  * must accept to give all security permissions.
  * <p>
  * <b>Note:</b> This class should not be referenced programmatically by
  * other Java code. This class exists only for the purpose of launching Eclipse
- * using Java webstart. To launch Eclipse programmatically, use 
+ * using Java webstart. To launch Eclipse programmatically, use
  * org.eclipse.core.runtime.adaptor.EclipseStarter. The fields and methods
  * on this class are not API.
- * 
+ *
  * @noextend This class is not intended to be subclassed by clients.
  * @noinstantiate This class is not intended to be instantiated by clients.
  * @noreference This class is not intended to be referenced by clients.
- * 
+ *
  * @deprecated Java WebStart is removed in Java 11.
- * 
+ *
  * This API is planned to be deleted, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=544262
- * 
+ *
  */
 //The bundles are discovered by finding all the jars on the classpath. Then they are added with their full path to the osgi.bundles list.
 @Deprecated
@@ -50,7 +50,7 @@ public class WebStartMain extends Main {
 	private static final String PROP_CHECK_CONFIG = "osgi.checkConfiguration"; //$NON-NLS-1$
 
 	private Map<String, List<BundleInfo>> allBundles = null; // Map of all the bundles found on the classpath. Id -> ArrayList of BundleInfo
-	private List<BundleInfo> bundleList = null; //The list of bundles found on the osgi.bundle list 
+	private List<BundleInfo> bundleList = null; //The list of bundles found on the osgi.bundle list
 
 	protected class BundleInfo {
 		String bsn;
@@ -63,7 +63,7 @@ public class WebStartMain extends Main {
 	 * @noreference This method is not intended to be referenced by clients.
 	 */
 	public static void main(String[] args) {
-		System.setSecurityManager(null); //TODO Hack so that when the classloader loading the fwk is created we don't have funny permissions. This should be revisited. 
+		System.setSecurityManager(null); //TODO Hack so that when the classloader loading the fwk is created we don't have funny permissions. This should be revisited.
 		int result = new WebStartMain().run(args);
 		if (!Boolean.getBoolean(PROP_NOSHUTDOWN))
 			System.exit(result);
@@ -100,7 +100,7 @@ public class WebStartMain extends Main {
 	}
 
 	/*
-	 * Null out all the fields containing data 
+	 * Null out all the fields containing data
 	 */
 	private void cleanup() {
 		allBundles = null;
@@ -163,7 +163,7 @@ public class WebStartMain extends Main {
 		return removeMatch ? matches.remove(highest) : matches.get(highest);
 	}
 
-	/* 
+	/*
 	 * Get all the bundles available on the webstart classpath
 	 */
 	private void discoverBundles() {
@@ -236,14 +236,11 @@ public class WebStartMain extends Main {
 		try {
 			nameField.setAccessible(true);
 			return (String) nameField.get(jarFile);
-		} catch (SecurityException e) {
+		} catch (SecurityException | IllegalArgumentException | IllegalAccessException e) {
 			// Don't have permissions, ignore
-		} catch (IllegalArgumentException e) {
-			// Shouldn't happen
-		} catch (IllegalAccessException e) {
+			// or
 			// Shouldn't happen
 		}
-
 		return null;
 	}
 
@@ -309,22 +306,19 @@ public class WebStartMain extends Main {
 		return null;
 	}
 
-	//Build the osgi bundle list. The allbundles data structure is changed during the process. 
+	//Build the osgi bundle list. The allbundles data structure is changed during the process.
 	private void buildOSGiBundleList() {
 		StringBuilder finalBundleList = new StringBuilder(allBundles.size() * 30);
 		//First go through all the bundles of the bundle
-		for (Iterator<BundleInfo> iterator = bundleList.iterator(); iterator.hasNext();) {
-			BundleInfo searched = iterator.next();
+		for (BundleInfo searched : bundleList) {
 			BundleInfo found = findBundle(searched.bsn, searched.version, true);
 			if (found != null)
 				finalBundleList.append(REFERENCE_SCHEME).append(found.location).append(searched.startData).append(',');
 		}
 
 		if (!Boolean.FALSE.toString().equalsIgnoreCase(System.getProperties().getProperty(PROP_WEBSTART_AUTOMATIC_INSTALLATION))) {
-			for (Iterator<List<BundleInfo>> iterator = allBundles.values().iterator(); iterator.hasNext();) {
-				List<BundleInfo> toAdd = iterator.next();
-				for (Iterator<BundleInfo> iterator2 = toAdd.iterator(); iterator2.hasNext();) {
-					BundleInfo bi = iterator2.next();
+			for (List<BundleInfo> toAdd : allBundles.values()) {
+				for (BundleInfo bi : toAdd) {
 					finalBundleList.append(REFERENCE_SCHEME).append(bi.location).append(',');
 				}
 			}

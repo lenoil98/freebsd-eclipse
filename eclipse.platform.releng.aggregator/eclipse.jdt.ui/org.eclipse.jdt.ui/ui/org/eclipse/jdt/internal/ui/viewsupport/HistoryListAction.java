@@ -15,7 +15,6 @@
 package org.eclipse.jdt.internal.ui.viewsupport;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -184,7 +183,7 @@ import org.eclipse.jdt.internal.ui.wizards.dialogfields.StringDialogField;
 			} else {
 				fResult= null;
 			}
-			fHistoryList.enableButton(0, selected.size() != 0);
+			fHistoryList.enableButton(0, !selected.isEmpty());
 		}
 
 		public E getResult() {
@@ -227,8 +226,7 @@ import org.eclipse.jdt.internal.ui.wizards.dialogfields.StringDialogField;
 
 		@Override
 		public void dispose() {
-			for (Iterator<Image> iter= fImages.values().iterator(); iter.hasNext();) {
-				Image image= iter.next();
+			for (Image image : fImages.values()) {
 				image.dispose();
 			}
 			fImages.clear();

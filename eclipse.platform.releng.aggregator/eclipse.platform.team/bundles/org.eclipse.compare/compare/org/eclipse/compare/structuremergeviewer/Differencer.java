@@ -15,6 +15,7 @@ package org.eclipse.compare.structuremergeviewer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,8 +31,6 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * A generic two-way or three-way differencing engine.
@@ -260,8 +259,7 @@ public class Differencer {
 
 			if (ancestorChildren != null) {
 				ancestorSet= new HashMap<>(10);
-				for (int i= 0; i < ancestorChildren.length; i++) {
-					Object ancestorChild= ancestorChildren[i];
+				for (Object ancestorChild : ancestorChildren) {
 					ancestorSet.put(ancestorChild, ancestorChild);
 					allSet.add(ancestorChild);
 				}
@@ -269,8 +267,7 @@ public class Differencer {
 
 			if (rightChildren != null) {
 				rightSet= new HashMap<>(10);
-				for (int i= 0; i < rightChildren.length; i++) {
-					Object rightChild= rightChildren[i];
+				for (Object rightChild : rightChildren) {
 					rightSet.put(rightChild, rightChild);
 					allSet.add(rightChild);
 				}
@@ -278,8 +275,7 @@ public class Differencer {
 
 			if (leftChildren != null) {
 				leftSet= new HashMap<>(10);
-				for (int i= 0; i < leftChildren.length; i++) {
-					Object leftChild= leftChildren[i];
+				for (Object leftChild : leftChildren) {
 					leftSet.put(leftChild, leftChild);
 					allSet.add(leftChild);
 				}

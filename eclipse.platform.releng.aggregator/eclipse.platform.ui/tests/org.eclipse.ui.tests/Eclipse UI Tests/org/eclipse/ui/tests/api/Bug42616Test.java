@@ -13,9 +13,12 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.api;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.ui.internal.WorkbenchPlugin;
-import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Test;
 
 /**
  * Test to ensure that <code>WorkbenchPlugin.createExtension()</code> will only
@@ -24,24 +27,18 @@ import org.eclipse.ui.tests.harness.util.UITestCase;
  *
  * @since 3.0
  */
-public class Bug42616Test extends UITestCase {
+public class Bug42616Test {
 
-    /**
-     * @param testName
-     */
-    public Bug42616Test(String testName) {
-        super(testName);
-    }
-
-    public void testErrorCondition() {
-        try {
-            WorkbenchPlugin.createExtension(null, null);
-            fail("createExtension with nulls succeeded");
-        } catch (CoreException e) {
-            // ensure that exception has a root cause.
-            assertNotNull("Cause is null", e.getStatus().getException());
-        } catch (Throwable t) {
-            fail("Throwable not wrapped in core exception.");
-        }
-    }
+	@Test
+	public void testErrorCondition() {
+		try {
+			WorkbenchPlugin.createExtension(null, null);
+			fail("createExtension with nulls succeeded");
+		} catch (CoreException e) {
+			// ensure that exception has a root cause.
+			assertNotNull("Cause is null", e.getStatus().getException());
+		} catch (Throwable t) {
+			fail("Throwable not wrapped in core exception.");
+		}
+	}
 }

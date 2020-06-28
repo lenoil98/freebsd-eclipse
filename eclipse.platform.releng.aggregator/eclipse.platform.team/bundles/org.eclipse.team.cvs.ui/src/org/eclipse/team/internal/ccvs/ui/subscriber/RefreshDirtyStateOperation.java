@@ -46,26 +46,22 @@ public class RefreshDirtyStateOperation extends CVSSubscriberOperation {
 		super(configuration, elements);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.CVSSubscriberOperation#run(org.eclipse.team.core.synchronize.SyncInfoSet, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected void runWithProjectRule(IProject project, SyncInfoSet set, IProgressMonitor monitor) throws TeamException {
 		final SyncInfo[] infos = set.getSyncInfos();
 		if (infos.length == 0) return;
-        monitor.beginTask(null, 200);
-        ensureBaseContentsCached(project, infos, Policy.subMonitorFor(monitor, 100));
-        performCleanTimestamps(project, infos, monitor);
-        monitor.done();
+		monitor.beginTask(null, 200);
+		ensureBaseContentsCached(project, infos, Policy.subMonitorFor(monitor, 100));
+		performCleanTimestamps(project, infos, monitor);
+		monitor.done();
 	}
 
 	private void performCleanTimestamps(IProject project, final SyncInfo[] infos, IProgressMonitor monitor) throws CVSException {
 		ICVSFolder folder = CVSWorkspaceRoot.getCVSFolderFor(project);
-        final ContentComparisonSyncInfoFilter comparator = new SyncInfoFilter.ContentComparisonSyncInfoFilter(false);
+		final ContentComparisonSyncInfoFilter comparator = new SyncInfoFilter.ContentComparisonSyncInfoFilter(false);
 		folder.run(monitor1 -> {
 			monitor1.beginTask(null, infos.length * 100);
-			for (int i = 0; i < infos.length; i++) {
-				SyncInfo info = infos[i];
+			for (SyncInfo info : infos) {
 				IResource resource = info.getLocal();
 				if (resource.getType() == IResource.FILE) {
 					if (comparator.compareContents((IFile) resource, info.getBase(),
@@ -81,8 +77,7 @@ public class RefreshDirtyStateOperation extends CVSSubscriberOperation {
 	
 	private void ensureBaseContentsCached(IProject project, SyncInfo[] infos, IProgressMonitor monitor) throws CVSException {
 		List<IDiff> diffs = new ArrayList<>();
-		for (int i = 0; i < infos.length; i++) {
-			SyncInfo info = infos[i];
+		for (SyncInfo info : infos) {
 			IDiff node = getConverter().getDeltaFor(info);
 			diffs.add(node);
 		}
@@ -99,8 +94,7 @@ public class RefreshDirtyStateOperation extends CVSSubscriberOperation {
 	private void ensureBaseContentsCached(final IProject project, IDiff[] nodes, IProgressMonitor monitor) throws CVSException {
 		try {
 			ResourceDiffTree tree = new ResourceDiffTree();
-			for (int i = 0; i < nodes.length; i++) {
-				IDiff node = nodes[i];
+			for (IDiff node : nodes) {
 				tree.add(node);
 			}
 			new CacheBaseContentsOperation(getPart(), new ResourceMapping[] { project.getAdapter(ResourceMapping.class) },
@@ -119,16 +113,13 @@ public class RefreshDirtyStateOperation extends CVSSubscriberOperation {
 		} catch (InterruptedException e) {
 			throw new OperationCanceledException();
 		}
-    }
-    
-    @Override
+	}
+	
+	@Override
 	protected String getErrorTitle() {
 		return CVSUIMessages.RefreshDirtyStateOperation_0; 
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.CVSSubscriberAction#getJobName(org.eclipse.team.ui.sync.SyncInfoSet)
-	 */
 	@Override
 	protected String getJobName() {
 		return CVSUIMessages.RefreshDirtyStateOperation_1; 

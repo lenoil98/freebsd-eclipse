@@ -32,7 +32,6 @@ import org.eclipse.jface.text.source.ISourceViewer;
 
 import org.eclipse.ui.internal.texteditor.CompoundEditExitStrategy;
 import org.eclipse.ui.internal.texteditor.HippieCompletionEngine;
-import org.eclipse.ui.internal.texteditor.ICompoundEditListener;
 import org.eclipse.ui.internal.texteditor.TextEditorPlugin;
 
 
@@ -212,12 +211,7 @@ final class HippieCompleteAction extends TextEditorAction {
 	 */
 	HippieCompleteAction(ResourceBundle bundle, String prefix, ITextEditor editor) {
 		super(bundle, prefix, editor);
-		fExitStrategy.addCompoundListener(new ICompoundEditListener() {
-			@Override
-			public void endCompoundEdit() {
-				clearState();
-			}
-		});
+		fExitStrategy.addCompoundListener(this::clearState);
 	}
 
 	/**
@@ -364,7 +358,7 @@ final class HippieCompleteAction extends TextEditorAction {
 
 		List<IDocument> documents= HippieCompletionEngine.computeDocuments(getTextEditor());
 
-		if (documents.size() > 0) {
+		if (!documents.isEmpty()) {
 			fDocument= documents.remove(0);
 
 			Iterator<String> suggestions;

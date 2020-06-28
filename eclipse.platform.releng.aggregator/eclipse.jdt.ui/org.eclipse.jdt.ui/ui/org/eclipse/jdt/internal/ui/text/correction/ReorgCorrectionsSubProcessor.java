@@ -77,6 +77,7 @@ import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.manipulation.TypeKinds;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation.IChooseImportQuery;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
@@ -114,9 +115,8 @@ import org.eclipse.jdt.internal.ui.text.correction.proposals.CorrectMainTypeName
 import org.eclipse.jdt.internal.ui.text.correction.proposals.CorrectPackageDeclarationProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.FixCorrectionProposal;
 import org.eclipse.jdt.internal.ui.util.BusyIndicatorRunnableContext;
-import org.eclipse.jdt.internal.ui.util.CoreUtility;
 import org.eclipse.jdt.internal.ui.util.ClasspathVMUtil;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
+import org.eclipse.jdt.internal.ui.util.CoreUtility;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.CPListElement;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.ClasspathFixSelectionDialog;
 
@@ -129,6 +129,7 @@ public class ReorgCorrectionsSubProcessor {
 		IJavaProject javaProject= cu.getJavaProject();
 		String sourceLevel= javaProject.getOption(JavaCore.COMPILER_SOURCE, true);
 		String compliance= javaProject.getOption(JavaCore.COMPILER_COMPLIANCE, true);
+		String previewEnabled= javaProject.getOption(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES, true);
 
 		CompilationUnit root= context.getASTRoot();
 
@@ -147,8 +148,7 @@ public class ReorgCorrectionsSubProcessor {
 
 		boolean found= false;
 		List<AbstractTypeDeclaration> types= root.types();
-		for (int i= 0; i < types.size(); i++) {
-			AbstractTypeDeclaration curr= types.get(i);
+		for (AbstractTypeDeclaration curr : types) {
 			if (parentType != curr) {
 				if (newTypeName.equals(curr.getName().getIdentifier())) {
 					return;
@@ -160,7 +160,7 @@ public class ReorgCorrectionsSubProcessor {
 				found= true;
 			}
 		}
-		if (!JavaConventions.validateJavaTypeName(newTypeName, sourceLevel, compliance).matches(IStatus.ERROR)) {
+		if (!JavaConventions.validateJavaTypeName(newTypeName, sourceLevel, compliance, previewEnabled).matches(IStatus.ERROR)) {
 			proposals.add(new CorrectMainTypeNameProposal(cu, context, currTypeName, newTypeName, IProposalRelevance.RENAME_TYPE));
 		}
 
@@ -183,7 +183,7 @@ public class ReorgCorrectionsSubProcessor {
 
 		// correct package declaration
 		int relevance= cu.getPackageDeclarations().length == 0 ? IProposalRelevance.MISSING_PACKAGE_DECLARATION : IProposalRelevance.CORRECT_PACKAGE_DECLARATION; // bug 38357
-		if (CorrectPackageDeclarationProposal.isValidProposal(cu)) {		
+		if (CorrectPackageDeclarationProposal.isValidProposal(cu)) {
 			proposals.add(new CorrectPackageDeclarationProposal(cu, problem, relevance));
 		}
 
@@ -379,17 +379,23 @@ public class ReorgCorrectionsSubProcessor {
 		private final IJavaProject fProject;
 		private final boolean fChangeOnWorkspace;
 		private final String fRequiredVersion;
+		private final boolean fEnablePreviews;
 
 		private Job fUpdateJob;
 		private boolean fRequiredJREFound;
 
 		public ChangeToRequiredCompilerCompliance(String name, IJavaProject project, boolean changeOnWorkspace, String requiredVersion, int relevance) {
+			this(name, project, changeOnWorkspace, requiredVersion, false, relevance);
+		}
+
+		public ChangeToRequiredCompilerCompliance(String name, IJavaProject project, boolean changeOnWorkspace, String requiredVersion, boolean enablePreviews, int relevance) {
 			super(name, null, relevance, JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_CHANGE));
 			fProject= project;
 			fChangeOnWorkspace= changeOnWorkspace;
 			fRequiredVersion= requiredVersion;
 			fUpdateJob= null;
 			fRequiredJREFound= false;
+			fEnablePreviews= enablePreviews;
 		}
 
 		private boolean isRequiredOrGreaterVMInstall(IVMInstall install) {
@@ -482,12 +488,19 @@ public class ReorgCorrectionsSubProcessor {
 			} catch (CoreException e) {
 				// ignore
 			}
+			if (fEnablePreviews) {
+				if (fChangeOnWorkspace) {
+					message.append(CorrectionMessages.PreviewFeaturesSubProcessor_enable_preview_features_workspace_info);
+				} else {
+					message.append(CorrectionMessages.PreviewFeaturesSubProcessor_enable_preview_features_info);
+				}
+			}
 			return message.toString();
 		}
 
 		private boolean isEEOnClasspath(IExecutionEnvironment ee) throws JavaModelException {
 			IPath eePath= JavaRuntime.newJREContainerPath(ee);
-			
+
 			for (IClasspathEntry entry: fProject.getRawClasspath()) {
 				if (entry.getEntryKind() == IClasspathEntry.CPE_CONTAINER && entry.getPath().equals(eePath))
 					return true;
@@ -500,6 +513,9 @@ public class ReorgCorrectionsSubProcessor {
 			if (fChangeOnWorkspace) {
 				Hashtable<String, String> map= JavaCore.getOptions();
 				JavaModelUtil.setComplianceOptions(map, fRequiredVersion);
+				if (fEnablePreviews) {
+					map.put(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES, JavaCore.ENABLED);
+				}
 				JavaCore.setOptions(map);
 			} else {
 				Map<String, String> map= fProject.getOptions(false);
@@ -508,6 +524,9 @@ public class ReorgCorrectionsSubProcessor {
 				if (map.size() > optionsCount) {
 					// options have been added -> ensure that all compliance options from preference page set
 					JavaModelUtil.setDefaultClassfileOptions(map, fRequiredVersion);
+				}
+				if (fEnablePreviews) {
+					map.put(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES, JavaCore.ENABLED);
 				}
 				fProject.setOptions(map);
 			}
@@ -540,14 +559,36 @@ public class ReorgCorrectionsSubProcessor {
 	 * @param requiredVersion the minimal required Java compiler version
 	 */
 	public static void getNeedHigherComplianceProposals(IInvocationContext context, IProblemLocation problem, Collection<ICommandAccess> proposals, String requiredVersion) {
-		IJavaProject project= context.getCompilationUnit().getJavaProject();
+		getNeedHigherComplianceProposals(context, problem, proposals, false, requiredVersion);
+	}
 
+	/**
+	 * Adds a proposal to increase the compiler compliance level as well as set --enable-previews
+	 * option.
+	 *
+	 * @param context the context
+	 * @param problem the current problem
+	 * @param proposals the resulting proposals
+	 * @param enablePreviews --enable-previews option will be enabled if set to true
+	 * @param requiredVersion the minimal required Java compiler version
+	 */
+	static void getNeedHigherComplianceProposals(IInvocationContext context, IProblemLocation problem, Collection<ICommandAccess> proposals, boolean enablePreviews, String requiredVersion) {
+		IJavaProject project= context.getCompilationUnit().getJavaProject();
 		String label1= Messages.format(CorrectionMessages.ReorgCorrectionsSubProcessor_change_project_compliance_description, requiredVersion);
-		proposals.add(new ChangeToRequiredCompilerCompliance(label1, project, false, requiredVersion, IProposalRelevance.CHANGE_PROJECT_COMPLIANCE));
+		if (enablePreviews) {
+			label1= Messages.format(CorrectionMessages.ReorgCorrectionsSubProcessor_combine_two_quickfixes, new String[] {label1, CorrectionMessages.PreviewFeaturesSubProcessor_enable_preview_features});
+			proposals.add(new ChangeToRequiredCompilerCompliance(label1, project, false, requiredVersion, enablePreviews, IProposalRelevance.CHANGE_PROJECT_COMPLIANCE));
+		} else {
+			proposals.add(new ChangeToRequiredCompilerCompliance(label1, project, false, requiredVersion, IProposalRelevance.CHANGE_PROJECT_COMPLIANCE));
+		}
+
 
 		if (project.getOption(JavaCore.COMPILER_COMPLIANCE, false) == null) {
 			String label2= Messages.format(CorrectionMessages.ReorgCorrectionsSubProcessor_change_workspace_compliance_description, requiredVersion);
-			proposals.add(new ChangeToRequiredCompilerCompliance(label2, project, true, requiredVersion, IProposalRelevance.CHANGE_WORKSPACE_COMPLIANCE));
+			if (enablePreviews) {
+				label2= Messages.format(CorrectionMessages.ReorgCorrectionsSubProcessor_combine_two_quickfixes, new String[] {label2, CorrectionMessages.PreviewFeaturesSubProcessor_enable_preview_features_workspace});
+			}
+			proposals.add(new ChangeToRequiredCompilerCompliance(label2, project, true, requiredVersion, enablePreviews, IProposalRelevance.CHANGE_WORKSPACE_COMPLIANCE));
 		}
 	}
 
@@ -604,6 +645,9 @@ public class ReorgCorrectionsSubProcessor {
 			return false;
 		}
 		return false;
+	}
+
+	private ReorgCorrectionsSubProcessor() {
 	}
 
 

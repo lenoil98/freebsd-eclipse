@@ -14,6 +14,8 @@
 
 package org.eclipse.ui.tests.keys;
 
+import static org.junit.Assert.assertFalse;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,31 +28,28 @@ import org.eclipse.jface.bindings.TriggerSequence;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.keys.IBindingService;
+import org.eclipse.ui.tests.harness.util.CloseTestWindowsRule;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  * Tests Bug 36537
  *
  * @since 3.0
  */
-public class Bug36537Test extends UITestCase {
+public class Bug36537Test {
 
-	/**
-	 * Constructor for Bug36537Test.
-	 *
-	 * @param name
-	 *            The name of the test
-	 */
-	public Bug36537Test(String name) {
-		super(name);
-	}
+	@Rule
+	public CloseTestWindowsRule closeTestWindows = new CloseTestWindowsRule();
 
 	/**
 	 * Tests that there are no redundant key bindings defined in the
 	 * application.
 	 */
+	@Test
 	public void testForRedundantKeySequenceBindings() {
-		final IWorkbenchWindow window = openTestWindow();
+		final IWorkbenchWindow window = UITestCase.openTestWindow();
 		final IWorkbench workbench = window.getWorkbench();
 		final IBindingService bindingService = workbench.getAdapter(IBindingService.class);
 		final Binding[] bindings = bindingService.getBindings();

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,16 +13,14 @@
  *******************************************************************************/
 package org.eclipse.ltk.internal.ui.refactoring;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import com.ibm.icu.text.Collator;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.ACC;
@@ -61,7 +59,6 @@ import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
@@ -155,13 +152,9 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 
 		@Override
 		public void run() {
-			BusyIndicator.showWhile(getShell().getDisplay(), new Runnable() {
-
-				@Override
-				public void run() {
-					setActiveGroupCategory(fGroupCategory);
-					fOwner.executed(FilterAction.this);
-				}
+			BusyIndicator.showWhile(getShell().getDisplay(), () -> {
+				setActiveGroupCategory(fGroupCategory);
+				fOwner.executed(FilterAction.this);
 			});
 		}
 	}
@@ -179,13 +172,9 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 
 		@Override
 		public void run() {
-			BusyIndicator.showWhile(getShell().getDisplay(), new Runnable() {
-
-				@Override
-				public final void run() {
-					clearGroupCategories();
-					fOwner.executed(ShowAllAction.this);
-				}
+			BusyIndicator.showWhile(getShell().getDisplay(), () -> {
+				clearGroupCategories();
+				fOwner.executed(ShowAllAction.this);
 			});
 		}
 	}
@@ -196,13 +185,10 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 		}
 		@Override
 		public void run() {
-			BusyIndicator.showWhile(getShell().getDisplay(), new Runnable() {
-				@Override
-				public final void run() {
-					boolean hideDerived= isChecked();
-					getRefactoringSettings().put(PREVIEW_WIZARD_PAGE_HIDE_DERIVED, hideDerived);
-					setHideDerived(hideDerived);
-				}
+			BusyIndicator.showWhile(getShell().getDisplay(), () -> {
+				boolean hideDerived= isChecked();
+				getRefactoringSettings().put(PREVIEW_WIZARD_PAGE_HIDE_DERIVED, hideDerived);
+				setHideDerived(hideDerived);
 			});
 		}
 	}
@@ -233,8 +219,8 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 			fActiveAction= fShowAllAction;
 			fFilterActions= new FilterAction[list.size()];
 			int i= 0;
-			for (Iterator<GroupCategory> iter= list.iterator(); iter.hasNext();) {
-				fFilterActions[i++]= new FilterAction(this, iter.next());
+			for (GroupCategory groupCategory : list) {
+				fFilterActions[i++]= new FilterAction(this, groupCategory);
 			}
 			fHideDerivedAction= new HideDerivedAction();
 		}
@@ -251,8 +237,8 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 			fMenu= new Menu(parent);
 			if (fFilterActions.length != 0) {
 				new ActionContributionItem(fShowAllAction).fill(fMenu, -1);
-				for (int i= 0; i < fFilterActions.length; i++) {
-					new ActionContributionItem(fFilterActions[i]).fill(fMenu, -1);
+				for (FilterAction fFilterAction : fFilterActions) {
+					new ActionContributionItem(fFilterAction).fill(fMenu, -1);
 				}
 				new MenuItem(fMenu, SWT.SEPARATOR);
 			}
@@ -457,7 +443,7 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 		tbm.update(true);
 
 		final ToolBar toolBar= tbm.getControl();
-		
+
 		// workaround for https://bugs.eclipse.org/bugs/show_bug.cgi?id=375354 :
 		toolBar.getAccessible().addAccessibleListener(new AccessibleAdapter() {
 			/*
@@ -477,6 +463,13 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 		fTreeViewer.addSelectionChangedListener(createSelectionChangedListener());
 		fTreeViewer.addCheckStateListener(createCheckStateListener());
 		fTreeViewerPane.setContent(fTreeViewer.getControl());
+		fTreeViewer.getControl().getAccessible().addAccessibleListener(new AccessibleAdapter() {
+			@Override
+			public void getName(AccessibleEvent e) {
+				super.getName(e);
+				e.result= fTreeViewerPane.getText() + (e.result != null ? (" " + e.result) : ""); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+		});
 		setHideDerived(fDerivedFilterActive);
 		setTreeViewerInput();
 		updateTreeViewerPaneTitle();
@@ -593,19 +586,16 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 	}
 
 	private ISelectionChangedListener createSelectionChangedListener() {
-		return new ISelectionChangedListener(){
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				IStructuredSelection sel= (IStructuredSelection) event.getSelection();
-				if (sel.size() == 1) {
-					PreviewNode newSelection= (PreviewNode)sel.getFirstElement();
-					if (newSelection != fCurrentSelection) {
-						fCurrentSelection= newSelection;
-						showPreview(newSelection);
-					}
-				} else {
-					showPreview(null);
+		return event -> {
+			IStructuredSelection sel= (IStructuredSelection) event.getSelection();
+			if (sel.size() == 1) {
+				PreviewNode newSelection= (PreviewNode)sel.getFirstElement();
+				if (newSelection != fCurrentSelection) {
+					fCurrentSelection= newSelection;
+					showPreview(newSelection);
 				}
+			} else {
+				showPreview(null);
 			}
 		};
 	}
@@ -663,13 +653,14 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 	}
 
 	private boolean hasChanges(CompositeChange change) {
-		final Change[] children= change.getChildren();
-		for (int index= 0; index < children.length; index++) {
-			if (children[index] instanceof CompositeChange) {
-				if (hasChanges((CompositeChange) children[index]))
+		for (Change child : change.getChildren()) {
+			if (child instanceof CompositeChange) {
+				if (hasChanges((CompositeChange) child)) {
 					return true;
-			} else
+				}
+			} else {
 				return true;
+			}
 		}
 		return false;
 	}
@@ -684,14 +675,12 @@ public class PreviewWizardPage extends RefactoringWizardPage implements IPreview
 
 	private void collectGroupCategories(Set<GroupCategory> result, Change change) {
 		if (change instanceof TextEditBasedChange) {
-			TextEditBasedChangeGroup[] groups= ((TextEditBasedChange)change).getChangeGroups();
-			for (int i= 0; i < groups.length; i++) {
-				result.addAll(groups[i].getGroupCategorySet().asList());
+			for (TextEditBasedChangeGroup group : ((TextEditBasedChange)change).getChangeGroups()) {
+				result.addAll(group.getGroupCategorySet().asList());
 			}
 		} else if (change instanceof CompositeChange) {
-			Change[] children= ((CompositeChange)change).getChildren();
-			for (int i= 0; i < children.length; i++) {
-				collectGroupCategories(result, children[i]);
+			for (Change child : ((CompositeChange)change).getChildren()) {
+				collectGroupCategories(result, child);
 			}
 		}
 	}

@@ -197,11 +197,11 @@ public class WebBrowserEditorInput implements IEditorInput,
 		WebBrowserEditorInput other = (WebBrowserEditorInput) obj;
 
 		if (url != null) {
-			if (other.url == null || !url.toExternalForm().equals(other.url.toExternalForm()))	 {
-			    return false;
+			if (other.url == null || !url.toExternalForm().equals(other.url.toExternalForm())) {
+				return false;
 			}
 		} else if (other.url != null) {
-		    return false;
+			return false;
 		}
 		return canReplaceInput(other);
 	}
@@ -285,7 +285,7 @@ public class WebBrowserEditorInput implements IEditorInput,
 	}
 
 	/**
-	 * Returns the browser id. Browsers with a set id will always & only be
+	 * Returns the browser id. Browsers with a set id will always &amp; only be
 	 * replaced by browsers with the same id.
 	 *
 	 * @return String

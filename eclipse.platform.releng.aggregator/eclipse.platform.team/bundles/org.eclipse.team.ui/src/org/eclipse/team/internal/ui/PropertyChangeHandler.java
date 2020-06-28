@@ -24,7 +24,7 @@ import org.eclipse.jface.util.PropertyChangeEvent;
  * Helper class for implementing property change handling
  */
 public class PropertyChangeHandler {
-	private ListenerList<IPropertyChangeListener> fListeners = new ListenerList<IPropertyChangeListener>(ListenerList.IDENTITY);
+	private ListenerList<IPropertyChangeListener> fListeners = new ListenerList<>(ListenerList.IDENTITY);
 
 	/**
 	 * Notifies listeners of property changes, handling any exceptions
@@ -34,17 +34,11 @@ public class PropertyChangeHandler {
 		private IPropertyChangeListener fListener;
 		private PropertyChangeEvent fEvent;
 
-		/**
-		 * @see org.eclipse.core.runtime.ISafeRunnable#handleException(java.lang.Throwable)
-		 */
 		@Override
 		public void handleException(Throwable exception) {
 			TeamUIPlugin.log(IStatus.ERROR, TeamUIMessages.AbstractSynchronizeParticipant_5, exception);
 		}
 
-		/**
-		 * @see org.eclipse.core.runtime.ISafeRunnable#run()
-		 */
 		@Override
 		public void run() throws Exception {
 			fListener.propertyChange(fEvent);
@@ -62,8 +56,8 @@ public class PropertyChangeHandler {
 			}
 			fEvent = event;
 			Object[] copiedListeners = fListeners.getListeners();
-			for (int i = 0; i < copiedListeners.length; i++) {
-				fListener = (IPropertyChangeListener) copiedListeners[i];
+			for (Object copiedListener : copiedListeners) {
+				fListener = (IPropertyChangeListener) copiedListener;
 				SafeRunner.run(this);
 			}
 			fListener = null;

@@ -82,7 +82,7 @@ public class MyQuickAssistProcessor implements IQuickAssistProcessor {
 
 	private String toUpperCase(String escapedValue) {
 		int length= escapedValue.length();
-		StringBuffer buf= new StringBuffer(length);
+		StringBuilder buf= new StringBuilder(length);
 		boolean inEscape= false;
 		for (int i= 0; i < length; i++) {
 			char ch= escapedValue.charAt(i);
@@ -171,7 +171,7 @@ public class MyQuickAssistProcessor implements IQuickAssistProcessor {
 	}
 
 	protected void wrapAndCopyToClipboard(IInvocationContext context, IDocument document) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		try {
 			int selectionOffset= context.getSelectionOffset();
 			int selectionLength= context.getSelectionLength();
@@ -184,12 +184,17 @@ public class MyQuickAssistProcessor implements IQuickAssistProcessor {
 				buf.append("buf.append(\"");
 				for (int k= 0; k < lineContent.length(); k++) {
 					char ch= lineContent.charAt(k);
-					if (ch == '\t') {
+					switch (ch) {
+					case '\t':
 						buf.append("    "); // 4 spaces
-					} else if (ch == '"' || ch == '\\') {
+						break;
+					case '"':
+					case '\\':
 						buf.append('\\').append(ch);
-					} else {
+						break;
+					default:
 						buf.append(ch);
+						break;
 					}
 				}
 				buf.append("\\n\");");

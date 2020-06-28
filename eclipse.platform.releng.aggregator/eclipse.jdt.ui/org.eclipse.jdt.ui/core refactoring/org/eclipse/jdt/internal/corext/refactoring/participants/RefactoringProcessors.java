@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.refactoring.participants;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,12 +25,13 @@ public class RefactoringProcessors {
 
 	public static String[] getNatures(IProject[] projects) throws CoreException {
 		Set<String> result= new HashSet<>();
-		for (int i= 0; i < projects.length; i++) {
-			String[] pns= projects[i].getDescription().getNatureIds();
-			for (int p = 0; p < pns.length; p++) {
-				result.add(pns[p]);
-			}
+		for (IProject project : projects) {
+			String[] pns= project.getDescription().getNatureIds();
+			Collections.addAll(result, pns);
 		}
 		return result.toArray(new String[result.size()]);
+	}
+
+	private RefactoringProcessors() {
 	}
 }

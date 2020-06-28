@@ -32,7 +32,7 @@ class BreadcrumbDropDownAutoExpandAction extends Action {
 	 * Creates a new action to set the debug view mode.
 	 *
 	 * @param view Reference to the debug view.
-     * in auto mode.
+	 * in auto mode.
 	 */
 	public BreadcrumbDropDownAutoExpandAction(LaunchView view) {
 		super(IInternalDebugCoreConstants.EMPTY_STRING, AS_CHECK_BOX);
@@ -46,9 +46,6 @@ class BreadcrumbDropDownAutoExpandAction extends Action {
 		setChecked(fLaunchView.getBreadcrumbDropDownAutoExpand());
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run() {
 		fLaunchView.setBreadcrumbDropDownAutoExpand(isChecked());

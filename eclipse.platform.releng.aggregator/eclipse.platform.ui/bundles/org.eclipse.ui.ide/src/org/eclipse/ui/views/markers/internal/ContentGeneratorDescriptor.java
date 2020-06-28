@@ -15,6 +15,7 @@
 package org.eclipse.ui.views.markers.internal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -138,9 +139,7 @@ public class ContentGeneratorDescriptor {
 		while (extensions.hasNext()) {
 			IConfigurationElement extension = extensions.next();
 			IConfigurationElement[] extensionFilters = extension.getChildren(ELEMENT_MARKER_FIELD_CONFIGURATION);
-			for (IConfigurationElement extensionFilter : extensionFilters) {
-				extendedElements.add(extensionFilter);
-			}
+			extendedElements.addAll(Arrays.asList(extensionFilters));
 		}
 		if (extendedElements.size() > 0) {
 			IConfigurationElement[] allGroups = new IConfigurationElement[filterGroups.length + extendedElements.size()];
@@ -205,16 +204,12 @@ public class ContentGeneratorDescriptor {
 			for (IConfigurationElement configElement : markerTypeElements) {
 				String elementName = configElement.getAttribute(MarkerSupportInternalUtilities.ATTRIBUTE_ID);
 				MarkerType[] types = MarkerTypesModel.getInstance().getType(elementName).getAllSubTypes();
-				for (MarkerType type : types) {
-					markerTypes.add(type);
-				}
+				markerTypes.addAll(Arrays.asList(types));
 				markerTypes.add(MarkerTypesModel.getInstance().getType(elementName));
 			}
 			if (markerTypes.isEmpty()) {
 				MarkerType[] types = MarkerTypesModel.getInstance().getType(IMarker.PROBLEM).getAllSubTypes();
-				for (MarkerType type : types) {
-					markerTypes.add(type);
-				}
+				markerTypes.addAll(Arrays.asList(types));
 			}
 		}
 		return markerTypes;
@@ -272,13 +267,13 @@ public class ContentGeneratorDescriptor {
 		IConfigurationElement[] elements = configurationElement.getChildren(MARKER_FIELD_REFERENCE);
 		Collection<MarkerField> allFieldList = new ArrayList<>();
 		Collection<MarkerField> initialVisibleList = new ArrayList<>();
-		for (int i = 0; i < elements.length; i++) {
-			MarkerField field = registry.getField(elements[i].getAttribute(MarkerSupportInternalUtilities.ATTRIBUTE_ID));
+		for (IConfigurationElement element : elements) {
+			MarkerField field = registry.getField(element.getAttribute(MarkerSupportInternalUtilities.ATTRIBUTE_ID));
 			if (field == null) {
 				continue;
 			}
 			allFieldList.add(field);
-			if (!MarkerSupportInternalUtilities.VALUE_FALSE.equals(elements[i].getAttribute(ATTRIBUTE_VISIBLE))) {
+			if (!MarkerSupportInternalUtilities.VALUE_FALSE.equals(element.getAttribute(ATTRIBUTE_VISIBLE))) {
 				initialVisibleList.add(field);
 			}
 		}

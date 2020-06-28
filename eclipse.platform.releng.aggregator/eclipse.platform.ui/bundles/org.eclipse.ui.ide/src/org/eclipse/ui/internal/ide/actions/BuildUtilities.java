@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.ide.actions;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -61,9 +62,7 @@ public class BuildUtilities {
 				ResourceMapping mapping = ResourceUtil.getResourceMapping(currentSelection);
 				if (mapping != null) {
 					IProject[] theProjects = mapping.getProjects();
-					for (IProject theProject : theProjects) {
-						projects.add(theProject);
-					}
+					projects.addAll(Arrays.asList(theProjects));
 				} else {
 					IMarker marker = Adapters.adapt(currentSelection, IMarker.class, false);
 					if (marker != null) {
@@ -149,19 +148,19 @@ public class BuildUtilities {
 	 * trigger activation matches the provided value, and <code>false</code> otherwise.
 	 */
 	private static boolean matchingTrigger(IProject[] projects, int trigger, boolean value) {
-		for (int i = 0; i < projects.length; i++) {
-			if (!projects[i].isAccessible()) {
+		for (IProject project : projects) {
+			if (!project.isAccessible()) {
 				continue;
 			}
 			try {
-				IProjectDescription description = projects[i].getDescription();
+				IProjectDescription description = project.getDescription();
 				for (ICommand buildSpec : description.getBuildSpec()) {
 					if (buildSpec.isBuilding(trigger) == value) {
 						return true;
 					}
 				}
 			} catch (CoreException e) {
-				//ignore projects that are not available
+				// ignore projects that are not available
 			}
 		}
 		return false;

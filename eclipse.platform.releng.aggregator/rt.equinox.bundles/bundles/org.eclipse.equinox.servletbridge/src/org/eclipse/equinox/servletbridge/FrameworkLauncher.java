@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2018 Cognos Incorporated, IBM Corporation and others.
+ * Copyright (c) 2005, 2019 Cognos Incorporated, IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     Cognos Incorporated - initial API and implementation
  *     IBM Corporation - bug fixes and enhancements
@@ -34,10 +34,10 @@ import javax.servlet.ServletContext;
  * 4) stop
  * 5) undeploy
  * 6) destroy
- * an instance of the OSGi framework. 
+ * an instance of the OSGi framework.
  * These 6 methods are provided to help manage the life-cycle and are called from outside this
  * class by the BridgeServlet. To create an extended FrameworkLauncher over-ride these methods to allow
- * custom behavior.  
+ * custom behavior.
  */
 public class FrameworkLauncher {
 
@@ -112,7 +112,7 @@ public class FrameworkLauncher {
 	};
 
 	static {
-		// We do this to ensure the anonymous Enumeration class in allPermissions is pre-loaded 
+		// We do this to ensure the anonymous Enumeration class in allPermissions is pre-loaded
 		if (allPermissions.elements() == null)
 			throw new IllegalStateException();
 	}
@@ -273,12 +273,18 @@ public class FrameworkLauncher {
 			// We know spec version 3.0 corresponds to package version 2.6
 			// we are guessing future 3.x spec versions will increment package versions minor, so ...
 			String servletVersion = (context.getMajorVersion() - 1) + "." + (context.getMinorVersion() + 6); //$NON-NLS-1$
+			String specVersion = context.getMajorVersion() + "." + context.getMinorVersion(); //$NON-NLS-1$
 			packageExports = "org.eclipse.equinox.servletbridge; version=1.1" + //$NON-NLS-1$
 					", javax.servlet; version=" + servletVersion + //$NON-NLS-1$
+					", javax.servlet; version=" + specVersion + //$NON-NLS-1$
 					", javax.servlet.annotation; version=" + servletVersion + //$NON-NLS-1$
+					", javax.servlet.annotation; version=" + specVersion + //$NON-NLS-1$
 					", javax.servlet.descriptor; version=" + servletVersion + //$NON-NLS-1$
+					", javax.servlet.descriptor; version=" + specVersion + //$NON-NLS-1$
 					", javax.servlet.http; version=" + servletVersion + //$NON-NLS-1$
-					", javax.servlet.resources; version=" + servletVersion; //$NON-NLS-1$
+					", javax.servlet.http; version=" + specVersion + //$NON-NLS-1$
+					", javax.servlet.resources; version=" + servletVersion + //$NON-NLS-1$
+					", javax.servlet.resources; version=" + specVersion; //$NON-NLS-1$
 		} else {
 			// We know spec version 2.x directly correspond to package versions
 			String servletVersion = context.getMajorVersion() + "." + context.getMinorVersion(); //$NON-NLS-1$
@@ -343,7 +349,7 @@ public class FrameworkLauncher {
 	}
 
 	/** undeploy is the reverse operation of deploy and removes the OSGi framework libraries from their
-	 * execution location. Typically this method will only be called if a manual undeploy is requested in the 
+	 * execution location. Typically this method will only be called if a manual undeploy is requested in the
 	 * ServletBridge.
 	 * By default, this method removes the OSGi install and also removes the workspace.
 	 */
@@ -370,7 +376,7 @@ public class FrameworkLauncher {
 	/** start is used to "start" a previously deployed OSGi framework
 	 * The default behavior will read launcher.ini to create a set of initial properties and
 	 * use the "commandline" configuration parameter to create the equivalent command line arguments
-	 * available when starting Eclipse. 
+	 * available when starting Eclipse.
 	 */
 	public synchronized void start() {
 		if (platformDirectory == null)
@@ -385,8 +391,7 @@ public class FrameworkLauncher {
 		String[] args = buildCommandLineArguments();
 
 		// Handle commandline -D properties
-		for (int i = 0; i < args.length; i++) {
-			String arg = args[i];
+		for (String arg : args) {
 			if (arg.startsWith("-D")) { //$NON-NLS-1$
 				int equalsIndex = arg.indexOf('=');
 				if (equalsIndex == -1) {
@@ -566,8 +571,7 @@ public class FrameworkLauncher {
 	protected Map<String, String> buildInitialPropertyMap() {
 		Map<String, String> initialPropertyMap = new HashMap<>();
 		Properties launchProperties = loadProperties(resourceBase + LAUNCH_INI);
-		for (Iterator it = launchProperties.entrySet().iterator(); it.hasNext();) {
-			Map.Entry entry = (Map.Entry) it.next();
+		for (Map.Entry entry : launchProperties.entrySet()) {
 			String key = (String) entry.getKey();
 			String value = (String) entry.getValue();
 			setInitialProperty(initialPropertyMap, key, value);
@@ -674,9 +678,8 @@ public class FrameworkLauncher {
 	 * clearPrefixedSystemProperties clears System Properties by writing null properties in the targetPropertyMap that match a prefix
 	 */
 	private static void clearPrefixedSystemProperties(String prefix, Map<String, String> targetPropertyMap) {
-		for (@SuppressWarnings("rawtypes")
-		Iterator it = System.getProperties().keySet().iterator(); it.hasNext();) {
-			String propertyName = (String) it.next();
+		for (Object key : System.getProperties().keySet()) {
+			String propertyName = (String) key;
 			if (propertyName.startsWith(prefix) && !targetPropertyMap.containsKey(propertyName)) {
 				targetPropertyMap.put(propertyName, null);
 			}
@@ -684,7 +687,7 @@ public class FrameworkLauncher {
 	}
 
 	/**
-	 * buildCommandLineArguments parses the commandline config parameter into a set of arguments 
+	 * buildCommandLineArguments parses the commandline config parameter into a set of arguments
 	 * @return an array of String containing the commandline arguments
 	 */
 	protected String[] buildCommandLineArguments() {
@@ -696,9 +699,9 @@ public class FrameworkLauncher {
 			while (tokenizer.hasMoreTokens()) {
 				String arg = tokenizer.nextToken();
 				if (arg.startsWith("\"")) { //$NON-NLS-1$
-					if (arg.endsWith("\"")) { //$NON-NLS-1$ 
+					if (arg.endsWith("\"")) { //$NON-NLS-1$
 						if (arg.length() >= 2) {
-							// strip the beginning and ending quotes 
+							// strip the beginning and ending quotes
 							arg = arg.substring(1, arg.length() - 1);
 						}
 					} else {
@@ -708,9 +711,9 @@ public class FrameworkLauncher {
 						tokenizer.nextToken(WS_DELIM);
 					}
 				} else if (arg.startsWith("'")) { //$NON-NLS-1$
-					if (arg.endsWith("'")) { //$NON-NLS-1$ 
+					if (arg.endsWith("'")) { //$NON-NLS-1$
 						if (arg.length() >= 2) {
-							// strip the beginning and ending quotes 
+							// strip the beginning and ending quotes
 							arg = arg.substring(1, arg.length() - 1);
 						}
 					} else {
@@ -758,7 +761,7 @@ public class FrameworkLauncher {
 			Thread.currentThread().setContextClassLoader(frameworkContextClassLoader);
 			method.invoke(clazz);
 
-			// ACL keys its loggers off of the ContextClassLoader which prevents GC without calling release. 
+			// ACL keys its loggers off of the ContextClassLoader which prevents GC without calling release.
 			// This section explicitly calls release if ACL is used.
 			try {
 				clazz = this.getClass().getClassLoader().loadClass("org.apache.commons.logging.LogFactory"); //$NON-NLS-1$
@@ -792,8 +795,7 @@ public class FrameworkLauncher {
 			Set<String> paths = context.getResourcePaths(resourcePath);
 			if (paths == null)
 				return;
-			for (Iterator<String> it = paths.iterator(); it.hasNext();) {
-				String path = it.next();
+			for (String path : paths) {
 				File newFile = new File(target, path.substring(resourcePath.length()));
 				copyResource(path, newFile);
 			}
@@ -835,11 +837,11 @@ public class FrameworkLauncher {
 	protected static boolean deleteDirectory(File directory) {
 		if (directory.isDirectory()) {
 			File[] files = directory.listFiles();
-			for (int i = 0; i < files.length; i++) {
-				if (files[i].isDirectory()) {
-					deleteDirectory(files[i]);
+			for (File file : files) {
+				if (file.isDirectory()) {
+					deleteDirectory(file);
 				} else {
-					files[i].delete();
+					file.delete();
 				}
 			}
 		}
@@ -901,10 +903,10 @@ public class FrameworkLauncher {
 
 	/**
 	 * Searches for the given target directory starting in the "plugins" subdirectory
-	 * of the given location.  If one is found then this location is returned; 
+	 * of the given location.  If one is found then this location is returned;
 	 * otherwise an exception is thrown.
-	 * @param target 
-	 * 
+	 * @param target
+	 *
 	 * @return the location where target directory was found
 	 * @param start the location to begin searching
 	 */
@@ -952,9 +954,9 @@ public class FrameworkLauncher {
 	}
 
 	/**
-	 * Compares version strings. 
-	 * @param left 
-	 * @param right 
+	 * Compares version strings.
+	 * @param left
+	 * @param right
 	 * @return result of comparison, as integer;
 	 * <code><0</code> if left < right;
 	 * <code>0</code> if left == right;
@@ -981,7 +983,7 @@ public class FrameworkLauncher {
 	 * Do a quick parse of version identifier so its elements can be correctly compared.
 	 * If we are unable to parse the full version, remaining elements are initialized
 	 * with suitable defaults.
-	 * @param version 
+	 * @param version
 	 * @return an array of size 4; first three elements are of type Integer (representing
 	 * major, minor and service) and the fourth element is of type String (representing
 	 * qualifier). Note, that returning anything else will cause exceptions in the caller.

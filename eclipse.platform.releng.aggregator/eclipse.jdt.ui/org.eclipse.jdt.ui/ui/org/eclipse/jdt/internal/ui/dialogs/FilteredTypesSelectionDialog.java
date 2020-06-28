@@ -90,6 +90,7 @@ import org.eclipse.jdt.core.search.TypeNameMatch;
 import org.eclipse.jdt.core.search.TypeNameMatchRequestor;
 import org.eclipse.jdt.core.search.TypeNameRequestor;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.util.CollectionsUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
 import org.eclipse.jdt.internal.corext.util.OpenTypeHistory;
@@ -117,7 +118,6 @@ import org.eclipse.jdt.internal.ui.preferences.TypeFilterPreferencePage;
 import org.eclipse.jdt.internal.ui.search.JavaSearchScopeFactory;
 import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
 import org.eclipse.jdt.internal.ui.util.TypeNameMatchLabelProvider;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.workingsets.WorkingSetFilterActionGroup;
 
 
@@ -248,7 +248,7 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 		fTypeInfoUtil= new TypeInfoUtil(extension != null ? extension.getImageProvider() : null);
 
 		fTypeInfoLabelProvider= new TypeItemLabelProvider();
-		
+
 		setListLabelProvider(fTypeInfoLabelProvider);
 		setListSelectionLabelDecorator(fTypeInfoLabelProvider);
 
@@ -392,16 +392,16 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 
 		List<IType> resultToReturn= new ArrayList<>();
 
-		for (int i= 0; i < newResult.size(); i++) {
-			if (newResult.get(i) instanceof TypeNameMatch) {
-				IType type= ((TypeNameMatch) newResult.get(i)).getType();
+		for (Object element : newResult) {
+			if (element instanceof TypeNameMatch) {
+				IType type= ((TypeNameMatch) element).getType();
 				if (type.exists()) {
 					// items are added to history in the
 					// org.eclipse.ui.dialogs.FilteredItemsSelectionDialog#computeResult()
 					// method
 					resultToReturn.add(type);
 				} else {
-					TypeNameMatch typeInfo= (TypeNameMatch) newResult.get(i);
+					TypeNameMatch typeInfo= (TypeNameMatch) element;
 					IPackageFragmentRoot root= typeInfo.getPackageFragmentRoot();
 					String containerName= JavaElementLabels.getElementLabel(root, JavaElementLabels.ROOT_QUALIFIED);
 					String message= Messages.format(JavaUIMessages.FilteredTypesSelectionDialog_dialogMessage, new String[] { TypeNameMatchLabelProvider.getText(typeInfo, TypeNameMatchLabelProvider.SHOW_FULLYQUALIFIED), containerName });
@@ -436,7 +436,7 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 					String text= ((ITextSelection) selection).getText();
 					if (text != null) {
 						text= text.trim();
-						if (text.length() > 0 && JavaConventions.validateJavaTypeName(text, JavaCore.VERSION_1_3, JavaCore.VERSION_1_3).isOK()) {
+						if (text.length() > 0 && JavaConventions.validateJavaTypeName(text, JavaCore.VERSION_1_3, JavaCore.VERSION_1_3, null).isOK()) {
 							setInitialPattern(text, FULL_SELECTION);
 						}
 					}
@@ -601,7 +601,7 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 		IProgressMonitor remainingMonitor;
 		SubMonitor subMonitor= SubMonitor.convert(monitor, JavaUIMessages.TypeSelectionDialog_progress_consistency, 10);
 		if (ConsistencyRunnable.needsExecution()) {
-			
+
 			try {
 				ConsistencyRunnable runnable= new ConsistencyRunnable();
 				runnable.run(subMonitor.split(1));
@@ -805,9 +805,8 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 			fProviderExtension= extension;
 			List<IPath> locations= new ArrayList<>();
 			List<String> labels= new ArrayList<>();
-			IVMInstallType[] installs= JavaRuntime.getVMInstallTypes();
-			for (int i= 0; i < installs.length; i++) {
-				processVMInstallType(installs[i], locations, labels);
+			for (IVMInstallType install : JavaRuntime.getVMInstallTypes()) {
+				processVMInstallType(install, locations, labels);
 			}
 			fInstallLocations= CollectionsUtil.toArray(locations, IPath.class);
 			fVMNames= labels.toArray(new String[labels.size()]);
@@ -816,15 +815,14 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 
 		private void processVMInstallType(IVMInstallType installType, List<IPath> locations, List<String> labels) {
 			if (installType != null) {
-				IVMInstall[] installs= installType.getVMInstalls();
 				boolean isMac= Platform.OS_MACOSX.equals(Platform.getOS());
-				for (int i= 0; i < installs.length; i++) {
-					String label= getFormattedLabel(installs[i].getName());
-					LibraryLocation[] libLocations= installs[i].getLibraryLocations();
+				for (IVMInstall install : installType.getVMInstalls()) {
+					String label= getFormattedLabel(install.getName());
+					LibraryLocation[] libLocations = install.getLibraryLocations();
 					if (libLocations != null) {
 						processLibraryLocation(libLocations, label);
 					} else {
-						IPath filePath= Path.fromOSString(installs[i].getInstallLocation().getAbsolutePath());
+						IPath filePath= Path.fromOSString(install.getInstallLocation().getAbsolutePath());
 						// On MacOS X, install locations end in an additional "/Home" segment; remove it.
 						if (isMac && "Home".equals(filePath.lastSegment())) //$NON-NLS-1$
 							filePath= filePath.removeLastSegments(1);
@@ -836,8 +834,7 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 		}
 
 		private void processLibraryLocation(LibraryLocation[] libLocations, String label) {
-			for (int l= 0; l < libLocations.length; l++) {
-				LibraryLocation location= libLocations[l];
+			for (LibraryLocation location : libLocations) {
 				fLib2Name.put(location.getSystemLibraryPath(), label);
 			}
 		}
@@ -1034,11 +1031,11 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 
 		/**
 		 * Matches text with filter.
-		 * 
+		 *
 		 * @param text the text to match with the filter
 		 * @return never returns
 		 * @throws UnsupportedOperationException always
-		 * 
+		 *
 		 * @deprecated not used
 		 */
 		@Deprecated
@@ -1115,9 +1112,8 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 		public TypeItemsComparator() {
 			List<String> locations= new ArrayList<>();
 			List<String> labels= new ArrayList<>();
-			IVMInstallType[] installs= JavaRuntime.getVMInstallTypes();
-			for (int i= 0; i < installs.length; i++) {
-				processVMInstallType(installs[i], locations, labels);
+			for (IVMInstallType install : JavaRuntime.getVMInstallTypes()) {
+				processVMInstallType(install, locations, labels);
 			}
 			fInstallLocations= locations.toArray(new String[locations.size()]);
 			fVMNames= labels.toArray(new String[labels.size()]);
@@ -1125,16 +1121,15 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 
 		private void processVMInstallType(IVMInstallType installType, List<String> locations, List<String> labels) {
 			if (installType != null) {
-				IVMInstall[] installs= installType.getVMInstalls();
 				boolean isMac= Platform.OS_MACOSX.equals(Platform.getOS());
 				final String HOME_SUFFIX= "/Home"; //$NON-NLS-1$
-				for (int i= 0; i < installs.length; i++) {
-					String label= getFormattedLabel(installs[i].getName());
-					LibraryLocation[] libLocations= installs[i].getLibraryLocations();
+				for (IVMInstall install : installType.getVMInstalls()) {
+					String label = getFormattedLabel(install.getName());
+					LibraryLocation[] libLocations= install.getLibraryLocations();
 					if (libLocations != null) {
 						processLibraryLocation(libLocations, label);
 					} else {
-						String filePath= installs[i].getInstallLocation().getAbsolutePath();
+						String filePath= install.getInstallLocation().getAbsolutePath();
 						// on MacOS X install locations end in an additional
 						// "/Home" segment; remove it
 						if (isMac && filePath.endsWith(HOME_SUFFIX))
@@ -1147,14 +1142,13 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 		}
 
 		private void processLibraryLocation(LibraryLocation[] libLocations, String label) {
-			for (int l= 0; l < libLocations.length; l++) {
-				LibraryLocation location= libLocations[l];
+			for (LibraryLocation location : libLocations) {
 				fLib2Name.put(location.getSystemLibraryPath().toString(), label);
 			}
 		}
 
 		private String getFormattedLabel(String name) {
-			return MessageFormat.format(JavaUIMessages.FilteredTypesSelectionDialog_library_name_format, new Object[] { name });
+			return MessageFormat.format(JavaUIMessages.FilteredTypesSelectionDialog_library_name_format, name);
 		}
 
 		@Override
@@ -1162,11 +1156,11 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 			int result= compareName(leftInfo.getSimpleTypeName(), rightInfo.getSimpleTypeName());
 			if (result != 0)
 				return result;
-			
+
 			result= compareDeprecation(leftInfo.getModifiers(), rightInfo.getModifiers());
 			if (result != 0)
 				return result;
-			
+
 			result= compareTypeContainerName(leftInfo.getTypeContainerName(), rightInfo.getTypeContainerName());
 			if (result != 0)
 				return result;
@@ -1194,7 +1188,7 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 				return leftString.compareTo(rightString);
 			}
 		}
-		
+
 		private int compareDeprecation(int leftType, int rightType) {
 			boolean rightIsDeprecated= Flags.isDeprecated(rightType);
 			if (Flags.isDeprecated(leftType))
@@ -1293,9 +1287,8 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 		 */
 		private synchronized void persistHistory() {
 			if (getReturnCode() == OK) {
-				Object[] items= getHistoryItems();
-				for (int i= 0; i < items.length; i++) {
-					OpenTypeHistory.getInstance().accessed((TypeNameMatch) items[i]);
+				for (Object item : getHistoryItems()) {
+					OpenTypeHistory.getInstance().accessed((TypeNameMatch) item);
 				}
 			}
 		}

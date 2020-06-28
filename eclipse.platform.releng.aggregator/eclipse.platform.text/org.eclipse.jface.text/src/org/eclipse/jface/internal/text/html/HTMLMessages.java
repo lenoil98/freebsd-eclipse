@@ -13,10 +13,9 @@
  *******************************************************************************/
 package org.eclipse.jface.internal.text.html;
 
+import java.text.MessageFormat;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-
-import com.ibm.icu.text.MessageFormat;
 
 
 /**
@@ -80,6 +79,6 @@ class HTMLMessages {
 		}
 		if (arg == null)
 			arg= ""; //$NON-NLS-1$
-		return MessageFormat.format(format, new Object[] { arg });
+		return MessageFormat.format(format, arg);
 	}
 }

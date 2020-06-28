@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Karsten Thoms - Bug#451777
  *******************************************************************************/
 package org.eclipse.jdt.ui.wizards;
 
@@ -20,11 +21,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.equinox.bidi.StructuredTextTypeHandlerFactory;
 
@@ -37,6 +38,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
@@ -347,7 +349,7 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 		private void updateEnableState() {
 			if (fDetectGroup == null)
 				return;
-			
+
 			final boolean detect= fDetectGroup.mustDetect();
 			fStdRadio.setEnabled(!detect);
 			fSrcBinRadio.setEnabled(!detect);
@@ -382,7 +384,7 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 		}
 	}
 
-	private final class JREGroup implements Observer, SelectionListener, IDialogFieldListener {
+	private final class JREGroup extends Observable implements Observer, SelectionListener, IDialogFieldListener {
 
 		private final String LAST_SELECTED_EE_SETTINGS_KEY= JavaUI.ID_PLUGIN + ".last.selected.execution.enviroment"; //$NON-NLS-1$
 		private final String LAST_SELECTED_JRE_SETTINGS_KEY= JavaUI.ID_PLUGIN + ".last.selected.project.jre"; //$NON-NLS-1$
@@ -402,43 +404,80 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 		private String[] fJRECompliance;
 		private IExecutionEnvironment[] fInstalledEEs;
 		private String[] fEECompliance;
+		private String fDefaultJVMLabel;
 
 		public JREGroup() {
 			fUseDefaultJRE= new SelectionButtonDialogField(SWT.RADIO);
-			fUseDefaultJRE.setLabelText(getDefaultJVMLabel());
+			fUseDefaultJRE.setLabelText(NewWizardMessages.NewJavaProjectWizardPageOne_JREGroup_unspecified_compliance);
 
 			fUseProjectJRE= new SelectionButtonDialogField(SWT.RADIO);
 			fUseProjectJRE.setLabelText(NewWizardMessages.NewJavaProjectWizardPageOne_JREGroup_specific_compliance);
 
 			fJRECombo= new ComboDialogField(SWT.READ_ONLY);
-			fillInstalledJREs(fJRECombo);
 			fJRECombo.setDialogFieldListener(this);
 
 			fUseEEJRE= new SelectionButtonDialogField(SWT.RADIO);
 			fUseEEJRE.setLabelText(NewWizardMessages.NewJavaProjectWizardPageOne_JREGroup_specific_EE);
 
 			fEECombo= new ComboDialogField(SWT.READ_ONLY);
-			fillExecutionEnvironments(fEECombo);
 			fEECombo.setDialogFieldListener(this);
-
-			switch (getLastSelectedJREKind()) {
-				case DEFAULT_JRE:
-					fUseDefaultJRE.setSelection(true);
-					break;
-				case PROJECT_JRE:
-					fUseProjectJRE.setSelection(true);
-					break;
-				case EE_JRE:
-					fUseEEJRE.setSelection(true);
-					break;
-			}
-
-			fJRECombo.setEnabled(fUseProjectJRE.isSelected());
-			fEECombo.setEnabled(fUseEEJRE.isSelected());
 
 			fUseDefaultJRE.setDialogFieldListener(this);
 			fUseProjectJRE.setDialogFieldListener(this);
 			fUseEEJRE.setDialogFieldListener(this);
+
+			CompletableFuture.supplyAsync(this::getLastSelectedJREKind)
+				.thenAcceptAsync(kind -> {
+					switch (kind.intValue()) {
+						case DEFAULT_JRE:
+							fUseDefaultJRE.setSelection(true);
+							break;
+						case PROJECT_JRE:
+							fUseProjectJRE.setSelection(true);
+							break;
+						case EE_JRE:
+							fUseEEJRE.setSelection(true);
+							break;
+						default:
+							break;
+					}
+				}, Display.getDefault()::asyncExec);
+
+			CompletableFuture.runAsync(this::initializeJvmFields)
+				.thenAcceptAsync(VOID -> {
+					if (fGroup.isDisposed()) {
+						return;
+					}
+					fUseDefaultJRE.setLabelText(fDefaultJVMLabel);
+					fillInstalledJREs(fJRECombo);
+					fillExecutionEnvironments(fEECombo);
+					updateEnableState();
+					fGroup.requestLayout();
+					setChanged();
+					notifyObservers();
+				}, Display.getDefault()::asyncExec);
+		}
+
+
+		private void initializeJvmFields () {
+			fDefaultJVMLabel= getDefaultJVMLabel();
+
+			fInstalledJVMs= getWorkspaceJREs();
+			Arrays.sort(fInstalledJVMs, new Comparator<IVMInstall>() {
+				@Override
+				public int compare(IVMInstall i0, IVMInstall i1) {
+					if (i1 instanceof IVMInstall2 && i0 instanceof IVMInstall2) {
+						String cc0= JavaModelUtil.getCompilerCompliance((IVMInstall2) i0, JavaCore.VERSION_1_4);
+						String cc1= JavaModelUtil.getCompilerCompliance((IVMInstall2) i1, JavaCore.VERSION_1_4);
+						int result= JavaCore.compareJavaVersions(cc1, cc0);
+						if (result != 0)
+							return result;
+					}
+					return Policy.getComparator().compare(i0.getName(), i1.getName());
+				}
+			});
+
+			fInstalledEEs= JavaRuntime.getExecutionEnvironmentsManager().getExecutionEnvironments();
 		}
 
 		public Control createControl(Composite composite) {
@@ -450,7 +489,7 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 			fUseEEJRE.doFillIntoGrid(fGroup, 1);
 			Combo eeComboControl= fEECombo.getComboControl(fGroup);
 			eeComboControl.setLayoutData(new GridData(GridData.FILL, GridData.CENTER, true, false));
-			
+
 			fUseProjectJRE.doFillIntoGrid(fGroup, 1);
 			Combo comboControl= fJRECombo.getComboControl(fGroup);
 			comboControl.setLayoutData(new GridData(GridData.FILL, GridData.CENTER, true, false));
@@ -469,6 +508,9 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 
 
 		private void fillInstalledJREs(ComboDialogField comboField) {
+			if (fGroup.isDisposed()) {
+				return;
+			}
 			String selectedItem= getLastSelectedJRE();
 			int selectionIndex= -1;
 			if (fUseProjectJRE.isSelected()) {
@@ -478,22 +520,6 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 				}
 			}
 
-			fInstalledJVMs= getWorkspaceJREs();
-			Arrays.sort(fInstalledJVMs, new Comparator<IVMInstall>() {
-
-				@Override
-				public int compare(IVMInstall i0, IVMInstall i1) {
-					if (i1 instanceof IVMInstall2 && i0 instanceof IVMInstall2) {
-						String cc0= JavaModelUtil.getCompilerCompliance((IVMInstall2) i0, JavaCore.VERSION_1_4);
-						String cc1= JavaModelUtil.getCompilerCompliance((IVMInstall2) i1, JavaCore.VERSION_1_4);
-						int result= JavaCore.compareJavaVersions(cc1, cc0);
-						if (result != 0)
-							return result;
-					}
-					return Policy.getComparator().compare(i0.getName(), i1.getName());
-				}
-
-			});
 			selectionIndex= -1;//find new index
 			String[] jreLabels= new String[fInstalledJVMs.length];
 			fJRECompliance= new String[fInstalledJVMs.length];
@@ -526,7 +552,6 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 				}
 			}
 
-			fInstalledEEs= JavaRuntime.getExecutionEnvironmentsManager().getExecutionEnvironments();
 			selectionIndex= -1;//find new index
 			String[] eeLabels= new String[fInstalledEEs.length];
 			fEECompliance= new String[fInstalledEEs.length];
@@ -547,12 +572,8 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 
 		private IVMInstall[] getWorkspaceJREs() {
 			List<VMStandin> standins = new ArrayList<>();
-			IVMInstallType[] types = JavaRuntime.getVMInstallTypes();
-			for (int i = 0; i < types.length; i++) {
-				IVMInstallType type = types[i];
-				IVMInstall[] installs = type.getVMInstalls();
-				for (int j = 0; j < installs.length; j++) {
-					IVMInstall install = installs[j];
+			for (IVMInstallType type : JavaRuntime.getVMInstallTypes()) {
+				for (IVMInstall install : type.getVMInstalls()) {
 					standins.add(new VMStandin(install));
 				}
 			}
@@ -573,10 +594,11 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 
 			IExecutionEnvironment[] environments= JavaRuntime.getExecutionEnvironmentsManager().getExecutionEnvironments();
 			if (defaultVM != null) {
-				for (int i= 0; i < environments.length; i++) {
-					IVMInstall eeDefaultVM= environments[i].getDefaultVM();
-					if (eeDefaultVM != null && defaultVM.getId().equals(eeDefaultVM.getId()))
-						return environments[i].getId();
+				for (IExecutionEnvironment environment : environments) {
+					IVMInstall eeDefaultVM= environment.getDefaultVM();
+					if (eeDefaultVM != null && defaultVM.getId().equals(eeDefaultVM.getId())) {
+						return environment.getId();
+					}
 				}
 			}
 
@@ -584,10 +606,11 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 			if (defaultVM instanceof IVMInstall2)
 				defaultCC= JavaModelUtil.getCompilerCompliance((IVMInstall2)defaultVM, defaultCC);
 
-			for (int i= 0; i < environments.length; i++) {
-				String eeCompliance= JavaModelUtil.getExecutionEnvironmentCompliance(environments[i]);
-				if (defaultCC.endsWith(eeCompliance))
-					return environments[i].getId();
+			for (IExecutionEnvironment environment : environments) {
+				String eeCompliance= JavaModelUtil.getExecutionEnvironmentCompliance(environment);
+				if (defaultCC.endsWith(eeCompliance)) {
+					return environment.getId();
+				}
 			}
 
 			return "JavaSE-1.7"; //$NON-NLS-1$
@@ -603,12 +626,15 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 		}
 
 		private void updateEnableState() {
-			final boolean detect= fDetectGroup.mustDetect();
+			if (fGroup.isDisposed()) {
+				return;
+			}
+			final boolean detect= fDetectGroup != null ? fDetectGroup.mustDetect() : false;
 			fUseDefaultJRE.setEnabled(!detect);
 			fUseProjectJRE.setEnabled(!detect);
 			fUseEEJRE.setEnabled(!detect);
-			fJRECombo.setEnabled(!detect && fUseProjectJRE.isSelected());
-			fEECombo.setEnabled(!detect && fUseEEJRE.isSelected());
+			fJRECombo.setEnabled(!detect && fUseProjectJRE.isSelected() && fJRECombo.getItems().length > 0);
+			fEECombo.setEnabled(!detect && fUseEEJRE.isSelected() && fEECombo.getItems().length > 0);
 			if (fPreferenceLink != null) {
 				fPreferenceLink.setEnabled(!detect);
 			}
@@ -643,6 +669,9 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 
 		@Override
 		public void dialogFieldChanged(DialogField field) {
+			if (fGroup.isDisposed()) {
+				return;
+			}
 			updateEnableState();
 			fDetectGroup.handlePossibleJVMChange();
 			if (field == fJRECombo) {
@@ -1004,11 +1033,20 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 					}
 				}
 			}
-			
+
 			// validate the location
 			final IStatus locationStatus= workspace.validateProjectLocation(handle, projectPath);
 			if (!locationStatus.isOK()) {
 				setErrorMessage(locationStatus.getMessage());
+				setPageComplete(false);
+				return;
+			}
+
+			if (fJREGroup.fUseEEJRE.isSelected() && fJREGroup.fEECombo.getItems().length == 0) {
+				setPageComplete(false);
+				return;
+			}
+			if (fJREGroup.fUseProjectJRE.isSelected() && fJREGroup.fJRECombo.getItems().length == 0) {
 				setPageComplete(false);
 				return;
 			}
@@ -1069,6 +1107,7 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 		fValidator= new Validator();
 		fNameGroup.addObserver(fValidator);
 		fLocationGroup.addObserver(fValidator);
+		fJREGroup.addObserver(fValidator);
 
 		// initialize defaults
 		setProjectName(""); //$NON-NLS-1$
@@ -1265,7 +1304,7 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 
 	/**
 	 * Updates the JRE container with module info
-	 * 
+	 *
 	 * @param cpEntries array containing jre container without module attribute
 	 * @param newPath JRE path
 	 * @return array containing JRE container with module attribute if modular
@@ -1311,7 +1350,7 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 		extraAttributes[extraAttributes.length-1]= JavaCore.newClasspathAttribute(IClasspathAttribute.MODULE, TRUE);
 		return extraAttributes;
 	}
-	
+
 	/**
 	 * Returns the source class path entries to be added on new projects.
 	 * The underlying resources may not exist. All entries that are returned must be of kind
@@ -1395,9 +1434,10 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 	private IWorkingSet[] getSelectedWorkingSet(IStructuredSelection selection, IWorkbenchPart activePart) {
 		IWorkingSet[] selected= getSelectedWorkingSet(selection);
 		if (selected != null && selected.length > 0) {
-			for (int i= 0; i < selected.length; i++) {
-				if (!isValidWorkingSet(selected[i]))
+			for (IWorkingSet s : selected) {
+				if (!isValidWorkingSet(s)) {
 					return EMPTY_WORKING_SET_ARRAY;
+				}
 			}
 			return selected;
 		}
@@ -1461,8 +1501,7 @@ public class NewJavaProjectWizardPageOne extends WizardPage {
 		}
 
 		ArrayList<IWorkingSet> result= new ArrayList<>();
-		for (Iterator<?> iterator= elements.iterator(); iterator.hasNext();) {
-			Object element= iterator.next();
+		for (Object element : elements) {
 			if (element instanceof IWorkingSet && isValidWorkingSet((IWorkingSet) element)) {
 				result.add((IWorkingSet) element);
 			}

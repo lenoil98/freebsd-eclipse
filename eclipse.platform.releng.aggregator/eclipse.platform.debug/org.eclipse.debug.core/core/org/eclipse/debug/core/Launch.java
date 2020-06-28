@@ -259,8 +259,7 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 		//stop targets first to free up and sockets, etc held by the target
 		// terminate or disconnect debug target if it is still alive
 		IDebugTarget[] targets = getDebugTargets();
-		for (int i = 0; i < targets.length; i++) {
-			IDebugTarget target= targets[i];
+		for (IDebugTarget target : targets) {
 			if (target != null) {
 				if (target.canTerminate()) {
 					try {
@@ -282,8 +281,7 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 		//second kill the underlying process
 		// terminate the system processes
 		IProcess[] processes = getProcesses();
-		for (int i = 0; i < processes.length; i++) {
-			IProcess process = processes[i];
+		for (IProcess process : processes) {
 			if (process.canTerminate()) {
 				try {
 					process.terminate();
@@ -452,8 +450,8 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 	 */
 	protected void addProcesses(IProcess[] processes) {
 		if (processes != null) {
-			for (int i = 0; i < processes.length; i++) {
-				addProcess(processes[i]);
+			for (IProcess process : processes) {
+				addProcess(process);
 				fireChanged();
 			}
 		}
@@ -477,6 +475,7 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 	 * properly created/initialized.
 	 */
 	protected void fireTerminate() {
+		setAttribute(DebugPlugin.ATTR_TERMINATE_TIMESTAMP, Long.toString(System.currentTimeMillis()));
 		if (!fSuppressChange) {
 			((LaunchManager)getLaunchManager()).fireUpdate(this, LaunchManager.TERMINATE);
 			((LaunchManager)getLaunchManager()).fireUpdate(new ILaunch[] {this}, LaunchManager.TERMINATE);
@@ -493,9 +492,9 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 	}
 
 	/**
-     * Returns whether any processes or targets can be disconnected.
-     * Ones that are already terminated or disconnected are ignored.
-     *
+	 * Returns whether any processes or targets can be disconnected.
+	 * Ones that are already terminated or disconnected are ignored.
+	 *
 	 * @see org.eclipse.debug.core.model.IDisconnect#canDisconnect()
 	 */
 	@Override
@@ -517,7 +516,7 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 		} finally {
 			readLock.unlock();
 		}
-        return false;
+		return false;
 	}
 
 	/**
@@ -546,10 +545,10 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 	}
 
 	/**
-     * Returns whether all of the contained targets and processes are
-     * disconnected. Processes that don't support disconnecting are not
-     * counted.
-     *
+	 * Returns whether all of the contained targets and processes are
+	 * disconnected. Processes that don't support disconnecting are not
+	 * counted.
+	 *
 	 * @see org.eclipse.debug.core.model.IDisconnect#isDisconnected()
 	 */
 	@Override
@@ -571,13 +570,10 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 		} finally {
 			readLock.unlock();
 		}
-        // only return true if there are processes or targets that are disconnected
-        return hasChildren();
+		// only return true if there are processes or targets that are disconnected
+		return hasChildren();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchListener#launchRemoved(org.eclipse.debug.core.ILaunch)
-	 */
 	@Override
 	public void launchRemoved(ILaunch launch) {
 		if (this.equals(launch)) {
@@ -596,26 +592,17 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 		return DebugPlugin.getDefault().getLaunchManager();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchListener#launchAdded(org.eclipse.debug.core.ILaunch)
-	 */
 	@Override
 	public void launchAdded(ILaunch launch) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchListener#launchChanged(org.eclipse.debug.core.ILaunch)
-	 */
 	@Override
 	public void launchChanged(ILaunch launch) {
 	}
 
-	/* (non-Javadoc)
-	 *
-	 * If the launch configuration this launch is associated with is
-	 * moved, update the underlying handle to the new location.
-	 *
-	 * @see org.eclipse.debug.core.ILaunchConfigurationListener#launchConfigurationAdded(org.eclipse.debug.core.ILaunchConfiguration)
+	/*
+	 * If the launch configuration this launch is associated with is moved,
+	 * update the underlying handle to the new location.
 	 */
 	@Override
 	public void launchConfigurationAdded(ILaunchConfiguration configuration) {
@@ -626,18 +613,12 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchConfigurationListener#launchConfigurationChanged(org.eclipse.debug.core.ILaunchConfiguration)
-	 */
 	@Override
 	public void launchConfigurationChanged(ILaunchConfiguration configuration) {}
 
-	/* (non-Javadoc)
-	 *
+	/*
 	 * Update the launch configuration associated with this launch if the
 	 * underlying configuration is deleted.
-	 *
-	 * @see org.eclipse.debug.core.ILaunchConfigurationListener#launchConfigurationRemoved(org.eclipse.debug.core.ILaunchConfiguration)
 	 */
 	@Override
 	public void launchConfigurationRemoved(ILaunchConfiguration configuration) {
@@ -649,13 +630,9 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.IDebugEventSetListener#handleDebugEvents(org.eclipse.debug.core.DebugEvent[])
-	 */
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
-		for (int i = 0; i < events.length; i++) {
-			DebugEvent event = events[i];
+		for (DebugEvent event : events) {
 			if (event.getKind() == DebugEvent.TERMINATE) {
 				Object object = event.getSource();
 				ILaunch launch = null;
@@ -673,9 +650,6 @@ public class Launch extends PlatformObject implements ILaunch, IDisconnect, ILau
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.runtime.PlatformObject#getAdapter(java.lang.Class)
-	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getAdapter(Class<T> adapter) {

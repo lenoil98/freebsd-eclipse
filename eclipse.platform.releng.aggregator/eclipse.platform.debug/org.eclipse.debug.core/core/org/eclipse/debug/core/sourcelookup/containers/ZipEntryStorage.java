@@ -38,6 +38,7 @@ import org.eclipse.debug.internal.core.sourcelookup.SourceLookupMessages;
  * @since 3.0
  * @noextend This class is not intended to be subclassed by clients.
  */
+@SuppressWarnings("resource")
 public class ZipEntryStorage extends PlatformObject implements IStorage {
 
 	/**
@@ -62,9 +63,6 @@ public class ZipEntryStorage extends PlatformObject implements IStorage {
 		setZipEntry(entry);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.IStorage#getContents()
-	 */
 	@Override
 	public InputStream getContents() throws CoreException {
 		try {
@@ -74,17 +72,11 @@ public class ZipEntryStorage extends PlatformObject implements IStorage {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.IStorage#getFullPath()
-	 */
 	@Override
 	public IPath getFullPath() {
 		return new Path(getArchive().getName()).append(getZipEntry().getName());
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.IStorage#getName()
-	 */
 	@Override
 	public String getName() {
 		int index = getZipEntry().getName().lastIndexOf('\\');
@@ -97,9 +89,6 @@ public class ZipEntryStorage extends PlatformObject implements IStorage {
 		return getZipEntry().getName().substring(index + 1);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.IStorage#isReadOnly()
-	 */
 	@Override
 	public boolean isReadOnly() {
 		return true;
@@ -141,9 +130,6 @@ public class ZipEntryStorage extends PlatformObject implements IStorage {
 		return fZipEntry;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
 	@Override
 	public boolean equals(Object object) {
 		return object instanceof ZipEntryStorage &&
@@ -151,9 +137,6 @@ public class ZipEntryStorage extends PlatformObject implements IStorage {
 			 getZipEntry().getName().equals(((ZipEntryStorage)object).getZipEntry().getName());
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
 	@Override
 	public int hashCode() {
 		return getZipEntry().getName().hashCode();

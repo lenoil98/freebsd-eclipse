@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,7 @@
 package org.eclipse.debug.internal.core;
 
 
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,8 +42,6 @@ import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.core.ILaunchMode;
 import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
 import org.eclipse.debug.core.sourcelookup.ISourcePathComputer;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * A launch configuration type wrappers a configuration
@@ -235,8 +234,8 @@ public class LaunchConfigurationType extends PlatformObject implements ILaunchCo
 			LaunchDelegate delegate = null;
 			List<Set<String>> modelist = null;
 			Set<ILaunchDelegate> tmp = null;
-			for (int i = 0; i < launchDelegates.length; i++) {
-				delegate = launchDelegates[i];
+			for (LaunchDelegate launchDelegate : launchDelegates) {
+				delegate = launchDelegate;
 				modelist = delegate.getModes();
 				for (Set<String> modes : modelist) {
 					tmp = fDelegates.get(modes);
@@ -286,10 +285,10 @@ public class LaunchConfigurationType extends PlatformObject implements ILaunchCo
 			//so it can be reused to try and find the source path computer
 			if(fSourceLocator == null) {
 				LaunchDelegate[] delegates = getLaunchDelegateExtensions();
-				for(int i = 0; i < delegates.length; i++) {
-					fSourceLocator = delegates[i].getSourceLocatorId();
-					if(fSourceLocator != null) {
-						fSourceProvider = delegates[i];
+				for (LaunchDelegate delegate : delegates) {
+					fSourceLocator = delegate.getSourceLocatorId();
+					if (fSourceLocator != null) {
+						fSourceProvider = delegate;
 						return fSourceLocator;
 					}
 				}
@@ -315,10 +314,10 @@ public class LaunchConfigurationType extends PlatformObject implements ILaunchCo
 			//if not provided check all the applicable delegates for one and record the delegate if found,
 			//so it can be reused to try and find the source path computer
 				LaunchDelegate[] delegates = getLaunchDelegateExtensions();
-				for(int i = 0; i < delegates.length; i++) {
-					id = delegates[i].getSourcePathComputerId();
-					if(id != null) {
-						fSourceProvider = delegates[i];
+				for (LaunchDelegate delegate : delegates) {
+					id = delegate.getSourcePathComputerId();
+					if (id != null) {
+						fSourceProvider = delegate;
 						fSourcePathComputer = DebugPlugin.getDefault().getLaunchManager().getSourcePathComputer(id);
 						if(fSourcePathComputer != null) {
 							return fSourcePathComputer;
@@ -338,8 +337,8 @@ public class LaunchConfigurationType extends PlatformObject implements ILaunchCo
 			fModes = new HashSet<>();
 			LaunchDelegate[] delegates = getLaunchDelegateExtensions();
 			List<Set<String>> modesets = null;
-			for(int i= 0; i < delegates.length; i++) {
-				modesets = delegates[i].getModes();
+			for (LaunchDelegate delegate : delegates) {
+				modesets = delegate.getModes();
 				for (Set<String> modes : modesets) {
 					fModes.addAll(modes);
 				}
@@ -489,6 +488,17 @@ public class LaunchConfigurationType extends PlatformObject implements ILaunchCo
 		String allowPrototypesString = fElement.getAttribute(IConfigurationElementConstants.ALLOW_COMMANDLINE);
 		if (allowPrototypesString != null) {
 			if (allowPrototypesString.equalsIgnoreCase("true")) { //$NON-NLS-1$
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public boolean supportsOutputMerging() {
+		String allowOutputMergingString = fElement.getAttribute(IConfigurationElementConstants.ALLOW_OUTPUT_MERGING);
+		if (allowOutputMergingString != null) {
+			if (allowOutputMergingString.equalsIgnoreCase("true")) { //$NON-NLS-1$
 				return true;
 			}
 		}

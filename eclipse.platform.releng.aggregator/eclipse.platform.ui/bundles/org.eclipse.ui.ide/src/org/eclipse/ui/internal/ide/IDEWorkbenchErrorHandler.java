@@ -15,6 +15,7 @@
 
 package org.eclipse.ui.internal.ide;
 
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -36,8 +37,6 @@ import org.eclipse.ui.progress.UIJob;
 import org.eclipse.ui.statushandlers.StatusAdapter;
 import org.eclipse.ui.statushandlers.StatusManager;
 import org.eclipse.ui.statushandlers.WorkbenchErrorHandler;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * This is the IDE workbench error handler. The instance of this handler is
@@ -77,7 +76,7 @@ public class IDEWorkbenchErrorHandler extends WorkbenchErrorHandler {
 	private final Map<IStatus, ?> map = Collections.synchronizedMap(new WeakHashMap<>());
 
 	/**
-	 * @param configurer
+	 * @param configurer the workbench configurer
 	 */
 	public IDEWorkbenchErrorHandler(IWorkbenchConfigurer configurer) {
 		workbenchConfigurer = configurer;

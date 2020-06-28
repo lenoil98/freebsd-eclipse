@@ -96,7 +96,7 @@ public class StructureDiffViewer extends DiffTreeViewer {
 	private class StructureInfo {
 		private ITypedElement fInput;
 		private IStructureComparator fStructureComparator;
-		private IRunnableWithProgress refreshTask = monitor -> refresh(monitor);
+		private IRunnableWithProgress refreshTask = this::refresh;
 
 		public boolean setInput(ITypedElement newInput, boolean force, IProgressMonitor monitor) {
 			boolean changed = false;
@@ -211,7 +211,7 @@ public class StructureDiffViewer extends DiffTreeViewer {
 
 		setAutoExpandLevel(3);
 
-		fContentChangedListener= changed -> StructureDiffViewer.this.contentChanged(changed);
+		fContentChangedListener= StructureDiffViewer.this::contentChanged;
 		fCompareInputChangeListener = input -> StructureDiffViewer.this.compareInputChanged(input, true);
 	}
 
@@ -263,11 +263,11 @@ public class StructureDiffViewer extends DiffTreeViewer {
 		return fRoot;
 	}
 
-    /*
-     * (non-Javadoc) Method declared on StructuredViewer.
-     * Overridden to create the comparable structures from the input object
-	 * and to feed them through the differencing engine. Note: for this viewer
-	 * the value from <code>getInput</code> is not identical to <code>getRoot</code>.
+	/*
+	 * Method declared on StructuredViewer. Overridden to create the comparable
+	 * structures from the input object and to feed them through the differencing
+	 * engine. Note: for this viewer the value from <code>getInput</code> is not
+	 * identical to <code>getRoot</code>.
 	 */
 	@Override
 	protected void inputChanged(Object input, Object oldInput) {

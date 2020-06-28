@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -46,6 +46,7 @@ public class SystemBundleLoader extends BundleLoader {
 	 * The ClassLoader that loads OSGi framework classes is used to find the class.
 	 * This method never gets called because there is no BundleClassLoader for the framework.
 	 */
+	@Override
 	public Class<?> findClass(String name) throws ClassNotFoundException {
 		Class<?> result = findLocalClass(name);
 		if (result == null)
@@ -54,8 +55,9 @@ public class SystemBundleLoader extends BundleLoader {
 	}
 
 	/**
-	 * The ClassLoader that loads OSGi framework classes is used to find the class. 
+	 * The ClassLoader that loads OSGi framework classes is used to find the class.
 	 */
+	@Override
 	public Class<?> findLocalClass(String name) {
 		try {
 			return classLoader.loadClass(name);
@@ -68,6 +70,7 @@ public class SystemBundleLoader extends BundleLoader {
 	/**
 	 * The ClassLoader that loads OSGi framework classes is used to find the resource.
 	 */
+	@Override
 	public URL findLocalResource(String name) {
 		return classLoader.getResource(name);
 	}
@@ -75,6 +78,7 @@ public class SystemBundleLoader extends BundleLoader {
 	/**
 	 * The ClassLoader that loads OSGi framework classes is used to find the resource.
 	 */
+	@Override
 	public Enumeration<URL> findLocalResources(String name) {
 		try {
 			return classLoader.getResources(name);
@@ -88,6 +92,7 @@ public class SystemBundleLoader extends BundleLoader {
 	 * The ClassLoader that loads OSGi framework classes is used to find the resource.
 	 * This method never gets called because there is no ModuleClassLoader for the framework.
 	 */
+	@Override
 	public URL findResource(String name) {
 		return findLocalResource(name);
 	}
@@ -95,8 +100,9 @@ public class SystemBundleLoader extends BundleLoader {
 	/**
 	 * The ClassLoader that loads OSGi framework classes is used to find the resource.
 	 * This method never gets called because there is no ModuleClassLoader for the framework.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
+	@Override
 	public Enumeration<URL> findResources(String name) throws IOException {
 		return findLocalResources(name);
 	}

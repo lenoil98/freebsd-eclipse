@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -51,27 +51,37 @@ public class CleanUpMessages extends NLS {
 	public static String CodeFormatingTabPage_SortMembersSemanticChange_warning;
 
 	public static String CodeStyleTabPage_CheckboxName_ConvertForLoopToEnhanced;
+	public static String CodeStyleTabPage_CheckboxName_ConvertLoopOnlyIfLoopVarUsed;
 	public static String CodeStyleTabPage_CheckboxName_UseBlocks;
 	public static String CodeStyleTabPage_CheckboxName_UseFinal;
 	public static String CodeStyleTabPage_CheckboxName_UseFinalForFields;
 	public static String CodeStyleTabPage_CheckboxName_UseFinalForLocals;
 	public static String CodeStyleTabPage_CheckboxName_UseFinalForParameters;
 
+	public static String CodeStyleTabPage_CheckboxName_UseVar;
+
 	public static String CodeStyleTabPage_CheckboxName_UseParentheses;
 	public static String CodeStyleTabPage_GroupName_ControlStatments;
 	public static String CodeStyleTabPage_GroupName_Expressions;
+
+	public static String CodeStyleTabPage_GroupName_NumberLiteral;
+
+	public static String CodeStyleTabPage_CheckboxName_NumberSuffix;
 
 	public static String CodeStyleTabPage_GroupName_VariableDeclarations;
 	public static String CodeStyleTabPage_RadioName_AlwaysUseBlocks;
 	public static String CodeStyleTabPage_RadioName_AlwaysUseParantheses;
 	public static String CodeStyleTabPage_RadioName_NeverUseBlocks;
 	public static String CodeStyleTabPage_RadioName_NeverUseParantheses;
+
+	public static String CodeStyleTabPage_CheckboxName_UseLazyLogicalOperator;
 	public static String CodeStyleTabPage_RadioName_UseBlocksSpecial;
-	
+
 	public static String CodeStyleTabPage_GroupName_FunctionalInterfaces;
 	public static String CodeStyleTabPage_CheckboxName_ConvertFunctionalInterfaces;
 	public static String CodeStyleTabPage_RadioName_UseLambdaWherePossible;
 	public static String CodeStyleTabPage_RadioName_UseAnonymous;
+	public static String CodeStyleTabPage_CheckboxName_SimplifyLambdaExpressionAndMethodRefSyntax;
 
 	public static String ContributedCleanUpTabPage_ErrorPage_message;
 
@@ -107,10 +117,18 @@ public class CleanUpMessages extends NLS {
 	public static String UnnecessaryCodeTabPage_CheckboxName_UnnecessaryCasts;
 	public static String UnnecessaryCodeTabPage_CheckboxName_UnnecessaryNLSTags;
 	public static String UnnecessaryCodeTabPage_CheckboxName_RedundantTypeArguments;
+	public static String UnnecessaryCodeTabPage_CheckboxName_Autoboxing;
+	public static String UnnecessaryCodeTabPage_CheckboxName_Unboxing;
+	public static String UnnecessaryCodeTabPage_CheckboxName_PushDownNegation;
+	public static String UnnecessaryCodeTabPage_CheckboxName_MergeConditionalBlocks;
+
+	public static String UnnecessaryCodeTabPage_CheckboxName_UseDirectlyMapMethod;
 	public static String UnnecessaryCodeTabPage_CheckboxName_RedundantModifiers;
 	public static String UnnecessaryCodeTabPage_CheckboxName_RedundantModifiers_description;
 	public static String UnnecessaryCodeTabPage_CheckboxName_RedundantSemicolons;
 	public static String UnnecessaryCodeTabPage_CheckboxName_RedundantSemicolons_description;
+	public static String UnnecessaryCodeTabPage_CheckboxName_RedundantArrayCreation_description;
+	public static String UnnecessaryCodeTabPage_CheckboxName_UnnecessaryVarargsArrayCreation;
 	public static String UnnecessaryCodeTabPage_CheckboxName_UnusedConstructors;
 	public static String UnnecessaryCodeTabPage_CheckboxName_UnusedFields;
 	public static String UnnecessaryCodeTabPage_CheckboxName_UnusedImports;

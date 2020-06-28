@@ -276,9 +276,7 @@ public class TextFileBufferManager implements ITextFileBufferManager {
 					if (type != null)
 						return type.isKindOf(TEXT_CONTENT_TYPE);
 				}
-			} catch (CoreException ex) {
-				// ignore: API specification tells return true if content type can't be determined
-			} catch (IOException ex) {
+			} catch (CoreException | IOException ex) {
 				// ignore: API specification tells return true if content type can't be determined
 			}
 
@@ -805,7 +803,7 @@ public class TextFileBufferManager implements ITextFileBufferManager {
 	 * @since 3.3
 	 */
 	protected String getLineDelimiterPreference(IPath location, LocationKind locationKind) {
-		return System.getProperty("line.separator"); //$NON-NLS-1$
+		return System.lineSeparator();
 	}
 
 }

@@ -31,24 +31,17 @@ public class HexRendering extends AbstractAsyncTableRendering {
 		super(renderingId);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.views.memory.AbstractTableRendering#getString(java.lang.String, java.math.BigInteger, org.eclipse.debug.core.model.MemoryByte[], java.lang.String)
-	 */
 	@Override
 	public String getString(String dataType, BigInteger address,
 			MemoryByte[] data) {
-		StringBuffer strBuffer = new StringBuffer();
+		StringBuilder strBuffer = new StringBuilder();
 
 		String paddedStr = DebugUIPlugin.getDefault().getPreferenceStore().getString(IDebugUIConstants.PREF_PADDED_STR);
 
-		for (int i=0; i<data.length; i++)
-		{
-			if (data[i].isReadable())
-			{
-				strBuffer.append(new String(RenderingsUtil.convertByteToCharArray(data[i].getValue())));
-			}
-			else
-			{
+		for (MemoryByte memByte : data) {
+			if (memByte.isReadable()) {
+				strBuffer.append(new String(RenderingsUtil.convertByteToCharArray(memByte.getValue())));
+			} else {
 				// pad with padded string
 				strBuffer.append(paddedStr);
 			}
@@ -57,9 +50,6 @@ public class HexRendering extends AbstractAsyncTableRendering {
 		return strBuffer.toString().toUpperCase();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.views.memory.AbstractTableRendering#getBytes(java.lang.String, java.math.BigInteger, org.eclipse.debug.core.model.MemoryByte[], java.lang.String)
-	 */
 	@Override
 	public byte[] getBytes(String dataType, BigInteger address,
 			MemoryByte[] currentValues, String data) {

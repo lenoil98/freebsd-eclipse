@@ -70,8 +70,7 @@ public class CyclePageHandler extends FilteredTableBaseHandler {
 	protected Object getInput(WorkbenchPage page) {
 		List<FilteredTableItem> rows = new ArrayList<>();
 
-		for(int i=0; i<pageSwitcher.getPages().length; i++){
-			Object viewPage = pageSwitcher.getPages()[i];
+		for (Object viewPage : pageSwitcher.getPages()) {
 			FilteredTableItem item = new FilteredTableItem();
 			ImageDescriptor imageDescriptor = pageSwitcher.getImageDescriptor(viewPage);
 			if (imageDescriptor != null) {
@@ -98,20 +97,16 @@ public class CyclePageHandler extends FilteredTableBaseHandler {
 
 	@Override
 	protected ParameterizedCommand getBackwardCommand() {
-		final ICommandService commandService = window
-				.getWorkbench().getService(ICommandService.class);
+		final ICommandService commandService = window.getWorkbench().getService(ICommandService.class);
 		final Command command = commandService.getCommand(IWorkbenchCommandConstants.NAVIGATE_PREVIOUS_PAGE);
-		ParameterizedCommand commandF = new ParameterizedCommand(command, null);
-		return commandF;
+		return new ParameterizedCommand(command, null);
 	}
 
 	@Override
 	protected ParameterizedCommand getForwardCommand() {
-		final ICommandService commandService = window
-				.getWorkbench().getService(ICommandService.class);
-		final Command command= commandService.getCommand(IWorkbenchCommandConstants.NAVIGATE_NEXT_PAGE);
-		ParameterizedCommand commandF = new ParameterizedCommand(command, null);
-		return commandF;
+		final ICommandService commandService = window.getWorkbench().getService(ICommandService.class);
+		final Command command = commandService.getCommand(IWorkbenchCommandConstants.NAVIGATE_NEXT_PAGE);
+		return new ParameterizedCommand(command, null);
 	}
 
 	@Override
@@ -139,8 +134,7 @@ public class CyclePageHandler extends FilteredTableBaseHandler {
 	}
 
 	@Override
-	protected void setDialogLocation(final Shell dialog,
-			IWorkbenchPart activePart) {
+	protected void setDialogLocation(final Shell dialog, IWorkbenchPart activePart) {
 		if (dialog == null)
 			return;
 

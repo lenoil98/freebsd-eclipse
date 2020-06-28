@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -97,7 +97,7 @@ public interface IMethodBinding extends IBinding {
 	 * <li>If the lambda expression is declared in the body of a method,
 	 *   answers the binding of that declaring method.
 	 * </li>
-	 * <li>Otherwise, if the lambda expression is declared in the 
+	 * <li>Otherwise, if the lambda expression is declared in the
 	 *   initializer of a field, answers the binding of that declaring field.
 	 * </li>
 	 * <li>Otherwise, if the lambda expression is declared in a static initializer or an
@@ -146,8 +146,8 @@ public interface IMethodBinding extends IBinding {
 	 * <p>
 	 * <b>Note:</b> This method only returns declaration annotations.
 	 * <em>Type annotations</em> in the sense of JLS8 9.7.4 are <em>not</em> returned.
-	 * Type annotations can be retrieved from a parameter type 
-	 * via {@link ITypeBinding#getTypeAnnotations()}. 
+	 * Type annotations can be retrieved from a parameter type
+	 * via {@link ITypeBinding#getTypeAnnotations()}.
 	 * </p>
 	 *
 	 * @param paramIndex the index of the parameter of interest
@@ -183,22 +183,22 @@ public interface IMethodBinding extends IBinding {
 	public ITypeBinding[] getParameterTypes();
 
 	/**
-	 * Returns the type of this method's receiver or <code>null</code> 
+	 * Returns the type of this method's receiver or <code>null</code>
 	 * if there is no receiver declared explicitly.
-	 * 
-	 * @return the type of this method's receiver or <code>null</code> 
+	 *
+	 * @return the type of this method's receiver or <code>null</code>
 	 * if there is no receiver declared explicitly.
-	 * 
+	 *
 	 * @since 3.10
 	 */
 	public ITypeBinding getDeclaredReceiverType();
-	
+
 	/**
 	 * Returns the binding for the return type of this method. Returns the
 	 * special primitive <code>void</code> return type for constructors.
 	 * <p>
-	 * For methods, the type binding that is returned contains type annotations 
-	 * if any. For e.g. the following code would get the type annotations on a 
+	 * For methods, the type binding that is returned contains type annotations
+	 * if any. For e.g. the following code would get the type annotations on a
 	 * method: <br><br>
 	 *  <code> IAnnotationBinding[] annots = getReturnType().getTypeAnnotations() </code>
 	 * </p>
@@ -383,4 +383,17 @@ public interface IMethodBinding extends IBinding {
 	 * @since 3.1
 	 */
 	public boolean overrides(IMethodBinding method);
+
+
+	/**
+	 * Returns a list of variable bindings representing the synthetic outer
+	 * local variables. Returns an empty array for non-lambda expressions or if
+	 * this method does not have any synthetic parameters.
+	 *
+	 * @return a (possibly empty) list of variable bindings for the synthetic
+	 * outer locals of this method if this is a lambda expression, else an empty array.
+	 * @since 3.18
+	 */
+	public IVariableBinding[] getSyntheticOuterLocals();
+
 }

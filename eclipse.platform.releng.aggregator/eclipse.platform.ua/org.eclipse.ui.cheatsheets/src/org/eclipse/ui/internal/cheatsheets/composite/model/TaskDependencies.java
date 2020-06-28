@@ -102,12 +102,14 @@ public class TaskDependencies {
 
 	/**
 	 * Check for circular dependencies using the following algorithm.
-	 * 1. Create a set of all the tasks which have an id (tasks without id cannot be in a cycle).;
-	 * 2. Remove from the set any tasks which depend on no other task, these cannot be part of a cycle
-	 * 3. Remove from the set any tasks which only depend on tasks already removed, these cannot be
+	 * <ol>
+	 * <li>Create a set of all the tasks which have an id (tasks without id cannot be in a cycle).;
+	 * <li>Remove from the set any tasks which depend on no other task, these cannot be part of a cycle
+	 * <li>Remove from the set any tasks which only depend on tasks already removed, these cannot be
 	 * part of a cycle.
-	 * 4. Repeat step 3 until not further tasks can be removed
-	 * 5. Any tasks remaining are part of a cycle or depend on a task in a cycle
+	 * <li>Repeat step 3 until not further tasks can be removed
+	 * <li>Any tasks remaining are part of a cycle or depend on a task in a cycle
+	 * </ol>
 	 * @param model
 	 * @param status
 	 */
@@ -173,13 +175,13 @@ public class TaskDependencies {
 					lastTask = thisTask;
 					thisTask = task.getName();
 					if (lastTask != null) {
-					    String message = NLS.bind(Messages.ERROR_PARSING_CYCLE_CONTAINS, (new Object[] {lastTask, thisTask}));
-					    status.addStatus(IStatus.ERROR, message, null);
+						String message = NLS.bind(Messages.ERROR_PARSING_CYCLE_CONTAINS, (new Object[] {lastTask, thisTask}));
+						status.addStatus(IStatus.ERROR, message, null);
 					}
 				}
 			}
 			String message = NLS.bind(Messages.ERROR_PARSING_CYCLE_CONTAINS, (new Object[] {thisTask, firstTask}));
-		    status.addStatus(IStatus.ERROR, message, null);
+			status.addStatus(IStatus.ERROR, message, null);
 		}
 	}
 

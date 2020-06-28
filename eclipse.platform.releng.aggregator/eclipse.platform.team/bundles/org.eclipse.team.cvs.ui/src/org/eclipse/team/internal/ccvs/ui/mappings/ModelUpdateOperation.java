@@ -47,17 +47,11 @@ public class ModelUpdateOperation extends AbstractModelMergeOperation {
 		super(targetPart, manager, true);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.TeamOperation#getJobName()
-	 */
 	@Override
 	protected String getJobName() {
 		return CVSUIMessages.UpdateOperation_taskName;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.operations.ResourceMappingOperation#isPreviewRequested()
-	 */
 	@Override
 	public boolean isPreviewRequested() {
 		return super.isPreviewRequested() || !isAttemptHeadlessMerge();
@@ -75,17 +69,11 @@ public class ModelUpdateOperation extends AbstractModelMergeOperation {
 		return ISynchronizationContext.THREE_WAY;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.operations.ResourceMappingMergeOperation#createParticipant()
-	 */
 	@Override
 	protected ModelSynchronizeParticipant createParticipant() {
 		return new WorkspaceModelParticipant(createMergeContext());
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.operations.ModelParticipantMergeOperation#createMergeContext()
-	 */
 	@Override
 	protected SynchronizationContext createMergeContext() {
 		return WorkspaceSubscriberContext.createContext(getScopeManager(), getMergeType());
@@ -100,10 +88,9 @@ public class ModelUpdateOperation extends AbstractModelMergeOperation {
 			ct.addTraversals(getContext().getScope().getTraversals());
 			IResource[] roots = ct.getRoots();
 			List<ICVSResource> cvsResources = new ArrayList<>();
-			for (int i = 0; i < roots.length; i++) {
-				IResource resource = roots[i];
+			for (IResource resource : roots) {
 				if (resource.getProject().isAccessible()) {
-					cvsResources.add(CVSWorkspaceRoot.getCVSResourceFor(roots[i]));
+					cvsResources.add(CVSWorkspaceRoot.getCVSResourceFor(resource));
 				}
 			}
 			new PruneFolderVisitor().visit(

@@ -49,7 +49,7 @@ class RetargetPatchElementDialog extends Dialog {
 	private static class RetargetPatchContentProvider extends BaseWorkbenchContentProvider {
 		private final PatchDiffNode node;
 		public RetargetPatchContentProvider(PatchDiffNode node) {
-			 this.node = node;
+			this.node = node;
 		}
 		@Override
 		public Object[] getChildren(Object element) {
@@ -57,9 +57,9 @@ class RetargetPatchElementDialog extends Dialog {
 				// Don't show closed projects
 				IProject[] allProjects= ((IWorkspaceRoot) element).getProjects();
 				ArrayList<IProject> accessibleProjects= new ArrayList<>();
-				for (int i= 0; i<allProjects.length; i++) {
-					if (allProjects[i].isOpen()) {
-						accessibleProjects.add(allProjects[i]);
+				for (IProject allProject : allProjects) {
+					if (allProject.isOpen()) {
+						accessibleProjects.add(allProject);
 					}
 				}
 				return accessibleProjects.toArray();
@@ -104,8 +104,8 @@ class RetargetPatchElementDialog extends Dialog {
 
 		GridLayout layout= new GridLayout();
 		layout.numColumns= 1;
-        layout.marginHeight= convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_MARGIN);
-        layout.marginWidth= convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
+		layout.marginHeight= convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_MARGIN);
+		layout.marginWidth= convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
 		composite.setLayout(layout);
 		final GridData data= new GridData(SWT.FILL, SWT.FILL, true, true);
 		composite.setLayoutData(data);

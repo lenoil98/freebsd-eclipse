@@ -129,7 +129,7 @@ public RGB[] getRGBs() {
  */
 public RGB open () {
 	byte [] buffer = Converter.wcsToMbcs (title, true);
-	long /*int*/ handle = GTK.gtk_color_chooser_dialog_new (buffer, parent.topHandle ());
+	long handle = GTK.gtk_color_chooser_dialog_new (buffer, parent.topHandle ());
 	Display display = parent != null ? parent.getDisplay (): Display.getCurrent ();
 	GdkRGBA rgba;
 	rgba = new GdkRGBA ();
@@ -142,7 +142,7 @@ public RGB open () {
 	GTK.gtk_color_chooser_set_rgba (handle, rgba);
 	if (rgbs != null) {
 		int colorsPerRow = 9;
-		long /*int*/ gdkRGBAS = OS.g_malloc(GdkRGBA.sizeof * rgbs.length);
+		long gdkRGBAS = OS.g_malloc(GdkRGBA.sizeof * rgbs.length);
 		rgba = new GdkRGBA ();
 		for (int i=0; i<rgbs.length; i++) {
 			RGB rgbS = rgbs[i];
@@ -171,11 +171,12 @@ public RGB open () {
 		display.setModalDialog (this);
 	}
 	int signalId = 0;
-	long /*int*/ hookId = 0;
+	long hookId = 0;
 	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
 		signalId = OS.g_signal_lookup (OS.map, GTK.GTK_TYPE_WIDGET());
 		hookId = OS.g_signal_add_emission_hook (signalId, 0, display.emissionProc, handle, 0);
 	}
+	display.externalEventLoop = true;
 	display.sendPreExternalEventDispatchEvent ();
 	int response = GTK.gtk_dialog_run (handle);
 	/*
@@ -185,6 +186,7 @@ public RGB open () {
 	* thread leaves the GTK lock acquired by the function above.
 	*/
 	if (!GTK.GTK4) GDK.gdk_threads_leave();
+	display.externalEventLoop = false;
 	display.sendPostExternalEventDispatchEvent ();
 	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
 		OS.g_signal_remove_emission_hook (signalId, hookId);
@@ -239,21 +241,21 @@ public void setRGBs(RGB[] rgbs) {
 	this.rgbs = rgbs;
 }
 static String[] splitString(String text, char ch) {
-    String[] substrings = new String[1];
-    int start = 0, pos = 0;
-    while (pos != -1) {
-        pos = text.indexOf(ch, start);
-        if (pos == -1) {
-        	substrings[substrings.length - 1] = text.substring(start);
-        } else {
-            substrings[substrings.length - 1] = text.substring(start, pos);
-            start = pos + 1;
-            String[] newSubstrings = new String[substrings.length+1];
-            System.arraycopy(substrings, 0, newSubstrings, 0, substrings.length);
-       		substrings = newSubstrings;
-        }
-    }
-    return substrings;
+	String[] substrings = new String[1];
+	int start = 0, pos = 0;
+	while (pos != -1) {
+		pos = text.indexOf(ch, start);
+		if (pos == -1) {
+			substrings[substrings.length - 1] = text.substring(start);
+		} else {
+			substrings[substrings.length - 1] = text.substring(start, pos);
+			start = pos + 1;
+			String[] newSubstrings = new String[substrings.length+1];
+			System.arraycopy(substrings, 0, newSubstrings, 0, substrings.length);
+			substrings = newSubstrings;
+		}
+	}
+	return substrings;
 }
 }
 

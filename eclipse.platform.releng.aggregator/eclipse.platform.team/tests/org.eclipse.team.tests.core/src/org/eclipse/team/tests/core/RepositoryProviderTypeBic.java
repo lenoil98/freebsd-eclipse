@@ -21,17 +21,18 @@ import org.eclipse.team.core.*;
 
 public class RepositoryProviderTypeBic extends RepositoryProviderType {
 	File createdFile;
-	/**
-	 * @see org.eclipse.team.core.RepositoryProviderType#getProjectSetCapability()
-	 */
+
+	@Override
 	public ProjectSetCapability getProjectSetCapability() {
 		return new ProjectSetCapability() {
+			@Override
 			public IProject[] addToWorkspace(String[] referenceStrings,
 					ProjectSetSerializationContext context,
 					IProgressMonitor monitor) throws TeamException {
 				return new IProject[0];
 			}
 
+			@Override
 			public void projectSetCreated(File file,
 					ProjectSetSerializationContext context,
 					IProgressMonitor monitor) {
@@ -40,9 +41,6 @@ public class RepositoryProviderTypeBic extends RepositoryProviderType {
 		};
 	}
 
-	/**
-	 * @return File
-	 */
 	public File getCreatedFile() {
 		return createdFile;
 	}

@@ -39,7 +39,7 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
 
 /**
  * Provides the default text hover info if it exists, else provides the native string as hover info.
- * 
+ *
  * @since 3.7
  */
 public class PropertiesFileHover implements ITextHover, ITextHoverExtension, ITextHoverExtension2 {
@@ -65,7 +65,7 @@ public class PropertiesFileHover implements ITextHover, ITextHoverExtension, ITe
 
 	/**
 	 * Hover control creator.
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	private static final class HoverControlCreator extends AbstractReusableInformationControlCreator {
@@ -81,14 +81,14 @@ public class PropertiesFileHover implements ITextHover, ITextHoverExtension, ITe
 
 	/**
 	 * The Properties File hover control.
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	static class PropertiesFileHoverControl extends DefaultInformationControl implements IInformationControlExtension2 {
 
 		/**
 		 * Creates an Properties File hover control with the given shell as parent.
-		 * 
+		 *
 		 * @param parent the parent shell
 		 * @param tooltipAffordanceString the text to be used in the status field or
 		 *            <code>null</code> to hide the status field
@@ -137,7 +137,8 @@ public class PropertiesFileHover implements ITextHover, ITextHoverExtension, ITe
 				return null;
 
 			String type= partition.getType();
-			if (!(type.equals(IPropertiesFilePartitions.PROPERTY_VALUE) || type.equals(IDocument.DEFAULT_CONTENT_TYPE))) {
+			if (!type.equals(IPropertiesFilePartitions.PROPERTY_VALUE)
+					&& !type.equals(IDocument.DEFAULT_CONTENT_TYPE)) {
 				return null;
 			}
 			String escapedString= document.get(partition.getOffset(), partition.getLength());

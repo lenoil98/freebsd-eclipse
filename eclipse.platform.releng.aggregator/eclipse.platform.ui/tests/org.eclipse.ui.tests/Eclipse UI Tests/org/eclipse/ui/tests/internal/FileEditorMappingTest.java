@@ -21,14 +21,20 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.internal.registry.EditorDescriptor;
 import org.eclipse.ui.internal.registry.FileEditorMapping;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
+@Ignore
 public class FileEditorMappingTest extends UITestCase {
 
 	private EditorDescriptor textEditor;
 	private EditorDescriptor pdeEditor;
 
-	public FileEditorMappingTest(String testName) {
-		super(testName);
+	public FileEditorMappingTest() {
+		super(FileEditorMappingTest.class.getSimpleName());
 	}
 
 	@Override
@@ -39,6 +45,7 @@ public class FileEditorMappingTest extends UITestCase {
 		pdeEditor = (EditorDescriptor) IDE.getEditorDescriptor("plugin.xml");
 	}
 
+	@Test
 	public void testEquals() {
 		FileEditorMapping mappingA = new FileEditorMapping("txt");
 		mappingA.addEditor(textEditor);
@@ -68,6 +75,7 @@ public class FileEditorMappingTest extends UITestCase {
 				mappingA.equals(mappingB));
 	}
 
+	@Test
 	public void testEquals2() {
 		FileEditorMapping mappingA = new FileEditorMapping("txt");
 		FileEditorMapping mappingB = new FileEditorMapping("txt");
@@ -94,6 +102,7 @@ public class FileEditorMappingTest extends UITestCase {
 				mappingA.equals(mappingB));
 	}
 
+	@Test
 	public void testHashCode() {
 		FileEditorMapping mappingA = new FileEditorMapping("txt");
 		mappingA.addEditor(textEditor);
@@ -123,6 +132,7 @@ public class FileEditorMappingTest extends UITestCase {
 				mappingA.hashCode() == mappingB.hashCode());
 	}
 
+	@Test
 	public void testHashCode2() {
 		FileEditorMapping mappingA = new FileEditorMapping("txt");
 		FileEditorMapping mappingB = new FileEditorMapping("txt");
@@ -149,6 +159,7 @@ public class FileEditorMappingTest extends UITestCase {
 				mappingA.hashCode() == mappingB.hashCode());
 	}
 
+	@Test
 	public void testClone() {
 		FileEditorMapping mapping = new FileEditorMapping("txt");
 		assertEquals(mapping, mapping.clone());

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,12 +10,13 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.ui.internal.views;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
-import org.eclipse.help.ui.internal.HelpUIPlugin;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.help.ui.internal.IHelpUIConstants;
 import org.eclipse.jface.preference.IPreferenceNode;
 import org.eclipse.jface.preference.IPreferencePage;
@@ -35,16 +36,16 @@ public class ScopePreferenceManager extends PreferenceManager implements IHelpUI
 
 		@Override
 		public void createPage() {
-	    	try {
-	    		Object obj = config.createExecutableExtension(IHelpUIConstants.ATT_CLASS);
-	    		IPreferencePage page = (IPreferencePage)obj;
-	    		setPage(page);
-	    		page.setTitle(getLabelText());
-	    	}
-	    	catch (CoreException e) {
-	    		HelpUIPlugin.logError("Unable to create executable extension", e); //$NON-NLS-1$
-	    	}
-	    }
+			try {
+				Object obj = config.createExecutableExtension(IHelpUIConstants.ATT_CLASS);
+				IPreferencePage page = (IPreferencePage)obj;
+				setPage(page);
+				page.setTitle(getLabelText());
+			}
+			catch (CoreException e) {
+				Platform.getLog(getClass()).error("Unable to create executable extension", e); //$NON-NLS-1$
+			}
+		}
 	}
 	class EnginePreferenceNode extends PreferenceNode {
 		private EngineDescriptor desc;
@@ -59,12 +60,12 @@ public class ScopePreferenceManager extends PreferenceManager implements IHelpUI
 
 		@Override
 		public void createPage() {
-	    	IPreferencePage page = desc.createRootPage(set.getName());
-	    	setPage(page);
-	    	page.setTitle(desc.getLabel());
-	    	page.setImageDescriptor(desc.getImageDescriptor());
-	    	page.setDescription(desc.getDescription());
-	    }
+			IPreferencePage page = desc.createRootPage(set.getName());
+			setPage(page);
+			page.setTitle(desc.getLabel());
+			page.setImageDescriptor(desc.getImageDescriptor());
+			page.setDescription(desc.getDescription());
+		}
 	}
 	/**
 	 *

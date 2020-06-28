@@ -53,27 +53,22 @@ public class CompareEditorContributor extends EditorActionBarContributor {
 	public CompareEditorContributor() {
 		ResourceBundle bundle= CompareUI.getResourceBundle();
 
-		IWorkbenchHelpSystem helpSystem= PlatformUI.getWorkbench().getHelpSystem();
-
 		fIgnoreWhitespace= ChangePropertyAction.createIgnoreWhiteSpaceAction(bundle, null);
-		helpSystem.setHelp(fIgnoreWhitespace, ICompareContextIds.IGNORE_WHITESPACE_ACTION);
-
 		fNext= new NavigationAction(bundle, true);
-		helpSystem.setHelp(fNext, ICompareContextIds.GLOBAL_NEXT_DIFF_ACTION);
-
 		fPrevious= new NavigationAction(bundle, false);
-		helpSystem.setHelp(fPrevious, ICompareContextIds.GLOBAL_PREVIOUS_DIFF_ACTION);
-
 		fToolbarNext= new NavigationAction(bundle, true);
-		helpSystem.setHelp(fToolbarNext, ICompareContextIds.NEXT_DIFF_ACTION);
-
 		fToolbarPrevious= new NavigationAction(bundle, false);
-		helpSystem.setHelp(fToolbarPrevious, ICompareContextIds.PREVIOUS_DIFF_ACTION);
+
+		if (PlatformUI.isWorkbenchRunning()) {
+			IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench().getHelpSystem();
+			helpSystem.setHelp(fIgnoreWhitespace, ICompareContextIds.IGNORE_WHITESPACE_ACTION);
+			helpSystem.setHelp(fNext, ICompareContextIds.GLOBAL_NEXT_DIFF_ACTION);
+			helpSystem.setHelp(fPrevious, ICompareContextIds.GLOBAL_PREVIOUS_DIFF_ACTION);
+			helpSystem.setHelp(fToolbarNext, ICompareContextIds.NEXT_DIFF_ACTION);
+			helpSystem.setHelp(fToolbarPrevious, ICompareContextIds.PREVIOUS_DIFF_ACTION);
+		}
 	}
 
-	/*
-	 * @see EditorActionBarContributor#contributeToToolBar(IToolBarManager)
-	 */
 	@Override
 	public void contributeToToolBar(IToolBarManager tbm) {
 		tbm.add(new Separator(FILTER_SEPARATOR));
@@ -83,9 +78,6 @@ public class CompareEditorContributor extends EditorActionBarContributor {
 		tbm.appendToGroup(BUILTIN_SEPARATOR, fToolbarPrevious);
 	}
 
-	/*
-	 * @see EditorActionBarContributor#contributeToMenu(IMenuManager)
-	 */
 	@Override
 	public void contributeToMenu(IMenuManager menuManager) {
 		// empty implementation
@@ -130,21 +122,20 @@ public class CompareEditorContributor extends EditorActionBarContributor {
 			IContributionItem[] items = actionBars.getToolBarManager()
 					.getItems();
 			boolean inFilters = false;
-			for (int i = 0; i < items.length; i++) {
-				if (items[i].getId().equals(FILTER_SEPARATOR)) {
+			for (IContributionItem item : items) {
+				if (item.getId().equals(FILTER_SEPARATOR)) {
 					inFilters = true;
-				} else if (items[i].getId().equals(BUILTIN_SEPARATOR)) {
+				} else if (item.getId().equals(BUILTIN_SEPARATOR)) {
 					break;
 				} else if (inFilters) {
-					if (items[i] instanceof ActionContributionItem) {
-						String definitionId = ((ActionContributionItem) items[i])
-								.getAction().getActionDefinitionId();
+					if (item instanceof ActionContributionItem) {
+						String definitionId = ((ActionContributionItem) item).getAction().getActionDefinitionId();
 						if (definitionId != null) {
 							actionBars.setGlobalActionHandler(definitionId,
 									null);
 						}
 					}
-					actionBars.getToolBarManager().remove(items[i]);
+					actionBars.getToolBarManager().remove(item);
 				}
 			}
 

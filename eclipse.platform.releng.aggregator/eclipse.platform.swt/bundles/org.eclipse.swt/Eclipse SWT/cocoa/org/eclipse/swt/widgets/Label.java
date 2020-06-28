@@ -99,12 +99,12 @@ public Label (Composite parent, int style) {
 }
 
 @Override
-long /*int*/ accessibleHandle() {
+long accessibleHandle() {
 	return eventView().id;
 }
 
 @Override
-boolean accessibilityIsIgnored(long /*int*/ id, long /*int*/ sel) {
+boolean accessibilityIsIgnored(long id, long sel) {
 	if (id == view.id) return true;
 	return super.accessibilityIsIgnored(id, sel);
 }
@@ -142,7 +142,7 @@ public Point computeSize (int wHint, int hHint, boolean changed) {
 	int width = DEFAULT_WIDTH;
 	int height = DEFAULT_HEIGHT;
 	if ((style & SWT.SEPARATOR) != 0) {
-		double /*float*/ lineWidth = ((NSBox)view).borderWidth ();
+		double lineWidth = ((NSBox)view).borderWidth ();
 		if ((style & SWT.HORIZONTAL) != 0) {
 			height = (int)Math.ceil (lineWidth * 2);
 		} else {
@@ -205,7 +205,7 @@ void createHandle () {
 		widget.setBoxType (OS.NSBoxCustom);
 		widget.setContentViewMargins (new NSSize());
 
-		double /*float*/ lineWidth = widget.borderWidth ();
+		double lineWidth = widget.borderWidth ();
 		if ((style & SWT.HORIZONTAL) != 0) {
 			rect.height = (int)Math.ceil (lineWidth * 2);
 			rect.y = (DEFAULT_HEIGHT / 2) - (rect.height / 2);
@@ -293,13 +293,13 @@ void deregister () {
 }
 
 @Override
-void drawBackground (long /*int*/ id, NSGraphicsContext context, NSRect rect) {
+void drawBackground (long id, NSGraphicsContext context, NSRect rect) {
 	if (id != view.id) return;
 	fillBackground(view, context, rect, -1);
 }
 
 @Override
-long /*int*/ imageView() {
+long imageView() {
 	return imageView.id;
 };
 
@@ -458,7 +458,7 @@ void setFont(NSFont font) {
 }
 
 @Override
-void setForeground (double /*float*/ [] color) {
+void setForeground (double [] color) {
 	if ((style & SWT.SEPARATOR) != 0) return;
 	NSCell cell = new NSCell(textView.cell());
 	cell.setAttributedStringValue(createString());
@@ -486,28 +486,32 @@ boolean setTabItemFocus () {
 public void setImage (Image image) {
 	checkWidget();
 	if ((style & SWT.SEPARATOR) != 0) return;
-	if (image != null && image.isDisposed ()) {
-		error (SWT.ERROR_INVALID_ARGUMENT);
-	}
-	this.image = image;
-	isImage = true;
-
-	/*
-	 * Feature in Cocoa.  If the NSImage object being set into the view is
-	 * the same NSImage object that is already there then the new image is
-	 * not taken.  This results in the view's image not changing even if the
-	 * NSImage object's content has changed since it was last set into the
-	 * view.  The workaround is to temporarily set the view's image to null
-	 * so that the new image will then be taken.
-	 */
 	if (image != null) {
+		if (image.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
+
+		this.image = image;
+		isImage = true;
+		/*
+		 * Feature in Cocoa.  If the NSImage object being set into the view is
+		 * the same NSImage object that is already there then the new image is
+		 * not taken.  This results in the view's image not changing even if the
+		 * NSImage object's content has changed since it was last set into the
+		 * view.  The workaround is to temporarily set the view's image to null
+		 * so that the new image will then be taken.
+		 */
 		NSImage current = imageView.image ();
 		if (current != null && current.id == image.handle.id) {
 			imageView.setImage (null);
 		}
+		imageView.setImage(image.handle);
+		((NSBox)view).setContentView(imageView);
+	} else {
+		if (this.image == null) return; // do nothing if image is already null
+
+		this.image = image;
+		imageView.setImage(null);
+		_setText();
 	}
-	imageView.setImage(image != null ? image.handle : null);
-	((NSBox)view).setContentView(imageView);
 }
 
 /**
@@ -545,8 +549,12 @@ public void setText (String string) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if ((style & SWT.SEPARATOR) != 0) return;
-	isImage = false;
 	text = string;
+	_setText();
+}
+
+private void _setText () {
+	isImage = false;
 	NSCell cell = new NSCell(textView.cell());
 	cell.setAttributedStringValue(createString());
 	((NSBox)view).setContentView(textView);

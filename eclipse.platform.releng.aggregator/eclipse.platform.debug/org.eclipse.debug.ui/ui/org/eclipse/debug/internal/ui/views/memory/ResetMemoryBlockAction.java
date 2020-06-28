@@ -39,19 +39,11 @@ public class ResetMemoryBlockAction implements IViewActionDelegate {
 	private IViewPart fView;
 	private ArrayList<Object> fSelectedMB = new ArrayList<>();
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.IViewActionDelegate#init(org.eclipse.ui.IViewPart)
-	 */
 	@Override
 	public void init(IViewPart view) {
 		fView = view;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		if (fSelectedMB.isEmpty()) {
@@ -69,21 +61,15 @@ public class ResetMemoryBlockAction implements IViewActionDelegate {
 				MemoryView memView = (MemoryView) fView;
 				IMemoryRenderingContainer[] containers = memView.getMemoryRenderingContainers();
 
-				for (int i = 0; i < containers.length; i++) {
-					if (containers[i] instanceof RenderingViewPane) {
-						((RenderingViewPane) containers[i]).resetRenderings(mb, resetVisible);
+				for (IMemoryRenderingContainer container : containers) {
+					if (container instanceof RenderingViewPane) {
+						((RenderingViewPane) container).resetRenderings(mb, resetVisible);
 					}
 				}
 			}
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action
-	 * .IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
 		action.setEnabled(!selection.isEmpty());
@@ -91,11 +77,13 @@ public class ResetMemoryBlockAction implements IViewActionDelegate {
 			IStructuredSelection strucSel = (IStructuredSelection) selection;
 			Object[] objs = strucSel.toArray();
 			fSelectedMB.clear();
-			for (int i = 0; i < objs.length; i++) {
-				if (objs[i] instanceof IMemoryBlock)
-					fSelectedMB.add(objs[i]);
-				if (objs[i] instanceof IMemoryRendering)
-					fSelectedMB.add(((IMemoryRendering) objs[i]).getMemoryBlock());
+			for (Object obj : objs) {
+				if (obj instanceof IMemoryBlock) {
+					fSelectedMB.add(obj);
+				}
+				if (obj instanceof IMemoryRendering) {
+					fSelectedMB.add(((IMemoryRendering) obj).getMemoryBlock());
+				}
 			}
 		}
 	}

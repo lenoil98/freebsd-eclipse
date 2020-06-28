@@ -36,8 +36,8 @@ import org.eclipse.equinox.bidi.internal.StructuredTextActivator;
 public class StructuredTextSql extends StructuredTextTypeHandler {
 	private static final byte WS = Character.DIRECTIONALITY_WHITESPACE;
 	static final String lineSep = StructuredTextActivator.getProperty("line.separator"); //$NON-NLS-1$
-	private static final Integer STATE_LITERAL = new Integer(2);
-	private static final Integer STATE_SLASH_ASTER_COMMENT = new Integer(4);
+	private static final Integer STATE_LITERAL = Integer.valueOf(2);
+	private static final Integer STATE_SLASH_ASTER_COMMENT = Integer.valueOf(4);
 
 	public StructuredTextSql() {
 		super("\t!#%&()*+,-./:;<=>?|[]{}"); //$NON-NLS-1$
@@ -46,20 +46,22 @@ public class StructuredTextSql extends StructuredTextTypeHandler {
 	/**
 	 *  @return 5 as the number of special cases handled by this handler.
 	 */
+	@Override
 	public int getSpecialsCount(IStructuredTextExpert expert) {
 		return 5;
 	}
 
 	/**
-	  *  Locates occurrences of 5 special strings:
-	  *  <ol>
-	  *    <li>spaces</li>
-	  *    <li>literals starting with apostrophe</li>
-	  *    <li>identifiers starting with quotation mark</li>
-	  *    <li>comments starting with slash-asterisk</li>
-	  *    <li>comments starting with hyphen-hyphen</li>
-	  *  </ol>
-	  */
+	 *  Locates occurrences of 5 special strings:
+	 *  <ol>
+	 *    <li>spaces</li>
+	 *    <li>literals starting with apostrophe</li>
+	 *    <li>identifiers starting with quotation mark</li>
+	 *    <li>comments starting with slash-asterisk</li>
+	 *    <li>comments starting with hyphen-hyphen</li>
+	 *  </ol>
+	 */
+	@Override
 	public int indexOfSpecial(IStructuredTextExpert expert, String text, StructuredTextCharTypes charTypes, StructuredTextOffsets offsets, int caseNumber, int fromIndex) {
 		switch (caseNumber) {
 			case 1 : /* space */
@@ -79,14 +81,15 @@ public class StructuredTextSql extends StructuredTextTypeHandler {
 
 	/**
 	 *  Processes the 5 special cases as follows.
-	     *  <ol>
-	     *    <li>skip the run of spaces</li>
-	     *    <li>look for a matching apostrophe and skip until after it</li>
-	     *    <li>look for a matching quotation mark and skip until after it</li>
-	     *    <li>skip until after the closing asterisk-slash</li>
-	     *    <li>skip until after a line separator</li>
-	     *  </ol>
+	 *  <ol>
+	 *    <li>skip the run of spaces</li>
+	 *    <li>look for a matching apostrophe and skip until after it</li>
+	 *    <li>look for a matching quotation mark and skip until after it</li>
+	 *    <li>skip until after the closing asterisk-slash</li>
+	 *    <li>skip until after a line separator</li>
+	 *  </ol>
 	 */
+	@Override
 	public int processSpecial(IStructuredTextExpert expert, String text, StructuredTextCharTypes charTypes, StructuredTextOffsets offsets, int caseNumber, int separLocation) {
 		int location;
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -20,14 +20,15 @@ import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.StopFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
-import org.apache.lucene.analysis.core.StopFilter;
+import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.en.PorterStemFilter;
 
 /**
  * Lucene Analyzer for English.
- * LowerCaseAndDigitsTokenizer->StopFilter->PorterStemFilter
+ * LowerCaseAndDigitsTokenizer-&gt;StopFilter-&gt;PorterStemFilter
  */
 public final class Analyzer_en extends Analyzer {
 	/**
@@ -44,9 +45,9 @@ public final class Analyzer_en extends Analyzer {
 	@SuppressWarnings("resource")
 	@Override
 	protected TokenStreamComponents createComponents(String fieldName) {
-		final Tokenizer source;
-		source = new LowerCaseAndDigitsTokenizer();
+		final Tokenizer source = new CharAndDigitsTokenizer();
 		TokenStream result = new StopFilter(source, new CharArraySet(getStopWords(), false));
+		result = new LowerCaseFilter(result);
 		result = new PorterStemFilter(result);
 		return new TokenStreamComponents(source, result);
 	}
@@ -56,8 +57,8 @@ public final class Analyzer_en extends Analyzer {
 	private Set<String> getStopWords() {
 		if ( stopWords == null ) {
 			stopWords = new HashSet<>();
-			for (int i = 0; i < STOP_WORDS.length; i++) {
-			    stopWords.add(STOP_WORDS[i]);
+			for (String element : STOP_WORDS) {
+				stopWords.add(element);
 			}
 		}
 		return stopWords;

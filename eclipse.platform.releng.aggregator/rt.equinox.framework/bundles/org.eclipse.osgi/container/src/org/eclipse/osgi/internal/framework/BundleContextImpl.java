@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2017 IBM Corporation and others.
+ * Copyright (c) 2003, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -147,6 +147,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @return The value of the requested property, or <code>null</code> if
 	 * the property is undefined.
 	 */
+	@Override
 	public String getProperty(String key) {
 		SecurityManager sm = System.getSecurityManager();
 
@@ -162,6 +163,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 *
 	 * @return The context bundle's Bundle object.
 	 */
+	@Override
 	public Bundle getBundle() {
 		checkValid();
 
@@ -172,10 +174,12 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 		return bundle;
 	}
 
+	@Override
 	public Bundle installBundle(String location) throws BundleException {
 		return installBundle(location, null);
 	}
 
+	@Override
 	public Bundle installBundle(String location, InputStream in) throws BundleException {
 		checkValid();
 		try {
@@ -195,6 +199,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @return A Bundle object, or <code>null</code>
 	 * if the identifier doesn't match any installed bundle.
 	 */
+	@Override
 	public Bundle getBundle(long id) {
 		Module m = container.getStorage().getModuleContainer().getModule(id);
 		if (m == null) {
@@ -210,6 +215,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 		return m.getBundle();
 	}
 
+	@Override
 	public Bundle getBundle(String location) {
 		Module m = container.getStorage().getModuleContainer().getModule(location);
 		return m == null ? null : m.getBundle();
@@ -224,6 +230,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @return An array of {@link Bundle} objects, one
 	 * object per installed bundle.
 	 */
+	@Override
 	public Bundle[] getBundles() {
 		List<Module> modules = container.getStorage().getModuleContainer().getModules();
 		List<Bundle> bundles = new ArrayList<>(modules.size());
@@ -246,6 +253,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 			notifyFindHooksPriviledged(context, shrinkable);
 		} else {
 			AccessController.doPrivileged(new PrivilegedAction<Void>() {
+				@Override
 				public Void run() {
 					notifyFindHooksPriviledged(context, shrinkable);
 					return null;
@@ -256,21 +264,24 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 
 	void notifyFindHooksPriviledged(final BundleContextImpl context, final Collection<Bundle> allBundles) {
 		if (debug.DEBUG_HOOKS) {
-			Debug.println("notifyBundleFindHooks(" + allBundles + ")"); //$NON-NLS-1$ //$NON-NLS-2$ 
+			Debug.println("notifyBundleFindHooks(" + allBundles + ")"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		container.getServiceRegistry().notifyHooksPrivileged(new HookContext() {
+			@Override
 			public void call(Object hook, ServiceRegistration<?> hookRegistration) throws Exception {
 				if (hook instanceof FindHook) {
 					((FindHook) hook).find(context, allBundles);
 				}
 			}
 
+			@Override
 			public String getHookClassName() {
 				return findHookName;
 			}
 
+			@Override
 			public String getHookMethodName() {
-				return "find"; //$NON-NLS-1$ 
+				return "find"; //$NON-NLS-1$
 			}
 
 			@Override
@@ -280,6 +291,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 		});
 	}
 
+	@Override
 	public void addServiceListener(ServiceListener listener, String filter) throws InvalidSyntaxException {
 		checkValid();
 
@@ -298,6 +310,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 *
 	 * @see #addServiceListener(ServiceListener, String)
 	 */
+	@Override
 	public void addServiceListener(ServiceListener listener) {
 		try {
 			addServiceListener(listener, null);
@@ -322,6 +335,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @exception java.lang.IllegalStateException
 	 * If the bundle context has stopped.
 	 */
+	@Override
 	public void removeServiceListener(ServiceListener listener) {
 		checkValid();
 
@@ -345,6 +359,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @see BundleEvent
 	 * @see BundleListener
 	 */
+	@Override
 	public void addBundleListener(BundleListener listener) {
 		checkValid();
 		if (listener == null) {
@@ -372,6 +387,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @exception java.lang.IllegalStateException
 	 * If the bundle context has stopped.
 	 */
+	@Override
 	public void removeBundleListener(BundleListener listener) {
 		checkValid();
 		if (listener == null) {
@@ -399,6 +415,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @see FrameworkEvent
 	 * @see FrameworkListener
 	 */
+	@Override
 	public void addFrameworkListener(FrameworkListener listener) {
 		checkValid();
 		if (listener == null) {
@@ -426,6 +443,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @exception java.lang.IllegalStateException
 	 * If the bundle context has stopped.
 	 */
+	@Override
 	public void removeFrameworkListener(FrameworkListener listener) {
 		checkValid();
 		if (listener == null) {
@@ -501,6 +519,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @see ServiceRegistration
 	 * @see ServiceFactory
 	 */
+	@Override
 	public ServiceRegistration<?> registerService(String[] clazzes, Object service, Dictionary<String, ?> properties) {
 		checkValid();
 		return container.getServiceRegistry().registerService(this, clazzes, service, properties);
@@ -518,6 +537,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 *
 	 * @see #registerService(java.lang.String[], java.lang.Object, java.util.Dictionary)
 	 */
+	@Override
 	public ServiceRegistration<?> registerService(String clazz, Object service, Dictionary<String, ?> properties) {
 		String[] clazzes = new String[] {clazz};
 
@@ -567,11 +587,13 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @exception InvalidSyntaxException If <tt>filter</tt> contains
 	 * an invalid filter string which cannot be parsed.
 	 */
+	@Override
 	public ServiceReference<?>[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException {
 		checkValid();
 		return container.getServiceRegistry().getServiceReferences(this, clazz, filter, false);
 	}
 
+	@Override
 	public ServiceReference<?>[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException {
 		checkValid();
 		return container.getServiceRegistry().getServiceReferences(this, clazz, filter, true);
@@ -597,6 +619,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * if no services are registered which implement the named class.
 	 * @see #getServiceReferences
 	 */
+	@Override
 	public ServiceReference<?> getServiceReference(String clazz) {
 		checkValid();
 
@@ -653,6 +676,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @see #ungetService
 	 * @see ServiceFactory
 	 */
+	@Override
 	public <S> S getService(ServiceReference<S> reference) {
 		checkValid();
 		if (reference == null)
@@ -697,6 +721,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @see #getService
 	 * @see ServiceFactory
 	 */
+	@Override
 	public boolean ungetService(ServiceReference<?> reference) {
 		checkValid();
 
@@ -727,6 +752,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @exception java.lang.IllegalStateException
 	 * If the bundle context has stopped.
 	 */
+	@Override
 	public File getDataFile(String filename) {
 		checkValid();
 
@@ -751,13 +777,14 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 			}
 			activator = loadBundleActivator();
 			if (debug.DEBUG_BUNDLE_TIME) {
-				Debug.println((System.currentTimeMillis() - start) + "ms" + " to load the activator of " + bundle); //$NON-NLS-1$  //$NON-NLS-2$
+				Debug.println((System.currentTimeMillis() - start) + " ms to load the activator of " + bundle); //$NON-NLS-1$
 			}
 		} catch (Exception e) {
 			if (e instanceof RuntimeException) {
 				throw (RuntimeException) e;
 			}
-			throw new BundleException(Msg.BundleContextImpl_LoadActivatorError, BundleException.ACTIVATOR_ERROR, e);
+			throw new BundleException(Msg.BundleContextImpl_LoadActivatorError + ' ' + bundle,
+					BundleException.ACTIVATOR_ERROR, e);
 		}
 
 		if (activator != null) {
@@ -768,7 +795,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 				throw be;
 			} finally {
 				if (debug.DEBUG_BUNDLE_TIME) {
-					Debug.println((System.currentTimeMillis() - start) + "ms" + " to load and start the activator of " + bundle); //$NON-NLS-1$  //$NON-NLS-2$
+					Debug.println((System.currentTimeMillis() - start) + " ms to load and start the activator of " + bundle); //$NON-NLS-1$
 				}
 			}
 		}
@@ -806,6 +833,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	private void startActivator(final BundleActivator bundleActivator) throws BundleException {
 		try {
 			AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+				@Override
 				public Void run() throws Exception {
 					if (bundleActivator != null) {
 						// make sure the context class loader is set correctly
@@ -833,7 +861,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 			String clazz = null;
 			clazz = bundleActivator.getClass().getName();
 
-			throw new BundleException(NLS.bind(Msg.BUNDLE_ACTIVATOR_EXCEPTION, new Object[] {clazz, "start", bundle.getSymbolicName() == null ? "" + bundle.getBundleId() : bundle.getSymbolicName()}), BundleException.ACTIVATOR_ERROR, t); //$NON-NLS-1$ //$NON-NLS-2$ 
+			throw new BundleException(NLS.bind(Msg.BUNDLE_ACTIVATOR_EXCEPTION, new Object[] {clazz, "start", bundle.getSymbolicName() == null ? "" + bundle.getBundleId() : bundle.getSymbolicName()}), BundleException.ACTIVATOR_ERROR, t); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 
@@ -862,6 +890,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 		try {
 			final BundleActivator bundleActivator = activator;
 			AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+				@Override
 				public Void run() throws Exception {
 					if (bundleActivator != null) {
 						// make sure the context class loader is set correctly
@@ -888,16 +917,16 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 
 			String clazz = (activator == null) ? "" : activator.getClass().getName(); //$NON-NLS-1$
 
-			throw new BundleException(NLS.bind(Msg.BUNDLE_ACTIVATOR_EXCEPTION, new Object[] {clazz, "stop", bundle.getSymbolicName() == null ? "" + bundle.getBundleId() : bundle.getSymbolicName()}), BundleException.ACTIVATOR_ERROR, t); //$NON-NLS-1$ //$NON-NLS-2$ 
+			throw new BundleException(NLS.bind(Msg.BUNDLE_ACTIVATOR_EXCEPTION, new Object[] {clazz, "stop", bundle.getSymbolicName() == null ? "" + bundle.getBundleId() : bundle.getSymbolicName()}), BundleException.ACTIVATOR_ERROR, t); //$NON-NLS-1$ //$NON-NLS-2$
 		} finally {
 			activator = null;
 		}
 	}
 
-	/** 
+	/**
 	 * Return the map of ServiceRegistrationImpl to ServiceUse for services being
 	 * used by this context.
-	 * @return A map of ServiceRegistrationImpl to ServiceUse for services in use by 
+	 * @return A map of ServiceRegistrationImpl to ServiceUse for services in use by
 	 * this context.
 	 */
 	public Map<ServiceRegistrationImpl<?>, ServiceUse<?>> getServicesInUseMap() {
@@ -926,6 +955,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @param action Event class type
 	 * @param object Event object
 	 */
+	@Override
 	public void dispatchEvent(Object originalListener, Object l, int action, Object object) {
 		Object previousTCCL = setContextFinder();
 		try {
@@ -1007,6 +1037,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 * @exception InvalidSyntaxException If the filter parameter contains
 	 * an invalid filter string which cannot be parsed.
 	 */
+	@Override
 	public Filter createFilter(String filter) throws InvalidSyntaxException {
 		checkValid();
 
@@ -1022,12 +1053,12 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 	 */
 	public void checkValid() {
 		if (!isValid()) {
-			throw new IllegalStateException(Msg.BUNDLE_CONTEXT_INVALID_EXCEPTION);
+			throw new IllegalStateException(Msg.BUNDLE_CONTEXT_INVALID_EXCEPTION + ' ' + bundle);
 		}
 	}
 
 	/**
-	 * This method checks that the context is still valid. 
+	 * This method checks that the context is still valid.
 	 *
 	 * @return true if the context is still valid; false otherwise
 	 */
@@ -1035,24 +1066,28 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 		return valid;
 	}
 
+	@Override
 	public <S> ServiceRegistration<S> registerService(Class<S> clazz, S service, Dictionary<String, ?> properties) {
 		@SuppressWarnings("unchecked")
 		ServiceRegistration<S> registration = (ServiceRegistration<S>) registerService(clazz.getName(), service, properties);
 		return registration;
 	}
 
+	@Override
 	public <S> ServiceRegistration<S> registerService(Class<S> clazz, ServiceFactory<S> factory, Dictionary<String, ?> properties) {
 		@SuppressWarnings("unchecked")
 		ServiceRegistration<S> registration = (ServiceRegistration<S>) registerService(clazz.getName(), factory, properties);
 		return registration;
 	}
 
+	@Override
 	public <S> ServiceReference<S> getServiceReference(Class<S> clazz) {
 		@SuppressWarnings("unchecked")
 		ServiceReference<S> reference = (ServiceReference<S>) getServiceReference(clazz.getName());
 		return reference;
 	}
 
+	@Override
 	public <S> Collection<ServiceReference<S>> getServiceReferences(Class<S> clazz, String filter) throws InvalidSyntaxException {
 		@SuppressWarnings("unchecked")
 		ServiceReference<S>[] refs = (ServiceReference<S>[]) getServiceReferences(clazz.getName(), filter);
@@ -1061,9 +1096,7 @@ public class BundleContextImpl implements BundleContext, EventDispatcher<Object,
 			return empty;
 		}
 		List<ServiceReference<S>> result = new ArrayList<>(refs.length);
-		for (ServiceReference<S> b : refs) {
-			result.add(b);
-		}
+		Collections.addAll(result, refs);
 		return result;
 	}
 

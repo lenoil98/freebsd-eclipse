@@ -47,12 +47,12 @@ public class JarProcessorTests extends AbstractProvisioningTest {
 				FileFilter filter = pathname -> {
 					String name = pathname.getName();
 					if (pathname.isFile() && name.endsWith(".jar"))
-						if ((name.indexOf("source") == -1) && name.startsWith("org.eclipse.equinox.p2"))
+						if ((!name.contains("source")) && name.startsWith("org.eclipse.equinox.p2"))
 							return true;
 					return false;
 				};
-				for (int i = 0; i < input.length; i++) {
-					File inputFile = new File(input[i]);
+				for (String filename : input) {
+					File inputFile = new File(filename);
 					if (inputFile.exists()) {
 						try {
 							process(inputFile, filter, true, processor, null);
@@ -91,7 +91,7 @@ public class JarProcessorTests extends AbstractProvisioningTest {
 		File plugins = new File(install, "plugins");
 		File[] files = plugins.listFiles((FileFilter) pathname -> {
 			String name = pathname.getName();
-			if (pathname.isFile() && name.endsWith(".jar") && name.indexOf(".source") == -1) {
+			if (pathname.isFile() && name.endsWith(".jar") && !name.contains(".source")) {
 				if (name.startsWith("org.eclipse.core.c") || name.startsWith("org.eclipse.core.r"))
 					return true;
 			}
@@ -99,8 +99,8 @@ public class JarProcessorTests extends AbstractProvisioningTest {
 		});
 
 		input.mkdirs();
-		for (int i = 0; i < files.length; i++) {
-			copy("Setup input", files[i], new File(input, files[i].getName()));
+		for (File file : files) {
+			copy("Setup input", file, new File(input, file.getName()));
 		}
 
 		Options options = new Options();

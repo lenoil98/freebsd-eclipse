@@ -95,8 +95,8 @@ class GroupInfo extends JobTreeElement implements IProgressMonitor {
 	}
 
 	/**
-	 * Updates the receiver in the progress manager. If all of the jobs are
-	 * finished and the receiver is not being kept then remove it.
+	 * Updates the receiver in the progress manager. If all of the jobs are finished
+	 * and the receiver is not being kept then remove it.
 	 */
 	private void updateInProgressManager() {
 		for (JobInfo info : infos) {
@@ -156,7 +156,7 @@ class GroupInfo extends JobTreeElement implements IProgressMonitor {
 	/**
 	 * Removes the job from the list of jobs.
 	 *
-	 * @param job
+	 * @param job the job to remove from group
 	 */
 	void removeJobInfo(final JobInfo job) {
 		synchronized (lock) {
@@ -170,7 +170,7 @@ class GroupInfo extends JobTreeElement implements IProgressMonitor {
 	/**
 	 * Removes the job from the list of jobs.
 	 *
-	 * @param job
+	 * @param job the job to add to group
 	 */
 	void addJobInfo(final JobInfo job) {
 		synchronized (lock) {
@@ -200,7 +200,7 @@ class GroupInfo extends JobTreeElement implements IProgressMonitor {
 	/**
 	 * Get the task name for the receiver.
 	 *
-	 * @return String
+	 * @return the task name
 	 */
 	String getTaskName() {
 		return taskName;

@@ -34,10 +34,10 @@ import org.eclipse.ui.Saveable;
  */
 public abstract class SaveableComparison extends Saveable {
 
-    /**
-     * The property id for <code>isDirty</code>.
-     */
-    public static final int PROP_DIRTY = IWorkbenchPartConstants.PROP_DIRTY;
+	/**
+	 * The property id for <code>isDirty</code>.
+	 */
+	public static final int PROP_DIRTY = IWorkbenchPartConstants.PROP_DIRTY;
 
 	private boolean dirty;
 	private ListenerList<IPropertyListener> listeners = new ListenerList<>(ListenerList.IDENTITY);
@@ -110,8 +110,7 @@ public abstract class SaveableComparison extends Saveable {
 	 */
 	protected void firePropertyChange(final int property) {
 		Object[] allListeners = listeners.getListeners();
-		for (int i = 0; i < allListeners.length; i++) {
-			final Object object = allListeners[i];
+		for (Object object : allListeners) {
 			SafeRunner.run(new ISafeRunnable() {
 				@Override
 				public void run() throws Exception {

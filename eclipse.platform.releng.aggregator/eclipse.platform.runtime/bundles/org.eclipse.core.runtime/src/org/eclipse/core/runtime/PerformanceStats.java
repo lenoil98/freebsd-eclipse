@@ -113,7 +113,7 @@ public class PerformanceStats {
 
 	/**
 	 * Maximum allowed durations for each event.
-	 * Maps String (event name) -> Long (threshold)
+	 * Maps String (event name) -&gt; Long (threshold)
 	 */
 	private final static Map<String, Long> thresholdMap = Collections.synchronizedMap(new HashMap<String, Long>());
 
@@ -200,7 +200,7 @@ public class PerformanceStats {
 	 * will be empty if there are no recorded statistics.
 	 */
 	public static PerformanceStats[] getAllStats() {
-		return statMap.values().toArray(new PerformanceStats[statMap.values().size()]);
+		return statMap.values().toArray(new PerformanceStats[statMap.size()]);
 	}
 
 	/**
@@ -247,7 +247,7 @@ public class PerformanceStats {
 		if (!ENABLED)
 			return false;
 		String option = Platform.getDebugOption(eventName);
-		return option != null && !option.equalsIgnoreCase("false") && !option.equalsIgnoreCase("-1"); //$NON-NLS-1$ //$NON-NLS-2$
+		return option != null && !"false".equalsIgnoreCase(option) && !"-1".equalsIgnoreCase(option); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	/**
@@ -386,11 +386,8 @@ public class PerformanceStats {
 		if (!(obj instanceof PerformanceStats))
 			return false;
 		PerformanceStats that = (PerformanceStats) obj;
-		if (!this.event.equals(that.event))
-			return false;
-		if (!this.getBlameString().equals(that.getBlameString()))
-			return false;
-		return this.context == null ? that.context == null : this.context.equals(that.context);
+		return this.event.equals(that.event) && this.getBlameString().equals(that.getBlameString())
+				&& Objects.equals(this.context, that.context);
 	}
 
 	/**

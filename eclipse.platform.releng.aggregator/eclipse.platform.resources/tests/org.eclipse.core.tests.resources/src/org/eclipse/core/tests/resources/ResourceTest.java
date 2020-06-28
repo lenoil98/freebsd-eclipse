@@ -78,17 +78,6 @@ public abstract class ResourceTest extends CoreTest {
 	 */
 	private final Set<IFileStore> storesToDelete = new HashSet<>();
 
-	/**
-	 * Does some garbage collections to free unused resources
-	 */
-	protected static void gc() {
-		/* make sure old stores get finalized so they free old files */
-		for (int i = 0; i < 2; i++) {
-			System.runFinalization();
-			System.gc();
-		}
-	}
-
 	public static IWorkspace getWorkspace() {
 		return ResourcesPlugin.getWorkspace();
 	}
@@ -152,7 +141,9 @@ public abstract class ResourceTest extends CoreTest {
 
 	/**
 	 * Creates a new ResourceTest
-	 * @param name java.lang.String
+	 *
+	 * @param name
+	 *            name of the TestCase
 	 */
 	public ResourceTest(String name) {
 		super(name);
@@ -233,7 +224,7 @@ public abstract class ResourceTest extends CoreTest {
 	/**
 	 * Assert whether or not the given resource exists in the local
 	 * store. Use the resource manager to ensure that we have a
-	 * correct Path -> File mapping.
+	 * correct Path -&gt; File mapping.
 	 */
 	public void assertExistsInFileSystem(IResource resource) {
 		assertExistsInFileSystem("", resource); //$NON-NLS-1$
@@ -249,7 +240,7 @@ public abstract class ResourceTest extends CoreTest {
 	/**
 	 * Assert whether or not the given resource exists in the local
 	 * store. Use the resource manager to ensure that we have a
-	 * correct Path -> File mapping.
+	 * correct Path -&gt; File mapping.
 	 */
 	public void assertExistsInFileSystem(String message, IResource resource) {
 		if (!existsInFileSystem(resource)) {
@@ -519,7 +510,7 @@ public abstract class ResourceTest extends CoreTest {
 
 	/**
 	 * Delete the given resource from the local store. Use the resource
-	 * manager to ensure that we have a correct Path -> File mapping.
+	 * manager to ensure that we have a correct Path -&gt; File mapping.
 	 */
 	public void ensureDoesNotExistInFileSystem(IResource resource) {
 		IPath path = resource.getLocation();
@@ -569,7 +560,7 @@ public abstract class ResourceTest extends CoreTest {
 
 	/**
 	 * Create the given file in the local store. Use the resource manager
-	 * to ensure that we have a correct Path -> File mapping.
+	 * to ensure that we have a correct Path -&gt; File mapping.
 	 */
 	public void ensureExistsInFileSystem(IFile file) {
 		createFileInFileSystem(((Resource) file).getStore());
@@ -577,7 +568,7 @@ public abstract class ResourceTest extends CoreTest {
 
 	/**
 	 * Create the given folder in the local store. Use the resource
-	 * manager to ensure that we have a correct Path -> File mapping.
+	 * manager to ensure that we have a correct Path -&gt; File mapping.
 	 */
 	public void ensureExistsInFileSystem(IResource resource) {
 		if (resource instanceof IFile) {
@@ -763,7 +754,7 @@ public abstract class ResourceTest extends CoreTest {
 	 */
 	protected String getClassName() {
 		String fullClassName = getClass().getName();
-		return fullClassName.substring(fullClassName.lastIndexOf(".") + 1);
+		return fullClassName.substring(fullClassName.lastIndexOf('.') + 1);
 	}
 
 	/**
@@ -805,9 +796,7 @@ public abstract class ResourceTest extends CoreTest {
 					}
 					return "\r"; //$NON-NLS-1$
 				}
-			} catch (CoreException e) {
-				// ignore
-			} catch (IOException e) {
+			} catch (CoreException | IOException e) {
 				// ignore
 			} finally {
 				try {
@@ -869,9 +858,11 @@ public abstract class ResourceTest extends CoreTest {
 	}
 
 	/**
-	 * Modifies the content of the given file in the file system by
-	 * appending an 'f'.
+	 * Modifies the content of the given file in the file system by appending an
+	 * 'f'.
+	 *
 	 * @param file
+	 *            the file system file to extend
 	 */
 	protected void modifyInFileSystem(IFile file) {
 		String m = getClassName() + ".modifyInFileSystem(IFile): ";
@@ -882,19 +873,18 @@ public abstract class ResourceTest extends CoreTest {
 			return;
 		}
 		java.io.File osFile = location.toFile();
-		try {
-			try (FileOutputStream os = new FileOutputStream(osFile);) {
-				os.write(newContent.getBytes("UTF8"));
-			}
+		try (FileOutputStream os = new FileOutputStream(osFile)) {
+			os.write(newContent.getBytes("UTF8"));
 		} catch (IOException e) {
 			fail(m + "0.0", e);
 		}
 	}
 
 	/**
-	 * Modifies the content of the given file in the workspace by
-	 * appending a 'w'.
+	 * Modifies the content of the given file in the workspace by appending a 'w'.
+	 *
 	 * @param file
+	 *            the workspace file to extend
 	 */
 	protected void modifyInWorkspace(IFile file) throws CoreException {
 		String newContent = readStringInWorkspace(file) + "w";
@@ -903,9 +893,10 @@ public abstract class ResourceTest extends CoreTest {
 	}
 
 	/**
-	 * Returns the content of the given file in the file system as a
-	 * byte array.
+	 * Returns the content of the given file in the file system as a byte array.
+	 *
 	 * @param file
+	 *            file system file to read
 	 */
 	protected byte[] readBytesInFileSystem(IFile file) {
 		String m = getClassName() + ".readBytesInFileSystem(IFile): ";
@@ -927,8 +918,10 @@ public abstract class ResourceTest extends CoreTest {
 	}
 
 	/**
-	 * Returns the content of the given file in the workspace as a
-	 * byte array.
+	 * Returns the content of the given file in the workspace as a byte array.
+	 *
+	 * @param file
+	 *            workspace file to read
 	 */
 	protected byte[] readBytesInWorkspace(IFile file) {
 		String m = getClassName() + ".readBytesInWorkspace(IFile): ";
@@ -944,18 +937,20 @@ public abstract class ResourceTest extends CoreTest {
 	}
 
 	/**
-	 * Returns the content of the given file in the file system as a
-	 * String (UTF8).
+	 * Returns the content of the given file in the file system as a String (UTF8).
+	 *
 	 * @param file
+	 *            file system file to read
 	 */
 	protected String readStringInFileSystem(IFile file) {
 		return new String(readBytesInFileSystem(file), StandardCharsets.UTF_8);
 	}
 
 	/**
-	 * Returns the content of the given file in the workspace as a
-	 * String (UTF8).
+	 * Returns the content of the given file in the workspace as a String (UTF8).
+	 *
 	 * @param file
+	 *            workspace file to read
 	 */
 	protected String readStringInWorkspace(IFile file) {
 		return new String(readBytesInWorkspace(file), StandardCharsets.UTF_8);
@@ -1016,9 +1011,7 @@ public abstract class ResourceTest extends CoreTest {
 	protected void waitForBuild() {
 		try {
 			Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
-		} catch (OperationCanceledException e) {
-			//ignore
-		} catch (InterruptedException e) {
+		} catch (OperationCanceledException | InterruptedException e) {
 			//ignore
 		}
 	}
@@ -1029,9 +1022,7 @@ public abstract class ResourceTest extends CoreTest {
 	protected void waitForRefresh() {
 		try {
 			Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_REFRESH, null);
-		} catch (OperationCanceledException e) {
-			//ignore
-		} catch (InterruptedException e) {
+		} catch (OperationCanceledException | InterruptedException e) {
 			//ignore
 		}
 	}

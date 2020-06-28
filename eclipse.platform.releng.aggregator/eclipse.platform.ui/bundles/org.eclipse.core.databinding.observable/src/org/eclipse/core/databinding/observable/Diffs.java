@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.eclipse.core.databinding.observable.list.ListDiff;
@@ -31,7 +32,6 @@ import org.eclipse.core.databinding.observable.list.ListDiffEntry;
 import org.eclipse.core.databinding.observable.map.MapDiff;
 import org.eclipse.core.databinding.observable.set.SetDiff;
 import org.eclipse.core.databinding.observable.value.ValueDiff;
-import org.eclipse.core.internal.databinding.observable.Util;
 
 /**
  * @since 1.0
@@ -51,9 +51,7 @@ public class Diffs {
 			ListDiffEntry<? extends E>[] original = toWrap.getDifferences();
 			ListDiffEntry<?>[] result = new ListDiffEntry<?>[original.length];
 
-			for (int idx = 0; idx < original.length; idx++) {
-				result[idx] = original[idx];
-			}
+			System.arraycopy(original, 0, result, 0, original.length);
 			return (ListDiffEntry<E>[]) result;
 		}
 	}
@@ -146,7 +144,7 @@ public class Diffs {
 			return (ListDiff<E>) diff;
 		}
 
-		return new UnmodifiableListDiff<E>(diff);
+		return new UnmodifiableListDiff<>(diff);
 	}
 
 	/**
@@ -168,7 +166,7 @@ public class Diffs {
 			return (SetDiff<E>) diff;
 		}
 
-		return new UnmodifiableSetDiff<E>(diff);
+		return new UnmodifiableSetDiff<>(diff);
 	}
 
 	/**
@@ -190,7 +188,7 @@ public class Diffs {
 			return (MapDiff<K, V>) diff;
 		}
 
-		return new UnmodifiableMapDiff<K, V>(diff);
+		return new UnmodifiableMapDiff<>(diff);
 	}
 
 	/**
@@ -212,7 +210,7 @@ public class Diffs {
 			return (ValueDiff<V>) diff;
 		}
 
-		return new UnmodifiableValueDiff<V>(diff);
+		return new UnmodifiableValueDiff<>(diff);
 	}
 
 	/**
@@ -231,9 +229,8 @@ public class Diffs {
 	 */
 	public static <E> ListDiff<E> computeListDiff(List<? extends E> oldList, List<? extends E> newList) {
 		List<ListDiffEntry<E>> diffEntries = new ArrayList<>();
-		createListDiffs(new ArrayList<E>(oldList), newList, diffEntries);
-		ListDiff<E> listDiff = createListDiff(diffEntries);
-		return listDiff;
+		createListDiffs(new ArrayList<>(oldList), newList, diffEntries);
+		return createListDiff(diffEntries);
 	}
 
 	/**
@@ -362,36 +359,32 @@ public class Diffs {
 	 * Checks whether the two objects are <code>null</code> -- allowing for
 	 * <code>null</code>.
 	 *
-	 * @param left
-	 *            The left object to compare; may be <code>null</code>.
-	 * @param right
-	 *            The right object to compare; may be <code>null</code>.
+	 * @param left  The left object to compare; may be <code>null</code>.
+	 * @param right The right object to compare; may be <code>null</code>.
 	 * @return <code>true</code> if the two objects are equivalent;
 	 *         <code>false</code> otherwise.
+	 * @deprecated Use {@link Objects#equals(Object, Object)} instead
 	 */
+	@Deprecated
 	public static final boolean equals(final Object left, final Object right) {
-		return left == null ? right == null : ((right != null) && left
-				.equals(right));
+		return Objects.equals(left, right);
 	}
 
 	/**
-	 * Returns a {@link SetDiff} describing the change between the specified old
-	 * and new set states.
+	 * Returns a {@link SetDiff} describing the change between the specified old and
+	 * new set states.
 	 *
-	 * @param <E>
-	 *            the set element type
+	 * @param <E>    the set element type
 	 *
-	 * @param oldSet
-	 *            the old set state
-	 * @param newSet
-	 *            the new set state
-	 * @return a {@link SetDiff} describing the change between the specified old
-	 *         and new set states.
+	 * @param oldSet the old set state
+	 * @param newSet the new set state
+	 * @return a {@link SetDiff} describing the change between the specified old and
+	 *         new set states.
 	 */
 	public static <E> SetDiff<E> computeSetDiff(Set<? extends E> oldSet, Set<? extends E> newSet) {
-		Set<E> additions = new HashSet<E>(newSet);
+		Set<E> additions = new HashSet<>(newSet);
 		additions.removeAll(oldSet);
-		Set<E> removals = new HashSet<E>(oldSet);
+		Set<E> removals = new HashSet<>(oldSet);
 		removals.removeAll(newSet);
 		return createSetDiff(additions, removals);
 	}
@@ -455,18 +448,18 @@ public class Diffs {
 			Map<? extends K, ? extends V> newMap) {
 		// starts out with all keys from the new map, we will remove keys from
 		// the old map as we go
-		final Set<K> addedKeys = new HashSet<K>(newMap.keySet());
-		final Set<K> removedKeys = new HashSet<K>();
-		final Set<K> changedKeys = new HashSet<K>();
-		final Map<K, V> oldValues = new HashMap<K, V>();
-		final Map<K, V> newValues = new HashMap<K, V>();
+		final Set<K> addedKeys = new HashSet<>(newMap.keySet());
+		final Set<K> removedKeys = new HashSet<>();
+		final Set<K> changedKeys = new HashSet<>();
+		final Map<K, V> oldValues = new HashMap<>();
+		final Map<K, V> newValues = new HashMap<>();
 		for (Entry<? extends K, ? extends V> oldEntry : oldMap.entrySet()) {
 			K oldKey = oldEntry.getKey();
 			if (addedKeys.remove(oldKey)) {
 				// potentially changed key since it is in oldMap and newMap
 				V oldValue = oldEntry.getValue();
 				V newValue = newMap.get(oldKey);
-				if (!Util.equals(oldValue, newValue)) {
+				if (!Objects.equals(oldValue, newValue)) {
 					changedKeys.add(oldKey);
 					oldValues.put(oldKey, oldValue);
 					newValues.put(oldKey, newValue);
@@ -567,10 +560,9 @@ public class Diffs {
 	/**
 	 * Creates a diff between two values
 	 *
-	 * @param <T>
-	 *            the value type
-	 * @param oldValue
-	 * @param newValue
+	 * @param <T>      the value type
+	 * @param oldValue the old value
+	 * @param newValue the new value
 	 * @return a value diff
 	 */
 	public static <T> ValueDiff<T> createValueDiff(final T oldValue, final T newValue) {
@@ -591,8 +583,8 @@ public class Diffs {
 	/**
 	 * @param <E>
 	 *            the set element type
-	 * @param additions
-	 * @param removals
+	 * @param additions the added elements
+	 * @param removals the removed elements
 	 * @return a set diff
 	 */
 	public static <E> SetDiff<E> createSetDiff(Set<? extends E> additions, Set<? extends E> removals) {
@@ -617,7 +609,7 @@ public class Diffs {
 	/**
 	 * @param <E>
 	 *            the list element type
-	 * @param difference
+	 * @param difference the entry to describe the added or removed element
 	 * @return a list diff with one differing entry
 	 */
 	public static <E> ListDiff<E> createListDiff(ListDiffEntry<E> difference) {
@@ -627,8 +619,8 @@ public class Diffs {
 	/**
 	 * @param <E>
 	 *            the list element type
-	 * @param difference1
-	 * @param difference2
+	 * @param difference1 the first entry to describe the added or removed element
+	 * @param difference2 the second entry to describe the added or removed element
 	 * @return a list diff with two differing entries
 	 */
 	public static <E> ListDiff<E> createListDiff(ListDiffEntry<E> difference1,
@@ -649,10 +641,11 @@ public class Diffs {
 	 *
 	 * @param <E>
 	 *            the list element type
-	 * @param differences
+	 * @param differences a list of entries describing additions and/or removals from a list
 	 * @return a list diff with the given entries
 	 */
-	public static <E> ListDiff<E> createListDiff(final ListDiffEntry<E>[] differences) {
+	@SafeVarargs
+	public static <E> ListDiff<E> createListDiff(final ListDiffEntry<E>... differences) {
 		return new ListDiff<E>() {
 			@Override
 			public ListDiffEntry<E>[] getDifferences() {
@@ -667,7 +660,7 @@ public class Diffs {
 	 *
 	 * @param <E>
 	 *            the list element type
-	 * @param differences
+	 * @param differences a list of entries describing additions and/or removals from a list
 	 * @return a list diff with the given entries
 	 * @since 1.6
 	 */
@@ -682,11 +675,11 @@ public class Diffs {
 	}
 
 	/**
-	 * @param <E>
-	 *            the list element type
-	 * @param position
-	 * @param isAddition
-	 * @param element
+	 * @param <E>        the list element type
+	 * @param position   position where list is changed
+	 * @param isAddition <code>true</code> if element is added or <code>false</code>
+	 *                   if removed
+	 * @param element    the added or removed element
 	 * @return a list diff entry
 	 */
 	public static <E> ListDiffEntry<E> createListDiffEntry(final int position,
@@ -713,12 +706,10 @@ public class Diffs {
 	/**
 	 * Creates a MapDiff representing the addition of a single added key
 	 *
-	 * @param <K>
-	 *            the type of keys maintained by this map
-	 * @param <V>
-	 *            the type of mapped values
-	 * @param addedKey
-	 * @param newValue
+	 * @param <K>      the type of keys maintained by this map
+	 * @param <V>      the type of mapped values
+	 * @param addedKey key added to map
+	 * @param newValue value of the added key
 	 * @return a map diff
 	 */
 	public static <K, V> MapDiff<K, V> createMapDiffSingleAdd(final K addedKey,
@@ -753,13 +744,11 @@ public class Diffs {
 	}
 
 	/**
-	 * @param <K>
-	 *            the type of keys maintained by this map
-	 * @param <V>
-	 *            the type of mapped values
-	 * @param existingKey
-	 * @param oldValue
-	 * @param newValue
+	 * @param <K>         the type of keys maintained by this map
+	 * @param <V>         the type of mapped values
+	 * @param existingKey key of the changed element
+	 * @param oldValue    old value for key
+	 * @param newValue    new value for key
 	 * @return a map diff
 	 */
 	public static <K, V> MapDiff<K, V> createMapDiffSingleChange(
@@ -794,12 +783,10 @@ public class Diffs {
 	}
 
 	/**
-	 * @param <K>
-	 *            the type of keys maintained by this map
-	 * @param <V>
-	 *            the type of mapped values
-	 * @param removedKey
-	 * @param oldValue
+	 * @param <K>        the type of keys maintained by this map
+	 * @param <V>        the type of mapped values
+	 * @param removedKey key removed from map
+	 * @param oldValue   value of the removed key
 	 * @return a map diff
 	 */
 	public static <K, V> MapDiff<K, V> createMapDiffSingleRemove(
@@ -834,11 +821,9 @@ public class Diffs {
 	}
 
 	/**
-	 * @param <K>
-	 *            the type of keys maintained by this map
-	 * @param <V>
-	 *            the type of mapped values
-	 * @param copyOfOldMap
+	 * @param <K>          the type of keys maintained by this map
+	 * @param <V>          the type of mapped values
+	 * @param copyOfOldMap map content before removal
 	 * @return a map diff
 	 */
 	public static <K, V> MapDiff<K, V> createMapDiffRemoveAll(
@@ -873,15 +858,13 @@ public class Diffs {
 	}
 
 	/**
-	 * @param <K>
-	 *            the type of keys maintained by this map
-	 * @param <V>
-	 *            the type of mapped values
-	 * @param addedKeys
-	 * @param removedKeys
-	 * @param changedKeys
-	 * @param oldValues
-	 * @param newValues
+	 * @param <K>         the type of keys maintained by this map
+	 * @param <V>         the type of mapped values
+	 * @param addedKeys   the keys added to map
+	 * @param removedKeys the keys removed from map
+	 * @param changedKeys the keys with changed values
+	 * @param oldValues   map of removed key values and old values of changed keys
+	 * @param newValues   map of added key values and new values of changed keys
 	 * @return a map diff
 	 */
 	public static <K, V> MapDiff<K, V> createMapDiff(Set<? extends K> addedKeys, Set<? extends K> removedKeys,

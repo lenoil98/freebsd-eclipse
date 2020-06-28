@@ -161,11 +161,14 @@ public class SWTUtil {
 	 * <p>
 	 * Should be applied to all SWT.READ_ONLY Texts in dialogs (or at least those which don't have an SWT.BORDER).
 	 * Search regex: {@code new Text\([^,]+,[^\)]+SWT\.READ_ONLY}
-	 * 
+	 *
 	 * @param textField the text field
 	 */
 	public static void fixReadonlyTextBackground(Text textField) {
 		textField.setBackground(textField.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+	}
+
+	private SWTUtil() {
 	}
 
 

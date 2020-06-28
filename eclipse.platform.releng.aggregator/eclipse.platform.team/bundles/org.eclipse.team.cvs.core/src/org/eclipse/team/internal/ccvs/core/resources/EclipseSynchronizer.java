@@ -101,7 +101,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 * 
 	 * @param folder the folder
 	 * @param info the folder sync info, must not be null
-	 * @see #getFolderSync, #deleteFolderSync
+	 * @see #getFolderSync
+	 * @see #deleteFolderSync
 	 */
 	public void setFolderSync(IContainer folder, FolderSyncInfo info) throws CVSException {
 		Assert.isNotNull(info); // enforce the use of deleteFolderSync
@@ -144,14 +145,15 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 * 
 	 * @param folder the folder
 	 * @return the folder sync info associated with the folder, or null if none.
-	 * @see #setFolderSync, #deleteFolderSync
+	 * @see #setFolderSync
+	 * @see #deleteFolderSync
 	 */
 	public FolderSyncInfo getFolderSync(IContainer folder) throws CVSException {
 		if (folder.getType() == IResource.ROOT || !isValid(folder)) return null;
-        // Do a check outside the lock for any folder sync info
-        FolderSyncInfo info = getSyncInfoCacheFor(folder).getCachedFolderSync(folder, false /* not thread safe */);
-        if (info != null)
-            return info;
+		// Do a check outside the lock for any folder sync info
+		FolderSyncInfo info = getSyncInfoCacheFor(folder).getCachedFolderSync(folder, false /* not thread safe */);
+		if (info != null)
+			return info;
 		try {
 			beginOperation();
 			cacheFolderSync(folder);
@@ -166,7 +168,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 * for all of its children.  Does not recurse.
 	 * 
 	 * @param folder the folder
-	 * @see #getFolderSync, #setFolderSync
+	 * @see #getFolderSync
+	 * @see #setFolderSync
 	 */
 	public void deleteFolderSync(IContainer folder) throws CVSException {
 		if (folder.getType() == IResource.ROOT || !isValid(folder)) return;
@@ -179,8 +182,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 				// this is done first since deleting the folder sync may remove a phantom
 				cacheResourceSyncForChildren(folder, true /* can modify workspace */);
 				IResource[] children = folder.members(true);
-				for (int i = 0; i < children.length; i++) {
-					IResource resource = children[i];
+				for (IResource resource : children) {
 					resourceChanged(resource);
 					// delete resource sync for all children
 					getSyncInfoCacheFor(resource).setCachedSyncBytes(resource, null, true);
@@ -212,7 +214,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 * 
 	 * @param resource the resource
 	 * @param info the resource sync info, must not be null
-	 * @see #getResourceSync, #deleteResourceSync
+	 * @see #getResourceSync
+	 * @see #deleteResourceSync
 	 */
 	public void setResourceSync(IResource resource, ResourceSyncInfo info) throws CVSException {
 		Assert.isNotNull(info); // enforce the use of deleteResourceSync
@@ -244,7 +247,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 * 
 	 * @param resource the resource
 	 * @return the resource sync info associated with the resource, or null if none.
-	 * @see #setResourceSync, #deleteResourceSync
+	 * @see #setResourceSync
+	 * @see #deleteResourceSync
 	 */
 	public ResourceSyncInfo getResourceSync(IResource resource) throws CVSException {
 		byte[] info = getSyncBytes(resource);
@@ -257,15 +261,16 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 * 
 	 * @param resource the resource
 	 * @return the resource sync info associated with the resource, or null if none.
-	 * @see #setResourceSync, #deleteResourceSync
+	 * @see #setResourceSync
+	 * @see #deleteResourceSync
 	 */
 	public byte[] getSyncBytes(IResource resource) throws CVSException {
 		IContainer parent = resource.getParent();
 		if (parent == null || parent.getType() == IResource.ROOT || !isValid(parent)) return null;
-        // Do a quick check outside the lock to see if there are sync butes for the resource.
-        byte[] info = getSyncInfoCacheFor(resource).getCachedSyncBytes(resource, false /* not thread safe */);
-        if (info != null)
-            return info;
+		// Do a quick check outside the lock to see if there are sync butes for the resource.
+		byte[] info = getSyncInfoCacheFor(resource).getCachedSyncBytes(resource, false /* not thread safe */);
+		if (info != null)
+			return info;
 		try {
 			beginOperation();
 			// cache resource sync for siblings, then return for self
@@ -295,7 +300,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 * 
 	 * @param resource the resource
 	 * @param info the resource sync info, must not be null
-	 * @see #getResourceSync, #deleteResourceSync
+	 * @see #getResourceSync
+	 * @see #deleteResourceSync
 	 */
 	public void setSyncBytes(IResource resource, byte[] syncBytes) throws CVSException {
 		Assert.isNotNull(syncBytes); // enforce the use of deleteResourceSync
@@ -326,7 +332,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 * Deletes the resource sync info for the specified resource, if it exists.
 	 * 
 	 * @param resource the resource
-	 * @see #getResourceSync, #setResourceSync
+	 * @see #getResourceSync
+	 * @see #setResourceSync
 	 */
 	public void deleteResourceSync(IResource resource) throws CVSException {
 		IContainer parent = resource.getParent();
@@ -368,20 +375,20 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 */
 	public boolean isIgnored(IResource resource) throws CVSException {
 		if (resource.getType() == IResource.ROOT || 
-		    resource.getType() == IResource.PROJECT || 
-		    ! resource.exists()) {
+			resource.getType() == IResource.PROJECT || 
+			! resource.exists()) {
 			return false;
 		}
 		IContainer parent = resource.getParent();
-        FileNameMatcher matcher = sessionPropertyCache.getFolderIgnores(parent, false /* not thread safe */);
-        if (matcher == null) {
-    		try {
-    			beginOperation();
-                matcher = cacheFolderIgnores(parent);
-    		} finally {
-    			endOperation();
-    		}
-        }
+		FileNameMatcher matcher = sessionPropertyCache.getFolderIgnores(parent, false /* not thread safe */);
+		if (matcher == null) {
+			try {
+				beginOperation();
+				matcher = cacheFolderIgnores(parent);
+			} finally {
+				endOperation();
+			}
+		}
 		return matcher.match(resource.getName());
 	}
 	
@@ -405,8 +412,10 @@ public class EclipseSynchronizer implements IFlushOperation {
 				String[] ignores = SyncFileWriter.readCVSIgnoreEntries(folder);
 				if (ignores != null) {
 					// verify that the pattern has not already been added
-					for (int i = 0; i < ignores.length; i++) {
-						if (ignores[i].equals(pattern)) return;
+					for (String ignore : ignores) {
+						if (ignore.equals(pattern)) {
+							return;
+						}
 					}
 					// add the pattern
 					String[] oldIgnores = ignores;
@@ -421,7 +430,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 				// broadcast changes to unmanaged children - they are the only candidates for being ignored
 				List<IResource> possibleIgnores = new ArrayList<>();
 				accumulateNonManagedChildren(folder, possibleIgnores);
-				ResourceStateChangeListeners.getListener().resourceSyncInfoChanged((IResource[])possibleIgnores.toArray(new IResource[possibleIgnores.size()]));
+				ResourceStateChangeListeners.getListener().resourceSyncInfoChanged(possibleIgnores.toArray(new IResource[possibleIgnores.size()]));
 			} finally {
 				endOperation();
 			}
@@ -499,19 +508,19 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 */
 	public void endBatching(ISchedulingRule rule, IProgressMonitor monitor) throws CVSException {
 		try {
-            resourceLock.release(rule, monitor);
-        } catch (TeamException e) {
-            throw CVSException.wrapException(e);
-        }
+			resourceLock.release(rule, monitor);
+		} catch (TeamException e) {
+			throw CVSException.wrapException(e);
+		}
 	}
 	
-	/* (non-Javadoc)
-	 * 
+	/* 
 	 * Callback which is invoked when the batching resource lock is released 
 	 * or when a flush is requested (see beginBatching(IResource)).
 	 * 
 	 * @see org.eclipse.team.internal.ccvs.core.syncinfo.ReentrantLock.IRunnableOnExit#run(org.eclipse.team.internal.ccvs.core.syncinfo.ReentrantLock.ThreadInfo, org.eclipse.core.runtime.IProgressMonitor)
 	 */
+	@Override
 	public void flush(final ThreadInfo info, IProgressMonitor monitor) throws CVSException {
 		if (info != null && !info.isEmpty()) {
 			try {
@@ -532,21 +541,21 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 */
 	private void beginOperation() {
 		try {
-            // Do not try to acquire the lock if the resources tree is locked
-            // The reason for this is that during the resource delta phase (i.e. when the tree is locked)
-            // the workspace lock is held. If we obtain our lock, there is 
-            // a chance of dealock. It is OK if we don't as we are still protected
-            // by scheduling rules and the workspace lock.
-            if (ResourcesPlugin.getWorkspace().isTreeLocked()) return;
-        } catch (RuntimeException e) {
-		    // If we are not active, throw a cancel. Otherwise, propogate it.
-		    // (see bug 78303)
-		    if (Platform.getBundle(CVSProviderPlugin.ID).getState() == Bundle.ACTIVE) {
-		        throw e;
-		    } else {
-		        throw new OperationCanceledException();
-		    }
-        }
+			// Do not try to acquire the lock if the resources tree is locked
+			// The reason for this is that during the resource delta phase (i.e. when the tree is locked)
+			// the workspace lock is held. If we obtain our lock, there is 
+			// a chance of dealock. It is OK if we don't as we are still protected
+			// by scheduling rules and the workspace lock.
+			if (ResourcesPlugin.getWorkspace().isTreeLocked()) return;
+		} catch (RuntimeException e) {
+			// If we are not active, throw a cancel. Otherwise, propogate it.
+			// (see bug 78303)
+			if (Platform.getBundle(CVSProviderPlugin.ID).getState() == Bundle.ACTIVE) {
+				throw e;
+			} else {
+				throw new OperationCanceledException();
+			}
+		}
 		lock.acquire();
 	}
 	
@@ -555,17 +564,17 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 */
 	private void endOperation() {
 		try {
-            // See beginOperation() for a description of why the lock is not obtained when the tree is locked
-            if (ResourcesPlugin.getWorkspace().isTreeLocked()) return;
-        } catch (RuntimeException e) {
-		    // If we are not active, throw a cancel. Otherwise, propogate it.
-		    // (see bug 78303)
-		    if (Platform.getBundle(CVSProviderPlugin.ID).getState() == Bundle.ACTIVE) {
-		        throw e;
-		    } else {
-		        throw new OperationCanceledException();
-		    }
-        }
+			// See beginOperation() for a description of why the lock is not obtained when the tree is locked
+			if (ResourcesPlugin.getWorkspace().isTreeLocked()) return;
+		} catch (RuntimeException e) {
+			// If we are not active, throw a cancel. Otherwise, propogate it.
+			// (see bug 78303)
+			if (Platform.getBundle(CVSProviderPlugin.ID).getState() == Bundle.ACTIVE) {
+				throw e;
+			} else {
+				throw new OperationCanceledException();
+			}
+		}
 		lock.release();
 	}
 	
@@ -595,8 +604,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 					// Flush changes to disk
 					resourceLock.flush(Policy.subMonitorFor(monitor, 8));
 				} catch (TeamException e) {
-				    throw CVSException.wrapException(e);
-                } finally {
+					throw CVSException.wrapException(e);
+				} finally {
 					// Purge the in-memory cache
 					sessionPropertyCache.purgeCache(root, deep);
 				}
@@ -636,71 +645,67 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 * listeners.
 	 */
 	public void ignoreFilesChanged(IContainer[] roots) throws CVSException {
-		for (int i = 0; i < roots.length; i++) {
-			IContainer container = roots[i];
-            if (container.exists()) {
-    			ISchedulingRule rule = null;
-    			try {
-    				Set<IResource> changed = new HashSet<>();
-    				rule = beginBatching(container, null);
-    				try {
-    					beginOperation();
-                        
-                        // Record the previous ignore pattterns
-                        FileNameMatcher oldIgnores = null;
-                        if (sessionPropertyCache.isFolderSyncInfoCached(container)) {
-                            oldIgnores = cacheFolderIgnores(container);
-                        }
-                        
-                        // Purge the cached state for direct children of the container
-    					changed.addAll(Arrays.asList(
-    						sessionPropertyCache.purgeCache(container, oldIgnores == null /*flush deeply if the old patterns are not known*/)));
-                        
-                        // Purge the state for any children of previously ignored containers
-                        if (oldIgnores != null) {
-                            FileNameMatcher newIgnores = cacheFolderIgnores(container);
-                            try {
-                                IResource[] members = container.members();
-                                for (int j = 0; j < members.length; j++) {
-                                    IResource resource = members[j];
-                                    if (resource.getType() == IResource.FOLDER) {
-                                        String name = resource.getName();
-                                        if (oldIgnores.match(name) && !newIgnores.match(name)) {
-                                            changed.addAll(Arrays.asList(
-                                                    sessionPropertyCache.purgeCache((IContainer)resource, true /*flush deeply*/)));
-                                        }
-                                    }
-                                }
-                            } catch (CoreException e) {
-                                // Just log and continue
-                                CVSProviderPlugin.log(e);
-                            }
-                        }
-    				} finally {
-    					endOperation();
-    				}
-    				if (!changed.isEmpty()) {
-    					ResourceStateChangeListeners.getListener().resourceSyncInfoChanged(
-    						(IResource[]) changed.toArray(new IResource[changed.size()]));
-    				}
-    			} finally {
-    				if (rule != null) endBatching(rule, null);
-    			}
-            }
+		for (IContainer container : roots) {
+			if (container.exists()) {
+				ISchedulingRule rule = null;
+				try {
+					Set<IResource> changed = new HashSet<>();
+					rule = beginBatching(container, null);
+					try {
+						beginOperation();
+						
+						// Record the previous ignore pattterns
+						FileNameMatcher oldIgnores = null;
+						if (sessionPropertyCache.isFolderSyncInfoCached(container)) {
+							oldIgnores = cacheFolderIgnores(container);
+						}
+						
+						// Purge the cached state for direct children of the container
+						changed.addAll(Arrays.asList(
+							sessionPropertyCache.purgeCache(container, oldIgnores == null /*flush deeply if the old patterns are not known*/)));
+						
+						// Purge the state for any children of previously ignored containers
+						if (oldIgnores != null) {
+							FileNameMatcher newIgnores = cacheFolderIgnores(container);
+							try {
+								IResource[] members = container.members();
+								for (IResource resource : members) {
+									if (resource.getType() == IResource.FOLDER) {
+										String name = resource.getName();
+										if (oldIgnores.match(name) && !newIgnores.match(name)) {
+											changed.addAll(Arrays.asList(
+													sessionPropertyCache.purgeCache((IContainer)resource, true /*flush deeply*/)));
+										}
+									}
+								}
+							} catch (CoreException e) {
+								// Just log and continue
+								CVSProviderPlugin.log(e);
+							}
+						}
+					} finally {
+						endOperation();
+					}
+					if (!changed.isEmpty()) {
+						ResourceStateChangeListeners.getListener().resourceSyncInfoChanged(
+							changed.toArray(new IResource[changed.size()]));
+					}
+				} finally {
+					if (rule != null) endBatching(rule, null);
+				}
+			}
 		}
 	}
 	
 	public void syncFilesChangedExternally(IContainer[] changedMetaFiles, IFile[] externalDeletions) throws CVSException {
 		List<IResource> changed = new ArrayList<>();
-		for (int i = 0; i < changedMetaFiles.length; i++) {
-			IContainer container = changedMetaFiles[i];
+		for (IContainer container : changedMetaFiles) {
 			if (!isWithinActiveOperationScope(container)) {
 				changed.addAll(Arrays.asList(
-					sessionPropertyCache.purgeCache(container, false /*don't flush children*/)));
+						sessionPropertyCache.purgeCache(container, false /*don't flush children*/)));
 			}
 		}
-		for (int i = 0; i < externalDeletions.length; i++) {
-			IFile file = externalDeletions[i];
+		for (IFile file : externalDeletions) {
 			if (!isWithinActiveOperationScope(file)) {
 				sessionPropertyCache.purgeCache(file.getParent(), false /*don't flush children*/);
 				changed.add(file);
@@ -708,7 +713,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 		}
 		if (!changed.isEmpty()) {
 			ResourceStateChangeListeners.getListener().externalSyncInfoChange(
-					(IResource[]) changed.toArray(new IResource[changed.size()]));
+					changed.toArray(new IResource[changed.size()]));
 		}
 	}
 	
@@ -869,8 +874,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 			}
 			try {
 				if (infos != null) {
-					for (int i = 0; i < infos.length; i++) {
-						byte[] syncBytes = infos[i];
+					for (byte[] syncBytes : infos) {
 						IPath name = new Path(null, getName(syncBytes));
 						IResource resource;
 						if (isFolder(syncBytes)) {
@@ -924,8 +928,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 	private byte[] getSyncBytesFromDisk(IResource resource) throws CVSException {
 		byte[][] infos = SyncFileWriter.readAllResourceSync(resource.getParent());
 		if (infos == null) return null;
-		for (int i = 0; i < infos.length; i++) {
-			byte[] syncBytes = infos[i];
+		for (byte[] syncBytes : infos) {
 			if (resource.getName().equals(getName(syncBytes))) {
 				return syncBytes;
 			}
@@ -954,13 +957,12 @@ public class EclipseSynchronizer implements IFlushOperation {
 			IResource[] changedResources = threadInfo.getChangedResources();
 			IContainer[] changedFolders;
 			if (threadInfo instanceof CVSThreadInfo) {
-			    changedFolders = ((CVSThreadInfo)threadInfo).getChangedFolders();
+				changedFolders = ((CVSThreadInfo)threadInfo).getChangedFolders();
 			} else {
-			    changedFolders = new IContainer[0];
+				changedFolders = new IContainer[0];
 			}
 			Set<IContainer> dirtyParents = new HashSet<>();
-			for (int i = 0; i < changedResources.length; i++) {
-				IResource resource = changedResources[i];
+			for (IResource resource : changedResources) {
 				IContainer folder = resource.getParent();
 				dirtyParents.add(folder);
 			}
@@ -977,11 +979,10 @@ public class EclipseSynchronizer implements IFlushOperation {
 			
 			/*** write sync info to disk ***/
 			// folder sync info changes
-			for (int i = 0; i < changedFolders.length; i++) {
-				IContainer folder = changedFolders[i];
+			for (IContainer folder : changedFolders) {
 				if (folder.exists() && folder.getType() != IResource.ROOT) {
 					try {
-                        beginOperation();
+						beginOperation();
 						FolderSyncInfo info = sessionPropertyCache.getCachedFolderSync(folder, true);
 						// Do not write the folder sync for linked resources
 						if (info == null) {
@@ -1002,8 +1003,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 						}
 						errors.add(e.getStatus());
 					} finally {
-                        endOperation();
-                    }
+						endOperation();
+					}
 				}
 				monitor.worked(1);
 			}
@@ -1017,11 +1018,10 @@ public class EclipseSynchronizer implements IFlushOperation {
 				if (folder.exists() && folder.getType() != IResource.ROOT) {
 					// write sync info for all children in one go
 					try {
-                        beginOperation();
+						beginOperation();
 						List<byte[]> infos = new ArrayList<>();
 						IResource[] children = folder.members(true);
-						for (int i = 0; i < children.length; i++) {
-							IResource resource = children[i];
+						for (IResource resource : children) {
 							byte[] syncBytes = getSyncBytes(resource);
 							if (syncBytes != null) {
 								infos.add(syncBytes);
@@ -1030,7 +1030,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 						// do not overwrite the sync info for linked resources
 						if (infos.size() > 0 || !isLinkedResource(folder))
 							SyncFileWriter.writeAllResourceSync(folder,
-								(byte[][]) infos.toArray(new byte[infos.size()][]));
+								infos.toArray(new byte[infos.size()][]));
 					} catch(CVSException e) {
 						try {
 							sessionPropertyCache.purgeCache(folder, false /* depth 1 */);
@@ -1046,8 +1046,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 						}							
 						errors.add(e.getStatus());
 					} finally {
-                        endOperation();
-                    }
+						endOperation();
+					}
 				}
 				monitor.worked(1);
 			}
@@ -1058,7 +1058,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 			allChanges.addAll(Arrays.asList(changedResources));
 			allChanges.addAll(Arrays.asList(changedFolders));
 			allChanges.addAll(dirtyParents);	
-			IResource[] resources = (IResource[]) allChanges.toArray(
+			IResource[] resources = allChanges.toArray(
 				new IResource[allChanges.size()]);
 			broadcastResourceStateChanges(resources);
 			if ( ! errors.isEmpty()) {
@@ -1067,7 +1067,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 											CVSMessages.EclipseSynchronizer_ErrorCommitting, 
 											null);
 				for (int i = 0; i < errors.size(); i++) {
-					status.merge((IStatus)errors.get(i));
+					status.merge(errors.get(i));
 				}
 				return status;
 			}
@@ -1114,9 +1114,9 @@ public class EclipseSynchronizer implements IFlushOperation {
 	}
 		
 	/**
- 	 * Sets the resource sync info for the resource; if null, deletes it. Parent
- 	 * must exist and must not be the workspace root. The resource sync info for
- 	 * the children of the parent container MUST ALREADY BE CACHED.
+	 * Sets the resource sync info for the resource; if null, deletes it. Parent
+	 * must exist and must not be the workspace root. The resource sync info for
+	 * the children of the parent container MUST ALREADY BE CACHED.
 	 * 
 	 * @param resource the resource
 	 * @param info the new resource sync info
@@ -1166,8 +1166,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 			IResource[] children = folder.members();
 			List<IResource> folders = new ArrayList<>();
 			// deal with all files first and then folders to be otimized for caching scheme
-			for (int i = 0; i < children.length; i++) {
-				IResource child = children[i];
+			for (IResource child : children) {
 				if(getCachedSyncBytes(child)==null) {
 					possibleIgnores.add(child);
 				}
@@ -1205,8 +1204,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 			infos = new NotifyInfo[] { info };
 		} else {
 			Map<String, NotifyInfo> infoMap = new HashMap<>();
-			for (int i = 0; i < infos.length; i++) {
-				NotifyInfo notifyInfo = infos[i];
+			for (NotifyInfo notifyInfo : infos) {
 				infoMap.put(notifyInfo.getName(), notifyInfo);
 			}
 			if (info == null) {
@@ -1235,8 +1233,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 	public NotifyInfo getNotifyInfo(IResource resource) throws CVSException {
 		NotifyInfo[] infos = SyncFileWriter.readAllNotifyInfo(resource.getParent());
 		if (infos == null) return null;
-		for (int i = 0; i < infos.length; i++) {
-			NotifyInfo notifyInfo = infos[i];
+		for (NotifyInfo notifyInfo : infos) {
 			if (notifyInfo.getName().equals(resource.getName())) {
 				return notifyInfo;
 			}
@@ -1252,8 +1249,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 		NotifyInfo[] infos = SyncFileWriter.readAllNotifyInfo(resource.getParent());
 		if (infos == null) return;
 		Map<String, NotifyInfo> infoMap = new HashMap<>();
-		for (int i = 0; i < infos.length; i++) {
-			NotifyInfo notifyInfo = infos[i];
+		for (NotifyInfo notifyInfo : infos) {
 			infoMap.put(notifyInfo.getName(), notifyInfo);
 		}
 		infoMap.remove(resource.getName());
@@ -1282,8 +1278,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 			infos = new BaserevInfo[] { info };
 		} else {
 			Map<String, BaserevInfo> infoMap = new HashMap<>();
-			for (int i = 0; i < infos.length; i++) {
-				infoMap.put(infos[i].getName(), infos[i]);
+			for (BaserevInfo i : infos) {
+				infoMap.put(i.getName(), i);
 			}
 			infoMap.put(info.getName(), info);
 			BaserevInfo[] newInfos = new BaserevInfo[infoMap.size()];
@@ -1304,8 +1300,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 	public BaserevInfo getBaserevInfo(IResource resource) throws CVSException {
 		BaserevInfo[] infos = SyncFileWriter.readAllBaserevInfo(resource.getParent());
 		if (infos == null) return null;
-		for (int i = 0; i < infos.length; i++) {
-			BaserevInfo info = infos[i];
+		for (BaserevInfo info : infos) {
 			if (info.getName().equals(resource.getName())) {
 				return info;
 			}
@@ -1321,8 +1316,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 		BaserevInfo[] infos = SyncFileWriter.readAllBaserevInfo(resource.getParent());
 		if (infos == null) return;
 		Map<String, BaserevInfo> infoMap = new HashMap<>();
-		for (int i = 0; i < infos.length; i++) {
-			infoMap.put(infos[i].getName(), infos[i]);
+		for (BaserevInfo info : infos) {
+			infoMap.put(info.getName(), info);
 		}
 		infoMap.remove(resource.getName());
 		BaserevInfo[] newInfos = new BaserevInfo[infoMap.size()];
@@ -1389,8 +1384,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 		// get the folders involved
 		IContainer[] folders = getParentFolders(resources, depth);
 		// for all folders that have a CVS folder, ensure the sync info is cached
-		for (int i = 0; i < folders.length; i++) {
-			IContainer parent = folders[i];
+		for (IContainer parent : folders) {
 			if (!getSyncInfoCacheFor(parent).isSyncInfoLoaded(parent)) {
 				return false;
 			}
@@ -1410,8 +1404,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 		// get the folders involved
 		IContainer[] folders = getParentFolders(resources, depth);
 		// Cache the sync info for all the folders
-		for (int i = 0; i < folders.length; i++) {
-			IContainer parent = folders[i];
+		for (IContainer parent : folders) {
 			ISchedulingRule rule = null;
 			try {
 				rule = beginBatching(parent, null);
@@ -1435,8 +1428,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 	 */
 	private IContainer[] getParentFolders(IResource[] resources, int depth) throws CVSException {
 		final Set<IResource> folders = new HashSet<>();
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			folders.add(resource.getProject());
 			if (resource.getType() != IResource.PROJECT) {
 				folders.add(resource.getParent());
@@ -1457,7 +1449,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 				}
 			}
 		}
-		return (IContainer[]) folders.toArray(new IContainer[folders.size()]);
+		return folders.toArray(new IContainer[folders.size()]);
 	}
 	
 	/**
@@ -1523,10 +1515,10 @@ public class EclipseSynchronizer implements IFlushOperation {
 	}
 
 	protected String getDirtyIndicator(IResource resource) throws CVSException {
-        // Do a check outside the lock for the dirty indicator
-        String indicator = getSyncInfoCacheFor(resource).getDirtyIndicator(resource, false /* not thread safe */);
-        if (indicator != null)
-            return indicator;
+		// Do a check outside the lock for the dirty indicator
+		String indicator = getSyncInfoCacheFor(resource).getDirtyIndicator(resource, false /* not thread safe */);
+		if (indicator != null)
+			return indicator;
 		try {
 			beginOperation();
 			return getSyncInfoCacheFor(resource).getDirtyIndicator(resource, true);
@@ -1755,8 +1747,8 @@ public class EclipseSynchronizer implements IFlushOperation {
 			boolean okToSet = !modified;
 			// Obtain the children while we're locked to ensure some were not added or changed
 			ICVSResource[] children = cvsFolder.members(ICVSFolder.ALL_UNIGNORED_MEMBERS);
-			for (int i = 0; i < children.length; i++) {
-				IResource resource = children[i].getIResource();
+			for (ICVSResource child : children) {
+				IResource resource = child.getIResource();
 				if (modified) {
 					if (getDirtyIndicator(resource) == IS_DIRTY_INDICATOR) {
 						okToSet = true;
@@ -1805,8 +1797,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 			monitor = Policy.monitorFor(monitor);
 			monitor.beginTask(null, 100);
 			rule = beginBatching(projectsRule, monitor);
-			for (int i = 0; i < resources.length; i++) {
-				IResource resource = resources[i];
+			for (IResource resource : resources) {
 				try {
 					created(resource);
 				} catch (CVSException e) {
@@ -1821,11 +1812,10 @@ public class EclipseSynchronizer implements IFlushOperation {
 	
 	private ISchedulingRule getProjectRule(IResource[] resources) {
 		HashSet<IProject> set = new HashSet<>();
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			set.add(resource.getProject());
 		}
-		IProject[] projects = (IProject[]) set.toArray(new IProject[set.size()]);
+		IProject[] projects = set.toArray(new IProject[set.size()]);
 		if (projects.length == 1) {
 			return projects[0];
 		}
@@ -1875,8 +1865,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 						// Purge new resource sync before restoring from phantom
 						ICVSFolder cvsFolder = CVSWorkspaceRoot.getCVSFolderFor(folder);
 						ICVSResource[] children = cvsFolder.members(ICVSFolder.MANAGED_MEMBERS);
-						for (int i = 0; i < children.length; i++) {
-							ICVSResource resource = children[i];
+						for (ICVSResource resource : children) {
 							deleteResourceSync(resource.getIResource());
 						}
 					}
@@ -1889,8 +1878,7 @@ public class EclipseSynchronizer implements IFlushOperation {
 				// Indicate that a member has changed so the entries file gets written (see bug 181546)
 				IResource[] members = members(folder);
 				IResource changedResource = null;
-				for (int i = 0; i < members.length; i++) {
-					IResource resource = members[i];
+				for (IResource resource : members) {
 					if (getSyncBytes(resource) != null) {
 						changedResource = resource;
 						break;

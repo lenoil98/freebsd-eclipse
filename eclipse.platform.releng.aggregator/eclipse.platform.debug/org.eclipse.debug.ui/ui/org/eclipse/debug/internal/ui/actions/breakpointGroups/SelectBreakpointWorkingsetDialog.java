@@ -48,9 +48,6 @@ public class SelectBreakpointWorkingsetDialog extends AbstractDebugCheckboxSelec
 		fWorkingSetList = getBreakpointWorkingSets();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugCheckboxSelectionDialog#addViewerListeners(org.eclipse.jface.viewers.StructuredViewer)
-	 */
 	@Override
 	protected void addViewerListeners(StructuredViewer viewer) {
 		CheckboxTableViewer checkViewer = getCheckBoxTableViewer();
@@ -72,41 +69,29 @@ public class SelectBreakpointWorkingsetDialog extends AbstractDebugCheckboxSelec
 	private IWorkingSet[] getBreakpointWorkingSets() {
 		IWorkingSet[] ws = PlatformUI.getWorkbench().getWorkingSetManager().getAllWorkingSets();
 		ArrayList<IWorkingSet> list = new ArrayList<>();
-		for(int i = 0; i < ws.length; i++) {
-			if(IDebugUIConstants.BREAKPOINT_WORKINGSET_ID.equals(ws[i].getId())) {
-				list.add(ws[i]);
+		for (IWorkingSet w : ws) {
+			if (IDebugUIConstants.BREAKPOINT_WORKINGSET_ID.equals(w.getId())) {
+				list.add(w);
 			}
 		}
 		return list.toArray(new IWorkingSet[list.size()]);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getViewerInput()
-	 */
 	@Override
 	protected Object getViewerInput() {
 		return fWorkingSetList;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getDialogSettingsId()
-	 */
 	@Override
 	protected String getDialogSettingsId() {
 		return SETTINGS_ID;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getHelpContextId()
-	 */
 	@Override
 	protected String getHelpContextId() {
 		return IDebugHelpContextIds.SELECT_DEFAULT_WORKINGSET_DIALOG;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getViewerLabel()
-	 */
 	@Override
 	protected String getViewerLabel() {
 		return BreakpointGroupMessages.SelectBreakpointWorkingsetDialog_0;

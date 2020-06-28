@@ -36,12 +36,12 @@ public class ScopeBuildingTests extends TeamTest {
 
 		protected TestResourceMappingOperation(ResourceMapping[] selectedMappings, final ResourceMapping[] additionalMappings) {
 			super(null, new SynchronizationScopeManager("", selectedMappings, ResourceMappingContext.LOCAL_CONTEXT, false) {
+				@Override
 				public void initialize(
 						IProgressMonitor monitor) throws CoreException {
 					super.initialize(monitor);
 					// Add the additional test mappings to the scope
-					for (int i = 0; i < additionalMappings.length; i++) {
-						ResourceMapping mapping = additionalMappings[i];
+					for (ResourceMapping mapping : additionalMappings) {
 						ResourceTraversal[] traversals = mapping.getTraversals(getContext(), monitor);
 						((ResourceMappingScope)getScope()).addMapping(mapping, traversals);
 						// TODO: The additional mappings and additional resources boolean will not be set
@@ -50,12 +50,14 @@ public class ScopeBuildingTests extends TeamTest {
 				}
 			});
 		}
+		@Override
 		protected void endOperation(IProgressMonitor monitor) throws InvocationTargetException {
 			ISynchronizationScopeManager manager= getScopeManager();
 			manager.dispose();
 			super.endOperation(monitor);
 		}
 
+		@Override
 		protected void execute(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 			// Do nothing since we're just testing the scope build
 		}
@@ -91,25 +93,30 @@ public class ScopeBuildingTests extends TeamTest {
 	private ResourceMapping getMapping(final IProject project, final IResource[] resources, final int depth) {
 		return new ResourceMapping() {
 
+			@Override
 			public ResourceTraversal[] getTraversals(ResourceMappingContext context,
 					IProgressMonitor monitor) throws CoreException {
 				return new ResourceTraversal[] { new ResourceTraversal(resources, depth, IResource.NONE)};
 			}
 
+			@Override
 			public IProject[] getProjects() {
 				return new IProject[] { project };
 			}
 
+			@Override
 			public Object getModelObject() {
 				return new Object();
 			}
 
+			@Override
 			public String getModelProviderId() {
 				return TEST_MODEL_PROVIDER_ID;
 			}
-		    public boolean contains(ResourceMapping mapping) {
-		    	return false;
-		    }
+			@Override
+			public boolean contains(ResourceMapping mapping) {
+				return false;
+			}
 
 		};
 	}

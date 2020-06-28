@@ -177,12 +177,12 @@ public class ExpressionTests {
 	}
 
 	@Test
-    public void testAdaptExpressionAdaptable() throws Exception {
-        AdaptExpression expression= new AdaptExpression("org.eclipse.core.internal.expressions.tests.Adapter"); //$NON-NLS-1$
-        expression.add(new InstanceofExpression("org.eclipse.core.internal.expressions.tests.Adapter")); //$NON-NLS-1$
-        EvaluationResult result= expression.evaluate(new EvaluationContext(null, new AdaptableAdaptee()));
-        assertTrue(result == EvaluationResult.TRUE);
-    }
+	public void testAdaptExpressionAdaptable() throws Exception {
+		AdaptExpression expression= new AdaptExpression("org.eclipse.core.internal.expressions.tests.Adapter"); //$NON-NLS-1$
+		expression.add(new InstanceofExpression("org.eclipse.core.internal.expressions.tests.Adapter")); //$NON-NLS-1$
+		EvaluationResult result= expression.evaluate(new EvaluationContext(null, new AdaptableAdaptee()));
+		assertTrue(result == EvaluationResult.TRUE);
+	}
 
 	@Test
 	public void testAdaptExpressionNotEqual() throws Exception {
@@ -681,7 +681,7 @@ public class ExpressionTests {
 			EvaluationResult result= exp.evaluate(context);
 			fail("Count should've failed for non-Collection variable.  Result = " +
 
-			result.toString());
+			result);
 		} catch (CoreException e) {
 			assertEquals(ExpressionStatus.VARIABLE_IS_NOT_A_COLLECTION, e.getStatus().getCode());
 		}
@@ -937,7 +937,7 @@ public class ExpressionTests {
 			EvaluationResult result= exp.evaluate(context);
 			fail("Count should've failed for non-Collection variable.  Result = " +
 
-			result.toString());
+			result);
 		} catch (CoreException e) {
 			assertEquals(ExpressionStatus.VARIABLE_IS_NOT_A_COLLECTION, e.getStatus().getCode());
 		}
@@ -1133,7 +1133,7 @@ public class ExpressionTests {
 		long instanceDelta= System.currentTimeMillis() - instanceStart;
 
 		assertTrue("cachedDelta: " + cachedDelta + ", instanceDelta: " + instanceDelta,
-				cachedDelta * 1.5 < instanceDelta);
+				cachedDelta < instanceDelta);
 	}
 
 }

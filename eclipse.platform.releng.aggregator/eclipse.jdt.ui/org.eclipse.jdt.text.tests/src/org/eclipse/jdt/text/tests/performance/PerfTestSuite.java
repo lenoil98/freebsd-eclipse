@@ -53,9 +53,8 @@ public class PerfTestSuite extends TestSuite {
 		Class<?> superClass= theClass;
 		Vector<String> names= new Vector<>();
 		while (Test.class.isAssignableFrom(superClass)) {
-			Method[] methods= superClass.getDeclaredMethods();
-			for (int i= 0; i < methods.length; i++) {
-				addPerformanceTestMethod(methods[i], names, theClass);
+			for (Method method : superClass.getDeclaredMethods()) {
+				addPerformanceTestMethod(method, names, theClass);
 			}
 			superClass= superClass.getSuperclass();
 		}
@@ -114,7 +113,7 @@ public class PerfTestSuite extends TestSuite {
 				if (test instanceof TestCase)
 					((TestCase) test).setName(name);
 			} else {
-				test= constructor.newInstance(new Object[]{name});
+				test= constructor.newInstance(name);
 			}
 		} catch (InstantiationException e) {
 			return(warning("Cannot instantiate test case: "+name+" ("+exceptionToString(e)+")")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$

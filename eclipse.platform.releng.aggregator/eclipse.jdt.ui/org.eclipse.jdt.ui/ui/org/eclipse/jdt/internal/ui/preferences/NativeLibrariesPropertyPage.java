@@ -138,7 +138,7 @@ public class NativeLibrariesPropertyPage extends PropertyPage implements IStatus
 	protected Control createContents(Composite parent) {
 		if (!fIsValidElement || fIsReadOnly) {
 			Composite inner= new Composite(parent, SWT.NONE);
-			
+
 			if (fIsReadOnly) {
 				GridLayout layout= new GridLayout();
 				layout.marginWidth= 0;
@@ -146,7 +146,7 @@ public class NativeLibrariesPropertyPage extends PropertyPage implements IStatus
 
 				Label label= new Label(inner, SWT.WRAP);
 				label.setText(PreferencesMessages.NativeLibrariesPropertyPage_location_path);
-				
+
 				Text location= new Text(inner, SWT.READ_ONLY | SWT.WRAP);
 				SWTUtil.fixReadonlyTextBackground(location);
 				GridData gd= new GridData(GridData.HORIZONTAL_ALIGN_FILL);
@@ -177,10 +177,9 @@ public class NativeLibrariesPropertyPage extends PropertyPage implements IStatus
 	}
 
 	private static String getNativeLibrariesPath(IClasspathEntry entry) {
-		IClasspathAttribute[] extraAttributes= entry.getExtraAttributes();
-		for (int i= 0; i < extraAttributes.length; i++) {
-			if (extraAttributes[i].getName().equals(JavaRuntime.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY)) {
-				return extraAttributes[i].getValue();
+		for (IClasspathAttribute extraAttribute : entry.getExtraAttributes()) {
+			if (extraAttribute.getName().equals(JavaRuntime.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY)) {
+				return extraAttribute.getValue();
 			}
 		}
 		return null;

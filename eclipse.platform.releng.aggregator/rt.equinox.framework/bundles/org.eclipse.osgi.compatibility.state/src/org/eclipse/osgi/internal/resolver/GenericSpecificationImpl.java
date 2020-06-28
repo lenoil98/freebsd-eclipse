@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rob Harrop - SpringSource Inc. (bug 247522)
@@ -28,7 +28,7 @@ public class GenericSpecificationImpl extends VersionConstraintImpl implements G
 	private Map<String, Object> attributes;
 	private Map<String, String> arbitraryDirectives;
 	/*
-	 * Indicates that a generic constraint was from converting the BREE header 
+	 * Indicates that a generic constraint was from converting the BREE header
 	 */
 	public static final int RESOLUTION_FROM_BREE = 0x04;
 
@@ -55,6 +55,7 @@ public class GenericSpecificationImpl extends VersionConstraintImpl implements G
 		}
 	}
 
+	@Override
 	public boolean isSatisfiedBy(BaseDescription supplier) {
 		if (!(supplier instanceof GenericDescription))
 			return false;
@@ -70,8 +71,9 @@ public class GenericSpecificationImpl extends VersionConstraintImpl implements G
 		return true;
 	}
 
+	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(Constants.REQUIRE_CAPABILITY).append(": ").append(getType()); //$NON-NLS-1$
 		if (matchingFilter != null)
 			sb.append("; filter=\"").append(getMatchingFilter()).append('"'); //$NON-NLS-1$
@@ -99,6 +101,7 @@ public class GenericSpecificationImpl extends VersionConstraintImpl implements G
 		}
 	}
 
+	@Override
 	public boolean isResolved() {
 		synchronized (this.monitor) {
 			return suppliers != null && suppliers.length > 0;
@@ -111,12 +114,14 @@ public class GenericSpecificationImpl extends VersionConstraintImpl implements G
 		}
 	}
 
+	@Override
 	public BaseDescription getSupplier() {
 		synchronized (this.monitor) {
 			return suppliers == null || suppliers.length == 0 ? null : suppliers[0];
 		}
 	}
 
+	@Override
 	protected void setSupplier(BaseDescription supplier) {
 		synchronized (this.monitor) {
 			if (supplier == null) {

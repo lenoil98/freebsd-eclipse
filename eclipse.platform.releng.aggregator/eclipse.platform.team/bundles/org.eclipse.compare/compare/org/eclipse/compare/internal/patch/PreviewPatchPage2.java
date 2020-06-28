@@ -58,7 +58,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.events.ExpansionAdapter;
 import org.eclipse.ui.forms.events.ExpansionEvent;
 import org.eclipse.ui.forms.widgets.ExpandableComposite;
@@ -136,8 +135,7 @@ public class PreviewPatchPage2 extends WizardPage {
 		// Initialize the input
 		try {
 			fInput.run(null);
-		} catch (InterruptedException e) {//ignore
-		} catch (InvocationTargetException e) {//ignore
+		} catch (InterruptedException | InvocationTargetException e) {//ignore
 		}
 
 		Label label = new Label(composite, SWT.NONE);
@@ -300,8 +298,7 @@ public class PreviewPatchPage2 extends WizardPage {
 						}
 						monitor.done();
 					});
-				} catch (InvocationTargetException e) { //ignore
-				} catch (InterruptedException e) { //ignore
+				} catch (InvocationTargetException | InterruptedException e) { //ignore
 				}
 			}
 		};
@@ -326,8 +323,7 @@ public class PreviewPatchPage2 extends WizardPage {
 						}
 						monitor.done();
 					});
-				} catch (InvocationTargetException e) { //ignore
-				} catch (InterruptedException e) { //ignore
+				} catch (InvocationTargetException | InterruptedException e) { //ignore
 				}
 
 			}
@@ -654,12 +650,9 @@ public class PreviewPatchPage2 extends WizardPage {
 	private int guessFuzzFactor(final WorkspacePatcher patcher) {
 		final int[] result= new int[] { -1 };
 		try {
-			PlatformUI.getWorkbench().getProgressService().run(true, true,
-					monitor -> result[0]= patcher.guessFuzzFactor(monitor)
-			);
-		} catch (InvocationTargetException ex) {
-			// NeedWork
-		} catch (InterruptedException ex) {
+			org.eclipse.compare.internal.Utilities
+					.executeRunnable(monitor -> result[0] = patcher.guessFuzzFactor(monitor));
+		} catch (InvocationTargetException | InterruptedException ex) {
 			// NeedWork
 		}
 		return result[0];
@@ -714,9 +707,9 @@ public class PreviewPatchPage2 extends WizardPage {
 
 			fPatcher.countLines();
 			FilePatch2[] fileDiffs = fPatcher.getDiffs();
-			for (int i = 0; i < fileDiffs.length; i++) {
-				added += fileDiffs[i].getAddedLines();
-				removed += fileDiffs[i].getRemovedLines();
+			for (FilePatch2 fileDiff : fileDiffs) {
+				added += fileDiff.getAddedLines();
+				removed += fileDiff.getRemovedLines();
 			}
 
 		} else {
@@ -724,13 +717,9 @@ public class PreviewPatchPage2 extends WizardPage {
 			Pattern addedPattern = Pattern.compile(addedLinesRegex);
 			Pattern removedPattern = Pattern.compile(removedLinesRegex);
 
-			FilePatch2[] fileDiffs = fPatcher.getDiffs();
-			for (int i = 0; i < fileDiffs.length; i++) {
-				IHunk[] hunks = fileDiffs[i].getHunks();
-				for (int j = 0; j < hunks.length; j++) {
-					String[] lines = ((Hunk) hunks[j]).getLines();
-					for (int k = 0; k < lines.length; k++) {
-						String line = lines[k];
+			for (FilePatch2 fileDiff : fPatcher.getDiffs()) {
+				for (IHunk hunk : fileDiff.getHunks()) {
+					for (String line : ((Hunk) hunk).getLines()) {
 						if (addedPattern.matcher(line).find())
 							added++;
 						if (removedPattern.matcher(line).find())

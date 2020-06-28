@@ -48,6 +48,11 @@ class INDENTATION {
 class Example {
 	int[] myArray = { 1, 2, 3, 4, 5, 6 };
 	String stringWithTabs = "1	2	3	4";
+	String textBlock = """
+first line
+
+second line
+""";
 
 	void foo(int a, int b, int c, int d, int e, int f) {
 		switch (a) {
@@ -66,6 +71,11 @@ enum MyEnum {
 }
 @interface MyAnnotation {
 	int count() default 1;
+}
+record MyRecord(int first, int second) {
+	MyRecord() {
+		Other.doFoo();
+	}
 }
 //--PREVIEW--END--section-indentation
 
@@ -104,6 +114,9 @@ enum MyEnum {
 		void foo() {}
 	}}
 @interface SomeAnnotationType {}
+record MyRecord(int first, int second) {
+	MyRecord {}
+}
 class Example {
 	SomeClass fField= new SomeClass() {  };
 	int [] myArray= {1,2,3,4,5,6};
@@ -126,6 +139,8 @@ class PARENTHESES {
 public class Example {
 	enum SomeEnum {
 		VALUE1(), VALUE2("example")
+	}
+	record MyRecord(int first, int second) {
 	}
 	@SomeAnnotation(key1 = "value1", key2 = "value2")
 	void method1() {
@@ -216,6 +231,19 @@ enum MyEnum {
 	public MyEnum(String arg1, String arg2, String arg3) { }
 }
 //--PREVIEW--END--org.eclipse.jdt.core.formatter.parentheses_positions_in_enum_constant_declaration
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.parentheses_positions_in_record_declaration
+record EmptReport() {}
+record ShortRecord(int foo) {}
+record LongRecord(int component1, int component2, int component3, int component4) {}
+record MixedRecord1(
+		int foo, int bar) {}
+record MixedRecord2(int foo, int bar
+		) {}
+record MixedRecord1(
+		int foo, int bar
+		) {}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.parentheses_positions_in_record_declaration
 
 //--PREVIEW--START--org.eclipse.jdt.core.formatter.parentheses_positions_in_annotation
 @EmptyAnnotation()
@@ -397,6 +425,14 @@ enum MyEnum { GREEN(0, 1), RED() { void process() {} } }
 @interface OtherAnnotation { }
 //--PREVIEW--END--section-whitespace-declarations-annotationtypes
 
+//--PREVIEW--START--section-whitespace-declarations-records
+record MyRecord(int first, int second, int third) {
+	public MyRecord {
+		Other.foo();
+	}
+}
+//--PREVIEW--END--section-whitespace-declarations-records
+
 //--PREVIEW--START--section-whitespace-declarations-lambdas
 Runnable r = () -> process();
 //--PREVIEW--END--section-whitespace-declarations-lambdas
@@ -416,10 +452,15 @@ for (String s : names) {}
 //--PREVIEW--END--section-whitespace-statements-for
 
 //--PREVIEW--START--section-whitespace-statements-switch
-switch (number) { 
+Color newColor = switch(color) {
+case RED -> GREEN;
+case GREEN,BLUD->RED;
+default->BLACK;
+};
+
+switch (color) { 
 case RED:return GREEN;
-case GREEN:return BLUE;
-case BLUE:return RED;
+case GREEN,BLUE:return RED;
 default:return BLACK;
 }
 //--PREVIEW--END--section-whitespace-statements-switch
@@ -481,7 +522,7 @@ int a = -4 + -9;
 int b = a++ / --number;
 b = (a++) / (--number) + (-9);
 String d = "a = " + a;
-if (a == b && a > c)
+if (a == b && a > c && !condition)
 	c += (a >> 5) & 0xFF;
 //--PREVIEW--END--section-whitespace-expressions-assignments
 //--PREVIEW--END--section-whitespace-expressions-unaryoperators
@@ -542,44 +583,58 @@ Map<X<?>, Y<? extends K, ? super V>> t;
 class BLANK_LINES {
 //--PREVIEW--START--section-blank-lines
 package foo.bar.baz;
+
+/* example comment */
+
 import java.util.List;
-import java.util.Vector;
+import java.util.Arrays;
 
 import org.eclipse.jdt.core.dom.ASTParser;
 
-import java.net.Socket;
-public class Another {}
 public class Example {
-	public static class Pair {
-		public String first;
-		public String second;
-// Between here...
-
-
-
-
-
-
-
-
-
-
-// ...and here are 10 blank lines
-	};
-	private LinkedList fList;
-	public int counter;
-	public Example(LinkedList list) {
-		fList= list;
-		counter= 0;
+	public interface ExampleProvider {
+		Example getExample();
+		List<Example> getManyExamples();
 	}
-	public void push(Pair p) {
-		fList.add(p);
-		++counter;
+	public class Pair {
+		String left;
+		String right;
 	}
-	public Object pop() {
-		--counter;
-		return (Pair)fList.getLast();
+	public Example() {
+		initialize(1);
 	}
+	protected void initialize(int value) {
+		Pair pair = new Pair();
+		for (int i = 0; i < value; i++) {
+			int square = i * i;
+			// Between here...
+
+
+
+
+
+
+
+
+
+
+			// ...and here are 10 blank lines
+			pair.left = pair.left + square;
+		}
+		switch (value) {
+		case 1:
+			pair.right = "";
+			break;
+		default:
+			pair.left = "";
+		}
+	}
+}
+class Another {
+
+
+
+
 }
 //--PREVIEW--END--section-blank-lines
 }
@@ -727,6 +782,22 @@ public enum EnumConstants {
 }
 //--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_enum_constant_declaration_on_one_line
 
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_record_declaration_on_one_line
+public record EmptyRecord(int a, int b) {}
+public record TinyRecord(int a, int b) {
+	static int field;
+}
+public record SmallRecord(int a, int b) { static int field1; static int field2; }
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_record_declaration_on_one_line
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_record_constructor_on_one_line
+public record EmptyCompactConstructor(int a, int b) { public EmptyCompactConstructor {} }
+public record TinyCompactConstructor(int a, int b) { public TinyCompactConstructor {
+	this.a = a; 
+}}
+public record SmallCompactConstructor(int a, int b) { public SmallCompactConstructor { this.a = a; this.b = b; } }
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.keep_record_constructor_on_one_line
+
 //--PREVIEW--START--org.eclipse.jdt.core.formatter.keep_annotation_declaration_on_one_line
 public @interface EmptyInterface {}
 public @interface TinyInterface { 
@@ -795,6 +866,13 @@ enum Example implements A, B, C {}
 //--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_arguments_in_enum_constant
 enum Example {GREEN(0, 255, 0), RED(255, 0, 0)  }
 //--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_arguments_in_enum_constant
+
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_record_components
+record Example(int firstNumber, int secondNumbere, String string) {}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_record_components
+//--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_record_declaration
+record Example(int first, int second) implements InterfaceA, InterfaceB, InterfaceC {}
+//--PREVIEW--END--org.eclipse.jdt.core.formatter.alignment_for_superinterfaces_in_record_declaration
 
 //--PREVIEW--START--org.eclipse.jdt.core.formatter.alignment_for_arguments_in_method_invocation
 class Example {void foo() {Other.bar( 100,

@@ -18,7 +18,6 @@ import java.util.Collection;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.test.performance.Dimension;
-import org.eclipse.ui.tests.performance.TestRunnable;
 
 public class TreeAddTest extends TreeTest {
 
@@ -33,8 +32,7 @@ public class TreeAddTest extends TreeTest {
 	}
 
 	/**
-	 * @throws CoreException
-	 *             Test addition to the tree one element at a time.
+	 * Test addition to the tree one element at a time.
 	 */
 	public void testAddOneAtATime() {
 		openBrowser();
@@ -45,11 +43,9 @@ public class TreeAddTest extends TreeTest {
 			input.createChildren(TEST_COUNT);
 			processEvents();
 			startMeasuring();
-			for (int j = 0; j < input.children.length; j++) {
-
-				viewer.add(input, input.children[j]);
+			for (TestTreeElement child : input.children) {
+				viewer.add(input, child);
 				processEvents();
-
 			}
 			stopMeasuring();
 		}
@@ -59,8 +55,7 @@ public class TreeAddTest extends TreeTest {
 	}
 
 	/**
-	 * @throws CoreException
-	 *             Test addition to the tree one element at a time.
+	 * Test addition to the tree one element at a time.
 	 */
 	public void testAddTen() throws CoreException {
 
@@ -68,8 +63,7 @@ public class TreeAddTest extends TreeTest {
 	}
 
 	/**
-	 * @throws CoreException
-	 *             Test addition to the tree one element at a time.
+	 * Test addition to the tree one element at a time.
 	 */
 	public void testAddFifty() throws CoreException {
 
@@ -77,8 +71,7 @@ public class TreeAddTest extends TreeTest {
 	}
 
 	/**
-	 * @throws CoreException
-	 *             Test addition to the tree one element at a time.
+	 * Test addition to the tree one element at a time.
 	 */
 	public void testAddHundred() throws CoreException {
 
@@ -99,36 +92,32 @@ public class TreeAddTest extends TreeTest {
 
 		openBrowser();
 
-		exercise(new TestRunnable() {
-			@Override
-			public void run() {
+		exercise(() -> {
 
-				TestTreeElement input = new TestTreeElement(0, null);
-				viewer.setInput(input);
-				input.createChildren(total);
-				if (preSort)
-					viewer.getSorter().sort(viewer, input.children);
-				Collection<Object> batches = new ArrayList<>();
-				int blocks = input.children.length / increment;
-				for (int j = 0; j < blocks; j = j + increment) {
-					Object[] batch = new Object[increment];
-					System.arraycopy(input.children, j * increment, batch, 0,
-							increment);
-					batches.add(batch);
-				}
-				processEvents();
-				Object[] batchArray = batches.toArray();
-				startMeasuring();
-
-				// Measure more than one for the fast cases
-				for (int k = 0; k < batchArray.length; k++) {
-					viewer.add(input, (Object[]) batchArray[k]);
-					processEvents();
-				}
-
-				stopMeasuring();
-
+			TestTreeElement input = new TestTreeElement(0, null);
+			viewer.setInput(input);
+			input.createChildren(total);
+			if (preSort)
+				viewer.getComparator().sort(viewer, input.children);
+			Collection<Object> batches = new ArrayList<>();
+			int blocks = input.children.length / increment;
+			for (int j = 0; j < blocks; j = j + increment) {
+				Object[] batch1 = new Object[increment];
+				System.arraycopy(input.children, j * increment, batch1, 0, increment);
+				batches.add(batch1);
 			}
+			processEvents();
+			Object[] batchArray = batches.toArray();
+			startMeasuring();
+
+			// Measure more than one for the fast cases
+			for (Object batch2 : batchArray) {
+				viewer.add(input, (Object[]) batch2);
+				processEvents();
+			}
+
+			stopMeasuring();
+
 		}, MIN_ITERATIONS, ITERATIONS, JFacePerformanceSuite.MAX_TIME);
 
 		commitMeasurements();
@@ -144,8 +133,7 @@ public class TreeAddTest extends TreeTest {
 	}
 
 	/**
-	 * @throws CoreException
-	 *             Test addition to the tree one element at a time.
+	 * Test addition to the tree one element at a time.
 	 */
 	public void testAddTwoThousand() throws CoreException {
 
@@ -154,8 +142,7 @@ public class TreeAddTest extends TreeTest {
 	}
 
 	/**
-	 * @throws CoreException
-	 *             Test addition to the tree with the items presorted.
+	 * Test addition to the tree with the items presorted.
 	 */
 	public void testAddHundredPreSort() throws CoreException {
 
@@ -163,11 +150,10 @@ public class TreeAddTest extends TreeTest {
 	}
 
 	/**
-	 * @throws CoreException
-	 *             Test addition to the tree with the items presorted.
+	 * Test addition to the tree with the items presorted.
 	 */
 	public void testAddThousandPreSort() throws CoreException {
-		tagIfNecessary("JFace - Add 2000 items in 2 blocks to TreeViewer",
+		tagAsGlobalSummary("JFace - Add 2000 items in 2 blocks to TreeViewer",
 				Dimension.ELAPSED_PROCESS);
 
 		doTestAdd(1000, 2000, true);

@@ -16,8 +16,6 @@ package org.eclipse.core.tests.internal.resources;
 
 import java.io.*;
 import java.util.*;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.internal.preferences.EclipsePreferences;
 import org.eclipse.core.internal.resources.ProjectPreferences;
 import org.eclipse.core.resources.*;
@@ -78,18 +76,6 @@ public class ProjectPreferencesTest extends ResourceTest {
 			log.append(event.getNewValue() == null ? "null" : event.getNewValue());
 			log.append("]");
 		}
-	}
-
-	public static Test suite() {
-		// all test methods are named "test..."
-		return new TestSuite(ProjectPreferencesTest.class);
-		//		TestSuite suite = new TestSuite();
-		//		suite.addTest(new ProjectPreferencesTest("testLoadIsImport"));
-		//		return suite;
-	}
-
-	public ProjectPreferencesTest(String name) {
-		super(name);
 	}
 
 	public void testSimple() {
@@ -589,26 +575,18 @@ public class ProjectPreferencesTest extends ResourceTest {
 		}
 
 		// add a log listener to ensure that no errors are reported silently
-		ILogListener logListener = new ILogListener() {
-			@Override
-			public void logging(IStatus status, String plugin) {
-				Throwable exception = status.getException();
-				if (exception == null || !(exception instanceof CoreException)) {
-					return;
-				}
-				if (IResourceStatus.WORKSPACE_LOCKED == ((CoreException) exception).getStatus().getCode()) {
-					fail("3.0");
-				}
+		ILogListener logListener = (status, plugin) -> {
+			Throwable exception = status.getException();
+			if (exception == null || !(exception instanceof CoreException)) {
+				return;
+			}
+			if (IResourceStatus.WORKSPACE_LOCKED == ((CoreException) exception).getStatus().getCode()) {
+				fail("3.0");
 			}
 		};
 
 		// listener to react to changes in the workspace
-		IResourceChangeListener rclistener = new IResourceChangeListener() {
-			@Override
-			public void resourceChanged(IResourceChangeEvent event) {
-				new ProjectScope(project).getNode(qualifier);
-			}
-		};
+		IResourceChangeListener rclistener = event -> new ProjectScope(project).getNode(qualifier);
 
 		// add the listeners
 		Platform.addLogListener(logListener);
@@ -842,9 +820,9 @@ public class ProjectPreferencesTest extends ResourceTest {
 		try {
 			File folder = new File(project.getLocation().toOSString() + "/.settings");
 			folder.mkdir();
-			BufferedWriter bw = new BufferedWriter(new FileWriter(folder.getPath() + "/" + nodeName + ".prefs"));
-			bw.write("#Fri Jan 28 10:28:45 CET 2011\neclipse.preferences.version=1\nKEY=VALUE");
-			bw.close();
+			try (BufferedWriter bw = new BufferedWriter(new FileWriter(folder.getPath() + "/" + nodeName + ".prefs"))) {
+				bw.write("#Fri Jan 28 10:28:45 CET 2011\neclipse.preferences.version=1\nKEY=VALUE");
+			}
 		} catch (IOException e) {
 			fail("2.0", e);
 		}
@@ -880,16 +858,17 @@ public class ProjectPreferencesTest extends ResourceTest {
 		//preferences were changed so the new file should contain two lines: 'KEY=VALUE' and 'NEW_KEY=NEW_VALUE'
 		try {
 			File folder = new File(project.getLocation().toOSString() + "/.settings");
-			BufferedReader br = new BufferedReader(new FileReader(folder.getPath() + "/" + nodeName + ".prefs"));
-			List<String> lines = new ArrayList<>();
-			String line = br.readLine();
-			while (line != null) {
-				if ((!line.startsWith("#")) && (!line.startsWith("eclipse.preferences.version"))) {
-					lines.add(line);
+			List<String> lines;
+			try (BufferedReader br = new BufferedReader(new FileReader(folder.getPath() + "/" + nodeName + ".prefs"))) {
+				lines = new ArrayList<>();
+				String line = br.readLine();
+				while (line != null) {
+					if ((!line.startsWith("#")) && (!line.startsWith("eclipse.preferences.version"))) {
+						lines.add(line);
+					}
+					line = br.readLine();
 				}
-				line = br.readLine();
 			}
-			br.close();
 			assertEquals(2, lines.size());
 			Collections.sort(lines);
 			assertTrue(lines.get(0).equals("KEY=VALUE"));
@@ -912,7 +891,7 @@ public class ProjectPreferencesTest extends ResourceTest {
 
 	public void test_384151() throws BackingStoreException, CoreException {
 		// make sure each line separator is different
-		String systemValue = System.getProperty("line.separator");
+		String systemValue = System.lineSeparator();
 		String newInstanceValue;
 		String newProjectValue;
 		if (systemValue.equals("\n")) {
@@ -1006,9 +985,9 @@ public class ProjectPreferencesTest extends ResourceTest {
 		//create file with preferences that will be discovered during refresh
 		File folder = new File(project.getLocation().toOSString() + "/.settings");
 		folder.mkdir();
-		BufferedWriter bw = new BufferedWriter(new FileWriter(folder.getPath() + "/" + nodeName + ".prefs"));
-		bw.write("#Fri Jan 28 10:28:45 CET 2011\neclipse.preferences.version=1\nKEY=VALUE");
-		bw.close();
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(folder.getPath() + "/" + nodeName + ".prefs"))) {
+			bw.write("#Fri Jan 28 10:28:45 CET 2011\neclipse.preferences.version=1\nKEY=VALUE");
+		}
 
 		//create project preference node
 		Preferences projectNode = Platform.getPreferencesService().getRootNode().node(ProjectScope.SCOPE).node(projectName);

@@ -16,7 +16,6 @@
 package org.eclipse.ui.actions;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
@@ -107,8 +106,8 @@ public class OpenResourceAction extends WorkspaceAction implements IResourceChan
 	private int countClosedProjects() {
 		int count = 0;
 		IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-		for (int i = 0; i < projects.length; i++) {
-			if (!projects[i].isOpen()) {
+		for (IProject project : projects) {
+			if (!project.isOpen()) {
 				count++;
 			}
 		}
@@ -139,10 +138,8 @@ public class OpenResourceAction extends WorkspaceAction implements IResourceChan
 	private boolean hasOtherClosedProjects() {
 		//count the closed projects in the selection
 		int closedInSelection = 0;
-		Iterator resources = getSelectedResources().iterator();
-		while (resources.hasNext()) {
-			IProject project = (IProject) resources.next();
-			if (!project.isOpen())
+		for (IResource project : getSelectedResources()) {
+			if (!((IProject) project).isOpen())
 				closedInSelection++;
 		}
 		//there are other closed projects if the selection does
@@ -152,7 +149,7 @@ public class OpenResourceAction extends WorkspaceAction implements IResourceChan
 
 	@Override
 	protected void invokeOperation(IResource resource, IProgressMonitor monitor) throws CoreException {
-		((IProject) resource).open(monitor);
+		((IProject) resource).open(IResource.BACKGROUND_REFRESH, monitor);
 	}
 
 	/**
@@ -233,12 +230,12 @@ public class OpenResourceAction extends WorkspaceAction implements IResourceChan
 					return;
 				}
 				SubMonitor subMonitor = SubMonitor.convert(mon, openProjectReferences ? 2 : 1);
-				project.open(subMonitor.split(1));
+				project.open(IResource.BACKGROUND_REFRESH, subMonitor.split(1));
 				final IProject[] references = project.getReferencedProjects();
 				if (!hasPrompted) {
 					openProjectReferences = false;
-					for (int i = 0; i < references.length; i++) {
-						if (references[i].exists() && !references[i].isOpen()) {
+					for (IProject reference : references) {
+						if (reference.exists() && !reference.isOpen()) {
 							openProjectReferences = true;
 							break;
 						}
@@ -310,10 +307,8 @@ public class OpenResourceAction extends WorkspaceAction implements IResourceChan
 		}
 
 		boolean hasClosedProjects = false;
-		Iterator resources = getSelectedResources().iterator();
-		while (resources.hasNext()) {
-			IProject currentResource = (IProject) resources.next();
-			if (!currentResource.isOpen()) {
+		for (IResource currentResource : getSelectedResources()) {
+			if (!((IProject) currentResource).isOpen()) {
 				if (hasClosedProjects) {
 					setText(IDEWorkbenchMessages.OpenResourceAction_text_plural);
 					setToolTipText(IDEWorkbenchMessages.OpenResourceAction_toolTip_plural);

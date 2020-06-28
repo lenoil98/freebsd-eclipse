@@ -65,7 +65,7 @@ public class CheatSheetHelpPart extends AbstractFormPart implements IHelpPart {
 	 * @param tbm the toolbar to contribute to
 	 */
 	private void contributeToToolBar(IToolBarManager tbm) {
-		IPath path = CheatSheetPlugin.ICONS_PATH.append(CheatSheetPlugin.T_ELCL).append("collapseall.gif");//$NON-NLS-1$
+		IPath path = CheatSheetPlugin.ICONS_PATH.append(CheatSheetPlugin.T_ELCL).append("collapseall.png");//$NON-NLS-1$
 		ImageDescriptor collapseImage = CheatSheetPlugin.createImageDescriptor(CheatSheetPlugin.getPlugin().getBundle(), path);
 		CheatSheetExpandRestoreAction expandRestoreAction = new CheatSheetExpandRestoreAction(Messages.COLLAPSE_ALL_BUT_CURRENT_TOOLTIP, false, viewer);
 		expandRestoreAction.setToolTipText(Messages.COLLAPSE_ALL_BUT_CURRENT_TOOLTIP);
@@ -102,7 +102,7 @@ public class CheatSheetHelpPart extends AbstractFormPart implements IHelpPart {
 	/**
 	 * Returns the part's unique identifier.
 	 *
-	 * @param the unique id for the part
+	 * @return the unique id for the part
 	 */
 	@Override
 	public String getId() {
@@ -145,7 +145,7 @@ public class CheatSheetHelpPart extends AbstractFormPart implements IHelpPart {
 	/**
 	 * Sets the visibility of the part.
 	 *
-	 * @param whether or not the part should be visible
+	 * @param visible whether or not the part should be visible
 	 */
 	@Override
 	public void setVisible(boolean visible) {

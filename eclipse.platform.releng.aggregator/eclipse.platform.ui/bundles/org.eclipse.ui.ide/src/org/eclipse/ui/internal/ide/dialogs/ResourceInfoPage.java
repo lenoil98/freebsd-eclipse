@@ -45,7 +45,6 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.content.IContentDescription;
@@ -827,10 +826,6 @@ public class ResourceInfoPage extends PropertyPage {
 		GridData tableData = new GridData();
 		tableData.heightHint = table.getHeaderHeight() + 3 * table.getItemHeight();
 		table.setLayoutData(tableData);
-		if (Platform.WS_GTK.equals(Platform.getWS()))
-			// Removes gray padding around buttons embedded in the table on
-			// GTK, see bug 312240
-			table.setBackgroundMode(SWT.INHERIT_FORCE);
 		createExecutableWarning(composite, font);
 	}
 
@@ -1029,21 +1024,21 @@ public class ResourceInfoPage extends PropertyPage {
 						IDEWorkbenchMessages.ResourceInfo_write,
 						IDEWorkbenchMessages.ResourceInfo_execute };
 
-				String message = ""; //$NON-NLS-1$
+				StringBuilder message = new StringBuilder(""); //$NON-NLS-1$
 				if ((changedPermissions & EFS.ATTRIBUTE_IMMUTABLE) != 0)
-					message += getSimpleChangeName(
+					message.append(getSimpleChangeName(
 							(finalPermissions & EFS.ATTRIBUTE_IMMUTABLE) != 0,
-							IDEWorkbenchMessages.ResourceInfo_locked);
+							IDEWorkbenchMessages.ResourceInfo_locked));
 
 				for (int j = 0; j < 3; j++) {
 					for (int i = 0; i < 3; i++) {
 						if ((changedPermissions & permissionMasks[j][i]) != 0)
-							message += getSimpleChangeName(
+							message.append(getSimpleChangeName(
 									(finalPermissions & permissionMasks[j][i]) != 0,
-									groupNames[j] + " " + permissionNames[i]); //$NON-NLS-1$
+									groupNames[j] + " " + permissionNames[i])); //$NON-NLS-1$
 					}
 				}
-				return message;
+				return message.toString();
 			}
 
 			@Override
@@ -1080,8 +1075,8 @@ public class ResourceInfoPage extends PropertyPage {
 		if (!changes.isEmpty()) {
 			StringBuilder message = new StringBuilder(IDEWorkbenchMessages.ResourceInfo_recursiveChangesSummary)
 					.append('\n');
-			for (int i = 0; i < changes.size(); i++) {
-				message.append(((IResourceChange) changes.get(i)).getMessage());
+			for (Object change : changes) {
+				message.append(((IResourceChange) change).getMessage());
 			}
 			message.append(IDEWorkbenchMessages.ResourceInfo_recursiveChangesQuestion);
 
@@ -1113,9 +1108,9 @@ public class ResourceInfoPage extends PropertyPage {
 					iterationMonitor.subTask(NLS
 							.bind(IDEWorkbenchMessages.ResourceInfo_recursiveChangesSubTaskName,
 									childResource.getFullPath()));
-					for (int i = 0; i < changes.size(); i++) {
+					for (Object change : changes) {
 						iterationMonitor.split(1);
-						((IResourceChange) changes.get(i))
+						((IResourceChange) change)
 								.performChange(childResource);
 					}
 				}

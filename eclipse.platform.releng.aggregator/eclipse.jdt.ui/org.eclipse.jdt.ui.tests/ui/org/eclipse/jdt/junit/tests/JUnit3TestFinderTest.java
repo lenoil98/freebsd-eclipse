@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2010 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,10 +13,13 @@
  *******************************************************************************/
 package org.eclipse.jdt.junit.tests;
 
-import java.util.HashSet;
-import java.util.Iterator;
+import static org.junit.Assert.assertEquals;
 
-import junit.framework.TestCase;
+import java.util.HashSet;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.eclipse.jdt.junit.JUnitCore;
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
@@ -37,13 +40,12 @@ import org.eclipse.jdt.internal.junit.launcher.ITestKind;
 import org.eclipse.jdt.internal.junit.launcher.TestKindRegistry;
 
 
-public class JUnit3TestFinderTest extends TestCase {
+public class JUnit3TestFinderTest {
 	private IJavaProject fProject;
 	private IPackageFragmentRoot fRoot;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		fProject= JavaProjectHelper.createJavaProject("TestProject", "bin");
 		JavaProjectHelper.addRTJar(fProject);
 		IClasspathEntry cpe= JavaCore.newContainerEntry(JUnitCore.JUNIT3_CONTAINER_PATH);
@@ -52,12 +54,12 @@ public class JUnit3TestFinderTest extends TestCase {
 		fRoot= JavaProjectHelper.addSourceContainer(fProject, "src");
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		JavaProjectHelper.delete(fProject);
-		super.tearDown();
 	}
 
+	@Test
 	public void testTestCase() throws Exception {
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		StringBuffer buf= new StringBuffer();
@@ -134,8 +136,8 @@ public class JUnit3TestFinderTest extends TestCase {
 		buf.append("    }\n");
 		buf.append("}\n");
 		IType[] invalidTests= p.createCompilationUnit("Outer2.java", buf.toString(), false, null).getAllTypes();
-		for (int i= 0; i < invalidTests.length; i++) {
-			assertTestFound(invalidTests[i], new String[] {});
+		for (IType invalidTest : invalidTests) {
+			assertTestFound(invalidTest, new String[] {});
 		}
 		assertTestFound(invalidTests[0].getCompilationUnit(), new String[] {});
 
@@ -173,8 +175,8 @@ public class JUnit3TestFinderTest extends TestCase {
 		assertTestFound(fProject, validTests);
 	}
 
+	@Test
 	public void testSuite() throws Exception {
-
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package p;\n");
@@ -254,8 +256,8 @@ public class JUnit3TestFinderTest extends TestCase {
 		buf.append("    }\n");
 		buf.append("}\n");
 		IType[] invalidTests= p.createCompilationUnit("Outer2.java", buf.toString(), false, null).getAllTypes();
-		for (int i= 0; i < invalidTests.length; i++) {
-			assertTestFound(invalidTests[i], new String[] {});
+		for (IType invalidTest : invalidTests) {
+			assertTestFound(invalidTest, new String[] {});
 		}
 		assertTestFound(invalidTests[0].getCompilationUnit(), new String[] {});
 
@@ -308,8 +310,8 @@ public class JUnit3TestFinderTest extends TestCase {
 		assertTestFound(fProject, validTests);
 	}
 
+	@Test
 	public void testTestInterface() throws Exception {
-
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package p;\n");
@@ -392,8 +394,8 @@ public class JUnit3TestFinderTest extends TestCase {
 		finder.findTestsInContainer(container, set, null);
 
 		HashSet<String> namesFound= new HashSet<>();
-		for (Iterator<IType> iterator= set.iterator(); iterator.hasNext();) {
-			namesFound.add(iterator.next().getFullyQualifiedName('.'));
+		for (IType iType : set) {
+			namesFound.add(iType.getFullyQualifiedName('.'));
 		}
 		String[] actuals= namesFound.toArray(new String[namesFound.size()]);
 		StringAsserts.assertEqualStringsIgnoreOrder(actuals, expectedValidTests);

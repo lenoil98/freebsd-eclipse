@@ -37,44 +37,29 @@ import org.eclipse.ui.model.IWorkbenchAdapter2;
 @Deprecated
 public abstract class DebugElementWorkbenchAdapter implements IWorkbenchAdapter, IWorkbenchAdapter2 {
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getImageDescriptor(java.lang.Object)
-     */
-    @Override
+	@Override
 	public ImageDescriptor getImageDescriptor(Object object) {
-        return DebugElementHelper.getImageDescriptor(object);
-    }
+		return DebugElementHelper.getImageDescriptor(object);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getLabel(java.lang.Object)
-     */
-    @Override
+	@Override
 	public String getLabel(Object o) {
-        return DebugElementHelper.getLabel(o);
-    }
+		return DebugElementHelper.getLabel(o);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter2#getForeground(java.lang.Object)
-     */
-    @Override
+	@Override
 	public RGB getForeground(Object element) {
-        return DebugElementHelper.getForeground(element);
-    }
+		return DebugElementHelper.getForeground(element);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter2#getBackground(java.lang.Object)
-     */
-    @Override
+	@Override
 	public RGB getBackground(Object element) {
-        return DebugElementHelper.getBackground(element);
-    }
+		return DebugElementHelper.getBackground(element);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter2#getFont(java.lang.Object)
-     */
-    @Override
+	@Override
 	public FontData getFont(Object element) {
-        return DebugElementHelper.getFont(element);
-    }
+		return DebugElementHelper.getFont(element);
+	}
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016 Lars Vogel and others.
+ * Copyright (c) 2016, 2020 Lars Vogel and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -157,7 +157,7 @@ public class SaveAllDirtyPartsAddon {
 	@Inject
 	@Optional
 	public void setAutoSave(
-			@SuppressWarnings("restriction") @Preference(value = IPreferenceConstants.SAVE_AUTOMATICALLY, nodePath = "org.eclipse.ui.workbench") boolean autoSave) {
+			@Preference(value = IPreferenceConstants.SAVE_AUTOMATICALLY, nodePath = "org.eclipse.ui.workbench") boolean autoSave) {
 		isAutoSaveActive = autoSave;
 		if (isAutoSaveActive) {
 			eventBroker.subscribe(UIEvents.Dirtyable.TOPIC_DIRTY, dirtyHandler);
@@ -173,7 +173,7 @@ public class SaveAllDirtyPartsAddon {
 	@Inject
 	@Optional
 	public void autoSaveIntervalChanged(
-			@SuppressWarnings("restriction") @Preference(value = IPreferenceConstants.SAVE_AUTOMATICALLY_INTERVAL, nodePath = "org.eclipse.ui.workbench") int newInterval) {
+			@Preference(value = IPreferenceConstants.SAVE_AUTOMATICALLY_INTERVAL, nodePath = "org.eclipse.ui.workbench") int newInterval) {
 		autoSaveInterval = TimeUnit.SECONDS.toMillis(newInterval);
 	}
 
@@ -216,14 +216,11 @@ public class SaveAllDirtyPartsAddon {
 		final Display display = getWorkbenchDisplay();
 		if (display != null && !display.isDisposed()) {
 			try {
-				display.asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						removeIdleListenerFromWorkbenchDisplay();
-						// save jov could have been rescheduled by idleListener
-						// before it has been removed
-						autoSaveJob.cancel();
-					}
+				display.asyncExec(() -> {
+					removeIdleListenerFromWorkbenchDisplay();
+					// save jov could have been rescheduled by idleListener
+					// before it has been removed
+					autoSaveJob.cancel();
 				});
 			} catch (SWTException ex) {
 				// ignore

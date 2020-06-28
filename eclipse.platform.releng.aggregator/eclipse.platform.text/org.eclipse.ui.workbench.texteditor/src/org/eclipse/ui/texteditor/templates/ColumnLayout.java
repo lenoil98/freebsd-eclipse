@@ -58,12 +58,17 @@ final class ColumnLayout extends Layout {
 	private static int COLUMN_TRIM;
 	static {
 		String platform= SWT.getPlatform();
-		if ("win32".equals(platform)) //$NON-NLS-1$
+		switch (platform) {
+		case "win32": //$NON-NLS-1$
 			COLUMN_TRIM= 4;
-		else if ("carbon".equals(platform)) //$NON-NLS-1$
+			break;
+		case "carbon": //$NON-NLS-1$
 			COLUMN_TRIM= 24;
-		else
+			break;
+		default:
 			COLUMN_TRIM= 3;
+			break;
+		}
 	}
 
 	private List<ColumnLayoutData> columns= new ArrayList<>();
@@ -188,41 +193,41 @@ final class ColumnLayout extends Layout {
 
 	@Override
 	protected void layout(Composite composite, boolean flushCache) {
-        Rectangle area= composite.getClientArea();
-        Table table= getTable(composite);
-        int tableWidth= table.getSize().x;
-        int trim= computeTrim(area, table, tableWidth);
-        int width= Math.max(0, area.width - trim);
+		Rectangle area= composite.getClientArea();
+		Table table= getTable(composite);
+		int tableWidth= table.getSize().x;
+		int trim= computeTrim(area, table, tableWidth);
+		int width= Math.max(0, area.width - trim);
 
-        if (width > 1)
-        	layoutTable(table, width, area, tableWidth < area.width);
+		if (width > 1)
+			layoutTable(table, width, area, tableWidth < area.width);
 
-        if( composite.getData(RECALCULATE_LAYOUT) == null ) {
-        	composite.setData(RECALCULATE_LAYOUT, Boolean.FALSE);
-        	composite.layout();
-        }
+		if( composite.getData(RECALCULATE_LAYOUT) == null ) {
+			composite.setData(RECALCULATE_LAYOUT, Boolean.FALSE);
+			composite.layout();
+		}
 	}
 
 	private int computeTrim(Rectangle area, Table table, int tableWidth) {
 		Point preferredSize= computeTableSize(table, area.width, area.height);
-        int trim;
-        if (tableWidth > 1) {
-        	trim= tableWidth - table.getClientArea().width;
-        } else {
-        	// initially, the table has no extend and no client area - use the border with
-        	// plus some padding as educated guess
-        	trim= 2 * table.getBorderWidth() + 1 ;
-        }
-        if (preferredSize.y > area.height) {
-            // Subtract the scrollbar width from the total column width
-            // if a vertical scrollbar will be required, but is not currently showing
-        	// (in which case it is already subtracted above)
-            ScrollBar vBar= table.getVerticalBar();
-            if (!vBar.isVisible()) {
-            	Point vBarSize= vBar.getSize();
-            	trim += vBarSize.x;
-            }
-        }
+		int trim;
+		if (tableWidth > 1) {
+			trim= tableWidth - table.getClientArea().width;
+		} else {
+			// initially, the table has no extend and no client area - use the border with
+			// plus some padding as educated guess
+			trim= 2 * table.getBorderWidth() + 1 ;
+		}
+		if (preferredSize.y > area.height) {
+			// Subtract the scrollbar width from the total column width
+			// if a vertical scrollbar will be required, but is not currently showing
+			// (in which case it is already subtracted above)
+			ScrollBar vBar= table.getVerticalBar();
+			if (!vBar.isVisible()) {
+				Point vBarSize= vBar.getSize();
+				trim += vBarSize.x;
+			}
+		}
 		return trim;
 	}
 

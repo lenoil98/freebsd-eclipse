@@ -14,7 +14,9 @@
 package org.eclipse.team.examples.filesystem.ui;
 
 import org.eclipse.core.resources.mapping.RemoteResourceMappingContext;
-import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -55,16 +57,14 @@ public class NonSyncModelMergeOperation extends ModelMergeOperation {
 		super(part, manager);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.synchronize.ModelMergeOperation#initializeContext(org.eclipse.core.runtime.IProgressMonitor)
-	 */
+	@Override
 	protected void initializeContext(IProgressMonitor monitor) throws CoreException {
 		try {
 			monitor.beginTask(null, 100);
 			// Create the context
 			context = new FileSystemMergeContext(getScopeManager());
 			// Refresh the context to get the latest remote state
-			context.refresh(getScope().getTraversals(), 
+			context.refresh(getScope().getTraversals(),
 					RemoteResourceMappingContext.FILE_CONTENTS_REQUIRED, SubMonitor.convert(monitor, 75));
 			// What for the context to asynchronously update the diff tree
 			try {
@@ -76,28 +76,25 @@ public class NonSyncModelMergeOperation extends ModelMergeOperation {
 			monitor.done();
 		}
 	}
-	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.synchronize.ModelOperation#getContext()
-	 */
+
+	@Override
 	protected ISynchronizationContext getContext() {
 		return context;
 	}
-	
+
 	/**
 	 * Handle the preview request by opening a dialog that allows the user to manually merge
 	 * any changes.
 	 * @see org.eclipse.team.ui.synchronize.ModelMergeOperation#handlePreviewRequest()
 	 */
+	@Override
 	protected void handlePreviewRequest() {
 		// We perform a syncExec so that the job will dispose of the scope manager
 		// after the dialog closes
 		Display.getDefault().syncExec(() -> NonSyncMergeDialog.openFor(NonSyncModelMergeOperation.this));
 	}
-	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.TeamOperation#getShell()
-	 */
+
+	@Override
 	public Shell getShell() {
 		// Change method to public
 		return super.getShell();

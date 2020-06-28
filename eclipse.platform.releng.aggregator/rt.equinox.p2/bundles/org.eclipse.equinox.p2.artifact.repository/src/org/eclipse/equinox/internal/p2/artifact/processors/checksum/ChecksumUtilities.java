@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2018 Mykola Nikishov.
+ * Copyright (c) 2015, 2019 Mykola Nikishov.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,7 @@ package org.eclipse.equinox.internal.p2.artifact.processors.checksum;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.*;
 import java.util.Map.Entry;
 import org.eclipse.core.runtime.*;
@@ -31,7 +32,6 @@ import org.eclipse.osgi.util.NLS;
 public class ChecksumUtilities {
 
 	private static final String ARTIFACT_CHECKSUMS_POINT = "org.eclipse.equinox.p2.artifact.repository.artifactChecksums"; //$NON-NLS-1$
-	private static final String MD5_MESSAGE_DIGEST = "MD5"; //$NON-NLS-1$
 
 	/**
 	 * Instances of checksum verifiers applicable for the artifact descriptor
@@ -57,7 +57,8 @@ public class ChecksumUtilities {
 				String checksumId = checksumVerifierConfiguration.getAttribute("id"); //$NON-NLS-1$
 				if (checksumEntry.getKey().equals(checksumId)) {
 					String checksumAlgorithm = checksumVerifierConfiguration.getAttribute("algorithm"); //$NON-NLS-1$
-					ChecksumVerifier checksumVerifier = new ChecksumVerifier(checksumAlgorithm, checksumId);
+					String providerName = checksumVerifierConfiguration.getAttribute("providerName"); //$NON-NLS-1$
+					ChecksumVerifier checksumVerifier = new ChecksumVerifier(checksumAlgorithm, providerName, checksumId);
 					checksumVerifier.initialize(null, new ProcessingStepDescriptor(null, checksumEntry.getValue(), true), descriptor);
 					if (checksumVerifier.getStatus().isOK())
 						steps.add(checksumVerifier);
@@ -92,27 +93,22 @@ public class ChecksumUtilities {
 				// don't calculate checksum if algo is disabled
 				continue;
 			String algorithm = checksumVerifierConfiguration.getAttribute("algorithm"); //$NON-NLS-1$
-			Optional<String> checksum = calculateChecksum(pathOnDisk, status, id, algorithm);
+			String providerName = checksumVerifierConfiguration.getAttribute("providerName"); //$NON-NLS-1$
+			Optional<String> checksum = calculateChecksum(pathOnDisk, status, id, algorithm, providerName);
 			checksum.ifPresent(c -> checksums.put(id, c));
-		}
-
-		boolean doNotSkipMd5 = !checksumsToSkip.contains(ChecksumHelper.MD5);
-		if (doNotSkipMd5) {
-			Optional<String> md5 = calculateChecksum(pathOnDisk, status, ChecksumHelper.MD5, MD5_MESSAGE_DIGEST);
-			md5.ifPresent(c -> checksums.put(ChecksumHelper.MD5, c));
 		}
 
 		return status;
 	}
 
-	private static Optional<String> calculateChecksum(File pathOnDisk, MultiStatus status, String id, String algorithm) {
+	private static Optional<String> calculateChecksum(File pathOnDisk, MultiStatus status, String id, String algorithm, String providerName) {
 		try {
-			String checksum = ChecksumProducer.produce(pathOnDisk, algorithm);
-			String message = NLS.bind(Messages.calculateChecksum_ok, new Object[] {id, algorithm, checksum});
+			String checksum = ChecksumProducer.produce(pathOnDisk, algorithm, providerName);
+			String message = NLS.bind(Messages.calculateChecksum_ok, new Object[] {id, algorithm, providerName, checksum});
 			status.add(new Status(IStatus.OK, Activator.ID, message));
 			return Optional.of(checksum);
-		} catch (NoSuchAlgorithmException e) {
-			String message = NLS.bind(Messages.calculateChecksum_error, id, algorithm);
+		} catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+			String message = NLS.bind(Messages.calculateChecksum_providerError, new Object[] {id, algorithm, providerName});
 			status.add(new Status(IStatus.ERROR, Activator.ID, message, e));
 		} catch (IOException e) {
 			String message = NLS.bind(Messages.calculateChecksum_error, id, algorithm);

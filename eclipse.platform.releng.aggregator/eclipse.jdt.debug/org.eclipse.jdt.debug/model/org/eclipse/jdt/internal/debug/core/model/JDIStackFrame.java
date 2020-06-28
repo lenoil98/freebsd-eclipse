@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,12 +14,15 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.debug.core.model;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -32,9 +35,19 @@ import org.eclipse.debug.core.model.ISuspendResume;
 import org.eclipse.debug.core.model.ITerminate;
 import org.eclipse.debug.core.model.IThread;
 import org.eclipse.debug.core.model.IVariable;
+import org.eclipse.jdi.internal.FieldImpl;
+import org.eclipse.jdi.internal.ReferenceTypeImpl;
 import org.eclipse.jdi.internal.ValueImpl;
 import org.eclipse.jdi.internal.VirtualMachineImpl;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.debug.core.IJavaClassType;
 import org.eclipse.jdt.debug.core.IJavaModifiers;
 import org.eclipse.jdt.debug.core.IJavaObject;
@@ -44,11 +57,10 @@ import org.eclipse.jdt.debug.core.IJavaThread;
 import org.eclipse.jdt.debug.core.IJavaValue;
 import org.eclipse.jdt.debug.core.IJavaVariable;
 import org.eclipse.jdt.internal.debug.core.JDIDebugPlugin;
+import org.eclipse.jdt.internal.debug.core.JavaDebugUtils;
 import org.eclipse.jdt.internal.debug.core.logicalstructures.JDILambdaVariable;
 import org.eclipse.jdt.internal.debug.core.logicalstructures.JDIReturnValueVariable;
-import org.eclipse.jdt.internal.debug.core.model.MethodResult.ResultType;
 
-import com.ibm.icu.text.MessageFormat;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassType;
@@ -127,6 +139,9 @@ public class JDIStackFrame extends JDIDebugElement implements IJavaStackFrame {
 	 * Whether the current stack frame is the top of the stack
 	 */
 	private boolean fIsTop;
+
+	@SuppressWarnings("restriction")
+	private static final String SYNTHETIC_OUTER_LOCAL_PREFIX = new String(org.eclipse.jdt.internal.compiler.lookup.TypeConstants.SYNTHETIC_OUTER_LOCAL_PREFIX);
 
 	/**
 	 * Creates a new stack frame in the given thread.
@@ -366,7 +381,9 @@ public class JDIStackFrame extends JDIDebugElement implements IJavaStackFrame {
 					int previousIndex = frames.indexOf(this) + 1;
 					if (previousIndex > 0 && previousIndex < frames.size()) {
 						IJavaStackFrame previousFrame = frames.get(previousIndex);
-						IJavaValue closureValue = JDIValue.createValue((JDIDebugTarget) getDebugTarget(), ((JDIStackFrame) previousFrame).getUnderlyingThisObject());
+						ObjectReference underlyingThisObject = ((JDIStackFrame) previousFrame).getUnderlyingThisObject();
+						IJavaValue closureValue = JDIValue.createValue((JDIDebugTarget) getDebugTarget(), underlyingThisObject);
+						tryToResolveLambdaVariableNames(closureValue, underlyingThisObject);
 						fVariables.add(new JDILambdaVariable(closureValue));
 					}
 				}
@@ -387,6 +404,124 @@ public class JDIStackFrame extends JDIDebugElement implements IJavaStackFrame {
 	}
 
 	/**
+	 * Tries to resolve "real" captured variable names by inspecting corresponding Java source code (if available)
+	 */
+	protected void tryToResolveLambdaVariableNames(IJavaValue value, ObjectReference underlyingThisObject) {
+		if (!isProbablyJavaCode()) {
+			// See bug 562056: we won't parse Java code if the current frame doesn't belong to Java, because
+			// we will most likely have different source line numbers and will produce garbage or errors
+			return;
+		}
+		try {
+			IType type = JavaDebugUtils.resolveType(value.getJavaType());
+			if (type == null) {
+				return;
+			}
+			ASTParser parser = ASTParser.newParser(AST.JLS11);
+			parser.setResolveBindings(true);
+			parser.setSource(type.getTypeRoot());
+			CompilationUnit cu = (CompilationUnit) parser.createAST(null);
+			List<Location> allLineLocations;
+			try {
+				allLineLocations = getUnderlyingMethod().allLineLocations();
+				int lineNo = allLineLocations.get(0).lineNumber();
+				cu.accept(new LambdaASTVisitor(false, underlyingThisObject, getUnderlyingMethod().isStatic(), cu, lineNo));
+			} catch (AbsentInformationException e) {
+				// Nothing to be done
+			}
+		} catch (CoreException e) {
+			logError(e);
+		}
+	}
+
+	/**
+	 * @return {@code true} if the current frame relates to the class generated from Java source file (and not from some different language)
+	 */
+	protected boolean isProbablyJavaCode() {
+		try {
+			String sourceName = getSourceName();
+			// Note: JavaCore.isJavaLikeFileName(sourceName) is too generic to be used here
+			// because it allows files that aren't using Java syntax, like groovy
+			// See https://github.com/groovy/groovy-eclipse/blob/master/base/org.eclipse.jdt.groovy.core/plugin.xml
+			if (sourceName == null || sourceName.endsWith(".java")) { //$NON-NLS-1$
+				// if nothing is defined (no source attributes), assume Java
+				return true;
+			}
+		} catch (DebugException e) {
+			// If we fail, assume Java
+			return true;
+		}
+		// Underlined source code is most likely not written in Java
+		return false;
+	}
+
+	private final static class LambdaASTVisitor extends ASTVisitor {
+		private final ObjectReference underlyingThisObject;
+		private boolean methodIsStatic;
+		private CompilationUnit cu;
+		private int lineNo;
+
+		private LambdaASTVisitor(boolean visitDocTags, ObjectReference underlyingThisObject, boolean methodIsStatic, CompilationUnit cu, int lineNo) {
+			super(visitDocTags);
+			this.underlyingThisObject = underlyingThisObject;
+			this.methodIsStatic = methodIsStatic;
+			this.cu = cu;
+			this.lineNo = lineNo;
+		}
+
+		@Override
+		public boolean visit(LambdaExpression lambdaExpression) {
+			// check if the lineNo fall in lambda region, it can either be single or multiline lambda body.
+			if (lineNo < cu.getLineNumber(lambdaExpression.getStartPosition())
+					|| lineNo > cu.getLineNumber(lambdaExpression.getStartPosition() + lambdaExpression.getLength())) {
+				return true;
+			}
+			IMethodBinding binding = lambdaExpression.resolveMethodBinding();
+			if (binding == null) {
+				return true;
+			}
+			IVariableBinding[] synVars = binding.getSyntheticOuterLocals();
+			if (synVars == null || synVars.length == 0) {// name cannot be updated if Synthetic Outer Locals are not available
+				return true;
+			}
+			List<Field> allFields = underlyingThisObject.referenceType().fields();
+			ListIterator<Field> listIterator = allFields.listIterator();
+			int i = 0;
+			if (methodIsStatic) {
+				if (synVars.length == allFields.size()) {
+					while (listIterator.hasNext()) {
+						FieldImpl field = (FieldImpl) listIterator.next();
+						String newName = synVars[i].getName();
+						FieldImpl newField = createRenamedCopy(field, newName);
+						listIterator.set(newField);
+						i++;
+					}
+				}
+			} else {
+				if (synVars.length + 1 == allFields.size()) {
+					while (listIterator.hasNext()) {
+						FieldImpl field = (FieldImpl) listIterator.next();
+						String newName = field.name();
+						if (i == 0) {
+							newName = "this"; //$NON-NLS-1$
+						} else {
+							newName = synVars[i - 1].getName();
+						}
+						FieldImpl newField = createRenamedCopy(field, newName);
+						listIterator.set(newField);
+						i++;
+					}
+				}
+			}
+			return true;
+		}
+
+		private FieldImpl createRenamedCopy(FieldImpl field, String newName) {
+			return new FieldImpl((VirtualMachineImpl) field.virtualMachine(), (ReferenceTypeImpl) field.declaringType(), field.getFieldID(), newName, field.signature(), field.genericSignature(), field.modifiers());
+		}
+	}
+
+	/**
 	 * If there is a return value from a "step return" that belongs to this frame, insert it as first element
 	 *
 	 * @param variables
@@ -394,32 +529,44 @@ public class JDIStackFrame extends JDIDebugElement implements IJavaStackFrame {
 	private void addStepReturnValue(List<IJavaVariable> variables) {
 		if (fIsTop) {
 			MethodResult methodResult = fThread.getMethodResult();
-			if (methodResult != null) {
-				if (methodResult.fResultType == ResultType.returned) {
-					if (fDepth + 1 != methodResult.fTargetFrameCount) {
-						// can happen e.g., because of checkPackageAccess/System.getSecurityManager()
-						return;
+			if (methodResult != null && methodResult.fResultType != null) {
+				switch (methodResult.fResultType) {
+					case returned:{
+						if (fDepth + 1 != methodResult.fTargetFrameCount) {
+							// can happen e.g., because of checkPackageAccess/System.getSecurityManager()
+							return;
+						}
+						String name = MessageFormat.format(JDIDebugModelMessages.JDIStackFrame_ReturnValue, methodResult.fMethod.name());
+						variables.add(0, new JDIReturnValueVariable(name, JDIValue.createValue(getJavaDebugTarget(), methodResult.fValue), true));
+						break;
 					}
-					String name = MessageFormat.format(JDIDebugModelMessages.JDIStackFrame_ReturnValue, methodResult.fMethod.name());
-					variables.add(0, new JDIReturnValueVariable(name, JDIValue.createValue(getJavaDebugTarget(), methodResult.fValue), true));
-				} else if (methodResult.fResultType == ResultType.returning) {
-					String name = MessageFormat.format(JDIDebugModelMessages.JDIStackFrame_ReturningValue, methodResult.fMethod.name());
-					variables.add(0, new JDIReturnValueVariable(name, JDIValue.createValue(getJavaDebugTarget(), methodResult.fValue), true));
-				} else if (methodResult.fResultType == ResultType.threw) {
-					if (fDepth + 1 > methodResult.fTargetFrameCount) {
-						// don't know if this really can happen, but other jvm suprises were not expected either
-						return;
+					case returning:{
+						String name = MessageFormat.format(JDIDebugModelMessages.JDIStackFrame_ReturningValue, methodResult.fMethod.name());
+						variables.add(0, new JDIReturnValueVariable(name, JDIValue.createValue(getJavaDebugTarget(), methodResult.fValue), true));
+						break;
 					}
-					String name = MessageFormat.format(JDIDebugModelMessages.JDIStackFrame_ExceptionThrown, methodResult.fMethod.name());
-					variables.add(0, new JDIReturnValueVariable(name, JDIValue.createValue(getJavaDebugTarget(), methodResult.fValue), true));
-				} else if (methodResult.fResultType == ResultType.throwing) {
-					String name = MessageFormat.format(JDIDebugModelMessages.JDIStackFrame_ThrowingException, methodResult.fMethod.name());
-					variables.add(0, new JDIReturnValueVariable(name, JDIValue.createValue(getJavaDebugTarget(), methodResult.fValue), true));
-				} else if (methodResult.fResultType == ResultType.step_timeout) {
-					String msg = JDIDebugModelMessages.JDIStackFrame_NotObservedBecauseOfTimeout;
-					variables.add(0, new JDIReturnValueVariable(JDIDebugModelMessages.JDIStackFrame_NoMethodReturnValue, new JDIPlaceholderValue(getJavaDebugTarget(), msg), false));
+					case threw:{
+						if (fDepth + 1 > methodResult.fTargetFrameCount) {
+							// don't know if this really can happen, but other jvm suprises were not expected either
+							return;
+						}
+						String name = MessageFormat.format(JDIDebugModelMessages.JDIStackFrame_ExceptionThrown, methodResult.fMethod.name());
+						variables.add(0, new JDIReturnValueVariable(name, JDIValue.createValue(getJavaDebugTarget(), methodResult.fValue), true));
+						break;
+					}
+					case throwing:{
+						String name = MessageFormat.format(JDIDebugModelMessages.JDIStackFrame_ThrowingException, methodResult.fMethod.name());
+						variables.add(0, new JDIReturnValueVariable(name, JDIValue.createValue(getJavaDebugTarget(), methodResult.fValue), true));
+						break;
+					}
+					case step_timeout:
+						String msg = JDIDebugModelMessages.JDIStackFrame_NotObservedBecauseOfTimeout;
+						variables.add(0, new JDIReturnValueVariable(JDIDebugModelMessages.JDIStackFrame_NoMethodReturnValue, new JDIPlaceholderValue(getJavaDebugTarget(), msg), false));
+						break;
+					default:
+						break;
 				}
-			} else if(JDIThread.showStepResultIsEnabled()) {
+			} else if (JDIThread.showStepResultIsEnabled(getDebugTarget())) {
 				variables.add(0, new JDIReturnValueVariable(JDIDebugModelMessages.JDIStackFrame_NoMethodReturnValue, new JDIPlaceholderValue(getJavaDebugTarget(), ""), false)); //$NON-NLS-1$
 			}
 		}
@@ -791,6 +938,19 @@ public class JDIStackFrame extends JDIDebugElement implements IJavaStackFrame {
 				// save for later - check for instance and static variables
 				thisVariable = var;
 			}
+			if (var instanceof JDILambdaVariable) {
+				// Check if we have match in synthetic fields generated
+				// by compiler for the captured variables (they start with "val$")
+				JDILambdaVariable lambda = (JDILambdaVariable) var;
+				JDIObjectValue ov = (JDIObjectValue) lambda.getValue();
+				IVariable[] lvars = ov.getVariables();
+				for (IVariable lv : lvars) {
+					String name = lv.getName();
+					if (name.startsWith(SYNTHETIC_OUTER_LOCAL_PREFIX) && (SYNTHETIC_OUTER_LOCAL_PREFIX + varName).equals(name)) {
+						possibleMatches.add((IJavaVariable) lv);
+					}
+				}
+			}
 		}
 		for(IJavaVariable variable: possibleMatches){
 			// Local Variable has more preference than Field Variable
@@ -847,7 +1007,7 @@ public class JDIStackFrame extends JDIDebugElement implements IJavaStackFrame {
 	 */
 	protected ObjectReference getUnderlyingThisObject() throws DebugException {
 		synchronized (fThread) {
-			if ((fStackFrame == null || fThisObject == null) && !isStatic()) {
+			if ((fStackFrame == null || fThisObject == null) && !isStatic() && !(getUnderlyingStackFrame() == null)) {
 				try {
 					fThisObject = getUnderlyingStackFrame().thisObject();
 				} catch (RuntimeException e) {
@@ -1204,11 +1364,12 @@ public class JDIStackFrame extends JDIDebugElement implements IJavaStackFrame {
 					// re-index stack frames - See Bug 47198
 					fThread.computeStackFrames();
 					if (fDepth == -1) {
+						// try it once more before throwing error
+						fThread.computeStackFrames();
+						if (fDepth == -1) {
 						// If depth is -1, then this is an invalid frame
-						throw new DebugException(new Status(IStatus.ERROR,
-								JDIDebugPlugin.getUniqueIdentifier(),
-								IJavaStackFrame.ERR_INVALID_STACK_FRAME,
-								JDIDebugModelMessages.JDIStackFrame_25, null));
+							throw new DebugException(new Status(IStatus.ERROR, JDIDebugPlugin.getUniqueIdentifier(), IJavaStackFrame.ERR_INVALID_STACK_FRAME, JDIDebugModelMessages.JDIStackFrame_25, null));
+						}
 					}
 				} else {
 					throw new DebugException(new Status(IStatus.ERROR,

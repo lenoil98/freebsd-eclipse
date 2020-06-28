@@ -15,7 +15,6 @@
 package org.eclipse.jdt.internal.corext.refactoring.util;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -33,7 +32,7 @@ import org.eclipse.jdt.internal.corext.dom.ASTNodes;
  * <p>
  * For nodes inside "tight" nodes, the source range is the extended source range, unless this would
  * violate the no-overlapping condition from the superclass.
- * 
+ *
  * @since 3.2
  */
 public class TightSourceRangeComputer extends TargetSourceRangeComputer {
@@ -41,7 +40,7 @@ public class TightSourceRangeComputer extends TargetSourceRangeComputer {
 
 	/**
 	 * Add the given node to the set of "tight" nodes.
-	 * 
+	 *
 	 * @param reference a node
 	 * @since 3.2
 	 */
@@ -49,21 +48,18 @@ public class TightSourceRangeComputer extends TargetSourceRangeComputer {
 		fTightSourceRangeNodes.add(reference);
 
 	    List<StructuralPropertyDescriptor> properties= reference.structuralPropertiesForType();
-	    for (Iterator<StructuralPropertyDescriptor> iterator= properties.iterator(); iterator.hasNext();) {
-	        StructuralPropertyDescriptor descriptor= iterator.next();
+	    for (StructuralPropertyDescriptor descriptor : properties) {
 	        if (descriptor.isChildProperty()) {
 	        	ASTNode child= (ASTNode)reference.getStructuralProperty(descriptor);
 	        	if (child != null && isExtending(child, reference)) {
 	        		addTightSourceNode(child);
 	        	}
 	        } else if (descriptor.isChildListProperty()) {
-	        	List<? extends ASTNode> children= ASTNodes.getChildListProperty(reference, (ChildListPropertyDescriptor) descriptor);
-	        	for (Iterator<? extends ASTNode> iterator2= children.iterator(); iterator2.hasNext();) {
-	                ASTNode child= iterator2.next();
-	                if (isExtending(child, reference)) {
-		        		addTightSourceNode(child);
-		        	}
-                }
+	        	for (ASTNode child : ASTNodes.getChildListProperty(reference, (ChildListPropertyDescriptor) descriptor)) {
+					if (isExtending(child, reference)) {
+						addTightSourceNode(child);
+					}
+				}
 	        }
         }
     }

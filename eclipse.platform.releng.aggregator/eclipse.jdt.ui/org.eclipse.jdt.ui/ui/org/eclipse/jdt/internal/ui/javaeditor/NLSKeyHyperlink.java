@@ -74,7 +74,7 @@ public class NLSKeyHyperlink implements IHyperlink {
 
 	/**
 	 * Creates a new NLS key hyperlink.
-	 * 
+	 *
 	 * @param region the region of the link
 	 * @param keyName the name of the key
 	 * @param ref the accessor class reference
@@ -117,7 +117,7 @@ public class NLSKeyHyperlink implements IHyperlink {
 
 	/**
 	 * Calculates the region of the NLS key in the properties file and reveals it in editor.
-	 * 
+	 *
 	 * @param keyName the NLS key
 	 * @param propertiesFile the properties file, or <code>null</code>
 	 * @param activeEditor the active editor part
@@ -179,8 +179,8 @@ public class NLSKeyHyperlink implements IHyperlink {
 						// test whether it's the key
 						IHyperlink[] hyperlinks= detector.detectHyperlinks(null, region, false);
 						if (hyperlinks != null) {
-							for (int i= 0; i < hyperlinks.length; i++) {
-								IRegion hyperlinkRegion= hyperlinks[i].getHyperlinkRegion();
+							for (IHyperlink hyperlink : hyperlinks) {
+								IRegion hyperlinkRegion= hyperlink.getHyperlinkRegion();
 								found= key.equals(document.get(hyperlinkRegion.getOffset(), hyperlinkRegion.getLength()));
 							}
 						} else if (document instanceof IDocumentExtension3) {
@@ -213,7 +213,7 @@ public class NLSKeyHyperlink implements IHyperlink {
 
 	/**
 	 * Shows the given message as error on the status line.
-	 * 
+	 *
 	 * @param editor the editor part
 	 * @param message message to be displayed
 	 */
@@ -236,7 +236,7 @@ public class NLSKeyHyperlink implements IHyperlink {
 
 	/**
 	 * Shows error message in status line if opening the properties file in editor fails.
-	 * 
+	 *
 	 * @param propertiesFile the propertiesFile
 	 * @param editor the editor part
 	 */

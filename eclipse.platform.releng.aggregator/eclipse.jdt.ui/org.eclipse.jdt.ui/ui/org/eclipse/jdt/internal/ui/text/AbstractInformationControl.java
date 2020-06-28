@@ -43,12 +43,16 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
+import org.eclipse.core.commands.Command;
+import org.eclipse.core.expressions.Expression;
+
 import org.eclipse.core.runtime.CoreException;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.bindings.TriggerSequence;
+import org.eclipse.jface.commands.ActionHandler;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.PopupDialog;
@@ -69,12 +73,11 @@ import org.eclipse.jface.text.IInformationControlExtension2;
 
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchCommandConstants;
+import org.eclipse.ui.LegacyHandlerSubmissionExpression;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.commands.ActionHandler;
-import org.eclipse.ui.commands.HandlerSubmission;
-import org.eclipse.ui.commands.ICommand;
-import org.eclipse.ui.commands.ICommandManager;
-import org.eclipse.ui.commands.Priority;
+import org.eclipse.ui.commands.ICommandService;
+import org.eclipse.ui.handlers.IHandlerActivation;
+import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.keys.IBindingService;
 
 import org.eclipse.jdt.core.IJavaElement;
@@ -116,12 +119,12 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 			}
 			return out.toArray();
 		}
-		
+
 		@Override
 		public boolean select(Viewer viewer, Object parentElement, Object element) {
 			return selectTreePath(viewer, new TreePath(new Object[] { parentElement }), element);
 		}
-		
+
 		public boolean selectTreePath(Viewer viewer, TreePath parentPath, Object element) {
 			// Avoid endless loops, see https://bugs.eclipse.org/395202 :
 			// Cut off children of elements that are shown repeatedly.
@@ -130,7 +133,7 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 					return false;
 				}
 			}
-			
+
 			JavaElementPrefixPatternMatcher matcher= getMatcher();
 			if (matcher == null || !(viewer instanceof TreeViewer))
 				return true;
@@ -151,9 +154,11 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 				Object[] children= contentProvider instanceof ITreePathContentProvider
 						? ((ITreePathContentProvider) contentProvider).getChildren(elementPath)
 						: ((ITreeContentProvider) contentProvider).getChildren(element);
-				for (int i= 0; i < children.length; i++)
-					if (selectTreePath(viewer, elementPath, children[i]))
+				for (Object child : children) {
+					if (selectTreePath(viewer, elementPath, child)) {
 						return true;
+					}
+				}
 			}
 			return false;
 		}
@@ -165,7 +170,7 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 	private TreeViewer fTreeViewer;
 	/** The current string matcher */
 	protected JavaElementPrefixPatternMatcher fPatternMatcher;
-	private ICommand fInvokingCommand;
+	private Command fInvokingCommand;
 	private TriggerSequence[] fInvokingCommandKeySequences;
 
 	/**
@@ -178,7 +183,7 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 	private CustomFiltersActionGroup fCustomFiltersActionGroup;
 
 	private IAction fShowViewMenuAction;
-	private HandlerSubmission fShowViewMenuHandlerSubmission;
+	private IHandlerActivation fShowViewMenuHandlerActivation;
 
 	/**
 	 * Field for tree style since it must be remembered by the instance.
@@ -206,8 +211,8 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 	public AbstractInformationControl(Shell parent, int shellStyle, int treeStyle, String invokingCommandId, boolean showStatusField) {
 		super(parent, shellStyle, true, true, false, true, true, null, null);
 		if (invokingCommandId != null) {
-			ICommandManager commandManager= PlatformUI.getWorkbench().getCommandSupport().getCommandManager();
-			fInvokingCommand= commandManager.getCommand(invokingCommandId);
+			ICommandService commandService= PlatformUI.getWorkbench().getService(ICommandService.class);
+			fInvokingCommand= commandService.getCommand(invokingCommandId);
 			if (fInvokingCommand != null && !fInvokingCommand.isDefined())
 				fInvokingCommand= null;
 			else
@@ -442,7 +447,7 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 	 *
 	 * @param pattern the pattern
 	 * @param update <code>true</code> if the viewer should be updated
-	 * 
+	 *
 	 * @see JavaElementPrefixPatternMatcher
 	 */
 	protected void setMatcherString(String pattern, boolean update) {
@@ -517,8 +522,7 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 		ILabelProvider labelProvider= (ILabelProvider)fTreeViewer.getLabelProvider();
 
 		// First search at same level
-		for (int i= 0; i < items.length; i++) {
-			final TreeItem item= items[i];
+		for (TreeItem item : items) {
 			IJavaElement element= (IJavaElement)item.getData();
 			if (element != null) {
 				String label= labelProvider.getText(element);
@@ -526,10 +530,8 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 					return item;
 			}
 		}
-
 		// Go one level down for each item
-		for (int i= 0; i < items.length; i++) {
-			final TreeItem item= items[i];
+		for (TreeItem item : items) {
 			TreeItem foundItem= findElement(selectItems(item.getItems(), toBeSkipped), null, false);
 			if (foundItem != null)
 				return foundItem;
@@ -546,14 +548,15 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 		// Check root elements
 		return findElement(selectItems(items[0].getParent().getItems(), items), null, false);
 	}
-	
+
 	private boolean canSkip(TreeItem item, TreeItem[] toBeSkipped) {
 		if (toBeSkipped == null)
 			return false;
-		
-		for (int i= 0; i < toBeSkipped.length; i++) {
-			if (toBeSkipped[i] == item)
+
+		for (TreeItem curr : toBeSkipped) {
+			if (curr == item) {
 				return true;
+			}
 		}
 		return false;
 	}
@@ -563,8 +566,7 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 			return items;
 
 		int j= 0;
-		for (int i= 0; i < items.length; i++) {
-			TreeItem item= items[i];
+		for (TreeItem item : items) {
 			if (!canSkip(item, toBeSkipped))
 				items[j++]= item;
 		}
@@ -669,10 +671,10 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 	 * @since 3.2
 	 */
 	protected void addHandlerAndKeyBindingSupport() {
-		// Register action with command support
-		if (fShowViewMenuHandlerSubmission == null) {
-			fShowViewMenuHandlerSubmission= new HandlerSubmission(null, getShell(), null, fShowViewMenuAction.getActionDefinitionId(), new ActionHandler(fShowViewMenuAction), Priority.MEDIUM);
-			PlatformUI.getWorkbench().getCommandSupport().addHandlerSubmission(fShowViewMenuHandlerSubmission);
+		if (fShowViewMenuHandlerActivation == null) {
+			IHandlerService handlerService= PlatformUI.getWorkbench().getService(IHandlerService.class);
+			Expression expression= new LegacyHandlerSubmissionExpression(null, getShell(), null);
+			fShowViewMenuHandlerActivation= handlerService.activateHandler(fShowViewMenuAction.getActionDefinitionId(), new ActionHandler(fShowViewMenuAction), expression);
 		}
 	}
 
@@ -682,9 +684,11 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 	 * @since 3.2
 	 */
 	protected void removeHandlerAndKeyBindingSupport() {
-		// Remove handler submission
-		if (fShowViewMenuHandlerSubmission != null)
-			PlatformUI.getWorkbench().getCommandSupport().removeHandlerSubmission(fShowViewMenuHandlerSubmission);
+		if (fShowViewMenuHandlerActivation != null) {
+			IHandlerService handlerService= PlatformUI.getWorkbench().getService(IHandlerService.class);
+			handlerService.deactivateHandler(fShowViewMenuHandlerActivation);
+			fShowViewMenuHandlerActivation= null;
+		}
 
 	}
 
@@ -768,7 +772,7 @@ public abstract class AbstractInformationControl extends PopupDialog implements 
 		getShell().removeFocusListener(listener);
 	}
 
-	final protected ICommand getInvokingCommand() {
+	final protected Command getInvokingCommand() {
 		return fInvokingCommand;
 	}
 

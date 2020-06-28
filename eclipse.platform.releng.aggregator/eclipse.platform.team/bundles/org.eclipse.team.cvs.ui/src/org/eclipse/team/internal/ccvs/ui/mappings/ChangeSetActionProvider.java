@@ -69,7 +69,7 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 		}
 
 		/* package */void createChangeSet(IDiff[] diffs) {
-            ActiveChangeSet set =  getChangeSetCapability().createChangeSet(getConfiguration(), diffs);
+			ActiveChangeSet set =  getChangeSetCapability().createChangeSet(getConfiguration(), diffs);
 			if (set != null) {
 				getActiveChangeSetManager().add(set);
 			}
@@ -83,8 +83,8 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 	}
 
 	/**
-	 * Escape a string so it can be used as an action text without '&'
-	 * being interpreted as a mnemonic. Specifically, turn each '&' into '&&'.
+	 * Escape a string so it can be used as an action text without '&amp;'
+	 * being interpreted as a mnemonic. Specifically, turn each '&amp;' into '&amp;&amp;'.
 	 */
 	/* package */static String escapeActionText(String x) {
 		// Loosely based on org.eclipse.jface.action.LegacyActionTools#removeMnemonics
@@ -93,7 +93,7 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 			return x;
 
 		int len = x.length();
-		StringBuffer sb = new StringBuffer(2 * len + 1);
+		StringBuilder sb = new StringBuilder(2 * len + 1);
 		int doneIndex = 0;
 		while (ampersandIndex != -1) {
 			sb.append(x.substring(doneIndex, ampersandIndex));
@@ -110,8 +110,8 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 
 		private final ActiveChangeSet set;
 
-        public AddToChangeSetAction(ISynchronizePageConfiguration configuration, ActiveChangeSet set, ISelection selection) {
-            super(set == null ? TeamUIMessages.ChangeSetActionGroup_2 : escapeActionText(set.getTitle()), configuration); 
+		public AddToChangeSetAction(ISynchronizePageConfiguration configuration, ActiveChangeSet set, ISelection selection) {
+			super(set == null ? TeamUIMessages.ChangeSetActionGroup_2 : escapeActionText(set.getTitle()), configuration); 
 			this.set = set;
 			selectionChanged(selection);
 		}
@@ -124,8 +124,8 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 			} else {
 				ChangeSet[] sets = getActiveChangeSetManager().getSets();
 				IResource[] resources = getResources(diffArray);
-				for (int i = 0; i < sets.length; i++) {
-					ActiveChangeSet activeSet = (ActiveChangeSet) sets[i];
+				for (ChangeSet s : sets) {
+					ActiveChangeSet activeSet = (ActiveChangeSet) s;
 					activeSet.remove(resources);
 				}
 			}
@@ -140,13 +140,10 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 
 	private abstract class ChangeSetAction extends BaseSelectionListenerAction {
 
-        public ChangeSetAction(String title, ISynchronizePageConfiguration configuration) {
+		public ChangeSetAction(String title, ISynchronizePageConfiguration configuration) {
 			super(title);
 		}
 
-        /* (non-Javadoc)
-         * @see org.eclipse.ui.actions.BaseSelectionListenerAction#updateSelection(org.eclipse.jface.viewers.IStructuredSelection)
-		 */
 		@Override
 		protected boolean updateSelection(IStructuredSelection selection) {
 			return getSelectedSet() != null;
@@ -175,8 +172,8 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 		@Override
 		public void run() {
 			ActiveChangeSet set = getSelectedSet();
-            if (set == null) return;
-            getChangeSetCapability().editChangeSet(internalGetSynchronizePageConfiguration(), set);
+			if (set == null) return;
+			getChangeSetCapability().editChangeSet(internalGetSynchronizePageConfiguration(), set);
 		}
 	}
 
@@ -191,8 +188,8 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 			IDiff[] diffArray = getLocalChanges(getStructuredSelection());
 			ChangeSet[] sets = getActiveChangeSetManager().getSets();
 			IResource[] resources = getResources(diffArray);
-			for (int i = 0; i < sets.length; i++) {
-				ActiveChangeSet activeSet = (ActiveChangeSet) sets[i];
+			for (ChangeSet set : sets) {
+				ActiveChangeSet activeSet = (ActiveChangeSet) set;
 				activeSet.remove(resources);
 			}
 		}
@@ -249,7 +246,7 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 		public void run() {
 			int sortCriteria = getSortCriteria(internalGetSynchronizePageConfiguration());
 			if (isChecked() && sortCriteria != criteria) {
-			    setSortCriteria(internalGetSynchronizePageConfiguration(), criteria);
+				setSortCriteria(internalGetSynchronizePageConfiguration(), criteria);
 				update();
 				((SynchronizePageConfiguration)internalGetSynchronizePageConfiguration()).getPage().getViewer().refresh();
 			}
@@ -260,7 +257,7 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 		}
 	}
 
-    public static int getSortCriteria(ISynchronizePageConfiguration configuration) {
+	public static int getSortCriteria(ISynchronizePageConfiguration configuration) {
 		int sortCriteria = ChangeSetSorter.DATE;
 		if (configuration != null) {
 			Object o = configuration.getProperty(P_LAST_COMMENTSORT);
@@ -339,8 +336,7 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 
 	private IResource[] getResources(IDiff[] diffArray) {
 		List<IResource> result = new ArrayList<>();
-		for (int i = 0; i < diffArray.length; i++) {
-			IDiff diff = diffArray[i];
+		for (IDiff diff : diffArray) {
 			IResource resource = ResourceDiffTree.getResourceFor(diff);
 			if (resource != null) {
 				result.add(resource);
@@ -395,8 +391,8 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 		createChangeSet.selectionChanged(selection);
 		manager.add(createChangeSet);
 		manager.add(new Separator());
-		for (int i = 0; i < sets.length; i++) {
-			ActiveChangeSet set = (ActiveChangeSet) sets[i];
+		for (ChangeSet s : sets) {
+			ActiveChangeSet set = (ActiveChangeSet) s;
 			AddToChangeSetAction action = new AddToChangeSetAction(
 					getSynchronizePageConfiguration(), set, selection);
 			manager.add(action);
@@ -439,7 +435,7 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 	}
 
 	public ChangeSetCapability getChangeSetCapability() {
-        ISynchronizeParticipant participant = getSynchronizePageConfiguration().getParticipant();
+		ISynchronizeParticipant participant = getSynchronizePageConfiguration().getParticipant();
 		if (participant instanceof IChangeSetProvider) {
 			IChangeSetProvider provider = (IChangeSetProvider) participant;
 			return provider.getChangeSetCapability();
@@ -461,13 +457,9 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 			ITreeSelection ts = (ITreeSelection) selection;
 			TreePath[] paths = ts.getPaths();
 			List<IDiff> result = new ArrayList<>();
-			for (int i = 0; i < paths.length; i++) {
-				TreePath path = paths[i];
+			for (TreePath path : paths) {
 				IDiff[] diffs = getLocalChanges(path);
-				for (int j = 0; j < diffs.length; j++) {
-					IDiff diff = diffs[j];
-					result.add(diff);
-				}
+				Collections.addAll(result, diffs);
 			}
 			return result.toArray(new IDiff[result.size()]);
 		}
@@ -492,10 +484,11 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 		IDiff[] diffArray = getLocalChanges(selection);
 		ChangeSet[] activeChangeSets = getActiveChangeSetManager().getSets();
 		IResource[] resources = getResources(diffArray);
-		for (int i = 0; i < activeChangeSets.length; i++) {
-			for (int j = 0; j < resources.length; j++) {
-				if (activeChangeSets[i].contains(resources[j]))
+		for (ChangeSet activeChangeSet : activeChangeSets) {
+			for (IResource resource : resources) {
+				if (activeChangeSet.contains(resource)) {
 					return false;
+				}
 			}
 		}
 		return true;
@@ -505,8 +498,7 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 		if (selection instanceof ITreeSelection) {
 			ITreeSelection ts = (ITreeSelection) selection;
 			TreePath[] paths = ts.getPaths();
-			for (int i = 0; i < paths.length; i++) {
-				TreePath path = paths[i];
+			for (TreePath path : paths) {
 				if (!containsOnlyLocalChanges(path)) {
 					return false;
 				}
@@ -605,11 +597,11 @@ public class ChangeSetActionProvider extends ResourceModelActionProvider {
 		super.setContext(context);
 		if (context != null) {
 			if (editChangeSet != null)
-		        editChangeSet.selectionChanged((IStructuredSelection)getContext().getSelection());
+				editChangeSet.selectionChanged((IStructuredSelection)getContext().getSelection());
 			if (removeChangeSet != null)
-	            removeChangeSet.selectionChanged((IStructuredSelection)getContext().getSelection());
+				removeChangeSet.selectionChanged((IStructuredSelection)getContext().getSelection());
 			if (makeDefault != null)
-		        makeDefault.selectionChanged((IStructuredSelection)getContext().getSelection());
+				makeDefault.selectionChanged((IStructuredSelection)getContext().getSelection());
 		}
 	}
 

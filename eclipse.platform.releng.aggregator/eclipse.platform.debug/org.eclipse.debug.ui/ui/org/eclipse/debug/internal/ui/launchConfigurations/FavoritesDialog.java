@@ -13,7 +13,9 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.ui.launchConfigurations;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -51,8 +53,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Dialog for organizing favorite launch configurations
@@ -153,8 +153,8 @@ public class FavoritesDialog extends TrayDialog {
 		sfd.open();
 		Object[] selection = sfd.getResult();
 		if (selection != null) {
-			for (int i = 0; i < selection.length; i++) {
-				getFavorites().add((ILaunchConfiguration) selection[i]);
+			for (Object s : selection) {
+				getFavorites().add((ILaunchConfiguration) s);
 			}
 			updateStatus();
 		}
@@ -182,7 +182,7 @@ public class FavoritesDialog extends TrayDialog {
 
 	@Override
 	protected Point getInitialSize() {
-		return new Point(350, 400);
+		return new Point(450, 500);
 	}
 
 	/**
@@ -201,8 +201,7 @@ public class FavoritesDialog extends TrayDialog {
 		List<?> selList = sel.toList();
 		Object[] movedFavs= new Object[getFavorites().size()];
 		int i;
-		for (Iterator<?> favs = selList.iterator(); favs.hasNext();) {
-			Object config = favs.next();
+		for (Object config : selList) {
 			i= getFavorites().indexOf(config);
 			movedFavs[i + direction]= config;
 		}
@@ -248,17 +247,17 @@ public class FavoritesDialog extends TrayDialog {
 	/**
 	 * Returns a label to use for launch mode with accelerators removed.
 	 *
-     * @return label to use for launch mode with accelerators removed
-     */
-    private String getModeLabel() {
-        return DebugUIPlugin.removeAccelerators(fHistory.getLaunchGroup().getLabel());
-    }
+	 * @return label to use for launch mode with accelerators removed
+	 */
+	private String getModeLabel() {
+		return DebugUIPlugin.removeAccelerators(fHistory.getLaunchGroup().getLabel());
+	}
 
-    /**
-     * Creates the main area of the dialog
-     * @param parent the parent to add this content to
-     */
-    protected void createFavoritesArea(Composite parent) {
+	/**
+	 * Creates the main area of the dialog
+	 * @param parent the parent to add this content to
+	 */
+	protected void createFavoritesArea(Composite parent) {
 		Composite topComp = SWTFactory.createComposite(parent, parent.getFont(), 2, 1, GridData.FILL_BOTH, 0, 0);
 		SWTFactory.createLabel(topComp, LaunchConfigurationsMessages.FavoritesDialog_2, 2);
 		fFavoritesTable = createTable(topComp, new FavoritesContentProvider());
@@ -326,9 +325,7 @@ public class FavoritesDialog extends TrayDialog {
 	 * Copies the array into the list
 	 */
 	protected void addAll(ILaunchConfiguration[] array, List<ILaunchConfiguration> list) {
-		for (int i = 0; i < array.length; i++) {
-			list.add(array[i]);
-		}
+		Collections.addAll(list, array);
 	}
 
 	/**
@@ -381,10 +378,8 @@ public class FavoritesDialog extends TrayDialog {
 
 				int taskSize = Math.abs(initial.length-current.size());//get task size
 				monitor.beginTask(LaunchConfigurationsMessages.FavoritesDialog_8, taskSize);//and set it
-
 				// removed favorites
-				for (int i = 0; i < initial.length; i++) {
-					ILaunchConfiguration configuration = initial[i];
+				for (ILaunchConfiguration configuration : initial) {
 					if (!current.contains(configuration)) {
 						// remove fav attributes
 						try {
@@ -451,15 +446,15 @@ public class FavoritesDialog extends TrayDialog {
 		super.okPressed();
 	}
 
-    @Override
+	@Override
 	protected IDialogSettings getDialogBoundsSettings() {
-    	 IDialogSettings settings = DebugUIPlugin.getDefault().getDialogSettings();
-         IDialogSettings section = settings.getSection(getDialogSettingsSectionName());
-         if (section == null) {
-             section = settings.addNewSection(getDialogSettingsSectionName());
-         }
-         return section;
-    }
+		IDialogSettings settings = DebugUIPlugin.getDefault().getDialogSettings();
+		IDialogSettings section = settings.getSection(getDialogSettingsSectionName());
+		if (section == null) {
+			section = settings.addNewSection(getDialogSettingsSectionName());
+		}
+		return section;
+	}
 
 	/**
 	 * Returns the name of the section that this dialog stores its settings in

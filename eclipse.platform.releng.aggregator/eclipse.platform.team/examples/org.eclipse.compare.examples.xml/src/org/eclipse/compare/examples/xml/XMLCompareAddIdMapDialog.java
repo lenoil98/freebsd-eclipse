@@ -112,11 +112,11 @@ public class XMLCompareAddIdMapDialog extends StatusDialog {
 			status.setError(XMLCompareMessages.XMLCompareAddIdMapDialog_error_invalidname); 
 		else if ( (!fEdit && (fIdMaps.containsKey(newText) || fIdMapsInternal.containsKey(newText)) )
 					|| (fEdit && !newText.equals(fIdMap.getName()) && (fIdMaps.containsKey(newText) || fIdMapsInternal.containsKey(newText)) )
-				 )
+				)
 			status.setError(XMLCompareMessages.XMLCompareAddIdMapDialog_error_idmapExists); 
 		newText= fIdMapExtText.getText().toLowerCase();
 		if (newText.length() > 0) {
-			if (newText.indexOf(".") > -1) //$NON-NLS-1$
+			if (newText.contains(".")) //$NON-NLS-1$
 				status.setError(XMLCompareMessages.XMLCompareAddIdMapDialog_error_extfullstop); 
 			else if (fIdExtensionToName.containsKey(newText) && !fIdExtensionToName.get(newText).equals(fIdMap.getName()))
 				status.setError(MessageFormat.format("{0} {1}", XMLCompareMessages.XMLCompareAddIdMapDialog_error_extExists,fIdExtensionToName.get(newText)));  //$NON-NLS-1$

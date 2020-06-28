@@ -15,7 +15,6 @@ package org.eclipse.ui.internal.editors.text;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.eclipse.swt.SWT;
@@ -161,7 +160,7 @@ public class AccessibilityPreferencePage extends PreferencePage implements IWork
 		@Override
 		public IStatus validate(Object value) {
 			StatusInfo status= new StatusInfo();
-			if (value instanceof String && ((String)value).length() == 0) {
+			if (value instanceof String && ((String)value).isEmpty()) {
 				status.setError(TextEditorMessages.TextEditorPreferencePage_emptyInput);
 				return status;
 			}
@@ -224,8 +223,7 @@ public class AccessibilityPreferencePage extends PreferencePage implements IWork
 
 		public int getIndex(EnumValue enumValue) {
 			int i= 0;
-			for (Iterator<EnumValue> it= fItems.iterator(); it.hasNext();) {
-				EnumValue ev= it.next();
+			for (EnumValue ev : fItems) {
 				if (ev.equals(enumValue))
 					return i;
 				i++;
@@ -240,8 +238,7 @@ public class AccessibilityPreferencePage extends PreferencePage implements IWork
 		}
 
 		public EnumValue getValueByInteger(int intValue) {
-			for (Iterator<EnumValue> it= fItems.iterator(); it.hasNext();) {
-				EnumValue e= it.next();
+			for (EnumValue e : fItems) {
 				if (e.getIntValue() == intValue)
 					return e;
 			}
@@ -260,7 +257,7 @@ public class AccessibilityPreferencePage extends PreferencePage implements IWork
 		@Override
 		public IStatus validate(Object value) {
 			StatusInfo status= new StatusInfo();
-			if (value instanceof String && ((String)value).length() == 0) {
+			if (value instanceof String && ((String)value).isEmpty()) {
 				status.setError(TextEditorMessages.TextEditorPreferencePage_emptyInput);
 				return status;
 			}
@@ -288,7 +285,7 @@ public class AccessibilityPreferencePage extends PreferencePage implements IWork
 		@Override
 		public IStatus validate(Object value) {
 			StatusInfo status= new StatusInfo();
-			if (value instanceof String && ((String)value).length() == 0) {
+			if (value instanceof String && ((String)value).isEmpty()) {
 				status.setError(TextEditorMessages.TextEditorPreferencePage_emptyInput);
 				return status;
 			}
@@ -443,8 +440,7 @@ public class AccessibilityPreferencePage extends PreferencePage implements IWork
 
 	private void initializeFields() {
 
-		for (Iterator<Initializer> it= fInitializers.iterator(); it.hasNext();) {
-			Initializer initializer= it.next();
+		for (Initializer initializer : fInitializers) {
 			initializer.initialize();
 		}
 
@@ -467,8 +463,7 @@ public class AccessibilityPreferencePage extends PreferencePage implements IWork
 
 		initializeFields();
 
-		for (Iterator<SelectionListener> iterator= fMasterSlaveListeners.iterator(); iterator.hasNext();) {
-			SelectionListener listener= iterator.next();
+		for (SelectionListener listener : fMasterSlaveListeners) {
 			listener.widgetSelected(null);
 		}
 
@@ -517,16 +512,16 @@ public class AccessibilityPreferencePage extends PreferencePage implements IWork
 		indent(slaves[0]);
 
 		boolean masterState= fOverlayStore.getBoolean(preference.getKey());
-		for (int i= 0; i < slaves.length; i++) {
-			slaves[i].setEnabled(masterState);
+		for (Control slave : slaves) {
+			slave.setEnabled(masterState);
 		}
 
 		SelectionListener listener= new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				boolean state= master.getSelection();
-				for (int i= 0; i < slaves.length; i++) {
-					slaves[i].setEnabled(state);
+				for (Control slave : slaves) {
+					slave.setEnabled(state);
 				}
 			}
 
@@ -573,7 +568,7 @@ public class AccessibilityPreferencePage extends PreferencePage implements IWork
 				page.setErrorMessage(null);
 				break;
 			default:
-				if (message.length() == 0) {
+				if (message.isEmpty()) {
 					message= null;
 				}
 				page.setMessage(null);

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -81,6 +81,7 @@ import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.Viewer;
 
+import org.eclipse.jface.text.MultiStringMatcher.Match;
 import org.eclipse.jface.text.hyperlink.HyperlinkManager;
 import org.eclipse.jface.text.hyperlink.HyperlinkManager.DETECTION_STRATEGY;
 import org.eclipse.jface.text.hyperlink.IHyperlinkDetector;
@@ -112,7 +113,7 @@ import org.eclipse.jface.text.projection.ChildDocumentManager;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class TextViewer extends Viewer implements
-					ITextViewer, ITextViewerExtension, ITextViewerExtension2, ITextViewerExtension4, ITextViewerExtension6, ITextViewerExtension7, ITextViewerExtension8,
+		ITextViewer, ITextViewerExtension, ITextViewerExtension2, ITextViewerExtension4, ITextViewerExtension6, ITextViewerExtension7, ITextViewerExtension8, ITextViewerExtension9,
 					IEditingSupportRegistry, ITextOperationTarget, ITextOperationTargetExtension,
 					IWidgetTokenOwner, IWidgetTokenOwnerExtension, IPostSelectionProvider {
 
@@ -2216,13 +2217,13 @@ public class TextViewer extends Viewer implements
 					return true;
 				}
 
-		   } else {
-			   fWidgetTokenKeeper= requester;
-			   return true;
-		   }
-	   }
-	   return false;
-   }
+			} else {
+				fWidgetTokenKeeper= requester;
+				return true;
+			}
+		}
+		return false;
+	}
 
 	@Override
 	public void releaseWidgetToken(IWidgetTokenKeeper tokenKeeper) {
@@ -2232,6 +2233,21 @@ public class TextViewer extends Viewer implements
 
 
 	//---- Selection
+
+	/**
+	 * Caches the selection value. Is only modified from inside UI Thread. Can be accessed from any
+	 * thread.
+	 */
+	private volatile ITextSelection cachedSelection= TextSelection.emptySelection();
+
+	private void updateSelectionCache() {
+		cachedSelection= computeSelection();
+	}
+
+	@Override
+	public ITextSelection getLastKnownSelection() {
+		return cachedSelection;
+	}
 
 	@Override
 	public Point getSelectedRange() {
@@ -2409,6 +2425,12 @@ public class TextViewer extends Viewer implements
 
 	@Override
 	public ISelection getSelection() {
+		final ITextSelection res= computeSelection();
+		cachedSelection= res;
+		return res;
+	}
+
+	private ITextSelection computeSelection() {
 		if (fTextWidget != null && fTextWidget.getBlockSelection()) {
 			int[] ranges= fTextWidget.getSelectionRanges();
 			int startOffset= ranges[0];
@@ -2491,7 +2513,7 @@ public class TextViewer extends Viewer implements
 
 		if (fPostSelectionChangedListeners != null)  {
 			fPostSelectionChangedListeners.remove(listener);
-			if (fPostSelectionChangedListeners.size() == 0)
+			if (fPostSelectionChangedListeners.isEmpty())
 				fPostSelectionChangedListeners= null;
 		}
 	}
@@ -2573,6 +2595,7 @@ public class TextViewer extends Viewer implements
 	 * @param length the length of the newly selected range in the visible document
 	 */
 	protected void selectionChanged(int offset, int length) {
+		updateSelectionCache();
 		queuePostSelectionChanged(true);
 		fireSelectionChanged(offset, length);
 	}
@@ -2661,7 +2684,7 @@ public class TextViewer extends Viewer implements
 
 		if (fTextListeners != null) {
 			fTextListeners.remove(listener);
-			if (fTextListeners.size() == 0)
+			if (fTextListeners.isEmpty())
 				fTextListeners= null;
 		}
 	}
@@ -2709,7 +2732,7 @@ public class TextViewer extends Viewer implements
 
 		if (fTextInputListeners != null) {
 			fTextInputListeners.remove(listener);
-			if (fTextInputListeners.size() == 0)
+			if (fTextInputListeners.isEmpty())
 				fTextInputListeners= null;
 		}
 	}
@@ -2843,7 +2866,7 @@ public class TextViewer extends Viewer implements
 	 * @return <code>true</code> if the slave has been adapted successfully
 	 * @throws BadLocationException in case the specified range is not valid in the master document
 	 * @since 2.1
- 	 * @deprecated use <code>updateSlaveDocument</code> instead
+	 * @deprecated use <code>updateSlaveDocument</code> instead
 	 */
 	@Deprecated
 	protected boolean updateVisibleDocument(IDocument visibleDocument, int visibleRegionOffset, int visibleRegionLength) throws BadLocationException {
@@ -3633,6 +3656,7 @@ public class TextViewer extends Viewer implements
 
 		IRegion modelRange= event2ModelRange(e);
 		fDocumentCommand.setEvent(e, modelRange);
+		fDocumentCommand.fSelection= (ITextSelection) getSelection();
 		customizeDocumentCommand(fDocumentCommand);
 		if (!fDocumentCommand.fillEvent(e, modelRange)) {
 
@@ -3927,7 +3951,7 @@ public class TextViewer extends Viewer implements
 					TextTransfer plainTextTransfer= TextTransfer.getInstance();
 					String contents= (String) clipboard.getContents(plainTextTransfer, DND.CLIPBOARD);
 					String toInsert;
-					if (TextUtilities.indexOf(fDocument.getLegalLineDelimiters(), contents, 0)[0] != -1) {
+					if (MultiStringMatcher.indexOf(contents, 0, fDocument.getLegalLineDelimiters()) != null) {
 						// multi-line insertion
 						toInsert= contents;
 					} else {
@@ -4303,6 +4327,9 @@ public class TextViewer extends Viewer implements
 
 			IRegion[] occurrences= new IRegion[endLine - startLine + 1];
 
+			boolean allowEmptyPrefix= Arrays.stream(prefixes).anyMatch(String::isEmpty);
+			MultiStringMatcher prefixMatcher= MultiStringMatcher.create(prefixes);
+
 			// find all the first occurrences of prefix in the given lines
 			for (int i= 0; i < occurrences.length; i++) {
 
@@ -4310,20 +4337,28 @@ public class TextViewer extends Viewer implements
 				String text= d.get(line.getOffset(), line.getLength());
 
 				int index= -1;
-				int[] found= TextUtilities.indexOf(prefixes, text, 0);
-				if (found[0] != -1) {
+				int matchOffset= -1;
+				String matchText= ""; //$NON-NLS-1$
+				Match m= prefixMatcher.indexOf(text, 0);
+				if (m != null) {
+					matchOffset= m.getOffset();
+					matchText= m.getText();
+				} else if (allowEmptyPrefix) {
+					matchOffset= 0;
+				}
+				if (matchOffset > -1) {
 					if (ignoreWhitespace) {
-						String s= d.get(line.getOffset(), found[0]);
+						String s= d.get(line.getOffset(), matchOffset);
 						s= s.trim();
-						if (s.length() == 0)
-							index= line.getOffset() + found[0];
-					} else if (found[0] == 0)
+						if (s.isEmpty())
+							index= line.getOffset() + matchOffset;
+					} else if (matchOffset == 0)
 						index= line.getOffset();
 				}
 
 				if (index > -1) {
 					// remember where prefix is in line, so that it can be removed
-					int length= prefixes[found[1]].length();
+					int length= matchText.length();
 					if (length == 0 && !ignoreWhitespace && line.getLength() > 0) {
 						// found a non-empty line which cannot be shifted
 						return;
@@ -4412,7 +4447,7 @@ public class TextViewer extends Viewer implements
 		options.printTextFontStyle= true;
 		options.printTextForeground= true;
 		print(options);
-    }
+	}
 
 	//------ find support
 
@@ -5446,7 +5481,7 @@ public class TextViewer extends Viewer implements
 
 		if (fTextPresentationListeners != null) {
 			fTextPresentationListeners.remove(listener);
-			if (fTextPresentationListeners.size() == 0)
+			if (fTextPresentationListeners.isEmpty())
 				fTextPresentationListeners= null;
 		}
 	}

@@ -13,10 +13,11 @@
  *******************************************************************************/
 package org.eclipse.ant.tests.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 import org.eclipse.ant.core.AntCorePlugin;
 import org.eclipse.ant.core.AntCorePreferences;
@@ -48,25 +49,20 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.intro.IIntroManager;
 import org.eclipse.ui.intro.IIntroPart;
 import org.eclipse.ui.progress.UIJob;
+import org.junit.Before;
 
 /**
  * Tests for Ant core
  */
-public abstract class AbstractAntTest extends TestCase {
+public abstract class AbstractAntTest {
 
 	protected static final String BUILD_SUCCESSFUL = "BUILD SUCCESSFUL"; //$NON-NLS-1$
 	public static final String ANT_TEST_BUILD_LOGGER = "org.eclipse.ant.tests.core.support.testloggers.TestBuildLogger"; //$NON-NLS-1$
 	public static final String ANT_TEST_BUILD_LISTENER = "org.eclipse.ant.tests.core.support.testloggers.TestBuildListener"; //$NON-NLS-1$
 	private static boolean welcomeClosed = false;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#setUp()
-	 */
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		assertProject();
 		assertWelcomeScreenClosed();
 	}
@@ -135,10 +131,6 @@ public abstract class AbstractAntTest extends TestCase {
 	 */
 	protected IProject getProject() {
 		return ResourcesPlugin.getWorkspace().getRoot().getProject(ProjectHelper.PROJECT_NAME);
-	}
-
-	public AbstractAntTest(String name) {
-		super(name);
 	}
 
 	protected IFile getBuildFile(String buildFileName) {
@@ -245,10 +237,9 @@ public abstract class AbstractAntTest extends TestCase {
 	 * Returns the target with the given name in the given build file or <code>null</code> if no such target can be found.
 	 */
 	protected TargetInfo getTarget(String buildFileName, String targetName) throws CoreException {
-		TargetInfo[] infos = getTargets(buildFileName);
-		for (int i = 0, numTargets = infos.length; i < numTargets; i++) {
-			if (infos[i].getName().equals(targetName)) {
-				return infos[i];
+		for (TargetInfo info : getTargets(buildFileName)) {
+			if (info.getName().equals(targetName)) {
+				return info;
 			}
 		}
 		return null;
@@ -258,7 +249,7 @@ public abstract class AbstractAntTest extends TestCase {
 	 * Return the log message n from the last: e.g. getLoggedMessage(0) returns the most recent message
 	 * 
 	 * @param n
-	 *            message index
+	 *              message index
 	 * @return the nth last message
 	 */
 	protected String getLoggedMessage(int n) {

@@ -15,6 +15,7 @@ package org.eclipse.ltk.ui.refactoring.model;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -144,10 +145,9 @@ public abstract class AbstractResourceMappingMerger extends ResourceMappingMerge
 	 */
 	private static IProject[] getAffectedProjects(final RefactoringHistory history) {
 		final Set<IProject> set= new HashSet<>();
-		final RefactoringDescriptorProxy[] proxies= history.getDescriptors();
 		final IWorkspaceRoot root= ResourcesPlugin.getWorkspace().getRoot();
-		for (int index= 0; index < proxies.length; index++) {
-			final String name= proxies[index].getProject();
+		for (RefactoringDescriptorProxy proxy : history.getDescriptors()) {
+			final String name= proxy.getProject();
 			if (name != null && !"".equals(name)) //$NON-NLS-1$
 				set.add(root.getProject(name));
 			else
@@ -165,13 +165,7 @@ public abstract class AbstractResourceMappingMerger extends ResourceMappingMerge
 	 */
 	private static Shell getDialogShell() {
 		final Shell[] shell= new Shell[] { null};
-		Display.getDefault().syncExec(new Runnable() {
-
-			@Override
-			public final void run() {
-				shell[0]= getActiveShell();
-			}
-		});
+		Display.getDefault().syncExec(() -> shell[0]= getActiveShell());
 		return shell[0];
 	}
 
@@ -225,21 +219,17 @@ public abstract class AbstractResourceMappingMerger extends ResourceMappingMerge
 				}
 				if (execute) {
 					final Shell shell= getDialogShell();
-					shell.getDisplay().syncExec(new Runnable() {
-
-						@Override
-						public final void run() {
-							if (MessageDialog.openQuestion(shell, RefactoringUIMessages.RefactoringWizard_refactoring, RefactoringUIMessages.AbstractRefactoringModelMerger_accept_question)) {
-								final RefactoringHistoryMergeWizard wizard= new RefactoringHistoryModelMergeWizard();
-								int result= Window.OK;
-								try {
-									wizard.setConfiguration(new RefactoringHistoryModelMergeConfiguration((projects != null && projects.length == 1) ? projects[0] : null));
-									wizard.setInput(history);
-									result= new WizardDialog(shell, wizard).open();
-								} finally {
-									if (result != Window.CANCEL)
-										wizard.resolveConflicts(context);
-								}
+					shell.getDisplay().syncExec(() -> {
+						if (MessageDialog.openQuestion(shell, RefactoringUIMessages.RefactoringWizard_refactoring, RefactoringUIMessages.AbstractRefactoringModelMerger_accept_question)) {
+							final RefactoringHistoryMergeWizard wizard= new RefactoringHistoryModelMergeWizard();
+							int result= Window.OK;
+							try {
+								wizard.setConfiguration(new RefactoringHistoryModelMergeConfiguration((projects != null && projects.length == 1) ? projects[0] : null));
+								wizard.setInput(history);
+								result= new WizardDialog(shell, wizard).open();
+							} finally {
+								if (result != Window.CANCEL)
+									wizard.resolveConflicts(context);
 							}
 						}
 					});
@@ -292,12 +282,10 @@ public abstract class AbstractResourceMappingMerger extends ResourceMappingMerge
 	 * @return the diffs, or an empty array
 	 */
 	private IDiff[] getDiffs(final IMergeContext context) {
-		final ResourceMapping[] mappings= context.getScope().getMappings(fModelProvider.getDescriptor().getId());
 		final Set<IDiff> set= new HashSet<>();
-		for (int index= 0; index < mappings.length; index++) {
-			final IDiff[] diffs= context.getDiffTree().getDiffs(context.getScope().getTraversals(mappings[index]));
-			for (int offset= 0; offset < diffs.length; offset++)
-				set.add(diffs[offset]);
+		for (ResourceMapping mapping : context.getScope().getMappings(fModelProvider.getDescriptor().getId())) {
+			final IDiff[] diffs= context.getDiffTree().getDiffs(context.getScope().getTraversals(mapping));
+			set.addAll(Arrays.asList(diffs));
 		}
 		return set.toArray(new IDiff[set.size()]);
 	}
@@ -320,8 +308,7 @@ public abstract class AbstractResourceMappingMerger extends ResourceMappingMerge
 		final Set<RefactoringDescriptor> result= new HashSet<>();
 		try {
 			monitor.beginTask(RefactoringUIMessages.RefactoringModelMerger_retrieving_refactorings, diffs.length * 2);
-			for (int index= 0; index < diffs.length; index++) {
-				final IDiff diff= diffs[index];
+			for (IDiff diff : diffs) {
 				if (diff instanceof IThreeWayDiff) {
 					final IThreeWayDiff threeWay= (IThreeWayDiff) diff;
 					final Set<RefactoringDescriptor> localDescriptors= new HashSet<>();
@@ -381,9 +368,9 @@ public abstract class AbstractResourceMappingMerger extends ResourceMappingMerge
 				try {
 					stream= storage.getContents();
 					final RefactoringHistory history= RefactoringHistoryService.getInstance().readRefactoringHistory(stream, RefactoringDescriptor.MULTI_CHANGE);
-					final RefactoringDescriptorProxy[] proxies= history.getDescriptors();
-					for (int offset= 0; offset < proxies.length; offset++)
-						descriptors.add(proxies[offset].requestDescriptor(null));
+					for (RefactoringDescriptorProxy proxy : history.getDescriptors()) {
+						descriptors.add(proxy.requestDescriptor(null));
+					}
 				} catch (CoreException exception) {
 					RefactoringUIPlugin.log(exception);
 				} finally {

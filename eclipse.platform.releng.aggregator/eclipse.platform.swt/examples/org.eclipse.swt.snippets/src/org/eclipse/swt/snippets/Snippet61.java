@@ -28,6 +28,7 @@ public class Snippet61 {
 public static void main (String [] args) {
 	Display display = new Display ();
 	Shell shell = new Shell (display);
+	shell.setText("Snippet 61");
 	shell.setLayout (new FillLayout ());
 	final Tree tree = new Tree (shell, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
 	for (int i=0; i<4; i++) {
@@ -44,14 +45,14 @@ public static void main (String [] args) {
 	}
 	tree.addListener (SWT.Selection, e -> {
 		String string = "";
-		TreeItem [] selection = tree.getSelection ();
-		for (int i=0; i<selection.length; i++) string += selection [i] + " ";
+		for (TreeItem item : tree.getSelection ())
+			string += item + " ";
 		System.out.println ("Selection={" + string + "}");
 	});
 	tree.addListener (SWT.DefaultSelection, e -> {
 		String string = "";
-		TreeItem [] selection = tree.getSelection ();
-		for (int i=0; i<selection.length; i++) string += selection [i] + " ";
+		for (TreeItem item : tree.getSelection ())
+			string += item + " ";
 		System.out.println ("DefaultSelection={" + string + "}");
 	});
 	tree.addListener (SWT.Expand, e -> System.out.println ("Expand={" + e.item + "}"));

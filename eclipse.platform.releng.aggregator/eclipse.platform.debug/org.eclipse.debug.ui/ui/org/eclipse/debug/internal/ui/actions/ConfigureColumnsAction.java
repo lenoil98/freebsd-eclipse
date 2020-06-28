@@ -14,6 +14,7 @@
 package org.eclipse.debug.internal.ui.actions;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,24 +45,15 @@ public class ConfigureColumnsAction extends Action implements IUpdate {
 
 	class ColumnContentProvider implements IStructuredContentProvider {
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-		 */
 		@Override
 		public Object[] getElements(Object inputElement) {
 			return ((IColumnPresentation)inputElement).getAvailableColumns();
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IContentProvider#dispose()
-		 */
 		@Override
 		public void dispose() {
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-		 */
 		@Override
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		}
@@ -111,17 +103,11 @@ public class ConfigureColumnsAction extends Action implements IUpdate {
 		fViewer = viewer;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.texteditor.IUpdate#update()
-	 */
 	@Override
 	public void update() {
 		setEnabled(fViewer.isShowColumns());
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.Action#run()
-	 */
 	@Override
 	public void run() {
 		ListSelectionDialog dialog = new ListSelectionDialog(
@@ -133,9 +119,7 @@ public class ConfigureColumnsAction extends Action implements IUpdate {
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IDebugHelpContextIds.CONFIGURE_COLUMNS_DIALOG);
 		String[] visibleColumns = fViewer.getVisibleColumns();
 		List<String> initialSelection = new ArrayList<>(visibleColumns.length);
-		for (int i = 0; i < visibleColumns.length; i++) {
-			initialSelection.add(visibleColumns[i]);
-		}
+		Collections.addAll(initialSelection, visibleColumns);
 		dialog.setTitle(ActionMessages.ConfigureColumnsAction_2);
 		dialog.setInitialElementSelections(initialSelection);
 		if (dialog.open() == Window.OK) {

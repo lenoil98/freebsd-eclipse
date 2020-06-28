@@ -15,6 +15,7 @@
 package org.eclipse.e4.ui.progress.internal;
 
 import java.net.URL;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -56,8 +57,6 @@ import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.osgi.framework.FrameworkUtil;
-
-import com.ibm.icu.text.DateFormat;
 
 
 /**
@@ -139,15 +138,15 @@ public class ProgressInfoItem extends Composite {
 
 	static {
 		ImageTools.getInstance().putIntoRegistry(STOP_IMAGE_KEY,
-		        "elcl16/progress_stop.png");//$NON-NLS-1$
+				"elcl16/progress_stop.png");//$NON-NLS-1$
 		ImageTools.getInstance().putIntoRegistry(DISABLED_STOP_IMAGE_KEY,
-		        "dlcl16/progress_stop.png");//$NON-NLS-1$
+				"dlcl16/progress_stop.png");//$NON-NLS-1$
 		ImageTools.getInstance().putIntoRegistry(DEFAULT_JOB_KEY,
-		        "progress/progress_task.png"); //$NON-NLS-1$
+				"progress/progress_task.png"); //$NON-NLS-1$
 		ImageTools.getInstance().putIntoRegistry(CLEAR_FINISHED_JOB_KEY,
-		        "elcl16/progress_rem.png"); //$NON-NLS-1$
+				"elcl16/progress_rem.png"); //$NON-NLS-1$
 		ImageTools.getInstance().putIntoRegistry(
-		        DISABLED_CLEAR_FINISHED_JOB_KEY, "dlcl16/progress_rem.png"); //$NON-NLS-1$
+				DISABLED_CLEAR_FINISHED_JOB_KEY, "dlcl16/progress_rem.png"); //$NON-NLS-1$
 
 		// Mac has different Gamma value
 		int shift = Util.isMac() ? -25 : -10;
@@ -157,22 +156,24 @@ public class ProgressInfoItem extends Composite {
 
 		// Determine a dark color by shifting the list color
 		RGB darkRGB = new RGB(Math.max(0, lightColor.getRed() + shift),
-		        Math.max(0, lightColor.getGreen() + shift), Math.max(0,
-		                lightColor.getBlue() + shift));
+				Math.max(0, lightColor.getGreen() + shift), Math.max(0,
+						lightColor.getBlue() + shift));
 		JFaceResources.getColorRegistry().put(DARK_COLOR_KEY, darkRGB);
 	}
 
 	/**
-	 * Create a new instance of the receiver with the specified parent, style
-	 * and info object/
+	 * Create a new instance of the receiver with the specified parent, style and
+	 * info object/
 	 *
-	 * @param parent
-	 * @param style
-	 * @param progressInfo
+	 * @param parent          the parent composite
+	 * @param style           the style to use for the info item's composite
+	 * @param progressInfo    the job element to represent
+	 * @param progressService service to do progress related work
+	 * @param finishedJobs    the singleton to store finished jobs which should kept
 	 */
 	public ProgressInfoItem(Composite parent, int style,
-	        JobTreeElement progressInfo, IProgressService progressService,
-	        FinishedJobs finishedJobs) {
+			JobTreeElement progressInfo, IProgressService progressService,
+			FinishedJobs finishedJobs) {
 		super(parent, style);
 		info = progressInfo;
 		this.progressService = progressService;
@@ -182,7 +183,7 @@ public class ProgressInfoItem extends Composite {
 		createChildren();
 		if (info.isJobInfo()) {
 			setToolTipText(decorateText(getMainTitle(),
-			        ((JobInfo) info).getJob()));
+					((JobInfo) info).getJob()));
 		}
 	}
 
@@ -211,6 +212,7 @@ public class ProgressInfoItem extends Composite {
 		jobImageLabel.setLayoutData(imageData);
 
 		progressLabel = new Label(this, SWT.NONE);
+		progressLabel.addListener(SWT.Resize, event -> setMainText());
 		setMainText();
 
 		actionBar = new ToolBar(this, SWT.FLAT);
@@ -381,9 +383,8 @@ public class ProgressInfoItem extends Composite {
 	/**
 	 * Get the name and status for a jobInfo
 	 *
-	 * @param jobInfo
-	 *
-	 * @return String
+	 * @param jobInfo job element to get display string for
+	 * @return display string for job
 	 */
 	public String getJobNameAndStatus(JobInfo jobInfo) {
 
@@ -704,8 +705,6 @@ public class ProgressInfoItem extends Composite {
 					IDialogConstants.VERTICAL_SPACING);
 			linkData.left = new FormAttachment(progressBar, 0, SWT.LEFT);
 			linkData.right = new FormAttachment(progressBar, 0, SWT.RIGHT);
-			// Give an initial value so as to constrain the link shortening
-			linkData.width = 20;
 
 			taskEntries.get(0).setLayoutData(linkData);
 		}
@@ -731,16 +730,12 @@ public class ProgressInfoItem extends Composite {
 						IDialogConstants.VERTICAL_SPACING);
 				linkData.left = new FormAttachment(top, 0, SWT.LEFT);
 				linkData.right = new FormAttachment(top, 0, SWT.RIGHT);
-				// Give an initial value so as to constrain the link shortening
-				linkData.width = 20;
 			} else {
 				Link previous = taskEntries.get(index - 1);
 				linkData.top = new FormAttachment(previous,
 						IDialogConstants.VERTICAL_SPACING);
 				linkData.left = new FormAttachment(previous, 0, SWT.LEFT);
 				linkData.right = new FormAttachment(previous, 0, SWT.RIGHT);
-				// Give an initial value so as to constrain the link shortening
-				linkData.width = 20;
 			}
 
 			link.setLayoutData(linkData);
@@ -770,7 +765,7 @@ public class ProgressInfoItem extends Composite {
 		Object actionProperty = linkJob
 				.getProperty(IProgressConstants.ACTION_PROPERTY);
 		Object commandProperty = linkJob
-		        .getProperty(IProgressConstants.COMMAND_PROPERTY);
+				.getProperty(IProgressConstants.COMMAND_PROPERTY);
 
 		if (actionProperty != null && commandProperty != null) {
 			// if both are specified, then use neither
@@ -793,8 +788,10 @@ public class ProgressInfoItem extends Composite {
 
 	}
 
+	/**
+	 * The action/trigger associated with this progress item should be executed.
+	 */
 	public void executeTrigger() {
-
 		Object data = link.getData(TRIGGER_KEY);
 		if (data instanceof IAction) {
 			IAction action = (IAction) data;
@@ -857,10 +854,10 @@ public class ProgressInfoItem extends Composite {
 	/**
 	 * Set the color base on the index
 	 *
-	 * @param i
+	 * @param row the item's index in presentation
 	 */
-	public void setColor(int i) {
-		currentIndex = i;
+	public void setColor(int row) {
+		currentIndex = row;
 
 		if (selected) {
 			setAllBackgrounds(getDisplay().getSystemColor(
@@ -870,7 +867,7 @@ public class ProgressInfoItem extends Composite {
 			return;
 		}
 
-		if (i % 2 == 0) {
+		if (row % 2 == 0) {
 			setAllBackgrounds(JFaceResources.getColorRegistry().get(
 					DARK_COLOR_KEY));
 		} else {
@@ -949,7 +946,7 @@ public class ProgressInfoItem extends Composite {
 	/**
 	 * Return whether or not the receiver is selected.
 	 *
-	 * @return boolean
+	 * @return receiver selected state
 	 */
 	boolean isSelected() {
 		return selected;
@@ -998,7 +995,7 @@ public class ProgressInfoItem extends Composite {
 
 	private static String decorateText(String text, Object element) {
 		String bundleId = FrameworkUtil.getBundle(element.getClass())
-		        .getSymbolicName();
+				.getSymbolicName();
 		return element == null ? text : text + " (" + bundleId + ")"; //$NON-NLS-1$//$NON-NLS-2$
 	}
 

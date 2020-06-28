@@ -16,7 +16,6 @@ package org.eclipse.team.internal.ui.history;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -63,7 +62,7 @@ public class EditionHistoryPage extends LocalHistoryPage {
 
 	private LocalResourceTypedElement localFileElement;
 	private IStructureCreator structureCreator;
-	private Map<IFileRevision, ITypedElement> editions = new HashMap<IFileRevision, ITypedElement>();
+	private Map<IFileRevision, ITypedElement> editions = new HashMap<>();
 	private ITypedElement localEdition;
 	private String name;
 
@@ -171,8 +170,7 @@ public class EditionHistoryPage extends LocalHistoryPage {
 		ITypedElement localEdition = null;
 		try {
 			localEdition = createLocalEdition(structureCreator, localFileElement, element);
-			for (int i = 0; i < revisions.length; i++) {
-				IFileRevision revision = revisions[i];
+			for (IFileRevision revision : revisions) {
 				ITypedElement edition = createEdition(structureCreator, element, new FileRevisionTypedElement(revision));
 				if (edition != null && !contentsEqual(structureCreator, localEdition, edition)) {
 					return edition;
@@ -242,11 +240,10 @@ public class EditionHistoryPage extends LocalHistoryPage {
 	private IFileRevision[] filterRevisions(ITypedElement localEdition, IFileRevision[] revisions,
 			IProgressMonitor monitor) {
 		ITypedElement previousEdition = localEdition;
-		List<IFileRevision> result = new ArrayList<IFileRevision>();
+		List<IFileRevision> result = new ArrayList<>();
 		sortDescending(revisions);
 		editions.clear();
-		for (int i = 0; i < revisions.length; i++) {
-			IFileRevision revision = revisions[i];
+		for (IFileRevision revision : revisions) {
 			ITypedElement edition = createEdition(new FileRevisionTypedElement(revision));
 			if (edition != null && !contentsEqual(structureCreator, previousEdition, edition)) {
 				editions.put(revision, edition);
@@ -381,8 +378,7 @@ public class EditionHistoryPage extends LocalHistoryPage {
 	private Object getRevisionFor(Object object) {
 		if (object == localEdition)
 			return localFileElement;
-		for (Iterator<IFileRevision> iterator = editions.keySet().iterator(); iterator.hasNext();) {
-			IFileRevision revision = iterator.next();
+		for (IFileRevision revision : editions.keySet()) {
 			if (editions.get(revision) == object) {
 				return revision;
 			}

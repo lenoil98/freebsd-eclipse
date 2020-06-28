@@ -37,6 +37,8 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 
 public class E4XMIResource extends XMIResourceImpl {
 
+	public static final String OPTION_FILTER_PERSIST_STATE = "E4_FILTER_PERSISTED_STATE"; //$NON-NLS-1$
+
 	private Map<EObject, String> objectMap = new WeakHashMap<>();
 	private Set<String> knownIds = new HashSet<>();
 
@@ -117,55 +119,20 @@ public class E4XMIResource extends XMIResourceImpl {
 
 	static final Map<String, ObjectCreator> deprecatedTypeMappings = new HashMap<>();
 	static {
-		deprecatedTypeMappings.put("OpaqueMenu", new ObjectCreator() { //$NON-NLS-1$
-
-					@Override
-					public MApplicationElement create() {
-						return OpaqueElementUtil.createOpaqueMenu();
-					}
-				});
-		deprecatedTypeMappings.put("OpaqueMenuItem", new ObjectCreator() { //$NON-NLS-1$
-
-					@Override
-					public MApplicationElement create() {
-						return OpaqueElementUtil.createOpaqueMenuItem();
-					}
-				});
-		deprecatedTypeMappings.put("OpaqueMenuSeparator", new ObjectCreator() { //$NON-NLS-1$
-
-					@Override
-					public MApplicationElement create() {
-						return OpaqueElementUtil.createOpaqueMenuSeparator();
-					}
-				});
-		deprecatedTypeMappings.put("OpaqueToolItem", new ObjectCreator() { //$NON-NLS-1$
-
-					@Override
-					public MApplicationElement create() {
-						return OpaqueElementUtil.createOpaqueToolItem();
-					}
-				});
-		deprecatedTypeMappings.put("RenderedMenu", new ObjectCreator() { //$NON-NLS-1$
-
-					@Override
-					public MApplicationElement create() {
-						return RenderedElementUtil.createRenderedMenu();
-					}
-				});
-		deprecatedTypeMappings.put("RenderedMenuItem", new ObjectCreator() { //$NON-NLS-1$
-
-					@Override
-					public MApplicationElement create() {
-						return RenderedElementUtil.createRenderedMenuItem();
-					}
-				});
-		deprecatedTypeMappings.put("RenderedToolBar", new ObjectCreator() { //$NON-NLS-1$
-
-					@Override
-					public MApplicationElement create() {
-						return RenderedElementUtil.createRenderedToolBar();
-					}
-				});
+		deprecatedTypeMappings.put("OpaqueMenu", (ObjectCreator) OpaqueElementUtil::createOpaqueMenu //$NON-NLS-1$
+				);
+		deprecatedTypeMappings.put("OpaqueMenuItem", (ObjectCreator) OpaqueElementUtil::createOpaqueMenuItem //$NON-NLS-1$
+				);
+		deprecatedTypeMappings.put("OpaqueMenuSeparator", (ObjectCreator) OpaqueElementUtil::createOpaqueMenuSeparator //$NON-NLS-1$
+				);
+		deprecatedTypeMappings.put("OpaqueToolItem", (ObjectCreator) OpaqueElementUtil::createOpaqueToolItem //$NON-NLS-1$
+				);
+		deprecatedTypeMappings.put("RenderedMenu", (ObjectCreator) RenderedElementUtil::createRenderedMenu //$NON-NLS-1$
+				);
+		deprecatedTypeMappings.put("RenderedMenuItem", (ObjectCreator) RenderedElementUtil::createRenderedMenuItem //$NON-NLS-1$
+				);
+		deprecatedTypeMappings.put("RenderedToolBar", (ObjectCreator) RenderedElementUtil::createRenderedToolBar //$NON-NLS-1$
+				);
 	}
 
 	@Override
@@ -201,11 +168,12 @@ public class E4XMIResource extends XMIResourceImpl {
 
 	/*
 	 * Create custom XML save to allow filtering of volatile UI elements.
-	 *
-	 * @generated NOT
 	 */
 	@Override
-	protected XMLSave createXMLSave() {
-		return new E4XMISave(createXMLHelper());
+	protected XMLSave createXMLSave(Map<?, ?> options) {
+		if (options != null && Boolean.TRUE.equals(options.get(OPTION_FILTER_PERSIST_STATE))) {
+			return new E4XMISave(createXMLHelper());
+		}
+		return super.createXMLSave(options);
 	}
 }

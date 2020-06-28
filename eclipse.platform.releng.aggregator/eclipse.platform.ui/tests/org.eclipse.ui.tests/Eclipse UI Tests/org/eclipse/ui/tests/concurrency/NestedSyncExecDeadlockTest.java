@@ -1,18 +1,20 @@
 /**********************************************************************
  * Copyright (c) 2004, 2017 Jeremiah Lott and others.
  *
- * This
- * program and the accompanying materials are made available under the terms of
- * the Eclipse Public License 2.0 which accompanies this distribution, and is
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   Jeremiah Lott (jeremiah.lott@timesys.com) - Initial implementation
  *   IBM Added comments, removed printlns, and incorporated into platform test suites
  **********************************************************************/
 package org.eclipse.ui.tests.concurrency;
+
+import static org.junit.Assert.fail;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -27,14 +29,15 @@ import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.actions.WorkspaceModifyOperation;
-
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * This is a regression test for a case where a recursive attempt to syncExec
  * from within code that owns a lock would cause deadlock. See bug 76378 for details.
  */
-public class NestedSyncExecDeadlockTest extends TestCase {
+public class NestedSyncExecDeadlockTest {
 
 	private class ResourceListener implements IResourceChangeListener {
 		@Override
@@ -51,10 +54,6 @@ public class NestedSyncExecDeadlockTest extends TestCase {
 
 	public NestedSyncExecDeadlockTest() {
 		super();
-	}
-
-	public NestedSyncExecDeadlockTest(String name) {
-		super(name);
 	}
 
 	public void doTest(final long timeToSleep) throws Exception {
@@ -84,8 +83,8 @@ public class NestedSyncExecDeadlockTest extends TestCase {
 		});
 	}
 
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		project = workspace.getRoot().getProject("test-deadlock");
 
 		tearDown();
@@ -97,14 +96,15 @@ public class NestedSyncExecDeadlockTest extends TestCase {
 		workspace.addResourceChangeListener(listener, IResourceChangeEvent.POST_CHANGE);
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		if (listener != null) {
 			workspace.removeResourceChangeListener(listener);
 		}
 		project.delete(true, true, null);
 	}
 
+	@Test
 	public void testDeadlock() throws Exception {
 		doTest(1000 * 30); // 30 secs almost always locks
 		if (Thread.interrupted()) {
@@ -112,6 +112,7 @@ public class NestedSyncExecDeadlockTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testOK() throws Exception {
 		doTest(0); // 0 rarely locks
 		if (Thread.interrupted()) {

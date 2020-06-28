@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013 IBM Corporation and others.
+ * Copyright (c) 2013, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,22 +13,26 @@
  *******************************************************************************/
 package org.eclipse.osgi.tests.bundles;
 
-import java.io.*;
-import java.util.HashMap;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Map;
-import java.util.jar.*;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.eclipse.osgi.launch.Equinox;
 import org.eclipse.osgi.tests.OSGiTestsActivator;
-import org.osgi.framework.*;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 
 /*
- * The framework must discard a persisted bundle when the 
+ * The framework must discard a persisted bundle when the
  * osgi.checkConfiguration configuration property is specified and equal to
  * true.
- * 
- * On a related note, if the osgi.dev configuration property is specified but 
+ *
+ * On a related note, if the osgi.dev configuration property is specified but
  * the osgi.checkConfiguration configuration property is not specified, the
  * framework must specify the osgi.checkConfiguration configuration property
  * with a value equal to true.
@@ -43,6 +47,7 @@ public class DiscardBundleTests extends AbstractBundleTests {
 
 	private File root;
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		root = OSGiTestsActivator.getContext().getDataFile(getName());
@@ -50,6 +55,7 @@ public class DiscardBundleTests extends AbstractBundleTests {
 		createBundleJar();
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		super.tearDown();
 	}
@@ -153,13 +159,6 @@ public class DiscardBundleTests extends AbstractBundleTests {
 		return manifest;
 	}
 
-	private Map<String, Object> createConfiguration() {
-		File file = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, Object> result = new HashMap<String, Object>();
-		result.put(Constants.FRAMEWORK_STORAGE, file.getAbsolutePath());
-		return result;
-	}
-
 	private void doTest(Map<String, ?> configuration, boolean discard) throws Exception {
 		doTest(configuration, discard, getDirectoryLocation());
 		doTest(configuration, discard, getJarLocation());
@@ -204,33 +203,11 @@ public class DiscardBundleTests extends AbstractBundleTests {
 		return new File(root, BUNDLE_JAR);
 	}
 
-	private void initAndStart(Equinox equinox) throws BundleException {
-		equinox.init();
-		equinox.start();
-	}
-
-	private Equinox restart(Equinox equinox, Map<String, ?> configuration) throws BundleException, InterruptedException {
+	private Equinox restart(Equinox equinox, Map<String, ?> configuration) throws BundleException {
 		stop(equinox);
 		equinox = new Equinox(configuration);
 		initAndStart(equinox);
 		return equinox;
-	}
-
-	private void stop(Equinox equinox) throws BundleException, InterruptedException {
-		equinox.stop();
-		FrameworkEvent event = equinox.waitForStop(5000);
-		assertEquals("The framework was not stopped", FrameworkEvent.STOPPED, event.getType());
-	}
-
-	private void stopQuietly(Equinox equinox) {
-		if (equinox == null)
-			return;
-		try {
-			equinox.stop();
-			equinox.waitForStop(5000);
-		} catch (Exception e) {
-			// Ignore
-		}
 	}
 
 	private void touchFile(File file) {

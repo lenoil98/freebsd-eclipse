@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,18 +16,6 @@
 /* DO NOT EDIT - your changes will be lost. */
 
 #include "os.h"
-
-#ifndef NO_CFRange
-void cacheCFRangeFields(JNIEnv *env, jobject lpObject);
-CFRange *getCFRangeFields(JNIEnv *env, jobject lpObject, CFRange *lpStruct);
-void setCFRangeFields(JNIEnv *env, jobject lpObject, CFRange *lpStruct);
-#define CFRange_sizeof() sizeof(CFRange)
-#else
-#define cacheCFRangeFields(a,b)
-#define getCFRangeFields(a,b,c) NULL
-#define setCFRangeFields(a,b,c)
-#define CFRange_sizeof() 0
-#endif
 
 #ifndef NO_CGAffineTransform
 void cacheCGAffineTransformFields(JNIEnv *env, jobject lpObject);
@@ -89,18 +77,6 @@ void setCGSizeFields(JNIEnv *env, jobject lpObject, CGSize *lpStruct);
 #define CGSize_sizeof() 0
 #endif
 
-#ifndef NO_CTParagraphStyleSetting
-void cacheCTParagraphStyleSettingFields(JNIEnv *env, jobject lpObject);
-CTParagraphStyleSetting *getCTParagraphStyleSettingFields(JNIEnv *env, jobject lpObject, CTParagraphStyleSetting *lpStruct);
-void setCTParagraphStyleSettingFields(JNIEnv *env, jobject lpObject, CTParagraphStyleSetting *lpStruct);
-#define CTParagraphStyleSetting_sizeof() sizeof(CTParagraphStyleSetting)
-#else
-#define cacheCTParagraphStyleSettingFields(a,b)
-#define getCTParagraphStyleSettingFields(a,b,c) NULL
-#define setCTParagraphStyleSettingFields(a,b,c)
-#define CTParagraphStyleSetting_sizeof() 0
-#endif
-
 #ifndef NO_NSAffineTransformStruct
 void cacheNSAffineTransformStructFields(JNIEnv *env, jobject lpObject);
 NSAffineTransformStruct *getNSAffineTransformStructFields(JNIEnv *env, jobject lpObject, NSAffineTransformStruct *lpStruct);
@@ -111,6 +87,18 @@ void setNSAffineTransformStructFields(JNIEnv *env, jobject lpObject, NSAffineTra
 #define getNSAffineTransformStructFields(a,b,c) NULL
 #define setNSAffineTransformStructFields(a,b,c)
 #define NSAffineTransformStruct_sizeof() 0
+#endif
+
+#ifndef NO_NSOperatingSystemVersion
+void cacheNSOperatingSystemVersionFields(JNIEnv *env, jobject lpObject);
+NSOperatingSystemVersion *getNSOperatingSystemVersionFields(JNIEnv *env, jobject lpObject, NSOperatingSystemVersion *lpStruct);
+void setNSOperatingSystemVersionFields(JNIEnv *env, jobject lpObject, NSOperatingSystemVersion *lpStruct);
+#define NSOperatingSystemVersion_sizeof() sizeof(NSOperatingSystemVersion)
+#else
+#define cacheNSOperatingSystemVersionFields(a,b)
+#define getNSOperatingSystemVersionFields(a,b,c) NULL
+#define setNSOperatingSystemVersionFields(a,b,c)
+#define NSOperatingSystemVersion_sizeof() 0
 #endif
 
 #ifndef NO_NSPoint

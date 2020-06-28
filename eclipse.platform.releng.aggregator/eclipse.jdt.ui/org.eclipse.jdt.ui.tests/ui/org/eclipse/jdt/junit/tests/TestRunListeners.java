@@ -68,9 +68,8 @@ public class TestRunListeners {
 		private void logElement(ITestElement elem, int indent) {
 			fLog.add(asString(elem, indent));
 			if (elem instanceof ITestElementContainer) {
-				ITestElement[] children= ((ITestElementContainer) elem).getChildren();
-				for (int i= 0; i < children.length; i++) {
-					logElement(children[i], indent + 1);
+				for (ITestElement child : ((ITestElementContainer) elem).getChildren()) {
+					logElement(child, indent + 1);
 				}
 			}
 		}
@@ -101,7 +100,7 @@ public class TestRunListeners {
 	}
 
 	public static String sessionAsString(String sessionName, ProgressState state, Result result, int indent) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append(startIndent(indent));
 		buf.append("sessionName: ").append(sessionName).append(separator(indent));
 		buf.append("state: ").append(state).append(separator(indent));
@@ -127,7 +126,7 @@ public class TestRunListeners {
 	}
 
 	public static String testCaseAsString(String methodName, String className, ProgressState state, Result result, FailureTrace trace, int indent) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append(startIndent(indent));
 		buf.append("testCaseMethod: ").append(methodName).append(separator(indent));
 		buf.append("class: ").append(className).append(separator(indent));
@@ -142,7 +141,7 @@ public class TestRunListeners {
 	}
 
 	public static String suiteAsString(String suiteName, ProgressState state, Result result, FailureTrace trace, int indent) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append(startIndent(indent));
 		buf.append("testSuiteClass: ").append(suiteName).append(separator(indent));
 		buf.append("state: ").append(state).append(separator(indent));

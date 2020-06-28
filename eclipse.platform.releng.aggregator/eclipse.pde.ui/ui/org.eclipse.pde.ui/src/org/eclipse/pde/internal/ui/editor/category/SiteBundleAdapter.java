@@ -1,20 +1,22 @@
 /*******************************************************************************
-.
-. This
-* program and the accompanying materials are made available under the terms of
-* the Eclipse Public License 2.0 which accompanies this distribution, and is
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
-*
-* Contributors:
-*   Mickael Istria (Red Hat Inc.) - 383795: <bundle...> support
-*   IBM Corporation - ongoing enhancements
+ * Copyright (c) 2013, 2015 Red Hat Inc. and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *   Mickael Istria (Red Hat Inc.) - 383795: <bundle...> support
+ *   IBM Corporation - ongoing enhancements
 ******************************************************************************/
 package org.eclipse.pde.internal.ui.editor.category;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.Objects;
 import org.eclipse.pde.core.IWritable;
 import org.eclipse.pde.internal.core.isite.ISiteBundle;
 
@@ -45,32 +47,13 @@ public class SiteBundleAdapter implements Serializable, IWritable {
 	public boolean equals(Object obj) {
 		if (obj instanceof SiteBundleAdapter) {
 			SiteBundleAdapter adapter = (SiteBundleAdapter) obj;
-			String id = bundle.getId();
-			String id2 = adapter.bundle.getId();
-			boolean sameBundle = id != null && id2 != null && id.equals(id2);
-			if (sameBundle) {
-				String version = bundle.getVersion();
-				String version2 = adapter.bundle.getVersion();
-				sameBundle = version != null && version2 != null && version.equals(version2);
-			}
-			boolean sameCategory = adapter.category != null && category != null ? adapter.category.equals(category) : true;
-			return sameBundle && sameCategory;
+			return Objects.equals(bundle, adapter.bundle);
 		}
 		return super.equals(obj);
 	}
 
 	@Override
 	public int hashCode() {
-		if (bundle.getId() == null) {
-			return super.hashCode();
-		}
-		int code = bundle.getId().hashCode();
-		if (bundle.getVersion() != null) {
-			code += bundle.getVersion().hashCode();
-		}
-		if (category != null) {
-			code += category.hashCode();
-		}
-		return code;
+		return bundle.hashCode();
 	}
 }

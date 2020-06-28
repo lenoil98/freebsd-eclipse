@@ -100,9 +100,6 @@ public class XMLComparePreferencePage extends PreferencePage implements IWorkben
 		fOrderedElementsInternal= plugin.getOrderedElementsInternal();
 	}
 
-	/**
-	 * @see PreferencePage#createContents(Composite)
-	 */
 	@Override
 	protected Control createContents(Composite ancestor) {
 		Composite parent= new Composite(ancestor, SWT.NULL);
@@ -408,7 +405,7 @@ public class XMLComparePreferencePage extends PreferencePage implements IWorkben
 		if (dialog.open() == Window.OK) {
 			if (!fIdMaps.containsKey(idmap.getName())) {
 				fIdMaps.put(idmap.getName(),new HashMap());
-				if (!idmap.getExtension().equals("")) //$NON-NLS-1$
+				if (!idmap.getExtension().isEmpty())
 					fIdExtensionToName.put(idmap.getExtension(),idmap.getName());
 				newIdMapsTableItem(idmap,true);
 			}
@@ -427,7 +424,7 @@ public class XMLComparePreferencePage extends PreferencePage implements IWorkben
 				fIdMaps.remove(old_name);
 				fIdExtensionToName.remove(old_extension);
 				fIdMaps.put(idmap.getName(),idmapHS);
-				if (!idmap.getExtension().equals("")) //$NON-NLS-1$
+				if (!idmap.getExtension().isEmpty())
 					fIdExtensionToName.put(idmap.getExtension(),idmap.getName());
 				fIdMapsTable.remove(fIdMapsTable.indexOf(itemsIdMaps[0]));
 				newIdMapsTableItem(idmap,true);
@@ -444,13 +441,13 @@ public class XMLComparePreferencePage extends PreferencePage implements IWorkben
 			fOrderedElements.remove( IdMapName );
 			//All the corresponding ID Mappings must be removed as well
 			TableItem[] itemsMappings = fMappingsTable.getItems();
-			for (int i=0; i<itemsMappings.length; i++) {
-				itemsMappings[i].dispose();
+			for (TableItem itemsMapping : itemsMappings) {
+				itemsMapping.dispose();
 			}
 			//All the corresponding Ordered entries must be removed as well
 			TableItem[] itemsOrdered= fOrderedTable.getItems();
-			for (int i= 0; i < itemsOrdered.length; i++) {
-				itemsOrdered[i].dispose();
+			for (TableItem itemsOrd : itemsOrdered) {
+				itemsOrd.dispose();
 			}
 			//Remove extension
 			if (!itemsIdMap[0].getText(2).equals("")) { //$NON-NLS-1$
@@ -772,9 +769,6 @@ public class XMLComparePreferencePage extends PreferencePage implements IWorkben
 		idmap.setOrdered(Ordered);
 	}
 
-	/*
-	 * @see IWorkbenchPreferencePage#performDefaults
-	 */	
 	@Override
 	public boolean performOk() {
 		XMLPlugin plugin= XMLPlugin.getDefault();

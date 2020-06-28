@@ -510,8 +510,8 @@ public class IntroHTMLGenerator {
 		int indentBase = indentLevel;
 		if (useTable) {
 			indentBase = indentLevel + 1;
-		    anchor2 = generateAnchorElement(element, indentLevel + 1);
-		    labelAnchor = anchor2;
+			anchor2 = generateAnchorElement(element, indentLevel + 1);
+			labelAnchor = anchor2;
 		}
 		// add <IMG src="blank.gif">
 		String blankImageURL = BundleUtil.getResolvedResourceLocation(IIntroHTMLConstants.IMAGE_SRC_BLANK,
@@ -828,8 +828,8 @@ public class IntroHTMLGenerator {
 		IntroTheme theme = introPage.getModelRoot().getTheme();
 		if (theme != null && theme.isScalable()
 				&& FontSelection.FONT_RELATIVE.equals(FontSelection.getFontStyle())) {
-		    String sizeStyle = FontSelection.generatePageFontStyle();
-            style.addContent(sizeStyle);
+			String sizeStyle = FontSelection.generatePageFontStyle();
+			style.addContent(sizeStyle);
 		}
 		return style;
 	}
@@ -1205,13 +1205,12 @@ public class IntroHTMLGenerator {
 	 * An example usage of the string substution: The html file <code>inline.html</code> is
 	 * included in your intro via the html inline mechanism . This file needs to reference a
 	 * resource that is located in another plugin. The following might be found in inline.html:
-	 * <code>
+	 * {@code
 	 *    <a href="$plugin:test.plugin$html/test.html">link to file</a>
-	 * </code> When this file
-	 * is read in, the relevant section will be replaced as follows: <code>
+	 * } When this file
+	 * is read in, the relevant section will be replaced as follows: {@code
 	 *   <a href="file:/install_path/plugins/test.plugin/html/test.html">link to file</a>
-	 * </code>
-	 *
+	 * }
 	 */
 	private static class PluginIdParser {
 
@@ -1241,7 +1240,7 @@ public class IntroHTMLGenerator {
 		/**
 		 * This method should be called after the initial substitution identifier has been read in
 		 * (the substition string begins and ends with the "$" character). A properly formatted
-		 * substitution string is of the form:</code> "$plugin:plugin_id$</code>- the initial "$"
+		 * substitution string is of the form: <code>"$plugin:plugin_id$</code>- the initial "$"
 		 * is immediately followed by the "plugin:" segment - the <code>plugin_id </code> refers to
 		 * a valid, installed plugin - the substitution string is terminated by a closing "$" If the
 		 * above conditions are not met, no substitution occurs. If the above conditions are met,

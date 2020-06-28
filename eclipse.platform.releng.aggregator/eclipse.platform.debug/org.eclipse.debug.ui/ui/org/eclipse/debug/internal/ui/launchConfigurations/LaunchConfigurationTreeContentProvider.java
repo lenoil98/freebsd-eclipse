@@ -17,6 +17,7 @@ package org.eclipse.debug.internal.ui.launchConfigurations;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -93,9 +94,7 @@ public class LaunchConfigurationTreeContentProvider implements ITreeContentProvi
 					}
 				}
 				ILaunchConfiguration[] prototypes = getLaunchManager().getLaunchConfigurations(type, ILaunchConfiguration.PROTOTYPE);
-				for (ILaunchConfiguration prototype : prototypes) {
-					configs.add(prototype);
-				}
+				Collections.addAll(configs, prototypes);
 				return configs.toArray(new ILaunchConfiguration[0]);
 			} else {
 				return getLaunchManager().getLaunchConfigurationTypes();
@@ -106,9 +105,6 @@ public class LaunchConfigurationTreeContentProvider implements ITreeContentProvi
 		return EMPTY_ARRAY;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
-	 */
 	@Override
 	public Object getParent(Object element) {
 		if (element instanceof ILaunchConfiguration) {
@@ -131,9 +127,6 @@ public class LaunchConfigurationTreeContentProvider implements ITreeContentProvi
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
-	 */
 	@Override
 	public boolean hasChildren(Object element) {
 		if (element instanceof ILaunchConfiguration) {
@@ -173,8 +166,7 @@ public class LaunchConfigurationTreeContentProvider implements ITreeContentProvi
 		List<ILaunchConfigurationType> filteredTypes = new ArrayList<>();
 		String mode = getMode();
 		LaunchConfigurationTypeContribution contribution;
-		for (int i = 0; i < allTypes.length; i++) {
-			ILaunchConfigurationType type = allTypes[i];
+		for (ILaunchConfigurationType type : allTypes) {
 			contribution= new LaunchConfigurationTypeContribution(type);
 			if (isVisible(type, mode) && !WorkbenchActivityHelper.filterItem(contribution)) {
 				filteredTypes.add(type);

@@ -562,24 +562,6 @@ public interface IProject extends IContainer, IAdaptable {
 
 	/**
 	 * Returns the location in the local file system of the project-specific
-	 * working data area for use by the given plug-in or <code>null</code>
-	 * if the project does not exist.
-	 * <p>
-	 * The content, structure, and management of this area is
-	 * the responsibility of the plug-in.  This area is deleted when the
-	 * project is deleted.
-	 * </p><p>
-	 * This project needs to exist but does not need to be open.
-	 * </p>
-	 * @param plugin the plug-in
-	 * @return a local file system path
-	 * @deprecated Use <code>IProject.getWorkingLocation(plugin.getUniqueIdentifier())</code>.
-	 */
-	@Deprecated
-	IPath getPluginWorkingLocation(IPluginDescriptor plugin);
-
-	/**
-	 * Returns the location in the local file system of the project-specific
 	 * working data area for use by the bundle/plug-in with the given identifier,
 	 * or <code>null</code> if the project does not exist.
 	 * <p>
@@ -845,6 +827,10 @@ public interface IProject extends IContainer, IAdaptable {
 	 * by the given progress monitor.
 	 * </p>
 	 *
+	 * @param updateFlags if {@link IResource#BACKGROUND_REFRESH} is passed,
+	 *    and the project is not new in the workspace (i.e. is not being opened for the first time)
+	 *    a background refresh is scheduled with the workspace refresh manager.
+	 *    See description above for cases in which the project is new in the workspace.
 	 * @param monitor a progress monitor, or <code>null</code> if progress
 	 *    reporting is not desired
 	 * @exception CoreException if this method fails. Reasons include:

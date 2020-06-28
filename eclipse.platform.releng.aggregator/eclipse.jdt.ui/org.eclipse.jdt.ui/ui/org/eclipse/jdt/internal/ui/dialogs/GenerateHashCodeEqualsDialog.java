@@ -113,9 +113,10 @@ public class GenerateHashCodeEqualsDialog extends SourceActionDialog {
 		@Override
 		public IStatus validate(Object[] selection) {
 			int count= 0;
-			for (int index= 0; index < selection.length; index++) {
-				if (selection[index] instanceof IVariableBinding)
+			for (Object s : selection) {
+				if (s instanceof IVariableBinding) {
 					count++;
+				}
 			}
 			if (count == 0)
 				return new StatusInfo(IStatus.ERROR, JavaUIMessages.GenerateHashCodeEqualsDialog_select_at_least_one_field);
@@ -134,7 +135,7 @@ public class GenerateHashCodeEqualsDialog extends SourceActionDialog {
 	private IJavaProject fProject;
 
 	private boolean fNoFields;
-	
+
 	public GenerateHashCodeEqualsDialog(Shell shell, CompilationUnitEditor editor, IType type, IVariableBinding[] allFields, IVariableBinding[] selectedFields) throws JavaModelException {
 		super(shell, new BindingLabelProvider(), new GenerateHashCodeEqualsContentProvider(allFields), editor, type, false);
 		this.fProject = type.getJavaProject();
@@ -190,9 +191,9 @@ public class GenerateHashCodeEqualsDialog extends SourceActionDialog {
 
 		button= new Button(composite, SWT.CHECK);
 		button.setText(JavaUIMessages.GenerateHashCodeEqualsDialog_blocks_button);
-		
+
 		button.addSelectionListener(new SelectionAdapter() {
-			
+
 			@Override
 			public void widgetSelected(SelectionEvent event) {
 				setUseBlocks((((Button) event.widget).getSelection()));
@@ -219,7 +220,7 @@ public class GenerateHashCodeEqualsDialog extends SourceActionDialog {
 		data= new GridData(GridData.HORIZONTAL_ALIGN_FILL);
 		data.horizontalSpan= 2;
 		button.setLayoutData(data);
-		
+
 		return composite;
 	}
 
@@ -252,7 +253,7 @@ public class GenerateHashCodeEqualsDialog extends SourceActionDialog {
 		createButton(parent, IDialogConstants.OK_ID, JavaUIMessages.GenerateHashCodeEqualsDialog_generate, true);
 		createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
 	}
-	
+
 	@Override
 	protected void updateOKStatus() {
 		if(fNoFields) {

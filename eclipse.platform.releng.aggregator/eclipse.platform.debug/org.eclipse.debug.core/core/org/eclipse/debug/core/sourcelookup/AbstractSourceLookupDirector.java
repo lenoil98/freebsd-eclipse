@@ -14,6 +14,7 @@
  *******************************************************************************/
 package org.eclipse.debug.core.sourcelookup;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,8 +41,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Directs source lookup among a collection of source lookup participants,
@@ -132,16 +131,16 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 			CoreException single = null;
 			ISourceLookupParticipant[] participants = getParticipants();
 			try {
-				for(int i=0; i < participants.length; i++) {
-					setCurrentParticipant(participants[i]);
+				for (ISourceLookupParticipant participant : participants) {
+					setCurrentParticipant(participant);
 					Object[] sourceArray;
 					try {
-						sourceArray = participants[i].findSourceElements(fElement);
+						sourceArray = participant.findSourceElements(fElement);
 						if (sourceArray !=null && sourceArray.length > 0) {
 							if (isFindDuplicates()) {
-								for(int j=0; j<sourceArray.length; j++) {
-									if(!checkDuplicate(sourceArray[j], fSourceElements)) {
-										fSourceElements.add(sourceArray[j]);
+								for (Object s : sourceArray) {
+									if (!checkDuplicate(s, fSourceElements)) {
+										fSourceElements.add(s);
 									}
 								}
 							} else {
@@ -214,8 +213,8 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 		}
 		fParticipants.clear();
 		if (fSourceContainers != null) {
-			for (int i = 0; i < fSourceContainers.length; i++) {
-				fSourceContainers[i].dispose();
+			for (ISourceContainer container : fSourceContainers) {
+				container.dispose();
 			}
 		}
 		fSourceContainers = null;
@@ -322,12 +321,11 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 		}
 	}
 
-	/* (non-Javadoc)
-	 *
+	/*
 	 * Updates source containers in response to changes in underlying launch
 	 * configuration. Only responds to changes in non-working copies.
-	 *
-	 * @see org.eclipse.debug.core.ILaunchConfigurationListener#launchConfigurationChanged(org.eclipse.debug.core.ILaunchConfiguration)
+	 * @see org.eclipse.debug.core.ILaunchConfigurationListener#
+	 * launchConfigurationChanged(org.eclipse.debug.core.ILaunchConfiguration)
 	 */
 	@Override
 	public void launchConfigurationChanged(ILaunchConfiguration configuration) {
@@ -371,9 +369,8 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 		}
 		rootNode.appendChild(pathNode);
 		if(fSourceContainers !=null){
-			for(int i=0; i<fSourceContainers.length; i++){
+			for (ISourceContainer container : fSourceContainers) {
 				Element node = doc.createElement(CONTAINER_NODE);
-				ISourceContainer container = fSourceContainers[i];
 				ISourceContainerType type = container.getType();
 				node.setAttribute(CONTAINER_TYPE_ATTR, type.getId());
 				node.setAttribute(CONTAINER_MEMENTO_ATTR, type.getMemento(container));
@@ -385,7 +382,7 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 
 	@Override
 	public void initializeFromMemento(String memento) throws CoreException {
-	    doInitializeFromMemento(memento, true);
+		doInitializeFromMemento(memento, true);
 	}
 
 	/**
@@ -399,9 +396,9 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 	 * @since 3.1
 	 */
 	protected void doInitializeFromMemento(String memento, boolean dispose) throws CoreException {
-	    if (dispose) {
-	        dispose();
-	    }
+		if (dispose) {
+			dispose();
+		}
 		Element rootElement = DebugPlugin.parseDocument(memento);
 		if (!rootElement.getNodeName().equalsIgnoreCase(DIRECTOR_ROOT_NODE)) {
 			abort(SourceLookupMessages.AbstractSourceLookupDirector_14, null);
@@ -435,15 +432,14 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 		synchronized (this) {
 			List<ISourceContainer> list = Arrays.asList(containers);
 			ISourceContainer[] old = getSourceContainers();
-			for (int i = 0; i < old.length; i++) {
+			for (ISourceContainer container : old) {
 				// skip overlapping containers
-				if (!list.contains(old[i])) {
-					old[i].dispose();
+				if (!list.contains(container)) {
+					container.dispose();
 				}
 			}
 			fSourceContainers = containers;
-			for (int i = 0; i < containers.length; i++) {
-				ISourceContainer container = containers[i];
+			for (ISourceContainer container : containers) {
 				container.init(this);
 			}
 		}
@@ -451,15 +447,14 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 		fResolvedElements = null;
 		// notify participants
 		ISourceLookupParticipant[] participants = getParticipants();
-		for (int i = 0; i < participants.length; i++) {
-			ISourceLookupParticipant participant = participants[i];
+		for (ISourceLookupParticipant participant : participants) {
 			participant.sourceContainersChanged(this);
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.model.ISourceLocator#getSourceElement(org.eclipse.debug.core.model.IStackFrame)
-	 * Would be better to accept Object so this can be used for breakpoints and other objects.
+	/*
+	 * Would be better to accept Object so this can be used for breakpoints and
+	 * other objects.
 	 */
 	@Override
 	public Object getSourceElement(IStackFrame stackFrame) {
@@ -535,7 +530,7 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 	 * @return true if it is already in the list, false if it is a new object
 	 */
 	private boolean checkDuplicate(Object sourceToAdd, List<Object> sources) {
-		if(sources.size() == 0) {
+		if(sources.isEmpty()) {
 			return false;
 		}
 		for (Object obj : sources) {
@@ -548,7 +543,7 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 
 	@Override
 	public void initializeFromMemento(String memento, ILaunchConfiguration configuration) throws CoreException {
-	    dispose();
+		dispose();
 		setLaunchConfiguration(configuration);
 		doInitializeFromMemento(memento, false);
 	}
@@ -664,8 +659,7 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 
 	@Override
 	public void addParticipants(ISourceLookupParticipant[] participants) {
-		for (int i = 0; i < participants.length; i++) {
-			ISourceLookupParticipant participant = participants[i];
+		for (ISourceLookupParticipant participant : participants) {
 			addSourceLookupParticipant(participant);
 			participant.sourceContainersChanged(this);
 		}
@@ -673,8 +667,8 @@ public abstract class AbstractSourceLookupDirector implements ISourceLookupDirec
 
 	@Override
 	public void removeParticipants(ISourceLookupParticipant[] participants) {
-		for (int i = 0; i < participants.length; i++) {
-			removeSourceLookupParticipant(participants[i]);
+		for (ISourceLookupParticipant participant : participants) {
+			removeSourceLookupParticipant(participant);
 		}
 	}
 

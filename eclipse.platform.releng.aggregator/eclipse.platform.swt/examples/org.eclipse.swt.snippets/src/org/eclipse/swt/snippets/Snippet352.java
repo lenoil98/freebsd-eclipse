@@ -51,6 +51,7 @@ public class Snippet352 {
 	public static void main (String [] args) {
 		final Display display = new Display ();
 		final Shell shell = new Shell (display);
+		shell.setText("Snippet 352");
 		shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 		shell.setText ("Touch demonstration");
 
@@ -58,9 +59,7 @@ public class Snippet352 {
 
 			Touch touches[] = e.touches;
 
-			for (int i = 0; i < touches.length; i++) {
-				Touch currTouch = touches[i];
-
+			for (Touch currTouch : touches) {
 				if ((currTouch.state & (SWT.TOUCHSTATE_UP)) != 0) {
 					touchLocations.remove(currTouch.id);
 				} else {

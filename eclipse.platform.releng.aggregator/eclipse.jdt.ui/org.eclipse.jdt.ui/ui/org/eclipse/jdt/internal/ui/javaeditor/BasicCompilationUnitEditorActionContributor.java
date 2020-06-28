@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.ui.javaeditor;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.jface.action.IAction;
@@ -59,9 +58,9 @@ public class BasicCompilationUnitEditorActionContributor extends BasicJavaEditor
 
 		@Override
 		public void menuAboutToShow(IMenuManager manager) {
-	    	for (int i= 0; i < fSpecificAssistActions.length; i++) {
-	            fSpecificAssistActions[i].update();
-	        }
+			for (SpecificContentAssistAction fSpecificAssistAction : fSpecificAssistActions) {
+				fSpecificAssistAction.update();
+			}
 	    }
 
 		public void dispose() {
@@ -122,8 +121,7 @@ public class BasicCompilationUnitEditorActionContributor extends BasicJavaEditor
 			caMenu.add(fRetargetContentAssist);
 			Collection<CompletionProposalCategory> descriptors= CompletionProposalComputerRegistry.getDefault().getProposalCategories();
 			List<IAction> specificAssistActions= new ArrayList<>(descriptors.size());
-			for (Iterator<CompletionProposalCategory> it= descriptors.iterator(); it.hasNext();) {
-				final CompletionProposalCategory cat= it.next();
+			for (CompletionProposalCategory cat : descriptors) {
 				if (cat.hasComputers()) {
 					IAction caAction= new SpecificContentAssistAction(cat);
 					caMenu.add(caAction);
@@ -158,8 +156,7 @@ public class BasicCompilationUnitEditorActionContributor extends BasicJavaEditor
 		fQuickAssistAction.setAction(getAction(textEditor, ITextEditorActionConstants.QUICK_ASSIST));
 
 		if (fSpecificAssistActions != null) {
-			for (int i= 0; i < fSpecificAssistActions.length; i++) {
-				SpecificContentAssistAction assistAction= fSpecificAssistActions[i];
+			for (SpecificContentAssistAction assistAction : fSpecificAssistActions) {
 				assistAction.setActiveEditor(part);
 			}
 		}

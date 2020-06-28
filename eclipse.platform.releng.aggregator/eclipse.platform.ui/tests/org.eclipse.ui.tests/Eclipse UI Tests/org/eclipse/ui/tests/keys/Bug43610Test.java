@@ -14,35 +14,28 @@
 
 package org.eclipse.ui.tests.keys;
 
+import static org.junit.Assert.assertEquals;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.intro.IIntroManager;
 import org.eclipse.ui.tests.harness.util.AutomationUtil;
-import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Test;
 
 /**
  * Test for Bug 43610.
  *
  * @since 3.0
  */
-public class Bug43610Test extends UITestCase {
-
-	/**
-	 * Constructs a new instance of this test case.
-	 *
-	 * @param testName
-	 *            The name of the test
-	 */
-	public Bug43610Test(String testName) {
-		super(testName);
-	}
+public class Bug43610Test {
 
 	/**
 	 * Tests that if "Shift+Alt+" is pressed, then the key code should
 	 * represent the "Alt+" key press.
 	 */
+	@Test
 	public void testShiftAlt() {
 		// Close Welcome: workaround for https://bugs.eclipse.org/429592 / https://bugs.eclipse.org/366608#c12
 		IIntroManager introManager= PlatformUI.getWorkbench().getIntroManager();

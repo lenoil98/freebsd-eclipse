@@ -54,7 +54,7 @@ public class UIPerformChangeOperation extends PerformChangeOperation {
 			final Throwable[] exception= new Throwable[1];
 			/** Cancel button to re-enable, or <code>null</code> to do nothing. */
 			final Button[] cancelToEnable= new Button[1];
-			
+
 			final ISafeRunnable safeRunnable= new ISafeRunnable() {
 				@Override
 				public void run() {
@@ -69,12 +69,7 @@ public class UIPerformChangeOperation extends PerformChangeOperation {
 					exception[0]= e;
 				}
 			};
-			Runnable r= new Runnable() {
-				@Override
-				public void run() {
-					SafeRunner.run(safeRunnable);
-				}
-			};
+			Runnable r= () -> SafeRunner.run(safeRunnable);
 			try {
 				fDisplay.syncExec(r);
 				if (exception[0] != null) {
@@ -99,12 +94,9 @@ public class UIPerformChangeOperation extends PerformChangeOperation {
 				super.executeChange(pm);
 			} finally {
 				if (cancelToEnable[0] != null) {
-					fDisplay.syncExec(new Runnable() {
-						@Override
-						public void run() {
-							if (!cancelToEnable[0].isDisposed()) {
-								cancelToEnable[0].setEnabled(true);
-							}
+					fDisplay.syncExec(() -> {
+						if (!cancelToEnable[0].isDisposed()) {
+							cancelToEnable[0].setEnabled(true);
 						}
 					});
 				}

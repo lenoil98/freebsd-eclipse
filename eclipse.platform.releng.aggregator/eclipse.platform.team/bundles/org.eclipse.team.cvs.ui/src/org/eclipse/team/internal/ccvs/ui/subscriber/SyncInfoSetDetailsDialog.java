@@ -47,9 +47,6 @@ public abstract class SyncInfoSetDetailsDialog extends DetailsDialog {
 		this.syncSet = syncSet;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ui.DetailsDialog#createDropDownDialogArea(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected Composite createDropDownDialogArea(Composite parent) {
 		Composite composite = createComposite(parent);
@@ -147,10 +144,6 @@ public abstract class SyncInfoSetDetailsDialog extends DetailsDialog {
 		return syncSet.getResources();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.team.internal.ui.DetailsDialog#updateEnablements()
-	 */
 	@Override
 	protected void updateEnablements() {
 	}
@@ -162,9 +155,6 @@ public abstract class SyncInfoSetDetailsDialog extends DetailsDialog {
 		return syncSet;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.Dialog#buttonPressed(int)
-	 */
 	@Override
 	protected void buttonPressed(int id) {
 		if (id == IDialogConstants.OK_ID) {
@@ -180,8 +170,10 @@ public abstract class SyncInfoSetDetailsDialog extends DetailsDialog {
 				@Override
 				public boolean select(SyncInfo info) {
 					IResource local = info.getLocal();
-					for (int i = 0; i < selectedResources.length; i++) {
-						if (local.equals(selectedResources[i])) return true;
+					for (Object selectedResource : selectedResources) {
+						if (local.equals(selectedResource)) {
+							return true;
+						}
 					}
 					return false;
 				}

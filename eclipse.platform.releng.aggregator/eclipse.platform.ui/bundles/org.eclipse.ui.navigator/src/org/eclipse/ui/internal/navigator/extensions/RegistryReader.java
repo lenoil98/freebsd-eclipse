@@ -14,7 +14,6 @@
 package org.eclipse.ui.internal.navigator.extensions;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 
 import org.eclipse.core.runtime.IConfigurationElement;
@@ -123,7 +122,7 @@ public abstract class RegistryReader {
 			String s2 = arg1.getContributor().getName();
 			return s1.compareToIgnoreCase(s2);
 		};
-		Collections.sort(Arrays.asList(sortedExtension), comparer);
+		Arrays.asList(sortedExtension).sort(comparer);
 		return sortedExtension;
 	}
 
@@ -151,9 +150,9 @@ public abstract class RegistryReader {
 	 * Logs an error if the element was not recognized.
 	 */
 	protected void readElements(IConfigurationElement[] elements) {
-		for (int i = 0; i < elements.length; i++) {
-			if (!readElement(elements[i])) {
-				logUnknownElement(elements[i]);
+		for (IConfigurationElement element : elements) {
+			if (!readElement(element)) {
+				logUnknownElement(element);
 			}
 		}
 	}

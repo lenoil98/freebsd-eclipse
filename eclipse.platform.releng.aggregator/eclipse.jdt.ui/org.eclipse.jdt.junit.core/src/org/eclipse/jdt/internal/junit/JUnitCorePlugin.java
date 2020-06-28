@@ -18,7 +18,6 @@ package org.eclipse.jdt.internal.junit;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.osgi.framework.Bundle;
@@ -52,7 +51,7 @@ public class JUnitCorePlugin extends Plugin {
 	private static JUnitCorePlugin fgPlugin= null;
 
 	public static final String CORE_PLUGIN_ID= "org.eclipse.jdt.junit.core"; //$NON-NLS-1$
-	
+
 	/**
 	 * Plug-in ID of the <b>UI</b> plug-in ("org.eclipse.jdt.junit").
 	 * @see #CORE_PLUGIN_ID
@@ -152,7 +151,7 @@ public class JUnitCorePlugin extends Plugin {
 
 	/**
 	 * Returns a service with the specified name or <code>null</code> if none.
-	 * 
+	 *
 	 * @param serviceName name of service
 	 * @return service object or <code>null</code> if none
 	 * @since 3.5
@@ -184,16 +183,15 @@ public class JUnitCorePlugin extends Plugin {
 		}
 		IConfigurationElement[] configs= extensionPoint.getConfigurationElements();
 		MultiStatus status= new MultiStatus(CORE_PLUGIN_ID, IStatus.OK, "Could not load some testRunner extension points", null); //$NON-NLS-1$
-
-		for (int i= 0; i < configs.length; i++) {
+		for (IConfigurationElement config : configs) {
 			try {
-				Object testRunListener= configs[i].createExecutableExtension("class"); //$NON-NLS-1$
+				Object testRunListener= config.createExecutableExtension("class"); //$NON-NLS-1$
 				if (testRunListener instanceof TestRunListener) {
 					fNewTestRunListeners.add((TestRunListener) testRunListener);
 				} else if (testRunListener instanceof org.eclipse.jdt.junit.ITestRunListener) {
 					fLegacyTestRunListeners.add((org.eclipse.jdt.junit.ITestRunListener) testRunListener);
 				}
-			} catch (CoreException e) {
+			}catch (CoreException e) {
 				status.add(e.getStatus());
 			}
 		}
@@ -257,8 +255,7 @@ public class JUnitCorePlugin extends Plugin {
 	public void addTestRunListener(org.eclipse.jdt.junit.ITestRunListener newListener) {
 		loadTestRunListeners();
 
-		for (Iterator<org.eclipse.jdt.junit.ITestRunListener> iter= fLegacyTestRunListeners.iterator(); iter.hasNext();) {
-			org.eclipse.jdt.junit.ITestRunListener o= iter.next();
+		for (org.eclipse.jdt.junit.ITestRunListener o : fLegacyTestRunListeners) {
 			if (o == newListener)
 				return;
 		}
@@ -281,7 +278,7 @@ public class JUnitCorePlugin extends Plugin {
 	 */
 	public ListenerList<TestRunListener> getNewTestRunListeners() {
 		loadTestRunListeners();
-		
+
 		return fNewTestRunListeners;
 	}
 

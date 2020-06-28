@@ -374,7 +374,7 @@ public class FeatureGenerator extends AbstractScriptGenerator {
 			writer.startTag(FEATURE, parameters, true);
 
 			boolean fragment = false;
-			List<Config> configs = getConfigInfos();
+			List<Config> configs = new ArrayList<>(getConfigInfos());
 			//we do the generic config first as a special case
 			configs.remove(Config.genericConfig());
 			Iterator<Config> configIterator = configs.iterator();
@@ -401,7 +401,7 @@ public class FeatureGenerator extends AbstractScriptGenerator {
 							Filter filter = helper.getFilter(bundle);
 							if (filter == null || filter.match(environment)) {
 								writeBundle = true;
-								guessedUnpack = Utils.guessUnpack(bundle, state.getExtraData().get(new Long(bundle.getBundleId())));
+								guessedUnpack = Utils.guessUnpack(bundle, state.getExtraData().get(Long.valueOf(bundle.getBundleId())));
 								if (currentConfig.equals(Config.genericConfig())) {
 									listIter.remove();
 								}

@@ -54,7 +54,7 @@ public class Strings {
 
 	/**
 	 * Adds special marks so that that the given string is readable in a BiDi environment.
-	 * 
+	 *
 	 * @param string the string
 	 * @return the processed styled string
 	 * @since 3.4
@@ -68,7 +68,7 @@ public class Strings {
 
 	/**
 	 * Adds special marks so that that the given string is readable in a BiDi environment.
-	 * 
+	 *
 	 * @param string the string
 	 * @param delimiters the delimiters
 	 * @return the processed styled string
@@ -84,7 +84,7 @@ public class Strings {
 	/**
 	 * Adds special marks so that that the given Java element label is readable in a BiDi
 	 * environment.
-	 * 
+	 *
 	 * @param string the string
 	 * @return the processed styled string
 	 * @since 3.6
@@ -118,7 +118,7 @@ public class Strings {
 	}
 
 	public static String removeNewLine(String message) {
-		StringBuffer result= new StringBuffer();
+		StringBuilder result= new StringBuilder();
 		int current= 0;
 		int index= message.indexOf('\n', 0);
 		while (index != -1) {
@@ -411,15 +411,13 @@ public class Strings {
 	public static String[] removeTrailingEmptyLines(String[] sourceLines) {
 		int lastNonEmpty= findLastNonEmptyLineIndex(sourceLines);
 		String[] result= new String[lastNonEmpty + 1];
-		for (int i= 0; i < result.length; i++) {
-			result[i]= sourceLines[i];
-		}
+		System.arraycopy(sourceLines, 0, result, 0, result.length);
 		return result;
 	}
 
 	private static int findLastNonEmptyLineIndex(String[] sourceLines) {
 		for (int i= sourceLines.length - 1; i >= 0; i--) {
-			if (! sourceLines[i].trim().equals(""))//$NON-NLS-1$
+			if (! sourceLines[i].trim().isEmpty())
 				return i;
 		}
 		return -1;
@@ -478,7 +476,7 @@ public class Strings {
 				lines[i]= source.substring(offset, offset + region.getLength());
 			}
 			Strings.trimIndentation(lines, tabWidth, indentWidth, considerFirstLine);
-			StringBuffer result= new StringBuffer();
+			StringBuilder result= new StringBuilder();
 			int last= size - 1;
 			for (int i= 0; i < size; i++) {
 				result.append(lines[i]);
@@ -501,7 +499,7 @@ public class Strings {
 	 * @return the concatenated lines
 	 */
 	public static String concatenate(String[] lines, String delimiter) {
-		StringBuffer buffer= new StringBuffer();
+		StringBuilder buffer= new StringBuilder();
 		for (int i= 0; i < lines.length; i++) {
 			if (i > 0)
 				buffer.append(delimiter);

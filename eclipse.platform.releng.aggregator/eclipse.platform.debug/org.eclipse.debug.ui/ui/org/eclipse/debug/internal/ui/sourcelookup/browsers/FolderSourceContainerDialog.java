@@ -73,8 +73,8 @@ public class FolderSourceContainerDialog extends ElementTreeSelectionDialog {
 	protected Control createDialogArea(Composite parent) {
 		Composite parentc = (Composite)super.createDialogArea(parent);
 		fSubfoldersButton = new Button(parentc, SWT.CHECK);
-        fSubfoldersButton.setText(SourceLookupUIMessages.DirectorySourceContainerDialog_6);
-        fSubfoldersButton.setSelection(fSearchSubfolders);
+		fSubfoldersButton.setText(SourceLookupUIMessages.DirectorySourceContainerDialog_6);
+		fSubfoldersButton.setSelection(fSearchSubfolders);
 		return parentc;
 	}
 
@@ -88,12 +88,12 @@ public class FolderSourceContainerDialog extends ElementTreeSelectionDialog {
 		super(parent, labelProvider, contentProvider);
 		setTitle(SourceLookupUIMessages.folderSelection_title);	//
 		setInput(ResourcesPlugin.getWorkspace().getRoot());
-        setComparator(new ResourceComparator(ResourceComparator.NAME));
+		setComparator(new ResourceComparator(ResourceComparator.NAME));
 		ISelectionStatusValidator validator= new ISelectionStatusValidator() {
 			@Override
 			public IStatus validate(Object[] selection) {
-				for (int i= 0; i < selection.length; i++) {
-					if (!(selection[i] instanceof IFolder)) {
+				for (Object f : selection) {
+					if (!(f instanceof IFolder)) {
 						return new Status(IStatus.ERROR, DebugUIPlugin.getUniqueIdentifier(), -1, SourceLookupUIMessages.sourceSearch_folderSelectionError, null); //
 					}
 				}
@@ -140,9 +140,6 @@ public class FolderSourceContainerDialog extends ElementTreeSelectionDialog {
 		fSearchSubfolders = subfolders;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.dialogs.SelectionStatusDialog#okPressed()
-	 */
 	@Override
 	protected void okPressed() {
 		fSearchSubfolders = fSubfoldersButton.getSelection();

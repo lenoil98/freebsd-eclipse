@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2017 IBM Corporation and others.
+ * Copyright (c) 2004, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,28 +7,43 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.osgi.internal.log;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
 import org.eclipse.core.runtime.adaptor.EclipseStarter;
-import org.eclipse.equinox.log.*;
+import org.eclipse.equinox.log.ExtendedLogEntry;
+import org.eclipse.equinox.log.LogFilter;
+import org.eclipse.equinox.log.SynchronousLogListener;
 import org.eclipse.osgi.framework.log.FrameworkLogEntry;
 import org.eclipse.osgi.internal.framework.EquinoxConfiguration;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
-import org.osgi.service.log.*;
+import org.osgi.service.log.LogEntry;
+import org.osgi.service.log.LogLevel;
+import org.osgi.service.log.LogService;
 import org.osgi.service.log.admin.LoggerAdmin;
 import org.osgi.service.log.admin.LoggerContext;
 
 class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
-	private static final String PASSWORD = "-password"; //$NON-NLS-1$	
+	private static final String PASSWORD = "-password"; //$NON-NLS-1$
 	/** The session tag */
 	private static final String SESSION = "!SESSION"; //$NON-NLS-1$
 	/** The entry tag */
@@ -164,7 +179,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 	 * @return the session timestamp
 	 */
 	private String getSessionTimestamp() {
-		// Main should have set the session start-up timestamp so return that. 
+		// Main should have set the session start-up timestamp so return that.
 		// Return the "now" time if not available.
 		String ts = environmentInfo.getConfiguration("eclipse.startTime"); //$NON-NLS-1$
 		if (ts != null) {
@@ -218,7 +233,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 		write(", ARCH=" + environmentInfo.getOSArch()); //$NON-NLS-1$
 		write(", WS=" + environmentInfo.getWS()); //$NON-NLS-1$
 		writeln(", NL=" + environmentInfo.getNL()); //$NON-NLS-1$
-		// Add the command-line arguments used to invoke the platform 
+		// Add the command-line arguments used to invoke the platform
 		// XXX: this includes runtime-private arguments - should we do that?
 		if (includeCommandLine) {
 			writeArgs("Framework arguments: ", environmentInfo.getNonFrameworkArgs()); //$NON-NLS-1$
@@ -288,7 +303,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 			writeLog(0, logEntry);
 			writer.flush();
 		} catch (Exception e) {
-			// any exceptions during logging should be caught 
+			// any exceptions during logging should be caught
 			System.err.println("An exception occurred while writing to the platform log:");//$NON-NLS-1$
 			e.printStackTrace(System.err);
 			System.err.println("Logging to the console instead.");//$NON-NLS-1$
@@ -311,7 +326,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 	}
 
 	/**
-	 * @throws IOException  
+	 * @throws IOException
 	 */
 	public synchronized void setFile(File newFile, boolean append) throws IOException {
 		if (newFile != null && !newFile.equals(this.outFile)) {
@@ -357,7 +372,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 				Reader fileIn = null;
 				try {
 					openFile();
-					fileIn = new InputStreamReader(ExtendedLogServiceFactory.secureAction.getFileInputStream(oldOutFile), "UTF-8"); //$NON-NLS-1$
+					fileIn = new InputStreamReader(ExtendedLogServiceFactory.secureAction.getFileInputStream(oldOutFile), StandardCharsets.UTF_8);
 					copyReader(fileIn, this.writer);
 				} catch (IOException e) {
 					copyFailed = true;
@@ -395,7 +410,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 	private String getDate(Date date) {
 		Calendar c = Calendar.getInstance();
 		c.setTime(date);
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		appendPaddedInt(c.get(Calendar.YEAR), 4, sb).append('-');
 		appendPaddedInt(c.get(Calendar.MONTH) + 1, 2, sb).append('-');
 		appendPaddedInt(c.get(Calendar.DAY_OF_MONTH), 2, sb).append(' ');
@@ -406,7 +421,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 		return sb.toString();
 	}
 
-	private StringBuffer appendPaddedInt(int value, int pad, StringBuffer buffer) {
+	private StringBuilder appendPaddedInt(int value, int pad, StringBuilder buffer) {
 		pad = pad - 1;
 		if (pad == 0)
 			return buffer.append(Integer.toString(value));
@@ -474,8 +489,8 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 
 		FrameworkLogEntry[] children = entry.getChildren();
 		if (children != null) {
-			for (int i = 0; i < children.length; i++) {
-				writeLog(depth + 1, children[i]);
+			for (FrameworkLogEntry child : children) {
+				writeLog(depth + 1, child);
 			}
 		}
 	}
@@ -576,7 +591,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 	}
 
 	/**
-	 * Checks the log file size.  If the log file size reaches the limit then the log 
+	 * Checks the log file size.  If the log file size reaches the limit then the log
 	 * is rotated
 	 * @return false if an error occured trying to rotate the log
 	 */
@@ -599,7 +614,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 				File backupFile = new File(backupFilename);
 				if (backupFile.exists()) {
 					if (!backupFile.delete()) {
-						System.err.println("Error when trying to delete old log file: " + backupFile.getName());//$NON-NLS-1$ 
+						System.err.println("Error when trying to delete old log file: " + backupFile.getName());//$NON-NLS-1$
 						if (backupFile.renameTo(new File(backupFile.getAbsolutePath() + System.currentTimeMillis()))) {
 							System.err.println("So we rename it to filename: " + backupFile.getName()); //$NON-NLS-1$
 						} else {
@@ -711,6 +726,8 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 		return (fwkEntrySeverity & logLevel) != 0;
 	}
 
+	@SuppressWarnings("deprecation")
+	@Override
 	public boolean isLoggable(Bundle bundle, String loggableName, int loggableLevel) {
 		if (!enabled)
 			return false;
@@ -727,6 +744,8 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 		return loggableLevel == LogService.LOG_ERROR;
 	}
 
+	@SuppressWarnings("deprecation")
+	@Override
 	public void logged(LogEntry entry) {
 		if (!(entry instanceof ExtendedLogEntry))
 			// TODO this should never happen
@@ -748,6 +767,7 @@ class EquinoxLogWriter implements SynchronousLogListener, LogFilter {
 		return "unknown"; //$NON-NLS-1$
 	}
 
+	@SuppressWarnings("deprecation")
 	private static int convertSeverity(int entryLevel) {
 		switch (entryLevel) {
 			case LogService.LOG_ERROR :

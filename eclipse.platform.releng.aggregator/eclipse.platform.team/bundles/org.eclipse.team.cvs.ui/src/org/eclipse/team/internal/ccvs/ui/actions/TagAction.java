@@ -38,9 +38,6 @@ public abstract class TagAction extends WorkspaceTraversalAction {
 	// remember if the execute action was cancelled
 	private boolean wasCancelled = false;
 
-	/**
-	 * @see CVSAction#execute(IAction)
-	 */
 	@Override
 	public void execute(IAction action) throws InvocationTargetException, InterruptedException {
 		setWasCancelled(false);
@@ -75,7 +72,7 @@ public abstract class TagAction extends WorkspaceTraversalAction {
 		IPreferenceStore store = CVSUIPlugin.getPlugin().getPreferenceStore();
 		ITagOperation operation = createTagOperation();
 		if (operation.isEmpty()) {
-		    return null;
+			return null;
 		}
 		if (!performPrompting(operation)) {
 			return null;
@@ -118,9 +115,6 @@ public abstract class TagAction extends WorkspaceTraversalAction {
 		return CVSUIMessages.TagAction_tagWarningTitle; 
 	}
 	
-	/**
-	 * @see org.eclipse.team.internal.ccvs.ui.actions.WorkspaceAction#isEnabledForAddedResources()
-	 */
 	@Override
 	protected boolean isEnabledForAddedResources() {
 		return false;
@@ -140,8 +134,7 @@ public abstract class TagAction extends WorkspaceTraversalAction {
 			@Override
 			public void run(IProgressMonitor monitor) {
 				try {
-					for (int i = 0; i < resources.length; i++) {
-						ICVSResource resource = resources[i];
+					for (ICVSResource resource : resources) {
 						// Cache the new tag creation even if the tag may have had warnings.
 						manager.addTags(getRootParent(resource), new CVSTag[] {tag});
 					}

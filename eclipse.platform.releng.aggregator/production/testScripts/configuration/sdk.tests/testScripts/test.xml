@@ -53,14 +53,6 @@
       value="org.eclipse.cvs.feature.group">
       <equals
         arg1="${testPlugin}"
-        arg2="org.eclipse.team.tests.cvs.core" />
-    </condition>
-
-    <condition
-      property="extraIU"
-      value="org.eclipse.cvs.feature.group">
-      <equals
-        arg1="${testPlugin}"
         arg2="org.eclipse.team.tests.core" />
     </condition>
 
@@ -228,6 +220,14 @@
           <os arch="x86_64" />
           <os arch="amd64" />
         </or>
+      </and>
+    </condition>
+    <condition
+      property="platformArchive"
+      value="eclipse-platform-${previousReleaseVersion}-linux-gtk-ppc64le.tar.gz">
+      <and>
+        <os family="unix" />
+        <os arch="ppc64le" />
       </and>
     </condition>
 
@@ -418,7 +418,6 @@
       <arg value="-repository" />
       <arg value="file:${repoLocation}" />
     </java>
-    <antcall target="configureTeamTest" />
 
     <antcall target="installderby" />
   </target>
@@ -428,15 +427,9 @@
     if="derby"
     unless="skipDerby">
     <!-- use p2director, not dropins -->
-    <!--
     <property
       name="perfrepoLocation"
-      value="http://build.eclipse.org/eclipse/buildtools/" />
-    -->
-    <!-- use 'file://' if problems with proxies -->
-    <property
-      name="perfrepoLocation"
-      value="file:///shared/eclipse/buildtools/" />
+      value="https://download.eclipse.org/eclipse/updates/buildtools/" />
 
     <java
       jar="${launcherPath}"
@@ -547,7 +540,7 @@
     unless="currentUpdateSite">
     <property
       name="currentUpdateSite"
-      value="http://${DOWNLOAD_HOST}/eclipse/updates/${updateSiteSegment}-${buildType}-builds/${buildId}" />
+      value="https://${DOWNLOAD_HOST}/eclipse/updates/${updateSiteSegment}-${buildType}-builds/${buildId}" />
   </target>
   <target
     name="initStreamSpecificProperties"
@@ -677,6 +670,11 @@
       value="${results}/${testedPlatform}/directorLogs" />
     <mkdir dir="${directorLogs}" />
     <echo message="directorLogs: ${directorLogs}" />
+    
+    <property
+      name="eclipse.perf.samples.out"
+      value="${results}/${testedPlatform}-perf-samples.dat" />
+    <echo message="eclipse.perf.samples.out: ${eclipse.perf.samples.out}" />
 
     <!-- this directory, with some sort files are created during unit tests
       ... need to find where to disable/enable JaCoCo -->
@@ -815,13 +813,13 @@
 
     <property
       name="current.build.repo"
-      value="http://${DOWNLOAD_HOST}/eclipse/updates/${eclipseStreamMajor}.${eclipseStreamMinor}-${buildType}-builds/${buildId}" />
+      value="https://${DOWNLOAD_HOST}/eclipse/updates/${eclipseStreamMajor}.${eclipseStreamMinor}-${buildType}-builds/${buildId}" />
     <echo message="current.build.repo: ${current.build.repo}" />
 
 
     <property
       name="last.release.build.repo"
-      value="http://${DOWNLOAD_HOST}/eclipse/updates/${previousReleaseVersionRepo}" />
+      value="https://${DOWNLOAD_HOST}/eclipse/updates/${previousReleaseVersionRepo}" />
     <echo message="last.release.build.repo: ${last.release.build.repo}" />
 
     <!--
@@ -1024,6 +1022,12 @@
           <matches
             string="${java.version}"
             pattern="^[11].*$" />
+            <matches
+              string="${java.version}"
+              pattern="^[12].*$" />
+            <matches
+              string="${java.version}"
+              pattern="^[13].*$" />
         </or>
     </condition>
     <condition
@@ -1042,6 +1046,12 @@
           <matches
             string="${java.version}"
             pattern="^[11].*$" />
+            <matches
+              string="${java.version}"
+              pattern="^[12].*$" />
+            <matches
+              string="${java.version}"
+              pattern="^[13].*$" />
     </or>
     </condition>
     <condition
@@ -1060,6 +1070,12 @@
           <matches
             string="${java.version}"
             pattern="^[11].*$" />
+            <matches
+              string="${java.version}"
+              pattern="^[12].*$" />
+            <matches
+              string="${java.version}"
+              pattern="^[13].*$" />
         </or>
     </condition>
     <condition
@@ -1078,6 +1094,12 @@
           <matches
             string="${java.version}"
             pattern="^[11].*$" />
+	        <matches
+	          string="${java.version}"
+	          pattern="^[12].*$" />
+	        <matches
+	          string="${java.version}"
+	          pattern="^[13].*$" />
         </or>
     </condition>
     <condition
@@ -1093,6 +1115,12 @@
           <matches
             string="${java.version}"
             pattern="^[11].*$" />
+          <matches
+            string="${java.version}"
+            pattern="^[12].*$" />
+          <matches
+            string="${java.version}"
+            pattern="^[13].*$" />
         </or>
     </condition>
     <condition
@@ -1105,18 +1133,57 @@
           <matches
             string="${java.version}"
             pattern="^[11].*$" />
+          <matches
+            string="${java.version}"
+            pattern="^[12].*$" />
+          <matches
+            string="${java.version}"
+            pattern="^[13].*$" />
         </or>
 	</condition>
     <condition
 		property="J2SE-11.0"
 		value="${java.home}/bin/java">
-		<matches
-		  string="${java.version}"
-		  pattern="^[11].*$" />
+    	<or>
+			<matches
+			  string="${java.version}"
+			  pattern="^[11].*$" />
+	        <matches
+	          string="${java.version}"
+	          pattern="^[12].*$" />
+	        <matches
+	          string="${java.version}"
+	          pattern="^[13].*$" />
+    	</or>
+	</condition>
+    <condition
+		property="J2SE-12.0"
+		value="${java.home}/bin/java">
+    	<or>
+	        <matches
+	          string="${java.version}"
+	          pattern="^[12].*$" />
+	        <matches
+	          string="${java.version}"
+	          pattern="^[13].*$" />
+    	</or>
+	</condition>
+    <condition
+		property="J2SE-13.0"
+		value="${java.home}/bin/java">
+	        <matches
+	          string="${java.version}"
+	          pattern="^[13].*$" />
 	</condition>
     <echo
       level="info"
       message="DEBUG: values from setJVMProperties" />
+    <echo
+      level="info"
+      message="J2SE-13.0:  ${J2SE-13.0}" />
+    <echo
+      level="info"
+      message="J2SE-12.0:  ${J2SE-12.0}" />
     <echo
       level="info"
       message="J2SE-11.0:  ${J2SE-11.0}" />
@@ -1161,11 +1228,38 @@
     <echo message="${javaversion}" />
 
     <condition
+      property="J2SE-13.0"
+      value="${jvm}">
+    		<matches
+				string="${javaversion}"
+				pattern='.*version "[13].*"' />
+    </condition>
+    <condition
+      property="J2SE-12.0"
+      value="${jvm}">
+    	<or>
+    		<matches
+				string="${javaversion}"
+				pattern='.*version "[12].*"' />
+    		<matches
+				string="${javaversion}"
+				pattern='.*version "[13].*"' />
+    	</or>
+    </condition>
+    <condition
       property="J2SE-11.0"
       value="${jvm}">
-      <matches
-        string="${javaversion}"
-        pattern='.*version "[11].*"' />
+    	<or>
+	    	<matches
+		        string="${javaversion}"
+		        pattern='.*version "[11].*"' />
+    		<matches
+				string="${javaversion}"
+				pattern='.*version "[12].*"' />
+    		<matches
+				string="${javaversion}"
+				pattern='.*version "[13].*"' />
+    	</or>
     </condition>
     <condition
       property="J2SE-10.0"
@@ -1177,6 +1271,12 @@
         <matches
           string="${javaversion}"
           pattern='.*version "[11].*"' />
+		<matches
+			string="${javaversion}"
+			pattern='.*version "[12].*"' />
+		<matches
+			string="${javaversion}"
+			pattern='.*version "[13].*"' />
       </or>
     </condition>
     <condition
@@ -1192,6 +1292,12 @@
           <matches
               string="${javaversion}"
               pattern='.*version "[11].*"' />
+    		<matches
+				string="${javaversion}"
+				pattern='.*version "[12].*"' />
+    		<matches
+				string="${javaversion}"
+				pattern='.*version "[13].*"' />
         </or>
     </condition>
     <condition
@@ -1210,6 +1316,12 @@
           <matches
             string="${javaversion}"
             pattern='.*version "[11].*"' />
+    		<matches
+    			string="${javaversion}"
+    			pattern='.*version "[12].*"' />
+    		<matches
+    			string="${javaversion}"
+    			pattern='.*version "[13].*"' />
         </or>
     </condition>
     <condition
@@ -1228,6 +1340,12 @@
           <matches
             string="${javaversion}"
             pattern='.*version "[11].*"' />
+    		<matches
+    			string="${javaversion}"
+    			pattern='.*version "[12].*"' />
+    		<matches
+    			string="${javaversion}"
+    			pattern='.*version "[13].*"' />
         </or>
     </condition>
     <condition
@@ -1246,6 +1364,12 @@
           <matches
             string="${javaversion}"
             pattern='.*version "[11].*"' />
+    		<matches
+    			string="${javaversion}"
+    			pattern='.*version "[12].*"' />
+    		<matches
+    			string="${javaversion}"
+    			pattern='.*version "[13].*"' />
         </or>
     </condition>
     <condition
@@ -1264,11 +1388,19 @@
           <matches
             string="${javaversion}"
             pattern='.*version "[11].*"' />
+    		<matches
+    			string="${javaversion}"
+    			pattern='.*version "[12].*"' />
+    		<matches
+    			string="${javaversion}"
+    			pattern='.*version "[13].*"' />
         </or>
     </condition>
     <echo
       level="info"
       message="DEBUG: values from setJVMfromUserSpecified" />
+  	<echo message="J2SE-13.0:  ${J2SE-13.0}" />
+  	<echo message="J2SE-12.0:  ${J2SE-12.0}" />
   	<echo message="J2SE-11.0:  ${J2SE-11.0}" />
     <echo message="J2SE-10.0:  ${J2SE-10.0}" />
     <echo message="J2SE-9.0:  ${J2SE-9.0}" />
@@ -1277,50 +1409,6 @@
     <echo message="J2SE-6.0:  ${J2SE-6.0}" />
     <echo message="J2SE-5.0:  ${J2SE-5.0}" />
   </target>
-  <target
-    name="checkCVSPropExists"
-    if="teamcvs">
-    <condition property="cvsPropertiesAvailable">
-      <available file="${cvstest.properties}" />
-    </condition>
-  </target>
-  <target
-    name="getcvstestProperties"
-    if="cvsPropertiesAvailable"
-    depends="checkCVSPropExists">
-    <!--
-      TODO: cvstest.properties (file location) is currently
-      hard coded in 'runTest2.xml' and passed along this 'test.xml'
-      via production.properties. Would be better to have the file location
-      be part of the platform specific properties files, as we do with "jvm"
-    -->
-    <echo message="cvstest.properties file: ${cvstest.properties}" />
-    <property file="${cvstest.properties}" />
-
-  </target>
-  <target
-    name="configureTeamTest"
-    depends="getcvstestProperties"
-    if="teamcvs">
-    <!-- Fill in cvs repository information -->
-    <replace
-      file="${eclipse-home}/plugins/${org.eclipse.team.tests.cvs.core}/repository.properties"
-      token="@user@"
-      value="${cvs_user}" />
-    <replace
-      file="${eclipse-home}/plugins/${org.eclipse.team.tests.cvs.core}/repository.properties"
-      token="@password@"
-      value="${cvs_password}" />
-    <replace
-      file="${eclipse-home}/plugins/${org.eclipse.team.tests.cvs.core}/repository.properties"
-      token="@host@"
-      value="${cvs_host}" />
-    <replace
-      file="${eclipse-home}/plugins/${org.eclipse.team.tests.cvs.core}/repository.properties"
-      token="@root@"
-      value="${cvs_root}" />
-  </target>
-
 
   <macrodef name="runTests">
     <attribute name="testPlugin" />
@@ -1490,9 +1578,6 @@
       TODO: would have to compute these in runTest2.xml, to make part of production properties,
       and phpproperties.php
     -->
-    <property
-      name="eclipse.perf.dbloc"
-      value="${eclipse.perf.dbloc.value}" />
     <!-- buildIdToUse equals either baselinePerfVersion or else equals buildId. In either case we want to collect the data -->
     <!-- TODO: Do we need "buildID" coded somewhere, to know WHICH build to match with?
       Or, else will take large number of "baselines" averaged? -->
@@ -1522,8 +1607,8 @@
     <!-- frameworkperfargs is used by library.xml ... probably an easier way? -->
     <condition
       property="frameworkperfargs"
-      value="-Declipse.perf.dbloc=${eclipse.perf.dbloc} -Declipse.perf.config=${eclipse.perf.config} -Declipse.perf.assertAgainst=${eclipse.perf.assertAgainst}"
-      else="-Declipse.perf.dbloc=${eclipse.perf.dbloc} -Declipse.perf.config=${eclipse.perf.config}">
+      value="-DInternalWriteRawPerformanceData=${eclipse.perf.samples.out} -Declipse.perf.config=${eclipse.perf.config} -Declipse.perf.assertAgainst=${eclipse.perf.assertAgainst}"
+      else="-DInternalWriteRawPerformanceData=${eclipse.perf.samples.out} -Declipse.perf.config=${eclipse.perf.config}">
       <isset property="eclipse.perf.assertAgainst" />
     </condition>
 
@@ -1719,7 +1804,7 @@
   </target>
 
   <target
-    name="jface"
+    name="jfacetext"
     depends="init">
     <runTests testPlugin="org.eclipse.jface.text.tests" />
   </target>
@@ -1728,6 +1813,12 @@
     name="jfacedatabinding"
     depends="init">
     <runTests testPlugin="org.eclipse.jface.tests.databinding" />
+  </target>
+
+	<target
+    name="jface"
+    depends="init">
+    <runTests testPlugin="org.eclipse.jface.tests" />
   </target>
 
   <target name="filebuffers">
@@ -1954,15 +2045,6 @@
   </target>
 
   <target
-    name="teamcvs"
-    depends="init">
-    <property
-      name="teamcvs"
-      value="true" />
-    <runTests testPlugin="org.eclipse.team.tests.cvs.core" />
-  </target>
-
-  <target
     name="ui"
     depends="init">
     <runTests testPlugin="org.eclipse.ui.tests" />
@@ -2080,6 +2162,12 @@
   </target>
 
   <target
+    name="pdejunit"
+    depends="init">
+    <runTests testPlugin="org.eclipse.pde.junit.runtime.tests" />
+  </target>
+
+  <target
     name="bidi"
     depends="init">
     <runTests testPlugin="org.eclipse.equinox.bidi.tests" />
@@ -2182,7 +2270,6 @@
     <antcall target="pdeui" />
     <antcall target="pdeapitooling" />
     <antcall target="swt" />
-    <antcall target="teamcvs" />
     <antcall target="ua" />
     <antcall target="uiforms" />
     <antcall target="uiperformance" />
@@ -2425,8 +2512,8 @@
     <antcall target="osgi" />
     <antcall target="coreresources" />
     <antcall target="equinoxp2" />
-    <antcall target="teamcvs" />
     <antcall target="jface" />
+    <antcall target="jfacetext" />
     <antcall target="ui" />
     <antcall target="uiperformance" />
 
@@ -2454,6 +2541,7 @@
     name="pde"
     depends="init">
     <antcall target="pdeds" />
+    <antcall target="pdejunit" />
     <antcall target="pdeui" />
   	<antcall target="pdeua" />
     <antcall target="pdeuitemplates" />

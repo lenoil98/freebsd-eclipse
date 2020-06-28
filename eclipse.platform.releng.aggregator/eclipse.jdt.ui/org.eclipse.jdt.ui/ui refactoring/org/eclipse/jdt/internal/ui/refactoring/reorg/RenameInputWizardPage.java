@@ -142,7 +142,7 @@ abstract class RenameInputWizardPage extends TextInputWizardPage {
 	/**
 	 * Returns the new name for the Java element or <code>null</code>
 	 * if no new name is provided
-	 * 
+	 *
 	 * @param nameUpdating the name updating
 	 *
 	 * @return the new name or <code>null</code>
@@ -301,7 +301,7 @@ abstract class RenameInputWizardPage extends TextInputWizardPage {
 	protected boolean getBooleanSetting(String key, boolean defaultValue) {
 		String update= getRefactoringSettings().get(key);
 		if (update != null)
-			return Boolean.valueOf(update).booleanValue();
+			return Boolean.parseBoolean(update);
 		else
 			return defaultValue;
 	}

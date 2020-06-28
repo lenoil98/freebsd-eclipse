@@ -13,12 +13,12 @@
  *******************************************************************************/
 package org.eclipse.help.internal.webapp.data;
 
-import java.util.*;
+import java.util.Locale;
 
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServletRequest;
 
 import org.eclipse.help.internal.base.HelpBasePlugin;
-import org.eclipse.help.internal.webapp.*;
+import org.eclipse.help.internal.webapp.WebappResources;
 
 /**
  * Uses a resource bundle to load images and strings from a property file in a
@@ -95,7 +95,7 @@ public class ServletResources {
 
 	/**
 	 * Returns a string from a property file, with underlined access key. Access
-	 * key can be specified in the label by &amp: character following character
+	 * key can be specified in the label by &amp; character following character
 	 * in the label that is to serve as access key It uses 'name' as a the key
 	 * to retrieve from the webapp.properties file.
 	 *
@@ -138,8 +138,8 @@ public class ServletResources {
 		}
 		int amp = property.indexOf('&');
 		if (amp <0 || amp >= property.length() - 1) {
-            return null;
-        }
+			return null;
+		}
 		return ("" + property.charAt(amp +1)).toLowerCase(Locale.ENGLISH); //$NON-NLS-1$
 	}
 

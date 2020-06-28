@@ -195,7 +195,7 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 			return false;
 		}
 	}
-	
+
 	private abstract static class LaunchConfigurationElement {
 
 		public abstract ILaunchConfiguration getLaunchConfiguration();
@@ -433,7 +433,7 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 
 	/**
 	 * Creates a new label with an optional bold font.
-	 * 
+	 *
 	 * @param parent the parent control
 	 * @param text the label text
 	 * @param bold bold or not
@@ -451,7 +451,7 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 
 	/**
 	 * Create the export options specification widgets.
-	 * 
+	 *
 	 * @param parent org.eclipse.swt.widgets.Composite
 	 */
 	protected void createLibraryHandlingGroup(Composite parent) {
@@ -590,10 +590,10 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 
 	/**
 	 * Gets the absolute location relative to the workspace.
-	 * 
+	 *
 	 * @param location the location
 	 * @return the absolute path for the location of the file
-	 * 
+	 *
 	 * @since 3.8
 	 */
 	private IPath getAbsoluteLocation(IPath location) {
@@ -617,7 +617,7 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 	/**
 	 * Returns a boolean indicating whether the passed File handle is is valid and available for
 	 * use.
-	 * 
+	 *
 	 * @param antScriptFile the ant script
 	 * @return boolean
 	 */
@@ -673,10 +673,8 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 		try {
 			ILaunchManager manager= DebugPlugin.getDefault().getLaunchManager();
 			ILaunchConfigurationType type= manager.getLaunchConfigurationType(IJavaLaunchConfigurationConstants.ID_JAVA_APPLICATION);
-			ILaunchConfiguration[] launchconfigs= manager.getLaunchConfigurations(type);
 
-			for (int i= 0; i < launchconfigs.length; i++) {
-				ILaunchConfiguration launchconfig= launchconfigs[i];
+			for (ILaunchConfiguration launchconfig : manager.getLaunchConfigurations(type)) {
 				if (!launchconfig.getAttribute(IDebugUIConstants.ATTR_PRIVATE, false)) {
 					String projectName= launchconfig.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, ""); //$NON-NLS-1$
 					result.add(new ExistingLaunchConfigurationElement(launchconfig, projectName));
@@ -714,10 +712,9 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 
 			if (jproject != null) {
 				try {
-					String[] childProjectNames= jproject.getRequiredProjectNames();
-					for (int i= 0; i < childProjectNames.length; i++) {
-						if (!projectNames.contains(childProjectNames[i])) {
-							projectNames.add(childProjectNames[i]);
+					for (String childProjectName : jproject.getRequiredProjectNames()) {
+						if (!projectNames.contains(childProjectName)) {
+							projectNames.add(childProjectName);
 						}
 					}
 				} catch (JavaModelException e) {
@@ -728,8 +725,7 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 		}
 
 		ArrayList<IJavaProject> result= new ArrayList<>();
-		for (int i= 0, size= projectNames.size(); i < size; i++) {
-			String name= projectNames.get(i);
+		for (String name : projectNames) {
 			IJavaProject project= getJavaProject(name);
 			if (project != null)
 				result.add(project);
@@ -759,12 +755,11 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 
 		boolean isModularConfig= JavaRuntime.isModularConfiguration(configuration);
 		ArrayList<IPath> userEntries= new ArrayList<>(entries.length);
-		for (int i= 0; i < entries.length; i++) {
-			int classPathProperty= entries[i].getClasspathProperty();
+		for (IRuntimeClasspathEntry cpentry : entries) {
+			int classPathProperty= cpentry.getClasspathProperty();
 			if ((!isModularConfig && classPathProperty == IRuntimeClasspathEntry.USER_CLASSES)
-					|| (isModularConfig && (classPathProperty == IRuntimeClasspathEntry.CLASS_PATH || classPathProperty == IRuntimeClasspathEntry.MODULE_PATH))) {
-
-				String location= entries[i].getLocation();
+				|| (isModularConfig && (classPathProperty == IRuntimeClasspathEntry.CLASS_PATH || classPathProperty == IRuntimeClasspathEntry.MODULE_PATH))) {
+				String location= cpentry.getLocation();
 				if (location != null) {
 					IPath entry= Path.fromOSString(location);
 					if (!userEntries.contains(entry)) {
@@ -803,15 +798,12 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 
 		IJavaProject[] searchOrder= getProjectSearchOrder(projectName);
 
-		for (int i= 0; i < classpathEntries.length; i++) {
-			IPath entry= classpathEntries[i];
+		for (IPath entry : classpathEntries) {
 			IPackageFragmentRoot[] elements= findRootsForClasspath(entry, searchOrder);
 			if (elements == null) {
 				status.add(new Status(IStatus.WARNING, JavaUI.ID_PLUGIN, Messages.format(FatJarPackagerMessages.FatJarPackageWizardPage_error_missingClassFile, BasicElementLabels.getPathLabel(entry, false))));
 			} else {
-				for (int j= 0; j < elements.length; j++) {
-					result.add(elements[j]);
-				}
+				result.addAll(Arrays.asList(elements));
 			}
 		}
 
@@ -819,8 +811,8 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 	}
 
 	private static IPackageFragmentRoot[] findRootsForClasspath(IPath entry, IJavaProject[] searchOrder) {
-		for (int i= 0; i < searchOrder.length; i++) {
-			IPackageFragmentRoot[] elements= findRootsInProject(entry, searchOrder[i]);
+		for (IJavaProject s : searchOrder) {
+			IPackageFragmentRoot[] elements= findRootsInProject(entry, s);
 			if (elements.length != 0) {
 				return elements;
 			}
@@ -832,9 +824,7 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 		ArrayList<IPackageFragmentRoot> result= new ArrayList<>();
 
 		try {
-			IPackageFragmentRoot[] roots= project.getPackageFragmentRoots();
-			for (int i= 0; i < roots.length; i++) {
-				IPackageFragmentRoot packageFragmentRoot= roots[i];
+			for (IPackageFragmentRoot packageFragmentRoot : project.getPackageFragmentRoots()) {
 				if (isRootAt(packageFragmentRoot, entry))
 					result.add(packageFragmentRoot);
 			}
@@ -880,18 +870,18 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 		}
 
 		for (Iterator<IResource> iterator= resources.iterator(); iterator.hasNext();) {
-			IResource element= iterator.next();
-			if (element == null)
+			IResource resource= iterator.next();
+			if (resource == null)
 				iterator.remove();
 		}
 
 		IJavaSearchScope searchScope= JavaSearchScopeFactory.getInstance().createJavaSearchScope(resources.toArray(new IResource[resources.size()]), true);
 		MainMethodSearchEngine engine= new MainMethodSearchEngine();
 		try {
-			IType[] mainTypes= engine.searchMainMethods(context, searchScope, 0);
-			for (int i= 0; i < mainTypes.length; i++) {
-				if (mainTypes[i].getFullyQualifiedName().equals(name))
-					return mainTypes[i];
+			for (IType mainType : engine.searchMainMethods(context, searchScope, 0)) {
+				if (mainType.getFullyQualifiedName().equals(name)) {
+					return mainType;
+				}
 			}
 		} catch (InvocationTargetException ex) {
 			JavaPlugin.log(ex);
@@ -906,8 +896,7 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 	public void dispose() {
 		super.dispose();
 		if (fLauchConfigurationModel != null) {
-			for (int i= 0, size= fLauchConfigurationModel.size(); i < size; i++) {
-				LaunchConfigurationElement element= fLauchConfigurationModel.get(i);
+			for (LaunchConfigurationElement element : fLauchConfigurationModel) {
 				element.dispose();
 			}
 		}
@@ -938,8 +927,9 @@ public class FatJarPackageWizardPage extends AbstractJarDestinationWizardPage {
 			if (directoryNames != null) {
 				if (!fAntScriptNamesCombo.getText().equals(directoryNames[0]))
 					fAntScriptNamesCombo.add(fAntScriptNamesCombo.getText());
-				for (int i= 0; i < directoryNames.length; i++)
-					fAntScriptNamesCombo.add(directoryNames[i]);
+				for (String directoryName : directoryNames) {
+					fAntScriptNamesCombo.add(directoryName);
+				}
 			}
 
 			// LIBRARY HANDLING

@@ -14,6 +14,7 @@
  *******************************************************************************/
 package org.eclipse.team.internal.ccvs.ui;
 
+import java.text.DateFormat;
 import java.util.Date;
 
 import org.eclipse.core.runtime.IAdaptable;
@@ -27,8 +28,6 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.team.internal.ccvs.core.*;
 import org.eclipse.team.internal.ccvs.core.syncinfo.ResourceSyncInfo;
-
-import com.ibm.icu.text.DateFormat;
 
 /**
  * This class provides the table and it's required components for a file's revision
@@ -79,7 +78,7 @@ public class HistoryTableProvider {
 					return revision;
 				case COL_BRANCHES:
 					CVSTag[] branches = entry.getBranches();
-					StringBuffer result = new StringBuffer();
+					StringBuilder result = new StringBuilder();
 					for (int i = 0; i < branches.length; i++) {
 						result.append(branches[i].getName());
 						if (i < branches.length - 1) {
@@ -87,9 +86,10 @@ public class HistoryTableProvider {
 						}
 					}
 					return result.toString();
+
 				case COL_TAGS:
 					CVSTag[] tags = entry.getTags();
-					result = new StringBuffer();
+					result = new StringBuilder();
 					for (int i = 0; i < tags.length; i++) {
 						result.append(tags[i].getName());
 						if (i < tags.length - 1) {
@@ -124,9 +124,6 @@ public class HistoryTableProvider {
 			return dateFormat;
 		}
 		
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IColorProvider#getForeground(java.lang.Object)
-		 */
 		@Override
 		public Color getForeground(Object element) {
 			ILogEntry entry = adaptToLogEntry(element);
@@ -136,17 +133,12 @@ public class HistoryTableProvider {
 				return null;
 			}
 		}
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IColorProvider#getBackground(java.lang.Object)
-		 */
+
 		@Override
 		public Color getBackground(Object element) {
 			return null;
 		}
-		/*
-		 * (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IFontProvider#getFont(java.lang.Object)
-		 */
+
 		@Override
 		public Font getFont(Object element) {
 			ILogEntry entry = adaptToLogEntry(element);
@@ -158,8 +150,8 @@ public class HistoryTableProvider {
 				if (currentRevisionFont == null) {
 					Font defaultFont = JFaceResources.getDefaultFont();
 					FontData[] data = defaultFont.getFontData();
-					for (int i = 0; i < data.length; i++) {
-						data[i].setStyle(SWT.BOLD);
+					for (FontData d : data) {
+						d.setStyle(SWT.BOLD);
 					}				
 					currentRevisionFont = new Font(viewer.getTable().getDisplay(), data);
 				}
@@ -417,7 +409,7 @@ public class HistoryTableProvider {
 	 */
 	private SelectionListener getColumnListener(final TableViewer tableViewer) {
 		/**
-	 	 * This class handles selections of the column headers.
+		 * This class handles selections of the column headers.
 		 * Selection of the column header will cause resorting
 		 * of the shown tasks using that column's sorter.
 		 * Repeated selection of the header will toggle

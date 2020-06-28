@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -150,16 +150,10 @@ public class HttpServerManager implements ManagedServiceFactory {
 		if (null != customizer)
 			httpContext = (ServletContextHandler) customizer.customizeContext(httpContext, dictionary);
 
-		SessionHandler sessionManager = httpContext.getSessionHandler();
-		try {
-			sessionManager.addEventListener((HttpSessionIdListener) holder.getServlet());
-		} catch (ServletException e) {
-			throw new ConfigurationException(pid, e.getMessage(), e);
-		}
-
 		try {
 			server.start();
-
+			SessionHandler sessionManager = httpContext.getSessionHandler();
+			sessionManager.addEventListener((HttpSessionIdListener) holder.getServlet());
 			HouseKeeper houseKeeper = server.getSessionIdManager().getSessionHouseKeeper();
 			houseKeeper.setIntervalSec(Details.getLong(dictionary, JettyConstants.HOUSEKEEPER_INTERVAL, houseKeeper.getIntervalSec()));
 		} catch (Exception e) {
@@ -172,7 +166,7 @@ public class HttpServerManager implements ManagedServiceFactory {
 		ServerConnector httpsConnector = null;
 		if (Details.getBoolean(dictionary, JettyConstants.HTTPS_ENABLED, false)) {
 			// SSL Context Factory for HTTPS and SPDY
-			SslContextFactory sslContextFactory = new SslContextFactory();
+			SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 			//sslContextFactory.setKeyStore(KeyS)
 
 			//Not sure if the next tree are properly migrated from jetty 8...
@@ -214,8 +208,7 @@ public class HttpServerManager implements ManagedServiceFactory {
 	}
 
 	public synchronized void shutdown() throws Exception {
-		for (Iterator<Server> it = servers.values().iterator(); it.hasNext();) {
-			Server server = it.next();
+		for (Server server : servers.values()) {
 			server.stop();
 		}
 		servers.clear();
@@ -337,9 +330,7 @@ public class HttpServerManager implements ManagedServiceFactory {
 			thread.setContextClassLoader(contextLoader);
 			try {
 				sessionDestroyed.invoke(httpServiceServlet, event.getSession().getId());
-			} catch (IllegalAccessException e) {
-				// not likely
-			} catch (IllegalArgumentException e) {
+			} catch (IllegalAccessException | IllegalArgumentException e) {
 				// not likely
 			} catch (InvocationTargetException e) {
 				throw new RuntimeException(e.getCause());
@@ -355,9 +346,7 @@ public class HttpServerManager implements ManagedServiceFactory {
 			thread.setContextClassLoader(contextLoader);
 			try {
 				sessionIdChanged.invoke(httpServiceServlet, oldSessionId);
-			} catch (IllegalAccessException e) {
-				// not likely
-			} catch (IllegalArgumentException e) {
+			} catch (IllegalAccessException | IllegalArgumentException e) {
 				// not likely
 			} catch (InvocationTargetException e) {
 				throw new RuntimeException(e.getCause());
@@ -371,11 +360,11 @@ public class HttpServerManager implements ManagedServiceFactory {
 	private static boolean deleteDirectory(File directory) {
 		if (directory.exists() && directory.isDirectory()) {
 			File[] files = directory.listFiles();
-			for (int i = 0; i < files.length; i++) {
-				if (files[i].isDirectory()) {
-					deleteDirectory(files[i]);
+			for (File file : files) {
+				if (file.isDirectory()) {
+					deleteDirectory(file);
 				} else {
-					files[i].delete();
+					file.delete();
 				}
 			}
 		}

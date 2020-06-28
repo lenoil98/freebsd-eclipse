@@ -7,7 +7,7 @@
  *  https://www.eclipse.org/legal/epl-2.0/
  *
  *  SPDX-License-Identifier: EPL-2.0
- * 
+ *
  *  Contributors:
  *     Sonatype, Inc. - initial API and implementation
  *     IBM Corporation - Ongoing development
@@ -17,7 +17,7 @@ package org.eclipse.equinox.p2.operations;
 import java.net.URI;
 import java.util.*;
 import org.eclipse.core.runtime.*;
-import org.eclipse.equinox.internal.p2.operations.Activator;
+import org.eclipse.equinox.internal.p2.operations.Constants;
 import org.eclipse.equinox.internal.p2.operations.Messages;
 import org.eclipse.equinox.p2.core.IProvisioningAgent;
 import org.eclipse.equinox.p2.core.ProvisionException;
@@ -27,28 +27,28 @@ import org.eclipse.equinox.p2.metadata.IInstallableUnit;
 import org.eclipse.equinox.p2.metadata.IVersionedId;
 import org.eclipse.equinox.p2.query.*;
 import org.eclipse.osgi.util.NLS;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceReference;
+import org.osgi.framework.*;
 
 /**
  * OperationFactory provides a set of helpers to simplify dealing with the running installation.
  * Among other things, it simplifies the installation, un-installation and update.
  * If the system you are trying to modify is not the running one, you need to directly use the various subclass of {@link ProfileChangeOperation}.
- * @since 2.1  
+ * @since 2.1
  */
 public class OperationFactory {
 
 	private IProvisioningAgent getAgent() {
 		Collection<ServiceReference<IProvisioningAgent>> ref = null;
+		BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
 		try {
-			ref = Activator.getContext().getServiceReferences(IProvisioningAgent.class, '(' + IProvisioningAgent.SERVICE_CURRENT + '=' + Boolean.TRUE.toString() + ')');
+			ref = bundleContext.getServiceReferences(IProvisioningAgent.class, '(' + IProvisioningAgent.SERVICE_CURRENT + '=' + Boolean.TRUE.toString() + ')');
 		} catch (InvalidSyntaxException e) {
 			//ignore can't happen since we write the filter ourselves
 		}
 		if (ref == null || ref.size() == 0)
 			throw new IllegalStateException(Messages.OperationFactory_noAgent);
-		IProvisioningAgent agent = Activator.getContext().getService(ref.iterator().next());
-		Activator.getContext().ungetService(ref.iterator().next());
+		IProvisioningAgent agent = bundleContext.getService(ref.iterator().next());
+		bundleContext.ungetService(ref.iterator().next());
 		return agent;
 	}
 
@@ -65,7 +65,7 @@ public class OperationFactory {
 			IQuery<IInstallableUnit> installableUnits = QueryUtil.createIUQuery(versionedId.getId(), versionedId.getVersion());
 			IQueryResult<IInstallableUnit> matches = searchContext.query(installableUnits, monitor);
 			if (matches.isEmpty())
-				throw new ProvisionException(new Status(IStatus.ERROR, Activator.ID, NLS.bind(Messages.OperationFactory_noIUFound, versionedId)));
+				throw new ProvisionException(new Status(IStatus.ERROR, Constants.BUNDLE_ID, NLS.bind(Messages.OperationFactory_noIUFound, versionedId)));
 
 			//Add the first IU
 			Iterator<IInstallableUnit> iuIt = matches.iterator();
@@ -84,7 +84,7 @@ public class OperationFactory {
 	}
 
 	/**
-	 * This factory method creates an {@link InstallOperation} to install all the elements listed from the specified repositories. 
+	 * This factory method creates an {@link InstallOperation} to install all the elements listed from the specified repositories.
 	 * @param toInstall the elements to install. This can not be null.
 	 * @param repos the repositories to install the elements from. If null is passed, it will use all previously registered repositories.
 	 * @param monitor the progress monitor
@@ -106,9 +106,9 @@ public class OperationFactory {
 	}
 
 	/**
-	 * Create an {@link UninstallOperation} that will uninstall the listed elements from the running instance. 
+	 * Create an {@link UninstallOperation} that will uninstall the listed elements from the running instance.
 	 * @param toUninstall the elements to uninstall. This can not be null.
-	 * @param repos the repositories to install the elements from. If null is passed, it will use all previously registered repositories. 
+	 * @param repos the repositories to install the elements from. If null is passed, it will use all previously registered repositories.
 	 * @param monitor the progress monitor
 	 * @return an operation to uninstall
 	 */
@@ -134,7 +134,7 @@ public class OperationFactory {
 	 *     cannot be accessed
 	 */
 	public IQueryResult<IInstallableUnit> listInstalledElements(boolean rootsOnly, IProgressMonitor monitor) {
-		IProfileRegistry registry = (IProfileRegistry) getAgent().getService(IProfileRegistry.SERVICE_NAME);
+		IProfileRegistry registry = getAgent().getService(IProfileRegistry.class);
 		IProfile profile = registry.getProfile(IProfileRegistry.SELF);
 		if (profile == null)
 			return new CollectionResult<>(null);
@@ -145,7 +145,7 @@ public class OperationFactory {
 
 	/**
 	 * Create an {@link UpdateOperation} that will update the elements specified.
-	 * @param toUpdate The elements to update.Passing null will result in looking for an update to all the installed. Note that you can pass the results of {@link OperationFactory#listInstalledElements(boolean, IProgressMonitor)} to this 
+	 * @param toUpdate The elements to update.Passing null will result in looking for an update to all the installed. Note that you can pass the results of {@link OperationFactory#listInstalledElements(boolean, IProgressMonitor)} to this
 	 * method if you wish to update all elements installed in the running instance of eclipse.
 	 * @param repos the repositories to update the elements from. If null is passed, it will use all previously registered repositories.
 	 * @param monitor the progress monitor

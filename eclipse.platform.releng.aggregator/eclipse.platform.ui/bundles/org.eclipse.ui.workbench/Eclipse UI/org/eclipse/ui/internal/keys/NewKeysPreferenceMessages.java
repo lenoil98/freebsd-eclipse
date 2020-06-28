@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2015 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Remy Chi Jian Suen <remy.suen@gmail.com> - Bug 186522 - [KeyBindings] New Keys preference page does not resort by binding with conflicts
+ *     Christian Georgi (SAP SE) - Bug 540440
  *******************************************************************************/
 
 package org.eclipse.ui.internal.keys;
@@ -65,6 +66,10 @@ public class NewKeysPreferenceMessages extends NLS {
 	public static String ActionSetFilterCheckBox_Text;
 	public static String InternalFilterCheckBox_Text;
 	public static String UncategorizedFilterCheckBox_Text;
+
+	public static String ShowCommandKeysGroup_Title;
+	public static String ShowCommandKeysForKeyboard_Text;
+	public static String ShowCommandKeysForMouse_Text;
 
 	static {
 		// load message values from bundle file

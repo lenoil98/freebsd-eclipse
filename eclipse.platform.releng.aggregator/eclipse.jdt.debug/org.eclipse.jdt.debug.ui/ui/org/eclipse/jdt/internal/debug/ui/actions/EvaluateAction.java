@@ -85,6 +85,7 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.ITextEditor;
 
 import com.sun.jdi.InvocationException;
@@ -273,7 +274,7 @@ public abstract class EvaluateAction implements IEvaluationListener, IWorkbenchW
             }
         };
 
-        IWorkbench workbench = JDIDebugUIPlugin.getDefault().getWorkbench();
+        IWorkbench workbench = PlatformUI.getWorkbench();
         try {
             workbench.getProgressService().busyCursorWhile(runnable);
         } catch (InvocationTargetException e) {
@@ -288,6 +289,9 @@ public abstract class EvaluateAction implements IEvaluationListener, IWorkbenchW
         			}
         		}
         	}
+			String error = NLS.bind(ActionMessages.EvaluateAction__evaluation_failed__Reason, message);
+			Status status = new Status(IStatus.WARNING, JDIDebugUIPlugin.getUniqueIdentifier(), error, e);
+			JDIDebugUIPlugin.log(status);
             reportError(message);
         } catch (InterruptedException e) {
         }

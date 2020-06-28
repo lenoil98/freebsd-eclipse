@@ -14,11 +14,8 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.api;
 
-import junit.framework.TestSuite;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorRegistry;
 import org.eclipse.ui.IPageLayout;
@@ -37,206 +34,215 @@ import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.tests.harness.util.FileUtil;
 import org.eclipse.ui.tests.harness.util.UITestCase;
 import org.eclipse.ui.views.IStickyViewDescriptor;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * @since 3.0
  */
+@RunWith(JUnit4.class)
 public class StickyViewTest extends UITestCase {
 
+	private IWorkbenchWindow window;
+
+	private IWorkbenchPage page;
+
 	/**
-	 * Allow tests to run just in this class.
-	 * @return the TestSuite to run.
+	 * @param testName
 	 */
-	public static TestSuite suite() {
-		return new TestSuite(StickyViewTest.class);
+	public StickyViewTest() {
+		super(StickyViewTest.class.getSimpleName());
 	}
 
-    private IWorkbenchWindow window;
+	@Test
+	public void testStackPlacementRight() {
+		testStackPlacement("Right");
+	}
 
-    private IWorkbenchPage page;
+	@Test
+	public void testStackPlacementLeft() {
+		testStackPlacement("Left");
+	}
 
-    /**
-     * @param testName
-     */
-    public StickyViewTest(String testName) {
-        super(testName);
-    }
+	@Test
+	public void testStackPlacementTop() {
+		testStackPlacement("Top");
+	}
 
-    public void testStackPlacementRight() {
-        testStackPlacement("Right");
-    }
+	@Test
+	public void testStackPlacementBottom() {
+		testStackPlacement("Bottom");
+	}
 
-    public void testStackPlacementLeft() {
-        testStackPlacement("Left");
-    }
+	/**
+	 * Tests to ensure that sticky views are opened in the same stack.
+	 */
+	private void testStackPlacement(String location) {
+		try {
+			IViewPart part1 = page
+					.showView("org.eclipse.ui.tests.api.StickyView" + location
+							+ "1");
+			assertNotNull(part1);
+			IViewPart part2 = page
+					.showView("org.eclipse.ui.tests.api.StickyView" + location
+							+ "2");
+			assertNotNull(part2);
+			IViewPart[] stack = page.getViewStack(part1);
 
-    public void testStackPlacementTop() {
-        testStackPlacement("Top");
-    }
+			assertTrue(ViewUtils.findInStack(stack, part1));
+			assertTrue(ViewUtils.findInStack(stack, part2));
 
-    public void testStackPlacementBottom() {
-        testStackPlacement("Bottom");
-    }
+		} catch (PartInitException e) {
+			fail(e.getMessage());
+		}
 
-    /**
-     * Tests to ensure that sticky views are opened in the same stack.
-     */
-    private void testStackPlacement(String location) {
-        try {
-            IViewPart part1 = page
-                    .showView("org.eclipse.ui.tests.api.StickyView" + location
-                            + "1");
-            assertNotNull(part1);
-            IViewPart part2 = page
-                    .showView("org.eclipse.ui.tests.api.StickyView" + location
-                            + "2");
-            assertNotNull(part2);
-            IViewPart[] stack = page.getViewStack(part1);
+	}
 
-            assertTrue(ViewUtils.findInStack(stack, part1));
-            assertTrue(ViewUtils.findInStack(stack, part2));
+	/**
+	 * Tests to ensure that all views in a stack with a known sticky view are also sticky.
+	 */
+	@Test
+	public void testStackContents() {
+		try {
+			IViewPart part1 = page
+					.showView("org.eclipse.ui.tests.api.StickyViewRight1");
+			assertNotNull(part1);
 
-        } catch (PartInitException e) {
-            fail(e.getMessage());
-        }
+			IViewPart[] stack = page.getViewStack(part1);
 
-    }
+			for (IViewPart element : stack) {
+				assertTrue(element.getTitle(), ViewUtils.isSticky(element));
+			}
+		} catch (PartInitException e) {
+			fail(e.getMessage());
+		}
+	}
 
-    /**
-     * Tests to ensure that all views in a stack with a known sticky view are also sticky.
-     */
-    public void testStackContents() {
-        try {
-            IViewPart part1 = page
-                    .showView("org.eclipse.ui.tests.api.StickyViewRight1");
-            assertNotNull(part1);
+	/**
+	 * Tests whether the moveable flag is being picked up and honoured
+	 * from the XML.
+	 */
+	@Test
+	@Ignore
+	public void XXXtestClosableFlag() {
+		//explicit closeable = true
+		testCloseable("org.eclipse.ui.tests.api.StickyViewRight1", true);
+		//explicit closeable = false
+		testCloseable("org.eclipse.ui.tests.api.StickyViewRight2", false);
+		//implicit closeable = true
+		testCloseable("org.eclipse.ui.tests.api.StickyViewLeft1", true);
+	}
 
-            IViewPart[] stack = page.getViewStack(part1);
+	@Test
+	@Ignore
+	public void XXXtestMoveableFlag() {
+		//explicit closeable = true
+		testMoveable("org.eclipse.ui.tests.api.StickyViewRight1", true);
+		//explicit closeable = false
+		testMoveable("org.eclipse.ui.tests.api.StickyViewRight2", false);
+		//implicit closeable = true
+		testMoveable("org.eclipse.ui.tests.api.StickyViewLeft1", true);
+	}
 
-            for (IViewPart element : stack) {
-                assertTrue(element.getTitle(), ViewUtils.isSticky(element));
-            }
-        } catch (PartInitException e) {
-            fail(e.getMessage());
-        }
-    }
+	/**
+	 * Tests whether a sticky view with the given id is moveable or not.
+	 *
+	 * @param id the id
+	 * @param expectation the expected moveable state
+	 */
+	private void testMoveable(String id, boolean expectation) {
+		try {
+			IViewPart part = page.showView(id);
+			assertNotNull(part);
+			assertTrue(ViewUtils.isSticky(part));
 
-    /**
-     * Tests whether the moveable flag is being picked up and honoured
-     * from the XML.
-     */
-    public void XXXtestClosableFlag() {
-        //explicit closeable = true
-        testCloseable("org.eclipse.ui.tests.api.StickyViewRight1", true);
-        //explicit closeable = false
-        testCloseable("org.eclipse.ui.tests.api.StickyViewRight2", false);
-        //implicit closeable = true
-        testCloseable("org.eclipse.ui.tests.api.StickyViewLeft1", true);
-    }
+			//tests to ensure that the XML was read correctly
+			IStickyViewDescriptor[] descs = PlatformUI.getWorkbench()
+					.getViewRegistry().getStickyViews();
+			for (IStickyViewDescriptor desc : descs) {
+				if (desc.getId().equals(id)) {
+					assertEquals(expectation, desc.isMoveable());
+				}
+			}
 
-    public void XXXtestMoveableFlag() {
-        //explicit closeable = true
-        testMoveable("org.eclipse.ui.tests.api.StickyViewRight1", true);
-        //explicit closeable = false
-        testMoveable("org.eclipse.ui.tests.api.StickyViewRight2", false);
-        //implicit closeable = true
-        testMoveable("org.eclipse.ui.tests.api.StickyViewLeft1", true);
-    }
+			// tests to ensure that the property is being honoured by the perspective
+			assertEquals(expectation, ViewUtils.isMoveable(part));
+		} catch (PartInitException e) {
+			fail(e.getMessage());
+		}
+	}
 
-    /**
-     * Tests whether a sticky view with the given id is moveable or not.
-     *
-     * @param id the id
-     * @param expectation the expected moveable state
-     */
-    private void testMoveable(String id, boolean expectation) {
-        try {
-            IViewPart part = page.showView(id);
-            assertNotNull(part);
-            assertTrue(ViewUtils.isSticky(part));
+	/**
+	 * Tests whether a sticky view with the given id is closeable or not.
+	 *
+	 * @param id the id
+	 * @param expectation the expected closeable state
+	 */
+	private void testCloseable(String id, boolean expectation) {
+		try {
+			IViewPart part = page.showView(id);
+			assertNotNull(part);
+			assertTrue(ViewUtils.isSticky(part));
 
-            //tests to ensure that the XML was read correctly
-            IStickyViewDescriptor[] descs = PlatformUI.getWorkbench()
-                    .getViewRegistry().getStickyViews();
-            for (IStickyViewDescriptor desc : descs) {
-                if (desc.getId().equals(id)) {
-                    assertEquals(expectation, desc.isMoveable());
-                }
-            }
+			//tests to ensure that the XML was read correctly
+			IStickyViewDescriptor[] descs = PlatformUI.getWorkbench()
+					.getViewRegistry().getStickyViews();
+			for (IStickyViewDescriptor desc : descs) {
+				if (desc.getId().equals(id)) {
+					assertEquals(expectation, desc.isCloseable());
+				}
+			}
 
-            // tests to ensure that the property is being honoured by the perspective
-            assertEquals(expectation, ViewUtils.isMoveable(part));
-        } catch (PartInitException e) {
-            fail(e.getMessage());
-        }
-    }
+			// tests to ensure that the property is being honoured by the perspective
+			assertEquals(expectation, ViewUtils.isCloseable(part));
+		} catch (PartInitException e) {
+			fail(e.getMessage());
+		}
+	}
 
-    /**
-     * Tests whether a sticky view with the given id is closeable or not.
-     *
-     * @param id the id
-     * @param expectation the expected closeable state
-     */
-    private void testCloseable(String id, boolean expectation) {
-        try {
-            IViewPart part = page.showView(id);
-            assertNotNull(part);
-            assertTrue(ViewUtils.isSticky(part));
+	/**
+	 * Sticky views should remain after perspective reset.
+	 */
+	@Test
+	public void testPerspectiveReset() {
+		try {
+			page.showView("org.eclipse.ui.tests.api.StickyViewRight1");
+			page.resetPerspective();
+			assertNotNull(page
+					.findView("org.eclipse.ui.tests.api.StickyViewRight1"));
+		} catch (PartInitException e) {
+			fail(e.getMessage());
+		}
+	}
 
-            //tests to ensure that the XML was read correctly
-            IStickyViewDescriptor[] descs = PlatformUI.getWorkbench()
-                    .getViewRegistry().getStickyViews();
-            for (IStickyViewDescriptor desc : descs) {
-                if (desc.getId().equals(id)) {
-                    assertEquals(expectation, desc.isCloseable());
-                }
-            }
+	/**
+	 * Tests that a sticky view is opened in successive perspectives.
+	 */
+	@Test
+	public void testPerspectiveOpen() {
+		try {
+			page.showView("org.eclipse.ui.tests.api.StickyViewRight1");
+			page.setPerspective(WorkbenchPlugin.getDefault()
+					.getPerspectiveRegistry().findPerspectiveWithId(
+							"org.eclipse.ui.tests.api.SessionPerspective"));
+			assertNotNull(page
+					.findView("org.eclipse.ui.tests.api.StickyViewRight1"));
+		} catch (PartInitException e) {
+			fail(e.getMessage());
+		}
+	}
 
-            // tests to ensure that the property is being honoured by the perspective
-            assertEquals(expectation, ViewUtils.isCloseable(part));
-        } catch (PartInitException e) {
-            fail(e.getMessage());
-        }
-    }
-
-    /**
-     * Sticky views should remain after perspective reset.
-     */
-    public void testPerspectiveReset() {
-        try {
-            page.showView("org.eclipse.ui.tests.api.StickyViewRight1");
-            page.resetPerspective();
-            assertNotNull(page
-                    .findView("org.eclipse.ui.tests.api.StickyViewRight1"));
-        } catch (PartInitException e) {
-            fail(e.getMessage());
-        }
-    }
-
-    /**
-     * Tests that a sticky view is opened in successive perspectives.
-     */
-    public void testPerspectiveOpen() {
-        try {
-            page.showView("org.eclipse.ui.tests.api.StickyViewRight1");
-            page.setPerspective(WorkbenchPlugin.getDefault()
-                    .getPerspectiveRegistry().findPerspectiveWithId(
-                            "org.eclipse.ui.tests.api.SessionPerspective"));
-            assertNotNull(page
-                    .findView("org.eclipse.ui.tests.api.StickyViewRight1"));
-        } catch (PartInitException e) {
-            fail(e.getMessage());
-        }
-    }
-
-    /**
-     * Test that closing a stand-alone view remove the editor stack and
-     * doesn't throw an NPE.
-     *
-     * @throws Throwable on error
-     * @since 3.2
-     */
-    public void testPerspectiveCloseStandaloneView() throws Throwable {
+	/**
+	 * Test that closing a stand-alone view remove the editor stack and
+	 * doesn't throw an NPE.
+	 *
+	 * @throws Throwable on error
+	 * @since 3.2
+	 */
+	@Test
+	public void testPerspectiveCloseStandaloneView() throws Throwable {
 		page.setPerspective(WorkbenchPlugin.getDefault()
 				.getPerspectiveRegistry().findPerspectiveWithId(
 						PerspectiveViewsBug120934.PERSP_ID));
@@ -250,7 +256,7 @@ public class StickyViewTest extends UITestCase {
 		} finally {
 			page.closePerspective(page.getPerspective(), false, false);
 		}
-    }
+	}
 
 	/**
 	 * Find the supplied menu item and make sure it's enabled/disabled.
@@ -290,12 +296,12 @@ public class StickyViewTest extends UITestCase {
 	 * @throws Throwable on an error
 	 * @since 3.2
 	 */
+	@Test
+	@Ignore
 	public void XXXtestPerspectiveViewToolBarVisible() throws Throwable {
 		// These tests are hard-wired to the pre-3.3 zoom behaviour
 		// Run them anyway to ensure that we preserve the 3.0 mechanism
-        IPreferenceStore apiStore = PrefUtil.getAPIPreferenceStore();
-        boolean oldMinMaxState = apiStore.getBoolean(IWorkbenchPreferenceConstants.ENABLE_NEW_MIN_MAX);
-		apiStore.setValue(IWorkbenchPreferenceConstants.ENABLE_NEW_MIN_MAX, false);
+		setPreference(PrefUtil.getAPIPreferenceStore(), IWorkbenchPreferenceConstants.ENABLE_NEW_MIN_MAX, false);
 
 		IPerspectiveDescriptor perspective = WorkbenchPlugin.getDefault()
 				.getPerspectiveRegistry().findPerspectiveWithId(
@@ -376,15 +382,12 @@ public class StickyViewTest extends UITestCase {
 			}
 			page.closePerspective(perspective, false, false);
 			page.closePerspective(secondPerspective, false, false);
-
-			// Restore the min/max state to it's correct value
-			apiStore.setValue(IWorkbenchPreferenceConstants.ENABLE_NEW_MIN_MAX, oldMinMaxState);
 		}
 	}
 
-    @Override
+	@Override
 	protected void doSetUp() throws Exception {
-        window = openTestWindow();
-        page = window.getActivePage();
-    }
+		window = openTestWindow();
+		page = window.getActivePage();
+	}
 }

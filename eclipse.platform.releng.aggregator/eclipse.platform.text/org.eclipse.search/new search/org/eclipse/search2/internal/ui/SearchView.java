@@ -17,10 +17,9 @@
  *******************************************************************************/
 package org.eclipse.search2.internal.ui;
 
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map.Entry;
-
-import com.ibm.icu.text.MessageFormat;
 
 import org.eclipse.osgi.util.NLS;
 
@@ -386,7 +385,7 @@ public class SearchView extends PageBookView implements ISearchResultViewPart, I
 			newPage= fSearchViewPageService.findPageForSearchResult(search, true);
 			if (newPage == null) {
 				String format= SearchMessages.SearchView_error_noResultPage;
-				String message= MessageFormat.format(format, new Object[] { search.getClass().getName() });
+				String message= MessageFormat.format(format, search.getClass().getName());
 				SearchPlugin.log(new Status(IStatus.ERROR, SearchPlugin.getID(), 0, message, null));
 				return;
 			}
@@ -460,7 +459,7 @@ public class SearchView extends PageBookView implements ISearchResultViewPart, I
 			label= LegacyActionTools.escapeMnemonics(page.getLabel());
 		}
 		if (!fPageContent.isDisposed()) {
-			if (label.length() == 0) {
+			if (label.isEmpty()) {
 				if (fDescriptionComposite != null) {
 					fDescriptionComposite.dispose();
 					fDescriptionComposite= null;
@@ -785,12 +784,7 @@ public class SearchView extends PageBookView implements ISearchResultViewPart, I
 		if (superAdapter != null)
 			return (T) superAdapter;
 		if (adapter == IShowInSource.class) {
-			return (T) new IShowInSource() {
-				@Override
-				public ShowInContext getShowInContext() {
-					return new ShowInContext(null, getSelectionProvider().getSelection());
-				}
-			};
+			return (T) (IShowInSource) () -> new ShowInContext(null, getSelectionProvider().getSelection());
 		}
 		return null;
 	}

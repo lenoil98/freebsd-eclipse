@@ -151,22 +151,26 @@ public class JarComparator implements IArtifactComparator {
 		if (entries1.length != entries2.length)
 			parent.add(newErrorStatus(Messages.featureSize));
 
-		for (int i = 0; i < entries1.length; i++)
-			entryMap.put(new FeatureEntryWrapper(entries1[i]), entries1[i]);
-
-		for (int i = 0; i < entries2.length; i++) {
-			FeatureEntry firstEntry = entryMap.get(new FeatureEntryWrapper(entries2[i]));
-			if (firstEntry == null)
-				parent.add(newErrorStatus(NLS.bind(Messages.featureEntry, entries2[i])));
-			else {
-				if (firstEntry.isOptional() != entries2[i].isOptional())
-					parent.add(newErrorStatus(NLS.bind(Messages.featureEntryOptional, entries2[i])));
-				if (firstEntry.isUnpack() != entries2[i].isUnpack())
-					parent.add(newErrorStatus(NLS.bind(Messages.featureEntryUnpack, entries2[i])));
-				if (firstEntry.isRequires() && firstEntry.getMatch() != null && !firstEntry.getMatch().equals(entries2[i].getMatch()))
-					parent.add(newErrorStatus(NLS.bind(Messages.featureEntryMatch, entries2[i])));
-				if (firstEntry.getFilter() != null && !firstEntry.getFilter().equals(entries2[i].getFilter()))
-					parent.add(newErrorStatus(NLS.bind(Messages.featureEntryFilter, entries2[i])));
+		for (FeatureEntry entries11 : entries1) {
+			entryMap.put(new FeatureEntryWrapper(entries11), entries11);
+		}
+		for (FeatureEntry entries21 : entries2) {
+			FeatureEntry firstEntry = entryMap.get(new FeatureEntryWrapper(entries21));
+			if (firstEntry == null) {
+				parent.add(newErrorStatus(NLS.bind(Messages.featureEntry, entries21)));
+			} else {
+				if (firstEntry.isOptional() != entries21.isOptional()) {
+					parent.add(newErrorStatus(NLS.bind(Messages.featureEntryOptional, entries21)));
+				}
+				if (firstEntry.isUnpack() != entries21.isUnpack()) {
+					parent.add(newErrorStatus(NLS.bind(Messages.featureEntryUnpack, entries21)));
+				}
+				if (firstEntry.isRequires() && firstEntry.getMatch() != null && !firstEntry.getMatch().equals(entries21.getMatch())) {
+					parent.add(newErrorStatus(NLS.bind(Messages.featureEntryMatch, entries21)));
+				}
+				if (firstEntry.getFilter() != null && !firstEntry.getFilter().equals(entries21.getFilter())) {
+					parent.add(newErrorStatus(NLS.bind(Messages.featureEntryFilter, entries21)));
+				}
 			}
 		}
 
@@ -326,8 +330,8 @@ public class JarComparator implements IArtifactComparator {
 			return newErrorStatus(NLS.bind(Messages.propertiesSizesDifferent, entryName, String.valueOf(Math.abs(props1.size() - props2.size()))));
 
 		props1.keys();
-		for (Iterator<Object> iterator = props1.keySet().iterator(); iterator.hasNext();) {
-			String key = (String) iterator.next();
+		for (Object object : props1.keySet()) {
+			String key = (String) object;
 			if (!props2.containsKey(key))
 				return newErrorStatus(NLS.bind(Messages.missingProperty, key, entryName));
 			String prop1 = props1.getProperty(key);
@@ -392,8 +396,7 @@ public class JarComparator implements IArtifactComparator {
 	private String normalize(String entryName) {
 		StringBuffer buffer = new StringBuffer();
 		char[] chars = entryName.toCharArray();
-		for (int i = 0, max = chars.length; i < max; i++) {
-			char currentChar = chars[i];
+		for (char currentChar : chars) {
 			if (!Character.isJavaIdentifierPart(currentChar)) {
 				buffer.append('_');
 			} else {

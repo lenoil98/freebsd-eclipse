@@ -50,17 +50,12 @@ import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
-import org.eclipse.jface.viewers.DoubleClickEvent;
-import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
@@ -169,11 +164,6 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		});
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.ui.IWorkbenchPart#createPartControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public void createPartControl(Composite parent) {
 		initializeActions();
@@ -207,12 +197,7 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		Control menuControl = viewer.getControl();
 		MenuManager menuMgr = new MenuManager("#PopUp"); //$NON-NLS-1$
 		menuMgr.setRemoveAllWhenShown(true);
-		menuMgr.addMenuListener(new IMenuListener() {
-			@Override
-			public void menuAboutToShow(IMenuManager mgr) {
-				fillContextMenu(mgr);
-			}
-		});
+		menuMgr.addMenuListener(mgr -> fillContextMenu(mgr));
 		Menu menu = menuMgr.createContextMenu(menuControl);
 		menuControl.setMenu(menu);
 
@@ -223,8 +208,6 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 	/**
 	 * Adds actions to the context menu
 	 * 
-	 * @param viewer
-	 *            the viewer who's menu we're configuring
 	 * @param menu
 	 *            The menu to contribute to
 	 */
@@ -303,11 +286,6 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		projectViewer.setLabelProvider(new AntModelLabelProvider());
 		projectViewer.setInput(fInput);
 		projectViewer.setComparator(new ViewerComparator() {
-			/*
-			 * (non-Javadoc)
-			 * 
-			 * @see org.eclipse.jface.viewers.ViewerComparator#compare(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-			 */
 			@Override
 			public int compare(Viewer viewer, Object e1, Object e2) {
 				if (e1 instanceof AntProjectNode && e2 instanceof AntProjectNode || e1 instanceof AntTargetNode && e2 instanceof AntTargetNode) {
@@ -317,19 +295,11 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 			}
 		});
 
-		projectViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				handleSelectionChanged((IStructuredSelection) event.getSelection());
-			}
-		});
+		projectViewer.addSelectionChangedListener(event -> handleSelectionChanged((IStructuredSelection) event.getSelection()));
 
-		projectViewer.addDoubleClickListener(new IDoubleClickListener() {
-			@Override
-			public void doubleClick(DoubleClickEvent event) {
-				if (!event.getSelection().isEmpty()) {
-					handleProjectViewerDoubleClick();
-				}
+		projectViewer.addDoubleClickListener(event -> {
+			if (!event.getSelection().isEmpty()) {
+				handleProjectViewerDoubleClick();
 			}
 		});
 
@@ -394,7 +364,7 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 	private String getStatusLineText(AntElementNode node) {
 		if (node instanceof AntProjectNode) {
 			AntProjectNode project = (AntProjectNode) node;
-			StringBuffer message = new StringBuffer(project.getBuildFileName());
+			StringBuilder message = new StringBuilder(project.getBuildFileName());
 			String description = project.getDescription();
 			if (description != null && description.length() > 0) {
 				message.append(": "); //$NON-NLS-1$
@@ -403,7 +373,7 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 			return message.toString();
 		} else if (node instanceof AntTargetNode) {
 			AntTargetNode target = (AntTargetNode) node;
-			StringBuffer message = new StringBuffer();
+			StringBuilder message = new StringBuilder();
 			Enumeration<String> depends = target.getTarget().getDependencies();
 			if (depends.hasMoreElements()) {
 				message.append(AntViewMessages.AntView_3);
@@ -498,9 +468,7 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 	 * Removes all projects from the view
 	 */
 	public void removeAllProjects() {
-		AntProjectNode[] projects = getProjects();
-		for (int i = 0; i < projects.length; i++) {
-			AntProjectNode node = projects[i];
+		for (AntProjectNode node : getProjects()) {
 			node.dispose();
 		}
 		fInput.clear();
@@ -509,11 +477,6 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		projectViewer.refresh();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ui.IViewPart#init(org.eclipse.ui.IViewSite, org.eclipse.ui.IMemento)
-	 */
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
 		super.init(site, memento);
@@ -546,8 +509,7 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		if (projects.length < 1) {
 			return;
 		}
-		for (int i = 0; i < projects.length; i++) {
-			IMemento projectMemento = projects[i];
+		for (IMemento projectMemento : projects) {
 			String pathString = projectMemento.getString(KEY_PATH);
 			if (!ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(pathString)).exists()) {
 				// If the file no longer exists, don't add it.
@@ -576,8 +538,8 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 	}
 
 	/**
-	 * Saves the state of the viewer into the dialog settings. Works around the issues of {@link #saveState()} not being called when a view is closed
-	 * while the workbench is still running
+	 * Saves the state of the viewer into the dialog settings. Works around the issues of {@link #saveState(IMemento))} not being called when a view
+	 * is closed while the workbench is still running
 	 * 
 	 * @since 3.5.500
 	 */
@@ -586,10 +548,8 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		StringWriter writer = new StringWriter();
 		AntProjectNode[] projects = getProjects();
 		if (projects.length > 0) {
-			AntProjectNode project;
 			IMemento projectMemento;
-			for (int i = 0; i < projects.length; i++) {
-				project = projects[i];
+			for (AntProjectNode project : projects) {
 				projectMemento = memento.createChild(TAG_PROJECT);
 				projectMemento.putString(KEY_PATH, project.getBuildFileName());
 				projectMemento.putString(KEY_NAME, project.getLabel());
@@ -618,21 +578,11 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ui.IViewPart#saveState(org.eclipse.ui.IMemento)
-	 */
 	@Override
 	public void saveState(IMemento memento) {
 		saveViewerState();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ui.IWorkbenchPart#dispose()
-	 */
 	@Override
 	public void dispose() {
 		saveViewerState();
@@ -644,22 +594,15 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		ResourcesPlugin.getWorkspace().removeResourceChangeListener(this);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.core.resources.IResourceChangeListener#resourceChanged(org.eclipse.core.resources.IResourceChangeEvent)
-	 */
 	@Override
 	public void resourceChanged(IResourceChangeEvent event) {
 		IResourceDelta delta = event.getDelta();
 		if (delta != null) {
-			AntProjectNode projects[] = getProjects();
-			IPath buildFilePath;
-			for (int i = 0; i < projects.length; i++) {
-				buildFilePath = new Path(projects[i].getBuildFileName());
+			for (AntProjectNode project : getProjects()) {
+				IPath buildFilePath = new Path(project.getBuildFileName());
 				IResourceDelta change = delta.findMember(buildFilePath);
 				if (change != null) {
-					handleChangeDelta(change, projects[i]);
+					handleChangeDelta(change, project);
 				}
 			}
 		}
@@ -712,11 +655,6 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		return null;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ui.part.IShowInSource#getShowInContext()
-	 */
 	@Override
 	public ShowInContext getShowInContext() {
 		AntElementNode node = getSelectionNode();
@@ -761,11 +699,6 @@ public class AntView extends ViewPart implements IResourceChangeListener, IShowI
 		return fInternalTargetFilter;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ui.IWorkbenchPart#setFocus()
-	 */
 	@Override
 	public void setFocus() {
 		if (getViewer() != null) {

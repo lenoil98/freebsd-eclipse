@@ -20,7 +20,7 @@ import org.eclipse.core.internal.databinding.conversion.NumberToDoubleConverter;
 import org.eclipse.core.internal.databinding.validation.NumberToDoubleValidator;
 import org.eclipse.core.internal.databinding.validation.NumberToNumberValidator;
 
-import com.ibm.icu.text.NumberFormat;
+import java.text.NumberFormat;
 
 /**
  * @since 1.1
@@ -30,7 +30,7 @@ public class NumberToDoubleValidatorTest extends
 
 	@Override
 	protected Number doGetOutOfRangeNumber() {
-		return new BigDecimal(Double.MAX_VALUE).add(new BigDecimal(Double.MAX_VALUE));
+		return BigDecimal.valueOf(Double.MAX_VALUE).add(BigDecimal.valueOf(Double.MAX_VALUE));
 	}
 
 	@Override

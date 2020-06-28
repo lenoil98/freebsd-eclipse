@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Laurent CARON.
+ * Copyright (c) 2019 Laurent CARON.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,9 +18,11 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
 /**
- * This class add the following behaviour to <code>StyledText</code> widgets:<br/>
+ * This class add the following behaviour to <code>StyledText</code> widgets:
+ * <p>
  * When the user clicks on the wheel, a circle with arrows appears. When the user moves the mouse,
- * the StyledText content is scrolled (on the right or on the left for horizontal movements, up or down for vertical movements).<br/>
+ * the StyledText content is scrolled (on the right or on the left for horizontal movements, up or down for vertical movements).
+ * </p>
  *
  * @since 3.110
  */
@@ -33,6 +35,7 @@ class MouseNavigator {
 	private Point originalMouseLocation;
 	private final Listener mouseDownListener, mouseUpListener, paintListener, mouseMoveListener, focusOutListener;
 	private boolean hasHBar, hasVBar;
+	private Cursor previousCursor;
 
 	MouseNavigator(final StyledText styledText) {
 		if (styledText == null) {
@@ -69,12 +72,12 @@ class MouseNavigator {
 		parent.addListener(SWT.FocusOut, focusOutListener);
 	}
 
-	private void onMouseDown(Event e) {
+	void onMouseDown(Event e) {
 		if ((e.button != 2) || navigationActivated) {
 			return;
 		}
 
-		if (!parent.isVisible() || !parent.getEnabled()) {
+		if (!parent.isVisible() || !parent.getEnabled() || parent.middleClickPressed) {
 			return;
 		}
 
@@ -86,6 +89,7 @@ class MouseNavigator {
 		}
 
 		navigationActivated = true;
+		previousCursor = parent.getCursor();
 		parent.setCursor(parent.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
 		originalMouseLocation = getMouseLocation();
 		parent.redraw();
@@ -129,7 +133,7 @@ class MouseNavigator {
 	}
 
 	private void deactivate() {
-		parent.setCursor(parent.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
+		parent.setCursor(previousCursor);
 		navigationActivated = false;
 		originalMouseLocation = null;
 		parent.redraw();

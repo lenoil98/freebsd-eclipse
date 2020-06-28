@@ -72,8 +72,8 @@ public class MRUBundleFileList implements EventDispatcher<Object, Object, Bundle
 	}
 
 	/**
-	 * Adds a BundleFile which is about to be opened to the MRU list.  If 
-	 * the number of open BundleFiles == the fileLimit then the least 
+	 * Adds a BundleFile which is about to be opened to the MRU list.  If
+	 * the number of open BundleFiles == the fileLimit then the least
 	 * recently used BundleFile is closed.
 	 * @param bundleFile the bundle file about to be opened.
 	 * @return true if back pressure is needed
@@ -98,7 +98,7 @@ public class MRUBundleFileList implements EventDispatcher<Object, Object, Bundle
 					}
 			} else {
 				// numOpen has reached the fileLimit
-				// find the least recently used bundleFile and close it 
+				// find the least recently used bundleFile and close it
 				// and use its slot for the new bundleFile to be opened.
 				index = 0;
 				for (int i = 1; i < fileLimit; i++)
@@ -181,6 +181,7 @@ public class MRUBundleFileList implements EventDispatcher<Object, Object, Bundle
 		useStampList[index] = ++curUseStamp;
 	}
 
+	@Override
 	public final void dispatchEvent(Object eventListener, Object listenerObject, int eventAction, BundleFile eventObject) {
 		if (firstDispatch) {
 			// used to work around bug 275166; we don't want to leak the TCCL in this thread.

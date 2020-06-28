@@ -59,6 +59,7 @@ import org.eclipse.ui.actions.ActionGroup;
  * viewer can be configured to show object contributions for random id schemes.
  * To enable declarative action contributions for a configuration there are two
  * steps required:
+ * </p>
  * <ul>
  * <li>Create a viewer contribution with a <code>targetID</code> that groups
  * sets of actions that are related. A common practice for synchronize view
@@ -74,7 +75,7 @@ import org.eclipse.ui.actions.ActionGroup;
  * <li>Create a configuration instance with a <code>menuID</code> that
  * matches the targetID in the viewer contribution.
  * </ul>
- * </p><p>
+ * <p>
  * Clients may subclass to add behavior for concrete structured viewers.
  * </p>
  *
@@ -185,7 +186,7 @@ public abstract class StructuredViewerAdvisor extends AbstractViewerAdvisor {
 			IResource resource = syncNode.getResource();
 			if (syncNode != null && resource != null && resource.getType() == IResource.FILE) {
 				// The open is handled by the open strategy but say we handled
-			    // it so that overriding methods will not do anything
+				// it so that overriding methods will not do anything
 				return true;
 			}
 		}
@@ -218,8 +219,7 @@ public abstract class StructuredViewerAdvisor extends AbstractViewerAdvisor {
 				o = ISynchronizePageConfiguration.DEFAULT_TOOLBAR_MENU;
 			}
 			String[] groups = (String[])o;
-			for (int i = 0; i < groups.length; i++) {
-				String group = groups[i];
+			for (String group : groups) {
 				// The groupIds must be converted to be unique since the toolbar is shared
 				manager.add(new Separator(getGroupId(group)));
 			}
@@ -234,8 +234,7 @@ public abstract class StructuredViewerAdvisor extends AbstractViewerAdvisor {
 				}
 				groups = (String[]) o;
 				initializeStatusLine(actionBars);
-				for (int i = 0; i < groups.length; i++) {
-					String group = groups[i];
+				for (String group : groups) {
 					// The groupIds must be converted to be unique since the
 					// view menu is shared
 					menu.add(new Separator(getGroupId(group)));
@@ -289,8 +288,7 @@ public abstract class StructuredViewerAdvisor extends AbstractViewerAdvisor {
 			@Override
 			public void menuShown(MenuEvent e) {
 				IContributionItem[] items = menuMgr.getItems();
-				for (int i = 0; i < items.length; i++) {
-					IContributionItem item = items[i];
+				for (IContributionItem item : items) {
 					if (item instanceof ActionContributionItem) {
 						IAction actionItem = ((ActionContributionItem) item).getAction();
 						if (actionItem instanceof SynchronizeModelAction) {
@@ -375,8 +373,7 @@ public abstract class StructuredViewerAdvisor extends AbstractViewerAdvisor {
 			o = ISynchronizePageConfiguration.DEFAULT_CONTEXT_MENU;
 		}
 		String[] groups = (String[])o;
-		for (int i = 0; i < groups.length; i++) {
-			String group = groups[i];
+		for (String group : groups) {
 			// There is no need to adjust the group ids in a context menu (see setActionBars)
 			manager.add(new Separator(group));
 		}

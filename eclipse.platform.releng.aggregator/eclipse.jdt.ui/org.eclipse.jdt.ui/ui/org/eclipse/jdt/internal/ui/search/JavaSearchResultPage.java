@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -35,6 +35,7 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -55,7 +56,6 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.part.IPageSite;
 import org.eclipse.ui.part.IShowInTargetList;
 import org.eclipse.ui.part.ResourceTransfer;
-import org.eclipse.ui.views.navigator.LocalSelectionTransfer;
 
 import org.eclipse.ui.texteditor.ITextEditor;
 
@@ -156,7 +156,7 @@ public class JavaSearchResultPage extends AbstractTextSearchViewPage implements 
 
 	private int fCurrentGrouping;
 
-	private static final String[] SHOW_IN_TARGETS= new String[] { JavaUI.ID_PACKAGES , JavaPlugin.ID_RES_NAV };
+	private static final String[] SHOW_IN_TARGETS= new String[] { JavaUI.ID_PACKAGES  };
 	public static final IShowInTargetList SHOW_IN_TARGET_LIST= new IShowInTargetList() {
 		@Override
 		public String[] getShowInTargetIds() {
@@ -319,7 +319,7 @@ public class JavaSearchResultPage extends AbstractTextSearchViewPage implements 
 	}
 
 	private void addDragAdapters(StructuredViewer viewer) {
-		Transfer[] transfers= new Transfer[] { LocalSelectionTransfer.getInstance(), ResourceTransfer.getInstance() };
+		Transfer[] transfers= new Transfer[] { LocalSelectionTransfer.getTransfer(), ResourceTransfer.getInstance() };
 		int ops= DND.DROP_COPY | DND.DROP_LINK;
 
 		JdtViewerDragAdapter dragAdapter= new JdtViewerDragAdapter(viewer);
@@ -529,19 +529,18 @@ public class JavaSearchResultPage extends AbstractTextSearchViewPage implements 
 
 	private int getMatchCount(ITreeContentProvider cp, Object[] elements) {
 		int count= 0;
-		for (int j = 0; j < elements.length; j++) {
-			count+= getDisplayedMatchCount(elements[j]);
-			Object[] children = cp.getChildren(elements[j]);
+		for (Object element : elements) {
+			count+= getDisplayedMatchCount(element);
+			Object[] children = cp.getChildren(element);
 			count+= getMatchCount(cp, children);
 		}
 		return count;
 	}
 
 	private int getMatchCount(TableViewer viewer) {
-		Object[] elements= getRootElements(viewer);
 		int count= 0;
-		for (int i = 0; i < elements.length; i++) {
-			count+= getDisplayedMatchCount(elements[i]);
+		for (Object element : getRootElements(viewer)) {
+			count+= getDisplayedMatchCount(element);
 		}
 		return count;
 	}

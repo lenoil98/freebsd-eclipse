@@ -15,8 +15,6 @@ package org.eclipse.ui;
 
 import java.net.URI;
 
-import org.eclipse.ui.IEditorInput;
-
 /**
  * This interface defines an editor input based on a URI.
  * <p>
@@ -36,10 +34,10 @@ import org.eclipse.ui.IEditorInput;
  * @since 3.3
  */
 public interface IURIEditorInput extends IEditorInput {
-    /**
-     * Returns the {@link URI} of the file underlying this editor input.
-     *
-     * @return {@link URI}
-     */
-    public URI getURI();
+	/**
+	 * Returns the {@link URI} of the file underlying this editor input.
+	 *
+	 * @return {@link URI}
+	 */
+	public URI getURI();
 }

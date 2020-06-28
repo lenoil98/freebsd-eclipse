@@ -7,7 +7,7 @@
  *  https://www.eclipse.org/legal/epl-2.0/
  *
  *  SPDX-License-Identifier: EPL-2.0
- * 
+ *
  *  Contributors:
  *      IBM Corporation - initial API and implementation
  *      Ericsson AB - Bug 400011 - [shared] Cleanup the SurrogateProfileHandler code
@@ -20,8 +20,7 @@ import java.lang.ref.SoftReference;
 import java.net.*;
 import java.util.*;
 import org.eclipse.core.runtime.*;
-import org.eclipse.equinox.internal.p2.core.helpers.LogHelper;
-import org.eclipse.equinox.internal.p2.core.helpers.ServiceHelper;
+import org.eclipse.equinox.internal.p2.core.helpers.*;
 import org.eclipse.equinox.p2.core.IProvisioningAgent;
 import org.eclipse.equinox.p2.core.ProvisionException;
 import org.eclipse.equinox.p2.engine.IProfile;
@@ -60,8 +59,7 @@ public class SurrogateProfileHandler implements ISurrogateProfileHandler {
 				"profileProperties[$0] == 'true' || (touchpointType != null && touchpointType.id == $1)", //$NON-NLS-1$
 				IProfile.PROP_PROFILE_ROOT_IU, NATIVE_TOUCHPOINT_TYPE);
 		IQueryResult<IInstallableUnit> rootIUs = sharedProfile.query(rootIUQuery, null);
-		for (Iterator<IInstallableUnit> iterator = rootIUs.iterator(); iterator.hasNext();) {
-			IInstallableUnit iu = iterator.next();
+		for (IInstallableUnit iu : rootIUs) {
 			userProfile.addInstallableUnit(iu);
 			userProfile.addInstallableUnitProperties(iu, sharedProfile.getInstallableUnitProperties(iu));
 			userProfile.setInstallableUnitProperty(iu, IProfile.PROP_PROFILE_LOCKED_IU, IU_LOCKED);
@@ -86,8 +84,7 @@ public class SurrogateProfileHandler implements ISurrogateProfileHandler {
 
 		ArrayList<IRequirement> iuRequirements = new ArrayList<>();
 		IQueryResult<IInstallableUnit> allIUs = sharedProfile.query(QueryUtil.createIUAnyQuery(), null);
-		for (Iterator<IInstallableUnit> iterator = allIUs.iterator(); iterator.hasNext();) {
-			IInstallableUnit iu = iterator.next();
+		for (IInstallableUnit iu : allIUs) {
 			IMatchExpression<IInstallableUnit> iuMatcher = ExpressionUtil.getFactory().matchExpression(ExpressionUtil.parse("id == $0 && version == $1"), iu.getId(), iu.getVersion()); //$NON-NLS-1$
 			iuRequirements.add(MetadataFactory.createRequirement(iuMatcher, null, 0, 1, true));
 		}
@@ -100,7 +97,11 @@ public class SurrogateProfileHandler implements ISurrogateProfileHandler {
 
 	private static void updateProperties(final IProfile sharedProfile, Profile userProfile) {
 		Location installLocation = ServiceHelper.getService(EngineActivator.getContext(), Location.class, Location.INSTALL_FILTER);
-		File installFolder = new File(installLocation.getURL().getPath());
+		File installFolder = URLUtil.toFile(installLocation.getURL());
+		if (installFolder == null) {
+			// fallback: use only path of the URL if the protocol is not 'file'
+			installFolder = new File(installLocation.getURL().getPath());
+		}
 
 		if (Boolean.parseBoolean(sharedProfile.getProperty(IProfile.PROP_ROAMING))) {
 			userProfile.setProperty(IProfile.PROP_INSTALL_FOLDER, installFolder.getAbsolutePath());
@@ -113,10 +114,14 @@ public class SurrogateProfileHandler implements ISurrogateProfileHandler {
 		}
 
 		Location configurationLocation = ServiceHelper.getService(EngineActivator.getContext(), Location.class, Location.CONFIGURATION_FILTER);
-		File configurationFolder = new File(configurationLocation.getURL().getPath());
+		File configurationFolder = URLUtil.toFile(configurationLocation.getURL());
+		if (configurationFolder == null) {
+			// fallback: use only path of the URL if the protocol is not 'file'
+			configurationFolder = new File(configurationLocation.getURL().getPath());
+		}
 		userProfile.setProperty(IProfile.PROP_CONFIGURATION_FOLDER, configurationFolder.getAbsolutePath());
 
-		// We need to check that the configuration folder is not a file system root. 
+		// We need to check that the configuration folder is not a file system root.
 		// some of the profiles resources are stored as siblings to the configuration folder.
 		// also see bug 230384
 		if (configurationFolder.getParentFile() == null)
@@ -181,7 +186,7 @@ public class SurrogateProfileHandler implements ISurrogateProfileHandler {
 	 */
 	private void setUpRepos() {
 		//clean old junk
-		IMetadataRepositoryManager metaManager = (IMetadataRepositoryManager) agent.getService(IMetadataRepositoryManager.SERVICE_NAME);
+		IMetadataRepositoryManager metaManager = agent.getService(IMetadataRepositoryManager.class);
 		URI[] knownRepositories = metaManager.getKnownRepositories(IRepositoryManager.REPOSITORIES_LOCAL);
 		for (URI uri : knownRepositories) {
 			if ("true".equals(metaManager.getRepositoryProperty(uri, EngineActivator.P2_FRAGMENT_PROPERTY))) { //$NON-NLS-1$
@@ -189,7 +194,7 @@ public class SurrogateProfileHandler implements ISurrogateProfileHandler {
 			}
 		}
 
-		IArtifactRepositoryManager artifactManager = (IArtifactRepositoryManager) agent.getService(IArtifactRepositoryManager.SERVICE_NAME);
+		IArtifactRepositoryManager artifactManager = agent.getService(IArtifactRepositoryManager.class);
 		knownRepositories = artifactManager.getKnownRepositories(IRepositoryManager.REPOSITORIES_LOCAL);
 		for (URI uri : knownRepositories) {
 			if ("true".equals(artifactManager.getRepositoryProperty(uri, EngineActivator.P2_FRAGMENT_PROPERTY))) { //$NON-NLS-1$
@@ -226,7 +231,7 @@ public class SurrogateProfileHandler implements ISurrogateProfileHandler {
 		Set<IInstallableUnit> added = new HashSet<>();
 		for (File extension : extensionLocations) {
 			try {
-				IMetadataRepositoryManager metaManager = (IMetadataRepositoryManager) agent.getService(IMetadataRepositoryManager.SERVICE_NAME);
+				IMetadataRepositoryManager metaManager = agent.getService(IMetadataRepositoryManager.class);
 				IMetadataRepository repo = metaManager.loadRepository(extension.toURI(), new NullProgressMonitor());
 				Set<IInstallableUnit> installableUnits = repo.query(QueryUtil.createIUAnyQuery(), new NullProgressMonitor()).toUnmodifiableSet();
 				for (IInstallableUnit unit : installableUnits) {

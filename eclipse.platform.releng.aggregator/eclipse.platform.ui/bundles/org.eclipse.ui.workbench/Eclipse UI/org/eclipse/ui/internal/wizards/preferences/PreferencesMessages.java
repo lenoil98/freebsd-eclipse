@@ -1,12 +1,12 @@
 /**********************************************************************
  * Copyright (c) 2005, 2017 IBM Corporation and others.
  *
- * This
- * program and the accompanying materials are made available under the terms of
- * the Eclipse Public License 2.0 which accompanies this distribution, and is
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  * IBM - Initial API and implementation
@@ -16,10 +16,9 @@ package org.eclipse.ui.internal.wizards.preferences;
 
 import org.eclipse.osgi.util.NLS;
 
-
 /**
  * NLS messages class for preferences messages.
-
+ *
  * @since 3.1
  *
  */
@@ -61,7 +60,6 @@ public class PreferencesMessages extends NLS {
 
 	public static String SelectionDialog_selectLabel;
 	public static String SelectionDialog_deselectLabel;
-
 
 	public static String WizardDataTransfer_existsQuestion;
 	public static String WizardDataTransfer_overwriteNameAndPathQuestion;

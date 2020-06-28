@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.chkpii;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,17 +27,21 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.StringTokenizer;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+
 import org.eclipse.osgi.service.environment.Constants;
 
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-public class ChkpiiTests extends TestCase {
+public class ChkpiiTests {
+	@Rule
+	public TestName tn= new TestName();
 
 	private String fLogDirectoryName;
 
@@ -59,6 +65,7 @@ public class ChkpiiTests extends TestCase {
 			return fName.toUpperCase();
 		}
 	}
+
 	private static class StreamConsumer extends Thread {
 		StringBuffer fStrBuffer;
 		BufferedReader fReader;
@@ -114,18 +121,17 @@ public class ChkpiiTests extends TestCase {
 	private final FileCategory PROPERTIES= new FileCategory("PROPERTIES");
 	private final FileCategory XML= new FileCategory("XML");
 
-	public static Test suite() {
-		return new TestSuite(ChkpiiTests.class);
-	}
-	
+	@Test
 	public void testHTMLFiles() {
 		assertChkpii(HTML);
 	}
 
+	@Test
 	public void testXMLFiles() {
 		assertChkpii(XML);
 	}
 
+	@Test
 	public void testPropertiesFiles() {
 		assertChkpii(PROPERTIES);
 	}
@@ -169,13 +175,15 @@ public class ChkpiiTests extends TestCase {
 				out.terminate();
 		}
 
- 		if (err.getContents().length() > 0 || !new File(type.getOutputFile()).exists()) {
-			System.out.println(err.getContents());
-			System.out.flush();
-			return false;
+		if (err != null) {
+			if (err.getContents().length() > 0 || !new File(type.getOutputFile()).exists()) {
+				System.out.println(err.getContents());
+				System.out.flush();
+				return false;
+			}
 		}
  		int res= process.exitValue();
- 		System.out.println("ChkpiiTests#" + getName() + "() exit value: " + res);
+ 		System.out.println("ChkpiiTests#" + tn.getMethodName() + "() exit value: " + res);
 		return true;
 	}
 
@@ -239,7 +247,7 @@ public class ChkpiiTests extends TestCase {
 	 * @return String
 	 */
 	private String getExec() {
-		return new File("chkpii.exe").getPath(); //$NON-NLS-1$
+		return new File("C:\\Program Files (x86)\\IBM\\CHKPII\\chkpii.exe").getPath(); //$NON-NLS-1$
 	}
 
 	private String getExcludeErrors() {
@@ -263,12 +271,11 @@ public class ChkpiiTests extends TestCase {
 	 */
 	private boolean checkLogFile(FileCategory type, StringBuffer message) {
 		String logFilePath= type.getOutputFile();
-		BufferedReader aReader= null;
 		int errors= -1, warnings= -1, notProcessed= -1, endOfSummary= -1;
 		boolean hasFailed= false;
 
-		try {
-			aReader= new BufferedReader(new InputStreamReader(new FileInputStream(logFilePath), Charset.forName("ISO-8859-1")));
+		try (BufferedReader aReader= new BufferedReader(new InputStreamReader(new FileInputStream(logFilePath), Charset.forName("ISO-8859-1")));) {
+
 			String aLine= aReader.readLine();
 			while (aLine != null) {
 				if (errors == -1)
@@ -308,15 +315,6 @@ public class ChkpiiTests extends TestCase {
 		} catch (IOException e) {
 			message.append("Error reading log file: " + logFilePath + "\n" + e.getLocalizedMessage() + "\n"); //$NON-NLS-1$
 			hasFailed= true;
-		} finally {
-			if (aReader != null) {
-				try {
-					aReader.close();
-				} catch (IOException e) {
-					message.append("Error closing log file: " + logFilePath + "\n" + e.getLocalizedMessage() + "\n"); //$NON-NLS-1$
-					hasFailed= true;
-				}
-			}
 		}
 
 		return !hasFailed;
@@ -357,11 +355,9 @@ public class ChkpiiTests extends TestCase {
 
 	/**
 	 * Constructor for EmptyDirectoriesTest.
-	 * 
-	 * @param name the test name
+	 *
 	 */
-	public ChkpiiTests(String name) {
-		super(name);
+	public ChkpiiTests() {
 		fLogDirectoryName= getPluginDirectory() + "chkpiiResults" + File.separator; //$NON-NLS-1$
 		new File(PROPERTIES.getOutputFile()).delete();
 		new File(HTML.getOutputFile()).delete();
@@ -371,18 +367,16 @@ public class ChkpiiTests extends TestCase {
 	/*
 	 * @see TestCase#setUp()
 	 */
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		new File(fLogDirectoryName).mkdirs();
 	}
 
 	/*
 	 * @see TestCase#tearDown()
 	 */
-	@Override
-	protected void tearDown() throws Exception {
-		super.tearDown();
+	@After
+	public void tearDown() throws Exception {
 		fLogDirectoryName= null;
 	}
 }

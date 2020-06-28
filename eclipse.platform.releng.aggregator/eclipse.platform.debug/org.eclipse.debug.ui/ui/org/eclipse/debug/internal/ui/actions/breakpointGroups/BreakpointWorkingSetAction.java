@@ -26,52 +26,37 @@ import org.eclipse.ui.IViewPart;
  */
 public abstract class BreakpointWorkingSetAction extends AbstractBreakpointsViewAction implements IPropertyChangeListener {
 
-    protected IAction fAction;
+	protected IAction fAction;
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-     */
-    @Override
+	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
-        update();
-    }
+		update();
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IViewActionDelegate#init(org.eclipse.ui.IViewPart)
-     */
-    @Override
+	@Override
 	public void init(IViewPart view) {
-        super.init(view);
-        DebugUIPlugin.getDefault().getPreferenceStore().addPropertyChangeListener(this);
-    }
+		super.init(view);
+		DebugUIPlugin.getDefault().getPreferenceStore().addPropertyChangeListener(this);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IActionDelegate2#dispose()
-     */
-    @Override
+	@Override
 	public void dispose() {
-        DebugUIPlugin.getDefault().getPreferenceStore().removePropertyChangeListener(this);
-        super.dispose();
-    }
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IActionDelegate2#init(org.eclipse.jface.action.IAction)
-     */
-    @Override
+		DebugUIPlugin.getDefault().getPreferenceStore().removePropertyChangeListener(this);
+		super.dispose();
+	}
+	@Override
 	public void init(IAction action) {
-        fAction = action;
-        super.init(action);
-        update();
-    }
+		fAction = action;
+		super.init(action);
+		update();
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
-     */
-    @Override
+	@Override
 	public void propertyChange(PropertyChangeEvent event) {
-        if (event.getProperty().equals(IInternalDebugUIConstants.MEMENTO_BREAKPOINT_WORKING_SET_NAME)) {
-            update();
-        }
+		if (event.getProperty().equals(IInternalDebugUIConstants.MEMENTO_BREAKPOINT_WORKING_SET_NAME)) {
+			update();
+		}
 
-    }
-    protected abstract void update();
+	}
+	protected abstract void update();
 }

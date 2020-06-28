@@ -16,7 +16,6 @@ package org.eclipse.ui.internal.monitoring;
 
 import java.lang.management.ThreadInfo;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -28,7 +27,7 @@ import org.eclipse.ui.monitoring.UiFreezeEvent;
 /**
  * Checks if the {@link UiFreezeEvent} matches any defined filters.
  * <p>
- * <strong>This class is not thread safe.<strong>
+ * <strong>This class is not thread safe.</strong>
  * </p>
  */
 public class FilterHandler {
@@ -124,8 +123,8 @@ public class FilterHandler {
 	public FilterHandler(String commaSeparatedMethods) {
 		String[] filters = commaSeparatedMethods.split(","); //$NON-NLS-1$
 
-		List<StackFrame> stackFrames = new ArrayList<StackFrame>(filters.length);
-		List<Pattern> stackPatterns = new ArrayList<Pattern>(filters.length);
+		List<StackFrame> stackFrames = new ArrayList<>(filters.length);
+		List<Pattern> stackPatterns = new ArrayList<>(filters.length);
 		for (String filter : filters) {
 			if (containsWildcards(filter)) {
 				Pattern pattern = createPattern(filter);
@@ -138,7 +137,7 @@ public class FilterHandler {
 			}
 		}
 
-		Collections.sort(stackFrames);
+		stackFrames.sort(null);
 		filterFrames = stackFrames.toArray(new StackFrame[stackFrames.size()]);
 		filterPatterns = stackPatterns.toArray(new Pattern[stackPatterns.size()]);
 	}
@@ -241,66 +240,66 @@ public class FilterHandler {
 		StringBuilder buf = new StringBuilder(len * 2);
 		boolean isEscaped = false;
 		for (int i = 0; i < len; i++) {
-		    char c = pattern.charAt(i);
-		    switch (c) {
-		    case '\\':
-		        // The backslash is an escape character.
-		        if (!isEscaped) {
-		            isEscaped = true;
-		        } else {
-		            buf.append(DOUBLE_BACKSLASH);
-		            isEscaped = false;
-		        }
-		        break;
-		    // Characters that have to be escaped in a regular expression.
-		    case '(':
-		    case ')':
-		    case '{':
-		    case '}':
-		    case '.':
-		    case '[':
-		    case ']':
-		    case '$':
-		    case '^':
-		    case '+':
-		    case '|':
-		        if (isEscaped) {
-		            buf.append(DOUBLE_BACKSLASH);
-		            isEscaped = false;
-		        }
-		        buf.append('\\');
-		        buf.append(c);
-		        break;
-		    case '?':
-		        if (!isEscaped) {
-		            buf.append('.');
-		        } else {
-		            buf.append('\\');
-		            buf.append(c);
-		            isEscaped = false;
-		        }
-		        break;
-		    case '*':
-		        if (!isEscaped) {
-		            buf.append(".*"); //$NON-NLS-1$
-		        } else {
-		            buf.append('\\');
-		            buf.append(c);
-		            isEscaped = false;
-		        }
-		        break;
-		    default:
-		        if (isEscaped) {
-		            buf.append(DOUBLE_BACKSLASH);
-		            isEscaped = false;
-		        }
-		        buf.append(c);
-		        break;
-		    }
+			char c = pattern.charAt(i);
+			switch (c) {
+			case '\\':
+				// The backslash is an escape character.
+				if (!isEscaped) {
+					isEscaped = true;
+				} else {
+					buf.append(DOUBLE_BACKSLASH);
+					isEscaped = false;
+				}
+				break;
+			// Characters that have to be escaped in a regular expression.
+			case '(':
+			case ')':
+			case '{':
+			case '}':
+			case '.':
+			case '[':
+			case ']':
+			case '$':
+			case '^':
+			case '+':
+			case '|':
+				if (isEscaped) {
+					buf.append(DOUBLE_BACKSLASH);
+					isEscaped = false;
+				}
+				buf.append('\\');
+				buf.append(c);
+				break;
+			case '?':
+				if (!isEscaped) {
+					buf.append('.');
+				} else {
+					buf.append('\\');
+					buf.append(c);
+					isEscaped = false;
+				}
+				break;
+			case '*':
+				if (!isEscaped) {
+					buf.append(".*"); //$NON-NLS-1$
+				} else {
+					buf.append('\\');
+					buf.append(c);
+					isEscaped = false;
+				}
+				break;
+			default:
+				if (isEscaped) {
+					buf.append(DOUBLE_BACKSLASH);
+					isEscaped = false;
+				}
+				buf.append(c);
+				break;
+			}
 		}
 		if (isEscaped) {
-		    buf.append(DOUBLE_BACKSLASH);
-		    isEscaped= false;
+			buf.append(DOUBLE_BACKSLASH);
+			isEscaped= false;
 		}
 		return Pattern.compile(buf.toString());
 	}

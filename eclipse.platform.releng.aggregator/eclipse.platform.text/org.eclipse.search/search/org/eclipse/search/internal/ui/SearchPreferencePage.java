@@ -13,10 +13,9 @@
  *******************************************************************************/
 package org.eclipse.search.internal.ui;
 
+import java.text.Collator;
 import java.util.Arrays;
 import java.util.Comparator;
-
-import com.ibm.icu.text.Collator;
 
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Composite;
@@ -53,8 +52,8 @@ public class SearchPreferencePage extends FieldEditorPreferencePage implements I
 	public static final String DEFAULT_PERSPECTIVE= "org.eclipse.search.defaultPerspective"; //$NON-NLS-1$
 	private static final String NO_DEFAULT_PERSPECTIVE= "org.eclipse.search.defaultPerspective.none"; //$NON-NLS-1$
 	public static final String BRING_VIEW_TO_FRONT= "org.eclipse.search.bringToFront"; //$NON-NLS-1$
-    public static final String TEXT_SEARCH_ENGINE = "org.eclipse.search.textSearchEngine"; //$NON-NLS-1$
-    public static final String TEXT_SEARCH_QUERY_PROVIDER = "org.eclipse.search.textSearchQueryProvider"; //$NON-NLS-1$
+	public static final String TEXT_SEARCH_ENGINE = "org.eclipse.search.textSearchEngine"; //$NON-NLS-1$
+	public static final String TEXT_SEARCH_QUERY_PROVIDER = "org.eclipse.search.textSearchQueryProvider"; //$NON-NLS-1$
 	public static final String LIMIT_HISTORY= "org.eclipse.search.limitHistory"; //$NON-NLS-1$
 
 	private ColorFieldEditor fColorEditor;
@@ -119,7 +118,7 @@ public class SearchPreferencePage extends FieldEditorPreferencePage implements I
 			POTENTIAL_MATCH_FG_COLOR,
 			SearchMessages.SearchPreferencePage_potentialMatchFgColor,
 			getFieldEditorParent()
-        );
+		);
 		addField(fColorEditor);
 
 		fEmphasizedCheckbox.setEnabled(!arePotentialMatchesIgnored(), getFieldEditorParent());
@@ -134,17 +133,17 @@ public class SearchPreferencePage extends FieldEditorPreferencePage implements I
 			getFieldEditorParent());
 		addField(comboEditor);
 
-        // in case we have a contributed engine, let the user choose.
-        TextSearchEngineRegistry reg= SearchPlugin.getDefault().getTextSearchEngineRegistry();
-        String[][] engineNamesAndIds= reg.getAvailableEngines();
-        if (engineNamesAndIds.length > 1) {
-            comboEditor= new ComboFieldEditor(
-                    TEXT_SEARCH_ENGINE,
-                    SearchMessages.SearchPreferencePage_textSearchEngine,
-                    engineNamesAndIds,
-                    getFieldEditorParent());
-            addField(comboEditor);
-        }
+		// in case we have a contributed engine, let the user choose.
+		TextSearchEngineRegistry reg= SearchPlugin.getDefault().getTextSearchEngineRegistry();
+		String[][] engineNamesAndIds= reg.getAvailableEngines();
+		if (engineNamesAndIds.length > 1) {
+			comboEditor= new ComboFieldEditor(
+					TEXT_SEARCH_ENGINE,
+					SearchMessages.SearchPreferencePage_textSearchEngine,
+					engineNamesAndIds,
+					getFieldEditorParent());
+			addField(comboEditor);
+		}
 	}
 
 	@Override
@@ -209,7 +208,7 @@ public class SearchPreferencePage extends FieldEditorPreferencePage implements I
 		handleDeletedPerspectives();
 		IPreferenceStore store= SearchPlugin.getDefault().getPreferenceStore();
 		String id= store.getString(DEFAULT_PERSPECTIVE);
-		if (id == null || id.length() == 0 || id.equals(NO_DEFAULT_PERSPECTIVE))
+		if (id == null || id.isEmpty() || id.equals(NO_DEFAULT_PERSPECTIVE))
 			return null;
 		else if (PlatformUI.getWorkbench().getPerspectiveRegistry().findPerspectiveWithId(id) == null) {
 			store.putValue(DEFAULT_PERSPECTIVE, id);

@@ -28,8 +28,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import junit.framework.TestCase;
-
 import org.eclipse.ant.internal.ui.AntUIPlugin;
 import org.eclipse.ant.internal.ui.IAntUIPreferenceConstants;
 import org.eclipse.ant.internal.ui.model.AntModel;
@@ -76,6 +74,8 @@ import org.eclipse.ui.progress.UIJob;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import junit.framework.TestCase;
 
 /**
  * Abstract Ant UI test class
@@ -133,7 +133,7 @@ public abstract class AbstractAntUITest extends TestCase {
 				tryAgain = false;
 			}
 			catch (TestAgainException e) {
-				System.out.println("Test failed attempt " + attempts + ". Re-testing: " + this.getName()); //$NON-NLS-1$ //$NON-NLS-2$ 
+				System.out.println("Test failed attempt " + attempts + ". Re-testing: " + this.getName()); //$NON-NLS-1$ //$NON-NLS-2$
 				e.printStackTrace();
 				if (attempts > 5) {
 					tryAgain = false;
@@ -142,11 +142,6 @@ public abstract class AbstractAntUITest extends TestCase {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#setUp()
-	 */
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
@@ -284,7 +279,7 @@ public abstract class AbstractAntUITest extends TestCase {
 	 * @return the contents of the given {@link BufferedReader} as a {@link String}
 	 */
 	protected String getReaderContentAsStringNew(BufferedReader bufferedReader) {
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 		try {
 			char[] readBuffer = new char[2048];
 			int n = bufferedReader.read(readBuffer);
@@ -308,7 +303,7 @@ public abstract class AbstractAntUITest extends TestCase {
 	 * @return the contents of the given {@link BufferedReader} as a {@link String}
 	 */
 	protected String getReaderContentAsString(BufferedReader bufferedReader) {
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 		try {
 			String line = bufferedReader.readLine();
 
@@ -388,8 +383,8 @@ public abstract class AbstractAntUITest extends TestCase {
 	/**
 	 * Launches the Ant build in debug output mode with the build file name (no extension).
 	 * 
-	 * @param mainTypeName
-	 *            the program to launch
+	 * @param buildFileName
+	 *            build file to launch
 	 * @return thread in which the first suspend event occurred
 	 */
 	protected void launchWithDebug(String buildFileName) throws CoreException {
@@ -548,8 +543,7 @@ public abstract class AbstractAntUITest extends TestCase {
 				// no links have been added
 				return null;
 			}
-			for (int i = 0; i < positions.length; i++) {
-				Position position = positions[i];
+			for (Position position : positions) {
 				if (offset >= position.getOffset() && offset <= (position.getOffset() + position.getLength())) {
 					return ((ConsoleHyperlinkPosition) position).getHyperLink();
 				}
@@ -563,7 +557,7 @@ public abstract class AbstractAntUITest extends TestCase {
 	 * document.
 	 * 
 	 * @param offset
-	 * @param doc
+	 * @param document
 	 * @return the {@link Color} at the given offset on the given document or <code>null</code>
 	 */
 	protected Color getColorAtOffset(int offset, IDocument document) throws BadLocationException {

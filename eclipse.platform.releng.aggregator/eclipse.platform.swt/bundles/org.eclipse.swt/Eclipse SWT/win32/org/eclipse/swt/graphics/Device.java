@@ -37,21 +37,6 @@ public abstract class Device implements Drawable {
 	Object [] objects;
 	Object trackingLock;
 
-	/**
-	 * Palette
-	 * (Warning: This field is platform dependent)
-	 * <p>
-	 * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-	 * public API. It is marked public only so that it can be shared
-	 * within the packages provided by SWT. It is not available on all
-	 * platforms and should never be accessed from application code.
-	 * </p>
-	 *
-	 * @noreference This field is not intended to be referenced by clients.
-	 */
-	public long /*int*/ hPalette = 0;
-	int [] colorRefCount;
-
 	/* System Font */
 	Font systemFont;
 
@@ -62,11 +47,11 @@ public abstract class Device implements Drawable {
 	int[] pixels;
 
 	/* Scripts */
-	long /*int*/ [] scripts;
+	long [] scripts;
 
 	/* Advanced Graphics */
-	long /*int*/ [] gdipToken;
-	long /*int*/ fontCollection;
+	long [] gdipToken;
+	long fontCollection;
 	String[] loadedFonts;
 
 	boolean disposed;
@@ -189,32 +174,23 @@ protected void checkDevice () {
 
 void checkGDIP() {
 	if (gdipToken != null) return;
-	int oldErrorMode = OS.SetErrorMode (OS.SEM_FAILCRITICALERRORS);
-	try {
-		long /*int*/ [] token = new long /*int*/ [1];
-		GdiplusStartupInput input = new GdiplusStartupInput ();
-		input.GdiplusVersion = 1;
-		if (Gdip.GdiplusStartup (token, input, 0) == 0) {
-			gdipToken = token;
-			if (loadedFonts != null) {
-				fontCollection = Gdip.PrivateFontCollection_new();
-				if (fontCollection == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-				for (int i = 0; i < loadedFonts.length; i++) {
-					String path = loadedFonts[i];
-					if (path == null) break;
-					int length = path.length();
-					char [] buffer = new char [length + 1];
-					path.getChars(0, length, buffer, 0);
-					Gdip.PrivateFontCollection_AddFontFile(fontCollection, buffer);
-				}
-				loadedFonts = null;
-			}
+	long [] token = new long [1];
+	GdiplusStartupInput input = new GdiplusStartupInput ();
+	input.GdiplusVersion = 1;
+	if (Gdip.GdiplusStartup (token, input, 0) != 0) SWT.error (SWT.ERROR_NO_HANDLES);
+	gdipToken = token;
+	if (loadedFonts != null) {
+		fontCollection = Gdip.PrivateFontCollection_new();
+		if (fontCollection == 0) SWT.error(SWT.ERROR_NO_HANDLES);
+		for (String path : loadedFonts) {
+			if (path == null) break;
+			int length = path.length();
+			char [] buffer = new char [length + 1];
+			path.getChars(0, length, buffer, 0);
+			Gdip.PrivateFontCollection_AddFontFile(fontCollection, buffer);
 		}
-	} catch (Throwable t) {
-		SWT.error (SWT.ERROR_NO_GRAPHICS_LIBRARY, t, " [GDI+ is required]"); //$NON-NLS-1$
-	} finally {
-		OS.SetErrorMode (oldErrorMode);
-    }
+		loadedFonts = null;
+	}
 }
 
 /**
@@ -236,14 +212,14 @@ protected void create (DeviceData data) {
 }
 
 int computePixels(float height) {
-	long /*int*/ hDC = internal_new_GC (null);
+	long hDC = internal_new_GC (null);
 	int pixels = -(int)(0.5f + (height * OS.GetDeviceCaps(hDC, OS.LOGPIXELSY) / 72f));
 	internal_dispose_GC (hDC, null);
 	return pixels;
 }
 
-float computePoints(LOGFONT logFont, long /*int*/ hFont) {
-	long /*int*/ hDC = internal_new_GC (null);
+float computePoints(LOGFONT logFont, long hFont) {
+	long hDC = internal_new_GC (null);
 	int logPixelsY = OS.GetDeviceCaps(hDC, OS.LOGPIXELSY);
 	int pixels = 0;
 	if (logFont.lfHeight > 0) {
@@ -254,7 +230,7 @@ float computePoints(LOGFONT logFont, long /*int*/ hFont) {
 		 * height of a font in points does not include the internal leading,
 		 * we must subtract the internal leading, which requires a TEXTMETRIC.
 		 */
-		long /*int*/ oldFont = OS.SelectObject(hDC, hFont);
+		long oldFont = OS.SelectObject(hDC, hFont);
 		TEXTMETRIC lptm = new TEXTMETRIC ();
 		OS.GetTextMetrics(hDC, lptm);
 		OS.SelectObject(hDC, oldFont);
@@ -323,8 +299,8 @@ void dispose_Object (Object object) {
 	}
 }
 
-long /*int*/ EnumFontFamProc (long /*int*/ lpelfe, long /*int*/ lpntme, long /*int*/ FontType, long /*int*/ lParam) {
-	boolean isScalable = ((int)/*64*/FontType & OS.RASTER_FONTTYPE) == 0;
+long EnumFontFamProc (long lpelfe, long lpntme, long FontType, long lParam) {
+	boolean isScalable = ((int)FontType & OS.RASTER_FONTTYPE) == 0;
 	boolean scalable = lParam == 1;
 	if (isScalable == scalable) {
 		/* Add the log font to the list of log fonts */
@@ -374,7 +350,7 @@ public Rectangle getBounds() {
 }
 
 private Rectangle getBoundsInPixels () {
-	long /*int*/ hDC = internal_new_GC (null);
+	long hDC = internal_new_GC (null);
 	int width = OS.GetDeviceCaps (hDC, OS.HORZRES);
 	int height = OS.GetDeviceCaps (hDC, OS.VERTRES);
 	internal_dispose_GC (hDC, null);
@@ -453,7 +429,7 @@ public Rectangle getClientArea () {
  */
 public int getDepth () {
 	checkDevice ();
-	long /*int*/ hDC = internal_new_GC (null);
+	long hDC = internal_new_GC (null);
 	int bits = OS.GetDeviceCaps (hDC, OS.BITSPIXEL);
 	int planes = OS.GetDeviceCaps (hDC, OS.PLANES);
 	internal_dispose_GC (hDC, null);
@@ -473,7 +449,7 @@ public int getDepth () {
  */
 public Point getDPI () {
 	checkDevice ();
-	long /*int*/ hDC = internal_new_GC (null);
+	long hDC = internal_new_GC (null);
 	int dpiX = OS.GetDeviceCaps (hDC, OS.LOGPIXELSX);
 	int dpiY = OS.GetDeviceCaps (hDC, OS.LOGPIXELSY);
 	internal_dispose_GC (hDC, null);
@@ -487,7 +463,7 @@ public Point getDPI () {
  * @return the horizontal DPI
  */
 int _getDPIx () {
-	long /*int*/ hDC = internal_new_GC (null);
+	long hDC = internal_new_GC (null);
 	int dpi = OS.GetDeviceCaps (hDC, OS.LOGPIXELSX);
 	internal_dispose_GC (hDC, null);
 	return dpi;
@@ -510,8 +486,7 @@ public FontData [] getFontList (String faceName, boolean scalable) {
 
 	/* Create the callback */
 	Callback callback = new Callback (this, "EnumFontFamProc", 4); //$NON-NLS-1$
-	long /*int*/ lpEnumFontFamProc = callback.getAddress ();
-	if (lpEnumFontFamProc == 0) SWT.error (SWT.ERROR_NO_MORE_CALLBACKS);
+	long lpEnumFontFamProc = callback.getAddress ();
 
 	/* Initialize the instance variables */
 	metrics = new TEXTMETRIC ();
@@ -524,7 +499,7 @@ public FontData [] getFontList (String faceName, boolean scalable) {
 
 	/* Enumerate */
 	int offset = 0;
-	long /*int*/ hDC = internal_new_GC (null);
+	long hDC = internal_new_GC (null);
 	if (faceName == null) {
 		/* The user did not specify a face name, so they want all versions of all available face names */
 		OS.EnumFontFamilies (hDC, null, lpEnumFontFamProc, scalable ? 1 : 0);
@@ -540,7 +515,6 @@ public FontData [] getFontList (String faceName, boolean scalable) {
 			OS.EnumFontFamilies (hDC, lf.lfFaceName, lpEnumFontFamProc, scalable ? 1 : 0);
 		}
 	} else {
-		/* Use the character encoding for the default locale */
 		TCHAR lpFaceName = new TCHAR (0, faceName, true);
 		OS.EnumFontFamilies (hDC, lpFaceName.chars, lpEnumFontFamProc, scalable ? 1 : 0);
 	}
@@ -576,19 +550,6 @@ String getLastError () {
 	int error = OS.GetLastError();
 	if (error == 0) return ""; //$NON-NLS-1$
 	return " [GetLastError=0x" + Integer.toHexString(error) + "]"; //$NON-NLS-1$ //$NON-NLS-2$
-}
-
-String getLastErrorText () {
-	int error = OS.GetLastError();
-	if (error == 0) return ""; //$NON-NLS-1$
-	long /*int*/ [] buffer = new long /*int*/ [1];
-	int dwFlags = OS.FORMAT_MESSAGE_ALLOCATE_BUFFER | OS.FORMAT_MESSAGE_FROM_SYSTEM | OS.FORMAT_MESSAGE_IGNORE_INSERTS;
-	int length = OS.FormatMessage(dwFlags, 0, error, OS.LANG_USER_DEFAULT, buffer, 0, 0);
-	if (length == 0) return " [GetLastError=0x" + Integer.toHexString(error) + "]"; //$NON-NLS-1$ //$NON-NLS-2$
-	TCHAR buffer1 = new TCHAR(0, length);
-	OS.MoveMemory(buffer1, buffer[0], length * TCHAR.sizeof);
-	if (buffer[0] != 0) OS.LocalFree(buffer[0]);
-	return buffer1.toString(0, length);
 }
 
 /**
@@ -657,7 +618,7 @@ public Color getSystemColor (int id) {
  */
 public Font getSystemFont () {
 	checkDevice ();
-	long /*int*/ hFont = OS.GetStockObject (OS.SYSTEM_FONT);
+	long hFont = OS.GetStockObject (OS.SYSTEM_FONT);
 	return Font.win32_new (this, hFont);
 }
 
@@ -698,63 +659,11 @@ protected void init () {
 	systemFont = getSystemFont();
 
 	/* Initialize scripts list */
-	long /*int*/ [] ppSp = new long /*int*/ [1];
+	long [] ppSp = new long [1];
 	int [] piNumScripts = new int [1];
 	OS.ScriptGetProperties (ppSp, piNumScripts);
-	scripts = new long /*int*/ [piNumScripts [0]];
+	scripts = new long [piNumScripts [0]];
 	OS.MoveMemory (scripts, ppSp [0], scripts.length * C.PTR_SIZEOF);
-
-	/*
-	 * If we're not on a device which supports palettes,
-	 * don't create one.
-	 */
-	long /*int*/ hDC = internal_new_GC (null);
-	int rc = OS.GetDeviceCaps (hDC, OS.RASTERCAPS);
-	int bits = OS.GetDeviceCaps (hDC, OS.BITSPIXEL);
-	int planes = OS.GetDeviceCaps (hDC, OS.PLANES);
-
-	bits *= planes;
-	if ((rc & OS.RC_PALETTE) == 0 || bits != 8) {
-		internal_dispose_GC (hDC, null);
-		return;
-	}
-
-	int numReserved = OS.GetDeviceCaps (hDC, OS.NUMRESERVED);
-	int numEntries = OS.GetDeviceCaps (hDC, OS.SIZEPALETTE);
-
-	/* Create the palette and reference counter */
-	colorRefCount = new int [numEntries];
-
-	/* 4 bytes header + 4 bytes per entry * numEntries entries */
-	byte [] logPalette = new byte [4 + 4 * numEntries];
-
-	/* 2 bytes = special header */
-	logPalette [0] = 0x00;
-	logPalette [1] = 0x03;
-
-	/* 2 bytes = number of colors, LSB first */
-	logPalette [2] = 0;
-	logPalette [3] = 1;
-
-	/*
-	* Create a palette which contains the system entries
-	* as they are located in the system palette.  The
-	* MSDN article 'Memory Device Contexts' describes
-	* where system entries are located.  On an 8 bit
-	* display with 20 reserved colors, the system colors
-	* will be the first 10 entries and the last 10 ones.
-	*/
-	byte[] lppe = new byte [4 * numEntries];
-	OS.GetSystemPaletteEntries (hDC, 0, numEntries, lppe);
-	/* Copy all entries from the system palette */
-	System.arraycopy (lppe, 0, logPalette, 4, 4 * numEntries);
-	/* Lock the indices corresponding to the system entries */
-	for (int i = 0; i < numReserved / 2; i++) {
-		colorRefCount [i] = 1;
-		colorRefCount [numEntries - 1 - i] = 1;
-	}
-	internal_dispose_GC (hDC, null);
-	hPalette = OS.CreatePalette (logPalette);
 }
 /**
  * Invokes platform specific functionality to allocate a new GC handle.
@@ -772,7 +681,7 @@ protected void init () {
  * @noreference This method is not intended to be referenced by clients.
  */
 @Override
-public abstract long /*int*/ internal_new_GC (GCData data);
+public abstract long internal_new_GC (GCData data);
 
 /**
  * Invokes platform specific functionality to dispose a GC handle.
@@ -790,7 +699,7 @@ public abstract long /*int*/ internal_new_GC (GCData data);
  * @noreference This method is not intended to be referenced by clients.
  */
 @Override
-public abstract void /*long*/ internal_dispose_GC (long /*int*/ hDC, GCData data);
+public abstract void /*long*/ internal_dispose_GC (long hDC, GCData data);
 
 /**
  * Returns <code>true</code> if the device has been disposed,
@@ -874,8 +783,7 @@ void printErrors () {
 			int objectCount = 0;
 			int colors = 0, cursors = 0, fonts = 0, gcs = 0, images = 0;
 			int paths = 0, patterns = 0, regions = 0, textLayouts = 0, transforms = 0;
-			for (int i=0; i<objects.length; i++) {
-				Object object = objects [i];
+			for (Object object : objects) {
 				if (object != null) {
 					objectCount++;
 					if (object instanceof Color) colors++;
@@ -906,8 +814,8 @@ void printErrors () {
 					string = string.substring (0, string.length () - 2);
 					System.err.println (string);
 				}
-				for (int i=0; i<errors.length; i++) {
-					if (errors [i] != null) errors [i].printStackTrace (System.err);
+				for (Error error : errors) {
+					if (error != null) error.printStackTrace (System.err);
 				}
 			}
 		}
@@ -947,9 +855,6 @@ protected void release () {
 	}
 	gdipToken = null;
 	scripts = null;
-	if (hPalette != 0) OS.DeleteObject (hPalette);
-	hPalette = 0;
-	colorRefCount = null;
 	logFonts = null;
 	nFonts = 0;
 }

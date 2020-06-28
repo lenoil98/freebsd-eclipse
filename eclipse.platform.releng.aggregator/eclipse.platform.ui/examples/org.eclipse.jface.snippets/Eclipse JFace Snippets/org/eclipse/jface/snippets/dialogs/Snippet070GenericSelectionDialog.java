@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 vogella GmbH and others.
+ * Copyright (c) 2015, 2019 vogella GmbH and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -22,14 +22,11 @@ import org.eclipse.jface.dialogs.AbstractSelectionDialog;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.DoubleClickEvent;
-import org.eclipse.jface.viewers.IDoubleClickListener;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.ListViewer;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.widgets.WidgetFactory;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
@@ -46,7 +43,7 @@ import org.eclipse.swt.widgets.Shell;
 public class Snippet070GenericSelectionDialog {
 
 	public Snippet070GenericSelectionDialog(final Shell shell) {
-		Label text = new Label(shell, SWT.CENTER);
+		Label text = WidgetFactory.label(SWT.CENTER).create(shell);
 		List<Model> models = getSampleModelElements();
 
 		GenericSelectionDialog genericSelectionDialog = new GenericSelectionDialog(shell, models, models.get(0),
@@ -156,13 +153,9 @@ public class Snippet070GenericSelectionDialog {
 			listViewer.getList().setLayoutData(data);
 			listViewer.getList().setFont(parent.getFont());
 			// Set the label provider
-			listViewer.setLabelProvider(new LabelProvider() {
-				@Override
-				public String getText(Object element) {
-					// Return the features's label.
-					return element == null ? "" : ((Model) element).getName(); //$NON-NLS-1$
-				}
-			});
+			LabelProvider labelProvider = LabelProvider
+					.createTextProvider(element -> element == null ? "" : ((Model) element).getName());
+			listViewer.setLabelProvider(labelProvider);
 
 			// Set the content provider
 			listViewer.setContentProvider(ArrayContentProvider.getInstance());
@@ -172,21 +165,11 @@ public class Snippet070GenericSelectionDialog {
 			listViewer.setSelection(new StructuredSelection(getInitialSelection()), true);
 
 			// Add a selection change listener
-			listViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-				@Override
-				public void selectionChanged(SelectionChangedEvent event) {
-					// Update OK button enablement
-					getButton(IDialogConstants.OK_ID).setEnabled(!event.getSelection().isEmpty());
-				}
-			});
+			listViewer.addSelectionChangedListener(
+					event -> getButton(IDialogConstants.OK_ID).setEnabled(!event.getSelection().isEmpty()));
 
 			// Add double-click listener
-			listViewer.addDoubleClickListener(new IDoubleClickListener() {
-				@Override
-				public void doubleClick(DoubleClickEvent event) {
-					okPressed();
-				}
-			});
+			listViewer.addDoubleClickListener(event -> okPressed());
 			return composite;
 		}
 
@@ -237,8 +220,7 @@ public class Snippet070GenericSelectionDialog {
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + ((name == null) ? 0 : name.hashCode());
-			return result;
+			return prime * result + ((name == null) ? 0 : name.hashCode());
 		}
 
 		@Override

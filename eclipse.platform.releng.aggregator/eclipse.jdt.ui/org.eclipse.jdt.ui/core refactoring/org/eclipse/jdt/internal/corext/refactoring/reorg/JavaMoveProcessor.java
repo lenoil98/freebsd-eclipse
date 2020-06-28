@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -23,9 +23,12 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.Platform;
 
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.ChangeDescriptor;
@@ -93,7 +96,7 @@ public final class JavaMoveProcessor extends MoveProcessor implements IQualified
 	 * Checks if <b>Java</b> references to the selected element(s) can be updated if moved to
 	 * the selected destination. Even if <code>false</code>, participants could still update
 	 * non-Java references.
-	 * 
+	 *
 	 * @return <code>true</code> iff <b>Java</b> references to the moved element can be updated
 	 * @since 3.5
 	 */
@@ -110,7 +113,7 @@ public final class JavaMoveProcessor extends MoveProcessor implements IQualified
 	public boolean canUpdateReferences() {
 		return canUpdateJavaReferences();
 	}
-	
+
 	@Override
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm, CheckConditionsContext context) throws CoreException {
 		try {
@@ -128,9 +131,39 @@ public final class JavaMoveProcessor extends MoveProcessor implements IQualified
 		pm.beginTask("", 1); //$NON-NLS-1$
 		try {
 			RefactoringStatus result= new RefactoringStatus();
-			result.merge(RefactoringStatus.create(Resources.checkInSync(ReorgUtils.getNotNulls(fMovePolicy.getResources()))));
+			IResource[] resources= ReorgUtils.getNotNulls(fMovePolicy.getResources());
+			IStatus status= Resources.checkInSync(resources);
+			if (!status.isOK()) {
+				boolean autoRefresh= Platform.getPreferencesService().getBoolean(ResourcesPlugin.PI_RESOURCES, ResourcesPlugin.PREF_LIGHTWEIGHT_AUTO_REFRESH, false, null);
+				if (autoRefresh) {
+					for (IResource resource : resources) {
+						try {
+							resource.refreshLocal(IResource.DEPTH_INFINITE, pm);
+						} catch (CoreException e) {
+							break;
+						}
+						status= Resources.checkInSync(resources);
+					}
+				}
+			}
+			result.merge(RefactoringStatus.create(status));
 			IResource[] javaResources= ReorgUtils.getResources(fMovePolicy.getJavaElements());
-			result.merge(RefactoringStatus.create(Resources.checkInSync(ReorgUtils.getNotNulls(javaResources))));
+			resources= ReorgUtils.getNotNulls(javaResources);
+			status= Resources.checkInSync(resources);
+			if (!status.isOK()) {
+				boolean autoRefresh= Platform.getPreferencesService().getBoolean(ResourcesPlugin.PI_RESOURCES, ResourcesPlugin.PREF_LIGHTWEIGHT_AUTO_REFRESH, false, null);
+				if (autoRefresh) {
+					for (IResource resource : resources) {
+						try {
+							resource.refreshLocal(IResource.DEPTH_INFINITE, pm);
+						} catch (CoreException e) {
+							break;
+						}
+						status= Resources.checkInSync(resources);
+					}
+				}
+			}
+			result.merge(RefactoringStatus.create(status));
 			return result;
 		} finally {
 			pm.done();
@@ -152,10 +185,10 @@ public final class JavaMoveProcessor extends MoveProcessor implements IQualified
 				@Override
 				public Change perform(IProgressMonitor pm2) throws CoreException {
 					Change change= super.perform(pm2);
-					Change[] changes= getChildren();
-					for (int index= 0; index < changes.length; index++) {
-						if (!(changes[index] instanceof TextEditBasedChange))
+					for (Change c : getChildren()) {
+						if (!(c instanceof TextEditBasedChange)) {
 							return null;
+						}
 					}
 					return change;
 				}
@@ -168,9 +201,8 @@ public final class JavaMoveProcessor extends MoveProcessor implements IQualified
 					log= queries.getCreateTargetExecutionLog();
 			}
 			if (log != null) {
-				final Object[] selected= log.getSelectedElements();
-				for (int index= 0; index < selected.length; index++) {
-					result.add(new LoggedCreateTargetChange(selected[index], fCreateTargetQueries));
+				for (Object element : log.getSelectedElements()) {
+					result.add(new LoggedCreateTargetChange(element, fCreateTargetQueries));
 				}
 			}
 			Change change= fMovePolicy.createChange(pm);

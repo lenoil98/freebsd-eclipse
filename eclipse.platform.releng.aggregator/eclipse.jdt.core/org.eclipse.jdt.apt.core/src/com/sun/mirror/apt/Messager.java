@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -36,7 +36,7 @@ import com.sun.mirror.util.SourcePosition;
 
 
 /**
- * A <tt>Messager</tt> provides the way for
+ * A <code>Messager</code> provides the way for
  * an annotation processor to report error messages, warnings, and
  * other notices.
  *
@@ -50,7 +50,7 @@ public interface Messager {
 
     /**
      * Prints an error message.
-     * Equivalent to <tt>printError(null, msg)</tt>.
+     * Equivalent to <code>printError(null, msg)</code>.
      * @param msg  the message, or an empty string if none
      */
     void printError(String msg);
@@ -65,7 +65,7 @@ public interface Messager {
 
     /**
      * Prints a warning message.
-     * Equivalent to <tt>printWarning(null, msg)</tt>.
+     * Equivalent to <code>printWarning(null, msg)</code>.
      * @param msg  the message, or an empty string if none
      */
     void printWarning(String msg);
@@ -80,7 +80,7 @@ public interface Messager {
 
     /**
      * Prints a notice.
-     * Equivalent to <tt>printNotice(null, msg)</tt>.
+     * Equivalent to <code>printNotice(null, msg)</code>.
      * @param msg  the message, or an empty string if none
      */
     void printNotice(String msg);

@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -31,8 +31,9 @@ public class ReadOnlyConfigurationAreaTest extends OSGiTest {
 		ConfigurationSessionTestSuite suite = new ConfigurationSessionTestSuite(PI_OSGI_TESTS, ReadOnlyConfigurationAreaTest.class);
 		suite.setReadOnly(true);
 		String[] ids = ConfigurationSessionTestSuite.MINIMAL_BUNDLE_SET;
-		for (int i = 0; i < ids.length; i++)
-			suite.addBundle(ids[i]);
+		for (String id : ids) {
+			suite.addBundle(id);
+		}
 		suite.addBundle(PI_OSGI_TESTS);
 		return suite;
 	}
@@ -42,7 +43,7 @@ public class ReadOnlyConfigurationAreaTest extends OSGiTest {
 	}
 
 	public void test0thSession() throws MalformedURLException, IOException {
-		// initialization session		
+		// initialization session
 		try {
 			Bundle installed = BundleTestingHelper.installBundle("1.0", getContext(), OSGiTestsActivator.TEST_FILES_ROOT + "configuration/bundle01");
 			// not read-only yet, should work fine
@@ -82,7 +83,7 @@ public class ReadOnlyConfigurationAreaTest extends OSGiTest {
 	 */
 	public void test2ndSession() throws BundleException, IOException {
 		// try to install plug-in
-		// ensure it is not installed		
+		// ensure it is not installed
 		Bundle installed = null;
 		try {
 			installed = BundleTestingHelper.installBundle(getContext(), OSGiTestsActivator.TEST_FILES_ROOT + "configuration/bundle02");
@@ -92,7 +93,7 @@ public class ReadOnlyConfigurationAreaTest extends OSGiTest {
 			// success
 		} finally {
 			if (installed != null)
-				// clean-up - only runs if we end-up accepting an invalid manifest				
+				// clean-up - only runs if we end-up accepting an invalid manifest
 				installed.uninstall();
 		}
 	}
@@ -111,17 +112,17 @@ public class ReadOnlyConfigurationAreaTest extends OSGiTest {
 	 */
 	public void test3rdSession() throws BundleException, IOException {
 		// install plug-in
-		// ensure it is not installed		
+		// ensure it is not installed
 		Bundle installed = null;
 		try {
 			installed = BundleTestingHelper.installBundle(getContext(), OSGiTestsActivator.TEST_FILES_ROOT + "configuration/bundle03");
 			// should have failed - cannot install a bundle in read-only mode
 			fail("1.0");
 		} catch (BundleException be) {
-			// success 
+			// success
 		} finally {
 			if (installed != null)
-				// clean-up - only runs if we end-up accepting an invalid manifest				
+				// clean-up - only runs if we end-up accepting an invalid manifest
 				installed.uninstall();
 		}
 	}

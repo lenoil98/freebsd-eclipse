@@ -97,7 +97,7 @@ class CopyCallHierarchyAction extends Action {
 
 	/**
 	 * Adds the specified {@link TreeItem}'s text to the StringBuffer.
-	 * 
+	 *
 	 * @param item the tree item
 	 * @param indent the indent size
 	 * @param buf the string buffer
@@ -111,9 +111,8 @@ class CopyCallHierarchyAction extends Action {
 		buf.append('\n');
 
 		if (item.getExpanded()) {
-			TreeItem[] items= item.getItems();
-			for (int i= 0; i < items.length; i++) {
-				addCalls(items[i], indent + 1, buf);
+			for (TreeItem i : item.getItems()) {
+				addCalls(i, indent + 1, buf);
 			}
 		}
 	}

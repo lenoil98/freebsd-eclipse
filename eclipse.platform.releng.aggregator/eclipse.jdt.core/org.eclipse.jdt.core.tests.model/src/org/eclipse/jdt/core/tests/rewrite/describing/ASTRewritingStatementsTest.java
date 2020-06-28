@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -102,6 +102,15 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 	public static Test suite() {
 		return createSuite(ASTRewritingStatementsTest.class);
+	}
+
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
+		if (this.apiLevel == AST.JLS14 ) {
+			this.project1.setOption(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES, JavaCore.ENABLED);
+			this.project1.setOption(JavaCore.COMPILER_PB_REPORT_PREVIEW_FEATURES, JavaCore.IGNORE);
+		}
 	}
 
 	/** @deprecated using deprecated code */
@@ -394,7 +403,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		assertEqualString(preview, buf.toString());
 
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement01() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -411,7 +420,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -435,7 +444,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement02() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -451,7 +460,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -475,7 +484,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement03() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -491,7 +500,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -515,7 +524,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement04() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -530,7 +539,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -553,7 +562,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement05() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -570,7 +579,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -595,7 +604,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement06() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -612,7 +621,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -637,7 +646,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement07() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -654,7 +663,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -680,7 +689,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement08() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -697,7 +706,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -722,7 +731,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement09() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -739,7 +748,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -765,7 +774,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement10() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -782,9 +791,9 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		AST ast = astRoot.getAST();
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -793,7 +802,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		assertTrue("Number of statements not 4", blockStatements.size() == 4);
 		{
 			ASTNode statement = (ASTNode)blockStatements.get(2);
-			
+
 			ListRewrite listRewrite= rewrite.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 			listRewrite.insertBefore(ast.newBreakStatement(), statement, null);
 			listRewrite.remove(statement, null);
@@ -812,7 +821,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement11() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -829,9 +838,9 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		AST ast = astRoot.getAST();
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -840,7 +849,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		assertTrue("Number of statements not 4", blockStatements.size() == 4);
 		{
 			ASTNode statement = (ASTNode)blockStatements.get(2);
-			
+
 			ListRewrite listRewrite= rewrite.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 			listRewrite.insertAfter(ast.newBreakStatement(), statement, null);
 			listRewrite.remove(statement, null);
@@ -860,7 +869,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testRemoveStatement12() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
@@ -877,9 +886,9 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 		CompilationUnit astRoot= createAST(cu);
 		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-		
+
 		AST ast = astRoot.getAST();
-		
+
 		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 		TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -1459,23 +1468,23 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu, true);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
 			AST ast= astRoot.getAST();
-	
+
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
 			Block block= methodDecl.getBody();
 			assertTrue("Parse errors", (block.getFlags() & ASTNode.MALFORMED) == 0);
-	
+
 			List statements= block.statements();
 			assertTrue("Number of statements not 1", statements.size() == 1);
-	
+
 			{ // replace body statement with body
 				DoStatement doStatement= (DoStatement) statements.get(0);
-	
-	
+
+
 				TryStatement newTry= ast.newTryStatement();
 				newTry.getBody().statements().add(ast.newReturnStatement());
 				CatchClause newCatchClause= ast.newCatchClause();
@@ -1491,13 +1500,13 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 				resource.setType(ast.newSimpleType(ast.newSimpleName("Reader")));
 
 				rewrite.getListRewrite(newTry, getResourcesProperty()).insertLast(resource, null);
-	
+
 				rewrite.replace(doStatement.getBody(), newTry, null);
 			}
-	
-	
+
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -3406,7 +3415,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		assertEqualString(preview, buf.toString());
 
 	}
-	
+
 	public void testReturnStatement2() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3441,7 +3450,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 			rewrite.replace(expression, newExpression, null);
 		}
-		
+
 		{ // replace expression "A" in return"A"+"B"
 			ReturnStatement statement= (ReturnStatement) statements.get(1);
 
@@ -3450,12 +3459,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Is not an InfixExpression", expression instanceof InfixExpression);
 			Expression leftOperand = ((InfixExpression)expression).getLeftOperand();
 			assertTrue("Has no leftOperand", leftOperand != null);
-			
+
 			SimpleName newExpression= ast.newSimpleName("x");
 
 			rewrite.replace(leftOperand, newExpression, null);
 		}
-		
+
 		{ // replace expression (1) in return(1) * 2 + 3
 			ReturnStatement statement= (ReturnStatement) statements.get(2);
 
@@ -3467,7 +3476,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Is not an InfixExpression", leftOperand instanceof InfixExpression);
 			Expression leftOperand2 = ((InfixExpression)leftOperand).getLeftOperand();
 			assertTrue("Has no leftOperand2", leftOperand2 != null);
-			
+
 			SimpleName newExpression= ast.newSimpleName("x");
 
 			rewrite.replace(leftOperand2, newExpression, null);
@@ -3558,10 +3567,10 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("    }\n");
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
-
 	}
 
 
+	@SuppressWarnings("deprecation")
 	public void testSwitchStatement() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -3606,12 +3615,19 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 0", statements.size() == 0);
 
 			SwitchCase caseStatement1= ast.newSwitchCase();
-			caseStatement1.setExpression(ast.newNumberLiteral("1"));
+			if (this.apiLevel < AST.JLS14) {
+				caseStatement1.setExpression(ast.newNumberLiteral("1"));
+			}
+			else {
+				caseStatement1.expressions().add(ast.newNumberLiteral("1"));
+			}
 
 			Statement statement1= ast.newReturnStatement();
 
 			SwitchCase caseStatement2= ast.newSwitchCase(); // default
-			caseStatement2.setExpression(null);
+			if (this.apiLevel < AST.JLS14) {
+				caseStatement2.setExpression(null);
+			}
 
 			ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 			listRewrite.insertLast(caseStatement1, null);
@@ -3634,14 +3650,25 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			// change case statement
 			SwitchCase caseStatement= (SwitchCase) statements.get(3);
 			Expression newCaseExpression= ast.newNumberLiteral("10");
-			rewrite.replace(caseStatement.getExpression(), newCaseExpression, null);
+			if (this.apiLevel < AST.JLS14) {
+				rewrite.replace(caseStatement.getExpression(), newCaseExpression, null);
+			} else {
+				List expressions = caseStatement.expressions();
+				ListRewrite listRewrite= rewrite.getListRewrite(caseStatement, SwitchCase.EXPRESSIONS2_PROPERTY);
+				listRewrite.replace((Expression)expressions.get(0), newCaseExpression, null);
+			}
 
 			ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 
 			{
 				// insert case statement
 				SwitchCase caseStatement2= ast.newSwitchCase();
-				caseStatement2.setExpression(ast.newNumberLiteral("11"));
+				if (this.apiLevel < AST.JLS14) {
+					caseStatement2.setExpression(ast.newNumberLiteral("11"));
+				}
+				else {
+					caseStatement2.expressions().add(ast.newNumberLiteral("11"));
+				}
 				listRewrite.insertFirst(caseStatement2, null);
 
 				// insert statement
@@ -3652,7 +3679,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			{
 				// insert case statement
 				SwitchCase caseStatement2= ast.newSwitchCase();
-				caseStatement2.setExpression(ast.newNumberLiteral("12"));
+				if (this.apiLevel < AST.JLS14) {
+					caseStatement2.setExpression(ast.newNumberLiteral("12"));
+				}
+				else {
+					caseStatement2.expressions().add(ast.newNumberLiteral("12"));
+				}
 				listRewrite.insertLast(caseStatement2, null);
 
 				// insert statement
@@ -3690,14 +3722,15 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		assertEqualString(preview, buf.toString());
 
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	public void testSwitchStatement2() throws Exception {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -3718,12 +3751,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-	
+
 			AST ast= astRoot.getAST();
-	
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -3732,74 +3765,98 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 2", blockStatements.size() == 2);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-	
+
 				ASTNode expression= switchStatement.getExpression();
 				SimpleName newExpression= ast.newSimpleName("x");
 				rewrite.replace(expression, newExpression, null);
-	
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 0", statements.size() == 0);
-	
+
 				SwitchCase caseStatement1= ast.newSwitchCase();
-				caseStatement1.setExpression(ast.newNumberLiteral("1"));
-	
+				if (this.apiLevel < AST.JLS14) {
+					caseStatement1.setExpression(ast.newNumberLiteral("1"));
+				}
+				else {
+					caseStatement1.expressions().add(ast.newNumberLiteral("1"));
+				}
+
 				Statement statement1= ast.newReturnStatement();
-	
+
 				SwitchCase caseStatement2= ast.newSwitchCase(); // default
-				caseStatement2.setExpression(null);
-	
+				if (this.apiLevel < AST.JLS14) {
+					caseStatement2.setExpression(null);
+				}
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.insertLast(caseStatement1, null);
 				listRewrite.insertLast(statement1, null);
 				listRewrite.insertLast(caseStatement2, null);
 			}
-	
+
 			{ // insert, remove, replace statements, change case statements
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(1);
-	
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 8", statements.size() == 8);
-	
+
 				// remove statements
-	
+
 				rewrite.remove((ASTNode) statements.get(0), null);
 				rewrite.remove((ASTNode) statements.get(1), null);
 				rewrite.remove((ASTNode) statements.get(2), null);
-	
+
 				// change case statement
 				SwitchCase caseStatement= (SwitchCase) statements.get(3);
 				Expression newCaseExpression= ast.newNumberLiteral("10");
-				rewrite.replace(caseStatement.getExpression(), newCaseExpression, null);
-	
+				if (this.apiLevel < AST.JLS14) {
+					rewrite.replace(caseStatement.getExpression(), newCaseExpression, null);
+				} else {
+					List expressions = caseStatement.expressions();
+					ListRewrite listRewrite2= rewrite.getListRewrite(caseStatement, SwitchCase.EXPRESSIONS2_PROPERTY);
+					listRewrite2.replace((Expression)expressions.get(0), newCaseExpression, null);
+				}
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
-	
+
 				{
 					// insert case statement
 					SwitchCase caseStatement2= ast.newSwitchCase();
-					caseStatement2.setExpression(ast.newNumberLiteral("11"));
+					if (this.apiLevel < AST.JLS14) {
+						caseStatement2.setExpression(ast.newNumberLiteral("11"));
+					}
+					else {
+						caseStatement2.expressions().add(ast.newNumberLiteral("11"));
+
+					}
 					listRewrite.insertFirst(caseStatement2, null);
-	
+
 					// insert statement
 					Statement statement1= ast.newReturnStatement();
 					listRewrite.insertAfter(statement1, caseStatement2, null);
 				}
-	
+
 				{
 					// insert case statement
 					SwitchCase caseStatement2= ast.newSwitchCase();
-					caseStatement2.setExpression(ast.newNumberLiteral("12"));
+					if (this.apiLevel < AST.JLS14) {
+						caseStatement2.setExpression(ast.newNumberLiteral("12"));
+					}
+					else {
+						caseStatement2.expressions().add(ast.newNumberLiteral("12"));
+					}
 					listRewrite.insertLast(caseStatement2, null);
-	
+
 					// insert statement
 					Statement statement1= ast.newReturnStatement();
 					listRewrite.insertAfter(statement1, caseStatement2, null);
 				}
-	
-	
+
+
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -3829,14 +3886,14 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 		}
 	}
-	
+
 	public void testSwitchStatement3() throws Exception {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -3852,12 +3909,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-	
+
 			AST ast= astRoot.getAST();
-	
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -3866,20 +3923,20 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 2", blockStatements.size() == 1);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-				
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 0", statements.size() == 5);
-				
+
 				SwitchCase caseStatement = (SwitchCase)statements.get(2);
-	
+
 				BreakStatement breakStatement= ast.newBreakStatement();
-				
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.insertBefore(breakStatement, caseStatement, null);
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -3901,7 +3958,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 		}
 	}
-	
+
 	/*
 	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=246627
 	 * Insert a statement before an unchanged statement (and preceded by an unchanged statement)
@@ -3910,9 +3967,9 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -3927,12 +3984,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-	
+
 			AST ast= astRoot.getAST();
-	
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -3941,18 +3998,18 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-				
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 4", statements.size() == 4);
-				
+
 				SwitchCase caseStatement = (SwitchCase)statements.get(2); // case 2:
-				
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.insertBefore(ast.newBreakStatement(), caseStatement, null);
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -3973,7 +4030,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 		}
 	}
-	
+
 	/*
 	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=246627
 	 * Insert a statement after an unchanged statement (and preceded by an unchanged statement)
@@ -3982,9 +4039,9 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -3999,12 +4056,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-	
+
 			AST ast= astRoot.getAST();
-	
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -4013,18 +4070,18 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-				
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 4", statements.size() == 4);
-				
+
 				ExpressionStatement assignment = (ExpressionStatement)statements.get(1); // i= 1;
-				
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.insertAfter(ast.newBreakStatement(), assignment, null);
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4045,18 +4102,19 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 		}
 	}
-	
+
 	/*
 	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=246627
 	 * Replace a statement preceded by an unchanged statement)
 	 */
+	@SuppressWarnings("deprecation")
 	public void testSwitchStatement7() throws Exception {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -4071,12 +4129,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-	
+
 			AST ast= astRoot.getAST();
-	
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -4085,21 +4143,26 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-				
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 4", statements.size() == 4);
-				
+
 				ExpressionStatement assignment = (ExpressionStatement)statements.get(1); // i= 1;:
-				
+
 				SwitchCase switchCase = ast.newSwitchCase();
-				switchCase.setExpression(ast.newNumberLiteral("2"));
-				
+				if (this.apiLevel < AST.JLS14) {
+					switchCase.setExpression(ast.newNumberLiteral("2"));
+				}
+				else {
+					switchCase.expressions().add(ast.newNumberLiteral("2"));
+				}
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.replace(assignment, switchCase, null);
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4119,7 +4182,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 		}
 	}
-	
+
 	/*
 	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=246627
 	 * Remove a statement preceded by an unchanged statement)
@@ -4128,9 +4191,9 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -4145,10 +4208,10 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-	
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -4157,18 +4220,18 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-				
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 4", statements.size() == 4);
-				
+
 				ExpressionStatement assignment = (ExpressionStatement)statements.get(1); // i= 1;:
-				
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.remove(assignment, null);
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4187,18 +4250,19 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 		}
 	}
-	
+
 	/*
 	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=246627
 	 * Remove a statement followed by an inserted statement)
 	 */
+	@SuppressWarnings("deprecation")
 	public void testSwitchStatement9() throws Exception {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -4213,12 +4277,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-			
+
 			AST ast= astRoot.getAST();
-	
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -4227,22 +4291,27 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-				
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 4", statements.size() == 4);
-				
+
 				ExpressionStatement assignment = (ExpressionStatement)statements.get(1); // i= 1;
-				
+
 				SwitchCase switchCase = ast.newSwitchCase();
-				switchCase.setExpression(ast.newNumberLiteral("2"));
-				
+				if (this.apiLevel < AST.JLS14) {
+					switchCase.setExpression(ast.newNumberLiteral("2"));
+				}
+				else {
+					switchCase.expressions().add(ast.newNumberLiteral("2"));
+				}
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.remove(assignment, null);
 				listRewrite.insertAfter(switchCase, assignment, null);
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4262,7 +4331,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 		}
 	}
-	
+
 	/*
 	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=246627
 	 * Remove a statement preceded by an inserted statement)
@@ -4271,9 +4340,9 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -4288,12 +4357,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-			
+
 			AST ast= astRoot.getAST();
-			
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -4302,19 +4371,19 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-				
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 4", statements.size() == 4);
-				
+
 				ExpressionStatement assignment = (ExpressionStatement)statements.get(1); // i= 1;:
-				
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.insertBefore(ast.newBreakStatement(), assignment, null);
 				listRewrite.remove(assignment, null);
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4334,15 +4403,15 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 		}
 	}
-	
+
 	//https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testSwitchStatement11() throws Exception {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -4355,10 +4424,10 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-			
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -4367,18 +4436,18 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-				
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 5", statements.size() == 5);
-				
+
 				BreakStatement breakStatement = (BreakStatement)statements.get(2); // break;:
-				
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.remove(breakStatement, null);
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4396,15 +4465,15 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 		}
 	}
-	
+
 	//https://bugs.eclipse.org/bugs/show_bug.cgi?id=276938
 	public void testSwitchStatement12() throws Exception {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -4416,10 +4485,10 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
-			
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -4428,18 +4497,18 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // insert statements, replace expression
 				SwitchStatement switchStatement= (SwitchStatement) blockStatements.get(0);
-				
+
 				List statements= switchStatement.statements();
 				assertTrue("Number of statements not 5", statements.size() == 5);
-				
+
 				BreakStatement breakStatement = (BreakStatement)statements.get(2); // break;:
-				
+
 				ListRewrite listRewrite= rewrite.getListRewrite(switchStatement, SwitchStatement.STATEMENTS_PROPERTY);
 				listRewrite.remove(breakStatement, null);
 			}
-	
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4462,9 +4531,9 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		String previousValue = null;
 		try {
 			previousValue = this.project1.getOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, false);
-			
+
 			this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_SWITCH, DefaultCodeFormatterConstants.FALSE);
-			
+
 			IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 			StringBuffer buf= new StringBuffer();
 			buf.append("package test1;\n");
@@ -4494,13 +4563,13 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			TextEdit res= rewrite.rewriteAST(document1, null);
 			res.apply(document1);
 			String preview = document1.get();
-			
+
 			buf= new StringBuffer();
-			buf.append("package test1;\n"); 
-			buf.append("public class E {\n"); 
+			buf.append("package test1;\n");
+			buf.append("public class E {\n");
 			buf.append("    public void foo(int i) {\n");
-			buf.append("        switch(4){\n"); 
-			buf.append("            case 4:break;default:System.out.println(\"Not 4\");\n"); 
+			buf.append("        switch(4){\n");
+			buf.append("            case 4:break;default:System.out.println(\"Not 4\");\n");
 			buf.append("			case 5:\n");
 			buf.append("			System.out.println(\"This is 5\");break;\n");
 			buf.append("        }\n");
@@ -4512,6 +4581,151 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 				this.project1.setOption(DefaultCodeFormatterConstants.FORMATTER_INDENT_SWITCHSTATEMENTS_COMPARE_TO_CASES, previousValue);
 			}
 		}
+	}
+	@SuppressWarnings("deprecation")
+	public void testSwitchStatement_Bug543720() throws Exception {
+		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
+		String s	=
+				"package test1;\n"+
+				"public class X {\n"+
+				"	static int foo(int i) {\n"+
+				"		int tw = 0;\n"+
+				"		switch (i) {\n"+
+				"			case 1 : {\n"+
+				" 				int z = 100;\n"+
+				" 				break;\n"+
+				"			}\n"+
+				"			default : {\n"+
+				"				break;\n"+
+				"			}\n"+
+				"		}\n"+
+				"		return tw;\n"+
+				"	}\n"+
+				"	public static void main(String[] args) {\n"+
+				"		System.out.print(foo(1));\n"+
+				"	}\n"+
+				"}\n";
+		StringBuffer buf = new StringBuffer(s);
+		ICompilationUnit cu= pack1.createCompilationUnit("X.java", buf.toString(), false, null);
+
+		CompilationUnit astRoot= createAST(cu);
+		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
+
+		AST ast= astRoot.getAST();
+
+		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
+		TypeDeclaration type= findTypeDeclaration(astRoot, "X");
+		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
+		Block block= methodDecl.getBody();
+		List blockStatements= block.statements();
+		{ // insert statements, replace expression
+			SwitchStatement switchStmt = (SwitchStatement) blockStatements.get(1);
+
+			SwitchCase caseStatement1= ast.newSwitchCase();
+			if (this.apiLevel < AST.JLS14) {
+				caseStatement1.setExpression(ast.newNumberLiteral("100"));
+			} else {
+				caseStatement1.expressions().add(ast.newNumberLiteral("100"));
+			}
+
+			BreakStatement breakStatement = ast.newBreakStatement();
+			Block block1 = ast.newBlock();
+			block1.statements().add(breakStatement);
+
+			SwitchCase defaultCase = (SwitchCase) switchStmt.statements().get(2);
+			ListRewrite listRewrite= rewrite.getListRewrite(switchStmt, SwitchStatement.STATEMENTS_PROPERTY);
+			listRewrite.insertBefore(caseStatement1, defaultCase, null);
+			listRewrite.insertBefore(block1, defaultCase, null);
+		}
+
+
+		String preview= evaluateRewrite(cu, rewrite);
+
+		buf= new StringBuffer();
+		buf.append("package test1;\n");
+		buf.append("public class X {\n");
+		buf.append("	static int foo(int i) {\n");
+		buf.append("		int tw = 0;\n");
+		buf.append("		switch (i) {\n");
+		buf.append("			case 1 : {\n");
+		buf.append(" 				int z = 100;\n");
+		buf.append(" 				break;\n");
+		buf.append("			}\n");
+		buf.append("			case 100:\n");
+		buf.append("                {\n");
+		buf.append("                    break;\n");
+		buf.append("                }\n");
+		buf.append("            default : {\n");
+		buf.append("				break;\n");
+		buf.append("			}\n");
+		buf.append("		}\n");
+		buf.append("		return tw;\n");
+		buf.append("	}\n");
+		buf.append("	public static void main(String[] args) {\n");
+		buf.append("		System.out.print(foo(1));\n");
+		buf.append("	}\n");
+		buf.append("}\n");
+		assertEqualString(preview, buf.toString());
+	}
+
+	// complete removal of statements under switch statement.
+	public void testSwitchStatement_Bug543720_complete_removal() throws Exception {
+		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
+		String s	=
+				"package test1;\n"+
+				"public class X {\n"+
+				"	static int foo(int i) {\n"+
+				"		int tw = 0;\n"+
+				"		switch (i) {\n"+
+				"			case 1 : {\n"+
+				" 				int z = 100;\n"+
+				" 				break;\n"+
+				"			}\n"+
+				"			default : {\n"+
+				"				break;\n"+
+				"			}\n"+
+				"		}\n"+
+				"		return tw;\n"+
+				"	}\n"+
+				"	public static void main(String[] args) {\n"+
+				"		System.out.print(foo(1));\n"+
+				"	}\n"+
+				"}\n";
+		StringBuffer buf = new StringBuffer(s);
+		ICompilationUnit cu= pack1.createCompilationUnit("X.java", buf.toString(), false, null);
+
+		CompilationUnit astRoot= createAST(cu);
+		ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
+
+		assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
+		TypeDeclaration type= findTypeDeclaration(astRoot, "X");
+		MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
+		Block block= methodDecl.getBody();
+		List blockStatements= block.statements();
+		{ // insert statements, replace expression
+			SwitchStatement switchStmt = (SwitchStatement) blockStatements.get(1);
+
+			List statements= switchStmt.statements();
+			for (int i = 0, l = statements.size(); i < l; ++i)
+				rewrite.remove((ASTNode) statements.get(i), null);
+		}
+
+		String preview= evaluateRewrite(cu, rewrite);
+
+		buf= new StringBuffer();
+		buf.append("package test1;\n");
+		buf.append("public class X {\n");
+		buf.append("	static int foo(int i) {\n");
+		buf.append("		int tw = 0;\n");
+		buf.append("		switch (i) {\n");
+		buf.append("		}\n");
+		buf.append("		return tw;\n");
+		buf.append("	}\n");
+		buf.append("	public static void main(String[] args) {\n");
+		buf.append("		System.out.print(foo(1));\n");
+		buf.append("	}\n");
+		buf.append("}\n");
+		assertEqualString(preview, buf.toString());
 	}
 
 	public void testSynchronizedStatement() throws Exception {
@@ -4800,7 +5014,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			AST ast= astRoot.getAST();
 			ASTRewrite rewrite= ASTRewrite.create(ast);
@@ -4813,19 +5027,19 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // replace catch exception type with a union type
 				TryStatement tryStatement= (TryStatement) blockStatements.get(0);
-	
+
 				List catchClauses= tryStatement.catchClauses();
-	
+
 				CatchClause catchClause= (CatchClause) catchClauses.get(0);
 				SingleVariableDeclaration exception = catchClause.getException();
 				UnionType unionType = ast.newUnionType();
 				unionType.types().add(ast.newSimpleType(ast.newSimpleName("IOException")));
 				unionType.types().add(ast.newSimpleType(ast.newSimpleName("Exception")));
 				rewrite.set(exception, SingleVariableDeclaration.TYPE_PROPERTY, unionType, null);
-			}	
-	
+			}
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4858,11 +5072,11 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			AST ast= astRoot.getAST();
 			ASTRewrite rewrite= ASTRewrite.create(ast);
-	
+
 			assertTrue("Parse errors", (astRoot.getFlags() & ASTNode.MALFORMED) == 0);
 			TypeDeclaration type= findTypeDeclaration(astRoot, "E");
 			MethodDeclaration methodDecl= findMethodDeclaration(type, "foo");
@@ -4871,23 +5085,23 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // replace catch exception type with a union type
 				TryStatement tryStatement= (TryStatement) blockStatements.get(0);
-	
+
 				List catchClauses= tryStatement.catchClauses();
-	
+
 				CatchClause catchClause= (CatchClause) catchClauses.get(0);
 				SingleVariableDeclaration exception = catchClause.getException();
 				UnionType unionType = (UnionType) exception.getType();
-				
+
 				SimpleType exceptionType = (SimpleType) unionType.types().get(0);
 				rewrite.getListRewrite(unionType, UnionType.TYPES_PROPERTY)
 					.replace(
 							exceptionType,
 							ast.newSimpleType(ast.newSimpleName("FileNotFoundException")),
 							null);
-			}	
-	
+			}
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4921,7 +5135,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			ASTRewrite rewrite= ASTRewrite.create(astRoot.getAST());
 
@@ -4933,12 +5147,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // remove finally
 				TryStatement tryStatement= (TryStatement) blockStatements.get(0);
-	
+
 				rewrite.remove(tryStatement.getFinally(), null);
-			}	
-	
+			}
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -4974,7 +5188,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			AST ast= astRoot.getAST();
 			ASTRewrite rewrite= ASTRewrite.create(ast);
@@ -4987,18 +5201,18 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 2", blockStatements.size() == 2);
 			{ // add catch, replace finally
 				TryStatement tryStatement= (TryStatement) blockStatements.get(0);
-	
+
 				CatchClause catchClause= ast.newCatchClause();
 				SingleVariableDeclaration decl= ast.newSingleVariableDeclaration();
 				decl.setType(ast.newSimpleType(ast.newSimpleName("IOException")));
 				decl.setName(ast.newSimpleName("e"));
 				catchClause.setException(decl);
-	
+
 				rewrite.getListRewrite(tryStatement, TryStatement.CATCH_CLAUSES_PROPERTY).insertLast(catchClause, null);
-	
+
 				Block body= ast.newBlock();
 				body.statements().add(ast.newReturnStatement());
-	
+
 				rewrite.replace(tryStatement.getFinally(), body, null);
 			}
 			{ // add resource
@@ -5013,23 +5227,23 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			}
 			{ // replace catch, remove finally
 				TryStatement tryStatement= (TryStatement) blockStatements.get(1);
-	
+
 				List catchClauses= tryStatement.catchClauses();
-	
+
 				CatchClause catchClause= ast.newCatchClause();
 				SingleVariableDeclaration decl= ast.newSingleVariableDeclaration();
 				decl.setType(ast.newSimpleType(ast.newSimpleName("Exception")));
 				decl.setName(ast.newSimpleName("x"));
 				catchClause.setException(decl);
-	
+
 				rewrite.replace((ASTNode) catchClauses.get(0), catchClause, null);
-	
+
 				rewrite.remove(tryStatement.getFinally(), null);
 			}
-	
-	
+
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -5074,7 +5288,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			buf.append("    }\n");
 			buf.append("}\n");
 			ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
-	
+
 			CompilationUnit astRoot= createAST(cu);
 			AST ast= astRoot.getAST();
 			ASTRewrite rewrite= ASTRewrite.create(ast);
@@ -5087,16 +5301,16 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			assertTrue("Number of statements not 1", blockStatements.size() == 1);
 			{ // rename resource
 				TryStatement tryStatement= (TryStatement) blockStatements.get(0);
-	
+
 				VariableDeclarationExpression resource = (VariableDeclarationExpression) tryStatement.resources().get(0);
 				VariableDeclarationFragment fragment = (VariableDeclarationFragment) resource.fragments().get(0);
-				
+
 				rewrite.set(fragment, VariableDeclarationFragment.NAME_PROPERTY, ast.newSimpleName("r1"), null);
 			}
-	
-	
+
+
 			String preview= evaluateRewrite(cu, rewrite);
-	
+
 			buf= new StringBuffer();
 			buf.append("package test1;\n");
 			buf.append("public class E {\n");
@@ -5165,7 +5379,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			TextEdit res= rewrite.rewriteAST(document1, null);
 			res.apply(document1);
 			String preview = document1.get();
-			
+
 			buf= new StringBuffer();
 			buf.append("package test0017;\n");
 			buf.append("\n");
@@ -5944,8 +6158,8 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		assertEqualString(preview, buf.toString());
 
 	}
-	
-	
+
+
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=350285
 	// Test that converting a multi catch into a normal catch using complete block copy doesn't change indentation
 	public void testTryStatementWithMultiCatch1_since_4() throws Exception {
@@ -5981,7 +6195,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 				List catchClauses= tryStatement.catchClauses();
 				assertTrue("Number of catch clauses not 1", catchClauses.size() == 1);
 				CatchClause catchClause = (CatchClause) catchClauses.get(0);
-				
+
 				SingleVariableDeclaration singleVariableDeclaration= catchClause.getException();
 				UnionType unionType = (UnionType) singleVariableDeclaration.getType();
 				List types = unionType.types();
@@ -6056,7 +6270,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 				List catchClauses= tryStatement.catchClauses();
 				assertTrue("Number of catch clauses not 1", catchClauses.size() == 1);
 				CatchClause catchClause = (CatchClause) catchClauses.get(0);
-				
+
 				SingleVariableDeclaration singleVariableDeclaration= catchClause.getException();
 				UnionType unionType = (UnionType) singleVariableDeclaration.getType();
 				List types = unionType.types();
@@ -6143,7 +6357,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			ArrayType creationType = creation.getType();
 			ArrayType newArrayType = (ArrayType) ASTNode.copySubtree(ast, creationType);
 			newArrayType.dimensions().add(ast.newDimension());
-			
+
 			Dimension dim0 = ast.newDimension();
 			markerAnnotation= ast.newMarkerAnnotation();
 			markerAnnotation.setTypeName(ast.newSimpleName("Annot3"));
@@ -6217,7 +6431,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 
 			expressions = creation.dimensions();
 			listRewrite = rewrite.getListRewrite(creation, ArrayCreation.DIMENSIONS_PROPERTY);
-			Expression expression = ast.newNumberLiteral("10"); 
+			Expression expression = ast.newNumberLiteral("10");
 			listRewrite.replace((ASTNode) expressions.get(1), expression, null);
 
 			MethodInvocation invoc = ast.newMethodInvocation();
@@ -6326,12 +6540,12 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("@interface Annot3 {}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	public void testBug413592a_since_8() throws Exception {
 		String buf = "default int func2(){return 1;}";
 		Document doc = new Document(buf);
 		String formattedString = "\tdefault int func2() {\n" +
-								 "\t\treturn 1;\n" + 
+								 "\t\treturn 1;\n" +
 								 "\t}";
 		Hashtable options = JavaCore.getOptions();
 		options.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_1_8);
@@ -6344,7 +6558,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		String buf = "default int func2(){return 2*(3+4)/5/(6+7);}";
 		Document doc = new Document(buf);
 		String formattedString = "\tdefault int func2() {\n" +
-								 "\t\treturn 2 * (3 + 4) / 5 / (6 + 7);\n" + 
+								 "\t\treturn 2 * (3 + 4) / 5 / (6 + 7);\n" +
 								 "\t}";
 		Hashtable options = JavaCore.getOptions();
 		options.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_1_8);
@@ -6647,7 +6861,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			markerAnnotation.setTypeName(ast.newSimpleName("Annot1"));
 			listRewrite.insertAt(markerAnnotation, 0, null);
 		}
-		
+
 		String preview= evaluateRewrite(cu, rewrite);
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
@@ -6708,7 +6922,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			markerAnnotation.setTypeName(ast.newSimpleName("Annot1"));
 			listRewrite.insertAt(markerAnnotation, 0, null);
 		}
-		
+
 		String preview= evaluateRewrite(cu, rewrite);
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
@@ -6838,7 +7052,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("@interface Annot1 {}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	public void testBug417923i_since_8() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -6898,7 +7112,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		buf.append("@interface Annot1 {}\n");
 		assertEqualString(preview, buf.toString());
 	}
-	
+
 	public void testBug417923j_since_8() throws Exception {
 		IPackageFragment pack1= this.sourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -7141,7 +7355,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 		{
 			VariableDeclarationStatement statement = (VariableDeclarationStatement) statements.get(2);
 			ArrayType arrayType = (ArrayType) statement.getType();
-			
+
 			SingleMemberAnnotation annotation = ast.newSingleMemberAnnotation();
 			annotation.setTypeName(ast.newSimpleName("Annot2"));
 			ArrayType type = ast.newArrayType(ast.newPrimitiveType(PrimitiveType.FLOAT), 1);
@@ -7218,10 +7432,10 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			fragment.setName(ast.newSimpleName("i"));
 			VariableDeclarationStatement statement = ast.newVariableDeclarationStatement(fragment);
 			statement.setType(arrayType);
-			
+
 			ListRewrite listRewrite= rewrite.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 			listRewrite.insertFirst(statement, null);
-			
+
 		}
 		{
 			ArrayType arrayType = ast.newArrayType(ast.newPrimitiveType(PrimitiveType.INT), 2);
@@ -7236,19 +7450,19 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			VariableDeclarationFragment fragment = ast.newVariableDeclarationFragment();
 			fragment.setName(ast.newSimpleName("j"));
 			fragment.setInitializer(creation);
-			
+
 			arrayType = ast.newArrayType(ast.newPrimitiveType(PrimitiveType.INT), 2);
 			dim = (Dimension) arrayType.dimensions().get(1);
 			markerAnnotation = ast.newMarkerAnnotation();
 			markerAnnotation.setTypeName(ast.newName("Marker"));
 			dim.annotations().add(markerAnnotation);
-			
+
 			VariableDeclarationStatement statement = ast.newVariableDeclarationStatement(fragment);
 			statement.setType(arrayType);
-			
+
 			ListRewrite listRewrite= rewrite.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 			listRewrite.insertLast(statement, null);
-			
+
 		}
 		{
 			ArrayType arrayType = ast.newArrayType(ast.newPrimitiveType(PrimitiveType.INT), 2);
@@ -7256,7 +7470,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			MarkerAnnotation markerAnnotation = ast.newMarkerAnnotation();
 			markerAnnotation.setTypeName(ast.newSimpleName("Marker"));
 			dim.annotations().add(markerAnnotation);
-			
+
 			NormalAnnotation normalAnnotation = ast.newNormalAnnotation();
 			normalAnnotation.setTypeName(ast.newSimpleName("Annot1"));
 			MemberValuePair memberValuePair= ast.newMemberValuePair();
@@ -7276,7 +7490,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			literal.setType(type);
 			singleMemberAnnotation.setValue(literal);
 			dim.annotations().add(singleMemberAnnotation);
-			
+
 			ArrayCreation creation = ast.newArrayCreation();
 			creation.setType(arrayType);
 			creation.dimensions().add(ast.newNumberLiteral("1"));
@@ -7284,13 +7498,13 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			VariableDeclarationFragment fragment = ast.newVariableDeclarationFragment();
 			fragment.setName(ast.newSimpleName("k"));
 			fragment.setInitializer(creation);
-			
+
 			arrayType = ast.newArrayType(ast.newPrimitiveType(PrimitiveType.INT), 2);
 			dim = (Dimension) arrayType.dimensions().get(0);
 			markerAnnotation = ast.newMarkerAnnotation();
 			markerAnnotation.setTypeName(ast.newName("Marker"));
 			dim.annotations().add(markerAnnotation);
-			
+
 			normalAnnotation = ast.newNormalAnnotation();
 			normalAnnotation.setTypeName(ast.newSimpleName("Annot1"));
 			memberValuePair= ast.newMemberValuePair();
@@ -7302,7 +7516,7 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			memberValuePair.setValue(ast.newNumberLiteral("2"));
 			normalAnnotation.values().add(memberValuePair);
 			dim.annotations().add(normalAnnotation);
-			
+
 			singleMemberAnnotation = ast.newSingleMemberAnnotation();
 			singleMemberAnnotation.setTypeName(ast.newSimpleName("Annot2"));
 			type = ast.newArrayType(ast.newPrimitiveType(PrimitiveType.FLOAT), 1);
@@ -7312,10 +7526,10 @@ public class ASTRewritingStatementsTest extends ASTRewritingTest {
 			dim.annotations().add(singleMemberAnnotation);
 			VariableDeclarationStatement statement = ast.newVariableDeclarationStatement(fragment);
 			statement.setType(arrayType);
-			
+
 			ListRewrite listRewrite= rewrite.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 			listRewrite.insertLast(statement, null);
-			
+
 		}
 
 		String preview= evaluateRewrite(cu, rewrite);

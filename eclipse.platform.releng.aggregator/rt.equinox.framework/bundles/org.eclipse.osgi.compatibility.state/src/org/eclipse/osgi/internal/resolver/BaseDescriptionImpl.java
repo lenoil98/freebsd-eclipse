@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rob Harrop - SpringSource Inc. (bug 247522)
@@ -56,7 +56,7 @@ public abstract class BaseDescriptionImpl implements BaseDescription {
 			return ""; //$NON-NLS-1$
 		String assignment = directives ? ":=" : "="; //$NON-NLS-1$//$NON-NLS-2$
 		Set<Entry<String, V>> set = map.entrySet();
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (Entry<String, V> entry : set) {
 			sb.append("; "); //$NON-NLS-1$
 			String key = entry.getKey();
@@ -150,6 +150,7 @@ public abstract class BaseDescriptionImpl implements BaseDescription {
 			return Collections.unmodifiableMap(attrs);
 		}
 
+		@Override
 		public int hashCode() {
 			return System.identityHashCode(BaseDescriptionImpl.this);
 		}
@@ -158,6 +159,7 @@ public abstract class BaseDescriptionImpl implements BaseDescription {
 			return BaseDescriptionImpl.this;
 		}
 
+		@Override
 		public boolean equals(Object obj) {
 			if (this == obj)
 				return true;
@@ -166,6 +168,7 @@ public abstract class BaseDescriptionImpl implements BaseDescription {
 			return (((BaseCapability) obj).getBaseDescription() == BaseDescriptionImpl.this) && namespace.equals(((BaseCapability) obj).getNamespace());
 		}
 
+		@Override
 		public String toString() {
 			return getNamespace() + BaseDescriptionImpl.toString(getAttributes(), false) + BaseDescriptionImpl.toString(getDirectives(), true);
 		}

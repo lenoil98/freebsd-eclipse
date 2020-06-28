@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,12 +14,19 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.refactoring;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
@@ -38,32 +45,21 @@ import org.eclipse.jdt.core.SourceRange;
 
 import org.eclipse.jdt.internal.corext.refactoring.code.IntroduceFactoryRefactoring;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.eclipse.jdt.ui.tests.refactoring.rules.Java16Setup;
+import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;
 
 /**
  * @author rfuhrer@watson.ibm.com
  */
-public class IntroduceFactoryTests extends RefactoringTest {
-
-	private static final Class<IntroduceFactoryTests> clazz= IntroduceFactoryTests.class;
+public class IntroduceFactoryTests extends GenericRefactoringTest {
 	private static final String REFACTORING_PATH= "IntroduceFactory/";
 
-	public IntroduceFactoryTests(String name) {
-		super(name);
-	}
+	@Rule
+	public RefactoringTestSetup rts= new Java16Setup();
 
 	@Override
 	protected String getRefactoringPath() {
 		return REFACTORING_PATH;
-	}
-
-	public static Test suite() {
-		return new Java16Setup(new TestSuite(clazz));
-	}
-
-	public static Test setUpTest(Test someTest) {
-	    return new Java16Setup(someTest);
 	}
 
 	/**
@@ -182,9 +178,9 @@ public class IntroduceFactoryTests extends RefactoringTest {
 		int		end= source.indexOf(SELECTION_END_HERALD);
 
 		if (begin < SELECTION_START_HERALD.length())
-			assertTrue("No selection start comment in input source file!", false);
+			fail("No selection start comment in input source file!");
 		if (end < 0)
-			assertTrue("No selection end comment in input source file!", false);
+			fail("No selection end comment in input source file!");
 
 		return new SourceRange(begin, end-begin);
 	}
@@ -210,7 +206,7 @@ public class IntroduceFactoryTests extends RefactoringTest {
 			System.err.println("Compile-time error: " + checkInputResult.toString());
 			System.err.println("Offending source:");
 			System.err.print(newSource);
-			assertTrue("precondition was supposed to pass but was " + checkInputResult.toString(), false);
+			fail("precondition was supposed to pass but was " + checkInputResult.toString());
 		}
 
 		performChange(ref, false);
@@ -219,7 +215,7 @@ public class IntroduceFactoryTests extends RefactoringTest {
 
 		assertEqualLines(getName() + ": ", getFileContents(outputFileName), newSource);
 	}
-	
+
 	private void doSingleUnitTestWithWarning(boolean protectConstructor, ICompilationUnit cu, String outputFileName) throws Exception, JavaModelException, IOException {
 		ISourceRange selection= findSelectionInSource(cu.getSource());
 		IntroduceFactoryRefactoring ref= new IntroduceFactoryRefactoring(cu, selection.getOffset(), selection.getLength());
@@ -274,7 +270,7 @@ public class IntroduceFactoryTests extends RefactoringTest {
 
 		doSingleUnitTest(protectConstructor, cu, getBugTestFileName(null, getPackageP(), baseFileName, false));
 	}
-	
+
 	protected void singleUnitBugHelperWithWarning(String baseFileName, boolean protectConstructor)
 			throws Exception
 	{
@@ -438,8 +434,7 @@ public class IntroduceFactoryTests extends RefactoringTest {
 			doMultiUnitTest(CUs, testPath, inputFileBaseNames, null);
 
 		} finally {
-			for (Iterator<IJavaProject> iter= proj2PkgRoot.keySet().iterator(); iter.hasNext();) {
-				IJavaProject project= iter.next();
+			for (IJavaProject project : proj2PkgRoot.keySet()) {
 				if (project.exists()) {
 					try {
 						project.getProject().delete(true, null);
@@ -475,37 +470,27 @@ public class IntroduceFactoryTests extends RefactoringTest {
 	}
 
 	private void addProjectDependencies(String[] dependencies, Map<String, IJavaProject> projName2Project) throws JavaModelException {
-		for(int i= 0; i < dependencies.length; i++) {
+		for (String dependency : dependencies) {
 			// dependent:provider
-			String dependency= dependencies[i];
 			int colonIdx= dependency.indexOf(':');
 			String depName= dependency.substring(0, colonIdx);
 			String provName= dependency.substring(colonIdx+1);
-
 			IJavaProject depProj= projName2Project.get(depName);
 			IJavaProject provProj= projName2Project.get(provName);
-
 			JavaProjectHelper.addRequiredProject(depProj, provProj);
 		}
 	}
 
 	private void createProjectPackageStructure(Map<String, Set<String>> projName2PkgNames, Map<String, IJavaProject> projName2Project, Map<IJavaProject, IPackageFragmentRoot> proj2PkgRoot) throws CoreException, JavaModelException {
-		for(Iterator<String> iter= projName2PkgNames.keySet().iterator(); iter.hasNext(); ) {
-			String projName= iter.next();
-			Set<String> projPkgNames= projName2PkgNames.get(projName);
-
+		for (Map.Entry<String, Set<String>> entry : projName2PkgNames.entrySet()) {
+			String projName = entry.getKey();
 			IJavaProject project= JavaProjectHelper.createJavaProject(projName, "bin");
 			IPackageFragmentRoot root= JavaProjectHelper.addSourceContainer(project, CONTAINER);
-
 			JavaProjectHelper.addRTJar(project);
-
 			Set<IPackageFragment> pkgs= new HashSet<>();
-
 			projName2Project.put(projName, project);
 			proj2PkgRoot.put(project, root);
-			for(Iterator<String> pkgIter= projPkgNames.iterator(); pkgIter.hasNext(); ) {
-				String pkgName= pkgIter.next();
-
+			for (String pkgName : entry.getValue()) {
 				pkgs.add(root.createPackageFragment(pkgName, true, null));
 			}
 		}
@@ -514,8 +499,7 @@ public class IntroduceFactoryTests extends RefactoringTest {
 	private Map<String, Set<String>> collectProjectPackages(String[] inputFileBaseNames) {
 		Map<String, Set<String>> proj2Pkgs= new HashMap<>();
 
-		for(int i= 0; i < inputFileBaseNames.length; i++) {
-			String filePath= inputFileBaseNames[i];
+		for (String filePath : inputFileBaseNames) {
 			int projEnd= filePath.indexOf('/');
 			String projName= filePath.substring(0, projEnd);
 			String pkgName= filePath.substring(projEnd+1, filePath.lastIndexOf('/'));
@@ -540,12 +524,14 @@ public class IntroduceFactoryTests extends RefactoringTest {
 	}
 
 	//--- TESTS
+	@Test
 	public void testStaticContext_FFF() throws Exception {
 		singleUnitHelper(false);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testInstanceContext_FFF() throws Exception {
 		singleUnitHelper(false);
 	}
@@ -554,88 +540,105 @@ public class IntroduceFactoryTests extends RefactoringTest {
 	//
 	static final String[]	k_Names = { "createThing", "ThingFactory", "IThingFactory" };
 
+	@Test
 	public void testNames_FFF() throws Exception {
 		namesHelper(k_Names[0], null);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testMultipleCallers_FFF() throws Exception {
 		singleUnitHelper(false);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testSelectConstructor() throws Exception {
 		singleUnitHelper(false);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testDifferentSigs() throws Exception {
 		singleUnitHelper(false);
 	}
 
+	@Test
 	public void testDifferentArgs1() throws Exception {
 		singleUnitHelper(false);
 	}
 
+	@Test
 	public void testDifferentArgs2() throws Exception {
 		singleUnitHelper(false);
 	}
 
+	@Test
 	public void testDifferentArgs3() throws Exception {
 		singleUnitHelper(false);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testUnmovableArg1() throws Exception {
 		singleUnitHelper(false);
 	}
 
+	@Test
 	public void testUnmovableArg2() throws Exception {
 		singleUnitHelper(false);
 	}
 
+	@Test
 	public void testDontMoveArgs1() throws Exception {
 		singleUnitHelper(false);
 	}
 
+	@Test
 	public void testDontMoveArgs2() throws Exception {
 		singleUnitHelper(false);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testProtectConstructor1() throws Exception {
 		singleUnitHelper(true);
 	}
 
+	@Test
 	public void testProtectConstructor2() throws Exception {
 		singleUnitHelper(true);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testStaticInstance() throws Exception {
 		singleUnitHelper(false);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testCtorThrows() throws Exception {
 		singleUnitHelper(true);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testJavadocRef() throws Exception {
 		singleUnitHelper(true);
 	}
 	//
 	// ================================================================================
 	//
+	@Test
 	public void testNestedClass() throws Exception {
 		failHelper(RefactoringStatus.FATAL);
 	}
@@ -645,48 +648,59 @@ public class IntroduceFactoryTests extends RefactoringTest {
     //
     // ================================================================================
     // Generics-related tests
-    public void testTypeParam() throws Exception {
+	@Test
+	public void testTypeParam() throws Exception {
         singleUnitHelper(true);
     }
 
-    public void testTwoTypeParams() throws Exception {
+	@Test
+	public void testTwoTypeParams() throws Exception {
         singleUnitHelper(true);
     }
 
-    public void testBoundedTypeParam() throws Exception {
+	@Test
+	public void testBoundedTypeParam() throws Exception {
         singleUnitHelper(true);
     }
 
-    public void testTwoBoundedTypeParams() throws Exception {
+	@Test
+	public void testTwoBoundedTypeParams() throws Exception {
         singleUnitHelper(true);
     }
 
+	@Test
 	public void testWildcardParam() throws Exception {
 		singleUnitHelper(true);
 	}
 
-    public void testTypeParam2() throws Exception {
+	@Test
+	public void testTypeParam2() throws Exception {
         namesHelper(null, "p.Factory");
     }
     //
 	// ================================================================================
 	// Other J2SE 5.0 tests
-    public void testEnum() throws Exception {
+	@Test
+	public void testEnum() throws Exception {
     	failHelper(RefactoringStatus.FATAL);
     }
 
-    public void testAnnotation1() throws Exception {
+	@Test
+	public void testAnnotation1() throws Exception {
    		singleUnitHelper(true);
     }
 
-    public void testAnnotation2() throws Exception {
+	@Test
+	public void testAnnotation2() throws Exception {
    		singleUnitHelper(true);
     }
 
-    public void testAnnotation3() throws Exception {
+	@Test
+	public void testAnnotation3() throws Exception {
    		singleUnitHelper(true);
     }
 
+	@Test
 	public void testVarArgsCtor() throws Exception {
 	    // RMF - As of I20050202, search engine doesn't reliably find call sites to varargs methods
 		singleUnitHelper(true);
@@ -694,6 +708,7 @@ public class IntroduceFactoryTests extends RefactoringTest {
     //
 	// ================================================================================
 	//
+	@Test
 	public void testMultipleUnits_FFF() throws Exception {
 		multiUnitHelper(false, new String[] { "MultiUnit1A", "MultiUnit1B", "MultiUnit1C" });
 	}
@@ -702,83 +717,103 @@ public class IntroduceFactoryTests extends RefactoringTest {
 	// Bugzilla bug regression tests
 	// ================================================================================
 	//
+	@Test
 	public void test45942() throws Exception {
 		multiUnitBugHelper(true, new String[] { "TestClass", "UseTestClass" }, null);
 	}
 
+	@Test
 	public void test46189() throws Exception {
 		singleUnitBugHelper("TestClass", true);
 	}
 
+	@Test
 	public void test46189B() throws Exception {
 		singleUnitBugHelper("TestClass", true);
 	}
 
+	@Test
 	public void test46373() throws Exception {
 		singleUnitBugHelper("ImplicitCtor", false);
 	}
 
+	@Test
 	public void test46374() throws Exception {
 		singleUnitBugHelper("QualifiedName", false);
 	}
 
+	@Test
 	public void test46608() throws Exception {
 		multiUnitBugHelper(true, new String[] { "p1/TT", "p2/TT" }, null);
 	}
 
+	@Test
 	public void test59284() throws Exception {
 		singleUnitBugHelper("ArgTypeImport", true);
 	}
 
+	@Test
 	public void test59280() throws Exception {
 		singleUnitBugHelper("ExplicitSuperCtorCall", true);
 	}
 
+	@Test
 	public void test48504() throws Exception {
 		multiUnitBugHelper(true, new String[] { "p1/A", "p1/B" }, "p1.B");
 	}
 
+	@Test
 	public void test58293() throws Exception {
 		singleUnitBugHelper("ImplicitSuperCtorCall", true);
 	}
 
+	@Test
 	public void test59283() throws Exception {
 		multiProjectBugHelper(new String[] { "proj1/pA/A", "proj2/pB/B" },
 				new String[] { "proj2:proj1" });
 	}
 
+	@Test
 	public void test84807() throws Exception {
 		singleUnitBugHelper("CtorOfParamType", true);
 	}
 
+	@Test
 	public void test85465() throws Exception {
 		singleUnitBugHelper("Varargs1", true);
 	}
 
+	@Test
 	public void test97507() throws Exception {
 		singleUnitBugHelper("CtorTypeArgBounds", true);
 	}
 
+	@Test
 	public void test250660() throws Exception {
 		singleUnitBugHelper("HasAnonymous", true);
 	}
-	
+
+	@Test
 	public void test74759() throws Exception {
 		singleUnitBugHelper("Test", true);
 	}
-	
+
+	@Test
 	public void test298281() throws Exception {
 		singleUnitBugHelper("Thing", true);
 	}
-	
+
+	@Test
 	public void test395016_1() throws Exception {
 		singleUnitBugHelperWithWarning("AbstractClass", true);
 	}
-	
+
+	@Test
 	public void test395016_2() throws Exception {
 		singleUnitBugHelperWithWarning("AbstractMethod", true);
 	}
-	
+
+	@Test
 	public void testFactoryClash() throws Exception {
 		failHelper(RefactoringStatus.ERROR);
 	}

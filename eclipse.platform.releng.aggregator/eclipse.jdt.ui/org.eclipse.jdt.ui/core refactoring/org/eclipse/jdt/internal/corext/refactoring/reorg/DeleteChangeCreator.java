@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.corext.refactoring.reorg;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -94,22 +93,20 @@ class DeleteChangeCreator {
 			result= new DynamicValidationStateChange(changeName);
 		}
 
-		for (int i= 0; i < javaElements.length; i++) {
-			IJavaElement element= javaElements[i];
+		for (IJavaElement element : javaElements) {
 			if (! ReorgUtils.isInsideCompilationUnit(element))
 				result.add(createDeleteChange(element));
 		}
-
-		for (int i= 0; i < resources.length; i++) {
-			result.add(createDeleteChange(resources[i]));
+		for (IResource resource : resources) {
+			result.add(createDeleteChange(resource));
 		}
 
 		Map<ICompilationUnit, List<IJavaElement>> grouped= ReorgUtils.groupByCompilationUnit(getElementsSmallerThanCu(javaElements));
-		if (grouped.size() != 0 ){
+		if (!grouped.isEmpty() ){
 			Assert.isNotNull(manager);
-			for (Iterator<ICompilationUnit> iter= grouped.keySet().iterator(); iter.hasNext();) {
-				ICompilationUnit cu= iter.next();
-				result.add(createDeleteChange(cu, grouped.get(cu), manager));
+			for (Map.Entry<ICompilationUnit, List<IJavaElement>> entry : grouped.entrySet()) {
+				ICompilationUnit cu = entry.getKey();
+				result.add(createDeleteChange(cu, entry.getValue(), manager));
 			}
 		}
 
@@ -153,8 +150,7 @@ class DeleteChangeCreator {
 	//List<IJavaElement>
 	private static List<IJavaElement> getElementsSmallerThanCu(IJavaElement[] javaElements){
 		List<IJavaElement> result= new ArrayList<>();
-		for (int i= 0; i < javaElements.length; i++) {
-			IJavaElement element= javaElements[i];
+		for (IJavaElement element : javaElements) {
 			if (ReorgUtils.isInsideCompilationUnit(element))
 				result.add(element);
 		}
@@ -180,9 +176,6 @@ class DeleteChangeCreator {
 				return createDeleteChange(((IClassFile)javaElement).getResource());
 
 			case IJavaElement.JAVA_MODEL: //cannot be done
-				Assert.isTrue(false);
-				return null;
-
 			case IJavaElement.JAVA_PROJECT: //handled differently
 				Assert.isTrue(false);
 				return null;
@@ -194,10 +187,8 @@ class DeleteChangeCreator {
 			case IJavaElement.PACKAGE_DECLARATION:
 			case IJavaElement.IMPORT_CONTAINER:
 			case IJavaElement.IMPORT_DECLARATION:
+			default://there's no more kinds
 				Assert.isTrue(false);//not done here
-				return new NullChange();
-			default:
-				Assert.isTrue(false);//there's no more kinds
 				return new NullChange();
 		}
 	}

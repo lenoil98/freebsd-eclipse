@@ -596,7 +596,7 @@ public class TestHarnessImpl extends ApplicationElementImpl implements
 	@Override
 	public List<MCommandParameter> getParameters() {
 		if (parameters == null) {
-			parameters = new EObjectContainmentEList<MCommandParameter>(MCommandParameter.class, this, MTestPackage.TEST_HARNESS__PARAMETERS);
+			parameters = new EObjectContainmentEList<>(MCommandParameter.class, this, MTestPackage.TEST_HARNESS__PARAMETERS);
 		}
 		return parameters;
 	}
@@ -666,7 +666,7 @@ public class TestHarnessImpl extends ApplicationElementImpl implements
 	@Override
 	public List<String> getVariables() {
 		if (variables == null) {
-			variables = new EDataTypeUniqueEList<String>(String.class, this, MTestPackage.TEST_HARNESS__VARIABLES);
+			variables = new EDataTypeUniqueEList<>(String.class, this, MTestPackage.TEST_HARNESS__VARIABLES);
 		}
 		return variables;
 	}
@@ -678,7 +678,7 @@ public class TestHarnessImpl extends ApplicationElementImpl implements
 	@Override
 	public Map<String, String> getProperties() {
 		if (properties == null) {
-			properties = new EcoreEMap<String,String>(ApplicationPackageImpl.Literals.STRING_TO_STRING_MAP, StringToStringMapImpl.class, this, MTestPackage.TEST_HARNESS__PROPERTIES);
+			properties = new EcoreEMap<>(ApplicationPackageImpl.Literals.STRING_TO_STRING_MAP, StringToStringMapImpl.class, this, MTestPackage.TEST_HARNESS__PROPERTIES);
 		}
 		return properties.map();
 	}
@@ -847,8 +847,7 @@ public class TestHarnessImpl extends ApplicationElementImpl implements
 	 */
 	public NotificationChain basicSetParent(
 			MElementContainer<MUIElement> newParent, NotificationChain msgs) {
-		msgs = eBasicSetContainer((InternalEObject)newParent, MTestPackage.TEST_HARNESS__PARENT, msgs);
-		return msgs;
+		return eBasicSetContainer((InternalEObject)newParent, MTestPackage.TEST_HARNESS__PARENT, msgs);
 	}
 
 	/**
@@ -859,7 +858,7 @@ public class TestHarnessImpl extends ApplicationElementImpl implements
 	public void setParent(MElementContainer<MUIElement> newParent) {
 		if (newParent != eInternalContainer() || (eContainerFeatureID() != MTestPackage.TEST_HARNESS__PARENT && newParent != null)) {
 			if (EcoreUtil.isAncestor(this, (EObject)newParent))
-				throw new IllegalArgumentException("Recursive containment not allowed for " + toString());
+				throw new IllegalArgumentException("Recursive containment not allowed for " + this);
 			NotificationChain msgs = null;
 			if (eInternalContainer() != null)
 				msgs = eBasicRemoveFromContainer(msgs);
@@ -1001,7 +1000,7 @@ public class TestHarnessImpl extends ApplicationElementImpl implements
 	@Override
 	public List<MUIElement> getChildren() {
 		if (children == null) {
-			children = new EObjectContainmentWithInverseEList<MUIElement>(MUIElement.class, this, MTestPackage.TEST_HARNESS__CHILDREN, UiPackageImpl.UI_ELEMENT__PARENT);
+			children = new EObjectContainmentWithInverseEList<>(MUIElement.class, this, MTestPackage.TEST_HARNESS__CHILDREN, UiPackageImpl.UI_ELEMENT__PARENT);
 		}
 		return children;
 	}
@@ -1198,7 +1197,7 @@ public class TestHarnessImpl extends ApplicationElementImpl implements
 	@Override
 	public List<MUIElement> getSnippets() {
 		if (snippets == null) {
-			snippets = new EObjectContainmentEList<MUIElement>(MUIElement.class, this, MTestPackage.TEST_HARNESS__SNIPPETS);
+			snippets = new EObjectContainmentEList<>(MUIElement.class, this, MTestPackage.TEST_HARNESS__SNIPPETS);
 		}
 		return snippets;
 	}

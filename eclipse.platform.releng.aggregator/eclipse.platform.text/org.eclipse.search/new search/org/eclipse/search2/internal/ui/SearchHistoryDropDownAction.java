@@ -13,7 +13,7 @@
  *******************************************************************************/
 package org.eclipse.search2.internal.ui;
 
-import com.ibm.icu.text.MessageFormat;
+import java.text.MessageFormat;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Control;
@@ -36,12 +36,12 @@ class SearchHistoryDropDownAction extends Action implements IMenuCreator {
 		private ISearchResult fSearch;
 
 		public ShowSearchFromHistoryAction(ISearchResult search) {
-	        super("", AS_RADIO_BUTTON); //$NON-NLS-1$
+			super("", AS_RADIO_BUTTON); //$NON-NLS-1$
 			fSearch= search;
 
 			String label= escapeAmp(search.getLabel());
 			if (InternalSearchUI.getInstance().isQueryRunning(search.getQuery()))
-				label= MessageFormat.format(SearchMessages.SearchDropDownAction_running_message, new Object[] { label });
+				label= MessageFormat.format(SearchMessages.SearchDropDownAction_running_message, label);
 			// fix for bug 38049
 			if (label.indexOf('@') >= 0)
 				label+= '@';

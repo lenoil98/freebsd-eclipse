@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,8 +37,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TreeEditor;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseAdapter;
@@ -65,7 +62,7 @@ import org.eclipse.ui.internal.views.properties.PropertiesMessages;
  * The PropertySheetViewer displays the properties of objects. The model for the
  * viewer consists of a hierarchy of <code>IPropertySheetEntry</code>.
  * <p>
- * This viewer also supports the optional catogorization of the first level
+ * This viewer also supports the optional categorization of the first level
  * <code>IPropertySheetEntry</code> s by using instances of
  * <code>PropertySheetCategory</code>.
  *
@@ -384,13 +381,10 @@ class PropertySheetViewer extends Viewer {
 
 		// Always ensure that if the tree item goes away that it's
 		// removed from the cache
-		item.addDisposeListener(new DisposeListener() {
-			@Override
-			public void widgetDisposed(DisposeEvent e) {
-				Object possibleEntry = e.widget.getData();
-				if (possibleEntry != null)
-					entryToItemMap.remove(possibleEntry);
-			}
+		item.addDisposeListener(e -> {
+			Object possibleEntry = e.widget.getData();
+			if (possibleEntry != null)
+				entryToItemMap.remove(possibleEntry);
 		});
 
 		// add our listener
@@ -929,12 +923,9 @@ class PropertySheetViewer extends Viewer {
 	 */
 	public void resetProperties() {
 		// Determine the selection
-		IStructuredSelection selection = (IStructuredSelection) getSelection();
-
 		// Iterate over entries and reset them
-		Iterator<IPropertySheetEntry> itr = selection.iterator();
-		while (itr.hasNext()) {
-			itr.next().resetPropertyValue();
+		for (Object element : (IStructuredSelection) getSelection()) {
+			((IPropertySheetEntry) element).resetPropertyValue();
 		}
 	}
 
@@ -1112,8 +1103,7 @@ class PropertySheetViewer extends Viewer {
 		}
 		boolean addMisc = false;
 
-		for (int i = 0; i < childEntries.size(); i++) {
-			IPropertySheetEntry childEntry = childEntries.get(i);
+		for (IPropertySheetEntry childEntry : childEntries) {
 			String categoryName = childEntry.getCategory();
 			if (categoryName == null) {
 				misc.addEntry(childEntry);
@@ -1141,9 +1131,7 @@ class PropertySheetViewer extends Viewer {
 		// (with misc added at the end, if needed) before passing to the sorter.
 		ArrayList<PropertySheetCategory> categoryList = new ArrayList<>();
 		Set<String> seen = new HashSet<>(childEntries.size());
-		for (int i = 0; i < childEntries.size(); i++) {
-			IPropertySheetEntry childEntry = childEntries
-					.get(i);
+		for (IPropertySheetEntry childEntry : childEntries) {
 			String categoryName = childEntry.getCategory();
 			if (categoryName != null && !seen.contains(categoryName)) {
 				seen.add(categoryName);

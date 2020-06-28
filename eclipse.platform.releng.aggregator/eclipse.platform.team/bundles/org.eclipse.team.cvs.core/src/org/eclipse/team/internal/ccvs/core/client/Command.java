@@ -79,7 +79,7 @@ public abstract class Command extends Request {
 	// Empty local option array
 	public static final LocalOption[] NO_LOCAL_OPTIONS = new LocalOption[0];
 	// valid for: annotate checkout commit diff export log rdiff remove rtag status tag update
-    public static final LocalOption RECURSE = new LocalOption("-R"); //$NON-NLS-1$
+	public static final LocalOption RECURSE = new LocalOption("-R"); //$NON-NLS-1$
 	public static final LocalOption DO_NOT_RECURSE = new LocalOption("-l"); //$NON-NLS-1$	
 	// valid for: checkout export update
 	public static final LocalOption PRUNE_EMPTY_DIRECTORIES = new LocalOption("-P"); //$NON-NLS-1$
@@ -88,7 +88,7 @@ public abstract class Command extends Request {
 
 	/*** Local options: keyword substitution mode ***/
 	// valid for: add admin checkout export import update
-	private static final Map ksubstOptionMap = new HashMap();
+	private static final Map<String, KSubstOption> ksubstOptionMap = new HashMap<>();
 	public static final KSubstOption KSUBST_BINARY = new KSubstOption("-kb"); //$NON-NLS-1$
 	public static final KSubstOption KSUBST_TEXT = new KSubstOption("-ko"); //$NON-NLS-1$
 	public static final KSubstOption KSUBST_TEXT_EXPAND = new KSubstOption("-kkv"); //$NON-NLS-1$
@@ -324,7 +324,7 @@ public abstract class Command extends Request {
 			
 			// run the command
 			try {
-			    session.setCurrentCommand(Command.this);
+				session.setCurrentCommand(Command.this);
 				status[0] = doExecute(session, gOptions, lOptions, arguments, listener, monitor);
 				notifyConsoleOnCompletion(session, status[0], null);
 			} catch (CVSException e1) {
@@ -379,13 +379,13 @@ public abstract class Command extends Request {
 
 			/*** initiate command ***/
 			// send global options
-			for (int i = 0; i < globalOptions.length; i++) {
-				globalOptions[i].send(session);
+			for (GlobalOption globalOption : globalOptions) {
+				globalOption.send(session);
 			}
 			Policy.checkCanceled(monitor);
 			// send local options
-			for (int i = 0; i < localOptions.length; i++) {
-				localOptions[i].send(session);
+			for (LocalOption localOption : localOptions) {
+				localOption.send(session);
 			}
 			Policy.checkCanceled(monitor);
 			// compute the work resources
@@ -432,7 +432,7 @@ public abstract class Command extends Request {
 	 */
 	private String constructCommandInvocationString(IPath commandRootPath, GlobalOption[] globalOptions,
 		LocalOption[] localOptions, String[] arguments) {
-		StringBuffer commandLine = new StringBuffer("cvs"); //$NON-NLS-1$
+		StringBuilder commandLine = new StringBuilder("cvs"); //$NON-NLS-1$
 		for (int i = 0; i < globalOptions.length; ++i) {
 			String option = globalOptions[i].toString();
 			if (option.length() == 0) continue;
@@ -560,28 +560,27 @@ public abstract class Command extends Request {
 			session.sendArgument(option);
 			if (argument != null) session.sendArgument(argument);
 		}
-        public LocalOption[] addTo(LocalOption[] options) {
-            if (this.isElementOf(options)) {
-                return options;
-            }
-            LocalOption[] newOptions = new LocalOption[options.length + 1];
-            System.arraycopy(options, 0, newOptions, 0, options.length);
-            newOptions[options.length] = this;
-            return newOptions;
-        }
-        public LocalOption[] removeFrom(LocalOption[] options) {
-            if (!this.isElementOf(options)) {
-                return options;
-            }
-            List result = new ArrayList();
-            for (int i = 0; i < options.length; i++) {
-                Command.LocalOption option = options[i];
-                if (!option.equals(this)) {
-                    result.add(option);
-                }
-            }
-            return (LocalOption[]) result.toArray(new LocalOption[result.size()]);
-        }
+		public LocalOption[] addTo(LocalOption[] options) {
+			if (this.isElementOf(options)) {
+				return options;
+			}
+			LocalOption[] newOptions = new LocalOption[options.length + 1];
+			System.arraycopy(options, 0, newOptions, 0, options.length);
+			newOptions[options.length] = this;
+			return newOptions;
+		}
+		public LocalOption[] removeFrom(LocalOption[] options) {
+			if (!this.isElementOf(options)) {
+				return options;
+			}
+			List<LocalOption> result = new ArrayList<>();
+			for (LocalOption option : options) {
+				if (!option.equals(this)) {
+					result.add(option);
+				}
+			}
+			return result.toArray(new LocalOption[result.size()]);
+		}
 	}
 	/**
 	 * Options subtype for keyword substitution options.
@@ -604,7 +603,7 @@ public abstract class Command extends Request {
 		 */
 		public static KSubstOption fromMode(String mode) {
 			if (mode.length() == 0) mode = "-kkv"; // use default //$NON-NLS-1$
-			KSubstOption option = (KSubstOption) ksubstOptionMap.get(mode);
+			KSubstOption option = ksubstOptionMap.get(mode);
 			if (option == null) option = new KSubstOption(mode, true);
 			return option;
 		}
@@ -623,7 +622,7 @@ public abstract class Command extends Request {
 		 * Returns an array of all valid modes.
 		 */
 		public static KSubstOption[] getAllKSubstOptions() {
-			return (KSubstOption[]) ksubstOptionMap.values().toArray(new KSubstOption[ksubstOptionMap.size()]);
+			return ksubstOptionMap.values().toArray(new KSubstOption[ksubstOptionMap.size()]);
 		}
 		/**
 		 * Returns the entry line mode string for this instance. Note that it might return blank strings
@@ -654,40 +653,40 @@ public abstract class Command extends Request {
 		 */
 		public String getShortDisplayText() {
 			if (isUnknownMode)
-                return NLS.bind(CVSMessages.KSubstOption_unknown_short, new String[] { option }); 
-            if (option.equals("-kb")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kb_short;
-            if (option.equals("-kkv")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kkv_short;
-            if (option.equals("-ko")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__ko_short;
-            if (option.equals("-kk")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kk_short;
-            if (option.equals("-kv")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kv_short;
-            if (option.equals("-kkvl")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kkvl_short;
-            return NLS.bind(CVSMessages.KSubstOption_unknown_short, new String[] { option }); 
+				return NLS.bind(CVSMessages.KSubstOption_unknown_short, new String[] { option }); 
+			if (option.equals("-kb")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kb_short;
+			if (option.equals("-kkv")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kkv_short;
+			if (option.equals("-ko")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__ko_short;
+			if (option.equals("-kk")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kk_short;
+			if (option.equals("-kv")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kv_short;
+			if (option.equals("-kkvl")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kkvl_short;
+			return NLS.bind(CVSMessages.KSubstOption_unknown_short, new String[] { option }); 
 		}
 		/**
 		 * Returns a long localized text string describing this mode.
 		 */
 		public String getLongDisplayText() {
 			if (isUnknownMode)
-                return NLS.bind(CVSMessages.KSubstOption_unknown_long, new String[] { option }); 
-            if (option.equals("-kb")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kb_long;
-            if (option.equals("-kkv")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kkv_long;
-            if (option.equals("-ko")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__ko_long;
-            if (option.equals("-kk")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kk_long;
-            if (option.equals("-kv")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kv_long;
-            if (option.equals("-kkvl")) //$NON-NLS-1$
-                return CVSMessages.KSubstOption__kkvl_long;
-            return NLS.bind(CVSMessages.KSubstOption_unknown_long, new String[] { option }); 
+				return NLS.bind(CVSMessages.KSubstOption_unknown_long, new String[] { option }); 
+			if (option.equals("-kb")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kb_long;
+			if (option.equals("-kkv")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kkv_long;
+			if (option.equals("-ko")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__ko_long;
+			if (option.equals("-kk")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kk_long;
+			if (option.equals("-kv")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kv_long;
+			if (option.equals("-kkvl")) //$NON-NLS-1$
+				return CVSMessages.KSubstOption__kkvl_long;
+			return NLS.bind(CVSMessages.KSubstOption_unknown_long, new String[] { option }); 
 		}
 		/**
 		 * Return the text mode that will be used by default
@@ -746,13 +745,13 @@ public abstract class Command extends Request {
 	 * @return an array of all arguments of belonging to matching options
 	 */
 	protected static String[] collectOptionArguments(Option[] array, String option) {
-		List /* of String */ list = new ArrayList();
+		List<String> list = new ArrayList<>();
 		for (int i = 0; i < array.length; ++i) {
 			if (array[i].getOption().equals(option)) {
 				list.add(array[i].argument);
 			}
 		}
-		return (String[]) list.toArray(new String[list.size()]);
+		return list.toArray(new String[list.size()]);
 	}
 	
 	/**
@@ -786,7 +785,7 @@ public abstract class Command extends Request {
 	 * Execute a CVS command on an array of ICVSResource. This method simply converts
 	 * the ICVSResource to String paths relative to the local root of the session and
 	 * invokes <code>execute(Session, GlobalOption[], LocalOption[], String[], ICommandOutputListener, IProgressMonitor)</code>.
-	 * </p>
+	 *
 	 * @param session the open CVS session
 	 * @param globalOptions the array of global options, or NO_GLOBAL_OPTIONS
 	 * @param localOptions the array of local options, or NO_LOCAL_OPTIONS
@@ -807,11 +806,11 @@ public abstract class Command extends Request {
 	
 	protected String[] convertArgumentsForOpenSession(ICVSResource[] arguments, Session openSession) throws CVSException {
 		// Convert arguments
-		List stringArguments = new ArrayList(arguments.length);
-		for (int i = 0; i < arguments.length; i++) {
-			stringArguments.add(arguments[i].getRelativePath(openSession.getLocalRoot()));
+		List<String> stringArguments = new ArrayList<>(arguments.length);
+		for (ICVSResource argument : arguments) {
+			stringArguments.add(argument.getRelativePath(openSession.getLocalRoot()));
 		}
-		return (String[]) stringArguments.toArray(new String[stringArguments.size()]);
+		return stringArguments.toArray(new String[stringArguments.size()]);
 	}
 	
 	/**

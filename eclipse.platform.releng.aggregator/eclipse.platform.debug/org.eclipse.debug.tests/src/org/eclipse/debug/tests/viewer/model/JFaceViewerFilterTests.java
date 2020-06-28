@@ -26,12 +26,8 @@ import org.eclipse.swt.widgets.Shell;
  */
 public class JFaceViewerFilterTests extends FilterTests {
 
-    public JFaceViewerFilterTests(String name) {
-        super(name);
-    }
-
-    @Override
+	@Override
 	protected IInternalTreeModelViewer createViewer(Display display, Shell shell) {
 		return new TreeModelViewer(fShell, SWT.VIRTUAL | SWT.MULTI, new PresentationContext("TestViewer")); //$NON-NLS-1$
-    }
+	}
 }

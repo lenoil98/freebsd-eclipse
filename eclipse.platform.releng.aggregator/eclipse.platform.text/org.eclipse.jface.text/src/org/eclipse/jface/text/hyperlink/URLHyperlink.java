@@ -13,7 +13,8 @@
  *******************************************************************************/
 package org.eclipse.jface.text.hyperlink;
 
-import com.ibm.icu.text.MessageFormat;
+
+import java.text.MessageFormat;
 
 import org.eclipse.swt.program.Program;
 
@@ -66,7 +67,7 @@ public class URLHyperlink implements IHyperlink {
 
 	@Override
 	public String getHyperlinkText() {
-		return MessageFormat.format(HyperlinkMessages.getString("URLHyperlink.hyperlinkText"), new Object[] { fURLString }); //$NON-NLS-1$
+		return MessageFormat.format(HyperlinkMessages.getString("URLHyperlink.hyperlinkText"), fURLString); //$NON-NLS-1$
 	}
 
 	/**

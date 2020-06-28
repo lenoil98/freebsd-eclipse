@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2017 IBM Corporation and others.
+ * Copyright (c) 2009, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Rolf Theunissen <rolf.theunissen@gmail.com> - Bug 546632
  ******************************************************************************/
 
 package org.eclipse.e4.ui.tests.workbench;
@@ -21,15 +22,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
-import org.eclipse.e4.core.commands.CommandServiceAddon;
-import org.eclipse.e4.core.contexts.ContextInjectionFactory;
+import javax.inject.Inject;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.e4.core.contexts.IEclipseContext;
-import org.eclipse.e4.ui.di.UISynchronize;
-import org.eclipse.e4.ui.internal.workbench.E4Workbench;
 import org.eclipse.e4.ui.internal.workbench.swt.AbstractPartRenderer;
-import org.eclipse.e4.ui.internal.workbench.swt.E4Application;
-import org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine;
 import org.eclipse.e4.ui.model.application.MApplication;
 import org.eclipse.e4.ui.model.application.ui.basic.MPart;
 import org.eclipse.e4.ui.model.application.ui.basic.MPartSashContainer;
@@ -39,7 +37,7 @@ import org.eclipse.e4.ui.model.application.ui.menu.MDirectMenuItem;
 import org.eclipse.e4.ui.model.application.ui.menu.MMenu;
 import org.eclipse.e4.ui.model.application.ui.menu.MMenuItem;
 import org.eclipse.e4.ui.services.IServiceConstants;
-import org.eclipse.e4.ui.workbench.IWorkbench;
+import org.eclipse.e4.ui.tests.rules.WorkbenchContextRule;
 import org.eclipse.e4.ui.workbench.modeling.EModelService;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.swt.SWT;
@@ -52,60 +50,36 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.Widget;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
  *
  */
 public class MWindowTest {
-	protected IEclipseContext appContext;
-	protected E4Workbench wb;
+
+	@Rule
+	public WorkbenchContextRule contextRule = new WorkbenchContextRule();
+
+	@Inject
+	private IEclipseContext appContext;
+
+	@Inject
 	private EModelService ems;
 
-	@Before
-	public void setUp() throws Exception {
-		appContext = E4Application.createDefaultContext();
-		ContextInjectionFactory.make(CommandServiceAddon.class, appContext);
-		appContext.set(IWorkbench.PRESENTATION_URI_ARG, PartRenderingEngine.engineURI);
-		appContext.set(UISynchronize.class, new UISynchronize() {
-			@Override
-			public void syncExec(Runnable runnable) {
-				runnable.run();
-			}
-
-			@Override
-			public void asyncExec(final Runnable runnable) {
-				runnable.run();
-			}
-		});
-		ContextInjectionFactory.setDefault(appContext);
-		ems = appContext.get(EModelService.class);
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		if (wb != null) {
-			wb.close();
-		}
-		appContext.dispose();
-		ContextInjectionFactory.setDefault(null);
-	}
+	@Inject
+	private MApplication application;
 
 	@Test
 	public void testCreateWindow() {
+		assumeFalse("Test fails on Mac: Bug 537639", Platform.OS_MACOSX.equals(Platform.getOS()));
+
 		final MWindow window = ems.createModelElement(MWindow.class);
 		window.setLabel("MyWindow");
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		Widget topWidget = (Widget) window.getWidget();
 		assertNotNull(topWidget);
@@ -120,13 +94,8 @@ public class MWindowTest {
 		final MWindow window = ems.createModelElement(MWindow.class);
 		window.setLabel("MyWindow");
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		Widget topWidget = (Widget) window.getWidget();
 		assertNotNull(topWidget);
@@ -148,13 +117,8 @@ public class MWindowTest {
 		window.setLabel("MyWindow");
 		window.setVisible(false);
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		Widget topWidget = (Widget) window.getWidget();
 		assertNotNull(topWidget);
@@ -168,13 +132,8 @@ public class MWindowTest {
 	public void testCreateView() {
 		final MWindow window = createWindowWithOneView();
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		MPartSashContainer container = (MPartSashContainer) window.getChildren().get(0);
 		MPartStack stack = (MPartStack) container.getChildren().get(0);
@@ -190,15 +149,12 @@ public class MWindowTest {
 
 	@Test
 	public void testContextChildren() {
+		assumeFalse("Test fails on Mac: Bug 537639", Platform.OS_MACOSX.equals(Platform.getOS()));
+
 		final MWindow window = createWindowWithOneView();
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		Widget topWidget = (Widget) window.getWidget();
 		assertNotNull(topWidget);
@@ -241,13 +197,9 @@ public class MWindowTest {
 	public void testCreateMenu() {
 		final MWindow window = createWindowWithOneViewAndMenu();
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
+		contextRule.createAndRunWorkbench(window);
 
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
 		((MenuManager) ((Widget) window.getMainMenu().getWidget()).getData()).updateAll(true);
 
 		Widget topWidget = (Widget) window.getWidget();
@@ -283,13 +235,8 @@ public class MWindowTest {
 		final MWindow window = ems.createModelElement(MWindow.class);
 		window.setLabel("windowName");
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		Object widget = window.getWidget();
 		assertNotNull(widget);
@@ -314,13 +261,8 @@ public class MWindowTest {
 		window.setWidth(200);
 		window.setHeight(200);
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		Object widget = window.getWidget();
 		assertTrue(widget instanceof Shell);
@@ -352,13 +294,8 @@ public class MWindowTest {
 		window.setWidth(200);
 		window.setHeight(200);
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		Object widget = window.getWidget();
 		assertTrue(widget instanceof Shell);
@@ -389,13 +326,8 @@ public class MWindowTest {
 		window.setWidth(200);
 		window.setHeight(200);
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		Object widget = window.getWidget();
 		assertTrue(widget instanceof Shell);
@@ -423,13 +355,8 @@ public class MWindowTest {
 		window.setWidth(200);
 		window.setHeight(200);
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		Object widget = window.getWidget();
 		assertTrue(widget instanceof Shell);
@@ -457,13 +384,8 @@ public class MWindowTest {
 		detachedWindow.setLabel("DetachedWindow");
 		window.getWindows().add(detachedWindow);
 
-		MApplication application = ems.createModelElement(MApplication.class);
 		application.getChildren().add(window);
-		application.setContext(appContext);
-		appContext.set(MApplication.class, application);
-
-		wb = new E4Workbench(application, appContext);
-		wb.createAndRunUI(window);
+		contextRule.createAndRunWorkbench(window);
 
 		assertTrue(window.getWidget() instanceof Shell);
 		assertTrue(detachedWindow.getWidget() instanceof Shell);
@@ -501,8 +423,7 @@ public class MWindowTest {
 	private MPart getContributedPart(MWindow window) {
 		MPartSashContainer psc = (MPartSashContainer) window.getChildren().get(0);
 		MPartStack stack = (MPartStack) psc.getChildren().get(0);
-		MPart part = (MPart) stack.getChildren().get(0);
-		return part;
+		return (MPart) stack.getChildren().get(0);
 	}
 
 	private MWindow createWindowWithOneView() {

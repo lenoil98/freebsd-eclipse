@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,7 @@
  *     IBM Corporation - initial API and implementation
  *     Nikolay Metchev <nikolaymetchev@gmail.com> - [extract local] Extract to local variable not replacing multiple occurrences in same statement - https://bugs.eclipse.org/406347
  *     Nicolaj Hoess <nicohoess@gmail.com> - [extract local] puts declaration at wrong position - https://bugs.eclipse.org/65875
+ *     Pierre-Yves B. <pyvesdev@gmail.com> - [inline] Allow inlining of local variable initialized to null. - https://bugs.eclipse.org/93850
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.refactoring.code;
 
@@ -30,7 +31,6 @@ import java.util.StringTokenizer;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 
 import org.eclipse.text.edits.TextEditGroup;
@@ -40,7 +40,6 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringChangeDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -48,7 +47,6 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.NamingConventions;
 import org.eclipse.jdt.core.SourceRange;
-import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -112,11 +110,9 @@ import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.Corext;
-import org.eclipse.jdt.internal.corext.SourceRangeFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.ScopeAnalyzer;
 import org.eclipse.jdt.internal.corext.dom.fragments.ASTFragmentFactory;
 import org.eclipse.jdt.internal.corext.dom.fragments.IASTFragment;
@@ -128,7 +124,6 @@ import org.eclipse.jdt.internal.corext.refactoring.JDTRefactoringDescriptorComme
 import org.eclipse.jdt.internal.corext.refactoring.JavaRefactoringArguments;
 import org.eclipse.jdt.internal.corext.refactoring.JavaRefactoringDescriptorUtil;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
-import org.eclipse.jdt.internal.corext.refactoring.base.JavaStringStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.base.RefactoringStatusCodes;
 import org.eclipse.jdt.internal.corext.refactoring.rename.RefactoringAnalyzeUtil;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
@@ -182,8 +177,8 @@ public class ExtractTempRefactoring extends Refactoring {
 
 	private static boolean allArraysEqual(ASTNode[][] arrays, int position) {
 		Object element= arrays[0][position];
-		for (int i= 0; i < arrays.length; i++) {
-			Object[] array= arrays[i];
+		for (ASTNode[] a : arrays) {
+			Object[] array= a;
 			if (!element.equals(array[position]))
 				return false;
 		}
@@ -214,6 +209,9 @@ public class ExtractTempRefactoring extends Refactoring {
 			return false;
 		if (parent instanceof SwitchCase)
 			return false;
+		if (node instanceof SimpleName && node.getLocationInParent() != null) {
+			return !node.getLocationInParent().getId().equals("name"); //$NON-NLS-1$
+		}
 		return true;
 	}
 
@@ -221,9 +219,7 @@ public class ExtractTempRefactoring extends Refactoring {
 		Assert.isTrue(prefixLength <= array.length);
 		Assert.isTrue(prefixLength >= 0);
 		ASTNode[] prefix= new ASTNode[prefixLength];
-		for (int i= 0; i < prefix.length; i++) {
-			prefix[i]= array[i];
-		}
+		System.arraycopy(array, 0, prefix, 0, prefix.length);
 		return prefix;
 	}
 
@@ -330,9 +326,10 @@ public class ExtractTempRefactoring extends Refactoring {
 
 	private static IASTFragment[] retainOnlyReplacableMatches(IASTFragment[] allMatches) {
 		List<IASTFragment> result= new ArrayList<>(allMatches.length);
-		for (int i= 0; i < allMatches.length; i++) {
-			if (canReplace(allMatches[i]))
-				result.add(allMatches[i]);
+		for (IASTFragment match : allMatches) {
+			if (canReplace(match)) {
+				result.add(match);
+			}
 		}
 		return result.toArray(new IASTFragment[result.size()]);
 	}
@@ -344,7 +341,7 @@ public class ExtractTempRefactoring extends Refactoring {
 	private ICompilationUnit fCu;
 
 	private boolean fDeclareFinal;
-	
+
 	private boolean fDeclareVarType;
 
 	private String[] fExcludedVariableNames;
@@ -433,8 +430,7 @@ public class ExtractTempRefactoring extends Refactoring {
 		//TODO: should not have to prune duplicates here...
 		ASTRewrite rewrite= fCURewrite.getASTRewrite();
 		HashSet<IASTFragment> seen= new HashSet<>();
-		for (int i= 0; i < fragmentsToReplace.length; i++) {
-			IASTFragment fragment= fragmentsToReplace[i];
+		for (IASTFragment fragment : fragmentsToReplace) {
 			if (! seen.add(fragment))
 				continue;
 			SimpleName tempName= fCURewrite.getAST().newSimpleName(fTempName);
@@ -517,7 +513,7 @@ public class ExtractTempRefactoring extends Refactoring {
 			fChange.setKeepPreviewEdits(true);
 
 			if (fCheckResultForCompileProblems) {
-				checkNewSource(new SubProgressMonitor(pm, 1), result);
+				result.merge(RefactoringAnalyzeUtil.checkNewSource(fChange, fCu, fCompilationUnitNode, pm));
 			}
 
 			return result;
@@ -548,15 +544,15 @@ public class ExtractTempRefactoring extends Refactoring {
 			comment.addSetting(RefactoringCoreMessages.ExtractTempRefactoring_replace_occurrences);
 		if (fDeclareFinal)
 			comment.addSetting(RefactoringCoreMessages.ExtractTempRefactoring_declare_final);
-		if (fDeclareVarType) 
+		if (fDeclareVarType)
 			comment.addSetting(RefactoringCoreMessages.ExtractTempRefactoring_declare_var_type);
 		final ExtractLocalDescriptor descriptor= RefactoringSignatureDescriptorFactory.createExtractLocalDescriptor(project, description, comment.asString(), arguments, RefactoringDescriptor.NONE);
 		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_INPUT, JavaRefactoringDescriptorUtil.elementToHandle(project, fCu));
 		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_NAME, fTempName);
-		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, Integer.valueOf(fSelectionStart).toString() + " " + Integer.valueOf(fSelectionLength).toString()); //$NON-NLS-1$
-		arguments.put(ATTRIBUTE_REPLACE, Boolean.valueOf(fReplaceAllOccurrences).toString());
-		arguments.put(ATTRIBUTE_FINAL, Boolean.valueOf(fDeclareFinal).toString());
-		arguments.put(ATTRIBUTE_TYPE_VAR, Boolean.valueOf(fDeclareVarType).toString());
+		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, Integer.toString(fSelectionStart) + " " + Integer.toString(fSelectionLength)); //$NON-NLS-1$
+		arguments.put(ATTRIBUTE_REPLACE, Boolean.toString(fReplaceAllOccurrences));
+		arguments.put(ATTRIBUTE_FINAL, Boolean.toString(fDeclareFinal));
+		arguments.put(ATTRIBUTE_TYPE_VAR, Boolean.toString(fDeclareVarType));
 		return descriptor;
 	}
 
@@ -574,23 +570,12 @@ public class ExtractTempRefactoring extends Refactoring {
 		}
 	}
 
-	private void checkNewSource(SubProgressMonitor monitor, RefactoringStatus result) throws CoreException {
-		String newCuSource= fChange.getPreviewContent(new NullProgressMonitor());
-		CompilationUnit newCUNode= new RefactoringASTParser(IASTSharedValues.SHARED_AST_LEVEL).parse(newCuSource, fCu, true, true, monitor);
-		IProblem[] newProblems= RefactoringAnalyzeUtil.getIntroducedCompileProblems(newCUNode, fCompilationUnitNode);
-		for (int i= 0; i < newProblems.length; i++) {
-			IProblem problem= newProblems[i];
-			if (problem.isError())
-				result.addEntry(new RefactoringStatusEntry((problem.isError() ? RefactoringStatus.ERROR : RefactoringStatus.WARNING), problem.getMessage(), new JavaStringStatusContext(newCuSource, SourceRangeFactory.create(problem))));
-		}
-	}
-
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException {
 		try {
 			pm.beginTask("", 6); //$NON-NLS-1$
 
-			RefactoringStatus result= Checks.validateModifiesFiles(ResourceUtil.getFiles(new ICompilationUnit[] { fCu}), getValidationContext());
+			RefactoringStatus result= Checks.validateModifiesFiles(ResourceUtil.getFiles(new ICompilationUnit[] { fCu}), getValidationContext(), pm);
 			if (result.hasFatalError())
 				return result;
 
@@ -612,9 +597,8 @@ public class ExtractTempRefactoring extends Refactoring {
 
 	private RefactoringStatus checkMatchingFragments() throws JavaModelException {
 		RefactoringStatus result= new RefactoringStatus();
-		IASTFragment[] matchingFragments= getMatchingFragments();
-		for (int i= 0; i < matchingFragments.length; i++) {
-			ASTNode node= matchingFragments[i].getAssociatedNode();
+		for (IASTFragment matchingFragment : getMatchingFragments()) {
+			ASTNode node= matchingFragment.getAssociatedNode();
 			if (isLeftValue(node) && !isReferringToLocalVariableFromFor((Expression) node)) {
 				String msg= RefactoringCoreMessages.ExtractTempRefactoring_assigned_to;
 				result.addWarning(msg, JavaStatusContext.create(fCu, node));
@@ -806,7 +790,7 @@ public class ExtractTempRefactoring extends Refactoring {
 	public boolean declareFinal() {
 		return fDeclareFinal;
 	}
-	
+
 	public boolean declareVarType() {
 		return fDeclareVarType;
 	}
@@ -864,13 +848,7 @@ public class ExtractTempRefactoring extends Refactoring {
 		IASTFragment[] nodesToReplace= retainOnlyReplacableMatches(getMatchingFragments());
 		if (nodesToReplace.length == 0)
 			return getSelectedExpression();
-		Comparator<IASTFragment> comparator= new Comparator<IASTFragment>() {
-
-			@Override
-			public int compare(IASTFragment o1, IASTFragment o2) {
-				return o1.getStartPosition() - o2.getStartPosition();
-			}
-		};
+		Comparator<IASTFragment> comparator= (o1, o2) -> o1.getStartPosition() - o2.getStartPosition();
 		Arrays.sort(nodesToReplace, comparator);
 		return (IExpressionFragment) nodesToReplace[0];
 	}
@@ -930,7 +908,7 @@ public class ExtractTempRefactoring extends Refactoring {
 
 		ASTRewrite rewrite= fCURewrite.getASTRewrite();
 		AST ast= rewrite.getAST();
-		
+
 		if (isVarTypeAllowed() && fDeclareVarType) {
 			resultingType= ast.newSimpleType(ast.newSimpleName("var")); //$NON-NLS-1$
 		} else if (expression instanceof ClassInstanceCreation && (typeBinding == null || typeBinding.getTypeArguments().length == 0)) {
@@ -1058,7 +1036,7 @@ public class ExtractTempRefactoring extends Refactoring {
 	public void setDeclareFinal(boolean declareFinal) {
 		fDeclareFinal= declareFinal;
 	}
-	
+
 	public void setDeclareVarType(boolean declareVarType) {
 		fDeclareVarType= declareVarType;
 	}
@@ -1088,9 +1066,9 @@ public class ExtractTempRefactoring extends Refactoring {
 			int length= -1;
 			final StringTokenizer tokenizer= new StringTokenizer(selection);
 			if (tokenizer.hasMoreTokens())
-				offset= Integer.valueOf(tokenizer.nextToken()).intValue();
+				offset= Integer.parseInt(tokenizer.nextToken());
 			if (tokenizer.hasMoreTokens())
-				length= Integer.valueOf(tokenizer.nextToken()).intValue();
+				length= Integer.parseInt(tokenizer.nextToken());
 			if (offset >= 0 && length >= 0) {
 				fSelectionStart= offset;
 				fSelectionLength= length;
@@ -1114,22 +1092,22 @@ public class ExtractTempRefactoring extends Refactoring {
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, JavaRefactoringDescriptorUtil.ATTRIBUTE_NAME));
 		final String replace= arguments.getAttribute(ATTRIBUTE_REPLACE);
 		if (replace != null) {
-			fReplaceAllOccurrences= Boolean.valueOf(replace).booleanValue();
+			fReplaceAllOccurrences= Boolean.parseBoolean(replace);
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_REPLACE));
 		final String declareFinal= arguments.getAttribute(ATTRIBUTE_FINAL);
 		if (declareFinal != null) {
-			fDeclareFinal= Boolean.valueOf(declareFinal).booleanValue();
+			fDeclareFinal= Boolean.parseBoolean(declareFinal);
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_FINAL));
 		final String declareVarType= arguments.getAttribute(ATTRIBUTE_TYPE_VAR);
 		if (declareVarType != null) {
-			fDeclareVarType= Boolean.valueOf(declareVarType).booleanValue();
+			fDeclareVarType= Boolean.parseBoolean(declareVarType);
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_TYPE_VAR));
 		return new RefactoringStatus();
 	}
-	
+
 	public boolean isVarTypeAllowed() {
 		boolean isAllowed= false;
 		if (fCompilationUnitNode != null) {

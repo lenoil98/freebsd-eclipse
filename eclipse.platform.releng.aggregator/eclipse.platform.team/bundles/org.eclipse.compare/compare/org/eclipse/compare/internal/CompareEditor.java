@@ -240,20 +240,20 @@ public class CompareEditor extends EditorPart
 			ErrorDialog.openError(getSite().getShell(), title, msg, s);
 			return;
 		}
-        doSetInput(input);
-        // Need to refresh the contributor (see #67888)
-        refreshActionBarsContributor();
+		doSetInput(input);
+		// Need to refresh the contributor (see #67888)
+		refreshActionBarsContributor();
 	}
 
 	public void refreshActionBarsContributor() {
 		IEditorSite editorSite= getEditorSite();
-        if (editorSite != null) {
-	        IEditorActionBarContributor actionBarContributor= editorSite.getActionBarContributor();
-	        if (actionBarContributor != null) {
-	        		actionBarContributor.setActiveEditor(null);
-	        		actionBarContributor.setActiveEditor(this);
-	        }
-        }
+		if (editorSite != null) {
+			IEditorActionBarContributor actionBarContributor= editorSite.getActionBarContributor();
+			if (actionBarContributor != null) {
+					actionBarContributor.setActiveEditor(null);
+					actionBarContributor.setActiveEditor(this);
+			}
+		}
 	}
 
 	private void doSetInput(IEditorInput input) {
@@ -299,12 +299,12 @@ public class CompareEditor extends EditorPart
 			initializeInBackground(cei, hadPreviousInput);
 		}
 
-        firePropertyChange(IWorkbenchPartConstants.PROP_INPUT);
+		firePropertyChange(IWorkbenchPartConstants.PROP_INPUT);
 
-        // We only need to notify of new Saveables if we are changing inputs
-        if (hadPreviousInput && hasResult) {
-        	registerSaveable();
-        }
+		// We only need to notify of new Saveables if we are changing inputs
+		if (hadPreviousInput && hasResult) {
+			registerSaveable();
+		}
 	}
 
 	private void registerSaveable() {
@@ -454,7 +454,11 @@ public class CompareEditor extends EditorPart
 					}
 				}
 				fPageBook.showPage(fControl);
-				PlatformUI.getWorkbench().getHelpSystem().setHelp(fControl, ICompareContextIds.COMPARE_EDITOR);
+
+				if (PlatformUI.isWorkbenchRunning()) {
+					PlatformUI.getWorkbench().getHelpSystem().setHelp(fControl, ICompareContextIds.COMPARE_EDITOR);
+				}
+
 				if (isActive()) {
 					setFocus();
 				}
@@ -499,10 +503,6 @@ public class CompareEditor extends EditorPart
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * Always throws an AssertionFailedException.
-	 * @see org.eclipse.ui.part.EditorPart#doSaveAs()
-	 */
 	@Override
 	public void doSaveAs() {
 		Assert.isTrue(false); // Save As not supported for CompareEditor
@@ -525,9 +525,7 @@ public class CompareEditor extends EditorPart
 		try {
 			operation.run(progressMonitor);
 			firePropertyChange(PROP_DIRTY);
-		} catch (InterruptedException x) {
-			// NeedWork
-		} catch (OperationCanceledException x) {
+		} catch (InterruptedException | OperationCanceledException x) {
 			// NeedWork
 		} catch (InvocationTargetException x) {
 			String title= Utilities.getString("CompareEditor.saveError.title"); //$NON-NLS-1$
@@ -570,8 +568,7 @@ public class CompareEditor extends EditorPart
 		if (init || knownSaveables == null) {
 			recordSaveables(sourceSaveables);
 		} else {
-			for (int i = 0; i < sourceSaveables.length; i++) {
-				Saveable saveable = sourceSaveables[i];
+			for (Saveable saveable : sourceSaveables) {
 				if (!knownSaveables.contains(saveable)) {
 					CompareUIPlugin.logErrorMessage(NLS.bind("Saveable {0} was not added using a saveables lifecycle event.", saveable.getName())); //$NON-NLS-1$
 					knownSaveables.add(saveable);
@@ -595,8 +592,7 @@ public class CompareEditor extends EditorPart
 		if (sourceSaveables.length != knownSaveables.size()) {
 			return false;
 		}
-		for (int i = 0; i < sourceSaveables.length; i++) {
-			Saveable saveable = sourceSaveables[i];
+		for (Saveable saveable : sourceSaveables) {
 			if (!knownSaveables.contains(saveable)) {
 				return false;
 			}
@@ -721,11 +717,10 @@ public class CompareEditor extends EditorPart
 				return;
 			java.util.List<Saveable> result = new ArrayList<>();
 			Saveable[] all = event.getSaveables();
-			for (int i = 0; i < all.length; i++) {
-				Saveable saveable = all[i];
+			for (Saveable saveable : all) {
 				if (knownSaveables.contains(saveable))
 					result.add(saveable);
-					knownSaveables.remove(saveable);
+				knownSaveables.remove(saveable);
 			}
 			if (result.isEmpty())
 				return;

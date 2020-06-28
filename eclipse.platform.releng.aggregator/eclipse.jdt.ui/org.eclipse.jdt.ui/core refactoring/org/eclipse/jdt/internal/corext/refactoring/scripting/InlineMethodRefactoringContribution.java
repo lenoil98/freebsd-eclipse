@@ -66,9 +66,9 @@ public final class InlineMethodRefactoringContribution extends JavaUIRefactoring
 				int length= -1;
 				final StringTokenizer tokenizer= new StringTokenizer(selection);
 				if (tokenizer.hasMoreTokens())
-					offset= Integer.valueOf(tokenizer.nextToken()).intValue();
+					offset= Integer.parseInt(tokenizer.nextToken());
 				if (tokenizer.hasMoreTokens())
-					length= Integer.valueOf(tokenizer.nextToken()).intValue();
+					length= Integer.parseInt(tokenizer.nextToken());
 				if (offset >= 0 && length >= 0) {
 					selectionStart= offset;
 					selectionLength= length;
@@ -111,7 +111,7 @@ public final class InlineMethodRefactoringContribution extends JavaUIRefactoring
 			throw new CoreException(new Status(IStatus.ERROR, JavaPlugin.getPluginId(), 0, RefactoringCoreMessages.InitializableRefactoring_inacceptable_arguments, null));
 		return InlineMethodRefactoring.create(unit, node, selectionStart, selectionLength);
 	}
-	
+
 	@Override
 	public RefactoringDescriptor createDescriptor() {
 		return RefactoringSignatureDescriptorFactory.createInlineMethodDescriptor();

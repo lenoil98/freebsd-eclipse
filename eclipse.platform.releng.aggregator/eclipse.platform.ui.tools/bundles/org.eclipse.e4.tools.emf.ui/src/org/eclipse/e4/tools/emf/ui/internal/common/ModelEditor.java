@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -35,7 +36,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.eclipse.core.databinding.ObservablesManager;
-import org.eclipse.core.databinding.observable.IObservable;
 import org.eclipse.core.databinding.observable.list.IObservableList;
 import org.eclipse.core.databinding.observable.list.WritableList;
 import org.eclipse.core.databinding.observable.map.IObservableMap;
@@ -56,6 +56,7 @@ import org.eclipse.e4.core.di.annotations.Execute;
 import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.core.di.extensions.Preference;
 import org.eclipse.e4.core.services.contributions.IContributionFactory;
+import org.eclipse.e4.core.services.log.Logger;
 import org.eclipse.e4.core.services.nls.Translation;
 import org.eclipse.e4.core.services.translation.TranslationService;
 import org.eclipse.e4.tools.emf.ui.common.AbstractElementEditorContribution;
@@ -124,6 +125,7 @@ import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VApplicatio
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VApplicationWindowEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VBindingTableEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VCommandEditor;
+import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VControlsEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VHandlerEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VItemParametersEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VMenuContributionsEditor;
@@ -131,8 +133,11 @@ import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VModelFragm
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VModelImportsEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VPartDescriptor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VPartDescriptorMenuEditor;
+import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VPartDescriptorTrimEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VPartMenuEditor;
+import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VPartTrimEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VPerspectiveControlEditor;
+import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VPerspectiveTrimEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VPerspectiveWindowsEditor;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VRootBindingContexts;
 import org.eclipse.e4.tools.emf.ui.internal.common.component.virtual.VSnippetsEditor;
@@ -251,14 +256,17 @@ public class ModelEditor implements IGotoObject {
 
 	public static final String VIRTUAL_PART_MENU = "org.eclipse.e4.tools.emf.ui.VIRTUAL_PART_MENU"; //$NON-NLS-1$
 	public static final String VIRTUAL_HANDLER = "org.eclipse.e4.tools.emf.ui.VIRTUAL_HANDLER"; //$NON-NLS-1$
+	public static final String VIRTUAL_CONTROLS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_CONTROLS"; //$NON-NLS-1$
 	public static final String VIRTUAL_BINDING_TABLE = "org.eclipse.e4.tools.emf.ui.VIRTUAL_BINDING_TABLE"; //$NON-NLS-1$
 	public static final String VIRTUAL_COMMAND = "org.eclipse.e4.tools.emf.ui.VIRTUAL_COMMAND"; //$NON-NLS-1$
 	public static final String VIRTUAL_APPLICATION_WINDOWS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_APPLICATION_WINDOWS"; //$NON-NLS-1$
 	public static final String VIRTUAL_PERSPECTIVE_WINDOWS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_PERSPECTIVE_WINDOWS"; //$NON-NLS-1$
 	public static final String VIRTUAL_WINDOW_WINDOWS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_WINDOW_WINDOWS"; //$NON-NLS-1$
 	public static final String VIRTUAL_WINDOW_CONTROLS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_WINDOW_CONTROLS"; //$NON-NLS-1$
+	public static final String VIRTUAL_PART_TRIMS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_PART_TRIMS"; //$NON-NLS-1$
 	public static final String VIRTUAL_PART_DESCRIPTORS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_PART_DESCRIPTORS"; //$NON-NLS-1$
 	public static final String VIRTUAL_PARTDESCRIPTOR_MENU = "org.eclipse.e4.tools.emf.ui.VIRTUAL_PARTDESCRIPTOR_MENU"; //$NON-NLS-1$
+	public static final String VIRTUAL_PARTDESCRIPTOR_TRIMS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_PART_DESCRIPTOR_TRIMS"; //$NON-NLS-1$
 	public static final String VIRTUAL_TRIMMED_WINDOW_TRIMS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_TRIMMED_WINDOW_TRIMS"; //$NON-NLS-1$
 	public static final String VIRTUAL_ADDONS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_ADDONS"; //$NON-NLS-1$
 	public static final String VIRTUAL_MENU_CONTRIBUTIONS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_MENU_CONTRIBUTIONS"; //$NON-NLS-1$
@@ -274,24 +282,27 @@ public class ModelEditor implements IGotoObject {
 	public static final String VIRTUAL_MENUELEMENTS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_MENUELEMENTS"; //$NON-NLS-1$
 	public static final String VIRTUAL_ROOT_CONTEXTS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_ROOT_CONTEXTS"; //$NON-NLS-1$
 	public static final String VIRTUAL_PERSPECTIVE_CONTROLS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_PERSPECTIVE_CONTROLS"; //$NON-NLS-1$
+	public static final String VIRTUAL_PERSPECTIVE_TRIMS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_PERSPECTIVE_TRIMS"; //$NON-NLS-1$
 	public static final String VIRTUAL_SNIPPETS = "org.eclipse.e4.tools.emf.ui.VIRTUAL_SNIPPETS"; //$NON-NLS-1$
 
 	public static final int TAB_FORM = 0;
 	public static final int TAB_XMI = 1;
 	public static final int TAB_LIST = 2;
 
+
+
 	/**
 	 * A map with key = eClass name or virtual key, value is an
 	 * AbstractComponentEditor instance This map is filled on the fly when getting
 	 * editors
 	 */
-	private final Map<String, AbstractComponentEditor> editors = new HashMap<>();
+	private final Map<String, AbstractComponentEditor<?>> editors = new HashMap<>();
 
 	/**
 	 * A map with key = eClass name or virtual key, value is a class of
 	 * AbstractComponentEditor. This map is filled on init by registerEditor
 	 */
-	private final Map<String, Class<? extends AbstractComponentEditor>> editorsClasses = new HashMap<>();
+	private final Map<String, Class<? extends AbstractComponentEditor<?>>> editorsClasses = new HashMap<>();
 
 	private final Map<Class<?>, List<AbstractElementEditorContribution>> tabContributions = new HashMap<>();
 	private final List<FeaturePath> labelFeaturePaths = new ArrayList<>();
@@ -347,13 +358,16 @@ public class ModelEditor implements IGotoObject {
 	@Optional
 	MPart currentPart;
 
+	@Inject
+	private Logger logger;
+
 	private final ObservablesManager obsManager;
 
 	private final IResourcePool resourcePool;
 
 	private EMFDocumentResourceMediator emfDocumentProvider;
 
-	private AbstractComponentEditor currentEditor;
+	private AbstractComponentEditor<?> currentEditor;
 
 	private Listener keyListener;
 
@@ -590,7 +604,7 @@ public class ModelEditor implements IGotoObject {
 				final IStructuredSelection s = (IStructuredSelection) event.getSelection();
 				if (s.getFirstElement() instanceof EObject) {
 					final EObject obj = (EObject) s.getFirstElement();
-					final AbstractComponentEditor editor1 = getEditor(obj.eClass());
+					final AbstractComponentEditor<?> editor1 = getEditor(obj.eClass());
 					if (editor1 != null) {
 						currentEditor = editor1;
 						headerContainer.setText(editor1.getLabel(obj));
@@ -601,8 +615,8 @@ public class ModelEditor implements IGotoObject {
 						});
 					}
 				} else {
-					final VirtualEntry<?> entry = (VirtualEntry<?>) s.getFirstElement();
-					final AbstractComponentEditor editor2 = getEditor(entry.getId());
+					final VirtualEntry<?, ?> entry = (VirtualEntry<?, ?>) s.getFirstElement();
+					final AbstractComponentEditor<?> editor2 = getEditor(entry.getId());
 					if (editor2 != null) {
 						currentEditor = editor2;
 						headerContainer.setText(editor2.getLabel(entry));
@@ -628,10 +642,11 @@ public class ModelEditor implements IGotoObject {
 			final int noSelected = listOfSelections.size();
 
 			boolean addSeparator = false;
+			// single selection
 			if (!s.isEmpty() && noSelected == 1) {
 				List<Action> actions;
-				if (s.getFirstElement() instanceof VirtualEntry<?>) {
-					actions = getEditor(((VirtualEntry<?>) s.getFirstElement()).getId())
+				if (s.getFirstElement() instanceof VirtualEntry) {
+					actions = getEditor(((VirtualEntry<?, ?>) s.getFirstElement()).getId())
 							.getActions(s.getFirstElement());
 					if (actions.size() > 0) {
 						final MenuManager addMenu1 = new MenuManager(messages.ModelEditor_AddChild);
@@ -642,7 +657,7 @@ public class ModelEditor implements IGotoObject {
 						manager.add(addMenu1);
 					}
 
-					actions = getEditor(((VirtualEntry<?>) s.getFirstElement()).getId())
+					actions = getEditor(((VirtualEntry<?, ?>) s.getFirstElement()).getId())
 							.getActionsImport(s.getFirstElement());
 					if (actions.size() > 0) {
 						final MenuManager menu1 = new MenuManager(messages.ModelEditor_Import3x);
@@ -660,7 +675,7 @@ public class ModelEditor implements IGotoObject {
 				} else {
 
 					final EObject o = (EObject) s.getFirstElement();
-					final AbstractComponentEditor editor = getEditor(o.eClass());
+					final AbstractComponentEditor<?> editor = getEditor(o.eClass());
 
 					// Build Add Child menu
 					if (editor != null) {
@@ -695,23 +710,32 @@ public class ModelEditor implements IGotoObject {
 						manager.add(menu2);
 					}
 
-					if (o.eContainer() != null) {
-						addSeparator = true;
-						manager.add(new Action(messages.ModelEditor_Delete, ImageDescriptor
-								.createFromImage(resourcePool.getImageUnchecked(ResourceProvider.IMG_Obj16_cross))) {
-							@Override
-							public void run() {
-								final Command cmd = DeleteCommand.create(modelProvider.getEditingDomain(), o);
-								if (cmd.canExecute()) {
-									modelProvider.getEditingDomain().getCommandStack().execute(cmd);
-								}
-							}
-						});
-					}
 				}
 			}
-			// multi selection
+
+			// single & multi selection
 			if (noSelected > 0) {
+
+				// add delete entry if there are no virtual entries in selection all selected
+				// elements have a container
+				if (listOfSelections.stream().noneMatch(VirtualEntry.class::isInstance)
+						&& listOfSelections.stream().filter(EObject.class::isInstance).map(EObject.class::cast)
+						.map(EObject::eContainer).allMatch(Objects::nonNull)) {
+					addSeparator = true;
+					manager.add(new Action(messages.ModelEditor_Delete, ImageDescriptor
+							.createFromImage(resourcePool.getImageUnchecked(ResourceProvider.IMG_Obj16_cross))) {
+						@Override
+						public void run() {
+							final CompoundCommand cmd = new CompoundCommand();
+							EditingDomain editingDomain = modelProvider.getEditingDomain();
+							listOfSelections.forEach(o -> cmd.append(DeleteCommand.create(editingDomain, o)));
+							if (cmd.canExecute() && !cmd.isEmpty()) {
+								editingDomain.getCommandStack().execute(cmd);
+							}
+						}
+					});
+				}
+
 				if (!isModelFragment() && modelExtractor != null) {
 					manager.add(new Action(messages.ModelEditor_ExtractFragment, ImageDescriptor
 							.createFromImage(resourcePool.getImageUnchecked(ResourceProvider.IMG_ModelFragments))) {
@@ -720,14 +744,15 @@ public class ModelEditor implements IGotoObject {
 							final ArrayList<MApplicationElement> maes = new ArrayList<>();
 							for (final Object objSelect : listOfSelections) {
 								EObject container = null;
-								if (objSelect instanceof VirtualEntry<?>) {
+								if (objSelect instanceof VirtualEntry) {
 
-									final VirtualEntry<?> ve = (VirtualEntry<?>) objSelect;
-									container = (EObject) ve.getOriginalParent();
-									final IObservableList list = ve.getList();
-									final Iterator<?> iterator = list.iterator();
+									@SuppressWarnings("unchecked")
+									final VirtualEntry<EObject, MApplicationElement> ve = (VirtualEntry<EObject, MApplicationElement>) objSelect;
+									container = ve.getOriginalParent();
+									final IObservableList<MApplicationElement> list = ve.getList();
+									final Iterator<MApplicationElement> iterator = list.iterator();
 									while (iterator.hasNext()) {
-										maes.add((MApplicationElement) iterator.next());
+										maes.add(iterator.next());
 									}
 
 								} else {
@@ -762,6 +787,7 @@ public class ModelEditor implements IGotoObject {
 						}
 					});
 				}
+
 
 			}
 
@@ -798,9 +824,8 @@ public class ModelEditor implements IGotoObject {
 								}
 
 								support.openEditor(viewer.getControl().getShell(), s.getFirstElement(), ctx);
-							} catch (final CoreException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+							} catch (CoreException e) {
+								logger.warn(e);
 							}
 						}
 					});
@@ -971,8 +996,7 @@ public class ModelEditor implements IGotoObject {
 			try {
 				contributionCreator.add((IContributionClassCreator) el.createExecutableExtension("class")); //$NON-NLS-1$
 			} catch (final CoreException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.warn(e);
 			}
 		}
 	}
@@ -998,8 +1022,7 @@ public class ModelEditor implements IGotoObject {
 			try {
 				editorFeatures.add((IEditorFeature) el.createExecutableExtension("class")); //$NON-NLS-1$
 			} catch (final CoreException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.warn(e);
 			}
 		}
 	}
@@ -1047,17 +1070,17 @@ public class ModelEditor implements IGotoObject {
 				.setStyle(SWT.ITALIC);
 		viewer.setLabelProvider(new DelegatingStyledCellLabelProvider(
 				new ComponentLabelProvider(this, messages, italicFontDescriptor)));
-		final ObservableListTreeContentProvider contentProvider = new ObservableListTreeContentProvider(
-				new ObservableFactoryImpl(), new TreeStructureAdvisor() {
+		final ObservableListTreeContentProvider<Object> contentProvider = new ObservableListTreeContentProvider<>(
+				new ObservableFactoryImpl(), new TreeStructureAdvisor<Object>() {
 				});
 		viewer.setContentProvider(contentProvider);
 
-		final WritableSet clearedSet = new WritableSet();
+		final WritableSet<EObject> clearedSet = new WritableSet<>();
 
 		contentProvider.getKnownElements().addSetChangeListener(event -> {
 			for (final Object o1 : event.diff.getAdditions()) {
 				if (o1 instanceof EObject) {
-					clearedSet.add(o1);
+					clearedSet.add((EObject) o1);
 				}
 			}
 
@@ -1069,7 +1092,8 @@ public class ModelEditor implements IGotoObject {
 		});
 
 		for (final FeaturePath p : labelFeaturePaths) {
-			final IObservableMap map = EMFProperties.value(p).observeDetail(clearedSet);
+			@SuppressWarnings("unchecked")
+			final IObservableMap<EObject, Object> map = EMFProperties.value(p).observeDetail(clearedSet);
 			map.addMapChangeListener(event -> viewer.update(event.diff.getChangedKeys().toArray(), null));
 		}
 
@@ -1118,7 +1142,7 @@ public class ModelEditor implements IGotoObject {
 			}
 
 			final IContributionFactory fact = context.get(IContributionFactory.class);
-			final AbstractComponentEditor editor = (AbstractComponentEditor) fact
+			final AbstractComponentEditor<?> editor = (AbstractComponentEditor<?>) fact
 					.create("bundleclass://" + el.getContributor().getName() + "/" + el.getAttribute("class"), context); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			registerEditor(el.getAttribute("id"), editor); //$NON-NLS-1$
 		}
@@ -1126,7 +1150,9 @@ public class ModelEditor implements IGotoObject {
 
 	private void registerVirtualEditors() {
 		registerEditor(VIRTUAL_PART_MENU, VPartMenuEditor.class);
+		registerEditor(VIRTUAL_PART_TRIMS, VPartTrimEditor.class);
 		registerEditor(VIRTUAL_HANDLER, VHandlerEditor.class);
+		registerEditor(VIRTUAL_CONTROLS, VControlsEditor.class);
 		registerEditor(VIRTUAL_BINDING_TABLE, VBindingTableEditor.class);
 		registerEditor(VIRTUAL_COMMAND, VCommandEditor.class);
 		registerEditor(VIRTUAL_APPLICATION_WINDOWS, VApplicationWindowEditor.class);
@@ -1136,6 +1162,7 @@ public class ModelEditor implements IGotoObject {
 		registerEditor(VIRTUAL_WINDOW_SNIPPETS, VSnippetsEditor.class);
 		registerEditor(VIRTUAL_PART_DESCRIPTORS, VPartDescriptor.class);
 		registerEditor(VIRTUAL_PARTDESCRIPTOR_MENU, VPartDescriptorMenuEditor.class);
+		registerEditor(VIRTUAL_PARTDESCRIPTOR_TRIMS, VPartDescriptorTrimEditor.class);
 		registerEditor(VIRTUAL_TRIMMED_WINDOW_TRIMS, VWindowTrimEditor.class);
 		registerEditor(VIRTUAL_ADDONS, VApplicationAddons.class);
 		registerEditor(VIRTUAL_MENU_CONTRIBUTIONS, VMenuContributionsEditor.class);
@@ -1148,6 +1175,7 @@ public class ModelEditor implements IGotoObject {
 		registerEditor(VIRTUAL_PARAMETERS, VItemParametersEditor.class);
 		registerEditor(VIRTUAL_ROOT_CONTEXTS, VRootBindingContexts.class);
 		registerEditor(VIRTUAL_PERSPECTIVE_CONTROLS, VPerspectiveControlEditor.class);
+		registerEditor(VIRTUAL_PERSPECTIVE_TRIMS, VPerspectiveTrimEditor.class);
 		registerEditor(VIRTUAL_SNIPPETS, VSnippetsEditor.class);
 	}
 
@@ -1168,7 +1196,7 @@ public class ModelEditor implements IGotoObject {
 				final IEditorDescriptor desc = (IEditorDescriptor) el.createExecutableExtension("descriptorClass"); //$NON-NLS-1$
 				final EClass eClass = desc.getEClass();
 				final IContributionFactory fact = context.get(IContributionFactory.class);
-				final AbstractComponentEditor editor = (AbstractComponentEditor) fact.create(
+				final AbstractComponentEditor<?> editor = (AbstractComponentEditor<?>) fact.create(
 						"bundleclass://" + el.getContributor().getName() + "/" + desc.getEditorClass().getName(), //$NON-NLS-1$ //$NON-NLS-2$
 						context);
 				registerEditor(eClass, editor);
@@ -1209,9 +1237,10 @@ public class ModelEditor implements IGotoObject {
 
 	public List<AbstractElementEditorContribution> getTabContributionsForClass(Class<?> clazz) {
 		final List<AbstractElementEditorContribution> ret = new ArrayList<>();
-		for (final Class<?> clasz : tabContributions.keySet()) {
+		for (Map.Entry<Class<?>, List<AbstractElementEditorContribution>> entry : tabContributions.entrySet()) {
+			Class<?> clasz = entry.getKey();
 			if (clasz.isAssignableFrom(clazz)) {
-				ret.addAll(tabContributions.get(clasz));
+				ret.addAll(entry.getValue());
 			}
 		}
 		return ret;
@@ -1295,12 +1324,12 @@ public class ModelEditor implements IGotoObject {
 	}
 
 	@Inject
-	public void setNotVisibleColor(@Preference(ModelEditorPreferences.NOT_VISIBLE_COLOR) String color) {
+	public void setNotVisibleColor(@Preference(ModelEditorPreferences.NOT_VISIBLE_COLOR) String prefColorText) {
 		final RGB current = JFaceResources.getColorRegistry().getRGB(ComponentLabelProvider.NOT_VISIBLE_KEY);
+		RGB prefColor = StringConverter.asRGB(prefColorText, new RGB(200, 200, 200));
 
-		if (current == null || !current.equals(color)) {
-			JFaceResources.getColorRegistry().put(ComponentLabelProvider.NOT_VISIBLE_KEY,
-					StringConverter.asRGB(color, new RGB(200, 200, 200)));
+		if (current == null || !current.equals(prefColor)) {
+			JFaceResources.getColorRegistry().put(ComponentLabelProvider.NOT_VISIBLE_KEY, prefColor);
 		}
 
 		if (viewer != null) {
@@ -1310,12 +1339,12 @@ public class ModelEditor implements IGotoObject {
 	}
 
 	@Inject
-	public void setNotRenderedColor(@Preference(ModelEditorPreferences.NOT_RENDERED_COLOR) String color) {
+	public void setNotRenderedColor(@Preference(ModelEditorPreferences.NOT_RENDERED_COLOR) String prefColorText) {
+		RGB prefColor = StringConverter.asRGB(prefColorText, new RGB(200, 200, 200));
 		final RGB current = JFaceResources.getColorRegistry().getRGB(ComponentLabelProvider.NOT_RENDERED_KEY);
 
-		if (current == null || !current.equals(color)) {
-			JFaceResources.getColorRegistry().put(ComponentLabelProvider.NOT_RENDERED_KEY,
-					StringConverter.asRGB(color, new RGB(200, 200, 200)));
+		if (current == null || !current.equals(prefColor)) {
+			JFaceResources.getColorRegistry().put(ComponentLabelProvider.NOT_RENDERED_KEY, prefColor);
 		}
 
 		if (viewer != null) {
@@ -1326,13 +1355,13 @@ public class ModelEditor implements IGotoObject {
 
 	@Inject
 	public void setNotVisibleRenderedColor(
-			@Preference(ModelEditorPreferences.NOT_VISIBLE_AND_RENDERED_COLOR) String color) {
+			@Preference(ModelEditorPreferences.NOT_VISIBLE_AND_RENDERED_COLOR) String prefColorText) {
+		RGB prefColor = StringConverter.asRGB(prefColorText, new RGB(200, 200, 200));
 		final RGB current = JFaceResources.getColorRegistry()
 				.getRGB(ComponentLabelProvider.NOT_VISIBLE_AND_RENDERED_KEY);
 
-		if (current == null || !current.equals(color)) {
-			JFaceResources.getColorRegistry().put(ComponentLabelProvider.NOT_VISIBLE_AND_RENDERED_KEY,
-					StringConverter.asRGB(color, new RGB(200, 200, 200)));
+		if (current == null || !current.equals(prefColor)) {
+			JFaceResources.getColorRegistry().put(ComponentLabelProvider.NOT_VISIBLE_AND_RENDERED_KEY, prefColor);
 		}
 
 		if (viewer != null) {
@@ -1341,7 +1370,7 @@ public class ModelEditor implements IGotoObject {
 		}
 	}
 
-	private void registerEditor(EClass eClass, Class<? extends AbstractComponentEditor> clazz) {
+	private void registerEditor(EClass eClass, Class<? extends AbstractComponentEditor<?>> clazz) {
 		registerEditor(eClass.getInstanceClassName(), clazz);
 	}
 
@@ -1351,7 +1380,7 @@ public class ModelEditor implements IGotoObject {
 	 * @param ley
 	 * @param clazz
 	 */
-	private void registerEditor(String key, Class<? extends AbstractComponentEditor> clazz) {
+	private void registerEditor(String key, Class<? extends AbstractComponentEditor<?>> clazz) {
 		editorsClasses.put(key, clazz);
 	}
 
@@ -1361,7 +1390,7 @@ public class ModelEditor implements IGotoObject {
 	 * @param instanceClassName
 	 * @param clazz
 	 */
-	private void registerEditor(String key, AbstractComponentEditor editor) {
+	private void registerEditor(String key, AbstractComponentEditor<?> editor) {
 		editors.put(key, editor);
 	}
 
@@ -1372,8 +1401,8 @@ public class ModelEditor implements IGotoObject {
 	 * @param eClass the eClass to get editor for
 	 * @return the {@link AbstractComponentEditor} found (never null).
 	 */
-	public AbstractComponentEditor getEditor(EClass eClass) {
-		AbstractComponentEditor editor = getEditor(eClass.getInstanceClassName(), false);
+	public AbstractComponentEditor<?> getEditor(EClass eClass) {
+		AbstractComponentEditor<?> editor = getEditor(eClass.getInstanceClassName(), false);
 
 		if (editor == null) {
 			// May be can try to use the ancestor editor if not found or the default editor
@@ -1397,7 +1426,7 @@ public class ModelEditor implements IGotoObject {
 
 	}
 
-	public AbstractComponentEditor getEditor(String key) {
+	public AbstractComponentEditor<?> getEditor(String key) {
 		return getEditor(key, true);
 	}
 
@@ -1410,14 +1439,14 @@ public class ModelEditor implements IGotoObject {
 	 * @return the {@link AbstractComponentEditor} if exists. Never null if
 	 *         createDefaultIfNull is true
 	 */
-	private AbstractComponentEditor getEditor(String key, boolean createDefaultIfNull) {
-		AbstractComponentEditor editor = editors.get(key);
+	private AbstractComponentEditor<?> getEditor(String key, boolean createDefaultIfNull) {
+		AbstractComponentEditor<?> editor = editors.get(key);
 
 		if (editor == null) {
 
 			// Editor not yet created in the map... must create instance using registered
 			// class
-			Class<? extends AbstractComponentEditor> cz = editorsClasses.get(key);
+			Class<? extends AbstractComponentEditor<?>> cz = editorsClasses.get(key);
 			if (cz != null) {
 				editor = ContextInjectionFactory.make(cz, context);
 				editors.put(key, editor);
@@ -1431,7 +1460,7 @@ public class ModelEditor implements IGotoObject {
 		return editor;
 	}
 
-	private void manageFeatureMap(AbstractComponentEditor editor) {
+	private void manageFeatureMap(AbstractComponentEditor<?> editor) {
 		for (final FeaturePath p : editor.getLabelProperties()) {
 			boolean found = false;
 			for (final FeaturePath tmp : labelFeaturePaths) {
@@ -1448,7 +1477,7 @@ public class ModelEditor implements IGotoObject {
 
 	}
 
-	public void registerEditor(EClass eClass, AbstractComponentEditor editor) {
+	public void registerEditor(EClass eClass, AbstractComponentEditor<?> editor) {
 		editors.put(eClass.getInstanceClassName(), editor);
 		manageFeatureMap(editor);
 	}
@@ -1569,10 +1598,10 @@ public class ModelEditor implements IGotoObject {
 
 			EStructuralFeature feature = null;
 			EObject container = null;
-			if (parent instanceof VirtualEntry<?>) {
-				final VirtualEntry<?> v = (VirtualEntry<?>) parent;
+			if (parent instanceof VirtualEntry) {
+				final VirtualEntry<EObject, ?> v = (VirtualEntry<EObject, ?>) parent;
 				feature = ((IEMFProperty) v.getProperty()).getStructuralFeature();
-				container = (EObject) v.getOriginalParent();
+				container = v.getOriginalParent();
 			} else if (parent instanceof EObject) {
 				container = (EObject) parent;
 				if (container instanceof MElementContainer<?>) {
@@ -1760,18 +1789,20 @@ public class ModelEditor implements IGotoObject {
 		}
 	}
 
-	public class ObservableFactoryImpl implements IObservableFactory {
+	public class ObservableFactoryImpl implements IObservableFactory<Object, IObservableList<Object>> {
 
+		@SuppressWarnings("unchecked")
 		@Override
-		public IObservable createObservable(Object target) {
+		public IObservableList<Object> createObservable(Object target) {
 			if (target instanceof IObservableList) {
-				return new WritableList((List<?>) target, Object.class);
-			} else if (target instanceof VirtualEntry<?>) {
-				return ((VirtualEntry<?>) target).getList();
+				return new WritableList<>((List<Object>) target, Object.class);
+			} else if (target instanceof VirtualEntry) {
+				return ((VirtualEntry<?, Object>) target).getList();
 			} else {
-				final AbstractComponentEditor editor = getEditor(((EObject) target).eClass());
+				final AbstractComponentEditor<EObject> editor = (AbstractComponentEditor<EObject>) getEditor(
+						((EObject) target).eClass());
 				if (editor != null) {
-					return editor.getChildList(target);
+					return (IObservableList<Object>) editor.getChildList(target);
 				}
 			}
 
@@ -1831,12 +1862,13 @@ public class ModelEditor implements IGotoObject {
 				if (getCurrentTarget() instanceof MElementContainer<?>) {
 					feature = UiPackageImpl.Literals.ELEMENT_CONTAINER__CHILDREN;
 					parent = (EObject) getCurrentTarget();
-				} else if (getCurrentTarget() instanceof VirtualEntry<?>) {
-					final VirtualEntry<?> entry = (VirtualEntry<?>) getCurrentTarget();
-					final IListProperty prop = entry.getProperty();
+				} else if (getCurrentTarget() instanceof VirtualEntry) {
+
+					final VirtualEntry<EObject, ?> entry = (VirtualEntry<EObject, ?>) getCurrentTarget();
+					final IListProperty<?, ?> prop = entry.getProperty();
 					if (prop instanceof IEMFProperty) {
 						feature = ((IEMFProperty) prop).getStructuralFeature();
-						parent = (EObject) entry.getOriginalParent();
+						parent = entry.getOriginalParent();
 
 					}
 				} else if (getCurrentTarget() instanceof EObject) {
@@ -1870,9 +1902,9 @@ public class ModelEditor implements IGotoObject {
 				if (item != null) {
 					final TreeItem parentItem = item.getParentItem();
 					if (parentItem != null) {
-						if (parentItem.getData() instanceof VirtualEntry<?>) {
-							final VirtualEntry<?> vE = (VirtualEntry<?>) parentItem.getData();
-							parent = (EObject) vE.getOriginalParent();
+						if (parentItem.getData() instanceof VirtualEntry) {
+							final VirtualEntry<EObject, ?> vE = (VirtualEntry<EObject, ?>) parentItem.getData();
+							parent = vE.getOriginalParent();
 							feature = ((IEMFProperty) vE.getProperty()).getStructuralFeature();
 						} else if (parentItem.getData() instanceof MElementContainer<?>) {
 							parent = (EObject) parentItem.getData();
@@ -1950,7 +1982,7 @@ public class ModelEditor implements IGotoObject {
 		 * @param destFeature the target feature in the model where data must be dropped
 		 * @param parent      the destination parent
 		 * @param index       the index in the parent list
-		 * @see bug #429684
+		 * @see bug 429684
 		 * @return the compound command
 		 */
 		private Command createRemoveAddCommand(Object data, EStructuralFeature destFeature, EObject parent, int index) {
@@ -2018,13 +2050,13 @@ public class ModelEditor implements IGotoObject {
 						UiPackageImpl.Literals.ELEMENT_CONTAINER__CHILDREN.getEGenericType());
 				return classifier.isInstance(instance);
 			}
-		} else if (target instanceof VirtualEntry<?>) {
+		} else if (target instanceof VirtualEntry) {
 			@SuppressWarnings("unchecked")
-			final VirtualEntry<Object> vTarget = (VirtualEntry<Object>) target;
+			final VirtualEntry<EObject, ?> vTarget = (VirtualEntry<EObject, ?>) target;
 			if (isIndex || !vTarget.getList().contains(instance)) {
 				if (vTarget.getProperty() instanceof IEMFProperty) {
 					final EStructuralFeature feature = ((IEMFProperty) vTarget.getProperty()).getStructuralFeature();
-					final EObject parent = (EObject) vTarget.getOriginalParent();
+					final EObject parent = vTarget.getOriginalParent();
 					final EClassifier classifier = ModelUtils.getTypeArgument(parent.eClass(),
 							feature.getEGenericType());
 					return classifier.isInstance(instance);
@@ -2065,7 +2097,7 @@ public class ModelEditor implements IGotoObject {
 			switch (targetHint) {
 			case TAB_FORM:
 				// make sure tree node has been instantiated
-				final ObservableListTreeContentProvider provider = (ObservableListTreeContentProvider) viewer
+				final ObservableListTreeContentProvider<?> provider = (ObservableListTreeContentProvider<?>) viewer
 				.getContentProvider();
 				getFirstMatchingItem(object, provider, provider.getChildren(viewer.getInput()));
 
@@ -2099,7 +2131,8 @@ public class ModelEditor implements IGotoObject {
 
 	// This will ensure the provider has created the tree node (so we can reveal
 	// it).
-	private Object getFirstMatchingItem(EObject target, ObservableListTreeContentProvider provider, Object[] items) {
+	private static Object getFirstMatchingItem(EObject target, ObservableListTreeContentProvider<?> provider,
+			Object[] items) {
 		for (int i = 0; i < items.length; i++) {
 			if (items[i] == target) {
 				return items[i];
@@ -2110,6 +2143,10 @@ public class ModelEditor implements IGotoObject {
 			}
 		}
 		return null;
+	}
+
+	public void refreshViewer() {
+		viewer.refresh(true);
 	}
 
 	@Inject

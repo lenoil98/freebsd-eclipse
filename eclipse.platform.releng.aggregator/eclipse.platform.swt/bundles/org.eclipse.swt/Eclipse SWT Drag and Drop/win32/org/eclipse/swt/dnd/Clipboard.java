@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Paul Pazderski - Bug 418714: Content copied to clipboard lost after dispose
  *******************************************************************************/
 package org.eclipse.swt.dnd;
 
@@ -220,9 +221,30 @@ public void dispose () {
 	 * The argument pDataObject is owned by the caller so reference count does not
 	 * need to be incremented.
 	 */
+	int result = COM.S_OK;
 	if (COM.OleIsCurrentClipboard(this.iDataObject.getAddress()) == COM.S_OK) {
-		COM.OleFlushClipboard();
+		result = COM.OleFlushClipboard();
 	}
+	/* Just like setContents, flushing the clipboard can fail if another application is
+	 * inspecting the clipboard at the exact moment we want to flush our content.
+	 * In this case try a few more times before accepting the failure.
+	 */
+	int retryCount = 0;
+	while (result != COM.S_OK && retryCount++ < RETRY_LIMIT) {
+		try {
+			Thread.sleep(25);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			break;
+		}
+		if (COM.OleIsCurrentClipboard(this.iDataObject.getAddress()) != COM.S_OK) {
+			break;
+		}
+		MSG msg = new MSG();
+		OS.PeekMessage(msg, 0, 0, 0, OS.PM_NOREMOVE | OS.PM_NOYIELD);
+		result = COM.OleFlushClipboard();
+	}
+
 	this.Release();
 	display = null;
 }
@@ -319,7 +341,7 @@ public Object getContents(Transfer transfer, int clipboards) {
 	* the clipboard, use PeekMessage() to enable cross thread
 	* message sends.
 	*/
-	long /*int*/[] ppv = new long /*int*/[1];
+	long[] ppv = new long[1];
 	int retryCount = 0;
 	/* OleGetClipboard([out] ppDataObject).
 	 * AddRef has already been called on ppDataObject by the callee and must be released by the caller.
@@ -334,10 +356,8 @@ public Object getContents(Transfer transfer, int clipboards) {
 	if (result != COM.S_OK) return null;
 	IDataObject dataObject = new IDataObject(ppv[0]);
 	try {
-		TransferData[] allowed = transfer.getSupportedTypes();
-		for (int i = 0; i < allowed.length; i++) {
-			if (dataObject.QueryGetData(allowed[i].formatetc) == COM.S_OK) {
-				TransferData data = allowed[i];
+		for (TransferData data : transfer.getSupportedTypes()) {
+			if (dataObject.QueryGetData(data.formatetc) == COM.S_OK) {
 				data.pIDataObject = ppv[0];
 				return transfer.nativeToJava(data);
 			}
@@ -522,20 +542,20 @@ private void createCOMInterfaces() {
 	// register each of the interfaces that this object implements
 	iDataObject = new COMObject(new int[]{2, 0, 0, 2, 2, 1, 2, 3, 2, 4, 1, 1}){
 		@Override
-		public long /*int*/ method0(long /*int*/[] args) {return QueryInterface(args[0], args[1]);}
+		public long method0(long[] args) {return QueryInterface(args[0], args[1]);}
 		@Override
-		public long /*int*/ method1(long /*int*/[] args) {return AddRef();}
+		public long method1(long[] args) {return AddRef();}
 		@Override
-		public long /*int*/ method2(long /*int*/[] args) {return Release();}
+		public long method2(long[] args) {return Release();}
 		@Override
-		public long /*int*/ method3(long /*int*/[] args) {return GetData(args[0], args[1]);}
+		public long method3(long[] args) {return GetData(args[0], args[1]);}
 		// method4 GetDataHere - not implemented
 		@Override
-		public long /*int*/ method5(long /*int*/[] args) {return QueryGetData(args[0]);}
+		public long method5(long[] args) {return QueryGetData(args[0]);}
 		// method6 GetCanonicalFormatEtc - not implemented
 		// method7 SetData - not implemented
 		@Override
-		public long /*int*/ method8(long /*int*/[] args) {return EnumFormatEtc((int)/*64*/args[0], args[1]);}
+		public long method8(long[] args) {return EnumFormatEtc((int)args[0], args[1]);}
 		// method9 DAdvise - not implemented
 		// method10 DUnadvise - not implemented
 		// method11 EnumDAdvise - not implemented
@@ -551,13 +571,13 @@ private void disposeCOMInterfaces() {
  * Ownership of ppenumFormatetc transfers from callee to caller so reference count on ppenumFormatetc
  * must be incremented before returning.  Caller is responsible for releasing ppenumFormatetc.
  */
-private int EnumFormatEtc(int dwDirection, long /*int*/ ppenumFormatetc) {
+private int EnumFormatEtc(int dwDirection, long ppenumFormatetc) {
 	// only allow getting of data - SetData is not currently supported
 	if (dwDirection == COM.DATADIR_SET) return COM.E_NOTIMPL;
 	// what types have been registered?
 	TransferData[] allowedDataTypes = new TransferData[0];
-	for (int i = 0; i < transferAgents.length; i++){
-		TransferData[] formats = transferAgents[i].getSupportedTypes();
+	for (Transfer transferAgent : transferAgents) {
+		TransferData[] formats = transferAgent.getSupportedTypes();
 		TransferData[] newAllowedDataTypes = new TransferData[allowedDataTypes.length + formats.length];
 		System.arraycopy(allowedDataTypes, 0, newAllowedDataTypes, 0, allowedDataTypes.length);
 		System.arraycopy(formats, 0, newAllowedDataTypes, allowedDataTypes.length, formats.length);
@@ -577,10 +597,10 @@ private int EnumFormatEtc(int dwDirection, long /*int*/ ppenumFormatetc) {
 	dropeffect.tymed = COM.TYMED_HGLOBAL;
 	formats[formats.length -1] = dropeffect;
 	enumFORMATETC.setFormats(formats);
-	OS.MoveMemory(ppenumFormatetc, new long /*int*/[] {enumFORMATETC.getAddress()}, C.PTR_SIZEOF);
+	OS.MoveMemory(ppenumFormatetc, new long[] {enumFORMATETC.getAddress()}, C.PTR_SIZEOF);
 	return COM.S_OK;
 }
-private int GetData(long /*int*/ pFormatetc, long /*int*/ pmedium) {
+private int GetData(long pFormatetc, long pmedium) {
 	/* Called by a data consumer to obtain data from a source data object.
 	   The GetData method renders the data described in the specified FORMATETC
 	   structure and transfers it through the specified STGMEDIUM structure.
@@ -622,7 +642,7 @@ private int GetData(long /*int*/ pFormatetc, long /*int*/ pmedium) {
 	return transferData.result;
 }
 
-private int QueryGetData(long /*int*/ pFormatetc) {
+private int QueryGetData(long pFormatetc) {
 	if (transferAgents == null) return COM.E_FAIL;
 	TransferData transferData = new TransferData();
 	transferData.formatetc = new FORMATETC();
@@ -630,8 +650,8 @@ private int QueryGetData(long /*int*/ pFormatetc) {
 	transferData.type = transferData.formatetc.cfFormat;
 	if (transferData.type == CFSTR_PREFERREDDROPEFFECT) return COM.S_OK;
 	// is this type supported by the transfer agent?
-	for (int i = 0; i < transferAgents.length; i++){
-		if (transferAgents[i].isSupportedType(transferData))
+	for (Transfer transferAgent : transferAgents) {
+		if (transferAgent.isSupportedType(transferData))
 			return COM.S_OK;
 	}
 
@@ -641,16 +661,16 @@ private int QueryGetData(long /*int*/ pFormatetc) {
  * Ownership of ppvObject transfers from callee to caller so reference count on ppvObject
  * must be incremented before returning.  Caller is responsible for releasing ppvObject.
  */
-private int QueryInterface(long /*int*/ riid, long /*int*/ ppvObject) {
+private int QueryInterface(long riid, long ppvObject) {
 	if (riid == 0 || ppvObject == 0) return COM.E_INVALIDARG;
 	GUID guid = new GUID();
 	COM.MoveMemory(guid, riid, GUID.sizeof);
 	if (COM.IsEqualGUID(guid, COM.IIDIUnknown) || COM.IsEqualGUID(guid, COM.IIDIDataObject) ) {
-		OS.MoveMemory(ppvObject, new long /*int*/[] {iDataObject.getAddress()}, C.PTR_SIZEOF);
+		OS.MoveMemory(ppvObject, new long[] {iDataObject.getAddress()}, C.PTR_SIZEOF);
 		AddRef();
 		return COM.S_OK;
 	}
-	OS.MoveMemory(ppvObject, new long /*int*/[] {0}, C.PTR_SIZEOF);
+	OS.MoveMemory(ppvObject, new long[] {0}, C.PTR_SIZEOF);
 	return COM.E_NOINTERFACE;
 }
 private int Release() {
@@ -743,10 +763,10 @@ public String[] getAvailableTypeNames() {
 	String[] names = new String[types.length];
 	int maxSize = 128;
 	for (int i = 0; i < types.length; i++){
-		TCHAR buffer = new TCHAR(0, maxSize);
+		char [] buffer = new char [maxSize];
 		int size = OS.GetClipboardFormatName(types[i].cfFormat, buffer, maxSize);
 		if (size != 0) {
-			names[i] = buffer.toString(0, size);
+			names[i] = new String (buffer, 0, size);
 		} else {
 			switch (types[i].cfFormat) {
 				case COM.CF_HDROP: names[i] = "CF_HDROP"; break; //$NON-NLS-1$
@@ -775,13 +795,13 @@ public String[] getAvailableTypeNames() {
 
 private FORMATETC[] _getAvailableTypes() {
 	FORMATETC[] types = new FORMATETC[0];
-	long /*int*/[] ppv = new long /*int*/[1];
+	long[] ppv = new long[1];
 	/* OleGetClipboard([out] ppDataObject).
 	 * AddRef has already been called on ppDataObject by the callee and must be released by the caller.
 	 */
 	if (COM.OleGetClipboard(ppv) != COM.S_OK) return types;
 	IDataObject dataObject = new IDataObject(ppv[0]);
-	long /*int*/[] ppFormatetc = new long /*int*/[1];
+	long[] ppFormatetc = new long[1];
 	/* EnumFormatEtc([in] dwDirection, [out] ppenumFormatetc)
 	 * AddRef has already been called on ppenumFormatetc by the callee and must be released by the caller.
 	 */
@@ -790,7 +810,7 @@ private FORMATETC[] _getAvailableTypes() {
 	if (rc != COM.S_OK)return types;
 	IEnumFORMATETC enumFormatetc = new IEnumFORMATETC(ppFormatetc[0]);
 	// Loop over enumerator and save any types that match what we are looking for
-	long /*int*/ rgelt = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, FORMATETC.sizeof);
+	long rgelt = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, FORMATETC.sizeof);
 	int[] pceltFetched = new int[1];
 	enumFormatetc.Reset();
 	while (enumFormatetc.Next(1, rgelt, pceltFetched) == COM.S_OK && pceltFetched[0] == 1) {

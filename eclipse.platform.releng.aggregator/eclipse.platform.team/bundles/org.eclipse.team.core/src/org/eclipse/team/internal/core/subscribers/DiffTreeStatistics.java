@@ -25,7 +25,7 @@ import org.eclipse.team.core.synchronize.SyncInfo;
 
 public class DiffTreeStatistics {
 	/**
-	 * {Integer sync kind -> Long number of infos with that sync kind in this sync set}
+	 * {Integer sync kind -&gt; Long number of infos with that sync kind in this sync set}
 	 */
 	protected Map<Integer, Long> stats = Collections.synchronizedMap(new HashMap<>());
 
@@ -107,9 +107,7 @@ public class DiffTreeStatistics {
 	@Override
 	public String toString() {
 		StringBuilder out = new StringBuilder();
-		Iterator it = stats.keySet().iterator();
-		while (it.hasNext()) {
-			Integer kind = (Integer) it.next();
+		for (Integer kind : stats.keySet()) {
 			out.append(SyncInfo.kindToString(kind.intValue()) + ": " + stats.get(kind) + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		return out.toString();

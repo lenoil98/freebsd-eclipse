@@ -15,7 +15,6 @@ package org.eclipse.ui.internal.editors.text;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
@@ -202,8 +201,8 @@ class SpellingConfigurationBlock implements IPreferenceConfigurationBlock {
 	private Map<String, SpellingEngineDescriptor> createListModel() {
 		SpellingEngineDescriptor[] descs= EditorsUI.getSpellingService().getSpellingEngineDescriptors();
 		Map<String, SpellingEngineDescriptor> map= new HashMap<>();
-		for (int i= 0; i < descs.length; i++) {
-			map.put(descs[i].getId(), descs[i]);
+		for (SpellingEngineDescriptor desc : descs) {
+			map.put(desc.getId(), desc);
 		}
 		return map;
 	}
@@ -421,8 +420,9 @@ class SpellingConfigurationBlock implements IPreferenceConfigurationBlock {
 	private void setEnabled(Control control, boolean enabled) {
 		if (control instanceof Composite) {
 			Control[] children= ((Composite) control).getChildren();
-			for (int i= 0; i < children.length; i++)
-				setEnabled(children[i], enabled);
+			for (Control c : children) {
+				setEnabled(c, enabled);
+			}
 		}
 		control.setEnabled(enabled);
 	}
@@ -520,8 +520,7 @@ class SpellingConfigurationBlock implements IPreferenceConfigurationBlock {
 
 	@Override
 	public void performOk() {
-		for (Iterator<ISpellingPreferenceBlock> it= fProviderPreferences.values().iterator(); it.hasNext();) {
-			final ISpellingPreferenceBlock block= it.next();
+		for (ISpellingPreferenceBlock block : fProviderPreferences.values()) {
 			ISafeRunnable runnable= new ISafeRunnable() {
 				@Override
 				public void run() throws Exception {
@@ -538,8 +537,7 @@ class SpellingConfigurationBlock implements IPreferenceConfigurationBlock {
 	@Override
 	public void performDefaults() {
 		restoreFromPreferences();
-		for (Iterator<ISpellingPreferenceBlock> it= fProviderPreferences.values().iterator(); it.hasNext();) {
-			final ISpellingPreferenceBlock block= it.next();
+		for (ISpellingPreferenceBlock block : fProviderPreferences.values()) {
 			ISafeRunnable runnable= new ISafeRunnable() {
 				@Override
 				public void run() throws Exception {
@@ -555,8 +553,7 @@ class SpellingConfigurationBlock implements IPreferenceConfigurationBlock {
 
 	@Override
 	public void dispose() {
-		for (Iterator<ISpellingPreferenceBlock> it= fProviderPreferences.values().iterator(); it.hasNext();) {
-			final ISpellingPreferenceBlock block= it.next();
+		for (ISpellingPreferenceBlock block : fProviderPreferences.values()) {
 			ISafeRunnable runnable= new ISafeRunnable() {
 				@Override
 				public void run() throws Exception {

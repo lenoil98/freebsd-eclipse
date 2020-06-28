@@ -13,57 +13,22 @@
  *******************************************************************************/
 package org.eclipse.osgi.tests.bundles;
 
-import java.io.*;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.jar.*;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.eclipse.osgi.launch.Equinox;
-import org.eclipse.osgi.tests.OSGiTestsActivator;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
 
 /*
- * The framework must persist data according to the value of the 
+ * The framework must persist data according to the value of the
  * eclipse.stateSaveDelayInterval property. The value is of type long and
  * represents the number of milliseconds between persists. A positive value
  * represents the number of milliseconds between persists. A value of zero
  * indicates data should be immediately persisted with each update. A negative
- * value disables persistence on update altogether (but data will still be 
+ * value disables persistence on update altogether (but data will still be
  * persisted on shutdown).
- * 
+ *
  */
 public class PersistedBundleTests extends AbstractBundleTests {
-	static class BundleBuilder {
-		static class BundleManifestBuilder {
-			private final Manifest manifest = new Manifest();
-
-			public Manifest build() {
-				manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-				return manifest;
-			}
-
-			public BundleManifestBuilder symbolicName(String value) {
-				manifest.getMainAttributes().putValue(Constants.BUNDLE_SYMBOLICNAME, value);
-				return this;
-			}
-		}
-
-		private final BundleManifestBuilder manifestBuilder = new BundleManifestBuilder();
-
-		public InputStream build() throws IOException {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			JarOutputStream jos = new JarOutputStream(baos, manifestBuilder.build());
-			jos.close();
-			return new ByteArrayInputStream(baos.toByteArray());
-		}
-
-		public BundleBuilder symbolicName(String value) {
-			manifestBuilder.symbolicName(value);
-			return this;
-		}
-	}
 
 	private static final String ECLIPSE_STATESAVEDELAYINTERVAL = "eclipse.stateSaveDelayInterval";
 
@@ -71,10 +36,12 @@ public class PersistedBundleTests extends AbstractBundleTests {
 	private static final String NO_PERSISTENCE = "-1";
 	private static final String PERIODIC_PERSISTENCE = "4000";
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		super.tearDown();
 	}
@@ -163,7 +130,7 @@ public class PersistedBundleTests extends AbstractBundleTests {
 			initAndStart(equinox2);
 			try {
 				// The bundle should not have been persisted and therefore be
-				// unknown to the second equinox instance. This check must 
+				// unknown to the second equinox instance. This check must
 				// happen before the first period elapses.
 				assertNull("Bundle exists", equinox2.getBundleContext().getBundle(getName()));
 				stopQuietly(equinox2);
@@ -183,26 +150,4 @@ public class PersistedBundleTests extends AbstractBundleTests {
 		}
 	}
 
-	private Map<String, Object> createConfiguration() {
-		File file = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, Object> result = new HashMap<String, Object>();
-		result.put(Constants.FRAMEWORK_STORAGE, file.getAbsolutePath());
-		return result;
-	}
-
-	private void initAndStart(Equinox equinox) throws BundleException {
-		equinox.init();
-		equinox.start();
-	}
-
-	private void stopQuietly(Equinox equinox) {
-		if (equinox == null)
-			return;
-		try {
-			equinox.stop();
-			equinox.waitForStop(5000);
-		} catch (Exception e) {
-			// Ignore
-		}
-	}
 }

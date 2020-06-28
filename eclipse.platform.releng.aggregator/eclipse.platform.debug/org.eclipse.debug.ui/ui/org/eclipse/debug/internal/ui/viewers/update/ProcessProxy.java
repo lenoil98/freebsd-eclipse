@@ -24,23 +24,23 @@ import org.eclipse.jface.viewers.Viewer;
 
 public class ProcessProxy extends EventHandlerModelProxy {
 
-    private IProcess fProcess;
+	private IProcess fProcess;
 
-    private DebugEventHandler fProcessEventHandler = new DebugEventHandler(this) {
-        @Override
+	private DebugEventHandler fProcessEventHandler = new DebugEventHandler(this) {
+		@Override
 		protected boolean handlesEvent(DebugEvent event) {
-            return event.getSource().equals(fProcess);
-        }
+			return event.getSource().equals(fProcess);
+		}
 
 		@Override
 		protected void handleChange(DebugEvent event) {
 			fireProcessDelta(IModelDelta.STATE);
-        }
+		}
 
-        @Override
+		@Override
 		protected void handleCreate(DebugEvent event) {
-        	// do nothing - Launch change notification handles this
-        }
+			// do nothing - Launch change notification handles this
+		}
 
 		@Override
 		protected void handleTerminate(DebugEvent event) {
@@ -48,26 +48,23 @@ public class ProcessProxy extends EventHandlerModelProxy {
 		}
 
 
-    };
+	};
 
-    private void fireProcessDelta(int flags) {
-        ModelDelta delta = null;
-        synchronized (ProcessProxy.this) {
-            if (!isDisposed()) {
-                delta = new ModelDelta(DebugPlugin.getDefault().getLaunchManager(), IModelDelta.NO_CHANGE);
-                ModelDelta node = delta;
-                node = node.addNode(fProcess.getLaunch(), IModelDelta.NO_CHANGE);
-                node.addNode(fProcess, flags);
-            }
-        }
-        if (delta != null && !isDisposed()) {
-            fireModelChanged(delta);
-        }
-    }
+	private void fireProcessDelta(int flags) {
+		ModelDelta delta = null;
+		synchronized (ProcessProxy.this) {
+			if (!isDisposed()) {
+				delta = new ModelDelta(DebugPlugin.getDefault().getLaunchManager(), IModelDelta.NO_CHANGE);
+				ModelDelta node = delta;
+				node = node.addNode(fProcess.getLaunch(), IModelDelta.NO_CHANGE);
+				node.addNode(fProcess, flags);
+			}
+		}
+		if (delta != null && !isDisposed()) {
+			fireModelChanged(delta);
+		}
+	}
 
-    /* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.update.EventHandlerModelProxy#dispose()
-	 */
 	@Override
 	public synchronized void dispose() {
 		super.dispose();
@@ -75,40 +72,37 @@ public class ProcessProxy extends EventHandlerModelProxy {
 	}
 
 	public ProcessProxy(IProcess process) {
-        fProcess = process;
-    }
+		fProcess = process;
+	}
 
-    @Override
+	@Override
 	protected synchronized boolean containsEvent(DebugEvent event) {
-        return event.getSource().equals(fProcess);
-    }
+		return event.getSource().equals(fProcess);
+	}
 
-    @Override
+	@Override
 	protected DebugEventHandler[] createEventHandlers() {
-        return new DebugEventHandler[] {fProcessEventHandler};
-    }
+		return new DebugEventHandler[] {fProcessEventHandler};
+	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.AbstractModelProxy#installed()
-	 */
 	@Override
 	public void installed(Viewer viewer) {
 		super.installed(viewer);
 		// select process if in run mode
 		IProcess process = fProcess;
 		if (process != null) {
-		    if (process.isTerminated()) {
-	            fireProcessDelta(IModelDelta.UNINSTALL);
-		    } else {
-    			ILaunch launch = process.getLaunch();
-    			if (launch != null && ILaunchManager.RUN_MODE.equals(launch.getLaunchMode())) {
-    				// select the process
-    				ModelDelta delta = new ModelDelta(DebugPlugin.getDefault().getLaunchManager(), IModelDelta.NO_CHANGE);
-    				ModelDelta node = delta.addNode(process.getLaunch(), IModelDelta.NO_CHANGE);
-    				node = node.addNode(process, IModelDelta.SELECT);
-    				fireModelChanged(delta);
-    			}
-		    }
+			if (process.isTerminated()) {
+				fireProcessDelta(IModelDelta.UNINSTALL);
+			} else {
+				ILaunch launch = process.getLaunch();
+				if (launch != null && ILaunchManager.RUN_MODE.equals(launch.getLaunchMode())) {
+					// select the process
+					ModelDelta delta = new ModelDelta(DebugPlugin.getDefault().getLaunchManager(), IModelDelta.NO_CHANGE);
+					ModelDelta node = delta.addNode(process.getLaunch(), IModelDelta.NO_CHANGE);
+					node = node.addNode(process, IModelDelta.SELECT);
+					fireModelChanged(delta);
+				}
+			}
 		}
 	}
 }

@@ -25,7 +25,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -76,25 +75,31 @@ import org.eclipse.ui.XMLMemento;
  * of dynamic participants, and the re-creation of persisted participants.
  * <p>
  * A participant is defined in a plugin manifest and can have several properties:
- * - static: means that they always exist and don't have to be added to the manager
- * - dynamic: will be added to the manager at some later time
+ * <ul>
+ * <li>static: means that they always exist and don't have to be added to the manager
+ * <li>dynamic: will be added to the manager at some later time
+ * </ul>
  *
  * Part (title, id, icon, composite) - described in plugin.xml (IPartInstance)
- * Can have multiple parts of the same type at runtime -> (IPart)
- *   - must acquire a part (IPartInstance.createPart())
- *   - must released to part when done (IPartInstance.releasePart())
+ * Can have multiple parts of the same type at runtime -&gt; (IPart)
+ * <ul>
+ *   <li>must acquire a part (IPartInstance.createPart())
+ *   <li>must released to part when done (IPartInstance.releasePart())
+ * </ul>
  * Some parts can added dynamically to the registry and events are fired to listeners. Listeners can create the newly added part via
  * the #createPart() method.
  * Parts can be persisted/restored with some state
  *
  *
- *
+ * <p>
  * Lifecycle:
- * 	startup -> registry read and stored in a participant instance
- *     createParticipant(id) ->
- * 	releaseParticipant(IParticipantDescriptor) ->
- *     getParticipantRegistry -> return IParticipantDescriptors that describe the participants
- * 	shutdown -> persist all settings
+ * </p><p>
+ * 	startup -&gt; registry read and stored in a participant instance
+ *     createParticipant(id) -&gt;
+ * 	releaseParticipant(IParticipantDescriptor) -&gt;
+ *     getParticipantRegistry -&gt; return IParticipantDescriptors that describe the participants
+ * 	shutdown -&gt; persist all settings
+ * </p>
  *
  * @see ISynchronizeView
  * @see ISynchronizeParticipant
@@ -118,7 +123,7 @@ public class SynchronizeManager implements ISynchronizeManager {
 
 	/**
 	 * Contains a table of the state saved between sessions for a participant. The set is keyed
-	 * as such {String key -> ISynchronizeParticipantReference}.
+	 * as such {String key -&gt; ISynchronizeParticipantReference}.
 	 */
 	private Map<String, ISynchronizeParticipantReference> participantReferences = Collections.synchronizedMap(new HashMap<>(10));
 
@@ -173,8 +178,8 @@ public class SynchronizeManager implements ISynchronizeManager {
 			fChanged = participants;
 			fType = update;
 			Object[] copiedListeners = fListeners.getListeners();
-			for (int i = 0; i < copiedListeners.length; i++) {
-				fListener = (ISynchronizeParticipantListener) copiedListeners[i];
+			for (Object copiedListener : copiedListeners) {
+				fListener = (ISynchronizeParticipantListener) copiedListener;
 				SafeRunner.run(this);
 			}
 			fChanged = null;
@@ -364,8 +369,7 @@ public class SynchronizeManager implements ISynchronizeManager {
 	public synchronized void addSynchronizeParticipants(ISynchronizeParticipant[] participants) {
 		// renamed to createSynchronizeParticipant(id)
 		List<ISynchronizeParticipant> added = new ArrayList<>(participants.length);
-		for (int i = 0; i < participants.length; i++) {
-			ISynchronizeParticipant participant = participants[i];
+		for (ISynchronizeParticipant participant : participants) {
 			String key = Utils.getKey(participant.getId(), participant.getSecondaryId());
 			if(! participantReferences.containsKey(key)) {
 				try {
@@ -390,8 +394,7 @@ public class SynchronizeManager implements ISynchronizeManager {
 		ISynchronizeParticipantReference[] refs = get(id);
 		if (refs.length > 0) {
 			// Find an un-pinned participant and replace it
-			for (int i = 0; i < refs.length; i++) {
-				ISynchronizeParticipantReference reference = refs[i];
+			for (ISynchronizeParticipantReference reference : refs) {
 				ISynchronizeParticipant p;
 				try {
 					p = reference.getParticipant();
@@ -420,8 +423,7 @@ public class SynchronizeManager implements ISynchronizeManager {
 	@Override
 	public synchronized void removeSynchronizeParticipants(ISynchronizeParticipant[] participants) {
 		List<ISynchronizeParticipant> removed = new ArrayList<>(participants.length);
-		for (int i = 0; i < participants.length; i++) {
-			ISynchronizeParticipant participant = participants[i];
+		for (ISynchronizeParticipant participant : participants) {
 			String key = Utils.getKey(participant.getId(), participant.getSecondaryId());
 			if(participantReferences.containsKey(key)) {
 				ParticipantInstance ref = (ParticipantInstance)participantReferences.remove(key);
@@ -447,8 +449,7 @@ public class SynchronizeManager implements ISynchronizeManager {
 	public ISynchronizeParticipantReference[] get(String id) {
 		ISynchronizeParticipantReference[] refs = getSynchronizeParticipants();
 		ArrayList<ISynchronizeParticipantReference> refsForId = new ArrayList<>();
-		for (int i = 0; i < refs.length; i++) {
-			ISynchronizeParticipantReference reference = refs[i];
+		for (ISynchronizeParticipantReference reference : refs) {
 			if(reference.getId().equals(id)) {
 				refsForId.add(reference);
 			}
@@ -458,12 +459,12 @@ public class SynchronizeManager implements ISynchronizeManager {
 
 	@Override
 	public synchronized ISynchronizeParticipantReference[] getSynchronizeParticipants() {
-		return participantReferences.values().toArray(new ISynchronizeParticipantReference[participantReferences.values().size()]);
+		return participantReferences.values().toArray(new ISynchronizeParticipantReference[participantReferences.size()]);
 	}
 
 	@Override
 	public ISynchronizeView showSynchronizeViewInActivePage() {
-		IWorkbench workbench = TeamUIPlugin.getPlugin().getWorkbench();
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
 
 		boolean switchPerspectives = promptForPerspectiveSwitch();
@@ -580,8 +581,8 @@ public class SynchronizeManager implements ISynchronizeManager {
 	public void dispose() {
 		// save state and settings for existing participants.
 		saveState();
-		for (Iterator it = participantReferences.values().iterator(); it.hasNext();) {
-			ParticipantInstance ref = (ParticipantInstance) it.next();
+		for (Object element : participantReferences.values()) {
+			ParticipantInstance ref = (ParticipantInstance) element;
 			if((ref).isInstantiated()) {
 				try {
 					ref.getParticipant().dispose();
@@ -606,8 +607,7 @@ public class SynchronizeManager implements ISynchronizeManager {
 		}
 		IMemento memento = XMLMemento.createReadRoot(reader);
 		IMemento[] participantNodes = memento.getChildren(CTX_PARTICIPANT);
-		for (int i = 0; i < participantNodes.length; i++) {
-			IMemento memento2 = participantNodes[i];
+		for (IMemento memento2 : participantNodes) {
 			String id = memento2.getString(CTX_ID);
 			String secondayId = memento2.getString(CTX_SECONDARY_ID);
 			if (secondayId != null) {
@@ -630,8 +630,8 @@ public class SynchronizeManager implements ISynchronizeManager {
 	 */
 	private void saveState() {
 		XMLMemento xmlMemento = XMLMemento.createWriteRoot(CTX_PARTICIPANTS);
-		for (Iterator it = participantReferences.values().iterator(); it.hasNext(); ) {
-			ParticipantInstance ref = (ParticipantInstance) it.next();
+		for (Object element : participantReferences.values()) {
+			ParticipantInstance ref = (ParticipantInstance) element;
 			// Participants can opt out of being saved between sessions
 			if(! ref.getDescriptor().isPersistent()) continue;
 			// Create the state placeholder for a participant
@@ -646,11 +646,8 @@ public class SynchronizeManager implements ISynchronizeManager {
 			ref.save(participantData);
 		}
 		try {
-			Writer writer = new BufferedWriter(new FileWriter(getStateFile()));
-			try {
+			try (Writer writer = new BufferedWriter(new FileWriter(getStateFile()))) {
 				xmlMemento.save(writer);
-			} finally {
-				writer.close();
 			}
 		} catch (IOException e) {
 			TeamUIPlugin.log(new Status(IStatus.ERROR, TeamUIPlugin.ID, 1, TeamUIMessages.SynchronizeManager_10, e));

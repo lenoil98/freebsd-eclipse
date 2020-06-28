@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,7 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.debug.core.model;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -37,6 +38,7 @@ import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IStatusHandler;
 import org.eclipse.debug.core.model.IBreakpoint;
+import org.eclipse.debug.core.model.IDebugTarget;
 import org.eclipse.debug.core.model.IStackFrame;
 import org.eclipse.debug.core.model.IStep;
 import org.eclipse.debug.core.model.IStepFilter;
@@ -47,6 +49,8 @@ import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.debug.core.IEvaluationRunnable;
 import org.eclipse.jdt.debug.core.IJavaBreakpoint;
 import org.eclipse.jdt.debug.core.IJavaBreakpointListener;
+import org.eclipse.jdt.debug.core.IJavaExceptionBreakpoint;
+import org.eclipse.jdt.debug.core.IJavaExceptionBreakpoint.SuspendOnRecurrenceStrategy;
 import org.eclipse.jdt.debug.core.IJavaObject;
 import org.eclipse.jdt.debug.core.IJavaStackFrame;
 import org.eclipse.jdt.debug.core.IJavaThread;
@@ -58,10 +62,10 @@ import org.eclipse.jdt.internal.debug.core.IJDIEventListener;
 import org.eclipse.jdt.internal.debug.core.JDIDebugPlugin;
 import org.eclipse.jdt.internal.debug.core.breakpoints.ConditionalBreakpointHandler;
 import org.eclipse.jdt.internal.debug.core.breakpoints.JavaBreakpoint;
+import org.eclipse.jdt.internal.debug.core.breakpoints.JavaExceptionBreakpoint;
 import org.eclipse.jdt.internal.debug.core.breakpoints.JavaLineBreakpoint;
 import org.eclipse.jdt.internal.debug.core.model.MethodResult.ResultType;
 
-import com.ibm.icu.text.MessageFormat;
 import com.sun.jdi.BooleanValue;
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassType;
@@ -305,6 +309,11 @@ public class JDIThread extends JDIDebugElement implements IJavaThread {
 	 * Result of the last step step-over or step-return operation or method exit breakpoint of exception break point
 	 */
 	private MethodResult fMethodResult;
+
+	/**
+	 * If previous suspend was on an exception breakpoint, this variable holds that Java exception instance, else {@code null}.
+	 */
+	private IJavaObject fPreviousException;
 
 	/**
 	 * Creates a new thread on the underlying thread reference in the given
@@ -1506,6 +1515,33 @@ public class JDIThread extends JDIDebugElement implements IJavaThread {
 	}
 
 	/**
+	 * To be called whenever a Java exception breakpoint is called. This thread will remember the Java exception instance associated with this event
+	 * and will answer if suspending should be skipped as per the breakpoint's {@link IJavaExceptionBreakpoint.SuspendOnRecurrenceStrategy suspend on
+	 * recurrence} strategy.
+	 *
+	 * @param breakpoint
+	 *            the breakpoint about to trigger
+	 * @return either {@code null} to signal that this breakpoint hit is not a recurrence, or one of
+	 *         {@link SuspendOnRecurrenceStrategy#RECURRENCE_UNCONFIGURED}, {@link SuspendOnRecurrenceStrategy#SKIP_RECURRENCES}, or
+	 *         {@link SuspendOnRecurrenceStrategy#SUSPEND_ALWAYS}.
+	 */
+	public SuspendOnRecurrenceStrategy shouldSkipExceptionRecurrence(IJavaExceptionBreakpoint breakpoint) {
+		if (breakpoint instanceof JavaExceptionBreakpoint) {
+			JavaExceptionBreakpoint exceptionBreakpoint = (JavaExceptionBreakpoint) breakpoint;
+			try {
+				IJavaObject lastException = exceptionBreakpoint.getLastException();
+				if (fPreviousException != null && fPreviousException.equals(lastException)) {
+					return exceptionBreakpoint.getSuspendOnRecurrenceStrategy();
+				}
+				fPreviousException = lastException;
+			} catch (CoreException e) {
+				// ignore
+			}
+		}
+		return null; // skipping not applicable, since this is no recurrence
+	}
+
+	/**
 	 * Called after an event set with a breakpoint is done being processed.
 	 * Updates thread state based on the result of handling the event set.
 	 * Aborts any step in progress and fires a suspend event is suspending.
@@ -2545,7 +2581,7 @@ public class JDIThread extends JDIDebugElement implements IJavaThread {
 				attachFiltersToStepRequest(request);
 				request.enable();
 
-				if (manager.virtualMachine().canGetMethodReturnValues() && showStepResultIsEnabled()) {
+				if (manager.virtualMachine().canGetMethodReturnValues() && showStepResultIsEnabled(getDebugTarget())) {
 					if (fCurrentMethodExitRequest != null) {
 						removeJDIEventListener(this, fCurrentMethodExitRequest);
 						manager.deleteEventRequest(fCurrentMethodExitRequest);
@@ -2993,9 +3029,8 @@ public class JDIThread extends JDIDebugElement implements IJavaThread {
 					return true;
 				}
 				if(!orig) {
-					IStepFilter[] contributedFilters = DebugPlugin.getStepFilters(JDIDebugPlugin.getUniqueIdentifier());
-					for (int i = 0; i < contributedFilters.length; i++) {
-						if (contributedFilters[i].isFiltered(method)) {
+					for (IStepFilter contributedFilter : DebugPlugin.getStepFilters(JDIDebugPlugin.getUniqueIdentifier())) {
+						if (contributedFilter.isFiltered(method)) {
 							return true;
 						}
 					}
@@ -3807,7 +3842,10 @@ public class JDIThread extends JDIDebugElement implements IJavaThread {
     protected DropToFrameHandler createDropToFrameHandler(IStackFrame stackFrame) throws DebugException {
         return new DropToFrameHandler(stackFrame);
     }
-	public static boolean showStepResultIsEnabled() {
+	public static boolean showStepResultIsEnabled(IDebugTarget debugTarget) {
+		if (debugTarget == null || debugTarget.getProcess() == null) {
+			return Platform.getPreferencesService().getBoolean(JDIDebugPlugin.getUniqueIdentifier(), JDIDebugModel.PREF_SHOW_STEP_RESULT_REMOTE, false, null);
+		}
 		return Platform.getPreferencesService().getBoolean(JDIDebugPlugin.getUniqueIdentifier(), JDIDebugModel.PREF_SHOW_STEP_RESULT, true, null);
 	}
 

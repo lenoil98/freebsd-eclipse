@@ -17,6 +17,7 @@ package org.eclipse.ant.internal.ui.datatransfer;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -32,7 +33,6 @@ import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.jdt.core.IJavaModel;
 import org.eclipse.jdt.core.IJavaProject;
@@ -41,13 +41,10 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
-import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -60,8 +57,6 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.model.WorkbenchContentProvider;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
-
-import com.ibm.icu.text.MessageFormat;
 
 public class AntBuildfileExportPage extends WizardPage {
 
@@ -79,9 +74,6 @@ public class AntBuildfileExportPage extends WizardPage {
 		setDescription(DataTransferMessages.AntBuildfileExportPage_1);
 	}
 
-	/*
-	 * @see IDialogPage#createControl(Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 
@@ -123,16 +115,13 @@ public class AntBuildfileExportPage extends WizardPage {
 			}
 		});
 		fTableViewer.setLabelProvider(new WorkbenchLabelProvider());
-		fTableViewer.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				if (event.getChecked()) {
-					fSelectedJavaProjects.add((IJavaProject) event.getElement());
-				} else {
-					fSelectedJavaProjects.remove(event.getElement());
-				}
-				updateEnablement();
+		fTableViewer.addCheckStateListener(event -> {
+			if (event.getChecked()) {
+				fSelectedJavaProjects.add((IJavaProject) event.getElement());
+			} else {
+				fSelectedJavaProjects.remove(event.getElement());
 			}
+			updateEnablement();
 		});
 
 		initializeProjects();
@@ -221,12 +210,7 @@ public class AntBuildfileExportPage extends WizardPage {
 		junitdirText.setText("junit"); //$NON-NLS-1$
 		junitdirText.setLayoutData(data);
 
-		ModifyListener listener = new ModifyListener() {
-			@Override
-			public void modifyText(ModifyEvent e) {
-				updateEnablement();
-			}
-		};
+		ModifyListener listener = e -> updateEnablement();
 		buildfilenameText.addModifyListener(listener);
 		junitdirText.addModifyListener(listener);
 	}
@@ -250,7 +234,7 @@ public class AntBuildfileExportPage extends WizardPage {
 
 	private void updateEnablement() {
 		boolean complete = true;
-		if (fSelectedJavaProjects.size() == 0) {
+		if (fSelectedJavaProjects.isEmpty()) {
 			setErrorMessage(DataTransferMessages.AntBuildfileExportPage_18);
 			complete = false;
 		}
@@ -292,11 +276,6 @@ public class AntBuildfileExportPage extends WizardPage {
 		setPageComplete(complete);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jface.dialogs.IDialogPage#setVisible(boolean)
-	 */
 	@Override
 	public void setVisible(boolean visible) {
 		super.setVisible(visible);
@@ -318,7 +297,7 @@ public class AntBuildfileExportPage extends WizardPage {
 		final Set<IJavaProject> projects;
 		try {
 			projects = getProjects(true);
-			if (projects.size() == 0) {
+			if (projects.isEmpty()) {
 				return false;
 			}
 		}
@@ -327,38 +306,35 @@ public class AntBuildfileExportPage extends WizardPage {
 			setErrorMessage(MessageFormat.format(DataTransferMessages.AntBuildfileExportPage_10, new Object[] { e.toString() }));
 			return false;
 		}
-		IRunnableWithProgress runnable = new IRunnableWithProgress() {
-			@Override
-			public void run(IProgressMonitor pm) throws InterruptedException {
-				SubMonitor localmonitor = SubMonitor.convert(pm, DataTransferMessages.AntBuildfileExportPage_creating_build_files, projects.size());
-				Exception problem = null;
-				try {
-					BuildFileCreator.setOptions(buildfilenameText.getText(), junitdirText.getText(), compatibilityCheckbox.getSelection(), compilerCheckbox.getSelection());
-					projectNames.addAll(BuildFileCreator.createBuildFiles(projects, getShell(), localmonitor.newChild(projects.size())));
-				}
-				catch (JavaModelException e) {
-					problem = e;
-				}
-				catch (TransformerConfigurationException e) {
-					problem = e;
-				}
-				catch (ParserConfigurationException e) {
-					problem = e;
-				}
-				catch (TransformerException e) {
-					problem = e;
-				}
-				catch (IOException e) {
-					problem = e;
-				}
-				catch (CoreException e) {
-					problem = e;
-				}
+		IRunnableWithProgress runnable = pm -> {
+			SubMonitor localmonitor = SubMonitor.convert(pm, DataTransferMessages.AntBuildfileExportPage_creating_build_files, projects.size());
+			Exception problem = null;
+			try {
+				BuildFileCreator.setOptions(buildfilenameText.getText(), junitdirText.getText(), compatibilityCheckbox.getSelection(), compilerCheckbox.getSelection());
+				projectNames.addAll(BuildFileCreator.createBuildFiles(projects, getShell(), localmonitor.newChild(projects.size())));
+			}
+			catch (JavaModelException e1) {
+				problem = e1;
+			}
+			catch (TransformerConfigurationException e2) {
+				problem = e2;
+			}
+			catch (ParserConfigurationException e3) {
+				problem = e3;
+			}
+			catch (TransformerException e4) {
+				problem = e4;
+			}
+			catch (IOException e5) {
+				problem = e5;
+			}
+			catch (CoreException e6) {
+				problem = e6;
+			}
 
-				if (problem != null) {
-					AntUIPlugin.log(problem);
-					setErrorMessage(MessageFormat.format(DataTransferMessages.AntBuildfileExportPage_10, new Object[] { problem.toString() }));
-				}
+			if (problem != null) {
+				AntUIPlugin.log(problem);
+				setErrorMessage(MessageFormat.format(DataTransferMessages.AntBuildfileExportPage_10, new Object[] { problem.toString() }));
 			}
 		};
 
@@ -413,8 +389,7 @@ public class AntBuildfileExportPage extends WizardPage {
 	 * warnings.
 	 */
 	private void findCyclicProjects(Set<IJavaProject> projects, List<String> errors, List<String> warnings) throws CoreException {
-		for (Iterator<IJavaProject> iter = projects.iterator(); iter.hasNext();) {
-			IJavaProject javaProject = iter.next();
+		for (IJavaProject javaProject : projects) {
 			IMarker marker = ExportUtil.getCyclicDependencyMarker(javaProject);
 			if (marker != null) {
 				Integer severityAttr = (Integer) marker.getAttribute(IMarker.SEVERITY);

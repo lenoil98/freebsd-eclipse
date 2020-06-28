@@ -34,24 +34,17 @@ public class OverrideAndUpdateSubscriberOperation extends CVSSubscriberOperation
 	protected OverrideAndUpdateSubscriberOperation(ISynchronizePageConfiguration configuration, IDiffElement[] elements) {
 		super(configuration, elements);
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.TeamOperation#shouldRun()
-	 */
 	@Override
 	public boolean shouldRun() {
 		SyncInfoSet syncSet = getSyncInfoSet();
 		return(promptForOverwrite(syncSet));
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.CVSSubscriberOperation#run(org.eclipse.team.core.synchronize.SyncInfoSet, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected void runWithProjectRule(IProject project, SyncInfoSet set, IProgressMonitor monitor) throws TeamException {
 		try {
 			SyncInfo[] conflicts = set.getNodes(getConflictingAdditionFilter());
 			List<IResource> conflictingResources = new ArrayList<>();
-			for (int i = 0; i < conflicts.length; i++) {
-				SyncInfo info = conflicts[i];
+			for (SyncInfo info : conflicts) {
 				conflictingResources.add(info.getLocal());
 			}
 			new OverrideAndUpdateOperation(getPart(), project, set.getResources(), conflictingResources.toArray(new IResource[conflictingResources.size()]), null /* tag */, false /* recurse */).run(monitor);
@@ -69,9 +62,6 @@ public class OverrideAndUpdateSubscriberOperation extends CVSSubscriberOperation
 			});
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.CVSSubscriberAction#getJobName(org.eclipse.team.ui.sync.SyncInfoSet)
-	 */
 	@Override
 	protected String getJobName() {
 		SyncInfoSet syncSet = getSyncInfoSet();

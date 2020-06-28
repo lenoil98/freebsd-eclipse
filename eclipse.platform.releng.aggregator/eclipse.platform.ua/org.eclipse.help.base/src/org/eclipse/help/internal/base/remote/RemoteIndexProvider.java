@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2019 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.base.remote;
 
@@ -17,11 +18,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.help.AbstractIndexProvider;
 import org.eclipse.help.IIndexContribution;
-import org.eclipse.help.internal.base.HelpBasePlugin;
 import org.eclipse.help.internal.base.util.ProxyUtil;
 
 /*
@@ -54,6 +56,7 @@ public class RemoteIndexProvider extends AbstractIndexProvider {
 			String [] path = handler.getPathEntries();
 			for (int ic = 0; ic < handler.getTotalRemoteInfocenters(); ic++) {
 				if (isEnabled[ic].equalsIgnoreCase("true")) { //$NON-NLS-1$
+					@SuppressWarnings("resource")
 					InputStream in = null;
 					try {
 						URL url;
@@ -71,15 +74,13 @@ public class RemoteIndexProvider extends AbstractIndexProvider {
 
 						RemoteIndexParser parser = new RemoteIndexParser();
 						IIndexContribution[] result = parser.parse(in);
-						for (int contrib = 0; contrib < result.length; contrib++) {
-							contributions.add(result[contrib]);
-						}
+						Collections.addAll(contributions, result);
 					} catch (IOException e) {
 						String msg = "I/O error while trying to contact the remote help server"; //$NON-NLS-1$
-						HelpBasePlugin.logError(msg, e);
+						Platform.getLog(getClass()).error(msg, e);
 					} catch (Throwable t) {
 						String msg = "Internal error while reading index contents from remote server"; //$NON-NLS-1$
-						HelpBasePlugin.logError(msg, t);
+						Platform.getLog(getClass()).error(msg, t);
 					} finally {
 						if (in != null) {
 							try {

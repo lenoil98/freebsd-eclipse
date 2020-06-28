@@ -17,7 +17,6 @@ package org.eclipse.team.internal.ui.synchronize;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -99,12 +98,12 @@ public class CompressedFoldersModelProvider extends HierarchicalModelProvider {
 		super(configuration, set);
 	}
 
-    public CompressedFoldersModelProvider(
-            AbstractSynchronizeModelProvider parentProvider,
-            ISynchronizeModelElement modelRoot,
-            ISynchronizePageConfiguration configuration, SyncInfoSet set) {
-        super(parentProvider, modelRoot, configuration, set);
-    }
+	public CompressedFoldersModelProvider(
+			AbstractSynchronizeModelProvider parentProvider,
+			ISynchronizeModelElement modelRoot,
+			ISynchronizePageConfiguration configuration, SyncInfoSet set) {
+		super(parentProvider, modelRoot, configuration, set);
+	}
 
 	@Override
 	public ISynchronizeModelProviderDescriptor getDescriptor() {
@@ -147,8 +146,7 @@ public class CompressedFoldersModelProvider extends HierarchicalModelProvider {
 		// Folders will only contain out-of-sync children
 		IResource[] children = getSyncInfoTree().members(resource);
 		List<IDiffElement> result = new ArrayList<>();
-		for (int i = 0; i < children.length; i++) {
-			IResource child = children[i];
+		for (IResource child : children) {
 			if (child.getType() == IResource.FILE) {
 				result.add(createModelObject(parent, child));
 			}
@@ -162,8 +160,7 @@ public class CompressedFoldersModelProvider extends HierarchicalModelProvider {
 		SyncInfo[] outOfSync = getSyncInfoTree().getSyncInfos(project, IResource.DEPTH_INFINITE);
 		Set<IDiffElement> result = new HashSet<>();
 		Set<IResource> resourcesToShow = new HashSet<>();
-		for (int i = 0; i < outOfSync.length; i++) {
-			SyncInfo info = outOfSync[i];
+		for (SyncInfo info : outOfSync) {
 			IResource local = info.getLocal();
 			if (local.getProjectRelativePath().segmentCount() == 1 && local.getType() == IResource.FILE) {
 				resourcesToShow.add(local);
@@ -175,8 +172,8 @@ public class CompressedFoldersModelProvider extends HierarchicalModelProvider {
 				}
 			}
 		}
-		for (Iterator iter = resourcesToShow.iterator(); iter.hasNext();) {
-			IResource resource = (IResource) iter.next();
+		for (Object element : resourcesToShow) {
+			IResource resource = (IResource) element;
 			result.add(createModelObject(parent, resource));
 		}
 
@@ -208,8 +205,7 @@ public class CompressedFoldersModelProvider extends HierarchicalModelProvider {
 	@Override
 	protected void handleResourceAdditions(ISyncInfoTreeChangeEvent event) {
 		SyncInfo[] infos = event.getAddedResources();
-		for (int i = 0; i < infos.length; i++) {
-			SyncInfo info = infos[i];
+		for (SyncInfo info : infos) {
 			addResource(info);
 		}
 	}
@@ -255,8 +251,7 @@ public class CompressedFoldersModelProvider extends HierarchicalModelProvider {
 
 		// First, deal with any projects that have been removed
 		List<IResource> removedProjects = new ArrayList<>();
-		for (int i = 0; i < roots.length; i++) {
-			IResource resource = roots[i];
+		for (IResource resource : roots) {
 			if (resource.getType() == IResource.PROJECT) {
 				removeFromViewer(resource);
 				removedProjects.add(resource);
@@ -264,35 +259,34 @@ public class CompressedFoldersModelProvider extends HierarchicalModelProvider {
 		}
 
 		IResource[] resources = event.getRemovedResources();
-		List<IResource> resourcesToRemove = new ArrayList<IResource>();
+		List<IResource> resourcesToRemove = new ArrayList<>();
 		List<SyncInfo> resourcesToAdd = new ArrayList<>();
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			if (!removedProjects.contains(resource.getProject())) {
 				if (resource.getType() == IResource.FILE) {
 					if (isCompressedParentEmpty(resource) && !isOutOfSync(resource.getParent())) {
 						// The parent compressed folder is also empty so remove it
-					    resourcesToRemove.add(resource.getParent());
+						resourcesToRemove.add(resource.getParent());
 					} else {
-					    resourcesToRemove.add(resource);
+						resourcesToRemove.add(resource);
 					}
 				} else {
 					// A folder has been removed (i.e. is in-sync)
 					// but may still contain children
-				    resourcesToRemove.add(resource);
-				    resourcesToAdd.addAll(Arrays.asList(getSyncInfosForFileMembers((IContainer)resource)));
+					resourcesToRemove.add(resource);
+					resourcesToAdd.addAll(Arrays.asList(getSyncInfosForFileMembers((IContainer)resource)));
 				}
 			}
 		}
 		if (!resourcesToRemove.isEmpty()) {
-		    removeFromViewer(resourcesToRemove.toArray(new IResource[resourcesToRemove.size()]));
+			removeFromViewer(resourcesToRemove.toArray(new IResource[resourcesToRemove.size()]));
 		}
 		if (!resourcesToAdd.isEmpty()) {
-		    addResources(resourcesToAdd.toArray(new SyncInfo[resourcesToAdd.size()]));
+			addResources(resourcesToAdd.toArray(new SyncInfo[resourcesToAdd.size()]));
 		}
 	}
 
-    @Override
+	@Override
 	protected int getLogicalModelDepth(IResource resource) {
 		if(resource.getType() == IResource.PROJECT) {
 			return IResource.DEPTH_INFINITE;
@@ -314,8 +308,7 @@ public class CompressedFoldersModelProvider extends HierarchicalModelProvider {
 	private boolean hasFileMembers(IContainer parent) {
 		// Check if the sync set has any file children of the parent
 		IResource[] members = getSyncInfoTree().members(parent);
-		for (int i = 0; i < members.length; i++) {
-			IResource member = members[i];
+		for (IResource member : members) {
 			if (member.getType() == IResource.FILE) {
 				return true;
 			}
@@ -326,16 +319,16 @@ public class CompressedFoldersModelProvider extends HierarchicalModelProvider {
 
 	private SyncInfo[] getSyncInfosForFileMembers(IContainer parent) {
 		// Check if the sync set has any file children of the parent
-	    List<SyncInfo> result = new ArrayList<>();
+		List<SyncInfo> result = new ArrayList<>();
 		IResource[] members = getSyncInfoTree().members(parent);
-		for (int i = 0; i < members.length; i++) {
-			SyncInfo info = getSyncInfoTree().getSyncInfo(members[i]);
+		for (IResource member : members) {
+			SyncInfo info = getSyncInfoTree().getSyncInfo(member);
 			if (info != null) {
-			    result.add(info);
+				result.add(info);
 			}
-		    if (members[i] instanceof IContainer) {
-		    	result.addAll(Arrays.asList(this.getSyncInfosForFileMembers((IContainer)members[i])));
-		    }
+			if (member instanceof IContainer) {
+				result.addAll(Arrays.asList(this.getSyncInfosForFileMembers((IContainer) member)));
+			}
 		}
 		return result.toArray(new SyncInfo[result.size()]);
 	}

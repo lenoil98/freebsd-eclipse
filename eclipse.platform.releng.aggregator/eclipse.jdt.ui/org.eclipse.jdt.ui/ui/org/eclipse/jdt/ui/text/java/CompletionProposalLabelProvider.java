@@ -69,14 +69,13 @@ public class CompletionProposalLabelProvider {
 	 * returned.
 	 * <p>
 	 * Examples:
-	 * 
+	 * </p>
+	 *
 	 * <pre>
 	 *   &quot;void method(int i, String s)&quot; -&gt; &quot;int i, String s&quot;
 	 *   &quot;? extends Number method(java.lang.String s, ? super Number n)&quot; -&gt; &quot;String s, Number n&quot;
 	 * </pre>
-	 * 
-	 * </p>
-	 * 
+	 *
 	 * @param proposal the proposal to create the parameter list for
 	 * @return the list of comma-separated parameters suitable for display
 	 */
@@ -86,15 +85,13 @@ public class CompletionProposalLabelProvider {
 		switch (kind) {
 			case CompletionProposal.METHOD_REF:
 			case CompletionProposal.CONSTRUCTOR_INVOCATION:
+			case CompletionProposal.ANONYMOUS_CLASS_DECLARATION:
+			case CompletionProposal.ANONYMOUS_CLASS_CONSTRUCTOR_INVOCATION:
 				paramList= appendUnboundedParameterList(new StyledString(), proposal).getString();
 				return org.eclipse.jdt.internal.core.manipulation.util.Strings.markJavaElementLabelLTR(paramList);
 			case CompletionProposal.TYPE_REF:
 			case CompletionProposal.JAVADOC_TYPE_REF:
 				paramList= appendTypeParameterList(new StyledString(), proposal).getString();
-				return org.eclipse.jdt.internal.core.manipulation.util.Strings.markJavaElementLabelLTR(paramList);
-			case CompletionProposal.ANONYMOUS_CLASS_DECLARATION:
-			case CompletionProposal.ANONYMOUS_CLASS_CONSTRUCTOR_INVOCATION:
-				paramList= appendUnboundedParameterList(new StyledString(), proposal).getString();
 				return org.eclipse.jdt.internal.core.manipulation.util.Strings.markJavaElementLabelLTR(paramList);
 			default:
 				Assert.isLegal(false);
@@ -731,8 +728,7 @@ public class CompletionProposalLabelProvider {
 		if (!deprecated) {
 			CompletionProposal[] requiredProposals= proposal.getRequiredProposals();
 			if (requiredProposals != null) {
-				for (int i= 0; i < requiredProposals.length; i++) {
-					CompletionProposal requiredProposal= requiredProposals[i];
+				for (CompletionProposal requiredProposal : requiredProposals) {
 					if (requiredProposal.getKind() == CompletionProposal.TYPE_REF) {
 						deprecated |= Flags.isDeprecated(requiredProposal.getFlags());
 					}

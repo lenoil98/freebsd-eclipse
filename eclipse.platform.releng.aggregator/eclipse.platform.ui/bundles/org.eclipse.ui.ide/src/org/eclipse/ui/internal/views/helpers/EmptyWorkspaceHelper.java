@@ -43,6 +43,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.ui.IPerspectiveDescriptor;
 import org.eclipse.ui.IPerspectiveListener;
+import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
@@ -211,8 +212,14 @@ public final class EmptyWorkspaceHelper {
 	private void recreateEmptyArea() {
 		disposeEmptyArea();
 
+		// forces to re-create wizard actions, fixes Bug 552374
+		projectWizardActions = null;
+
 		// re-read the project wizards and re-create the empty area
 		createEmptyArea(displayArea);
+		if (control != null && !control.isDisposed()) {
+			emptyArea.setBackground(control.getBackground());
+		}
 	}
 
 	private void disposeEmptyArea() {
@@ -224,6 +231,9 @@ public final class EmptyWorkspaceHelper {
 	}
 
 	private void readProjectWizardActions() {
+		if (projectWizardActions == null) {
+			return;
+		}
 		IWorkbench wb = PlatformUI.getWorkbench();
 		IWorkbenchWindow win = wb.getActiveWorkbenchWindow();
 		IWorkbenchPage page = win.getActivePage();
@@ -250,7 +260,13 @@ public final class EmptyWorkspaceHelper {
 	private void createOption(Composite optionsArea, final FormToolkit toolkit, final Color linkColor, IAction action,
 			ImageDescriptor imageDesc, String text) {
 		Label addLabel = new Label(optionsArea, SWT.NONE);
+
+		if (imageDesc == null) {
+			ISharedImages images = PlatformUI.getWorkbench().getSharedImages();
+			imageDesc = images.getImageDescriptor(ISharedImages.IMG_TOOL_NEW_WIZARD);
+		}
 		addLabel.setImage(resourceManager.createImage(imageDesc));
+
 		Hyperlink addLink = toolkit.createHyperlink(optionsArea, text, SWT.WRAP);
 		addLink.setForeground(linkColor);
 		addLink.addHyperlinkListener(new HyperlinkAdapter() {
@@ -334,7 +350,6 @@ public final class EmptyWorkspaceHelper {
 		 */
 		@Override
 		public void perspectiveActivated(IWorkbenchPage page, IPerspectiveDescriptor perspective) {
-			readProjectWizardActions();
 			if (emptyArea != null) {
 				recreateEmptyArea();
 				switchTopControlRunnable.run();

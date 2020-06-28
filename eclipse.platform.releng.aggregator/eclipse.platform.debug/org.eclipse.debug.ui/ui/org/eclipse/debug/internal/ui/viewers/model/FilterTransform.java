@@ -215,10 +215,10 @@ public class FilterTransform {
 				return childIndex;
 			}
 			int offset = 0;
-			for (int i = 0; i < filteredIndexes.length; i++) {
-				if (childIndex == filteredIndexes[i] ) {
+			for (int filteredIndex : filteredIndexes) {
+				if (childIndex == filteredIndex ) {
 					return -1;
-				} else if (childIndex > filteredIndexes[i]) {
+				} else if (childIndex > filteredIndex) {
 					offset++;
 				} else {
 					break;
@@ -375,11 +375,11 @@ public class FilterTransform {
 	}
 
 	public int indexOfFilteredElement(TreePath parentPath, Object element) {
-        Node parentNode = root.find(parentPath, 0);
-        if (parentNode == null) {
-            return -1;
-        }
-        return parentNode.indexOfFilteredElement(element);
+		Node parentNode = root.find(parentPath, 0);
+		if (parentNode == null) {
+			return -1;
+		}
+		return parentNode.indexOfFilteredElement(element);
 	}
 
 	/**

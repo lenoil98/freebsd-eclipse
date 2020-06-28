@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -47,6 +47,8 @@
  *                              bug 386692 - Missing "unused" warning on "autowired" fields
  *     Pierre-Yves B. <pyvesdev@gmail.com> - Contribution for
  *                              bug 542520 - [JUnit 5] Warning The method xxx from the type X is never used locally is shown when using MethodSource
+ *     Sebastian Zarnekow - Contributions for
+ *								bug 544921 - [performance] Poor performance with large source files
  *******************************************************************************/
 package org.eclipse.jdt.internal.compiler.lookup;
 
@@ -105,9 +107,7 @@ abstract public class ReferenceBinding extends TypeBinding {
 	};
 	private static final Comparator<MethodBinding> METHOD_COMPARATOR = new Comparator<MethodBinding>() {
 		@Override
-		public int compare(MethodBinding o1, MethodBinding o2) {
-			MethodBinding m1 = o1;
-			MethodBinding m2 = o2;
+		public int compare(MethodBinding m1, MethodBinding m2) {
 			char[] s1 = m1.selector;
 			char[] s2 = m2.selector;
 			int c = ReferenceBinding.compare(s1, s2, s1.length, s2.length);
@@ -235,6 +235,33 @@ public static void sortMethods(MethodBinding[] sortedMethods, int left, int righ
 }
 
 /**
+ * Sort the member types using a quicksort
+ */
+static void sortMemberTypes(ReferenceBinding[] sortedMemberTypes, int left, int right) {
+	Arrays.sort(sortedMemberTypes, left, right, BASIC_MEMBER_TYPES_COMPARATOR);
+}
+
+/**
+ * Compares two reference bindings by the value of the {@link #sourceName} field.
+ * A ReferenceBinding with a sourceName field that has the value null is considered
+ * to be smaller than a ReferenceBinding that does have a source name.
+ */
+static final Comparator<ReferenceBinding> BASIC_MEMBER_TYPES_COMPARATOR = (ReferenceBinding o1, ReferenceBinding o2) -> {
+	char[] n1 = o1.sourceName;
+	char[] n2 = o2.sourceName;
+	// n1 or n2 may be null - compare without accessing the length of the array
+	if (n1 == null) {
+		if (n2 == null) {
+			return 0;
+		}
+		return -1;
+	} else if (n2 == null) {
+		return 1;
+	}
+	return ReferenceBinding.compare(n1, n2, n1.length, n2.length);
+};
+
+/**
  * Return the array of resolvable fields (resilience)
  */
 public FieldBinding[] availableFields() {
@@ -247,6 +274,15 @@ public FieldBinding[] availableFields() {
 public MethodBinding[] availableMethods() {
 	return methods();
 }
+
+public boolean hasHierarchyCheckStarted() {
+	return  (this.tagBits & TagBits.BeginHierarchyCheck) != 0;
+}
+
+public void setHierarchyCheckDone() {
+	return;
+}
+
 
 /**
  * Answer true if the receiver can be instantiated
@@ -342,7 +378,7 @@ public boolean canBeSeenBy(ReferenceBinding receiverType, ReferenceBinding invoc
 	do {
 		if (currentType.isCapture()) {  // https://bugs.eclipse.org/bugs/show_bug.cgi?id=285002
 			if (TypeBinding.equalsEquals(originalDeclaringClass, currentType.erasure().original())) return true;
-		} else { 
+		} else {
 			if (TypeBinding.equalsEquals(originalDeclaringClass, currentType.original())) return true;
 		}
 		PackageBinding currentPackage = currentType.fPackage;
@@ -441,7 +477,7 @@ public char[] computeGenericTypeSignature(TypeVariableBinding[] typeVariables) {
 }
 
 public void computeId() {
-	// note that more (configurable) ids are assigned from PackageBinding#checkIfNullAnnotationType() 
+	// note that more (configurable) ids are assigned from PackageBinding#checkIfNullAnnotationType()
 
 	// try to avoid multiple checks against a package/type name
 	switch (this.compoundName.length) {
@@ -453,7 +489,7 @@ public void computeId() {
 				case 3: // only one type in this group, yet:
 					if (CharOperation.equals(TypeConstants.ORG_JUNIT_ASSERT, this.compoundName))
 						this.id = TypeIds.T_OrgJunitAssert;
-					return;						
+					return;
 				case 4:
 					if (!CharOperation.equals(TypeConstants.JAVA, packageName))
 						return;
@@ -473,7 +509,7 @@ public void computeId() {
 				default: return;
 			}
 			// ... at this point we know it's java.*.*
-			
+
 			packageName = this.compoundName[1];
 			if (packageName.length == 0) return; // just to be safe
 			char[] typeName = this.compoundName[2];
@@ -486,7 +522,7 @@ public void computeId() {
 							switch (typeName[0]) {
 								case 'C' :
 									if (CharOperation.equals(typeName, TypeConstants.JAVA_IO_CLOSEABLE[2]))
-										this.typeBits |= TypeIds.BitCloseable; // don't assign id, only typeBit (for analysis of resource leaks) 
+										this.typeBits |= TypeIds.BitCloseable; // don't assign id, only typeBit (for analysis of resource leaks)
 									return;
 								case 'E' :
 									if (CharOperation.equals(typeName, TypeConstants.JAVA_IO_EXTERNALIZABLE[2]))
@@ -518,7 +554,7 @@ public void computeId() {
 									if (CharOperation.equals(typeName, TypeConstants.JAVA_UTIL_COLLECTION[2])) {
 										this.id = TypeIds.T_JavaUtilCollection;
 										this.typeBits |= TypeIds.BitCollection;
-									}										
+									}
 									return;
 								case 'I' :
 									if (CharOperation.equals(typeName, TypeConstants.JAVA_UTIL_ITERATOR[2]))
@@ -528,7 +564,7 @@ public void computeId() {
 									if (CharOperation.equals(typeName, TypeConstants.JAVA_UTIL_LIST[2])) {
 										this.id = TypeIds.T_JavaUtilList;
 										this.typeBits |= TypeIds.BitList;
-									}										
+									}
 									return;
 								case 'M' :
 									if (CharOperation.equals(typeName, TypeConstants.JAVA_UTIL_MAP[2])) {
@@ -554,7 +590,7 @@ public void computeId() {
 						case 13 :
 							if (CharOperation.equals(typeName, TypeConstants.JAVA_LANG_AUTOCLOSEABLE[2])) {
 								this.id = TypeIds.T_JavaLangAutoCloseable;
-								this.typeBits |= TypeIds.BitAutoCloseable; 
+								this.typeBits |= TypeIds.BitAutoCloseable;
 							}
 							return;
 						case 14:
@@ -666,6 +702,8 @@ public void computeId() {
 				case 'R' :
 					if (CharOperation.equals(typeName, TypeConstants.JAVA_LANG_RUNTIMEEXCEPTION[2]))
 						this.id = 	TypeIds.T_JavaLangRuntimeException;
+					if (CharOperation.equals(typeName, TypeConstants.JAVA_LANG_RECORD[2]))
+						this.id = TypeIds.T_JavaLangRecord;
 					break;
 				case 'S' :
 					switch (typeName.length) {
@@ -806,13 +844,13 @@ public void computeId() {
 						return;
 					packageName = this.compoundName[1];
 					if (packageName.length == 0) return; // just to be safe
-					
+
 					if (CharOperation.equals(TypeConstants.LANG, packageName)) {
 						packageName = this.compoundName[2];
 						if (packageName.length == 0) return; // just to be safe
 						switch (packageName[0]) {
 							case 'i' :
-								if (CharOperation.equals(packageName, TypeConstants.INVOKE)) { 
+								if (CharOperation.equals(packageName, TypeConstants.INVOKE)) {
 									typeName = this.compoundName[3];
 									if (typeName.length == 0) return; // just to be safe
 									switch (typeName[0]) {
@@ -843,7 +881,7 @@ public void computeId() {
 								if (packageName.length == 0) return; // just to be safe
 								switch (packageName[0]) {
 									case 'c' :
-										if (CharOperation.equals(packageName, TypeConstants.CORE)) { 
+										if (CharOperation.equals(packageName, TypeConstants.CORE)) {
 											typeName = this.compoundName[3];
 											if (typeName.length == 0) return; // just to be safe
 											switch (typeName[0]) {
@@ -1049,12 +1087,46 @@ public char[] getFileName() {
 	return this.fileName;
 }
 
+/**
+ * Find the member type with the given simple typeName. Benefits from the fact that
+ * the array of {@link #memberTypes()} is sorted.
+ */
 public ReferenceBinding getMemberType(char[] typeName) {
 	ReferenceBinding[] memberTypes = memberTypes();
-	for (int i = memberTypes.length; --i >= 0;)
-		if (CharOperation.equals(memberTypes[i].sourceName, typeName))
-			return memberTypes[i];
+	int memberTypeIndex = binarySearch(typeName, memberTypes);
+	if (memberTypeIndex >= 0) {
+		return memberTypes[memberTypeIndex];
+	}
 	return null;
+}
+
+/**
+ * Search the given sourceName in the list of sorted member types.
+ *
+ * Neither the array of sortedMemberTypes nor the given sourceName may be null.
+ */
+static int binarySearch(char[] sourceName, ReferenceBinding[] sortedMemberTypes) {
+	if (sortedMemberTypes == null)
+		return -1;
+	int max = sortedMemberTypes.length, nameLength = sourceName.length;
+	if (max == 0)
+		return -1;
+	int left = 0, right = max - 1;
+	while (left <= right) {
+		int mid = left + (right - left) / 2;
+		char[] midName = sortedMemberTypes[mid].sourceName;
+		// The read source name may be null. In that case, the given sourceName is considered
+		// to be larger than the current value at mid.
+		int compare = midName == null ? 1 : compare(sourceName, midName, nameLength, midName.length);
+		if (compare < 0) {
+			right = mid-1;
+		} else if (compare > 0) {
+			left = mid+1;
+		} else {
+			return mid;
+		}
+	}
+	return -1;
 }
 
 @Override
@@ -1095,6 +1167,10 @@ public int hashCode() {
 	return (this.compoundName == null || this.compoundName.length == 0)
 		? super.hashCode()
 		: CharOperation.hashCode(this.compoundName[this.compoundName.length - 1]);
+}
+
+final int identityHashCode() {
+	return super.hashCode();
 }
 
 /**
@@ -1323,7 +1399,7 @@ public boolean isProperType(boolean admitCapture18) {
 public boolean isCompatibleWith(TypeBinding otherType, /*@Nullable*/ Scope captureScope) {
 	if (equalsEquals(otherType, this))
 		return true;
-	
+
 	if (otherType.id == TypeIds.T_JavaLangObject)
 		return true;
 	Object result;
@@ -1341,8 +1417,8 @@ public boolean isCompatibleWith(TypeBinding otherType, /*@Nullable*/ Scope captu
 		this.compatibleCache.put(otherType, Boolean.TRUE);
 		return true;
 	}
-	if (captureScope == null 
-			&& this instanceof TypeVariableBinding 
+	if (captureScope == null
+			&& this instanceof TypeVariableBinding
 			&& ((TypeVariableBinding)this).firstBound instanceof ParameterizedTypeBinding) {
 		// see https://bugs.eclipse.org/395002#c9
 		// in this case a subsequent check with captureScope != null may actually get
@@ -1401,7 +1477,7 @@ private boolean isCompatibleWith0(TypeBinding otherType, /*@Nullable*/ Scope cap
 				case Binding.GENERIC_TYPE :
 				case Binding.PARAMETERIZED_TYPE :
 				case Binding.RAW_TYPE :
-					if (TypeBinding.equalsEquals(erasure(), otherType.erasure())) 
+					if (TypeBinding.equalsEquals(erasure(), otherType.erasure()))
 						return false; // should have passed equivalence check
 										// above if same erasure
 			}
@@ -1444,11 +1520,11 @@ public boolean isSubtypeOf(TypeBinding other, boolean simulatingBugJDK8026527) {
 		return false;
 	if (TypeBinding.equalsEquals(candidate, other))
 		return true;
-	
+
 	// T<Ai...> <: T#RAW:
 	if (other.isRawType() && TypeBinding.equalsEquals(candidate.erasure(), other.erasure()))
 		return true;
-	
+
 	TypeBinding[] sis = other.typeArguments();
 	TypeBinding[] tis = candidate.typeArguments();
 	if (tis == null || sis == null)
@@ -1516,7 +1592,7 @@ public boolean isHierarchyBeingConnected() {
 	return (this.tagBits & TagBits.EndHierarchyCheck) == 0 && (this.tagBits & TagBits.BeginHierarchyCheck) != 0;
 }
 /**
- * Returns true if the type hierarchy is being connected "actively" i.e not paused momentatrily, 
+ * Returns true if the type hierarchy is being connected "actively" i.e not paused momentatrily,
  * while resolving type arguments. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=294057
  */
 public boolean isHierarchyBeingActivelyConnected() {
@@ -1673,6 +1749,9 @@ public final boolean isViewedAsDeprecated() {
 	return false;
 }
 
+/**
+ * Returns the member types of this type sorted by simple name.
+ */
 public ReferenceBinding[] memberTypes() {
 	return Binding.NO_MEMBER_TYPES;
 }
@@ -1904,7 +1983,7 @@ public char[] sourceName() {
  * Perform an upwards type projection as per JLS 4.10.5
  * @param scope Relevant scope for evaluating type projection
  * @param mentionedTypeVariables Filter for mentioned type variabled
- * @returns Upwards type projection of 'this', or null if downwards projection is undefined 
+ * @returns Upwards type projection of 'this', or null if downwards projection is undefined
 */
 @Override
 public ReferenceBinding upwardsProjection(Scope scope, TypeBinding[] mentionedTypeVariables) {
@@ -1915,7 +1994,7 @@ public ReferenceBinding upwardsProjection(Scope scope, TypeBinding[] mentionedTy
  * Perform a downwards type projection as per JLS 4.10.5
  * @param scope Relevant scope for evaluating type projection
  * @param mentionedTypeVariables Filter for mentioned type variabled
- * @returns Downwards type projection of 'this', or null if downwards projection is undefined 
+ * @returns Downwards type projection of 'this', or null if downwards projection is undefined
 */
 @Override
 public ReferenceBinding downwardsProjection(Scope scope, TypeBinding[] mentionedTypeVariables) {
@@ -1985,7 +2064,7 @@ public FieldBinding[] unResolvedFields() {
  * If a type - known to be a Closeable - is mentioned in one of our white lists
  * answer the typeBit for the white list (BitWrapperCloseable or BitResourceFreeCloseable).
  */
-protected int applyCloseableClassWhitelists() {
+protected int applyCloseableClassWhitelists(CompilerOptions options) {
 	switch (this.compoundName.length) {
 		case 3:
 			if (CharOperation.equals(TypeConstants.JAVA, this.compoundName[0])) {
@@ -2023,10 +2102,27 @@ protected int applyCloseableClassWhitelists() {
 	for (int i = 0; i < l; i++) {
 		if (CharOperation.equals(this.compoundName, TypeConstants.OTHER_WRAPPER_CLOSEABLES[i]))
 			return TypeIds.BitWrapperCloseable;
-	}	
+	}
+	if (options.analyseResourceLeaks) {
+		ReferenceBinding mySuper = this.superclass();
+		if (mySuper != null && mySuper.id != TypeIds.T_JavaLangObject) {
+			if (hasMethodWithNumArgs(TypeConstants.CLOSE, 0))
+				return 0; // close methods indicates: class may need more closing than super
+			return mySuper.applyCloseableClassWhitelists(options);
+		}
+	}
 	return 0;
 }
 
+protected boolean hasMethodWithNumArgs(char[] selector, int numArgs) {
+	for (MethodBinding methodBinding : unResolvedMethods()) {
+		if (CharOperation.equals(methodBinding.selector, selector)
+				&& methodBinding.parameters.length == numArgs) {
+			return true;
+		}
+	}
+	return false;
+}
 
 /*
  * If a type - known to be a Closeable - is mentioned in one of our white lists
@@ -2047,16 +2143,16 @@ protected int applyCloseableInterfaceWhitelists() {
 }
 
 protected MethodBinding [] getInterfaceAbstractContracts(Scope scope, boolean replaceWildcards, boolean filterDefaultMethods) throws InvalidInputException {
-	
+
 	if (!isInterface() || !isValidBinding()) {
 		throw new InvalidInputException("Not a functional interface"); //$NON-NLS-1$
 	}
-	
+
 	MethodBinding [] methods = methods();
 	MethodBinding [] contracts = new MethodBinding[0];
 	int contractsCount = 0;
 	int contractsLength = 0;
-	
+
 	ReferenceBinding [] superInterfaces = superInterfaces();
 	for (int i = 0, length = superInterfaces.length; i < length; i++) {
 		// filterDefaultMethods=false => keep default methods needed to filter out any abstract methods they may override:
@@ -2073,9 +2169,9 @@ protected MethodBinding [] getInterfaceAbstractContracts(Scope scope, boolean re
 	LookupEnvironment environment = scope.environment();
 	for (int i = 0, length = methods == null ? 0 : methods.length; i < length; i++) {
 		final MethodBinding method = methods[i];
-		if (method == null || method.isStatic() || method.redeclaresPublicObjectMethod(scope) || method.isPrivate()) 
+		if (method == null || method.isStatic() || method.redeclaresPublicObjectMethod(scope) || method.isPrivate())
 			continue;
-		if (!method.isValidBinding()) 
+		if (!method.isValidBinding())
 			throw new InvalidInputException("Not a functional interface"); //$NON-NLS-1$
 		for (int j = 0; j < contractsCount;) {
 			if ( contracts[j] != null && MethodVerifier.doesMethodOverride(method, contracts[j], environment)) {
@@ -2112,7 +2208,7 @@ protected MethodBinding [] getInterfaceAbstractContracts(Scope scope, boolean re
 				// abstract method from one super type overridden by other super interface ==> contracts[j] = null;
 				if (j < contractsCount) {
 					System.arraycopy(contracts, j+1, contracts, j, contractsCount - j);
-				}				
+				}
 				j--;
 				if (j < i)
 					i--;
@@ -2124,8 +2220,8 @@ protected MethodBinding [] getInterfaceAbstractContracts(Scope scope, boolean re
 			// remove default method after it has eliminated any matching abstract methods from contracts
 			if (i < contractsCount) {
 				System.arraycopy(contracts, i+1, contracts, i, contractsCount - i);
-			}				
-			i--;				
+			}
+			i--;
 		}
 	}
 	if (contractsCount < contractsLength) {
@@ -2135,7 +2231,7 @@ protected MethodBinding [] getInterfaceAbstractContracts(Scope scope, boolean re
 }
 @Override
 public MethodBinding getSingleAbstractMethod(Scope scope, boolean replaceWildcards) {
-	
+
 	int index = replaceWildcards ? 0 : 1;
 	if (this.singleAbstractMethod != null) {
 		if (this.singleAbstractMethod[index] != null)
@@ -2170,12 +2266,12 @@ public MethodBinding getSingleAbstractMethod(Scope scope, boolean replaceWildcar
 	}
 	if (methods.length == 1)
 		return this.singleAbstractMethod[index] = methods[0];
-	
+
 	final LookupEnvironment environment = scope.environment();
 	boolean genericMethodSeen = false;
 	int length = methods.length;
 	boolean analyseNullAnnotations = environment.globalOptions.isAnnotationBasedNullAnalysisEnabled;
-	
+
 	next:for (int i = length - 1; i >= 0; --i) {
 		MethodBinding method = methods[i], otherMethod = null;
 		if (method.typeVariables != Binding.NO_TYPE_VARIABLES)
@@ -2187,13 +2283,13 @@ public MethodBinding getSingleAbstractMethod(Scope scope, boolean replaceWildcar
 			otherMethod = methods[j];
 			if (otherMethod.typeVariables != Binding.NO_TYPE_VARIABLES)
 				genericMethodSeen = true;
-			
+
 			if (genericMethodSeen) { // adapt type parameters.
 				otherMethod = MethodVerifier.computeSubstituteMethod(otherMethod, method, environment);
 				if (otherMethod == null)
 					continue next;
 			}
-			if (!MethodVerifier.isSubstituteParameterSubsignature(method, otherMethod, environment) || !MethodVerifier.areReturnTypesCompatible(method, otherMethod, environment)) 
+			if (!MethodVerifier.isSubstituteParameterSubsignature(method, otherMethod, environment) || !MethodVerifier.areReturnTypesCompatible(method, otherMethod, environment))
 				continue next;
 			if (analyseNullAnnotations) {
 				returnType = NullAnnotationMatching.strongerType(returnType, otherMethod.returnType, environment);
@@ -2207,7 +2303,7 @@ public MethodBinding getSingleAbstractMethod(Scope scope, boolean replaceWildcar
 		boolean shouldEraseThrows = theAbstractMethod.typeVariables == Binding.NO_TYPE_VARIABLES && genericMethodSeen;
 		boolean shouldAdaptThrows = theAbstractMethod.typeVariables != Binding.NO_TYPE_VARIABLES;
 		final int typeVariableLength = theAbstractMethod.typeVariables.length;
-		
+
 		none:for (i = 0; i < length; i++) {
 			method = methods[i];
 			ReferenceBinding[] methodThrownExceptions = method.thrownExceptions;
@@ -2232,10 +2328,10 @@ public MethodBinding getSingleAbstractMethod(Scope scope, boolean replaceWildcar
 					int otherMethodExceptionsLength =  otherMethodThrownExceptions == null ? 0 : otherMethodThrownExceptions.length;
 					if (otherMethodExceptionsLength == 0) break none;
 					if (shouldAdaptThrows && otherMethod != theAbstractMethod) {
-						System.arraycopy(otherMethodThrownExceptions, 
-								0, 
-								otherMethodThrownExceptions = new ReferenceBinding[otherMethodExceptionsLength], 
-								0, 
+						System.arraycopy(otherMethodThrownExceptions,
+								0,
+								otherMethodThrownExceptions = new ReferenceBinding[otherMethodExceptionsLength],
+								0,
 								otherMethodExceptionsLength);
 						for (int tv = 0; tv < typeVariableLength; tv++) {
 							if (otherMethodThrownExceptions[tv] instanceof TypeVariableBinding) {
@@ -2262,11 +2358,11 @@ public MethodBinding getSingleAbstractMethod(Scope scope, boolean replaceWildcar
 		if (exceptionsCount != exceptionsLength) {
 			System.arraycopy(exceptions, 0, exceptions = new ReferenceBinding[exceptionsCount], 0, exceptionsCount);
 		}
-		this.singleAbstractMethod[index] = new MethodBinding(theAbstractMethod.modifiers | ClassFileConstants.AccSynthetic, 
-				theAbstractMethod.selector, 
-				returnType, 
-				parameters, 
-				exceptions, 
+		this.singleAbstractMethod[index] = new MethodBinding(theAbstractMethod.modifiers | ClassFileConstants.AccSynthetic,
+				theAbstractMethod.selector,
+				returnType,
+				parameters,
+				exceptions,
 				theAbstractMethod.declaringClass);
 	    this.singleAbstractMethod[index].typeVariables = theAbstractMethod.typeVariables;
 		return this.singleAbstractMethod[index];

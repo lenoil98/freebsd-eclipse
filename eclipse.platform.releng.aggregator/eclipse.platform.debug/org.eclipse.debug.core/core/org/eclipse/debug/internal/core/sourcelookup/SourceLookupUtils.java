@@ -51,6 +51,7 @@ public class SourceLookupUtils {
 	 * @exception IOException if unable to create the specified zip
 	 * 	file
 	 */
+	@SuppressWarnings("resource")
 	public static ZipFile getZipFile(String name) throws IOException {
 		synchronized (fgZipFileCache) {
 			if (fgCleaner == null) {
@@ -107,8 +108,7 @@ public class SourceLookupUtils {
 
 		@Override
 		public void launchesRemoved(ILaunch[] launches) {
-			for (int i = 0; i < launches.length; i++) {
-				ILaunch launch = launches[i];
+			for (ILaunch launch : launches) {
 				if (!launch.isTerminated()) {
 					SourceLookupUtils.closeArchives();
 					return;

@@ -144,10 +144,9 @@ public abstract class JUnitTestCase extends TestCase {
 	protected static void writeToFile(IFile file, String[] contents)
 			throws IOException, CoreException {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		PrintStream os = new PrintStream(bos);
-		try {
-			for (int i = 0; i < contents.length; i++) {
-				os.println(contents[i]);
+		try (PrintStream os = new PrintStream(bos)) {
+			for (String content : contents) {
+				os.println(content);
 			}
 			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
 			if (file.exists()) {
@@ -156,8 +155,6 @@ public abstract class JUnitTestCase extends TestCase {
 				mkdirs(file.getParent());
 				file.create(bis, false /*force*/, null);
 			}
-		} finally {
-			os.close();
 		}
 	}
 	
@@ -221,7 +218,7 @@ public abstract class JUnitTestCase extends TestCase {
 	 * Generates random content meant to be written in a file.
 	 */
 	protected static String createRandomContent() {
-		StringBuffer content = new StringBuffer();
+		StringBuilder content = new StringBuilder();
 		int contentSize;
 		
 		content.append("Random file generated for test" + PLATFORM_NEWLINE);
@@ -299,8 +296,8 @@ public abstract class JUnitTestCase extends TestCase {
 	 */
 	protected static void createRandomFile(IContainer parent, String[] fileNameArray) 
 		throws IOException, CoreException {
-		for (int i = 0; i < fileNameArray.length; i++) {
-			IFile file = parent.getFile(new Path(fileNameArray[i]));
+		for (String fileName : fileNameArray) {
+			IFile file = parent.getFile(new Path(fileName));
 			createRandomFile(file);
 		}
 	}

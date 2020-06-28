@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.corext.fix;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -131,9 +130,8 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 				ParameterizedType type= nodes[i];
 				List<Type> args= type.typeArguments();
 				int j= 0;
-				for (Iterator<Type> iter= args.iterator(); iter.hasNext();) {
+				for (Type argType : args) {
 					LinkedProposalPositionGroup group= new LinkedProposalPositionGroup("G" + i + "_" + j); //$NON-NLS-1$ //$NON-NLS-2$
-					Type argType= iter.next();
 					if (!positionGroups.hasLinkedPositions()) {
 						group.addPosition(astRewrite.track(argType), true);
 					} else {
@@ -157,7 +155,7 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 	public static boolean isMissingOverrideAnnotationInterfaceProblem(int id) {
 		return id == IProblem.MissingOverrideAnnotationForInterfaceMethodImplementation;
 	}
-	
+
 	public static boolean isMissingOverrideAnnotationProblem(int id) {
 		return id == IProblem.MissingOverrideAnnotation || id == IProblem.MissingOverrideAnnotationForInterfaceMethodImplementation;
 	}
@@ -198,7 +196,7 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 	public static Java50Fix createRawTypeReferenceFix(CompilationUnit compilationUnit, IProblemLocation problem) {
 		List<CompilationUnitRewriteOperation> operations= new ArrayList<>();
 		SimpleType node= createRawTypeReferenceOperations(compilationUnit, new IProblemLocation[] {problem}, operations);
-		if (operations.size() == 0)
+		if (operations.isEmpty())
 			return null;
 
 		return new Java50Fix(Messages.format(FixMessages.Java50Fix_AddTypeArguments_description,  BasicElementLabels.getJavaElementName(node.getName().getFullyQualifiedName())), compilationUnit, operations.toArray(new CompilationUnitRewriteOperation[operations.size()]));
@@ -234,7 +232,7 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 		if (rawTypeReference)
 			createRawTypeReferenceOperations(compilationUnit, locations, operations);
 
-		if (operations.size() == 0)
+		if (operations.isEmpty())
 			return null;
 
 		String fixName;
@@ -273,7 +271,7 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 			createRawTypeReferenceOperations(compilationUnit, problems, operations);
 
 
-		if (operations.size() == 0)
+		if (operations.isEmpty())
 			return null;
 
 		CompilationUnitRewriteOperation[] operationsArray= operations.toArray(new CompilationUnitRewriteOperation[operations.size()]);
@@ -281,9 +279,7 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 	}
 
 	private static void createAddDeprecatedAnnotationOperations(CompilationUnit compilationUnit, IProblemLocation[] locations, List<CompilationUnitRewriteOperation> result) {
-		for (int i= 0; i < locations.length; i++) {
-			IProblemLocation problem= locations[i];
-
+		for (IProblemLocation problem : locations) {
 			if (isMissingDeprecationProblem(problem.getProblemId())) {
 				ASTNode selectedNode= problem.getCoveringNode(compilationUnit);
 				if (selectedNode != null) {
@@ -300,15 +296,14 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 	}
 
 	private static void createAddOverrideAnnotationOperations(CompilationUnit compilationUnit, boolean addOverrideInterfaceAnnotation, IProblemLocation[] locations, List<CompilationUnitRewriteOperation> result) {
-		for (int i= 0; i < locations.length; i++) {
-			IProblemLocation problem= locations[i];
+		for (IProblemLocation problem : locations) {
 			int problemId= problem.getProblemId();
-			
+
 			if (isMissingOverrideAnnotationProblem(problemId)) {
 				if (!isMissingOverrideAnnotationInterfaceProblem(problemId) || addOverrideInterfaceAnnotation) {
 					ASTNode selectedNode= problem.getCoveringNode(compilationUnit);
 					if (selectedNode != null) {
-	
+
 						ASTNode declaringNode= getDeclaringNode(selectedNode);
 						if (declaringNode instanceof BodyDeclaration) {
 							BodyDeclaration declaration= (BodyDeclaration) declaringNode;
@@ -326,9 +321,7 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 			return null;
 
 		List<SimpleType> result= new ArrayList<>();
-		for (int i= 0; i < locations.length; i++) {
-			IProblemLocation problem= locations[i];
-
+		for (IProblemLocation problem : locations) {
 			if (isRawTypeReferenceProblem(problem.getProblemId())) {
 				ASTNode node= problem.getCoveredNode(compilationUnit);
 				if (node instanceof ClassInstanceCreation) {
@@ -340,7 +333,8 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 					ASTNode rawReference= node.getParent();
 					if (isRawTypeReference(rawReference)) {
 						ASTNode parent= rawReference.getParent();
-						if (!(parent instanceof ArrayType || parent instanceof ParameterizedType))
+						if (!(parent instanceof ArrayType)
+								&& !(parent instanceof ParameterizedType))
 							result.add((SimpleType) rawReference);
 					}
 				} else if (node instanceof MethodInvocation) {
@@ -354,7 +348,7 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 			}
 		}
 
-		if (result.size() == 0)
+		if (result.isEmpty())
 			return null;
 
 		SimpleType[] types= result.toArray(new SimpleType[result.size()]);
@@ -371,29 +365,25 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 			return true;
 		}
 
-		IProblem[] problems= compilationUnit.getProblems();
-		for (int i= 0; i < problems.length; i++) {
-			if (problems[i].isError()) {
-				if (!(problems[i] instanceof CategorizedProblem))
+		for (IProblem problem : compilationUnit.getProblems()) {
+			if (problem.isError()) {
+				if (!(problem instanceof CategorizedProblem)) {
 					return true;
-
-				CategorizedProblem categorizedProblem= (CategorizedProblem) problems[i];
+				}
+				CategorizedProblem categorizedProblem= (CategorizedProblem) problem;
 				int categoryID= categorizedProblem.getCategoryID();
-
-				if (categoryID == CategorizedProblem.CAT_BUILDPATH)
-					return true;
-				if (categoryID == CategorizedProblem.CAT_SYNTAX)
-					return true;
-				if (categoryID == CategorizedProblem.CAT_IMPORT)
-					return true;
-				if (categoryID == CategorizedProblem.CAT_TYPE)
-					return true;
-				if (categoryID == CategorizedProblem.CAT_MEMBER)
-					return true;
-				if (categoryID == CategorizedProblem.CAT_INTERNAL)
-					return true;
-				if (categoryID == CategorizedProblem.CAT_MODULE)
-					return true;
+				switch (categoryID) {
+					case CategorizedProblem.CAT_BUILDPATH:
+					case CategorizedProblem.CAT_SYNTAX:
+					case CategorizedProblem.CAT_IMPORT:
+					case CategorizedProblem.CAT_TYPE:
+					case CategorizedProblem.CAT_MEMBER:
+					case CategorizedProblem.CAT_INTERNAL:
+					case CategorizedProblem.CAT_MODULE:
+						return true;
+					default:
+						break;
+				}
 			}
 		}
 
@@ -453,10 +443,9 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 	}
 
 	private static SimpleType getRawReference(SimpleName name, CompilationUnit compilationUnit) {
-		SimpleName[] names= LinkedNodeFinder.findByNode(compilationUnit, name);
-		for (int j= 0; j < names.length; j++) {
-			if (names[j].getParent() instanceof VariableDeclarationFragment) {
-				VariableDeclarationFragment fragment= (VariableDeclarationFragment)names[j].getParent();
+		for (SimpleName n : LinkedNodeFinder.findByNode(compilationUnit, name)) {
+			if (n.getParent() instanceof VariableDeclarationFragment) {
+				VariableDeclarationFragment fragment= (VariableDeclarationFragment) n.getParent();
 				if (fragment.getParent() instanceof VariableDeclarationStatement) {
 					VariableDeclarationStatement statement= (VariableDeclarationStatement)fragment.getParent();
 					ASTNode result= (ASTNode)statement.getStructuralProperty(VariableDeclarationStatement.TYPE_PROPERTY);
@@ -468,13 +457,13 @@ public class Java50Fix extends CompilationUnitRewriteOperationsFix {
 					if (isRawTypeReference(result))
 						return (SimpleType) result;
 				}
-			} else if (names[j].getParent() instanceof SingleVariableDeclaration) {
-				SingleVariableDeclaration declaration= (SingleVariableDeclaration)names[j].getParent();
+			} else if (n.getParent() instanceof SingleVariableDeclaration) {
+				SingleVariableDeclaration declaration= (SingleVariableDeclaration) n.getParent();
 				ASTNode result= (ASTNode)declaration.getStructuralProperty(SingleVariableDeclaration.TYPE_PROPERTY);
 				if (isRawTypeReference(result))
 					return (SimpleType) result;
-			} else if (names[j].getParent() instanceof MethodDeclaration) {
-				MethodDeclaration methodDecl= (MethodDeclaration)names[j].getParent();
+			} else if (n.getParent() instanceof MethodDeclaration) {
+				MethodDeclaration methodDecl= (MethodDeclaration) n.getParent();
 				ASTNode result= (ASTNode)methodDecl.getStructuralProperty(MethodDeclaration.RETURN_TYPE2_PROPERTY);
 				if (isRawTypeReference(result))
 					return (SimpleType) result;

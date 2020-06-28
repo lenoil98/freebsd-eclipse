@@ -94,7 +94,7 @@ import org.eclipse.jdt.internal.ui.viewsupport.JavaElementImageProvider;
 
 /**
  * Properties key hyperlink.
- * 
+ *
  * @since 3.1
  */
 public class PropertyKeyHyperlink implements IHyperlink {
@@ -335,7 +335,7 @@ public class PropertyKeyHyperlink implements IHyperlink {
 
 				return name;
 			}
-			
+
 			@Override
 			protected ImageDescriptor decorateImage(ImageDescriptor input, Object element) {
 				KeyReference keyRef= (KeyReference)element;
@@ -473,7 +473,7 @@ public class PropertyKeyHyperlink implements IHyperlink {
 										throw new InvocationTargetException(e);
 									}
 								}
-								if (result.size() == 0) {
+								if (result.isEmpty()) {
 									//maybe not an eclipse style NLS string
 									String searchString;
 									if (useDoubleQuotedKey) {
@@ -518,9 +518,9 @@ public class PropertyKeyHyperlink implements IHyperlink {
 		ArrayList<String> fileNamePatternStrings= new ArrayList<>();
 
 		// XXX: Should be configurable via preference, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=81117
-		String[] javaExtensions= JavaCore.getJavaLikeExtensions();
-		for (int i= 0; i < javaExtensions.length; i++)
-			fileNamePatternStrings.add("*." + javaExtensions[i]); //$NON-NLS-1$
+		for (String javaExtension : JavaCore.getJavaLikeExtensions()) {
+			fileNamePatternStrings.add("*." + javaExtension); //$NON-NLS-1$
+		}
 		fileNamePatternStrings.add("*.xml"); //$NON-NLS-1$
 		fileNamePatternStrings.add("*.ini"); //$NON-NLS-1$
 

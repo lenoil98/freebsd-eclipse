@@ -57,23 +57,15 @@ public abstract class UndoManagerAction implements IWorkbenchWindowActionDelegat
 		public boolean proceed(RefactoringStatus status) {
 			final Dialog dialog= RefactoringUI.createRefactoringStatusDialog(status, fParent, fTitle, false);
 			final int[] result= new int[1];
-			Runnable r= new Runnable() {
-				@Override
-				public void run() {
-					result[0]= dialog.open();
-				}
-			};
+			Runnable r= () -> result[0]= dialog.open();
 			fParent.getDisplay().syncExec(r);
 			return result[0] == IDialogConstants.OK_ID;
 		}
 		@Override
 		public void stopped(final RefactoringStatus status) {
-			Runnable r= new Runnable() {
-				@Override
-				public void run() {
-					String message= status.getMessageMatchingSeverity(RefactoringStatus.FATAL);
-					MessageDialog.openWarning(fParent, fTitle, getFullMessage(message));
-				}
+			Runnable r= () -> {
+				String message= status.getMessageMatchingSeverity(RefactoringStatus.FATAL);
+				MessageDialog.openWarning(fParent, fTitle, getFullMessage(message));
 			};
 			fParent.getDisplay().syncExec(r);
 		}
@@ -114,7 +106,7 @@ public abstract class UndoManagerAction implements IWorkbenchWindowActionDelegat
 		final int finalLength = MAX_LENGTH + patternLength;
 		if (text.length() <= finalLength)
 			return text;
-		StringBuffer result= new StringBuffer();
+		StringBuilder result= new StringBuilder();
 		int mid= finalLength / 2;
 		result.append(text.substring(0, mid));
 		result.append("..."); //$NON-NLS-1$
@@ -150,9 +142,7 @@ public abstract class UndoManagerAction implements IWorkbenchWindowActionDelegat
 				PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
 				RefactoringUIMessages.UndoManagerAction_internal_error_title,
 				RefactoringUIMessages.UndoManagerAction_internal_error_message);
-		} catch (InterruptedException e) {
-			// Operation isn't cancelable.
-		} catch (OperationCanceledException e) {
+		} catch (InterruptedException | OperationCanceledException e) {
 			// the waiting dialog got canceled.
 		}
 	}

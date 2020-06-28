@@ -14,8 +14,7 @@
 package org.eclipse.ui.internal.texteditor.rulers;
 
 import java.net.URL;
-
-import com.ibm.icu.text.MessageFormat;
+import java.text.MessageFormat;
 
 import org.osgi.framework.Bundle;
 
@@ -52,7 +51,7 @@ public final class ExtensionPointHelper {
 	public String getNonNullAttribute(String attribute) throws InvalidRegistryObjectException, CoreException {
 		String value= fElement.getAttribute(attribute);
 		if (value == null)
-			fail(MessageFormat.format(RulerColumnMessages.ExtensionPointHelper_missing_attribute_msg, new Object[] {fName, attribute}));
+			fail(MessageFormat.format(RulerColumnMessages.ExtensionPointHelper_missing_attribute_msg, fName, attribute));
 		return value;
 	}
 
@@ -64,7 +63,8 @@ public final class ExtensionPointHelper {
 		try {
 			return Float.valueOf(value).floatValue();
 		} catch (NumberFormatException x) {
-			fail(MessageFormat.format(RulerColumnMessages.ExtensionPointHelper_invalid_number_attribute_msg, new Object[] {attribute, fName}));
+			fail(MessageFormat.format(RulerColumnMessages.ExtensionPointHelper_invalid_number_attribute_msg, attribute,
+					fName));
 			return dflt;
 		}
 	}
@@ -77,7 +77,8 @@ public final class ExtensionPointHelper {
 		try {
 			return Boolean.parseBoolean(value);
 		} catch (NumberFormatException x) {
-			fail(MessageFormat.format(RulerColumnMessages.ExtensionPointHelper_invalid_number_attribute_msg, new Object[] {fName, attribute}));
+			fail(MessageFormat.format(RulerColumnMessages.ExtensionPointHelper_invalid_number_attribute_msg, fName,
+					attribute));
 			return dflt;
 		}
 	}

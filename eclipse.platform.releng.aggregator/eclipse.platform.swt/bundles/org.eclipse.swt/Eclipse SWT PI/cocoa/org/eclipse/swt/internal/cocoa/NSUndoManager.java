@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2012 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,12 +19,16 @@ public NSUndoManager() {
 	super();
 }
 
-public NSUndoManager(long /*int*/ id) {
+public NSUndoManager(long id) {
 	super(id);
 }
 
 public NSUndoManager(id id) {
 	super(id);
+}
+
+public void beginUndoGrouping() {
+	OS.objc_msgSend(this.id, OS.sel_beginUndoGrouping);
 }
 
 public boolean canRedo() {
@@ -33,6 +37,10 @@ public boolean canRedo() {
 
 public boolean canUndo() {
 	return OS.objc_msgSend_bool(this.id, OS.sel_canUndo);
+}
+
+public void endUndoGrouping() {
+	OS.objc_msgSend(this.id, OS.sel_endUndoGrouping);
 }
 
 public void redo() {

@@ -14,7 +14,6 @@
 package org.eclipse.ui.internal.console;
 
 import java.util.Arrays;
-import java.util.Comparator;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.action.Action;
@@ -52,20 +51,16 @@ public class OpenConsoleAction extends Action implements IMenuCreator {
 
 	private ConsoleFactoryExtension[] getSortedFactories() {
 		ConsoleFactoryExtension[] factoryExtensions = ((ConsoleManager) ConsolePlugin.getDefault().getConsoleManager()).getConsoleFactoryExtensions();
-		Arrays.sort(factoryExtensions, new Comparator<ConsoleFactoryExtension>() {
-
-			@Override
-			public int compare(ConsoleFactoryExtension e1, ConsoleFactoryExtension e2) {
-				if (e1.isNewConsoleExtenson()) {
-					return -1;
-				}
-				if (e2.isNewConsoleExtenson()) {
-					return 1;
-				}
-				String first = e1.getLabel();
-				String second = e2.getLabel();
-				return first.compareTo(second);
+		Arrays.sort(factoryExtensions, (e1, e2) -> {
+			if (e1.isNewConsoleExtenson()) {
+				return -1;
 			}
+			if (e2.isNewConsoleExtenson()) {
+				return 1;
+			}
+			String first = e1.getLabel();
+			String second = e2.getLabel();
+			return first.compareTo(second);
 		});
 		return factoryExtensions;
 	}
@@ -101,8 +96,7 @@ public class OpenConsoleAction extends Action implements IMenuCreator {
 
 		fMenu= new Menu(parent);
 		int accel = 1;
-		for (int i = 0; i < fFactoryExtensions.length; i++) {
-			ConsoleFactoryExtension extension = fFactoryExtensions[i];
+		for (ConsoleFactoryExtension extension : fFactoryExtensions) {
 			if (!WorkbenchActivityHelper.filterItem(extension) && extension.isEnabled()) {
 				String label = extension.getLabel();
 				ImageDescriptor image = extension.getImageDescriptor();
@@ -118,7 +112,7 @@ public class OpenConsoleAction extends Action implements IMenuCreator {
 
 	private void addActionToMenu(Menu parent, Action action, int accelerator) {
 		if (accelerator < 10) {
-			StringBuffer label= new StringBuffer();
+			StringBuilder label= new StringBuilder();
 			//add the numerical accelerator
 			label.append('&');
 			label.append(accelerator);

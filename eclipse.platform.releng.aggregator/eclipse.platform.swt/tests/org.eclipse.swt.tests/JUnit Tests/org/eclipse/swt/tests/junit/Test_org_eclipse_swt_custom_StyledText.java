@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,9 +21,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -32,6 +36,7 @@ import org.eclipse.swt.custom.BidiSegmentListener;
 import org.eclipse.swt.custom.CaretListener;
 import org.eclipse.swt.custom.ExtendedModifyListener;
 import org.eclipse.swt.custom.LineBackgroundListener;
+import org.eclipse.swt.custom.LineStyleEvent;
 import org.eclipse.swt.custom.LineStyleListener;
 import org.eclipse.swt.custom.MovementEvent;
 import org.eclipse.swt.custom.MovementListener;
@@ -61,15 +66,19 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.BidiUtil;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.printing.Printer;
 import org.eclipse.swt.widgets.Caret;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.test.Screenshots;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
 
 /**
  * Automated Test Suite for class org.eclipse.swt.custom.StyledText
@@ -85,10 +94,18 @@ final static RGB GREEN = new RGB(0,255,0);
 final static RGB YELLOW = new RGB(255,255,0);
 final static RGB CYAN = new RGB(0,255,255);
 final static RGB PURPLE = new RGB(255,0,255);
-final static String PLATFORM_LINE_DELIMITER = System.getProperty("line.separator");
+final static String PLATFORM_LINE_DELIMITER = System.lineSeparator();
 Map<RGB, Color> colors = new HashMap<>();
 private boolean listenerCalled;
 private boolean listener2Called;
+
+@Rule public TestWatcher screenshotRule = new TestWatcher() {
+	@Override
+	protected void failed(Throwable e, org.junit.runner.Description description) {
+		super.failed(e, description);
+		Screenshots.takeScreenshot(description.getTestClass(), description.getMethodName());
+	}
+};
 
 @Override
 @Before
@@ -696,28 +713,28 @@ public void test_computeSizeIIZ() {
 
 @Test
 public void test_computeSizeAlignment(){
-    shell.setLayout(new GridLayout());
-    StyledText singleText = new StyledText(shell, SWT.SINGLE);
-    shell.layout(true);
-    Point beforeAlignment = singleText.computeSize(100, SWT.DEFAULT);
-    //Should not change the computed size
-    singleText.setAlignment(SWT.RIGHT);
-    Point afterAlignment = singleText.computeSize(100, SWT.DEFAULT);
-    assertEquals(beforeAlignment, afterAlignment);
-    singleText.dispose();
+	shell.setLayout(new GridLayout());
+	StyledText singleText = new StyledText(shell, SWT.SINGLE);
+	shell.layout(true);
+	Point beforeAlignment = singleText.computeSize(100, SWT.DEFAULT);
+	//Should not change the computed size
+	singleText.setAlignment(SWT.RIGHT);
+	Point afterAlignment = singleText.computeSize(100, SWT.DEFAULT);
+	assertEquals(beforeAlignment, afterAlignment);
+	singleText.dispose();
 }
 @Test
 public void test_marginsCorrect(){
-    shell.setLayout(new GridLayout());
-    StyledText singleText = new StyledText(shell, SWT.SINGLE);
-    int leftMargin = 10;
-    singleText.setLeftMargin(leftMargin);
-    shell.layout(true);
-    singleText.setAlignment(SWT.RIGHT);
-    assertEquals(leftMargin, singleText.getLeftMargin());
-    singleText.setLeftMargin(leftMargin);
-    assertEquals(leftMargin, singleText.getLeftMargin());
-    singleText.dispose();
+	shell.setLayout(new GridLayout());
+	StyledText singleText = new StyledText(shell, SWT.SINGLE);
+	int leftMargin = 10;
+	singleText.setLeftMargin(leftMargin);
+	shell.layout(true);
+	singleText.setAlignment(SWT.RIGHT);
+	assertEquals(leftMargin, singleText.getLeftMargin());
+	singleText.setLeftMargin(leftMargin);
+	assertEquals(leftMargin, singleText.getLeftMargin());
+	singleText.dispose();
 }
 @Test
 public void test_copy() {
@@ -1755,9 +1772,9 @@ public void test_getSelectionRange() {
 	int invalidRanges [][] = {{-1, 0}, {-1, -1}, {100, 1}, {100, -1}, {12, 1}, {11, 2}, {2, -3}, {50, -1}};
 	int selectionRanges [][] = {{0, 1}, {0, 0}, {2, 3}, {12, 0}, {2, -2}, {5, -1}};
 
-	for (int i = 0; i < invalidRanges.length; i++) {
-		int start = invalidRanges[i][0];
-		int length = invalidRanges[i][1];
+	for (int[] invalidRange : invalidRanges) {
+		int start = invalidRange[0];
+		int length = invalidRange[1];
 
 		try {
 			text.setSelectionRange(start, length);
@@ -1785,9 +1802,9 @@ public void test_getSelectionRange() {
 		assertTrue(":c:" + i, text.getSelectionRange().x == start && text.getSelectionRange().y == length);
 	}
 
-	for (int i = 0; i < invalidRanges.length; i++) {
-		int start = invalidRanges[i][0];
-		int length = invalidRanges[i][1];
+	for (int[] invalidRange : invalidRanges) {
+		int start = invalidRange[0];
+		int length = invalidRange[1];
 
 		try {
 			text.setSelectionRange(start, length);
@@ -1888,8 +1905,8 @@ public void test_getStyleRanges() {
 	text.setStyleRange(getStyle(14,23,RED,null));
 	text.setStyleRange(getStyle(38,6,BLUE,null));
 	text.setStyleRange(getStyle(45,5,BLUE,null));
- 	text.replaceTextRange(14, 23, "\t/*Line 1\n\t * Line 2\n\t */");
- 	String newText = text.getTextRange(0, text.getCharCount());
+	text.replaceTextRange(14, 23, "\t/*Line 1\n\t * Line 2\n\t */");
+	String newText = text.getTextRange(0, text.getCharCount());
 	assertTrue(":1:", newText.equals("package test;\n\t/*Line 1\n\t * Line 2\n\t */\npublic class SimpleClass {\n}"));
 	StyleRange[] styles = text.getStyleRanges();
 	assertTrue(":1:", styles.length == 3);
@@ -1951,6 +1968,21 @@ public void test_getStyleRangesII() {
 
 }
 @Test
+public void test_getStyleRanges_Bug549110() {
+	text.setText("abc\tdef\n123\t");
+	StyleRange tabStyle = new StyleRange();
+	tabStyle.start = 3;
+	tabStyle.length = 1;
+	tabStyle.metrics = new GlyphMetrics(0, 0, 50);
+	text.setStyleRange(tabStyle);
+	tabStyle = new StyleRange();
+	tabStyle.start = 11;
+	tabStyle.length = 1;
+	tabStyle.metrics = new GlyphMetrics(0, 0, 100);
+	text.setStyleRange(tabStyle);
+	text.selectAll();
+}
+@Test
 public void test_getTabs() {
 	text.setTabs(1);
 	assertTrue(":a:", text.getTabs() == 1);
@@ -1985,9 +2017,9 @@ public void test_getTextII() {
 	int invalidRanges[][] = {{-1, 0}, {0, -1}, {-1, -1}, {100, 1}, {100, -1}, {2, testText.length()}, {5, 2}};
 	int ranges[][] = {{0, 1}, {0, 0}, {2, 5}, {7, 11}};
 
-	for (int i = 0; i < invalidRanges.length; i++) {
-		int start = invalidRanges[i][0];
-		int end = invalidRanges[i][1];
+	for (int[] invalidRange : invalidRanges) {
+		int start = invalidRange[0];
+		int end = invalidRange[1];
 
 		exceptionThrown = false;
 		try {
@@ -2004,9 +2036,9 @@ public void test_getTextII() {
 		int end = ranges[i][1];
 		assertEquals(":b:" + i, testText.substring(start, end + 1), text.getText(start, end));
 	}
-	for (int i = 0; i < invalidRanges.length; i++) {
-		int start = invalidRanges[i][0];
-		int end = invalidRanges[i][1];
+	for (int[] invalidRange : invalidRanges) {
+		int start = invalidRange[0];
+		int end = invalidRange[1];
 
 		exceptionThrown = false;
 		try {
@@ -2029,9 +2061,9 @@ public void test_getTextRangeII() {
 	int invalidRanges[][] = {{-1, 0}, {0, -1}, {-1, -1}, {100, 1}, {100, -1}, {1, testText.length()}, {5, -1}};
 	int ranges[][] = {{0, 1}, {0, 0}, {5, 1}, {7, 5}, {12, 0}};
 
-	for (int i = 0; i < invalidRanges.length; i++) {
-		int start = invalidRanges[i][0];
-		int length = invalidRanges[i][1];
+	for (int[] invalidRange : invalidRanges) {
+		int start = invalidRange[0];
+		int length = invalidRange[1];
 
 		exceptionThrown = false;
 		try {
@@ -2048,9 +2080,9 @@ public void test_getTextRangeII() {
 		int length = ranges[i][1];
 		assertEquals(":b:" + i, testText.substring(start, start + length), text.getTextRange(start, length));
 	}
-	for (int i = 0; i < invalidRanges.length; i++) {
-		int start = invalidRanges[i][0];
-		int length = invalidRanges[i][1];
+	for (int[] invalidRange : invalidRanges) {
+		int start = invalidRange[0];
+		int length = invalidRange[1];
 
 		exceptionThrown = false;
 		try {
@@ -3405,6 +3437,64 @@ public void test_setDoubleClickEnabledZ(){
 }
 
 @Test
+public void test_setEnabled(){
+	// Get colors
+	Color disabledBg = text.getDisplay().getSystemColor(SWT.COLOR_TEXT_DISABLED_BACKGROUND);
+	Color disabledFg = text.getDisplay().getSystemColor(SWT.COLOR_WIDGET_DISABLED_FOREGROUND);
+	Color enabledBg = text.getDisplay().getSystemColor(SWT.COLOR_LIST_BACKGROUND);
+	Color enabledFg = text.getDisplay().getSystemColor(SWT.COLOR_LIST_FOREGROUND);
+
+	// Test basic enabled/disabled functionality twice
+	text.setEnabled(false);
+	assertEquals(disabledBg, text.getBackground());
+	assertEquals(disabledFg, text.getForeground());
+	text.setEnabled(true);
+	assertEquals(enabledBg, text.getBackground());
+	assertEquals(enabledFg, text.getForeground());
+	text.setEnabled(false);
+	assertEquals(disabledBg, text.getBackground());
+	assertEquals(disabledFg, text.getForeground());
+	text.setEnabled(true);
+	assertEquals(enabledBg, text.getBackground());
+	assertEquals(enabledFg, text.getForeground());
+
+	// Test color preservation
+	text.setBackground(getColor(BLUE));
+	text.setForeground(getColor(RED));
+	text.setEnabled(false);
+	assertEquals(getColor(BLUE), text.getBackground());
+	assertEquals(getColor(RED), text.getForeground());
+	text.setEnabled(true);
+	assertEquals(getColor(BLUE), text.getBackground());
+	assertEquals(getColor(RED), text.getForeground());
+
+	// Test color reset
+	text.setBackground(null);
+	text.setForeground(null);
+	assertEquals(enabledBg, text.getBackground());
+	assertEquals(enabledFg, text.getForeground());
+	text.setEnabled(false);
+	text.setBackground(null);
+	text.setForeground(null);
+	assertEquals(disabledBg, text.getBackground());
+	assertEquals(disabledFg, text.getForeground());
+	text.setBackground(getColor(GREEN));
+	text.setForeground(getColor(CYAN));
+	assertEquals(getColor(GREEN), text.getBackground());
+	assertEquals(getColor(CYAN), text.getForeground());
+	text.setBackground(null);
+	text.setForeground(null);
+	assertEquals(disabledBg, text.getBackground());
+	assertEquals(disabledFg, text.getForeground());
+
+	// Dispose colors
+	disabledBg.dispose();
+	disabledFg.dispose();
+	enabledBg.dispose();
+	enabledFg.dispose();
+}
+
+@Test
 public void test_setEditableZ(){
 	text.setEditable(true);
 	assertTrue(":a:", text.getEditable());
@@ -3662,9 +3752,9 @@ public void test_setLineBackgroundIILorg_eclipse_swt_graphics_Color(){
 public void test_setSelectionI() {
 	int[] invalid = {-1, 100, 12};
 
-	for (int i = 0; i < invalid.length; i++) {
+	for (int start : invalid) {
 		try {
-			text.setSelection(invalid[i]);
+			text.setSelection(start);
 		} catch (IllegalArgumentException e) {
 			fail("should not throw exception for out of range");
 		}
@@ -3676,9 +3766,9 @@ public void test_setSelectionI() {
 	text.setSelection(11);
 	assertEquals(11, text.getCaretOffset());
 
-	for (int i = 0; i < invalid.length; i++) {
+	for (int start : invalid) {
 		try {
-			text.setSelection(invalid[i]);
+			text.setSelection(start);
 		}
 		catch (IllegalArgumentException e) {
 			fail("should not throw exception for out of range");
@@ -3691,9 +3781,9 @@ public void test_setSelectionLorg_eclipse_swt_graphics_Point() {
 	Point[] invalidRanges = {new Point(-1, 0), new Point(-1, -1), new Point(100, 1),
 		new Point(100, -1), new Point(11, 12), new Point(10, 12)};
 
-	for (int i = 0; i < invalidRanges.length; i++) {
+	for (Point invalidRange : invalidRanges) {
 		try {
-			text.setSelection(invalidRanges[i]);
+			text.setSelection(invalidRange);
 		}
 		catch (IllegalArgumentException e) {
 			fail("should not throw exception for out of range");
@@ -3704,9 +3794,9 @@ public void test_setSelectionLorg_eclipse_swt_graphics_Point() {
 	text.setSelection(3, 7);
 	assertEquals("3456", text.getSelectionText());
 
-	for (int i = 0; i < invalidRanges.length; i++) {
+	for (Point invalidRange : invalidRanges) {
 		try {
-			text.setSelection(invalidRanges[i]);
+			text.setSelection(invalidRange);
 		}
 		catch (IllegalArgumentException e) {
 			fail("should not throw exception for out of range");
@@ -3718,9 +3808,9 @@ public void test_setSelectionLorg_eclipse_swt_graphics_Point() {
 public void test_setSelectionII(){
 	int[][] invalidRanges = {{-1, 0}, {-1, -1}, {100, 1}, {100, -1}, {11, 12}, {10, 12}, {2, -3}, {50, -1}};
 
-	for (int i = 0; i < invalidRanges.length; i++) {
-		int start = invalidRanges[i][0];
-		int end = invalidRanges[i][1];
+	for (int[] invalidRange : invalidRanges) {
+		int start = invalidRange[0];
+		int end = invalidRange[1];
 
 		try {
 			text.setSelection(start, end);
@@ -3737,9 +3827,9 @@ public void test_setSelectionII(){
 	assertEquals("012", text.getSelectionText());
 	assertEquals(0, text.getCaretOffset());
 
-	for (int i = 0; i < invalidRanges.length; i++) {
-		int start = invalidRanges[i][0];
-		int end = invalidRanges[i][1];
+	for (int[] invalidRange : invalidRanges) {
+		int start = invalidRange[0];
+		int end = invalidRange[1];
 
 		try {
 			text.setSelection(start, end);
@@ -4877,7 +4967,7 @@ public void test_isTextSelected() {
 	// Set block selection
 	StringBuilder buffer = new StringBuilder();
 	for (int i = 0; i < 500; i++) {
-		buffer.append("Sample Test Selection" + System.getProperty("line.separator"));
+		buffer.append("Sample Test Selection" + System.lineSeparator());
 	}
 	text.setText(buffer.toString());
 	text.setSize(100, 10000);
@@ -4886,7 +4976,7 @@ public void test_isTextSelected() {
 	assertTrue(text.isTextSelected());
 
 	// Set block selection on new line
-	text.setText(System.getProperty("line.separator"));
+	text.setText(System.lineSeparator());
 	text.setSize(100, 100);
 	text.setBlockSelection(true);
 	text.setBlockSelectionBounds(0, 0, 100, 100);
@@ -5039,13 +5129,13 @@ public void test_isTextSelectedInBlockSelection() {
 	Point lowerRight = text.getLocationAtOffset(blockSelectionTestTextOneLine().length() * 2 + 6);
 	text.setBlockSelectionBounds(0, 0, lowerRight.x, lowerRight.y + 1);
 	assertTrue(text.isTextSelected());
-	assertEquals("Sample" + System.getProperty("line.separator") + "Sample" + System.getProperty("line.separator")
+	assertEquals("Sample" + System.lineSeparator() + "Sample" + System.lineSeparator()
 			+ "Sample", text.getSelectionText());
 }
 
 @Test
 public void test_isTextSelectedInBlockSelectionForLingleEmptyLine() {
-	text.setText(System.getProperty("line.separator"));
+	text.setText(System.lineSeparator());
 	text.setSize(100, 100);
 	text.setBlockSelection(true);
 	text.setBlockSelectionBounds(0, 0, 100, 100);
@@ -5054,7 +5144,7 @@ public void test_isTextSelectedInBlockSelectionForLingleEmptyLine() {
 
 @Test
 public void test_selectionIsClearedOnCaretMoveWhenInBlockSelection() {
-	text.setText("Test" + System.getProperty("line.separator"));
+	text.setText("Test" + System.lineSeparator());
 	text.setSize(100, 100);
 	text.setBlockSelection(true);
 	text.setBlockSelectionBounds(0, 0, 100, 100);
@@ -5077,7 +5167,7 @@ public void test_setBlockSelectionBounds_updatesNormalSelectionIfNotInBlockMode(
 
 @Test
 public void test_selectionIsMaintainedOnDisableOfBlockSelection() {
-	text.setText("Test" + System.getProperty("line.separator"));
+	text.setText("Test" + System.lineSeparator());
 	text.setSize(100, 100);
 	text.setBlockSelection(true);
 	text.setBlockSelectionBounds(0, 0, 100, 100);
@@ -5089,12 +5179,12 @@ public void test_selectionIsMaintainedOnDisableOfBlockSelection() {
 
 @Test
 public void test_selectAllInBlockSelectionMode() {
-	text.setText("Test" + System.getProperty("line.separator"));
+	text.setText("Test" + System.lineSeparator());
 	text.setSize(100, 100);
 	text.setBlockSelection(true);
 	text.selectAll();
 	assertTrue(text.isTextSelected());
-	assertEquals("Test" + System.getProperty("line.separator"), text.getSelectionText());
+	assertEquals("Test" + System.lineSeparator(), text.getSelectionText());
 }
 
 @Test
@@ -5108,10 +5198,10 @@ public void test_cutTextInBlockSelection() {
 
 	assertTrue(text.getText(),
 			text.getText()
-					.startsWith(" Test Selection" + System.getProperty("line.separator")
-							+ " Test Selection" + System.getProperty("line.separator")
-							+ " Test Selection" + System.getProperty("line.separator")
-							+ "Sample Test Selection" + System.getProperty("line.separator")));
+					.startsWith(" Test Selection" + System.lineSeparator()
+							+ " Test Selection" + System.lineSeparator()
+							+ " Test Selection" + System.lineSeparator()
+							+ "Sample Test Selection" + System.lineSeparator()));
 }
 
 @Test
@@ -5154,8 +5244,8 @@ public void test_cutAndPasteInBlockSelection() {
 
 @Test
 public void test_trippleClickInBlockSelectionSelectsLine() {
-	text.setText("  Sample Test Selection  " + System.getProperty("line.separator") + "  Sample Test Selection  "
-			+ System.getProperty("line.separator"));
+	text.setText("  Sample Test Selection  " + System.lineSeparator() + "  Sample Test Selection  "
+			+ System.lineSeparator());
 	text.setSize(1000, 1000);
 	text.setBlockSelection(true);
 	Point lowerRight = text.getLocationAtOffset(3);
@@ -5177,8 +5267,8 @@ public void test_getSelectionRangesInBlockSelection() {
 	text.setBlockSelection(true);
 	Point lowerRight = text.getLocationAtOffset(blockSelectionTestTextOneLine().length() * 2 + 6);
 	text.setBlockSelectionBounds(0, 0, lowerRight.x, lowerRight.y + 1);
-	assertArrayEquals(new int[] { 0, 6, 21 + System.getProperty("line.separator").length(), 6,
-			42 + System.getProperty("line.separator").length() * 2, 6 }, text.getSelectionRanges());
+	assertArrayEquals(new int[] { 0, 6, 21 + System.lineSeparator().length(), 6,
+			42 + System.lineSeparator().length() * 2, 6 }, text.getSelectionRanges());
 }
 
 @Test
@@ -5189,7 +5279,7 @@ public void test_getSelectionCountInBlockSelection() {
 	Point lowerRight = text
 			.getLocationAtOffset(blockSelectionTestTextOneLine().length() * 2 + 6);
 	text.setBlockSelectionBounds(0, 0, lowerRight.x, lowerRight.y + 1);
-	assertEquals(18 + System.getProperty("line.separator").length() * 2, text.getSelectionCount());
+	assertEquals(18 + System.lineSeparator().length() * 2, text.getSelectionCount());
 }
 
 @Test
@@ -5210,17 +5300,17 @@ public void test_insertInBlockSelection() {
 	text.setBlockSelection(true);
 
 	text.setSelection(6, 6 + blockSelectionTestTextOneLine().length());
-	text.insert("Foo" + System.getProperty("line.separator") + "Foo" + System.getProperty("line.separator"));
+	text.insert("Foo" + System.lineSeparator() + "Foo" + System.lineSeparator());
 
 	assertTrue(text.getText(), text.getText()
-			.startsWith("SampleFoo Test Selection" + System.getProperty("line.separator")
-					+ "SampleFoo Test Selection" + System.getProperty("line.separator") + "Sample Test Selection"
-					+ System.getProperty("line.separator")));
+			.startsWith("SampleFoo Test Selection" + System.lineSeparator()
+					+ "SampleFoo Test Selection" + System.lineSeparator() + "Sample Test Selection"
+					+ System.lineSeparator()));
 }
 
 @Test
 public void test_setStyleRanges_render() throws InterruptedException {
-	Assume.assumeFalse("Bug 536588 prevents test to work on Mac", SwtTestUtil.isCocoa);
+	Assume.assumeFalse("Bug 553090 causes test to fail on Mac", SwtTestUtil.isCocoa);
 	shell.setVisible(true);
 	text.setText("abc");
 	text.setMargins(0, 0, 0, 0);
@@ -5245,15 +5335,175 @@ public void test_setStyleRanges_render() throws InterruptedException {
 	assertTrue(hasPixel(text, text.getDisplay().getSystemColor(SWT.COLOR_RED)));
 }
 
+/**
+ * Test LineStyleListener which provides styles but no ranges.
+ */
+@Test
+public void test_lineStyleListener_styles_render() throws InterruptedException {
+	Assume.assumeFalse("Bug 536588 prevents test to work on Mac", SwtTestUtil.isCocoa);
+	final ArrayList<StyleRange> styles = new ArrayList<>();
+	styles.add(getStyle(0, 2, null, GREEN));
+	styles.add(getStyle(4, 1, null, GREEN));
+	styles.add(getStyle(7, 7, null, GREEN));
+	styles.add(getStyle(17, 13, null, GREEN));
+	final LineStyleListener listener = (LineStyleEvent event) -> {
+		event.styles = styles.toArray(new StyleRange[0]);
+	};
+	testLineStyleListener("0123456789\n123456789\n123456789", listener, () -> hasPixel(text, getColor(GREEN)));
+
+	// Bug 549110: test styling from LineStyleListener which include tab character with metrics
+	final StyleRange tabStyle = new StyleRange();
+	tabStyle.start = 15;
+	tabStyle.length = 1;
+	tabStyle.metrics = new GlyphMetrics(0, 0, 100);
+	styles.add(tabStyle);
+	testLineStyleListener("0123456789\n1234\t6789\n123456789", listener, () -> hasPixel(text, getColor(GREEN)));
+}
+
+/**
+ * Test LineStyleListener which provides styles and ranges.
+ */
+@Test
+public void test_lineStyleListener_stylesAndRanges_render() throws InterruptedException {
+	Assume.assumeFalse("Bug 536588 prevents test to work on Mac", SwtTestUtil.isCocoa);
+	LineStyleListener listener = (LineStyleEvent event) -> {
+		final StyleRange style = getStyle(0, 0, null, GREEN);
+		event.styles =  new StyleRange[] { style, style, style, style };
+		event.ranges = new int[] {0,2, 4,1, 7,7, 17,13};
+	};
+	testLineStyleListener("0123456789\n123456789\n123456789", listener, () -> hasPixel(text, getColor(GREEN)));
+
+	// Bug 549110: test styling from LineStyleListener which include tab character with metrics
+	listener = (LineStyleEvent event) -> {
+		final StyleRange style = getStyle(0, 0, null, GREEN);
+		final StyleRange tabStyle = new StyleRange();
+		tabStyle.start = 15;
+		tabStyle.length = 1;
+		tabStyle.metrics = new GlyphMetrics(0, 0, 100);
+		event.styles =  new StyleRange[] { style, style, style, tabStyle, style };
+		event.ranges = new int[] {0,2, 4,1, 7,7, 15,1, 17,13};
+	};
+	testLineStyleListener("0123456789\n1234\t6789\n123456789", listener, () -> hasPixel(text, getColor(GREEN)));
+}
+
+/**
+ * Test LineStyleListener which provides invalid styles with invalid start or length.
+ */
+@Test
+public void test_lineStyleListener_invalidStyles_render() throws InterruptedException {
+	Assume.assumeFalse("Bug 536588 prevents test to work on Mac", SwtTestUtil.isCocoa);
+	LineStyleListener listener = (LineStyleEvent event) -> {
+		event.styles = new StyleRange[] {
+			getStyle(-10, 4, null, GREEN),
+			getStyle(-5, 10, null, GREEN),
+			getStyle(12, 10, null, GREEN),
+			getStyle(40, 8, null, GREEN),
+		};
+	};
+	testLineStyleListener("0123456789\n123456789", listener, () -> hasPixel(text, getColor(GREEN)));
+
+	// Bug 549110: test styling from LineStyleListener which include tab character with metrics
+	final StyleRange tabStyle = new StyleRange();
+	listener = (LineStyleEvent event) -> {
+		event.styles = new StyleRange[] { tabStyle };
+	};
+	// The following tests do not need a condition to wait and test since they should trigger/test
+	// for exceptions and the getTextBounds fail due to bug 547532.
+	tabStyle.start = 0; tabStyle.length = 1; tabStyle.metrics = new GlyphMetrics(0, 0, 25);
+	testLineStyleListener("\t", listener, () -> true /*text.getTextBounds(0, 0).width == 25*/);
+	tabStyle.start = -2; tabStyle.length = 3; tabStyle.metrics = new GlyphMetrics(0, 0, 40);
+	testLineStyleListener("\t", listener, () -> true /*text.getTextBounds(0, 0).width == 40*/);
+	tabStyle.start = 0; tabStyle.length = 3; tabStyle.metrics = new GlyphMetrics(0, 0, 70);
+	testLineStyleListener("\t", listener, () -> true /*text.getTextBounds(0, 0).width == 70*/);
+	tabStyle.start = -2; tabStyle.length = 10; tabStyle.metrics = new GlyphMetrics(0, 0, 100);
+	testLineStyleListener("\t", listener, () -> true /*text.getTextBounds(0, 0).width == 100*/);
+}
+
+private void testLineStyleListener(String content, LineStyleListener listener, BooleanSupplier evaluation) throws InterruptedException {
+	try {
+		text.setText("");
+		text.addLineStyleListener(listener);
+		shell.setVisible(true);
+		text.setText(content);
+		text.setMargins(0, 0, 0, 0);
+		text.pack();
+		processEvents(1000, evaluation);
+		assertTrue("Text not styled correctly.", evaluation.getAsBoolean());
+	} finally {
+		text.removeLineStyleListener(listener);
+	}
+}
+
+@Test
+public void test_variableToFixedLineHeight() throws InterruptedException {
+	GridData layoutData = new GridData(SWT.FILL, SWT.FILL,true, true);
+	text.setLayoutData(layoutData);
+	shell.setVisible(true);
+	text.setText("\nabc\n\nd");
+	text.setMargins(0, 0, 0, 0);
+	text.setSize(100, 100);
+	processEvents(1000, () -> Boolean.FALSE);
+	StyleRange range = new StyleRange();
+	range.start = 1;
+	range.length = 1;
+	Color colorForVariableHeight = text.getDisplay().getSystemColor(SWT.COLOR_RED);
+	range.background = colorForVariableHeight;
+	range.metrics = new GlyphMetrics(40, 0, 10);
+	text.setStyleRange(range);
+	// move to variable height and paint with red to check later whether
+	// redraw was done properly
+	processEvents(100, null);
+	range = new StyleRange();
+	range.start = 1;
+	range.length = 1;
+	range.fontStyle = SWT.BOLD;
+	range.metrics = null;
+	text.replaceStyleRanges(0, text.getCharCount(), new StyleRange[] {range});
+	// changing to fixed line height here should redraw widget until
+	// the bottom and clear the area (no more red)
+	processEvents(3000, () -> !hasPixel(text, colorForVariableHeight));
+	assertFalse(hasPixel(text, colorForVariableHeight));
+}
+
+/**
+ * Check if StyledText widget contains the given color.
+ *
+ * @param text widget to check
+ * @param expectedColor color to find
+ * @return <code>true</code> if the given color was found in current text widget
+ *         bounds
+ */
 private boolean hasPixel(StyledText text, Color expectedColor) {
+	return hasPixel(text, expectedColor, null);
+}
+
+/**
+ * Check if StyledText widget contains the given color in given bounds. The
+ * effective search range to find the color is the union of current widget
+ * bounds and given rectangle.
+ *
+ * @param text widget to check
+ * @param expectedColor color to find
+ * @param rect          the bounds where the color is searched in. Can overlap
+ *                      the text widget bounds or <code>null</code> to check the
+ *                      widgets full bounds.
+ * @return <code>true</code> if the given color was found in search range of
+ *         text widget
+ */
+private boolean hasPixel(StyledText text, Color expectedColor, Rectangle rect) {
 	GC gc = new GC(text);
 	final Image image = new Image(text.getDisplay(), text.getSize().x, text.getSize().y);
 	gc.copyArea(image, 0, 0);
 	gc.dispose();
 	ImageData imageData = image.getImageData();
+	if (rect == null) {
+		rect = new Rectangle(0, 0, image.getBounds().width, image.getBounds().height);
+	}
 	RGB expectedRGB = expectedColor.getRGB();
-	for (int x = 1; x < image.getBounds().width - 1; x++) { // ignore first and last columns
-		for (int y = 0; y < image.getBounds().height; y++) {
+	int xEnd = rect.x + rect.width;
+	int yEnd = rect.y + rect.height;
+	for (int x = Math.max(rect.x, 1); x < xEnd && x < image.getBounds().width - 1; x++) { // ignore first and last columns
+		for (int y = rect.y; y < yEnd && y < image.getBounds().height; y++) {
 			RGB pixelRGB = imageData.palette.getRGB(imageData.getPixel(x, y));
 			if (expectedRGB.equals(pixelRGB)) {
 				image.dispose();
@@ -5274,7 +5524,7 @@ private String blockSelectionTestText() {
 }
 
 private String blockSelectionTestTextOneLine() {
-	return "Sample Test Selection" + System.getProperty("line.separator");
+	return "Sample Test Selection" + System.lineSeparator();
 }
 
 /**
@@ -5345,20 +5595,243 @@ protected void rtfCopy() {
 
 @Test
 public void test_consistency_Modify() {
-    consistencyEvent('a', 0, 0, 0, ConsistencyUtility.KEY_PRESS);
+	consistencyEvent('a', 0, 0, 0, ConsistencyUtility.KEY_PRESS);
 }
 
 @Override
 @Test
 public void test_consistency_MenuDetect () {
-    consistencyEvent(10, 10, 3, ConsistencyUtility.ESCAPE_MENU, ConsistencyUtility.MOUSE_CLICK);
+	consistencyEvent(10, 10, 3, ConsistencyUtility.ESCAPE_MENU, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Override
 @Test
 public void test_consistency_DragDetect () {
-    consistencyEvent(30, 10, 50, 0, ConsistencyUtility.MOUSE_DRAG);
+	consistencyEvent(30, 10, 50, 0, ConsistencyUtility.MOUSE_DRAG);
 }
 
+/**
+ * This tests if a tab character styled with custom metrics affects other styled parts.
+ * <p>
+ * Such a problem was once caused with bug 547532 and discovered along bug 549110.
+ * </p>
+ */
+@Test
+public void test_GlyphMetricsOnTab_Bug549110() throws InterruptedException {
+	Assume.assumeFalse("Bug 536588 prevents test to work on Mac", SwtTestUtil.isCocoa);
+	shell.setVisible(true);
+	text.setText("ab\tcde");
+	text.setMargins(0, 0, 0, 0);
+	text.pack();
+	processEvents(1000,
+			() -> hasPixel(text, text.getBackground())
+					&& !hasPixel(text, getColor(RED))
+					&& !hasPixel(text, getColor(BLUE)));
+	assertTrue(hasPixel(text, text.getBackground()));
+	assertFalse(hasPixel(text, getColor(RED)));
+	assertFalse(hasPixel(text, getColor(BLUE)));
+
+	final StyleRange styleR = getStyle(0, 1, null, RED);
+	final StyleRange styleB = getStyle(4, 1, null, BLUE);
+	final StyleRange tabStyle = new StyleRange();
+	tabStyle.start = 2;
+	tabStyle.length = 1;
+	tabStyle.metrics = new GlyphMetrics(0, 0, 100);
+	text.replaceStyleRanges(0, text.getText().length(), new StyleRange[] { styleR, tabStyle, styleB });
+	text.pack();
+	processEvents(1000, () -> hasPixel(text, getColor(RED)) && hasPixel(text, getColor(BLUE)));
+	assertTrue("Wrong style before tab", hasPixel(text, getColor(RED)));
+	assertTrue("Wrong style after tab", hasPixel(text, getColor(BLUE)));
 }
 
+@Test
+public void test_GlyphMetricsOnTab() {
+	text.setTabs(4);
+	text.setText("\tabcdefghijkl");
+	Rectangle boundsWithoutGlyphMetrics = text.getTextBounds(0, text.getText().length() - 1);
+	int tabWidthWithoutGlyphMetrics = text.getTextBounds(0, 0).width;
+	StyleRange range = new StyleRange(0, 1, null, null);
+	range.metrics = new GlyphMetrics(0, 0, 100);
+	text.setStyleRange(range);
+	int tabWidthWithGlyphMetrics = text.getTextBounds(0, 0).width;
+	assertEquals(range.metrics.width, tabWidthWithGlyphMetrics);
+	Rectangle boundsWithGlyphMetrics = text.getTextBounds(0, text.getText().length() - 1);
+	assertEquals("Style should change text bounds", boundsWithoutGlyphMetrics.width - tabWidthWithoutGlyphMetrics + tabWidthWithGlyphMetrics, boundsWithGlyphMetrics.width);
+}
+
+/**
+ * Test for:
+ * Bug 550017 - [StyledText] Disabling StyledText moves insertion position to 0
+ */
+@Test
+public void test_InsertWhenDisabled() {
+	String str = "some test text";
+	text.setText(str);
+	String selected = "test";
+	int selectionStart = str.indexOf(selected);
+	int selectionEnd = selectionStart + selected.length();
+	text.setSelection(selectionStart, selectionEnd);
+	assertEquals(selectionEnd, text.getCaretOffset());
+	assertEquals(selected, text.getSelectionText());
+
+	text.setEnabled(false);
+
+	assertEquals(selected, text.getSelectionText());
+	assertEquals(selectionEnd, text.getCaretOffset());
+
+	text.insert("[inserted]");
+	String actualText = text.getText();
+	String expectedText = "some [inserted] text";
+	assertEquals("Wrong insert in disabled StyledText", expectedText, actualText);
+}
+
+/**
+ * Test for:
+ * Bug 551335 - [StyledText] setStyleRanges reset less cache than necessary
+ * Bug 551336 - [StyledText] resetting styles does not reset rendering
+ */
+@Test
+public void test_bug551335_lostStyles() throws InterruptedException {
+	Assume.assumeFalse("Bug 536588 prevents test to work on Mac", SwtTestUtil.isCocoa);
+	shell.setVisible(true);
+	text.setText("012345678\n012345678\n0123456789");
+	text.setMargins(0, 0, 0, 0);
+	text.pack();
+	shell.pack();
+
+	StyleRange style = new StyleRange();
+	style.background = getColor(BLUE);
+	style.length = 3;
+
+	StyleRange[] styles = new StyleRange[3];
+	style.start = 3;
+	styles[0] = (StyleRange) style.clone();
+	style.start = 13;
+	styles[1] =  (StyleRange) style.clone();
+	style.start = 23;
+	styles[2] =  (StyleRange) style.clone();
+
+	int lineHeight = text.getBounds().height / text.getLineCount();
+	Rectangle[] testAreas = new Rectangle[text.getLineCount()];
+	for (int i = 0; i < testAreas.length; i++) {
+		// the test area is a small horizontal line approximate in the middle of the line
+		// the concrete width doesn't matter because it is clipped to the actual line width
+		testAreas[i] = new Rectangle(0, (int)((i + 0.48) * lineHeight), 1000, 3);
+	}
+	BooleanSupplier testAllLinesStyled = () -> {
+		for (Rectangle testArea : testAreas) {
+			if (!hasPixel(text, getColor(BLUE), testArea)) {
+				return false;
+			}
+		}
+		return true;
+	};
+	BooleanSupplier testUnstyledText = () -> {
+		for (Rectangle testArea : testAreas) {
+			if (hasPixel(text, getColor(BLUE), testArea)) {
+				return false;
+			}
+		}
+		return true;
+	};
+
+	// 1. apply style one by one
+	for (StyleRange s : styles) {
+		text.setStyleRange(s);
+	}
+	processEvents(1000, testAllLinesStyled);
+	assertTrue(testAllLinesStyled.getAsBoolean());
+
+	text.setStyleRange(null); // reset style
+	processEvents(1000, testUnstyledText);
+	assertTrue(testUnstyledText.getAsBoolean());
+
+	// 2. apply styles as array
+	text.setStyleRanges(styles);
+	processEvents(1000, testAllLinesStyled);
+	assertTrue(testAllLinesStyled.getAsBoolean());
+
+	text.setStyleRange(null); // reset style
+	processEvents(1000, testUnstyledText);
+	assertTrue(testUnstyledText.getAsBoolean());
+
+	// 3. apply styles using ranges
+	int[] ranges = new int[styles.length * 2];
+	style.start = style.length = 0;
+	for (int i = 0; i < styles.length; i++) {
+		ranges[i*2] =   styles[i].start;
+		ranges[i*2 + 1] = styles[i].length;
+		styles[i] = style;
+	}
+	text.setStyleRanges(ranges, styles);
+	processEvents(1000, testAllLinesStyled);
+	assertTrue(testAllLinesStyled.getAsBoolean());
+
+	text.setStyleRange(null); // reset style
+	processEvents(1000, testUnstyledText);
+	assertTrue(testUnstyledText.getAsBoolean());
+}
+
+/**
+ * Test for: Bug 418714 - [Win32] Content copied to clipboard lost after dispose
+ *
+ * More a {@link Clipboard} than a StlyedText test. Depending on platform data
+ * transfered to clipboard is not actually copied until the data is requested
+ * from clipboard. It should be still possible to paste text which was copied
+ * from a now disposed/unavailable StyledText.
+ */
+@Test
+public void test_clipboardCarryover() {
+	assumeFalse("Disabled on Mac because similar clipboard tests are also disabled.", SwtTestUtil.isCocoa);
+
+	String content = "StyledText-" + Math.abs(new Random().nextInt());
+	text.setText(content);
+	text.selectAll();
+	text.copy();
+	text.dispose();
+
+	text = new StyledText(shell, SWT.NONE);
+	setWidget(text);
+	text.paste();
+	assertEquals("Lost clipboard content", content, text.getText());
+	assertEquals("Clipboard content got some unexpected styling", 0, text.getStyleRanges().length);
+
+	Clipboard clipboard = new Clipboard(text.getDisplay());
+	RTFTransfer rtfTranfer = RTFTransfer.getInstance();
+	String clipboardText = (String) clipboard.getContents(rtfTranfer);
+	assertTrue("RTF copy failed", clipboardText.length() > 0);
+}
+
+/**
+ * Bug 563531 - [regression][StyledText] Scrolling with arrow down key does not update caret painting
+ */
+@Test
+public void test_caretLocationOnArrowMove() {
+	text.setText(
+		  "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................\n"
+		+ "............................................................");
+
+	shell.open();
+	text.setSize(10, 50);
+
+	for (int i = 0; i < 5; i++) {
+		text.invokeAction(ST.LINE_DOWN);
+	}
+
+	Point caretLocation = text.getCaret().getLocation();
+	int caretOffset = text.getCaretOffset();
+	text.setCaretOffset(0);
+	text.setCaretOffset(caretOffset);
+	assertEquals(text.getCaret().getLocation(), caretLocation);
+}
+}

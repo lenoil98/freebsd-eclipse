@@ -34,9 +34,6 @@ public class BasicContainerContentProvider implements ITreeContentProvider {
 	public BasicContainerContentProvider() {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
-	 */
 	@Override
 	public Object[] getChildren(Object element) {
 		if (element instanceof IWorkspaceRoot) {
@@ -47,9 +44,9 @@ public class BasicContainerContentProvider implements ITreeContentProvider {
 			}
 
 			ArrayList<IProject> accessibleProjects = new ArrayList<>();
-			for (int i = 0; i < allProjects.length; i++) {
-				if (allProjects[i].isOpen()) {
-					accessibleProjects.add(allProjects[i]);
+			for (IProject p : allProjects) {
+				if (p.isOpen()) {
+					accessibleProjects.add(p);
 				}
 			}
 			return accessibleProjects.toArray();
@@ -62,9 +59,6 @@ public class BasicContainerContentProvider implements ITreeContentProvider {
 		return getChildren(element);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
-	 */
 	@Override
 	public Object getParent(Object element) {
 		if (element instanceof IResource) {
@@ -73,9 +67,6 @@ public class BasicContainerContentProvider implements ITreeContentProvider {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
-	 */
 	@Override
 	public boolean hasChildren(Object element) {
 		return getChildren(element).length > 0;

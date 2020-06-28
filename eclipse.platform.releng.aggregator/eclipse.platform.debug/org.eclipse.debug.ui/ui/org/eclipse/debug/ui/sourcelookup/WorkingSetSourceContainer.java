@@ -54,17 +54,11 @@ public class WorkingSetSourceContainer extends CompositeSourceContainer{
 		fWorkingSet = workingSet;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.sourcelookup.ISourceContainer#getName()
-	 */
 	@Override
 	public String getName() {
 		return fWorkingSet.getName();
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (obj != null && obj instanceof WorkingSetSourceContainer) {
@@ -78,17 +72,11 @@ public class WorkingSetSourceContainer extends CompositeSourceContainer{
 		return fWorkingSet.hashCode();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.sourcelookup.ISourceContainer#getType()
-	 */
 	@Override
 	public ISourceContainerType getType() {
 		return getSourceContainerType(TYPE_ID);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.sourcelookup.containers.CompositeSourceContainer#createSourceContainers()
-	 */
 	@Override
 	protected ISourceContainer[] createSourceContainers() throws CoreException {
 		IAdaptable[] elements = fWorkingSet.getElements();
@@ -98,18 +86,17 @@ public class WorkingSetSourceContainer extends CompositeSourceContainer{
 		}
 
 		ArrayList<ISourceContainer> locationList = new ArrayList<>();
-		for (int i = 0; i < elements.length; i++) {
-			IResource resource = elements[i].getAdapter(IResource.class);
-
+		for (IAdaptable element : elements) {
+			IResource resource = element.getAdapter(IResource.class);
 			if (resource != null) {
 				switch (resource.getType()) {
-				case IResource.FOLDER:
-					locationList.add(new FolderSourceContainer((IFolder)resource, true));
-					break;
-				case IResource.PROJECT:
-					locationList.add(new ProjectSourceContainer((IProject)resource, true));
-					break;
-					//if the element corresponds to an IFile, do nothing
+					case IResource.FOLDER:
+						locationList.add(new FolderSourceContainer((IFolder)resource, true));
+						break;
+					case IResource.PROJECT:
+						locationList.add(new ProjectSourceContainer((IProject)resource, true));
+						break;
+						//if the element corresponds to an IFile, do nothing
 					default:
 						break;
 				}

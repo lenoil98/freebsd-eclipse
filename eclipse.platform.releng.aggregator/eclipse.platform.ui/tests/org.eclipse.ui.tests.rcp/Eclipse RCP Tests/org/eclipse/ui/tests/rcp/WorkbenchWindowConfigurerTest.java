@@ -51,75 +51,75 @@ import org.junit.Test;
 public class WorkbenchWindowConfigurerTest {
 
 
-    private Display display = null;
+	private Display display = null;
 
 	@Before
 	public void setUp() throws Exception {
 
-        assertNull(display);
-        display = PlatformUI.createDisplay();
-        assertNotNull(display);
-    }
+		assertNull(display);
+		display = PlatformUI.createDisplay();
+		assertNotNull(display);
+	}
 
 	@After
 	public void tearDown() throws Exception {
-        assertNotNull(display);
-        display.dispose();
-        assertTrue(display.isDisposed());
+		assertNotNull(display);
+		display.dispose();
+		assertTrue(display.isDisposed());
 
-    }
+	}
 
 	@Test
 	public void testDefaults() {
-        WorkbenchAdvisor wa = new WorkbenchAdvisorObserver(1) {
+		WorkbenchAdvisor wa = new WorkbenchAdvisorObserver(1) {
 
-            @Override
+			@Override
 			public void fillActionBars(IWorkbenchWindow window,
-                    IActionBarConfigurer actionBarConfig, int flags) {
-                super.fillActionBars(window, actionBarConfig, flags);
+					IActionBarConfigurer actionBarConfig, int flags) {
+				super.fillActionBars(window, actionBarConfig, flags);
 
-                String tempTitle = "title"; //$NON-NLS-1$
+				String tempTitle = "title"; //$NON-NLS-1$
 
-                IWorkbenchWindowConfigurer windowConfig = workbenchConfig
-                        .getWindowConfigurer(window);
-                assertNotNull(windowConfig);
+				IWorkbenchWindowConfigurer windowConfig = workbenchConfig
+						.getWindowConfigurer(window);
+				assertNotNull(windowConfig);
 
-                assertEquals(window, windowConfig.getWindow());
-                assertEquals(workbenchConfig, windowConfig
-                        .getWorkbenchConfigurer());
-                assertEquals(actionBarConfig, windowConfig
-                        .getActionBarConfigurer());
-                assertNotNull(windowConfig.getTitle());
-                assertTrue(windowConfig.getShowCoolBar());
-                assertTrue(windowConfig.getShowMenuBar());
-                assertFalse(windowConfig.getShowPerspectiveBar());
-                assertTrue(windowConfig.getShowStatusLine());
+				assertEquals(window, windowConfig.getWindow());
+				assertEquals(workbenchConfig, windowConfig
+						.getWorkbenchConfigurer());
+				assertEquals(actionBarConfig, windowConfig
+						.getActionBarConfigurer());
+				assertNotNull(windowConfig.getTitle());
+				assertTrue(windowConfig.getShowCoolBar());
+				assertTrue(windowConfig.getShowMenuBar());
+				assertFalse(windowConfig.getShowPerspectiveBar());
+				assertTrue(windowConfig.getShowStatusLine());
 
-                windowConfig.setTitle(tempTitle);
-                windowConfig.setShowCoolBar(false);
-                windowConfig.setShowMenuBar(false);
-                windowConfig.setShowPerspectiveBar(true);
-                windowConfig.setShowStatusLine(false);
-                assertEquals(tempTitle, windowConfig.getTitle());
-                assertFalse(windowConfig.getShowCoolBar());
-                assertFalse(windowConfig.getShowMenuBar());
-                assertTrue(windowConfig.getShowPerspectiveBar());
-                assertFalse(windowConfig.getShowStatusLine());
+				windowConfig.setTitle(tempTitle);
+				windowConfig.setShowCoolBar(false);
+				windowConfig.setShowMenuBar(false);
+				windowConfig.setShowPerspectiveBar(true);
+				windowConfig.setShowStatusLine(false);
+				assertEquals(tempTitle, windowConfig.getTitle());
+				assertFalse(windowConfig.getShowCoolBar());
+				assertFalse(windowConfig.getShowMenuBar());
+				assertTrue(windowConfig.getShowPerspectiveBar());
+				assertFalse(windowConfig.getShowStatusLine());
 
-                // *** title is orginally null, but cannot set it back to null,
-                // should that
-                //     check be allowed?
-                windowConfig.setTitle("");//$NON-NLS-1$
-                windowConfig.setShowCoolBar(true);
-                windowConfig.setShowMenuBar(true);
-                windowConfig.setShowPerspectiveBar(false);
-                windowConfig.setShowStatusLine(true);
-            }
-        };
+				// *** title is orginally null, but cannot set it back to null,
+				// should that
+				//     check be allowed?
+				windowConfig.setTitle("");//$NON-NLS-1$
+				windowConfig.setShowCoolBar(true);
+				windowConfig.setShowMenuBar(true);
+				windowConfig.setShowPerspectiveBar(false);
+				windowConfig.setShowStatusLine(true);
+			}
+		};
 
-        int code = PlatformUI.createAndRunWorkbench(display, wa);
-        assertEquals(PlatformUI.RETURN_OK, code);
-    }
+		int code = PlatformUI.createAndRunWorkbench(display, wa);
+		assertEquals(PlatformUI.RETURN_OK, code);
+	}
 
 	@Test
 	public void test104558_T_T() throws Throwable {
@@ -186,14 +186,14 @@ public class WorkbenchWindowConfigurerTest {
 	// tests to ensure that all WorkbenchAdvisor API is called from the UI thread.
 	@Test
 	public void testThreading() {
-		final ArrayList<String> results = new ArrayList<String>();
+		final ArrayList<String> results = new ArrayList<>();
 
 		WorkbenchAdvisor advisor = new RCPTestWorkbenchAdvisor(1) {
 
 			@Override
 			public WorkbenchWindowAdvisor createWorkbenchWindowAdvisor(
 					IWorkbenchWindowConfigurer configurer) {
-				WorkbenchWindowAdvisor advisor = new WorkbenchWindowAdvisor(configurer) {
+				return new WorkbenchWindowAdvisor(configurer) {
 
 					private void ensureThread() {
 						if (Display.getCurrent() != null) {
@@ -211,7 +211,7 @@ public class WorkbenchWindowConfigurerTest {
 							IActionBarConfigurer configurer) {
 						ensureThread();
 
-						ActionBarAdvisor advisor = new ActionBarAdvisor(configurer) {
+						return new ActionBarAdvisor(configurer) {
 
 							@Override
 							public void dispose() {
@@ -297,7 +297,6 @@ public class WorkbenchWindowConfigurerTest {
 								ensureThread();
 								return super.saveState(memento);
 							}};
-						return advisor;
 					}
 
 					@Override
@@ -381,7 +380,6 @@ public class WorkbenchWindowConfigurerTest {
 					}
 
 				};
-				return advisor;
 			}
 		};
 

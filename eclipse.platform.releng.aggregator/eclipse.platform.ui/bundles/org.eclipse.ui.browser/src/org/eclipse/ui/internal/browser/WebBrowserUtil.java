@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2016 IBM Corporation and others.
+ * Copyright (c) 2003, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,7 @@
  *     IBM Corporation - Initial API and implementation
  *     Martin Oberhuber (Wind River) - [292882] Default Browser on Solaris
  *     Tomasz Zarna (Tasktop Technologies) - [429546] External Browser with parameters
+ *     Christoph Läubrich - Bug 552773 - Simplify logging in platform code base
  *******************************************************************************/
 package org.eclipse.ui.internal.browser;
 
@@ -21,9 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.util.Util;
 import org.eclipse.swt.SWT;
@@ -59,7 +58,7 @@ public class WebBrowserUtil {
 	 */
 	public static boolean isWindows() {
 		String os = System.getProperty("os.name"); //$NON-NLS-1$
-		if (os != null && os.toLowerCase().indexOf("win") >= 0) //$NON-NLS-1$
+		if (os != null && os.toLowerCase().contains("win")) //$NON-NLS-1$
 			return true;
 		return false;
 	}
@@ -71,7 +70,7 @@ public class WebBrowserUtil {
 	 */
 	public static boolean isLinux() {
 		String os = System.getProperty("os.name"); //$NON-NLS-1$
-		if (os != null && os.toLowerCase().indexOf("lin") >= 0) //$NON-NLS-1$
+		if (os != null && os.toLowerCase().contains("lin")) //$NON-NLS-1$
 			return true;
 		return false;
 	}
@@ -142,9 +141,7 @@ public class WebBrowserUtil {
 		} catch (Throwable t) {
 			StringBuilder message = new StringBuilder("Internal browser is not available"); //$NON-NLS-1$
 			message.append(t.getMessage() == null?".":": " + t.getMessage()); //$NON-NLS-1$ //$NON-NLS-2$
-			WebBrowserUIPlugin.getInstance().getLog().log(
-					new Status(IStatus.WARNING, WebBrowserUIPlugin.PLUGIN_ID,
-							0, message.toString() , null));
+			WebBrowserUIPlugin.getInstance().getLog().warn(message.toString());
 			isInternalBrowserOperational = Boolean.FALSE;
 			return false;
 		} finally {
@@ -185,7 +182,7 @@ public class WebBrowserUtil {
 			IBrowserExt browserExt = browsers[i];
 			String[] locations = browserExt.getDefaultLocations();
 			if (locations != null
-					&& browserExt.getOS().toLowerCase().indexOf(os) >= 0) {
+					&& browserExt.getOS().toLowerCase().contains(os)) {
 				int size2 = locations.length;
 				for (int j = 0; j < size2; j++) {
 					String location = locations[j];

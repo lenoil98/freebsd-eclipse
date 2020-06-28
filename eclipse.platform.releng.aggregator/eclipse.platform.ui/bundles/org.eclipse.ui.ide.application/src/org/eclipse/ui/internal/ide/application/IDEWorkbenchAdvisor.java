@@ -19,6 +19,7 @@ package org.eclipse.ui.internal.ide.application;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -84,11 +85,10 @@ import org.eclipse.ui.internal.ide.undo.WorkspaceUndoMonitor;
 import org.eclipse.ui.internal.progress.ProgressMonitorJobsDialog;
 import org.eclipse.ui.progress.IProgressService;
 import org.eclipse.ui.statushandlers.AbstractStatusHandler;
+import org.eclipse.urischeme.AutoRegisterSchemeHandlersJob;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
-
-import com.ibm.icu.text.Collator;
 
 /**
  * IDE-specified workbench advisor which configures the workbench for use as an
@@ -112,7 +112,7 @@ public class IDEWorkbenchAdvisor extends WorkbenchAdvisor {
 	private static IDEWorkbenchAdvisor workbenchAdvisor = null;
 
 	/**
-	 * Ordered map of versioned feature ids -> info that are new for this
+	 * Ordered map of versioned feature ids -gt; info that are new for this
 	 * session; <code>null</code> if uninitialized. Key type:
 	 * <code>String</code>, Value type: <code>AboutInfo</code>.
 	 */
@@ -221,6 +221,7 @@ public class IDEWorkbenchAdvisor extends WorkbenchAdvisor {
 			jfaceComparatorIsSet = true;
 		}
 
+		new AutoRegisterSchemeHandlersJob().schedule();
 	}
 
 	@Override
@@ -491,9 +492,8 @@ public class IDEWorkbenchAdvisor extends WorkbenchAdvisor {
 	 */
 	private void disconnectFromWorkspace() {
 		// save the workspace
-		final MultiStatus status = new MultiStatus(
-				IDEWorkbenchPlugin.IDE_WORKBENCH, 1,
-				IDEWorkbenchMessages.ProblemSavingWorkbench, null);
+		final MultiStatus status = new MultiStatus(IDEWorkbenchPlugin.IDE_WORKBENCH, 1,
+				IDEWorkbenchMessages.ProblemSavingWorkbench);
 		try {
 			final ProgressMonitorJobsDialog p = new CancelableProgressMonitorJobsDialog(
 					null);
@@ -554,11 +554,11 @@ public class IDEWorkbenchAdvisor extends WorkbenchAdvisor {
 	}
 
 	/**
-	 * Returns the map of versioned feature ids -> info object for all installed
+	 * Returns the map of versioned feature ids -&gt; info object for all installed
 	 * features. The format of the versioned feature id (the key of the map) is
 	 * featureId + ":" + versionId.
 	 *
-	 * @return map of versioned feature ids -> info object (key type:
+	 * @return map of versioned feature ids -&gt; info object (key type:
 	 *         <code>String</code>, value type: <code>AboutInfo</code>)
 	 * @since 3.0
 	 */
@@ -585,11 +585,11 @@ public class IDEWorkbenchAdvisor extends WorkbenchAdvisor {
 	}
 
 	/**
-	 * Returns the ordered map of versioned feature ids -> AboutInfo that are
+	 * Returns the ordered map of versioned feature ids -&gt; AboutInfo that are
 	 * new for this session.
 	 *
 	 * @return ordered map of versioned feature ids (key type:
-	 *         <code>String</code>) -> infos (value type:
+	 *         <code>String</code>) -&gt; infos (value type:
 	 *         <code>AboutInfo</code>).
 	 */
 	public Map<String, AboutInfo> getNewlyAddedBundleGroups() {

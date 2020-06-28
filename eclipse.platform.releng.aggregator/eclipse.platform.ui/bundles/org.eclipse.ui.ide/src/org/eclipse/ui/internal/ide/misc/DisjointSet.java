@@ -29,7 +29,7 @@ import java.util.List;
  * to a constant depth.  A rank is maintained for each tree that is used when
  * performing union operations to ensure the tree remains balanced.
  * <p>
- * Ref: Cormen, Leiserson, and Rivest <it>Introduction to Algorithms</it>,
+ * Ref: Cormen, Leiserson, and Rivest <i>Introduction to Algorithms</i>,
  * McGraw-Hill, 1990. The disjoint set forest implementation in section 22.3.
  * </p>
  *
@@ -55,7 +55,7 @@ public class DisjointSet<T> {
 	}
 
 	/**
-	 * Map of Object -> Node, where each key is an object in the
+	 * Map of Object -&gt; Node, where each key is an object in the
 	 * disjoint set, and the Node represents its position and rank
 	 * within the set.
 	 */

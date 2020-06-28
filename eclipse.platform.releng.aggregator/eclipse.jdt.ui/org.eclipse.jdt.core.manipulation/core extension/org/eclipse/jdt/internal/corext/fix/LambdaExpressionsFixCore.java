@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2019 IBM Corporation and others.
+ * Copyright (c) 2013, 2020 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -39,10 +38,13 @@ import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
+import org.eclipse.jdt.core.dom.FieldAccess;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -50,6 +52,7 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
@@ -59,12 +62,15 @@ import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.TypeLocation;
+import org.eclipse.jdt.core.manipulation.ICleanUpFixCore;
+import org.eclipse.jdt.core.util.IModifierConstants;
 
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -199,6 +205,109 @@ public class LambdaExpressionsFixCore extends CompilationUnitRewriteOperationsFi
 		}
 	}
 
+	public static final class FinalFieldAccessInFieldDeclarationFinder extends HierarchicalASTVisitor {
+
+		private MethodDeclaration fMethodDeclaration;
+		private ASTNode fFieldDeclaration;
+		static boolean hasReference(MethodDeclaration node) {
+			try {
+				FinalFieldAccessInFieldDeclarationFinder finder= new FinalFieldAccessInFieldDeclarationFinder();
+				ClassInstanceCreation cic= (ClassInstanceCreation) node.getParent().getParent();
+				cic.getType().resolveBinding();
+				finder.fMethodDeclaration= node;
+				finder.fFieldDeclaration= finder.findFieldDeclaration(node);
+				if (finder.fFieldDeclaration == null) {
+					return false;
+				}
+				node.accept(finder);
+			} catch (AbortSearchException e) {
+				return true;
+			}
+			return false;
+		}
+
+		private ASTNode findFieldDeclaration(ASTNode node) {
+			while (node != null) {
+				if (node instanceof FieldDeclaration) {
+					return node;
+				}
+				if (node instanceof AbstractTypeDeclaration) {
+					return null;
+				}
+				node= node.getParent();
+			}
+			return null;
+		}
+
+		@Override
+		public boolean visit(AnonymousClassDeclaration node) {
+			return false;
+		}
+
+		@Override
+		public boolean visit(BodyDeclaration node) {
+			return false;
+		}
+
+		@Override
+		public boolean visit(MethodDeclaration node) {
+			return node == fMethodDeclaration;
+		}
+
+		private void checkForUninitializedFinalReference(IBinding binding) {
+			if (binding instanceof IVariableBinding) {
+				int modifiers= ((IVariableBinding)binding).getModifiers();
+				if ((modifiers & IModifierConstants.ACC_FINAL) == IModifierConstants.ACC_FINAL) {
+					if (((IVariableBinding) binding).isField()) {
+						ASTNode decl= ((CompilationUnit)fMethodDeclaration.getRoot()).findDeclaringNode(binding);
+						if (decl instanceof VariableDeclaration && ((VariableDeclaration)decl).getInitializer() == null) {
+							throw new AbortSearchException();
+						}
+					}
+				}
+			}
+		}
+
+		@Override
+		public boolean visit(SuperFieldAccess node) {
+			IVariableBinding binding= node.resolveFieldBinding();
+			if (binding == null) {
+				return true;
+			}
+			IVariableBinding decl= binding.getVariableDeclaration();
+			checkForUninitializedFinalReference(decl);
+			return true;
+		}
+
+		@Override
+		public boolean visit(SimpleName node) {
+			node.getParent();
+			IBinding binding= node.resolveBinding();
+			checkForUninitializedFinalReference(binding);
+			return true;
+		}
+
+		@Override
+		public boolean visit(QualifiedName node) {
+			node.getParent();
+			IBinding binding= node.resolveBinding();
+			checkForUninitializedFinalReference(binding);
+			return true;
+		}
+
+		@Override
+		public boolean visit(FieldAccess node) {
+			IVariableBinding binding= node.resolveFieldBinding();
+			if (binding == null) {
+				return true;
+			}
+			IVariableBinding decl= binding.getVariableDeclaration();
+			checkForUninitializedFinalReference(decl);
+			return true;
+		}
+
+	}
+
 	public static final class SuperThisQualifier extends HierarchicalASTVisitor {
 
 		private ITypeBinding fQualifierTypeBinding;
@@ -282,6 +391,62 @@ public class LambdaExpressionsFixCore extends CompilationUnitRewriteOperationsFi
 		}
 	}
 
+	private static final class MethodRecursionFinder extends HierarchicalASTVisitor {
+		private MethodDeclaration fMethodDeclaration;
+		private IMethodBinding fMethodBinding;
+		private ASTNode fFieldDeclaration;
+
+		private static boolean isRecursiveLocal(MethodDeclaration node) {
+			try {
+				MethodRecursionFinder finder= new MethodRecursionFinder();
+				ClassInstanceCreation cic= (ClassInstanceCreation) node.getParent().getParent();
+				cic.getType().resolveBinding();
+				finder.fMethodDeclaration= node;
+				finder.fFieldDeclaration= finder.findFieldDeclaration(node);
+				if (finder.fFieldDeclaration != null) {
+					return false;
+				}
+				finder.fMethodBinding= finder.fMethodDeclaration.resolveBinding();
+				if (finder.fMethodBinding == null) {
+					return false;
+				}
+				node.accept(finder);
+			} catch (AbortSearchException e) {
+				return true;
+			}
+
+			return false;
+		}
+
+		private ASTNode findFieldDeclaration(ASTNode node) {
+			ASTNode originalNode= node;
+			while (node != null) {
+				if (node instanceof FieldDeclaration) {
+					return node;
+				}
+				if (node instanceof AbstractTypeDeclaration) {
+					return null;
+				}
+				if (node instanceof MethodDeclaration && node != originalNode) {
+					return null;
+				}
+				node= node.getParent();
+			}
+			return null;
+		}
+
+		@Override
+		public boolean visit(MethodInvocation node) {
+			if (node.getExpression() == null) {
+				IMethodBinding binding= node.resolveMethodBinding();
+				if (binding != null && binding.isEqualTo(fMethodBinding)) {
+					throw new AbortSearchException();
+				}
+			}
+			return true;
+		}
+	}
+
 	public static class CreateLambdaOperation extends CompilationUnitRewriteOperation {
 
 		private final List<ClassInstanceCreation> fExpressions;
@@ -293,9 +458,9 @@ public class LambdaExpressionsFixCore extends CompilationUnitRewriteOperationsFi
 		@Override
 		public void rewriteAST(CompilationUnitRewrite cuRewrite, LinkedProposalModelCore model) throws CoreException {
 
-			ASTRewrite rewrite= cuRewrite.getASTRewrite();
+			final ASTRewrite rewrite= cuRewrite.getASTRewrite();
 			ImportRemover importRemover= cuRewrite.getImportRemover();
-			AST ast= rewrite.getAST();
+			final AST ast= rewrite.getAST();
 
 			HashMap<ClassInstanceCreation, HashSet<String>> cicToNewNames= new HashMap<>();
 			for (int i= 0; i < fExpressions.size(); i++) {
@@ -309,7 +474,7 @@ public class LambdaExpressionsFixCore extends CompilationUnitRewriteOperationsFi
 				if (!(object instanceof MethodDeclaration)) {
 					continue;
 				}
-				MethodDeclaration methodDeclaration= (MethodDeclaration) object;
+				final MethodDeclaration methodDeclaration= (MethodDeclaration) object;
 				HashSet<String> excludedNames= new HashSet<>();
 				if (i != 0) {
 					for (ClassInstanceCreation convertedCic : fExpressions.subList(0, i)) {
@@ -359,10 +524,104 @@ public class LambdaExpressionsFixCore extends CompilationUnitRewriteOperationsFi
 						}
 					}
 				}
+
+				@SuppressWarnings("unchecked")
+				ASTNode fragment= ASTNodes.getFirstAncestorOrNull(classInstanceCreation, VariableDeclarationFragment.class, BodyDeclaration.class);
+
+				if (fragment instanceof VariableDeclarationFragment) {
+					final VariableDeclarationFragment actualFragment= (VariableDeclarationFragment) fragment;
+
+					if (actualFragment.getParent() instanceof FieldDeclaration) {
+						FieldDeclaration fieldDeclaration= (FieldDeclaration) actualFragment.getParent();
+
+						@SuppressWarnings("unchecked")
+						ASTNode declarationClass= ASTNodes.getFirstAncestorOrNull(fieldDeclaration, TypeDeclaration.class);
+
+						if (declarationClass instanceof TypeDeclaration) {
+							TypeDeclaration typeDeclaration= (TypeDeclaration) declarationClass;
+
+							final List<FieldDeclaration> nextFields= new ArrayList<>(typeDeclaration.getFields().length);
+							boolean isBefore= true;
+
+							for (FieldDeclaration oneField : typeDeclaration.getFields()) {
+								if (oneField == fieldDeclaration) {
+									isBefore= false;
+								}
+
+								if (!isBefore) {
+									nextFields.add(oneField);
+								}
+							}
+
+							ASTVisitor visitor= new ASTVisitor() {
+								@Override
+								public boolean visit(final MethodInvocation node) {
+									ITypeBinding fieldType= fieldDeclaration.getType().resolveBinding();
+									ASTNode declaration= ASTNodes.findDeclaration(node.resolveMethodBinding(), declarationClass);
+
+									if (node.getExpression() == null && fieldType != null && methodDeclaration == declaration) {
+										ASTNode replacement;
+
+										if ((fieldDeclaration.getModifiers() & Modifier.STATIC) != 0) {
+											SimpleName copyOfClassName= (SimpleName) rewrite.createCopyTarget(typeDeclaration.getName());
+											replacement= ast.newQualifiedName(copyOfClassName, (SimpleName) rewrite.createCopyTarget(actualFragment.getName()));
+										} else {
+											FieldAccess newFieldAccess= ast.newFieldAccess();
+											newFieldAccess.setExpression(ast.newThisExpression());
+											newFieldAccess.setName((SimpleName) rewrite.createCopyTarget(actualFragment.getName()));
+											replacement= newFieldAccess;
+										}
+
+										rewrite.set(node, MethodInvocation.EXPRESSION_PROPERTY, replacement, group);
+
+										return false;
+									}
+
+									return true;
+								}
+
+								@Override
+								public boolean visit(final SimpleName node) {
+									if ((!(node.getParent() instanceof QualifiedName) || node.getLocationInParent() != QualifiedName.NAME_PROPERTY)
+											&& (!(node.getParent() instanceof FieldAccess) || node.getLocationInParent() != FieldAccess.NAME_PROPERTY)
+											&& (!(node.getParent() instanceof SuperFieldAccess) || node.getLocationInParent() != SuperFieldAccess.NAME_PROPERTY)) {
+										ASTNode declaration= ASTNodes.findDeclaration(node.resolveBinding(), declarationClass);
+
+										if (declaration != null
+												&& declaration instanceof VariableDeclarationFragment
+												&& declaration.getParent() instanceof FieldDeclaration) {
+											FieldDeclaration currentField= (FieldDeclaration) declaration.getParent();
+
+											if (nextFields.contains(currentField)) {
+												if ((currentField.getModifiers() & Modifier.STATIC) != 0) {
+													SimpleName copyOfClassName= (SimpleName) rewrite.createCopyTarget(typeDeclaration.getName());
+													QualifiedName replacement= ast.newQualifiedName(copyOfClassName, ASTNodes.createMoveTarget(rewrite, node));
+													rewrite.replace(node, replacement, group);
+												} else {
+													FieldAccess newFieldAccess= ast.newFieldAccess();
+													newFieldAccess.setExpression(ast.newThisExpression());
+													newFieldAccess.setName(ASTNodes.createMoveTarget(rewrite, node));
+													rewrite.replace(node, newFieldAccess, group);
+												}
+
+												return false;
+											}
+										}
+									}
+
+									return true;
+								}
+							};
+							lambdaBody.accept(visitor);
+						}
+					}
+				}
+
 				//TODO: Bug 421479: [1.8][clean up][quick assist] convert anonymous to lambda must consider lost scope of interface
 				//				lambdaBody.accept(new InterfaceAccessQualifier(rewrite, classInstanceCreation.getType().resolveBinding())); //TODO: maybe need a separate ASTRewrite and string placeholder
 
 				lambdaExpression.setBody(ASTNodes.getCopyOrReplacement(rewrite, lambdaBody, group));
+
 				Expression replacement= lambdaExpression;
 				ITypeBinding targetTypeBinding= ASTNodes.getTargetType(classInstanceCreation);
 				if (ASTNodes.isTargetAmbiguous(classInstanceCreation, ASTNodes.isExplicitlyTypedLambda(lambdaExpression)) || targetTypeBinding.getFunctionalInterfaceMethod() == null) {
@@ -507,8 +766,7 @@ public class LambdaExpressionsFixCore extends CompilationUnitRewriteOperationsFi
 			ASTRewrite rewrite= cuRewrite.getASTRewrite();
 			AST ast= rewrite.getAST();
 
-			for (Iterator<LambdaExpression> iterator= fExpressions.iterator(); iterator.hasNext();) {
-				LambdaExpression lambdaExpression= iterator.next();
+			for (LambdaExpression lambdaExpression : fExpressions) {
 				TextEditGroup group= createTextEditGroup(FixMessages.LambdaExpressionsFix_convert_to_anonymous_class_creation, cuRewrite);
 
 				ITypeBinding lambdaTypeBinding= lambdaExpression.resolveTypeBinding();
@@ -696,7 +954,19 @@ public class LambdaExpressionsFixCore extends CompilationUnitRewriteOperationsFi
 			return false;
 		}
 
+		// lambda cannot access this and so we should avoid lambda conversion
+		// when anonymous class is used to initialize field and refers to
+		// final fields that may or may not be initialized
+		if (FinalFieldAccessInFieldDeclarationFinder.hasReference(methodDecl)) {
+			return false;
+		}
+
 		if (ASTNodes.getTargetType(node) == null) {
+			return false;
+		}
+
+		// Cannot handle recursive calls in a locally declared anonymous class
+		if (MethodRecursionFinder.isRecursiveLocal(methodDecl)) {
 			return false;
 		}
 

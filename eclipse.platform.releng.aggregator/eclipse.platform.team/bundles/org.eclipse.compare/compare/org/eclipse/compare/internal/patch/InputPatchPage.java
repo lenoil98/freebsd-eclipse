@@ -25,6 +25,7 @@ import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -71,8 +72,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.model.WorkbenchContentProvider;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.views.navigator.ResourceComparator;
-
-import com.ibm.icu.text.MessageFormat;
 
 public class InputPatchPage extends WizardPage {
 
@@ -181,7 +180,10 @@ public class InputPatchPage extends WizardPage {
 		shell.addShellListener(fActivationListener);
 
 		Dialog.applyDialogFont(composite);
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, ICompareContextIds.PATCH_INPUT_WIZARD_PAGE);
+
+		if(PlatformUI.isWorkbenchRunning()) {
+			PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, ICompareContextIds.PATCH_INPUT_WIZARD_PAGE);
+		}
 	}
 
 	/**
@@ -284,11 +286,7 @@ public class InputPatchPage extends WizardPage {
 								patchFileURL), getContainer());
 						if (contents != null)
 							reader = new StringReader(contents);
-					} catch (MalformedURLException e) {
-						// ignore as we tested it with modify listener on combo
-					} catch (InvocationTargetException e) { // ignore
-					} catch (OperationCanceledException e) { // ignore
-					} catch (InterruptedException e) { // ignore
+					} catch (MalformedURLException | InvocationTargetException | OperationCanceledException | InterruptedException e) { // ignore
 					}
 				}
 				fPatchSource= PatchMessages.InputPatchPage_URL_title;
@@ -297,13 +295,15 @@ public class InputPatchPage extends WizardPage {
 				IResource[] resources= Utilities.getResources(fTreeViewer.getSelection());
 				IResource patchFile= resources[0];
 				if (patchFile != null) {
-					try {
-						reader= new FileReader(patchFile.getLocation().toFile());
-					} catch (FileNotFoundException ex) {
+					if (patchFile.getLocation() == null) {
 						MessageDialog.openError(null, PatchMessages.InputPatchPage_PatchErrorDialog_title, PatchMessages.InputPatchPage_PatchFileNotFound_message);
-					} catch (NullPointerException nex) {
-						//in case the path doesn't exist (eg. getLocation() returned null)
-						MessageDialog.openError(null, PatchMessages.InputPatchPage_PatchErrorDialog_title, PatchMessages.InputPatchPage_PatchFileNotFound_message);
+					} else {
+						try {
+							reader = new FileReader(patchFile.getLocation().toFile());
+						} catch (FileNotFoundException ex) {
+							MessageDialog.openError(null, PatchMessages.InputPatchPage_PatchErrorDialog_title,
+									PatchMessages.InputPatchPage_PatchFileNotFound_message);
+						}
 					}
 				}
 				fPatchSource= PatchMessages.InputPatchPage_WorkspacePatch_title;
@@ -332,9 +332,6 @@ public class InputPatchPage extends WizardPage {
 		}
 	}
 
-	/* (non-JavaDoc)
-	 * Method declared in IWizardPage.
-	 */
 	@Override
 	public boolean canFlipToNextPage() {
 		// we can't call getNextPage to determine if flipping is allowed since computing
@@ -730,9 +727,11 @@ public class InputPatchPage extends WizardPage {
 			// set filenames history
 			String[] sourceNames= settings.getArray(STORE_PATCH_FILES_ID);
 			if (sourceNames != null)
-				for (int i= 0; i < sourceNames.length; i++)
-					if (sourceNames[i] != null && sourceNames[i].length() > 0)
-						fPatchFileNameField.add(sourceNames[i]);
+				for (String sourceName : sourceNames) {
+					if (sourceName != null && sourceName.length() > 0) {
+						fPatchFileNameField.add(sourceName);
+					}
+				}
 
 			// set patch file path
 			String patchFilePath= settings.get(STORE_PATCH_FILES_ID);
@@ -742,9 +741,11 @@ public class InputPatchPage extends WizardPage {
 			// set URLs history
 			String[] sourceURLs= settings.getArray(STORE_PATCH_URLS_ID);
 			if (sourceURLs != null)
-				for (int i= 0; i < sourceURLs.length; i++)
-					if (sourceURLs[i] != null && sourceURLs[i].length() > 0)
-						fPatchURLField.add(sourceURLs[i]);
+				for (String sourceURL : sourceURLs) {
+					if (sourceURL != null && sourceURL.length() > 0) {
+						fPatchURLField.add(sourceURL);
+					}
+				}
 
 			// If the previous apply patch was used with a clipboard, we need to check
 			// if there is a valid patch on the clipboard. This will be done in adjustToCurrentTarget()
@@ -841,7 +842,7 @@ public class InputPatchPage extends WizardPage {
 		// readjust selection if there is a patch selected in the workspace or on the clipboard
 		// check workspace first
 		IResource patchTarget= fPatchWizard.getTarget();
-		if (patchTarget instanceof IFile) {
+		if (patchTarget instanceof IFile && patchTarget.getLocation() != null) {
 			Reader reader= null;
 			try {
 				try {
@@ -857,10 +858,7 @@ public class InputPatchPage extends WizardPage {
 					}
 				} catch (FileNotFoundException ex) {
 					// silently ignored
-				} catch (NullPointerException nex) {
-					// silently ignored
 				}
-
 			} finally {
 				if (reader != null) {
 					try {

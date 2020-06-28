@@ -44,7 +44,7 @@ public abstract class RepositoryTracker {
 	/**
 	 * List<URI> of repositories that have already been reported to the user as not found.
 	 */
-	private final List<URI> reposNotFound = Collections.synchronizedList(new ArrayList<URI>());
+	private final List<URI> reposNotFound = Collections.synchronizedList(new ArrayList<>());
 
 	/**
 	 * Return an array of repository locations known for the specified provisioning session.
@@ -60,7 +60,7 @@ public abstract class RepositoryTracker {
 	 * @return a status that describes an invalid location
 	 */
 	public IStatus getInvalidLocationStatus(String locationText) {
-		return new Status(IStatus.ERROR, Activator.ID, IStatusCodes.INVALID_REPOSITORY_LOCATION, NLS.bind(Messages.RepositoryTracker_InvalidLocation, locationText), null);
+		return new Status(IStatus.ERROR, Constants.BUNDLE_ID, IStatusCodes.INVALID_REPOSITORY_LOCATION, NLS.bind(Messages.RepositoryTracker_InvalidLocation, locationText), null);
 	}
 
 	/**
@@ -130,8 +130,8 @@ public abstract class RepositoryTracker {
 		// This is a fallback implementation in the absence of a repository tracker
 		// that would know what to do.
 		URI[] knownRepositories = getKnownRepositories(session);
-		for (int i = 0; i < knownRepositories.length; i++) {
-			if (URIUtil.sameURI(knownRepositories[i], location)) {
+		for (URI repository : knownRepositories) {
+			if (URIUtil.sameURI(repository, location)) {
 				return true;
 			}
 		}

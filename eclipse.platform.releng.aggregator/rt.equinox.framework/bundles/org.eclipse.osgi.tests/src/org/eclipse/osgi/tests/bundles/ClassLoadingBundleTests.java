@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2018 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -1013,7 +1013,7 @@ public class ClassLoadingBundleTests extends AbstractBundleTests {
 		threadLockTest.loadClass("thread.locktest.ATest"); //$NON-NLS-1$
 
 		Object[] expectedEvents = new Object[2];
-		expectedEvents[0] = new Long(5000);
+		expectedEvents[0] = Long.valueOf(5000);
 		expectedEvents[1] = new BundleEvent(BundleEvent.STARTED, threadLockTest);
 		Object[] actualEvents = simpleResults.getResults(2);
 		compareResults(expectedEvents, actualEvents);
@@ -1028,44 +1028,44 @@ public class ClassLoadingBundleTests extends AbstractBundleTests {
 		urls[1] = test.getEntry("a/b/c/d"); //$NON-NLS-1$
 		assertNotNull("resource", urls[0]); //$NON-NLS-1$
 		assertNotNull("entry", urls[1]); //$NON-NLS-1$
-		for (int i = 0; i < urls.length; i++) {
-			URL testURL = new URL(urls[i], "g"); //$NON-NLS-1$
+		for (URL url : urls) {
+			URL testURL = new URL(url, "g"); //$NON-NLS-1$
 			assertEquals("g", "/a/b/c/g", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "./g"); //$NON-NLS-1$
+			testURL = new URL(url, "./g"); //$NON-NLS-1$
 			assertEquals("./g", "/a/b/c/g", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "g/"); //$NON-NLS-1$
+			testURL = new URL(url, "g/"); //$NON-NLS-1$
 			assertEquals("g/", "/a/b/c/g/", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "/g"); //$NON-NLS-1$
+			testURL = new URL(url, "/g"); //$NON-NLS-1$
 			assertEquals("/g", "/g", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "?y"); //$NON-NLS-1$
+			testURL = new URL(url, "?y"); //$NON-NLS-1$
 			assertEquals("?y", "/a/b/c/?y", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "g?y"); //$NON-NLS-1$
+			testURL = new URL(url, "g?y"); //$NON-NLS-1$
 			assertEquals("g?y", "/a/b/c/g?y", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "g#s"); //$NON-NLS-1$
+			testURL = new URL(url, "g#s"); //$NON-NLS-1$
 			assertEquals("g#s", "/a/b/c/g#s", testURL.getPath() + "#s"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			testURL = new URL(urls[i], "g?y#s"); //$NON-NLS-1$
+			testURL = new URL(url, "g?y#s"); //$NON-NLS-1$
 			assertEquals("g?y#s", "/a/b/c/g?y#s", testURL.getPath() + "#s"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			testURL = new URL(urls[i], ";x"); //$NON-NLS-1$
+			testURL = new URL(url, ";x"); //$NON-NLS-1$
 			assertEquals(";x", "/a/b/c/;x", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "g;x"); //$NON-NLS-1$
+			testURL = new URL(url, "g;x"); //$NON-NLS-1$
 			assertEquals("g;x", "/a/b/c/g;x", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "g;x?y#s"); //$NON-NLS-1$
+			testURL = new URL(url, "g;x?y#s"); //$NON-NLS-1$
 			assertEquals("g;x?y#s", "/a/b/c/g;x?y#s", testURL.getPath() + "#s"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			testURL = new URL(urls[i], "."); //$NON-NLS-1$
+			testURL = new URL(url, "."); //$NON-NLS-1$
 			assertEquals(".", "/a/b/c/", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "./"); //$NON-NLS-1$
+			testURL = new URL(url, "./"); //$NON-NLS-1$
 			assertEquals("./", "/a/b/c/", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], ".."); //$NON-NLS-1$
+			testURL = new URL(url, ".."); //$NON-NLS-1$
 			assertEquals("..", "/a/b/", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "../"); //$NON-NLS-1$
+			testURL = new URL(url, "../"); //$NON-NLS-1$
 			assertEquals("../", "/a/b/", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "../g"); //$NON-NLS-1$
+			testURL = new URL(url, "../g"); //$NON-NLS-1$
 			assertEquals("../g", "/a/b/g", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "../.."); //$NON-NLS-1$
+			testURL = new URL(url, "../.."); //$NON-NLS-1$
 			assertEquals("../..", "/a/", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "../../"); //$NON-NLS-1$
+			testURL = new URL(url, "../../"); //$NON-NLS-1$
 			assertEquals("../../", "/a/", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
-			testURL = new URL(urls[i], "../../g"); //$NON-NLS-1$
+			testURL = new URL(url, "../../g"); //$NON-NLS-1$
 			assertEquals("../../g", "/a/g", testURL.getPath()); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
@@ -1506,6 +1506,10 @@ public class ClassLoadingBundleTests extends AbstractBundleTests {
 	}
 
 	public void testUninstallInUse01() throws BundleException {
+		if (getContext().getServiceReference("org.eclipse.equinox.region.RegionDigraph") != null) {
+			System.out.println("Cannot test uninstall in use with RegionDigraph service");
+			return;
+		}
 		Bundle exporter1 = installer.installBundle("exporter.importer1"); //$NON-NLS-1$
 		BundleRevision iExporter1 = exporter1.adapt(BundleRevision.class);
 		Bundle exporter2 = installer.installBundle("exporter.importer2"); //$NON-NLS-1$
@@ -2119,7 +2123,7 @@ public class ClassLoadingBundleTests extends AbstractBundleTests {
 	}
 
 	private String readURL(URL url) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		try {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
 			try {
@@ -2220,8 +2224,8 @@ public class ClassLoadingBundleTests extends AbstractBundleTests {
 		};
 
 		testThread.set(Boolean.TRUE);
-		final Set<String> weavingHookClasses = new HashSet<String>();
-		final List<WovenClass> called = new ArrayList<WovenClass>();
+		final Set<String> weavingHookClasses = new HashSet<>();
+		final List<WovenClass> called = new ArrayList<>();
 		final AtomicBoolean loadNewClassInWeave = new AtomicBoolean(false);
 
 		ServiceFactory<WeavingHook> topFactory = new ServiceFactory<WeavingHook>() {
@@ -2279,7 +2283,7 @@ public class ClassLoadingBundleTests extends AbstractBundleTests {
 			reg.unregister();
 		}
 
-		assertEquals("Unexpected number of woven classes.", 3, called.size());
+		assertEquals("Unexpected number of woven classes.", 2, called.size());
 		for (WovenClass wovenClass : called) {
 			if (weavingHookClasses.contains(wovenClass.getClassName())) {
 				assertNull("Did not expect to find class: " + wovenClass.getDefinedClass(), wovenClass.getDefinedClass());
@@ -2292,7 +2296,7 @@ public class ClassLoadingBundleTests extends AbstractBundleTests {
 	public void testLoaderUninstalledBundle() throws BundleException, IOException {
 		String testResourcePath = "testResource";
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, String> testHeaders = new HashMap<String, String>();
+		Map<String, String> testHeaders = new HashMap<>();
 		testHeaders.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		testHeaders.put(Constants.BUNDLE_SYMBOLICNAME, getName());
 		config.mkdirs();

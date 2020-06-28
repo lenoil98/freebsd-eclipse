@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2016 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,6 +19,7 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.views.markers;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -113,9 +114,6 @@ import org.eclipse.ui.views.markers.internal.MarkerGroup;
 import org.eclipse.ui.views.markers.internal.MarkerMessages;
 import org.eclipse.ui.views.markers.internal.MarkerSupportRegistry;
 
-import com.ibm.icu.text.MessageFormat;
-
-
 /**
  * The ExtendedMarkersView is the internal implementation of the view that shows
  * markers using the markerGenerators extension point.
@@ -151,6 +149,8 @@ public class ExtendedMarkersView extends ViewPart {
 	private static final String TAG_PART_NAME = "partName"; //$NON-NLS-1$
 
 	private static final String TAG_COLUMN_WIDTHS = "columnWidths"; //$NON-NLS-1$
+
+	private final IMarker[] noMarkers = new IMarker[0];
 
 	private MarkerContentGenerator generator;
 	private CachedMarkerBuilder builder;
@@ -345,8 +345,7 @@ public class ExtendedMarkersView extends ViewPart {
 		viewer.getTree().setLayout(layout);
 		tree.setLinesVisible(true);
 		tree.setHeaderVisible(true);
-		tree.layout(true);
-
+		tree.requestLayout();
 	}
 
 	/**
@@ -406,8 +405,8 @@ public class ExtendedMarkersView extends ViewPart {
 			gc.setFont(tree.getFont());
 			FontMetrics fontMetrics = gc.getFontMetrics();
 			gc.dispose();
-			preferredWidth = Math.max(markerField.getDefaultColumnWidth(tree),
-					fontMetrics.getAverageCharWidth() * 5);
+			preferredWidth = (int) Math.max(markerField.getDefaultColumnWidth(tree),
+					fontMetrics.getAverageCharacterWidth() * 5);
 		}
 		return preferredWidth;
 	}
@@ -577,17 +576,15 @@ public class ExtendedMarkersView extends ViewPart {
 	 * @since 3.8
 	 */
 	IMarker[] getOpenableMarkers() {
-		IStructuredSelection structured = viewer.getStructuredSelection();
-		Iterator<?> elements = structured.iterator();
 		HashSet<IMarker> result = new HashSet<>();
-		while (elements.hasNext()) {
-			MarkerSupportItem next = (MarkerSupportItem) elements.next();
+		for (Object o : viewer.getStructuredSelection()) {
+			MarkerSupportItem next = (MarkerSupportItem) o;
 			if (next.isConcrete()) {
 				result.add(((MarkerEntry) next).getMarker());
 			}
 		}
 		if (result.isEmpty()) {
-			return MarkerSupportInternalUtilities.EMPTY_MARKER_ARRAY;
+			return noMarkers;
 		}
 		IMarker[] markers = new IMarker[result.size()];
 		result.toArray(markers);
@@ -1304,8 +1301,7 @@ public class ExtendedMarkersView extends ViewPart {
 	 */
 	void setSelection(StructuredSelection structuredSelection, boolean reveal) {
 		List<MarkerItem> newSelection = new ArrayList<>(structuredSelection.size());
-		for (Iterator<?> i = structuredSelection.iterator(); i.hasNext();) {
-			Object next = i.next();
+		for (Object next : structuredSelection) {
 			if (next instanceof IMarker) {
 				MarkerItem marker = builder.getMarkers().getMarkerItem(
 						(IMarker) next);
@@ -1339,7 +1335,7 @@ public class ExtendedMarkersView extends ViewPart {
 	 * Update the direction indicator as column is now the primary column.
 	 *
 	 * @param column
-	 * @field {@link MarkerField}
+	 * @param field
 	 */
 	void updateDirectionIndicator(TreeColumn column, MarkerField field) {
 		viewer.getTree().setSortColumn(column);
@@ -1496,56 +1492,6 @@ public class ExtendedMarkersView extends ViewPart {
 		scheduleUpdate(0L);
 	}
 
-	//See Bug 294303
-	//void indicateUpdating(final String message, final boolean updateLabels) {
-	//	Display display = getSite().getShell().getDisplay();
-	//	if (Display.getCurrent() == display) {
-	//		setContentDescription(message != null ? message
-	//				: getStatusMessage());
-	//		if (updateLabels) {
-	//			updateCategoryLabels();
-	//		}
-	//		return;
-	//	}
-	//	WorkbenchJob job = new WorkbenchJob(display,
-	//			MarkerMessages.MarkerView_queueing_updates) {
-	//		public IStatus runInUIThread(IProgressMonitor monitor) {
-	//				setContentDescription(message != null ? message
-	//						: getStatusMessage());
-	//				if (updateLabels) {
-	//					updateCategoryLabels();
-	//				}
-	//				return Status.OK_STATUS;
-	//		}
-	//	};
-	//	job.setPriority(Job.INTERACTIVE);
-	//	job.schedule();
-	//  //see Bug 293305
-	//	//	if (block) {
-	//	//		try {
-	//	//			if (display.getSyncThread() != Thread.currentThread()) {
-	//	//				job.join();
-	//	//			}
-	//	//		} catch (InterruptedException e) {
-	//	//		}
-	//	//	}
-	//}
-	//
-	//void updateCategoryLabels() {
-	//	if (builder.isShowingHierarchy()) {
-	//		MarkerCategory[] categories =getActiveViewerInputClone().getCategories();
-	//		boolean refreshing = builder.isBuilding()
-	//				|| builder.getMarkerListener().isUpdating()
-	//				|| builder.getMarkerListener().workspaceBuilding();
-	//		for (int i = 0; i < categories.length; i++) {
-	//			categories[i].refreshing = refreshing;
-	//		}
-	//		if (categories != null && categories.length > 1) {
-	//			viewer.update(categories, null);
-	//		}
-	//	}
-	//}
-
 	/**
 	 * @return the viewer
 	 */
@@ -1687,8 +1633,7 @@ public class ExtendedMarkersView extends ViewPart {
 				objectsToAdapt.add(editor.getEditorInput());
 			} else {
 				if (selection instanceof IStructuredSelection) {
-					for (Iterator<?> iterator = ((IStructuredSelection) selection).iterator(); iterator.hasNext();) {
-						Object object = iterator.next();
+					for (Object object : (IStructuredSelection) selection) {
 						objectsToAdapt.add(object);
 					}
 				}

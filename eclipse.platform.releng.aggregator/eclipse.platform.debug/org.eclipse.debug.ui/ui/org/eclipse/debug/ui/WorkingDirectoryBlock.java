@@ -150,9 +150,6 @@ public abstract class WorkingDirectoryBlock extends AbstractLaunchConfigurationT
 		this.helpContextId = helpContextId;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public final void createControl(Composite parent) {
 		Font font = parent.getFont();
@@ -212,9 +209,9 @@ public abstract class WorkingDirectoryBlock extends AbstractLaunchConfigurationT
 	 * the workspace
 	 */
 	private void handleWorkspaceDirBrowseButtonSelected() {
-	    IContainer currentContainer= getContainer();
+		IContainer currentContainer= getContainer();
 		if (currentContainer == null) {
-		    currentContainer = ResourcesPlugin.getWorkspace().getRoot();
+			currentContainer = ResourcesPlugin.getWorkspace().getRoot();
 		}
 		ContainerSelectionDialog dialog = new ContainerSelectionDialog(getShell(), currentContainer, false,	DebugUIMessages.WorkingDirectoryBlock_4);
 		dialog.showClosedProjects(false);
@@ -234,23 +231,23 @@ public abstract class WorkingDirectoryBlock extends AbstractLaunchConfigurationT
 	protected IContainer getContainer() {
 		String path = getWorkingDirectoryText();
 		if (path.length() > 0) {
-		    IResource res = null;
-		    IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-		    if (path.startsWith("${workspace_loc:")) { //$NON-NLS-1$
-		        IStringVariableManager manager = VariablesPlugin.getDefault().getStringVariableManager();
-			    try {
-                    path = manager.performStringSubstitution(path, false);
-                    IPath uriPath = new Path(path).makeAbsolute();
-                    IContainer[] containers = root.findContainersForLocationURI(URIUtil.toURI(uriPath));
-                    if (containers.length > 0) {
-                        res = containers[0];
-                    }
-                }
-			    catch (CoreException e) {
-			    	log(e);
-			    }
+			IResource res = null;
+			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+			if (path.startsWith("${workspace_loc:")) { //$NON-NLS-1$
+				IStringVariableManager manager = VariablesPlugin.getDefault().getStringVariableManager();
+				try {
+					path = manager.performStringSubstitution(path, false);
+					IPath uriPath = new Path(path).makeAbsolute();
+					IContainer[] containers = root.findContainersForLocationURI(URIUtil.toURI(uriPath));
+					if (containers.length > 0) {
+						res = containers[0];
+					}
+				}
+				catch (CoreException e) {
+					log(e);
+				}
 			}
-		    else {
+			else {
 				res = root.findMember(path);
 			}
 			if (res instanceof IContainer) {
@@ -327,16 +324,13 @@ public abstract class WorkingDirectoryBlock extends AbstractLaunchConfigurationT
 	 */
 	protected abstract IProject getProject(ILaunchConfiguration configuration) throws CoreException;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#isValid(org.eclipse.debug.core.ILaunchConfiguration)
-	 */
 	@Override
 	public boolean isValid(ILaunchConfiguration config) {
 		setErrorMessage(null);
 		setMessage(null);
 		// if variables are present, we cannot resolve the directory
 		String workingDirPath = getWorkingDirectoryText();
-		if (workingDirPath.indexOf("${") >= 0) { //$NON-NLS-1$
+		if (workingDirPath.contains("${")) { //$NON-NLS-1$
 			IStringVariableManager manager = VariablesPlugin.getDefault().getStringVariableManager();
 			try {
 				manager.validateStringVariables(workingDirPath);
@@ -374,9 +368,6 @@ public abstract class WorkingDirectoryBlock extends AbstractLaunchConfigurationT
 		config.setAttribute(workingDirectoryAttribteName, (String)null);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#initializeFrom(org.eclipse.debug.core.ILaunchConfiguration)
-	 */
 	@Override
 	public void initializeFrom(ILaunchConfiguration configuration) {
 		setLaunchConfiguration(configuration);
@@ -392,9 +383,6 @@ public abstract class WorkingDirectoryBlock extends AbstractLaunchConfigurationT
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#performApply(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
-	 */
 	@Override
 	public void performApply(ILaunchConfigurationWorkingCopy configuration) {
 		if(fUseDefaultDirButton.getSelection()) {
@@ -405,9 +393,6 @@ public abstract class WorkingDirectoryBlock extends AbstractLaunchConfigurationT
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getName()
-	 */
 	@Override
 	public String getName() {
 		return DebugUIMessages.WorkingDirectoryBlock_Working_Directory_8;

@@ -45,32 +45,29 @@ public abstract class RemoteCommand extends Command {
 		// do nothing
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.client.Command#convertArgumentsForOpenSession(org.eclipse.team.internal.ccvs.core.ICVSResource[], org.eclipse.team.internal.ccvs.core.client.Session)
-	 */
+	@Override
 	protected String[] convertArgumentsForOpenSession(
 		ICVSResource[] arguments,
 		Session openSession)
 		throws CVSException {
 		
-			// Convert arguments
-			List stringArguments = new ArrayList(arguments.length);
-			for (int i = 0; i < arguments.length; i++) {
-			    ICVSResource resource = arguments[i];
-			    String remotePath;
-                if (isDefinedModule(resource)) {
-			        remotePath = resource.getName();
-			    } else {
-			        remotePath = resource.getRepositoryRelativePath();
-                    
-			    }
-                stringArguments.add(remotePath);
+		// Convert arguments
+		List<String> stringArguments = new ArrayList<>(arguments.length);
+		for (ICVSResource resource : arguments) {
+			String remotePath;
+			if (isDefinedModule(resource)) {
+				remotePath = resource.getName();
+			} else {
+				remotePath = resource.getRepositoryRelativePath();
+
 			}
-			return (String[]) stringArguments.toArray(new String[stringArguments.size()]);
+			stringArguments.add(remotePath);
+		}
+			return stringArguments.toArray(new String[stringArguments.size()]);
 	}
 
-    private boolean isDefinedModule(ICVSResource resource) {
-        return resource instanceof ICVSRemoteFolder && ((ICVSRemoteFolder)resource).isDefinedModule();
-    }
+	private boolean isDefinedModule(ICVSResource resource) {
+		return resource instanceof ICVSRemoteFolder && ((ICVSRemoteFolder)resource).isDefinedModule();
+	}
 
 }

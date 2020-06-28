@@ -27,8 +27,8 @@ import org.eclipse.swt.internal.cocoa.*;
  * below:</p>
  *
  * <pre><code>
- *     File file1 = new File("C:\temp\file1");
- *     File file2 = new File("C:\temp\file2");
+ *     File file1 = new File("C:\\temp\\file1");
+ *     File file2 = new File("C:\\temp\\file2");
  *     String[] fileData = new String[2];
  *     fileData[0] = file1.getAbsolutePath();
  *     fileData[1] = file2.getAbsolutePath();
@@ -98,7 +98,7 @@ public Object nativeToJava(TransferData transferData) {
 	if (!isSupportedType(transferData) || transferData.data == null) return null;
 	NSArray array = (NSArray) transferData.data;
 	if (array.count() == 0) return null;
-	int count = (int)/*64*/array.count();
+	int count = (int)array.count();
 	String[] fileNames = new String[count];
 	for (int i=0; i<count; i++) {
 		NSString string = new NSString(array.objectAtIndex(i));
@@ -109,20 +109,12 @@ public Object nativeToJava(TransferData transferData) {
 
 @Override
 protected int[] getTypeIds(){
-	if (OS.VERSION >= 0x1060) {
-		return new int[] {ID, ID1};
-	} else {
-		return new int[] {ID};
-	}
+	return new int[] {ID, ID1};
 }
 
 @Override
 protected String[] getTypeNames(){
-	if (OS.VERSION >= 0x1060) {
-		return new String[] {ID_NAME, ID1_NAME};
-	} else {
-		return new String[] {ID_NAME};
-	}
+	return new String[] {ID_NAME, ID1_NAME};
 }
 
 boolean checkFile(Object object) {

@@ -27,9 +27,6 @@ import org.eclipse.jface.viewers.ICellModifier;
 @SuppressWarnings("deprecation")
 public class DefaultVariableCellModifier implements ICellModifier {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ICellModifier#canModify(java.lang.Object, java.lang.String)
-	 */
 	@Override
 	public boolean canModify(Object element, String property) {
 		if (VariableColumnPresentation.COLUMN_VARIABLE_VALUE.equals(property)) {
@@ -40,9 +37,6 @@ public class DefaultVariableCellModifier implements ICellModifier {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ICellModifier#getValue(java.lang.Object, java.lang.String)
-	 */
 	@Override
 	public Object getValue(Object element, String property) {
 		if (VariableColumnPresentation.COLUMN_VARIABLE_VALUE.equals(property)) {
@@ -58,14 +52,11 @@ public class DefaultVariableCellModifier implements ICellModifier {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ICellModifier#modify(java.lang.Object, java.lang.String, java.lang.Object)
-	 */
 	@Override
 	public void modify(Object element, String property, Object value) {
 		Object oldValue = getValue(element, property);
-        if (!value.equals(oldValue)) {
-        	if (VariableColumnPresentation.COLUMN_VARIABLE_VALUE.equals(property)) {
+		if (!value.equals(oldValue)) {
+			if (VariableColumnPresentation.COLUMN_VARIABLE_VALUE.equals(property)) {
 				if (element instanceof IVariable) {
 					if (value instanceof String) {
 						// The value column displays special characters escaped, so encode the string with any special characters escaped properly
@@ -74,7 +65,7 @@ public class DefaultVariableCellModifier implements ICellModifier {
 						DetailPaneAssignValueAction.assignValue(DebugUIPlugin.getShell(), variable, valueExpression);
 					}
 				}
-	        }
+			}
 		}
 	}
 

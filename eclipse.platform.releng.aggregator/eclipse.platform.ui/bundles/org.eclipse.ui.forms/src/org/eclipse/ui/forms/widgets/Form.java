@@ -282,6 +282,21 @@ public class Form extends Composite {
 	}
 
 	/**
+	 * Sets whether ther text in the title region should be selectable.
+	 * <p>
+	 * Note: If {@link #addTitleDragSupport(int, Transfer[], DragSourceListener)
+	 * drag support} is also enabled, text selection has priority. Dragging still
+	 * works in the non-text parts of the title area.
+	 *
+	 * @param selectable whether the title text should be selectable
+	 *
+	 * @since 3.8
+	 */
+	public void setTitleTextSelectable(boolean selectable) {
+		head.setTextSelectable(selectable);
+	}
+
+	/**
 	 * Sets the image to be rendered to the left of the title. This image will
 	 * be temporarily hidden in two cases:
 	 *
@@ -681,7 +696,7 @@ public class Form extends Composite {
 	 * Adds a message hyperlink listener. If at least one listener is present,
 	 * messages will be rendered as hyperlinks.
 	 *
-	 * @param listener
+	 * @param listener the listener to add; not <code>null</code>
 	 * @see #removeMessageHyperlinkListener(IHyperlinkListener)
 	 * @since 3.3
 	 */
@@ -692,7 +707,7 @@ public class Form extends Composite {
 	/**
 	 * Remove the message hyperlink listener.
 	 *
-	 * @param listener
+	 * @param listener the listener to remove; not <code>null</code>
 	 * @see #addMessageHyperlinkListener(IHyperlinkListener)
 	 * @since 3.3
 	 */

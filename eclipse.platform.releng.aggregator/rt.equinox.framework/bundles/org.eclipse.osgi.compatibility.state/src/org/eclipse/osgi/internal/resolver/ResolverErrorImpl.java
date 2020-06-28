@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rob Harrop - SpringSource Inc. (bug 247522)
@@ -46,6 +46,7 @@ public final class ResolverErrorImpl implements ResolverError {
 		return unsatisfied;
 	}
 
+	@Override
 	public String toString() {
 		switch (getType()) {
 			case ResolverError.EXPORT_PACKAGE_PERMISSION :

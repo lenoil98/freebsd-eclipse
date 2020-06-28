@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rob Harrop - SpringSource Inc. (bug 247522)
@@ -53,6 +53,7 @@ public class HostSpecificationImpl extends VersionConstraintImpl implements Host
 		}
 	}
 
+	@Override
 	public boolean isSatisfiedBy(BaseDescription supplier) {
 		if (!(supplier instanceof BundleDescriptionImpl))
 			return false;
@@ -99,6 +100,7 @@ public class HostSpecificationImpl extends VersionConstraintImpl implements Host
 		return true;
 	}
 
+	@Override
 	public boolean isResolved() {
 		synchronized (this.monitor) {
 			return hosts != null && hosts.length > 0;
@@ -114,10 +116,12 @@ public class HostSpecificationImpl extends VersionConstraintImpl implements Host
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "Fragment-Host: " + getName() + "; bundle-version=\"" + getVersionRange() + "\""; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	}
 
+	@Override
 	public BaseDescription getSupplier() {
 		synchronized (this.monitor) {
 			if (hosts == null || hosts.length == 0)
@@ -150,7 +154,7 @@ public class HostSpecificationImpl extends VersionConstraintImpl implements Host
 	}
 
 	private String createFilterDirective() {
-		StringBuffer filter = new StringBuffer();
+		StringBuilder filter = new StringBuilder();
 		filter.append("(&"); //$NON-NLS-1$
 		synchronized (this.monitor) {
 			addFilterAttribute(filter, BundleRevision.HOST_NAMESPACE, getName());

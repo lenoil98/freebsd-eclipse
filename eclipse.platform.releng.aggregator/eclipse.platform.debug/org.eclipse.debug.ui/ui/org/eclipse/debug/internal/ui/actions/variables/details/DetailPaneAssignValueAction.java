@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.ui.actions.variables.details;
 
+import java.text.MessageFormat;
+
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IValueModification;
@@ -38,15 +40,13 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.IHandlerActivation;
 import org.eclipse.ui.handlers.IHandlerService;
 
-import com.ibm.icu.text.MessageFormat;
-
 /**
  * Action which assigns a value to a variable from the detail pane
  * of the variables view.
  */
 public class DetailPaneAssignValueAction extends Action{
 
-    private IHandlerActivation fHandlerActivation;
+	private IHandlerActivation fHandlerActivation;
 	private IViewSite fViewSite;
 	private ITextViewer fTextViewer;
 	private IStructuredSelection fCurrentSelection;
@@ -67,46 +67,46 @@ public class DetailPaneAssignValueAction extends Action{
 		String modelIdentifier = variable.getModelIdentifier();
 		IVariableValueEditor editor = VariableValueEditorManager.getDefault().getVariableValueEditor(modelIdentifier);
 		if (editor != null) {
-		    if (editor.saveVariable(variable, newValueExpression, shell)) {
-		        // If we successfully delegate to an editor which performs the save,
-		        // don't do any more work.
-		        return;
-		    }
+			if (editor.saveVariable(variable, newValueExpression, shell)) {
+				// If we successfully delegate to an editor which performs the save,
+				// don't do any more work.
+				return;
+			}
 		}
 
 		try {
-		    // If we failed to delegate to anyone, perform the default assignment.
+			// If we failed to delegate to anyone, perform the default assignment.
 			if (variable.verifyValue(newValueExpression)) {
 				variable.setValue(newValueExpression);
 			} else {
-			    if (shell != null) {
+				if (shell != null) {
 					DebugUIPlugin.errorDialog(shell, ActionMessages.DetailPaneAssignValueAction_2, MessageFormat.format(ActionMessages.DetailPaneAssignValueAction_3, new Object[] {
 							newValueExpression, variable.getName() }), new StatusInfo(IStatus.ERROR, ActionMessages.DetailPaneAssignValueAction_4)); //
-			    }
+				}
 			}
 		} catch (DebugException e) {
-            MessageDialog.openError(shell, ActionMessages.DetailPaneAssignValueAction_0, e.getStatus().getMessage());
+			MessageDialog.openError(shell, ActionMessages.DetailPaneAssignValueAction_0, e.getStatus().getMessage());
 		}
 	}
 
 	public DetailPaneAssignValueAction(ITextViewer textViewer, IViewSite viewSite) {
 		super(ActionMessages.DetailPaneAssignValueAction_1);
 
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IDebugHelpContextIds.DETAIL_PANE_ASSIGN_VALUE_ACTION);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IDebugHelpContextIds.DETAIL_PANE_ASSIGN_VALUE_ACTION);
 
 		fTextViewer = textViewer;
 		fViewSite = viewSite;
 
 		setEnabled(false);
-        IHandlerService service = fViewSite.getService(IHandlerService.class);
-        ActionHandler handler = new ActionHandler(this);
-        fHandlerActivation = service.activateHandler(getActionDefinitionId(), handler);
+		IHandlerService service = fViewSite.getService(IHandlerService.class);
+		ActionHandler handler = new ActionHandler(this);
+		fHandlerActivation = service.activateHandler(getActionDefinitionId(), handler);
 	}
 
 	public void dispose() {
-        IHandlerService service = fViewSite.getService(IHandlerService.class);
-        service.deactivateHandler(fHandlerActivation);
-    }
+		IHandlerService service = fViewSite.getService(IHandlerService.class);
+		service.deactivateHandler(fHandlerActivation);
+	}
 
 	public void updateCurrentVariable(IStructuredSelection selection) {
 		boolean enabled = false;
@@ -120,9 +120,6 @@ public class DetailPaneAssignValueAction extends Action{
 		setEnabled(enabled);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run() {
 		IVariable variable = (IVariable) fCurrentSelection.getFirstElement();
@@ -146,9 +143,6 @@ public class DetailPaneAssignValueAction extends Action{
 		assignValue(activeShell, variable, value);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#getActionDefinitionId()
-	 */
 	@Override
 	public String getActionDefinitionId() {
 		return IWorkbenchCommandConstants.FILE_SAVE;

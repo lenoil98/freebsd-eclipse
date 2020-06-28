@@ -27,7 +27,7 @@ import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.swt.IFocusService;
 
 public class CopyUtils {
-	public static final String NEWLINE = System.getProperty("line.separator"); //$NON-NLS-1$
+	public static final String NEWLINE = System.lineSeparator();
 	public static final String DELIMITER = "\t"; //$NON-NLS-1$
 	private static final String NESTING_INDENT = "  "; //$NON-NLS-1$
 
@@ -35,7 +35,7 @@ public class CopyUtils {
 	private static final String CONTROL_ID = "org.eclipse.equinox.p2.ui.CopyControlId"; //$NON-NLS-1$
 
 	public static String getIndentedClipboardText(Object[] elements, IUDetailsLabelProvider labelProvider) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		for (int i = 0; i < elements.length; i++) {
 			if (i > 0)
 				buffer.append(NEWLINE);
@@ -46,8 +46,9 @@ public class CopyUtils {
 	}
 
 	/**
-	 * Install a copy popup menu on the specified control and activate the copy handler for the control when
-	 * the control has focus.  The handler will be deactivated when the control is disposed.
+	 * Install a copy popup menu on the specified control and activate the copy
+	 * handler for the control when the control has focus. The handler will be
+	 * deactivated when the control is disposed.
 	 *
 	 * @param copyable the copyable that will perform the copy
 	 * @param control  the control on which to install the menu and handler
@@ -58,23 +59,26 @@ public class CopyUtils {
 		new CopyPopup(copyable, control);
 		if (fs != null && hs != null) {
 			fs.addFocusTracker(control, CONTROL_ID);
-			final IHandlerActivation handlerActivation = hs.activateHandler(CopyHandler.ID, new CopyHandler(copyable), new Expression() {
-				@Override
-				public EvaluationResult evaluate(IEvaluationContext context) {
-					return context.getVariable(ISources.ACTIVE_FOCUS_CONTROL_NAME) == control ? EvaluationResult.TRUE : EvaluationResult.FALSE;
-				}
+			final IHandlerActivation handlerActivation = hs.activateHandler(CopyHandler.ID, new CopyHandler(copyable),
+					new Expression() {
+						@Override
+						public EvaluationResult evaluate(IEvaluationContext context) {
+							return context.getVariable(ISources.ACTIVE_FOCUS_CONTROL_NAME) == control
+									? EvaluationResult.TRUE
+									: EvaluationResult.FALSE;
+						}
 
-				@Override
-				public void collectExpressionInfo(final ExpressionInfo info) {
-					info.addVariableNameAccess(ISources.ACTIVE_FOCUS_CONTROL_NAME);
-				}
+						@Override
+						public void collectExpressionInfo(final ExpressionInfo info) {
+							info.addVariableNameAccess(ISources.ACTIVE_FOCUS_CONTROL_NAME);
+						}
 
-			});
+					});
 			control.addDisposeListener(e -> hs.deactivateHandler(handlerActivation));
 		}
 	}
 
-	private static void appendIndention(StringBuffer buffer, Object element) {
+	private static void appendIndention(StringBuilder buffer, Object element) {
 		Object parent;
 		while (element instanceof ProvElement && (parent = ((ProvElement) element).getParent(element)) != null) {
 			buffer.append(NESTING_INDENT);

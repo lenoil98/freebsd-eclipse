@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2018 IBM Corporation and others.
+ * Copyright (c) 2011, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -43,26 +43,15 @@ import org.eclipse.jdt.core.dom.ThrowStatement;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.WhileStatement;
 
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
+
 /**
  * Helper class to check if an expression requires parentheses.
- * 
+ *
  * @see JDTUIHelperClasses
  * @since 3.7
  */
 public class NecessaryParenthesesChecker {
-
-	/*
-	 * Get the expression wrapped by the parentheses
-	 * i.e. ((((expression)))) -> expression
-	 */
-	private static Expression getExpression(ParenthesizedExpression node) {
-		Expression expression= node.getExpression();
-		while (expression instanceof ParenthesizedExpression) {
-			expression= ((ParenthesizedExpression)expression).getExpression();
-		}
-		return expression;
-	}
-
 	private static boolean expressionTypeNeedsParentheses(Expression expression) {
 		int type= expression.getNodeType();
 		return type == ASTNode.INFIX_EXPRESSION
@@ -92,6 +81,7 @@ public class NecessaryParenthesesChecker {
 				|| locationInParent == IfStatement.EXPRESSION_PROPERTY
 				|| locationInParent == SwitchStatement.EXPRESSION_PROPERTY
 				|| locationInParent == SwitchCase.EXPRESSION_PROPERTY
+				|| locationInParent == SwitchCase.EXPRESSIONS2_PROPERTY
 				|| locationInParent == ArrayAccess.INDEX_PROPERTY
 				|| locationInParent == ThrowStatement.EXPRESSION_PROPERTY
 				|| locationInParent == SynchronizedStatement.EXPRESSION_PROPERTY
@@ -108,18 +98,18 @@ public class NecessaryParenthesesChecker {
 		ITypeBinding binding= leftOperandType;
 		if (binding == null)
 			return false;
-	
+
 		ITypeBinding current= rightOperandType;
 		if (binding != current)
 			return false;
-	
+
 		for (Iterator<Expression> iterator= expression.extendedOperands().iterator(); iterator.hasNext();) {
 			Expression operand= iterator.next();
 			current= operand.resolveTypeBinding();
 			if (binding != current)
 				return false;
 		}
-	
+
 		return true;
 	}
 
@@ -146,7 +136,7 @@ public class NecessaryParenthesesChecker {
 
 	/*
 	 * Is the given expression associative?
-	 * 
+	 *
 	 * This is true if and only if:<br>
 	 * <code>left operator (right) == (right) operator left == right operator left</code>
 	 */
@@ -163,7 +153,7 @@ public class NecessaryParenthesesChecker {
 				|| operator == InfixExpression.Operator.OR
 				|| operator == InfixExpression.Operator.XOR)
 			return true;
-	
+
 		return false;
 	}
 
@@ -210,15 +200,15 @@ public class NecessaryParenthesesChecker {
 
 				if (parentInfixOperator != InfixExpression.Operator.TIMES)
 					return false;
-	
+
 				if (operator == InfixExpression.Operator.TIMES)
 					// x * (y * z) == x * y * z
 					return false;
-	
+
 				if (operator == InfixExpression.Operator.REMAINDER || operator == InfixExpression.Operator.DIVIDE)
 					// x * (y % z) != x * y % z , x * (y / z) == x * y / z rounding involved
 					return true;
-	
+
 				return false;
 			}
 			return false;
@@ -229,13 +219,13 @@ public class NecessaryParenthesesChecker {
 
 	/**
 	 * Returns the type of infix expression based on its operands and operator.
-	 * 
+	 *
 	 * @param operator the operator of infix expression
 	 * @param leftOperandType the type of left operand of infix expression
 	 * @param rightOperandType the type of right operand of infix expression
 	 * @return the type of infix expression if the type of both the operands is same or if the type
 	 *         of either operand of a + operator is String, <code>null</code> otherwise.
-	 * 
+	 *
 	 * @since 3.9
 	 */
 	private static ITypeBinding getInfixExpressionType(InfixExpression.Operator operator, ITypeBinding leftOperandType, ITypeBinding rightOperandType) {
@@ -256,11 +246,11 @@ public class NecessaryParenthesesChecker {
 
 	/**
 	 * Can the parentheses be removed from the parenthesized expression ?
-	 * 
+	 *
 	 * <p>
 	 * <b>Note:</b> The parenthesized expression must not be an unparented node.
 	 * </p>
-	 * 
+	 *
 	 * @param expression the parenthesized expression
 	 * @return <code>true</code> if parentheses can be removed, <code>false</code> otherwise.
 	 */
@@ -271,11 +261,11 @@ public class NecessaryParenthesesChecker {
 	/**
 	 * Can the parentheses be removed from the parenthesized expression when inserted into
 	 * <code>parent</code> at <code>locationInParent</code> ?
-	 * 
+	 *
 	 * <p>
 	 * <b>Note:</b> The parenthesized expression can be an unparented node.
 	 * </p>
-	 * 
+	 *
 	 * @param expression the parenthesized expression
 	 * @param parent the parent node
 	 * @param locationInParent location of expression in the parent
@@ -285,13 +275,13 @@ public class NecessaryParenthesesChecker {
 		if (!(expression instanceof ParenthesizedExpression)) {
 			return false;
 		}
-		return !needsParentheses(getExpression((ParenthesizedExpression)expression), parent, locationInParent);
+		return !needsParentheses(ASTNodes.getUnparenthesedExpression(expression), parent, locationInParent);
 	}
 
 	/**
 	 * Does the <code>rightOperand</code> need parentheses when inserted into
 	 * <code>infixExpression</code> ?
-	 * 
+	 *
 	 * <p>
 	 * <b>Note:</b>
 	 * <ul>
@@ -301,13 +291,13 @@ public class NecessaryParenthesesChecker {
 	 * <li>The <code>rightOperand</code> node must have bindings.</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @param rightOperand the right operand in <code>infixExpression</code>
 	 * @param infixExpression the parent infix expression
 	 * @param leftOperandType the type of the left operand in <code>infixExpression</code>
 	 * @return <code>true</code> if <code>rightOperand</code> needs parentheses, <code>false</code>
 	 *         otherwise.
-	 * 
+	 *
 	 * @since 3.9
 	 */
 	public static boolean needsParenthesesForRightOperand(Expression rightOperand, InfixExpression infixExpression, ITypeBinding leftOperandType) {
@@ -317,11 +307,11 @@ public class NecessaryParenthesesChecker {
 	/**
 	 * Does the <code>expression</code> need parentheses when inserted into <code>parent</code> at
 	 * <code>locationInParent</code> ?
-	 * 
+	 *
 	 * <p>
 	 * <b>Note:</b> The expression can be an unparented node.
 	 * </p>
-	 * 
+	 *
 	 * @param expression the expression
 	 * @param parent the parent node
 	 * @param locationInParent location of expression in the parent
@@ -335,7 +325,7 @@ public class NecessaryParenthesesChecker {
 	/**
 	 * Does the <code>expression</code> need parentheses when inserted into <code>parent</code> at
 	 * <code>locationInParent</code> ?
-	 * 
+	 *
 	 * @param expression the expression
 	 * @param parent the parent node
 	 * @param locationInParent location of expression in the parent
@@ -344,7 +334,7 @@ public class NecessaryParenthesesChecker {
 	 *            <code>expression</code> is the right operand in it, <code>null</code> otherwise
 	 * @return <code>true</code> if <code>expression</code> needs parentheses, <code>false</code>
 	 *         otherwise.
-	 * 
+	 *
 	 * @since 3.9
 	 */
 	private static boolean needsParentheses(Expression expression, ASTNode parent, StructuralPropertyDescriptor locationInParent, ITypeBinding leftOperandType) {
@@ -357,7 +347,7 @@ public class NecessaryParenthesesChecker {
 
 		if (parent instanceof Expression) {
 			Expression parentExpression= (Expression)parent;
-			
+
 			if (expression instanceof PrefixExpression) { // see bug 405096
 				return needsParenthesesForPrefixExpression(parentExpression, ((PrefixExpression) expression).getOperator());
 			}
@@ -392,7 +382,7 @@ public class NecessaryParenthesesChecker {
 
 		return true;
 	}
-	
+
 	private static boolean needsParenthesesForPrefixExpression(Expression parentExpression, PrefixExpression.Operator expressionOperator) {
 		if (parentExpression instanceof PrefixExpression) {
 			PrefixExpression.Operator parentOperator= ((PrefixExpression) parentExpression).getOperator();
@@ -416,5 +406,8 @@ public class NecessaryParenthesesChecker {
 			}
 		}
 		return false;
+	}
+
+	private NecessaryParenthesesChecker() {
 	}
 }

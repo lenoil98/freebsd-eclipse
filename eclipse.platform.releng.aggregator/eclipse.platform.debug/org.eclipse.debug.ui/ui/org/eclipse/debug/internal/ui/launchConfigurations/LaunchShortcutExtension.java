@@ -68,32 +68,29 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 	 * Command handler for launch shortcut key binding.
 	 */
 	private class LaunchCommandHandler extends AbstractHandler {
-	    // the shortcut to invoke
-	    private LaunchShortcutExtension fShortcut;
-	    private String fMode;
+		// the shortcut to invoke
+		private LaunchShortcutExtension fShortcut;
+		private String fMode;
 
-	    /**
-	     * Constructs a new command handler for the given shortcut
-	     *
-	     * @param shortcut
-	     */
-	    public LaunchCommandHandler(LaunchShortcutExtension shortcut, String mode) {
-	        fShortcut = shortcut;
-	        fMode = mode;
-	    }
-
-		/* (non-Javadoc)
-		 * @see org.eclipse.core.commands.IHandler#execute(org.eclipse.core.commands.ExecutionEvent)
+		/**
+		 * Constructs a new command handler for the given shortcut
+		 *
+		 * @param shortcut
 		 */
+		public LaunchCommandHandler(LaunchShortcutExtension shortcut, String mode) {
+			fShortcut = shortcut;
+			fMode = mode;
+		}
+
 		@Override
 		public Object execute(ExecutionEvent event) throws ExecutionException {
-           LaunchShortcutAction action = new LaunchShortcutAction(fMode, fShortcut);
-            if (action.isEnabled()) {
-                action.run();
-            } else {
-                fShortcut.launch(new StructuredSelection(), fMode);
-            }
-            return null;
+			LaunchShortcutAction action = new LaunchShortcutAction(fMode, fShortcut);
+			if (action.isEnabled()) {
+				action.run();
+			} else {
+				fShortcut.launch(new StructuredSelection(), fMode);
+			}
+			return null;
 		}
 	}
 
@@ -119,16 +116,16 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 	/**
 	 * Registers command handlers for launch shortcut key bindings
 	 */
-    private void registerLaunchCommandHandlers() {
-        IHandlerService handlerService = PlatformUI.getWorkbench().getAdapter(IHandlerService.class);
-        if(handlerService != null) {
+	private void registerLaunchCommandHandlers() {
+		IHandlerService handlerService = PlatformUI.getWorkbench().getAdapter(IHandlerService.class);
+		if(handlerService != null) {
 			for (String mode : getModes()) {
-	            String id = getId() + "." + mode; //$NON-NLS-1$
-		        IHandler handler = new LaunchCommandHandler(this, mode);
-		        handlerService.activateHandler(id, handler);
-	        }
-        }
-    }
+				String id = getId() + "." + mode; //$NON-NLS-1$
+				IHandler handler = new LaunchCommandHandler(this, mode);
+				handlerService.activateHandler(id, handler);
+			}
+		}
+	}
 
 	/**
 	 * Sets the configuration element that defines the attributes
@@ -201,9 +198,8 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 			}
 			IConfigurationElement[] labels = context.getChildren(IConfigurationElementConstants.CONTEXT_LABEL);
 			fContextLabels = new ArrayList<>(labels.length);
-			for (int i = 0; i < labels.length; i++) {
-				fContextLabels.add(new Pair(labels[i].getAttribute(IConfigurationElementConstants.MODE),
-						labels[i].getAttribute(IConfigurationElementConstants.LABEL)));
+			for (IConfigurationElement label : labels) {
+				fContextLabels.add(new Pair(label.getAttribute(IConfigurationElementConstants.MODE), label.getAttribute(IConfigurationElementConstants.LABEL)));
 			}
 		}
 		// pick out the first occurance of the "name" bound to "mode"
@@ -226,8 +222,8 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 			fAssociatedTypes = new HashSet<>();
 			IConfigurationElement[] children = fConfig.getChildren(IConfigurationElementConstants.CONFIGURATION_TYPES);
 			String id = null;
-			for (int i = 0; i < children.length; i++) {
-				id = children[i].getAttribute(IConfigurationElementConstants.ID);
+			for (IConfigurationElement child : children) {
+				id = child.getAttribute(IConfigurationElementConstants.ID);
 				if(id != null) {
 					fAssociatedTypes.add(id);
 				}
@@ -259,9 +255,9 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 			}
 			//load descriptions for child description elements
 			IConfigurationElement[] children = fConfig.getChildren(IConfigurationElementConstants.DESCRIPTION);
-			for(int i = 0; i < children.length; i++) {
-				String lmode = children[i].getAttribute(IConfigurationElementConstants.MODE);
-				descr = children[i].getAttribute(IConfigurationElementConstants.DESCRIPTION);
+			for (IConfigurationElement child : children) {
+				String lmode = child.getAttribute(IConfigurationElementConstants.MODE);
+				descr = child.getAttribute(IConfigurationElementConstants.DESCRIPTION);
 				fDescriptions.put(lmode, descr);
 			}
 		}
@@ -390,8 +386,8 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 		if (fPerspectives == null) {
 			IConfigurationElement[] perspectives = getConfigurationElement().getChildren(IConfigurationElementConstants.PERSPECTIVE);
 			fPerspectives = new ArrayList<>(perspectives.length);
-			for (int i = 0; i < perspectives.length; i++) {
-				fPerspectives.add(perspectives[i].getAttribute(IConfigurationElementConstants.ID));
+			for (IConfigurationElement perspective : perspectives) {
+				fPerspectives.add(perspective.getAttribute(IConfigurationElementConstants.ID));
 			}
 		}
 		return fPerspectives;
@@ -468,32 +464,22 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 
 	/*
 	 * Only for debugging
-	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
 		return getId();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IPluginContribution#getLocalId()
-	 */
 	@Override
 	public String getLocalId() {
 		return getId();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IPluginContribution#getPluginId()
-	 */
 	@Override
 	public String getPluginId() {
 		return fConfig.getContributor().getName();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchShortcut2#getLaunchConfigurations(org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public ILaunchConfiguration[] getLaunchConfigurations(ISelection selection) {
 		ILaunchShortcut delegate = getDelegate();
@@ -503,9 +489,6 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchShortcut2#getLaunchConfigurations(org.eclipse.ui.IEditorPart)
-	 */
 	@Override
 	public ILaunchConfiguration[] getLaunchConfigurations(IEditorPart editorpart) {
 		ILaunchShortcut delegate = getDelegate();
@@ -515,9 +498,6 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchShortcut2#getLaunchableResource(org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public IResource getLaunchableResource(ISelection selection) {
 		ILaunchShortcut delegate = getDelegate();
@@ -527,9 +507,6 @@ public class LaunchShortcutExtension implements ILaunchShortcut2, IPluginContrib
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchShortcut2#getLaunchableResource(org.eclipse.ui.IEditorPart)
-	 */
 	@Override
 	public IResource getLaunchableResource(IEditorPart editorpart) {
 		ILaunchShortcut delegate = getDelegate();

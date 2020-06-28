@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2018 Mateusz Matela and others.
+ * Copyright (c) 2008, 2019 Mateusz Matela and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,7 +17,6 @@ package org.eclipse.jdt.ui.actions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Shell;
@@ -64,19 +63,19 @@ import org.eclipse.jdt.internal.ui.javaeditor.CompilationUnitEditor;
  * <p>
  * The action is applicable to structured selections containing elements of type
  * {@link org.eclipse.jdt.core.IType}.
- * 
+ *
  * <p>
  * This class may be instantiated; it is not intended to be subclassed.
  * </p>
- * 
+ *
  * @since 3.5
- * 
+ *
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class GenerateToStringAction extends GenerateMethodAbstractAction {
-	
+
 	private static final String METHODNAME_TO_STRING= "toString"; //$NON-NLS-1$
-	
+
 	private List<IVariableBinding> fFields;
 
 	private List<IVariableBinding> fInheritedFields;
@@ -96,13 +95,12 @@ public class GenerateToStringAction extends GenerateMethodAbstractAction {
 		public boolean foundFinalToString= false;
 
 		public ToStringInfo(ITypeBinding typeBinding) {
-			IMethodBinding[] declaredMethods= typeBinding.getDeclaredMethods();
-
-			for (int i= 0; i < declaredMethods.length; i++) {
-				if (declaredMethods[i].getName().equals(METHODNAME_TO_STRING) && declaredMethods[i].getParameterTypes().length == 0) {
+			for (IMethodBinding declaredMethod : typeBinding.getDeclaredMethods()) {
+				if (declaredMethod.getName().equals(METHODNAME_TO_STRING) && declaredMethod.getParameterTypes().length == 0) {
 					this.foundToString= true;
-					if (Modifier.isFinal(declaredMethods[i].getModifiers()))
+					if (Modifier.isFinal(declaredMethod.getModifiers())) {
 						this.foundFinalToString= true;
+					}
 				}
 			}
 		}
@@ -114,7 +112,7 @@ public class GenerateToStringAction extends GenerateMethodAbstractAction {
 	 * The action requires that the selection provided by the site's selection
 	 * provider is of type
 	 * {@link org.eclipse.jface.viewers.IStructuredSelection}.
-	 * 
+	 *
 	 * @param site the workbench site providing context information for this
 	 *            action
 	 */
@@ -129,9 +127,9 @@ public class GenerateToStringAction extends GenerateMethodAbstractAction {
 	/**
 	 * Note: This constructor is for internal use only. Clients should not call
 	 * this constructor.
-	 * 
+	 *
 	 * @param editor the compilation unit editor
-	 * 
+	 *
 	 * @noreference This constructor is not intended to be referenced by clients.
 	 */
 	public GenerateToStringAction(CompilationUnitEditor editor) {
@@ -180,9 +178,9 @@ public class GenerateToStringAction extends GenerateMethodAbstractAction {
 
 	@Override
 	IWorkspaceRunnable createOperation(Object[] selectedBindings, CodeGenerationSettings settings, boolean regenerate, IJavaElement type, IJavaElement elementPosition) {
-		return operation= GenerateToStringOperation.createOperation(fTypeBinding, selectedBindings, fUnit, elementPosition, (ToStringGenerationSettings)settings);
+		return operation= GenerateToStringOperation.createOperation(fTypeBinding, selectedBindings, fUnit, elementPosition, (ToStringGenerationSettings)settings, true, false);
 	}
-	
+
 	@Override
 	CodeGenerationSettings createSettings(IType type, SourceActionDialog dialog) {
 		ToStringGenerationSettings settings= ((GenerateToStringDialog) dialog).getGenerationSettings();
@@ -197,14 +195,14 @@ public class GenerateToStringAction extends GenerateMethodAbstractAction {
 
 	@Override
 	boolean generateCandidates() throws JavaModelException {
-		IVariableBinding[] candidateFields= fTypeBinding.getDeclaredFields();
 		HashMap<IJavaElement, IVariableBinding> fieldsToBindings= new HashMap<>();
 		HashMap<IJavaElement, IVariableBinding> selectedFieldsToBindings= new HashMap<>();
-		for (int i= 0; i < candidateFields.length; i++) {
-			if (!Modifier.isStatic(candidateFields[i].getModifiers())) {
-				fieldsToBindings.put(candidateFields[i].getJavaElement(), candidateFields[i]);
-				if (!Modifier.isTransient(candidateFields[i].getModifiers()))
-					selectedFieldsToBindings.put(candidateFields[i].getJavaElement(), candidateFields[i]);
+		for (IVariableBinding candidateField : fTypeBinding.getDeclaredFields()) {
+			if (!Modifier.isStatic(candidateField.getModifiers())) {
+				fieldsToBindings.put(candidateField.getJavaElement(), candidateField);
+				if (!Modifier.isTransient(candidateField.getModifiers())) {
+					selectedFieldsToBindings.put(candidateField.getJavaElement(), candidateField);
+				}
 			}
 		}
 		IType type= (IType)fTypeBinding.getJavaElement();
@@ -214,12 +212,10 @@ public class GenerateToStringAction extends GenerateMethodAbstractAction {
 		fSelectedFields= new ArrayList<>();
 		populateMembers(fSelectedFields, allFields, selectedFieldsToBindings);
 
-		IMethodBinding[] candidateMethods= fTypeBinding.getDeclaredMethods();
 		HashMap<IJavaElement, IMethodBinding> methodsToBindings= new HashMap<>();
-		for (int i= 0; i < candidateMethods.length; i++) {
-			if (!Modifier.isStatic(candidateMethods[i].getModifiers()) && candidateMethods[i].getParameterTypes().length == 0
-					&& !candidateMethods[i].getReturnType().getName().equals("void") && !candidateMethods[i].getName().equals("toString") && !candidateMethods[i].getName().equals("clone")) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-				methodsToBindings.put(candidateMethods[i].getJavaElement(), candidateMethods[i]);
+		for (IMethodBinding candidateMethod : fTypeBinding.getDeclaredMethods()) {
+			if (!Modifier.isStatic(candidateMethod.getModifiers()) && candidateMethod.getParameterTypes().length == 0 && !candidateMethod.getReturnType().getName().equals("void") && !candidateMethod.getName().equals("toString") && !candidateMethod.getName().equals("clone")) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				methodsToBindings.put(candidateMethod.getJavaElement(), candidateMethod);
 			}
 		}
 		fMethods= new ArrayList<>();
@@ -230,42 +226,36 @@ public class GenerateToStringAction extends GenerateMethodAbstractAction {
 		ITypeBinding typeBinding= fTypeBinding;
 		while ((typeBinding= typeBinding.getSuperclass()) != null) {
 			type = (IType)typeBinding.getJavaElement();
-			candidateFields= typeBinding.getDeclaredFields();
-			for (int i= 0; i < candidateFields.length; i++) {
-				if (!Modifier.isPrivate(candidateFields[i].getModifiers()) && !Modifier.isStatic(candidateFields[i].getModifiers()) && !contains(fFields, candidateFields[i])
-						&& !contains(fInheritedFields, candidateFields[i])) {
-					fieldsToBindings.put(candidateFields[i].getJavaElement(), candidateFields[i]);
+			for (IVariableBinding candidateField : typeBinding.getDeclaredFields()) {
+				if (!Modifier.isPrivate(candidateField.getModifiers()) && !Modifier.isStatic(candidateField.getModifiers()) && !contains(fFields, candidateField) && !contains(fInheritedFields, candidateField)) {
+					fieldsToBindings.put(candidateField.getJavaElement(), candidateField);
 				}
 			}
 			populateMembers(fInheritedFields, type.getFields(), fieldsToBindings);
-			
-			candidateMethods= typeBinding.getDeclaredMethods();
-			for (int i= 0; i < candidateMethods.length; i++) {
-				if (!Modifier.isPrivate(candidateMethods[i].getModifiers())
-						&& !Modifier.isStatic(candidateMethods[i].getModifiers())
-						&& candidateMethods[i].getParameterTypes().length == 0
-						&& !candidateMethods[i].getReturnType().getName().equals("void") && !contains(fMethods, candidateMethods[i]) && !contains(fInheritedMethods, candidateMethods[i]) && !candidateMethods[i].getName().equals("clone")) { //$NON-NLS-1$ //$NON-NLS-2$
-					methodsToBindings.put(candidateMethods[i].getJavaElement(), candidateMethods[i]);
+
+			for (IMethodBinding candidateMethod : typeBinding.getDeclaredMethods()) {
+				if (!Modifier.isPrivate(candidateMethod.getModifiers()) && !Modifier.isStatic(candidateMethod.getModifiers()) && candidateMethod.getParameterTypes().length == 0 && !candidateMethod.getReturnType().getName().equals("void") && !contains(fMethods, candidateMethod) && !contains(fInheritedMethods, candidateMethod) && !candidateMethod.getName().equals("clone")) { //$NON-NLS-1$ //$NON-NLS-2$
+					methodsToBindings.put(candidateMethod.getJavaElement(), candidateMethod);
 				}
 			}
 			populateMembers(fInheritedMethods, type.getMethods(), methodsToBindings);
 		}
-		
+
 		return true;
 	}
 
 	/**
 	 * Populates <code>result</code> with the bindings from <code>membersToBindings</code>, sorted
 	 * in the order of <code>allMembers</code>.
-	 * 
+	 *
 	 * @param result list of bindings from membersToBindings, sorted in source order
 	 * @param allMembers all member elements in source order
 	 * @param membersToBindings map from {@link IMember} to {@link IBinding}
 	 * @since 3.6
 	 */
 	private static <T extends IBinding> void populateMembers(List<T> result, IMember[] allMembers, HashMap<IJavaElement, T> membersToBindings) {
-		for (int i= 0; i < allMembers.length; i++) {
-			T memberBinding= membersToBindings.remove(allMembers[i]);
+		for (IMember member : allMembers) {
+			T memberBinding= membersToBindings.remove(member);
 			if (memberBinding != null) {
 				result.add(memberBinding);
 			}
@@ -273,8 +263,7 @@ public class GenerateToStringAction extends GenerateMethodAbstractAction {
 	}
 
 	private static <T extends IBinding> boolean contains(List<T> inheritedFields, T member) {
-		for (Iterator<T> iterator= inheritedFields.iterator(); iterator.hasNext();) {
-			T object= iterator.next();
+		for (T object : inheritedFields) {
 			if (object instanceof IVariableBinding && member instanceof IVariableBinding)
 				if (((IVariableBinding) object).getName().equals(((IVariableBinding) member).getName()))
 					return true;

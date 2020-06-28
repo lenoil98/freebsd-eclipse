@@ -104,9 +104,6 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 		setShellStyle(getShellStyle() | SWT.RESIZE);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		ILabelProvider labelProvider= new BreakpointOrganzierLabelProvider();
@@ -116,7 +113,7 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 		Composite composite= new Composite(parentComposite, SWT.NONE);
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 3;
-        composite.setLayout(layout);
+		composite.setLayout(layout);
 		GridData data= new GridData(GridData.FILL_BOTH);
 		data.heightHint= 400;
 		composite.setLayoutData(data);
@@ -126,7 +123,7 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 		label.setText(BreakpointGroupMessages.GroupBreakpointsByDialog_0);
 		GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
 		gridData.horizontalSpan = 3;
-        label.setLayoutData(gridData);
+		label.setLayoutData(gridData);
 
 		createAvailableViewer(composite, labelProvider);
 		createButtons(composite);
@@ -138,9 +135,6 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 		return parentComposite;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.Dialog#createContents(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected Control createContents(Composite parent) {
 		Control contents = super.createContents(parent);
@@ -154,15 +148,15 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 	 */
 	private void initializeContent() {
 		IBreakpointOrganizer[] organizers= BreakpointOrganizerManager.getDefault().getOrganizers();
-		for (int i = 0; i < organizers.length; i++) {
-			fAvailableOrganizersProvider.addAvailable(organizers[i]);
+		for (IBreakpointOrganizer organizer : organizers) {
+			fAvailableOrganizersProvider.addAvailable(organizer);
 		}
 		organizers = fView.getBreakpointOrganizers();
-        if (organizers != null) {
-    		for (int i = 0; i < organizers.length; i++) {
-                fSelectedOrganizersProvider.addSelected(organizers[i]);
-            }
-        }
+		if (organizers != null) {
+			for (IBreakpointOrganizer organizer : organizers) {
+				fSelectedOrganizersProvider.addSelected(organizer);
+			}
+		}
 	}
 
 	/**
@@ -183,7 +177,7 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 		Label label= new Label(availableComposite, SWT.WRAP);
 		label.setText(BreakpointGroupMessages.GroupBreakpointsByDialog_1);
 		gridData = new GridData(GridData.FILL_HORIZONTAL);
-        label.setLayoutData(gridData);
+		label.setLayoutData(gridData);
 
 		fAvailableViewer= new TableViewer(availableComposite);
 		fAvailableViewer.setContentProvider(fAvailableOrganizersProvider);
@@ -226,7 +220,7 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 		label.setText(BreakpointGroupMessages.GroupBreakpointsByDialog_3);
 		gridData = new GridData();
 		gridData.horizontalSpan = 2;
-        label.setLayoutData(gridData);
+		label.setLayoutData(gridData);
 
 		fSelectedViewer= new TreeViewer(selectedComposite);
 		fSelectedViewer.setContentProvider(fSelectedOrganizersProvider);
@@ -236,11 +230,11 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 		tree.setLayoutData(new GridData(GridData.FILL_BOTH));
 		tree.setFont(parent.getFont());
 		fSelectedViewer.addDoubleClickListener(new IDoubleClickListener() {
-            @Override
+			@Override
 			public void doubleClick(DoubleClickEvent event) {
-                handleRemovePressed();
-            }
-        });
+				handleRemovePressed();
+			}
+		});
 		fSelectedViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
@@ -411,13 +405,13 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 
 	/**
 	 * Content provider that provides the list of breakpoint organaisers
-     * that are available but not currently selected.
+	 * that are available but not currently selected.
 	 */
 	private class AvailableOrganizersProvider implements IStructuredContentProvider {
 		protected List<IBreakpointOrganizer> availableOrganziers = new ArrayList<>();
 
 		public void addAvailable(IBreakpointOrganizer organizer) {
-            availableOrganziers.add(organizer);
+			availableOrganziers.add(organizer);
 			fSelectedOrganizersProvider.selectedOrganizers.remove(organizer);
 		}
 
@@ -443,23 +437,23 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 		protected List<Object> selectedOrganizers = new ArrayList<>();
 
 		public void addSelected(IBreakpointOrganizer organizer) {
-            selectedOrganizers.add(organizer);
+			selectedOrganizers.add(organizer);
 			fAvailableOrganizersProvider.availableOrganziers.remove(organizer);
 		}
 
 		public void moveUp(Object object) {
 			int index = selectedOrganizers.indexOf(object);
 			if (index > 0) {
-                selectedOrganizers.remove(object);
-                selectedOrganizers.add(index - 1, object);
+				selectedOrganizers.remove(object);
+				selectedOrganizers.add(index - 1, object);
 			}
 		}
 
 		public void moveDown(Object object) {
 			int index = selectedOrganizers.indexOf(object);
 			if (index < selectedOrganizers.size() - 1) {
-                selectedOrganizers.remove(object);
-                selectedOrganizers.add(index + 1, object);
+				selectedOrganizers.remove(object);
+				selectedOrganizers.add(index + 1, object);
 			}
 		}
 
@@ -539,14 +533,9 @@ public class GroupBreakpointsByDialog extends TrayDialog {
 		}
 	}
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.eclipse.jface.window.Window#configureShell(org.eclipse.swt.widgets.Shell)
-     */
-    @Override
+	@Override
 	protected void configureShell(Shell shell) {
-        super.configureShell(shell);
-        shell.setText(BreakpointGroupMessages.GroupBreakpointsByDialog_7);
-    }
+		super.configureShell(shell);
+		shell.setText(BreakpointGroupMessages.GroupBreakpointsByDialog_7);
+	}
 }

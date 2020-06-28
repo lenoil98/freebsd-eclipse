@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2008 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,8 +18,6 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -85,12 +83,9 @@ public class TextEditChangePreviewViewer implements IChangePreviewViewer {
 			fCompareConfiguration.setLeftLabel(RefactoringUIMessages.ComparePreviewer_original_source);
 			fCompareConfiguration.setRightEditable(false);
 			fCompareConfiguration.setRightLabel(RefactoringUIMessages.ComparePreviewer_refactored_source);
-			addDisposeListener(new DisposeListener() {
-				@Override
-				public void widgetDisposed(DisposeEvent e) {
-					if (fImage != null && !fImage.isDisposed())
-						fImage.dispose();
-				}
+			addDisposeListener(e -> {
+				if (fImage != null && !fImage.isDisposed())
+					fImage.dispose();
 			});
 			Dialog.applyDialogFont(this);
 		}
@@ -107,6 +102,8 @@ public class TextEditChangePreviewViewer implements IChangePreviewViewer {
 		@Override
 		public void setText(String text) {
 			if (fLabel != null) {
+				// Updating corresponding viewer state to reflect the updated text value.
+				getViewer().getControl().setData(CompareUI.COMPARE_VIEWER_TITLE, fLabel);
 				super.setText(fLabel);
 			} else {
 				super.setText(text);
@@ -226,10 +223,7 @@ public class TextEditChangePreviewViewer implements IChangePreviewViewer {
 			} else {
 				fViewer.setInput(null);
 			}
-		} catch (CoreException e) {
-			RefactoringUIPlugin.log(e);
-			fViewer.setInput(null);
-		} catch (AssertionFailedException e) {
+		} catch (CoreException | AssertionFailedException e) {
 			RefactoringUIPlugin.log(e);
 			fViewer.setInput(null);
 		}

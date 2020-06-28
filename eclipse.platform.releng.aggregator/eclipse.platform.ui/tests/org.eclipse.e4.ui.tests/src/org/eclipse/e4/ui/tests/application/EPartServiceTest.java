@@ -9883,7 +9883,7 @@ public class EPartServiceTest extends UITest {
 		partService.activate(partB);
 		partService.activate(partA);
 
-		WeakReference<MPart> ref = new WeakReference<MPart>(partA);
+		WeakReference<MPart> ref = new WeakReference<>(partA);
 		assertEquals(partA, ref.get());
 
 		partService.hidePart(partA, true);
@@ -9954,9 +9954,9 @@ public class EPartServiceTest extends UITest {
 			MPartStack partStack = ems.createModelElement(MPartStack.class);
 			window.getChildren().add(partStack);
 
-			for (int j = 0; j < partIds[i].length; j++) {
+			for (String partId : partIds[i]) {
 				MPart part = ems.createModelElement(MPart.class);
-				part.setElementId(partIds[i][j]);
+				part.setElementId(partId);
 				partStack.getChildren().add(part);
 			}
 		}
@@ -9987,11 +9987,11 @@ public class EPartServiceTest extends UITest {
 
 	class PartListener implements IPartListener {
 
-		private List<MPart> activatedParts = new ArrayList<MPart>();
-		private List<MPart> deactivatedParts = new ArrayList<MPart>();
-		private List<MPart> hiddenParts = new ArrayList<MPart>();
-		private List<MPart> visibleParts = new ArrayList<MPart>();
-		private List<MPart> broughtToTopParts = new ArrayList<MPart>();
+		private List<MPart> activatedParts = new ArrayList<>();
+		private List<MPart> deactivatedParts = new ArrayList<>();
+		private List<MPart> hiddenParts = new ArrayList<>();
+		private List<MPart> visibleParts = new ArrayList<>();
+		private List<MPart> broughtToTopParts = new ArrayList<>();
 
 		private int activated = 0;
 		private int deactivated = 0;

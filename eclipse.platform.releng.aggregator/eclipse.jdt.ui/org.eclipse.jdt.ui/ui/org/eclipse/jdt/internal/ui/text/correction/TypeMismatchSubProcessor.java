@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -77,6 +77,7 @@ import org.eclipse.jdt.internal.ui.text.correction.proposals.ImplementInterfaceP
 import org.eclipse.jdt.internal.ui.text.correction.proposals.LinkedCorrectionProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.NewVariableCorrectionProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.TypeChangeCorrectionProposal;
+import org.eclipse.jdt.internal.ui.text.correction.proposals.OptionalCorrectionProposal;
 
 import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
@@ -109,34 +110,40 @@ public class TypeMismatchSubProcessor {
 		ITypeBinding castTypeBinding= null;
 
 		int parentNodeType= selectedNode.getParent().getNodeType();
-		if (parentNodeType == ASTNode.ASSIGNMENT) {
-			Assignment assign= (Assignment) selectedNode.getParent();
-			Expression leftHandSide= assign.getLeftHandSide();
-			if (selectedNode.equals(leftHandSide)) {
-				nodeToCast= assign.getRightHandSide();
-			}
-			castTypeBinding= assign.getLeftHandSide().resolveTypeBinding();
-			if (leftHandSide instanceof Name) {
-				receiverNode= (Name) leftHandSide;
-			} else if (leftHandSide instanceof FieldAccess) {
-				receiverNode= ((FieldAccess) leftHandSide).getName();
-			}
-		} else if (parentNodeType == ASTNode.VARIABLE_DECLARATION_FRAGMENT) {
-			VariableDeclarationFragment frag= (VariableDeclarationFragment) selectedNode.getParent();
-			if (selectedNode.equals(frag.getName()) || selectedNode.equals(frag.getInitializer())) {
-				nodeToCast= frag.getInitializer();
-				castTypeBinding= ASTNodes.getType(frag).resolveBinding();
-				receiverNode= frag.getName();
-			}
-		} else if (parentNodeType == ASTNode.MEMBER_VALUE_PAIR) {
-			receiverNode= ((MemberValuePair) selectedNode.getParent()).getName();
-			castTypeBinding= ASTResolving.guessBindingForReference(nodeToCast);
-		} else if (parentNodeType == ASTNode.SINGLE_MEMBER_ANNOTATION) {
-			receiverNode= ((SingleMemberAnnotation) selectedNode.getParent()).getTypeName(); // use the type name
-			castTypeBinding= ASTResolving.guessBindingForReference(nodeToCast);
-		} else {
-			// try to find the binding corresponding to 'castTypeName'
-			castTypeBinding= ASTResolving.guessBindingForReference(nodeToCast);
+		switch (parentNodeType) {
+			case ASTNode.ASSIGNMENT:
+				Assignment assign= (Assignment) selectedNode.getParent();
+				Expression leftHandSide= assign.getLeftHandSide();
+				if (selectedNode.equals(leftHandSide)) {
+					nodeToCast= assign.getRightHandSide();
+				}
+				castTypeBinding= assign.getLeftHandSide().resolveTypeBinding();
+				if (leftHandSide instanceof Name) {
+					receiverNode= (Name) leftHandSide;
+				} else if (leftHandSide instanceof FieldAccess) {
+					receiverNode= ((FieldAccess) leftHandSide).getName();
+				}
+				break;
+			case ASTNode.VARIABLE_DECLARATION_FRAGMENT:
+				VariableDeclarationFragment frag= (VariableDeclarationFragment) selectedNode.getParent();
+				if (selectedNode.equals(frag.getName()) || selectedNode.equals(frag.getInitializer())) {
+					nodeToCast= frag.getInitializer();
+					castTypeBinding= ASTNodes.getType(frag).resolveBinding();
+					receiverNode= frag.getName();
+				}
+				break;
+			case ASTNode.MEMBER_VALUE_PAIR:
+				receiverNode= ((MemberValuePair) selectedNode.getParent()).getName();
+				castTypeBinding= ASTResolving.guessBindingForReference(nodeToCast);
+				break;
+			case ASTNode.SINGLE_MEMBER_ANNOTATION:
+				receiverNode= ((SingleMemberAnnotation) selectedNode.getParent()).getTypeName(); // use the type name
+				castTypeBinding= ASTResolving.guessBindingForReference(nodeToCast);
+				break;
+			default:
+				// try to find the binding corresponding to 'castTypeName'
+				castTypeBinding= ASTResolving.guessBindingForReference(nodeToCast);
+				break;
 		}
 		if (castTypeBinding == null) {
 			return;
@@ -149,8 +156,31 @@ public class TypeMismatchSubProcessor {
 				currBinding= methodBinding.getReturnType();
 			}
 		}
-		
+
 		if (!(nodeToCast instanceof ArrayInitializer)) {
+			String castTypeName= castTypeBinding.getErasure().getQualifiedName();
+			if (castTypeName.equals("java.util.Optional") && ast.apiLevel() >= AST.JLS8) { //$NON-NLS-1$
+				ITypeBinding nodeToCastTypeBinding= nodeToCast.resolveTypeBinding();
+				String label0= Messages.format(CorrectionMessages.TypeMismatchSubProcessor_changetooptionalempty_description, nodeToCast.toString());
+				proposals.add(new OptionalCorrectionProposal(label0, cu, nodeToCast, IProposalRelevance.CREATE_EMPTY_OPTIONAL, OptionalCorrectionProposal.OPTIONAL_EMPTY));
+				ITypeBinding[] typeArguments= castTypeBinding.getTypeArguments();
+				boolean wrapAll= false;
+				for (ITypeBinding typeArgument : typeArguments) {
+					if (typeArgument.isCastCompatible(nodeToCastTypeBinding)) {
+						wrapAll= true;
+						break;
+					}
+				}
+				if (wrapAll) {
+					String label1= Messages.format(CorrectionMessages.TypeMismatchSubProcessor_changetooptionalof_description, nodeToCast.toString());
+					proposals.add(new OptionalCorrectionProposal(label1, cu, nodeToCast, IProposalRelevance.CREATE_OPTIONAL, OptionalCorrectionProposal.OPTIONAL_OF));
+					if (!nodeToCastTypeBinding.isPrimitive()) {
+						String label2= Messages.format(CorrectionMessages.TypeMismatchSubProcessor_changetooptionalofnullable_description, nodeToCast.toString());
+						proposals.add(new OptionalCorrectionProposal(label2, cu, nodeToCast, IProposalRelevance.CREATE_OPTIONAL_OF_NULLABLE, OptionalCorrectionProposal.OPTIONAL_OF_NULLABLE));
+					}
+				}
+			}
+
 			ITypeBinding castFixType= null;
 			if (currBinding == null || castTypeBinding.isCastCompatible(currBinding) || nodeToCast instanceof CastExpression) {
 				castFixType= castTypeBinding;
@@ -196,9 +226,8 @@ public class TypeMismatchSubProcessor {
 
 				String returnKey= "return"; //$NON-NLS-1$
 				proposal.addLinkedPosition(rewrite.track(newReturnType), true, returnKey);
-				ITypeBinding[] typeSuggestions= ASTResolving.getRelaxingTypes(ast, currBinding);
-				for (int i= 0; i < typeSuggestions.length; i++) {
-					proposal.addLinkedPositionProposal(returnKey, typeSuggestions[i]);
+				for (ITypeBinding typeSuggestion : ASTResolving.getRelaxingTypes(ast, currBinding)) {
+					proposal.addLinkedPositionProposal(returnKey, typeSuggestion);
 				}
 				proposals.add(proposal);
 			}
@@ -402,7 +431,7 @@ public class TypeMismatchSubProcessor {
 					undeclaredExceptions.add(methodExceptions[i]);
 				}
 			}
-			if (undeclaredExceptions.size() == 0) {
+			if (undeclaredExceptions.isEmpty()) {
 				return;
 			}
 			String label= Messages.format(CorrectionMessages.TypeMismatchSubProcessor_removeexceptions_description, BasicElementLabels.getJavaElementName(methodDeclBinding.getName()));
@@ -430,8 +459,8 @@ public class TypeMismatchSubProcessor {
 	}
 
 	private static boolean isDeclaredException(ITypeBinding curr, ITypeBinding[] declared) {
-		for (int i= 0; i < declared.length; i++) {
-			if (Bindings.isSuperType(declared[i], curr)) {
+		for (ITypeBinding d : declared) {
+			if (Bindings.isSuperType(d, curr)) {
 				return true;
 			}
 		}
@@ -487,12 +516,12 @@ public class TypeMismatchSubProcessor {
 				int relevance= StubUtility.hasLocalVariableName(cu.getJavaProject(), name) ? 10 : 7;
 				String label= Messages.format(CorrectionMessages.TypeMismatchSubProcessor_create_loop_variable_description, BasicElementLabels.getJavaElementName(name));
 				Image image= JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_LOCAL);
-				
+
 				proposals.add(new NewVariableCorrectionProposal(label, cu, NewVariableCorrectionProposal.LOCAL, simpleName, null, relevance, image));
 				return;
 			}
 		}
-		
+
 		String label= Messages.format(CorrectionMessages.TypeMismatchSubProcessor_incompatible_for_each_type_description, new String[] { BasicElementLabels.getJavaElementName(parameter.getName().getIdentifier()), BindingLabelProvider.getBindingLabel(expectedBinding, BindingLabelProvider.DEFAULT_TEXTFLAGS) });
 		Image image= JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_CHANGE);
 		ASTRewrite rewrite= ASTRewrite.create(ast);

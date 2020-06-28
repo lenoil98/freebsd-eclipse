@@ -115,8 +115,7 @@ public class BuilderUtils {
 		IConfigurationElement[] elements = ep.getConfigurationElements();
 		String sourceType= config.getType().getIdentifier();
 		String builderType= null;
-		for (int i= 0; i < elements.length; i++) {
-			IConfigurationElement element= elements[i];
+		for (IConfigurationElement element : elements) {
 			if (element.getName().equals(TAG_CONFIGURATION_MAP) && sourceType.equals(element.getAttribute(TAG_SOURCE_TYPE))) {
 				builderType= element.getAttribute(TAG_BUILDER_TYPE);
 				break;
@@ -147,7 +146,7 @@ public class BuilderUtils {
 	 */
 	public static ILaunchConfiguration duplicateConfiguration(IProject project, ILaunchConfiguration config) throws CoreException {
 		Map<String, Object> attributes = config.getAttributes();
-		String newName= new StringBuffer(config.getName()).append(ExternalToolsModelMessages.BuilderUtils_7).toString();
+		String newName= new StringBuilder(config.getName()).append(ExternalToolsModelMessages.BuilderUtils_7).toString();
 		newName= DebugPlugin.getDefault().getLaunchManager().generateLaunchConfigurationName(newName);
 		ILaunchConfigurationType newType= getConfigurationDuplicationType(config);
 		ILaunchConfigurationWorkingCopy newWorkingCopy= newType.newInstance(getBuilderFolder(project, true), newName);
@@ -175,14 +174,14 @@ public class BuilderUtils {
 		return BuilderCoreUtils.migrateBuilderConfiguration(project, workingCopy);
 	}
 
-    /**
-     * Converts the build types string into an array of
-     * build kinds.
-     *
-     * @param buildTypes the string of built types to convert
-     * @return the array of build kinds.
-     */
-    public static int[] buildTypesToArray(String buildTypes) {
-    	return BuilderCoreUtils.buildTypesToArray(buildTypes);
-    }
+	/**
+	 * Converts the build types string into an array of
+	 * build kinds.
+	 *
+	 * @param buildTypes the string of built types to convert
+	 * @return the array of build kinds.
+	 */
+	public static int[] buildTypesToArray(String buildTypes) {
+		return BuilderCoreUtils.buildTypesToArray(buildTypes);
+	}
 }

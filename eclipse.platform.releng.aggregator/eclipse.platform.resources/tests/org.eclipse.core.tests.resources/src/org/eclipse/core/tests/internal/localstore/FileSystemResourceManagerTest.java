@@ -16,8 +16,6 @@ package org.eclipse.core.tests.internal.localstore;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.filesystem.IFileInfo;
 import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.internal.localstore.FileSystemResourceManager;
@@ -26,23 +24,11 @@ import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.tests.internal.filesystem.bug440110.Bug440110FileSystem;
 
-//
 public class FileSystemResourceManagerTest extends LocalStoreTest implements ICoreConstants {
-	public FileSystemResourceManagerTest() {
-		super();
-	}
-
-	public FileSystemResourceManagerTest(String name) {
-		super(name);
-	}
 
 	@Override
 	public String[] defineHierarchy() {
 		return new String[] {"/Folder1/", "/Folder1/File1", "/Folder1/Folder2/", "/Folder1/Folder2/File2", "/Folder1/Folder2/Folder3/"};
-	}
-
-	public static Test suite() {
-		return new TestSuite(FileSystemResourceManagerTest.class);
 	}
 
 	public void testBug440110() throws URISyntaxException, CoreException {
@@ -72,8 +58,6 @@ public class FileSystemResourceManagerTest extends LocalStoreTest implements ICo
 		assertTrue("3.0", Bug440110FileSystem.hasFetchedFileTree());
 	}
 
-	/**
-	 */
 	public void testContainerFor() throws Throwable {
 
 		/* test null parameter */
@@ -138,8 +122,6 @@ public class FileSystemResourceManagerTest extends LocalStoreTest implements ICo
 		}
 	}
 
-	/**
-	 */
 	public void testFileFor() throws Throwable {
 
 		/* test null parameter */
@@ -461,6 +443,25 @@ public class FileSystemResourceManagerTest extends LocalStoreTest implements ICo
 		assertTrue("2.2", fileStore.fetchInfo().isDirectory());
 		long lastModified = ((Resource) dotProject).getStore().fetchInfo().getLastModified();
 		assertEquals("2.3", lastModified, ((Resource) project).getResourceInfo(false, false).getLocalSyncInfo());
+	}
+
+	/**
+	 * Test for bug 547691, exception when passing deleted project path to
+	 * {@link FileSystemResourceManager#locationURIFor(IResource)}.
+	 */
+	public void testBug547691() throws Exception {
+		String projectName = getUniqueString();
+		IWorkspace workspace = getWorkspace();
+		IProject project = workspace.getRoot().getProject(projectName);
+		IProjectDescription projectDescription = workspace.newProjectDescription(projectName);
+		project.create(projectDescription, null);
+		project.open(null);
+		FileSystemResourceManager manager = ((Workspace) getWorkspace()).getFileSystemManager();
+		URI location = manager.locationURIFor(project);
+		assertNotNull("Expected location for accessible project to not be null", location);
+		project.delete(true, null);
+		URI locationAfterDelete = manager.locationURIFor(project);
+		assertEquals("Expected location of project to not change after delete", location, locationAfterDelete);
 	}
 
 	protected void write(final IFile file, final InputStream contents, final boolean force, IProgressMonitor monitor)

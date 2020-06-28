@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -26,6 +26,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -70,6 +71,7 @@ import org.eclipse.osgi.container.ModuleWire;
 import org.eclipse.osgi.container.ModuleWiring;
 import org.eclipse.osgi.container.builders.OSGiManifestBuilderFactory;
 import org.eclipse.osgi.container.namespaces.EclipsePlatformNamespace;
+import org.eclipse.osgi.container.namespaces.EquinoxModuleDataNamespace;
 import org.eclipse.osgi.framework.util.ThreadInfoReport;
 import org.eclipse.osgi.internal.debug.Debug;
 import org.eclipse.osgi.internal.framework.EquinoxConfiguration;
@@ -135,7 +137,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleRevisionBuilder systembuilder = OSGiManifestBuilderFactory.createBuilder(asMap(systemBundle.getHeaders("")), Constants.SYSTEM_BUNDLE_SYMBOLICNAME, extraPackages, extraCapabilities);
 		container.install(null, systemBundle.getLocation(), systembuilder, null);
 
-		final List<Throwable> installErrors = new ArrayList<Throwable>(0);
+		final List<Throwable> installErrors = new ArrayList<>(0);
 		// just trying to pound the container with a bunch of installs
 		ExecutorService executor = Executors.newFixedThreadPool(10);
 		Bundle[] bundles = context.getBundles();
@@ -179,7 +181,7 @@ public class TestModuleContainer extends AbstractTest {
 	}
 
 	static <K, V> Map<K, V> asMap(Dictionary<K, V> dictionary) {
-		Map<K, V> map = new HashMap<K, V>();
+		Map<K, V> map = new HashMap<>();
 		for (Enumeration<K> eKeys = dictionary.keys(); eKeys.hasMoreElements();) {
 			K key = eKeys.nextElement();
 			V value = dictionary.get(key);
@@ -584,7 +586,7 @@ public class TestModuleContainer extends AbstractTest {
 
 	@Test
 	public void testSingleton04() throws BundleException, IOException {
-		final Collection<BundleRevision> disabled = new ArrayList<BundleRevision>();
+		final Collection<BundleRevision> disabled = new ArrayList<>();
 		ResolverHookFactory resolverHookFactory = new ResolverHookFactory() {
 
 			@Override
@@ -697,7 +699,7 @@ public class TestModuleContainer extends AbstractTest {
 
 		container.resolve(Arrays.asList(c1, c2, c3, c4, c5, c6, c7), true);
 		List<DummyModuleEvent> actual = database.getModuleEvents();
-		List<DummyModuleEvent> expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(c1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c2, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c3, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c6, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.RESOLVED, State.RESOLVED)));
+		List<DummyModuleEvent> expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(c1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c2, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c3, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c6, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.RESOLVED, State.RESOLVED)));
 		assertEvents(expected, actual, false);
 	}
 
@@ -725,7 +727,7 @@ public class TestModuleContainer extends AbstractTest {
 
 		container.refresh(Arrays.asList(systemBundle));
 		List<DummyModuleEvent> actual = database.getModuleEvents();
-		List<DummyModuleEvent> expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c1, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c2, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c3, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c5, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c6, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c7, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(systemBundle, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c1, ModuleEvent.RESOLVED, State.RESOLVED),
+		List<DummyModuleEvent> expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c1, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c2, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c3, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c5, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c6, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c7, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(systemBundle, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c1, ModuleEvent.RESOLVED, State.RESOLVED),
 				new DummyModuleEvent(c2, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c3, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c6, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.RESOLVED, State.RESOLVED)));
 		assertEvents(expected, actual, false);
 	}
@@ -756,7 +758,7 @@ public class TestModuleContainer extends AbstractTest {
 		c7.start();
 
 		List<DummyModuleEvent> actual = database.getModuleEvents();
-		List<DummyModuleEvent> expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(c1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c2, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c3, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c6, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c7, ModuleEvent.STARTED, State.ACTIVE)));
+		List<DummyModuleEvent> expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(c1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c2, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c3, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c6, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c7, ModuleEvent.STARTED, State.ACTIVE)));
 		assertEvents(expected, actual, false);
 	}
 
@@ -782,8 +784,8 @@ public class TestModuleContainer extends AbstractTest {
 		database.getModuleEvents();
 		container.refresh(Arrays.asList(c4));
 		List<DummyModuleEvent> actual = database.getModuleEvents();
-		List<DummyModuleEvent> expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(c7, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c7, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c5, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c6, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c7, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c6, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.RESOLVED, State.RESOLVED),
-				new DummyModuleEvent(c7, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c7, ModuleEvent.STARTED, State.ACTIVE)));
+		List<DummyModuleEvent> expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(c7, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c7, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c5, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c6, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c7, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c6, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.STARTING, State.STARTING),
+				new DummyModuleEvent(c7, ModuleEvent.STARTED, State.ACTIVE)));
 		assertEvents(expected, actual, false);
 	}
 
@@ -839,7 +841,7 @@ public class TestModuleContainer extends AbstractTest {
 		Assert.assertEquals("Wrong number of removal pending", 0, removalPending.size());
 
 		List<DummyModuleEvent> actual = database.getModuleEvents();
-		List<DummyModuleEvent> expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.UPDATED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.RESOLVED, State.RESOLVED),
+		List<DummyModuleEvent> expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.UPDATED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.RESOLVED, State.RESOLVED),
 
 				new DummyModuleEvent(c6, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c6, ModuleEvent.UPDATED, State.INSTALLED), new DummyModuleEvent(c6, ModuleEvent.RESOLVED, State.RESOLVED),
 
@@ -857,7 +859,7 @@ public class TestModuleContainer extends AbstractTest {
 
 		container.refresh(null);
 		actual = database.getModuleEvents();
-		expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.UNINSTALLED, State.UNINSTALLED), new DummyModuleEvent(c6, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c7, ModuleEvent.UNRESOLVED, State.INSTALLED)));
+		expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.UNINSTALLED, State.UNINSTALLED), new DummyModuleEvent(c6, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c7, ModuleEvent.UNRESOLVED, State.INSTALLED)));
 		assertEvents(expected, actual, false);
 
 		// Test bug 411833
@@ -880,7 +882,7 @@ public class TestModuleContainer extends AbstractTest {
 
 		container.refresh(Collections.singletonList(c6));
 		actual = database.getModuleEvents();
-		expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.UNINSTALLED, State.UNINSTALLED), new DummyModuleEvent(c6, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c7, ModuleEvent.UNRESOLVED, State.INSTALLED)));
+		expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(c4, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c4, ModuleEvent.UNINSTALLED, State.UNINSTALLED), new DummyModuleEvent(c6, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(c7, ModuleEvent.UNRESOLVED, State.INSTALLED)));
 		assertEvents(expected, actual, false);
 
 		removalPending = container.getRemovalPending();
@@ -941,7 +943,7 @@ public class TestModuleContainer extends AbstractTest {
 		List<ModuleWire> providedWiresA = wiringA.getProvidedModuleWires(PackageNamespace.PACKAGE_NAMESPACE);
 		Assert.assertEquals("Wrong number of provided wires.", 2, providedWiresA.size());
 
-		Collection<ModuleRevision> requirers = new ArrayList<ModuleRevision>();
+		Collection<ModuleRevision> requirers = new ArrayList<>();
 		for (ModuleWire wire : providedWiresA) {
 			requirers.add(wire.getRequirer());
 		}
@@ -983,7 +985,7 @@ public class TestModuleContainer extends AbstractTest {
 		Module f = installDummyModule("sub.f.MF", "f", container);
 		Module e = installDummyModule("sub.e.MF", "e", container);
 
-		// resolve order does matter so that transitive dependencies are pulled in 
+		// resolve order does matter so that transitive dependencies are pulled in
 		// and cause substitution to happen in a certain way
 		container.resolve(Arrays.asList(g, f, e), true);
 
@@ -993,7 +995,7 @@ public class TestModuleContainer extends AbstractTest {
 		List<ModuleWire> providedWiresE = wiringE.getProvidedModuleWires(PackageNamespace.PACKAGE_NAMESPACE);
 		Assert.assertEquals("Wrong number of provided wires.", 3, providedWiresE.size());
 
-		Collection<ModuleRevision> requirers = new HashSet<ModuleRevision>();
+		Collection<ModuleRevision> requirers = new HashSet<>();
 		for (ModuleWire wire : providedWiresE) {
 			requirers.add(wire.getRequirer());
 		}
@@ -1016,7 +1018,7 @@ public class TestModuleContainer extends AbstractTest {
 		installDummyModule("sub.j.MF", "j", container);
 		Module k = installDummyModule("sub.k.MF", "k", container);
 
-		// resolve order does matter so that transitive dependencies are pulled in 
+		// resolve order does matter so that transitive dependencies are pulled in
 		// and cause substitution to happen in a certain way
 		container.resolve(Arrays.asList(k), true);
 
@@ -1053,29 +1055,29 @@ public class TestModuleContainer extends AbstractTest {
 		lazy1.start(StartOptions.USE_ACTIVATION_POLICY);
 
 		List<DummyModuleEvent> actual = database.getModuleEvents();
-		List<DummyModuleEvent> expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING)));
+		List<DummyModuleEvent> expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING)));
 		assertEvents(expected, actual, true);
 
 		lazy1.start(StartOptions.LAZY_TRIGGER);
 
 		actual = database.getModuleEvents();
-		expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(lazy1, ModuleEvent.STARTED, State.ACTIVE)));
+		expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(lazy1, ModuleEvent.STARTED, State.ACTIVE)));
 		assertEvents(expected, actual, true);
 
 		container.refresh(Arrays.asList(lazy1));
 
 		actual = database.getModuleEvents();
-		expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(lazy1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(lazy1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING)));
+		expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(lazy1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(lazy1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING)));
 		assertEvents(expected, actual, true);
 
 		container.update(lazy1, OSGiManifestBuilderFactory.createBuilder(getManifest("lazy1_v1.MF")), null);
 		actual = database.getModuleEvents();
-		expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(lazy1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(lazy1, ModuleEvent.UPDATED, State.INSTALLED), new DummyModuleEvent(lazy1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING)));
+		expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(lazy1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(lazy1, ModuleEvent.UPDATED, State.INSTALLED), new DummyModuleEvent(lazy1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING)));
 		assertEvents(expected, actual, true);
 
 		container.refresh(Arrays.asList(lazy1));
 		actual = database.getModuleEvents();
-		expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(lazy1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(lazy1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING)));
+		expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(lazy1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.UNRESOLVED, State.INSTALLED), new DummyModuleEvent(lazy1, ModuleEvent.RESOLVED, State.RESOLVED), new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING)));
 		assertEvents(expected, actual, true);
 	}
 
@@ -1119,11 +1121,11 @@ public class TestModuleContainer extends AbstractTest {
 		container.getFrameworkStartLevel().setStartLevel(3);
 
 		List<DummyContainerEvent> actualContainerEvents = database.getContainerEvents(1);
-		List<DummyContainerEvent> expectedContainerEvents = new ArrayList<DummyContainerEvent>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null)));
+		List<DummyContainerEvent> expectedContainerEvents = new ArrayList<>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null)));
 		Assert.assertEquals("Wrong container events.", expectedContainerEvents, actualContainerEvents);
 
 		actual = database.getModuleEvents(3);
-		List<DummyModuleEvent> expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTED, State.ACTIVE)));
+		List<DummyModuleEvent> expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTED, State.ACTIVE)));
 		assertEvents(expected, actual, true);
 
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -1159,20 +1161,20 @@ public class TestModuleContainer extends AbstractTest {
 		systemBundle.start();
 
 		actualContainerEvents = database.getContainerEvents();
-		expectedContainerEvents = new ArrayList<DummyContainerEvent>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null), new DummyContainerEvent(ContainerEvent.STARTED, systemBundle, null)));
+		expectedContainerEvents = new ArrayList<>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null), new DummyContainerEvent(ContainerEvent.STARTED, systemBundle, null)));
 
 		actual = database.getModuleEvents(2);
-		expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(systemBundle, ModuleEvent.STARTED, State.ACTIVE)));
+		expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(systemBundle, ModuleEvent.STARTED, State.ACTIVE)));
 		assertEvents(expected, actual, true);
 
 		container.getFrameworkStartLevel().setStartLevel(3);
 
 		actualContainerEvents = database.getContainerEvents(1);
-		expectedContainerEvents = new ArrayList<DummyContainerEvent>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null)));
+		expectedContainerEvents = new ArrayList<>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null)));
 		Assert.assertEquals("Wrong container events.", expectedContainerEvents, actualContainerEvents);
 
 		actual = database.getModuleEvents(3);
-		expected = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTED, State.ACTIVE)));
+		expected = new ArrayList<>(Arrays.asList(new DummyModuleEvent(lazy1, ModuleEvent.LAZY_ACTIVATION, State.LAZY_STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTED, State.ACTIVE)));
 		assertEvents(expected, actual, true);
 	}
 
@@ -1219,7 +1221,7 @@ public class TestModuleContainer extends AbstractTest {
 	}
 
 	private void doTestEventsStartLevel(int beginningStartLevel) throws BundleException, IOException {
-		Map<String, String> configuration = new HashMap<String, String>();
+		Map<String, String> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_BEGINNING_STARTLEVEL, String.valueOf(beginningStartLevel));
 
 		DummyContainerAdaptor adaptor = new DummyContainerAdaptor(new DummyCollisionHook(false), configuration);
@@ -1263,41 +1265,41 @@ public class TestModuleContainer extends AbstractTest {
 
 		if (beginningStartLevel == 1) {
 			actualModuleEvents = database.getModuleEvents(2);
-			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(systemBundle, ModuleEvent.STARTED, State.ACTIVE)));
+			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(systemBundle, ModuleEvent.STARTED, State.ACTIVE)));
 			assertEvents(expectedModuleEvents, actualModuleEvents, true);
 
 			List<DummyContainerEvent> actualContainerEvents = database.getContainerEvents();
-			List<DummyContainerEvent> expectedContainerEvents = new ArrayList<DummyContainerEvent>(Arrays.asList(new DummyContainerEvent(ContainerEvent.STARTED, systemBundle, null)));
+			List<DummyContainerEvent> expectedContainerEvents = new ArrayList<>(Arrays.asList(new DummyContainerEvent(ContainerEvent.STARTED, systemBundle, null)));
 			Assert.assertEquals("Wrong container events.", expectedContainerEvents, actualContainerEvents);
 
 			container.getFrameworkStartLevel().setStartLevel(100);
 			actualModuleEvents = database.getModuleEvents(14);
-			expectedModuleEvents = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(c7, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c7, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c6, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c6, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c5, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c5, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c4, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c3, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c3, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c2, ModuleEvent.STARTING, State.STARTING),
+			expectedModuleEvents = new ArrayList<>(Arrays.asList(new DummyModuleEvent(c7, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c7, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c6, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c6, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c5, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c5, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c4, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c3, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c3, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c2, ModuleEvent.STARTING, State.STARTING),
 					new DummyModuleEvent(c2, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c1, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c1, ModuleEvent.STARTED, State.ACTIVE)));
 
 			actualContainerEvents = database.getContainerEvents(1);
-			expectedContainerEvents = new ArrayList<DummyContainerEvent>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null)));
+			expectedContainerEvents = new ArrayList<>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null)));
 			Assert.assertEquals("Wrong container events.", expectedContainerEvents, actualContainerEvents);
 		} else {
 			actualModuleEvents = database.getModuleEvents(16);
-			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c7, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c7, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c6, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c6, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c5, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c5, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c4, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c3, ModuleEvent.STARTING, State.STARTING),
-					new DummyModuleEvent(c3, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c2, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c2, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c1, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c1, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(systemBundle, ModuleEvent.STARTED, State.ACTIVE)));
+			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c7, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c7, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c6, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c6, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c5, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c5, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c4, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c4, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c3, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c3, ModuleEvent.STARTED, State.ACTIVE),
+					new DummyModuleEvent(c2, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c2, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(c1, ModuleEvent.STARTING, State.STARTING), new DummyModuleEvent(c1, ModuleEvent.STARTED, State.ACTIVE), new DummyModuleEvent(systemBundle, ModuleEvent.STARTED, State.ACTIVE)));
 			assertEvents(expectedModuleEvents, actualModuleEvents, true);
 
 			List<DummyContainerEvent> actualContainerEvents = database.getContainerEvents();
-			List<DummyContainerEvent> expectedContainerEvents = new ArrayList<DummyContainerEvent>(Arrays.asList(new DummyContainerEvent(ContainerEvent.STARTED, systemBundle, null)));
+			List<DummyContainerEvent> expectedContainerEvents = new ArrayList<>(Arrays.asList(new DummyContainerEvent(ContainerEvent.STARTED, systemBundle, null)));
 			Assert.assertEquals("Wrong container events.", expectedContainerEvents, actualContainerEvents);
 		}
 
 		if (beginningStartLevel == 1) {
 			container.getFrameworkStartLevel().setStartLevel(1);
 			actualModuleEvents = database.getModuleEvents(14);
-			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(c1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c2, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c2, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c3, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c3, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c4, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c5, ModuleEvent.STOPPED, State.RESOLVED),
-					new DummyModuleEvent(c6, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c6, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c7, ModuleEvent.STOPPED, State.RESOLVED)));
+			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<>(Arrays.asList(new DummyModuleEvent(c1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c2, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c2, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c3, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c3, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c4, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c5, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c6, ModuleEvent.STOPPING, State.STOPPING),
+					new DummyModuleEvent(c6, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c7, ModuleEvent.STOPPED, State.RESOLVED)));
 			assertEvents(expectedModuleEvents, actualModuleEvents, true);
 
 			List<DummyContainerEvent> actualContainerEvents = database.getContainerEvents(1);
-			List<DummyContainerEvent> expectedContainerEvents = new ArrayList<DummyContainerEvent>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null)));
+			List<DummyContainerEvent> expectedContainerEvents = new ArrayList<>(Arrays.asList(new DummyContainerEvent(ContainerEvent.START_LEVEL, systemBundle, null)));
 			Assert.assertEquals("Wrong container events.", expectedContainerEvents, actualContainerEvents);
 		}
 
@@ -1305,16 +1307,16 @@ public class TestModuleContainer extends AbstractTest {
 
 		if (beginningStartLevel == 1) {
 			actualModuleEvents = database.getModuleEvents(2);
-			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(systemBundle, ModuleEvent.STOPPED, State.RESOLVED)));
+			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(systemBundle, ModuleEvent.STOPPED, State.RESOLVED)));
 			assertEvents(expectedModuleEvents, actualModuleEvents, true);
 		} else {
 			actualModuleEvents = database.getModuleEvents(16);
-			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<DummyModuleEvent>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c2, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c2, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c3, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c3, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c4, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.STOPPING, State.STOPPING),
-					new DummyModuleEvent(c5, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c6, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c6, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c7, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(systemBundle, ModuleEvent.STOPPED, State.RESOLVED)));
+			List<DummyModuleEvent> expectedModuleEvents = new ArrayList<>(Arrays.asList(new DummyModuleEvent(systemBundle, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c1, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c1, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c2, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c2, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c3, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c3, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c4, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c4, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c5, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c5, ModuleEvent.STOPPED, State.RESOLVED),
+					new DummyModuleEvent(c6, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c6, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(c7, ModuleEvent.STOPPING, State.STOPPING), new DummyModuleEvent(c7, ModuleEvent.STOPPED, State.RESOLVED), new DummyModuleEvent(systemBundle, ModuleEvent.STOPPED, State.RESOLVED)));
 			assertEvents(expectedModuleEvents, actualModuleEvents, true);
 		}
 		List<DummyContainerEvent> actualContainerEvents = database.getContainerEvents();
-		List<DummyContainerEvent> expectedContainerEvents = new ArrayList<DummyContainerEvent>(Arrays.asList(new DummyContainerEvent(ContainerEvent.STOPPED, systemBundle, null)));
+		List<DummyContainerEvent> expectedContainerEvents = new ArrayList<>(Arrays.asList(new DummyContainerEvent(ContainerEvent.STOPPED, systemBundle, null)));
 		Assert.assertEquals("Wrong container events.", expectedContainerEvents, actualContainerEvents);
 	}
 
@@ -1557,7 +1559,7 @@ public class TestModuleContainer extends AbstractTest {
 		// make sure h1 is not resolved
 		ModuleWiring h1Wiring = h1.getCurrentRevision().getWiring();
 		Assert.assertNull("h1 got resolved somehow.", h1Wiring);
-		// do not resolve the host first; make sure it gets pulled in while attempting to resolve 
+		// do not resolve the host first; make sure it gets pulled in while attempting to resolve
 		// to a fragment capability.
 		ModuleWire dynamicWire = container.resolveDynamic("f1.a", dynamic2.getCurrentRevision());
 		Assert.assertNotNull("Dynamic wire not found.", dynamicWire);
@@ -1832,7 +1834,7 @@ public class TestModuleContainer extends AbstractTest {
 		Assert.assertEquals("n3 should resolve.", State.RESOLVED, uses_n3.getState());
 	}
 
-	// DISABLE see bug 498064 @Test
+	@Test
 	public void testUsesTimeout() throws BundleException {
 		// Always want to go to zero threads when idle
 		int coreThreads = 0;
@@ -1841,7 +1843,7 @@ public class TestModuleContainer extends AbstractTest {
 		// idle timeout; make it short to get rid of threads quickly after resolve
 		int idleTimeout = 5;
 		// use sync queue to force thread creation
-		BlockingQueue<Runnable> queue = new SynchronousQueue<Runnable>();
+		BlockingQueue<Runnable> queue = new SynchronousQueue<>();
 		// try to name the threads with useful name
 		ThreadFactory threadFactory = new ThreadFactory() {
 			@Override
@@ -1861,7 +1863,7 @@ public class TestModuleContainer extends AbstractTest {
 		ExecutorService executor = new ThreadPoolExecutor(coreThreads, maxThreads, idleTimeout, TimeUnit.SECONDS, queue, threadFactory, rejectHandler);
 		ScheduledExecutorService timeoutExecutor = new ScheduledThreadPoolExecutor(1);
 
-		Map<String, String> configuration = new HashMap<String, String>();
+		Map<String, String> configuration = new HashMap<>();
 		configuration.put(EquinoxConfiguration.PROP_RESOLVER_BATCH_TIMEOUT, "5000");
 		Map<String, String> debugOpts = Collections.emptyMap();
 		DummyContainerAdaptor adaptor = new DummyContainerAdaptor(new DummyCollisionHook(false), configuration, new DummyResolverHookFactory(), new DummyDebugOptions(debugOpts));
@@ -1886,35 +1888,35 @@ public class TestModuleContainer extends AbstractTest {
 	}
 
 	private List<Map<String, String>> getUsesTimeoutManifests(String prefix) {
-		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> result = new ArrayList<>();
 		// x1 bundle
-		Map<String, String> x1Manifest = new HashMap<String, String>();
+		Map<String, String> x1Manifest = new HashMap<>();
 		x1Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		x1Manifest.put(Constants.BUNDLE_SYMBOLICNAME, prefix + ".x1");
 		x1Manifest.put(Constants.EXPORT_PACKAGE, prefix + ".a; version=1.0; uses:=" + prefix + ".b");
 		x1Manifest.put(Constants.IMPORT_PACKAGE, prefix + ".b; version=\"[1.1,1.2)\"");
 		result.add(x1Manifest);
 		// x2 bundle
-		Map<String, String> x2Manifest = new HashMap<String, String>();
+		Map<String, String> x2Manifest = new HashMap<>();
 		x2Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		x2Manifest.put(Constants.BUNDLE_SYMBOLICNAME, prefix + ".x2");
 		x2Manifest.put(Constants.EXPORT_PACKAGE, prefix + ".a; version=1.1; uses:=" + prefix + ".b");
 		x2Manifest.put(Constants.IMPORT_PACKAGE, prefix + ".b; version=\"[1.0,1.1)\"");
 		result.add(x2Manifest);
 		// y1 bundle
-		Map<String, String> y1Manifest = new HashMap<String, String>();
+		Map<String, String> y1Manifest = new HashMap<>();
 		y1Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		y1Manifest.put(Constants.BUNDLE_SYMBOLICNAME, prefix + ".y1");
 		y1Manifest.put(Constants.EXPORT_PACKAGE, prefix + ".b; version=1.0");
 		result.add(y1Manifest);
 		// y1 bundle
-		Map<String, String> y2Manifest = new HashMap<String, String>();
+		Map<String, String> y2Manifest = new HashMap<>();
 		y2Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		y2Manifest.put(Constants.BUNDLE_SYMBOLICNAME, prefix + ".y2");
 		y2Manifest.put(Constants.EXPORT_PACKAGE, prefix + ".b; version=1.1");
 		result.add(y2Manifest);
 		// z1 bundle
-		Map<String, String> z1Manifest = new HashMap<String, String>();
+		Map<String, String> z1Manifest = new HashMap<>();
 		z1Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		z1Manifest.put(Constants.BUNDLE_SYMBOLICNAME, prefix + ".z1");
 		z1Manifest.put(Constants.IMPORT_PACKAGE, prefix + ".a, " + prefix + ".b");
@@ -2174,16 +2176,16 @@ public class TestModuleContainer extends AbstractTest {
 		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
 
 		// install bundle with Bundle-NativeCode
-		Map<String, String> nativeCodeManifest = new HashMap<String, String>();
+		Map<String, String> nativeCodeManifest = new HashMap<>();
 		nativeCodeManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		nativeCodeManifest.put(Constants.BUNDLE_SYMBOLICNAME, "importer");
-		nativeCodeManifest.put(Constants.BUNDLE_NATIVECODE, // 
+		nativeCodeManifest.put(Constants.BUNDLE_NATIVECODE, //
 				"/lib/mylib.dll; osname=\"win32\"; osname=\"Windows NT (unknown)\"," + //
 						"/lib/mylib.lib; osname=\"Linux\"");
 
 		Module nativeCodeModule = installDummyModule(nativeCodeManifest, "nativeCodeBundle", container);
 
-		// unsatisfied optional and dynamic imports do not fail a resolve. 
+		// unsatisfied optional and dynamic imports do not fail a resolve.
 		report = container.resolve(Arrays.asList(nativeCodeModule), true);
 		Assert.assertNull("Failed to resolve nativeCodeBundle.", report.getResolutionException());
 	}
@@ -2193,7 +2195,7 @@ public class TestModuleContainer extends AbstractTest {
 		DummyContainerAdaptor adaptor = createDummyAdaptor();
 		ModuleContainer container = adaptor.getContainer();
 		String utfString = "a.with.�.multibyte";
-		while (utfString.getBytes("UTF8").length < 500) {
+		while (utfString.getBytes(StandardCharsets.UTF_8).length < 500) {
 			Map<String, String> manifest = getUTFManifest(utfString);
 			Module testModule = installDummyModule(manifest, manifest.get(Constants.BUNDLE_SYMBOLICNAME), container);
 			Assert.assertEquals("Wrong bns for the bundle.", utfString, testModule.getCurrentRevision().getSymbolicName());
@@ -2221,14 +2223,14 @@ public class TestModuleContainer extends AbstractTest {
 		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
 
 		// install an importer
-		Map<String, String> optionalImporterManifest = new HashMap<String, String>();
+		Map<String, String> optionalImporterManifest = new HashMap<>();
 		optionalImporterManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		optionalImporterManifest.put(Constants.BUNDLE_SYMBOLICNAME, "importer");
 		optionalImporterManifest.put(Constants.IMPORT_PACKAGE, "exporter; resolution:=optional");
 		optionalImporterManifest.put(Constants.DYNAMICIMPORT_PACKAGE, "exporter");
 		Module optionalImporterModule = installDummyModule(optionalImporterManifest, "optionalImporter", container);
 
-		// unsatisfied optional and dynamic imports do not fail a resolve. 
+		// unsatisfied optional and dynamic imports do not fail a resolve.
 		report = container.resolve(Arrays.asList(optionalImporterModule), true);
 		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
 
@@ -2238,7 +2240,7 @@ public class TestModuleContainer extends AbstractTest {
 		assertEquals("Import was not dynamic", PackageNamespace.RESOLUTION_DYNAMIC, importReqsList.get(0).getDirectives().get(Namespace.REQUIREMENT_RESOLUTION_DIRECTIVE));
 
 		// install a exporter to satisfy existing optional import
-		Map<String, String> exporterManifest = new HashMap<String, String>();
+		Map<String, String> exporterManifest = new HashMap<>();
 		exporterManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		exporterManifest.put(Constants.BUNDLE_SYMBOLICNAME, "exporter");
 		exporterManifest.put(Constants.EXPORT_PACKAGE, "exporter");
@@ -2268,14 +2270,14 @@ public class TestModuleContainer extends AbstractTest {
 		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
 
 		// install an importer
-		Map<String, String> optionalImporterManifest = new HashMap<String, String>();
+		Map<String, String> optionalImporterManifest = new HashMap<>();
 		optionalImporterManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		optionalImporterManifest.put(Constants.BUNDLE_SYMBOLICNAME, "importer");
 		optionalImporterManifest.put(Constants.EXPORT_PACKAGE, "exporter");
 		optionalImporterManifest.put(Constants.DYNAMICIMPORT_PACKAGE, "exporter");
 		Module optionalImporterModule = installDummyModule(optionalImporterManifest, "optionalImporter", container);
 
-		// unsatisfied optional and dynamic imports do not fail a resolve. 
+		// unsatisfied optional and dynamic imports do not fail a resolve.
 		report = container.resolve(Arrays.asList(optionalImporterModule), true);
 		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
 
@@ -2299,7 +2301,7 @@ public class TestModuleContainer extends AbstractTest {
 		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
 
 		// install an exporter with substitutable export.
-		Map<String, String> exporterManifest = new HashMap<String, String>();
+		Map<String, String> exporterManifest = new HashMap<>();
 		exporterManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		exporterManifest.put(Constants.BUNDLE_SYMBOLICNAME, "exporter");
 		exporterManifest.put(Constants.EXPORT_PACKAGE, "exporter");
@@ -2312,7 +2314,7 @@ public class TestModuleContainer extends AbstractTest {
 
 		container.uninstall(moduleSubsExport);
 
-		exporterManifest = new HashMap<String, String>();
+		exporterManifest = new HashMap<>();
 		exporterManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		exporterManifest.put(Constants.BUNDLE_SYMBOLICNAME, "substitutableExporter");
 		exporterManifest.put(Constants.EXPORT_PACKAGE, "exporter");
@@ -2320,7 +2322,7 @@ public class TestModuleContainer extends AbstractTest {
 
 		moduleSubsExport = installDummyModule(exporterManifest, "substitutableExporter", container);
 
-		exporterManifest = new HashMap<String, String>();
+		exporterManifest = new HashMap<>();
 		exporterManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		exporterManifest.put(Constants.BUNDLE_SYMBOLICNAME, "exporter");
 		exporterManifest.put(Constants.EXPORT_PACKAGE, "exporter; pickme=true");
@@ -2342,6 +2344,67 @@ public class TestModuleContainer extends AbstractTest {
 	}
 
 	@Test
+	public void testSubstitutableExportBatch() throws BundleException, IOException {
+		DummyContainerAdaptor adaptor = new DummyContainerAdaptor(new DummyCollisionHook(false), Collections.singletonMap(EquinoxConfiguration.PROP_RESOLVER_REVISION_BATCH_SIZE, Integer.toString(1)));
+		ModuleContainer container = adaptor.getContainer();
+
+		// install the system.bundle
+		Module systemBundle = installDummyModule("system.bundle.MF", Constants.SYSTEM_BUNDLE_LOCATION, Constants.SYSTEM_BUNDLE_SYMBOLICNAME, null, null, container);
+		ResolutionReport report = container.resolve(Arrays.asList(systemBundle), true);
+		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
+
+		Map<String, String> manifest = new HashMap<>();
+		manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		manifest.put(Constants.BUNDLE_SYMBOLICNAME, "substitutableExporter");
+		manifest.put(Constants.EXPORT_PACKAGE, "exporter; uses:=usedPkg; version=1.1, usedPkg");
+		manifest.put(Constants.IMPORT_PACKAGE, "exporter; pickme=true");
+
+		Module moduleSubsExport = installDummyModule(manifest, "substitutableExporter", container);
+
+		manifest = new HashMap<>();
+		manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		manifest.put(Constants.BUNDLE_SYMBOLICNAME, "exporter");
+		manifest.put(Constants.EXPORT_PACKAGE, "exporter; version=1.0; pickme=true");
+		Module moduleExport = installDummyModule(manifest, "exporter", container);
+
+		manifest = new HashMap<>();
+		manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		manifest.put(Constants.BUNDLE_SYMBOLICNAME, "importer1");
+		manifest.put(Constants.IMPORT_PACKAGE, "exporter, usedPkg");
+		Module moduleImporter1 = installDummyModule(manifest, "importer1", container);
+
+		manifest = new HashMap<>();
+		manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		manifest.put(Constants.BUNDLE_SYMBOLICNAME, "importer2");
+		manifest.put(Constants.EXPORT_PACKAGE, "pkgUser; uses:=exporter");
+		manifest.put(Constants.IMPORT_PACKAGE, "exporter, usedPkg");
+		Module moduleImporter2 = installDummyModule(manifest, "importer2", container);
+
+		manifest = new HashMap<>();
+		manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		manifest.put(Constants.BUNDLE_SYMBOLICNAME, "importer3");
+		manifest.put(Constants.IMPORT_PACKAGE, "pkgUser, exporter");
+		Module moduleImporter3 = installDummyModule(manifest, "importer3", container);
+
+		report = container.resolve(Arrays.asList(moduleExport, moduleSubsExport, moduleImporter1, moduleImporter2, moduleImporter3), true);
+		Assert.assertNull("Failed to resolve", report.getResolutionException());
+
+		ModuleWiring subsExportWiring = moduleSubsExport.getCurrentRevision().getWiring();
+		Collection<String> substituteNames = subsExportWiring.getSubstitutedNames();
+		Assert.assertEquals("Wrong number of exports: " + substituteNames, 1, substituteNames.size());
+		List<ModuleWire> providedWires = moduleSubsExport.getCurrentRevision().getWiring().getProvidedModuleWires(PackageNamespace.PACKAGE_NAMESPACE);
+		assertEquals("Wrong number of wires.", 2, providedWires.size());
+
+		ModuleWiring importer3Wiring = moduleImporter3.getCurrentRevision().getWiring();
+		for (ModuleWire wire : importer3Wiring.getRequiredModuleWires(PackageNamespace.PACKAGE_NAMESPACE)) {
+			if ("exporter".equals(wire.getCapability().getAttributes().get(PackageNamespace.PACKAGE_NAMESPACE))) {
+				assertEquals("wrong provider", moduleExport.getCurrentRevision(), wire.getProvider());
+			}
+
+		}
+	}
+
+	@Test
 	public void testR3() throws BundleException, IOException {
 		DummyContainerAdaptor adaptor = createDummyAdaptor();
 		ModuleContainer container = adaptor.getContainer();
@@ -2351,8 +2414,8 @@ public class TestModuleContainer extends AbstractTest {
 		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
 
 		//R3 bundle
-		Map<String, String> exporterManifest = new HashMap<String, String>();
-		exporterManifest = new HashMap<String, String>();
+		Map<String, String> exporterManifest = new HashMap<>();
+		exporterManifest = new HashMap<>();
 		exporterManifest.put(Constants.BUNDLE_SYMBOLICNAME, "exporter");
 		exporterManifest.put(Constants.EXPORT_PACKAGE, "exporter; version=\"1.1\"");
 
@@ -2407,7 +2470,7 @@ public class TestModuleContainer extends AbstractTest {
 		// install the system.bundle
 		installDummyModule("system.bundle.MF", Constants.SYSTEM_BUNDLE_LOCATION, Constants.SYSTEM_BUNDLE_SYMBOLICNAME, null, null, container);
 
-		Map<String, Object> attrs = new HashMap<String, Object>();
+		Map<String, Object> attrs = new HashMap<>();
 		attrs.put("string", "sValue");
 		attrs.put("string.list1", Arrays.asList("v1", "v2", "v3"));
 		attrs.put("string.list2", Arrays.asList("v4", "v5", "v6"));
@@ -2421,7 +2484,7 @@ public class TestModuleContainer extends AbstractTest {
 		attrs.put("set", Arrays.asList("s1", "s2", "s3"));
 
 		// provider with all supported types
-		Map<String, String> providerManifest = new HashMap<String, String>();
+		Map<String, String> providerManifest = new HashMap<>();
 		providerManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		providerManifest.put(Constants.BUNDLE_SYMBOLICNAME, "provider");
 		providerManifest.put(Constants.EXPORT_PACKAGE, "provider; version=1.1; attr1=attr1; attr2=attr2; dir1:=dir1; dir2:=dir2");
@@ -2441,7 +2504,7 @@ public class TestModuleContainer extends AbstractTest {
 		Map<String, Object> providerAttrs = providerModule.getCurrentRevision().getCapabilities("provider.cap").get(0).getAttributes();
 		assertEquals("Wrong provider attrs", attrs, providerAttrs);
 
-		Map<String, String> requirerManifest = new HashMap<String, String>();
+		Map<String, String> requirerManifest = new HashMap<>();
 		requirerManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		requirerManifest.put(Constants.BUNDLE_SYMBOLICNAME, "requirer");
 		requirerManifest.put(Constants.IMPORT_PACKAGE, "provider; version=1.1; attr1=attr1; attr2=attr2; dir1:=dir1; dir2:=dir2");
@@ -2506,7 +2569,7 @@ public class TestModuleContainer extends AbstractTest {
 		installDummyModule("system.bundle.MF", Constants.SYSTEM_BUNDLE_LOCATION, Constants.SYSTEM_BUNDLE_SYMBOLICNAME, null, null, container);
 
 		// provider with all supported types
-		Map<String, String> invalidAttrManifest = new HashMap<String, String>();
+		Map<String, String> invalidAttrManifest = new HashMap<>();
 		invalidAttrManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		invalidAttrManifest.put(Constants.BUNDLE_SYMBOLICNAME, "invalid");
 
@@ -2637,7 +2700,7 @@ public class TestModuleContainer extends AbstractTest {
 		systemBundle.start();
 
 		// install a module
-		Map<String, String> manifest = new HashMap<String, String>();
+		Map<String, String> manifest = new HashMap<>();
 		manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		manifest.put(Constants.BUNDLE_SYMBOLICNAME, "module.test");
 		Module module = installDummyModule(manifest, manifest.get(Constants.BUNDLE_SYMBOLICNAME), container);
@@ -2660,14 +2723,14 @@ public class TestModuleContainer extends AbstractTest {
 		Module systemBundle = installDummyModule("system.bundle.MF", Constants.SYSTEM_BUNDLE_LOCATION, Constants.SYSTEM_BUNDLE_SYMBOLICNAME, null, null, container);
 
 		// install an equinox fragment
-		Map<String, String> equinoxFragManifest = new HashMap<String, String>();
+		Map<String, String> equinoxFragManifest = new HashMap<>();
 		equinoxFragManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		equinoxFragManifest.put(Constants.BUNDLE_SYMBOLICNAME, "equinoxFrag");
 		equinoxFragManifest.put(Constants.FRAGMENT_HOST, "org.eclipse.osgi");
 		Module equinoxFrag = installDummyModule(equinoxFragManifest, "equinoxFrag", container);
 
 		// install a system.bundle fragment
-		Map<String, String> systemFragManifest = new HashMap<String, String>();
+		Map<String, String> systemFragManifest = new HashMap<>();
 		systemFragManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag");
 		systemFragManifest.put(Constants.FRAGMENT_HOST, "system.bundle");
@@ -2692,7 +2755,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = adaptor.getContainer();
 
 		// install a host
-		Map<String, String> hostManifest = new HashMap<String, String>();
+		Map<String, String> hostManifest = new HashMap<>();
 		hostManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		hostManifest.put(Constants.BUNDLE_SYMBOLICNAME, "host");
 		hostManifest.put(Constants.BUNDLE_VERSION, "1.0");
@@ -2707,7 +2770,7 @@ public class TestModuleContainer extends AbstractTest {
 		//installDummyModule(hostManifest, "host13", container);
 
 		// install a host.impl fragment
-		Map<String, String> hostImplManifest = new HashMap<String, String>();
+		Map<String, String> hostImplManifest = new HashMap<>();
 		hostImplManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		hostImplManifest.put(Constants.BUNDLE_SYMBOLICNAME, "host.impl");
 		hostImplManifest.put(Constants.EXPORT_PACKAGE, "host.impl");
@@ -2716,7 +2779,7 @@ public class TestModuleContainer extends AbstractTest {
 		installDummyModule(hostImplManifest, "hostImpl", container);
 
 		// install an importer of host package
-		Map<String, String> hostImporterManifest = new HashMap<String, String>();
+		Map<String, String> hostImporterManifest = new HashMap<>();
 		hostImporterManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		hostImporterManifest.put(Constants.BUNDLE_SYMBOLICNAME, "host.importer");
 		hostImporterManifest.put(Constants.IMPORT_PACKAGE, "host");
@@ -2732,7 +2795,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = adaptor.getContainer();
 
 		// install an exporter
-		Map<String, String> exporterManifest = new HashMap<String, String>();
+		Map<String, String> exporterManifest = new HashMap<>();
 		exporterManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		exporterManifest.put(Constants.BUNDLE_SYMBOLICNAME, "exporter");
 		exporterManifest.put(Constants.BUNDLE_VERSION, "1.0");
@@ -2740,7 +2803,7 @@ public class TestModuleContainer extends AbstractTest {
 		installDummyModule(exporterManifest, "exporter", container);
 
 		// install a fragment to the exporter
-		Map<String, String> exporterFragManifest = new HashMap<String, String>();
+		Map<String, String> exporterFragManifest = new HashMap<>();
 		exporterFragManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		exporterFragManifest.put(Constants.BUNDLE_SYMBOLICNAME, "exporter.frag");
 		exporterFragManifest.put(Constants.EXPORT_PACKAGE, "exporter.frag");
@@ -2748,7 +2811,7 @@ public class TestModuleContainer extends AbstractTest {
 		installDummyModule(exporterFragManifest, "exporter.frag", container);
 
 		// install a host that imports the exporter
-		Map<String, String> hostManifest = new HashMap<String, String>();
+		Map<String, String> hostManifest = new HashMap<>();
 		hostManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		hostManifest.put(Constants.BUNDLE_SYMBOLICNAME, "host");
 		hostManifest.put(Constants.BUNDLE_VERSION, "1.0");
@@ -2760,7 +2823,7 @@ public class TestModuleContainer extends AbstractTest {
 		installDummyModule(hostManifest, "host12", container);
 
 		// install a fragment that also imports the exporter
-		Map<String, String> hostFragManifest = new HashMap<String, String>();
+		Map<String, String> hostFragManifest = new HashMap<>();
 		hostFragManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		hostFragManifest.put(Constants.BUNDLE_SYMBOLICNAME, "host.frag");
 		hostFragManifest.put(Constants.FRAGMENT_HOST, "host");
@@ -2777,7 +2840,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = adaptor.getContainer();
 
 		// install a test module
-		Map<String, String> testManifest = new HashMap<String, String>();
+		Map<String, String> testManifest = new HashMap<>();
 		testManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		testManifest.put(Constants.BUNDLE_SYMBOLICNAME, "test.name");
 		testManifest.put(Constants.BUNDLE_VERSION, "1.0");
@@ -2802,7 +2865,7 @@ public class TestModuleContainer extends AbstractTest {
 	}
 
 	private void doTestStartOnResolve(boolean enabled) throws BundleException, IOException {
-		Map<String, String> configuration = new HashMap<String, String>();
+		Map<String, String> configuration = new HashMap<>();
 		if (!enabled) {
 			configuration.put(EquinoxConfiguration.PROP_MODULE_AUTO_START_ON_RESOLVE, Boolean.toString(false));
 		}
@@ -2816,8 +2879,8 @@ public class TestModuleContainer extends AbstractTest {
 		systemBundle.start();
 
 		// install a bunch of modules
-		Map<String, String> manifest = new HashMap<String, String>();
-		List<Module> modules = new ArrayList<Module>();
+		Map<String, String> manifest = new HashMap<>();
+		List<Module> modules = new ArrayList<>();
 		for (int i = 0; i < 5; i++) {
 			manifest.clear();
 			manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
@@ -2860,8 +2923,8 @@ public class TestModuleContainer extends AbstractTest {
 		systemBundle.start();
 
 		// install a bunch of modules
-		Map<String, String> manifest = new HashMap<String, String>();
-		List<Module> modules = new ArrayList<Module>();
+		Map<String, String> manifest = new HashMap<>();
+		List<Module> modules = new ArrayList<>();
 		for (int i = 0; i < 5; i++) {
 			manifest.clear();
 			manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
@@ -2869,7 +2932,7 @@ public class TestModuleContainer extends AbstractTest {
 			modules.add(installDummyModule(manifest, manifest.get(Constants.BUNDLE_SYMBOLICNAME), container));
 		}
 		adaptor.setSlowdownEvents(true);
-		final ConcurrentLinkedQueue<BundleException> startErrors = new ConcurrentLinkedQueue<BundleException>();
+		final ConcurrentLinkedQueue<BundleException> startErrors = new ConcurrentLinkedQueue<>();
 		final ExecutorService executor = Executors.newFixedThreadPool(5);
 		try {
 			for (final Module module : modules) {
@@ -2915,7 +2978,7 @@ public class TestModuleContainer extends AbstractTest {
 					// Don't do this again
 					return;
 				}
-				Map<String, String> manifest = new HashMap<String, String>();
+				Map<String, String> manifest = new HashMap<>();
 				manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 				manifest.put(Constants.BUNDLE_SYMBOLICNAME, "module.recurse." + nextId);
 				try {
@@ -2973,7 +3036,7 @@ public class TestModuleContainer extends AbstractTest {
 		systemBundle.start();
 
 		// install a bundle to do dynamic resolution from
-		Map<String, String> manifest = new HashMap<String, String>();
+		Map<String, String> manifest = new HashMap<>();
 		manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		manifest.put(Constants.BUNDLE_SYMBOLICNAME, "dynamicImport");
 		manifest.put(Constants.DYNAMICIMPORT_PACKAGE, "*");
@@ -3008,7 +3071,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = systemBundle.getContainer();
 
 		// install an system.bundle fragment that imports framework package
-		Map<String, String> systemFragManifest = new HashMap<String, String>();
+		Map<String, String> systemFragManifest = new HashMap<>();
 		systemFragManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag");
 		systemFragManifest.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
@@ -3034,7 +3097,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = systemBundle.getContainer();
 
 		// install an system.bundle fragment that imports framework package
-		Map<String, String> systemFragManifest = new HashMap<String, String>();
+		Map<String, String> systemFragManifest = new HashMap<>();
 		systemFragManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag");
 		systemFragManifest.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
@@ -3064,7 +3127,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = systemBundle.getContainer();
 
 		// install an system.bundle fragment that requires a payload requirement from system.bundle
-		Map<String, String> systemFragManifest = new HashMap<String, String>();
+		Map<String, String> systemFragManifest = new HashMap<>();
 		systemFragManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag");
 		systemFragManifest.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
@@ -3096,7 +3159,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = systemBundle.getContainer();
 
 		// install an system.bundle fragment that provides a capability
-		Map<String, String> systemFragManifest1 = new HashMap<String, String>();
+		Map<String, String> systemFragManifest1 = new HashMap<>();
 		systemFragManifest1.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest1.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag1");
 		systemFragManifest1.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
@@ -3104,7 +3167,7 @@ public class TestModuleContainer extends AbstractTest {
 		Module systemFrag1 = installDummyModule(systemFragManifest1, "systemFrag1", container);
 
 		// install an system.bundle fragment that requires a fragment capability
-		Map<String, String> systemFragManifest2 = new HashMap<String, String>();
+		Map<String, String> systemFragManifest2 = new HashMap<>();
 		systemFragManifest2.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest2.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag2");
 		systemFragManifest2.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
@@ -3136,7 +3199,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = systemBundle.getContainer();
 
 		// install an system.bundle fragment that provides a capability
-		Map<String, String> systemFragManifest1 = new HashMap<String, String>();
+		Map<String, String> systemFragManifest1 = new HashMap<>();
 		systemFragManifest1.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest1.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag1");
 		systemFragManifest1.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
@@ -3144,7 +3207,7 @@ public class TestModuleContainer extends AbstractTest {
 		Module systemFrag1 = installDummyModule(systemFragManifest1, "systemFrag1", container);
 
 		// install an system.bundle fragment that requires a fragment capability, but fails to match
-		Map<String, String> systemFragManifest2 = new HashMap<String, String>();
+		Map<String, String> systemFragManifest2 = new HashMap<>();
 		systemFragManifest2.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest2.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag2");
 		systemFragManifest2.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
@@ -3153,7 +3216,7 @@ public class TestModuleContainer extends AbstractTest {
 		Module systemFrag2 = installDummyModule(systemFragManifest2, "systemFrag2", container);
 
 		// install an system.bundle fragment that requires a fragment capability from a fragment that fails to resolve
-		Map<String, String> systemFragManifest3 = new HashMap<String, String>();
+		Map<String, String> systemFragManifest3 = new HashMap<>();
 		systemFragManifest3.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest3.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag3");
 		systemFragManifest3.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
@@ -3170,7 +3233,7 @@ public class TestModuleContainer extends AbstractTest {
 		assertWires(systemFrag1HostWires, hostWires);
 
 		// install a bundle that can satisfy the failed requirement, but it should not be allowed since it is not a fragment
-		Map<String, String> provideCapabilityManifest1 = new HashMap<String, String>();
+		Map<String, String> provideCapabilityManifest1 = new HashMap<>();
 		provideCapabilityManifest1.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		provideCapabilityManifest1.put(Constants.BUNDLE_SYMBOLICNAME, "provideCapabilityBundle1");
 		provideCapabilityManifest1.put(Constants.PROVIDE_CAPABILITY, "fragment.capability; fragment.capability=test4");
@@ -3182,7 +3245,7 @@ public class TestModuleContainer extends AbstractTest {
 		assertWires(systemFrag1HostWires, hostWires);
 
 		// install a fragment that satisfies the failed requirement
-		Map<String, String> systemFragManifest4 = new HashMap<String, String>();
+		Map<String, String> systemFragManifest4 = new HashMap<>();
 		systemFragManifest4.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest4.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag4");
 		systemFragManifest4.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
@@ -3206,8 +3269,8 @@ public class TestModuleContainer extends AbstractTest {
 		List<ModuleCapability> fragmentCapabilities = systemBundle.getCurrentRevision().getWiring().getModuleCapabilities("fragment.capability");
 		assertEquals("Wrong number of fragment capabilities.", 4, fragmentCapabilities.size());
 		// Use set since the order of required and provided wires will be different
-		Set<ModuleWire> hostRequiredFragmentCapWires = new HashSet<ModuleWire>(systemBundle.getCurrentRevision().getWiring().getRequiredModuleWires("fragment.capability"));
-		Set<ModuleWire> hostProvidedFragmentCapWires = new HashSet<ModuleWire>(systemBundle.getCurrentRevision().getWiring().getProvidedModuleWires("fragment.capability"));
+		Set<ModuleWire> hostRequiredFragmentCapWires = new HashSet<>(systemBundle.getCurrentRevision().getWiring().getRequiredModuleWires("fragment.capability"));
+		Set<ModuleWire> hostProvidedFragmentCapWires = new HashSet<>(systemBundle.getCurrentRevision().getWiring().getProvidedModuleWires("fragment.capability"));
 		assertEquals("Wrong number of wires.", 2, hostProvidedFragmentCapWires.size());
 		assertEquals("Wrong wires found from host.", hostRequiredFragmentCapWires, hostProvidedFragmentCapWires);
 	}
@@ -3219,7 +3282,7 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = systemBundle.getContainer();
 
 		// install multiple versions of the same fragment
-		Map<String, String> systemFragManifest1 = new HashMap<String, String>();
+		Map<String, String> systemFragManifest1 = new HashMap<>();
 		systemFragManifest1.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest1.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag");
 		systemFragManifest1.put(Constants.BUNDLE_VERSION, "1.0");
@@ -3235,14 +3298,14 @@ public class TestModuleContainer extends AbstractTest {
 		List<ModuleWire> systemFrag1HostWires = systemFrag1.getCurrentRevision().getWiring().getRequiredModuleWires(HostNamespace.HOST_NAMESPACE);
 		assertWires(systemFrag1HostWires, hostWires);
 
-		Map<String, String> systemFragManifest2 = new HashMap<String, String>();
+		Map<String, String> systemFragManifest2 = new HashMap<>();
 		systemFragManifest2.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest2.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag");
 		systemFragManifest2.put(Constants.BUNDLE_VERSION, "2.0");
 		systemFragManifest2.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
 		Module systemFrag2 = installDummyModule(systemFragManifest2, "systemFrag2", container);
 
-		Map<String, String> systemFragManifest3 = new HashMap<String, String>();
+		Map<String, String> systemFragManifest3 = new HashMap<>();
 		systemFragManifest3.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		systemFragManifest3.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag");
 		systemFragManifest3.put(Constants.BUNDLE_VERSION, "3.0");
@@ -3287,6 +3350,58 @@ public class TestModuleContainer extends AbstractTest {
 		assertWires(systemFrag3HostWires, hostWires);
 	}
 
+	@Test
+	public void testSystemBundleFragmentsWithNonEffectiveCapsReqs() throws BundleException, IOException {
+		// install the system.bundle
+		Module systemBundle = createContainerWithSystemBundle(true);
+		ModuleContainer container = systemBundle.getContainer();
+
+		ModuleWiring systemWiring = systemBundle.getCurrentRevision().getWiring();
+
+		// install an system.bundle fragment with activator
+		Map<String, String> systemFragManifest = new HashMap<>();
+		systemFragManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		systemFragManifest.put(Constants.BUNDLE_SYMBOLICNAME, "systemFrag");
+		systemFragManifest.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
+		systemFragManifest.put(Constants.EXTENSION_BUNDLE_ACTIVATOR, "systemFrag.Activator");
+		systemFragManifest.put(Constants.REQUIRE_CAPABILITY,
+				"does.not.exist; effective:=never; filter:=\"(never=true)\"");
+		systemFragManifest.put(Constants.PROVIDE_CAPABILITY,
+				"non.effective.cap; non.effective.cap=test; effective:=never");
+
+		Module systemFrag = installDummyModule(systemFragManifest, "systemFrag", container);
+
+		ResolutionReport report = container.resolve(Arrays.asList(systemFrag), true);
+		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
+
+		List<ModuleWire> hostWires = systemWiring.getProvidedModuleWires(HostNamespace.HOST_NAMESPACE);
+		assertEquals("Wrong number of fragments.", 1, hostWires.size());
+		Assert.assertEquals("Unexpected fragment revision: " + hostWires, systemFrag.getCurrentRevision(),
+				hostWires.get(0).getRequirer());
+
+		List<ModuleCapability> dataCaps = systemWiring
+				.getModuleCapabilities(EquinoxModuleDataNamespace.MODULE_DATA_NAMESPACE);
+		assertTrue("Unexpected module data capabilities: " + dataCaps, dataCaps.isEmpty());
+
+		List<ModuleCapability> nonEffectiveCaps = systemBundle.getCurrentRevision().getWiring()
+				.getModuleCapabilities("non.effective.cap");
+		assertTrue("Unexpected non-effective capabilities: " + nonEffectiveCaps, nonEffectiveCaps.isEmpty());
+
+		List<ModuleRequirement> nonEffectiveReqs = systemWiring.getModuleRequirements("does.not.exist");
+		assertTrue("Unexpected non-effective requirements: " + nonEffectiveReqs, nonEffectiveReqs.isEmpty());
+
+		Map<String, String> failResolutionManifest = new HashMap<>();
+		failResolutionManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		failResolutionManifest.put(Constants.BUNDLE_SYMBOLICNAME, "failResolution");
+		failResolutionManifest.put(Constants.FRAGMENT_HOST, Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
+		failResolutionManifest.put(Constants.REQUIRE_CAPABILITY,
+				"non.effective.cap; filter:=\"(non.effective.cap=test)\"");
+		Module failResolution = installDummyModule(failResolutionManifest, "failResolution", container);
+		report = container.resolve(Arrays.asList(failResolution), false);
+		String resolutionMsg = report.getResolutionReportMessage(failResolution.getCurrentRevision());
+		assertTrue("Wrong resolution message:" + resolutionMsg, resolutionMsg.contains("non.effective.cap"));
+	}
+
 	private Module createContainerWithSystemBundle(boolean resolveSystemBundle) throws BundleException, IOException {
 		DummyContainerAdaptor adaptor = createDummyAdaptor();
 		ModuleContainer container = adaptor.getContainer();
@@ -3309,28 +3424,28 @@ public class TestModuleContainer extends AbstractTest {
 		ModuleContainer container = adaptor.getContainer();
 
 		// install a split exporter core that substitutes
-		Map<String, String> coreManifest = new HashMap<String, String>();
+		Map<String, String> coreManifest = new HashMap<>();
 		coreManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		coreManifest.put(Constants.BUNDLE_SYMBOLICNAME, "core");
 		coreManifest.put(Constants.EXPORT_PACKAGE, "pkg1; core=split; mandatory:=core");
 		coreManifest.put(Constants.IMPORT_PACKAGE, "pkg1; core=split");
 
 		// install a split exporter misc that requires core and substitutes
-		Map<String, String> miscManifest = new HashMap<String, String>();
+		Map<String, String> miscManifest = new HashMap<>();
 		miscManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		miscManifest.put(Constants.BUNDLE_SYMBOLICNAME, "misc");
 		miscManifest.put(Constants.EXPORT_PACKAGE, "pkg1; misc=split; mandatory:=misc");
 		miscManifest.put(Constants.REQUIRE_BUNDLE, "core");
 
 		// install a bundle that imports core and exports pkg2 that uses pkg1 from core
-		Map<String, String> importsCoreManifest = new HashMap<String, String>();
+		Map<String, String> importsCoreManifest = new HashMap<>();
 		importsCoreManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		importsCoreManifest.put(Constants.BUNDLE_SYMBOLICNAME, "importsCore");
 		importsCoreManifest.put(Constants.EXPORT_PACKAGE, "pkg2; uses:=pkg1");
 		importsCoreManifest.put(Constants.IMPORT_PACKAGE, "pkg1; core=split");
 
 		// install a bundle that imports pkg2, but requires misc
-		Map<String, String> requiresMiscManifest = new HashMap<String, String>();
+		Map<String, String> requiresMiscManifest = new HashMap<>();
 		requiresMiscManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		requiresMiscManifest.put(Constants.BUNDLE_SYMBOLICNAME, "requiresMisc");
 		requiresMiscManifest.put(Constants.IMPORT_PACKAGE, "pkg2");
@@ -3363,7 +3478,7 @@ public class TestModuleContainer extends AbstractTest {
 		container = adaptor.getContainer();
 
 		// install a exporter that substitutes core's export
-		Map<String, String> substitutesCoreManifest = new HashMap<String, String>();
+		Map<String, String> substitutesCoreManifest = new HashMap<>();
 		substitutesCoreManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		substitutesCoreManifest.put(Constants.BUNDLE_SYMBOLICNAME, "substitutesCore");
 		substitutesCoreManifest.put(Constants.EXPORT_PACKAGE, "pkg1; substitutesCore=true; mandatory:=substitutesCore");
@@ -3426,7 +3541,7 @@ public class TestModuleContainer extends AbstractTest {
 		ResolutionReport report = container.resolve(Arrays.asList(systemBundle), true);
 		Assert.assertNull("Failed to resolve test.", report.getResolutionException());
 
-		List<Module> modules = new ArrayList<Module>();
+		List<Module> modules = new ArrayList<>();
 		for (String manifest : HTTPCOMPS_AND_EATHER) {
 			modules.add(installDummyModule(manifest, manifest, container));
 		}
@@ -3444,10 +3559,10 @@ public class TestModuleContainer extends AbstractTest {
 		ResolutionReport report = container.resolve(Arrays.asList(systemBundle), true);
 		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
 
-		Map<String, String> manifest = new HashMap<String, String>();
+		Map<String, String> manifest = new HashMap<>();
 
 		// test by installing bundles with decreasing IDs
-		List<Module> modules = new ArrayList<Module>();
+		List<Module> modules = new ArrayList<>();
 		for (int i = 5; i > 0; i--) {
 			manifest.clear();
 			manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
@@ -3518,12 +3633,12 @@ public class TestModuleContainer extends AbstractTest {
 		systemBundle.start();
 
 		// install a module
-		Map<String, String> manifest = new HashMap<String, String>();
+		Map<String, String> manifest = new HashMap<>();
 		manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		manifest.put(Constants.BUNDLE_SYMBOLICNAME, "lock.test");
 		final Module module = installDummyModule(manifest, manifest.get(Constants.BUNDLE_SYMBOLICNAME), container);
 
-		final ArrayBlockingQueue<BundleException> startExceptions = new ArrayBlockingQueue<BundleException>(2);
+		final ArrayBlockingQueue<BundleException> startExceptions = new ArrayBlockingQueue<>(2);
 		Runnable start = new Runnable() {
 			@Override
 			public void run() {
@@ -3546,7 +3661,7 @@ public class TestModuleContainer extends AbstractTest {
 		Assert.assertEquals("Wrong cause.", ThreadInfoReport.class, startError.getCause().getCause().getClass());
 		startError.printStackTrace();
 
-		final ArrayBlockingQueue<BundleException> stopExceptions = new ArrayBlockingQueue<BundleException>(2);
+		final ArrayBlockingQueue<BundleException> stopExceptions = new ArrayBlockingQueue<>(2);
 		Runnable stop = new Runnable() {
 			@Override
 			public void run() {
@@ -3563,11 +3678,88 @@ public class TestModuleContainer extends AbstractTest {
 		tStop2.start();
 
 		BundleException stopError = stopExceptions.poll(10, TimeUnit.SECONDS);
-		startLatch.countDown();
+		stopLatch.countDown();
 
 		Assert.assertEquals("Wrong cause.", TimeoutException.class, stopError.getCause().getClass());
 		Assert.assertEquals("Wrong cause.", ThreadInfoReport.class, stopError.getCause().getCause().getClass());
 		stopError.printStackTrace();
+	}
+
+	@Test
+	public void testUsesWithRequireReexport() throws BundleException, IOException {
+		DummyContainerAdaptor adaptor = createDummyAdaptor();
+		ModuleContainer container = adaptor.getContainer();
+
+		// install the system.bundle
+		Module systemBundle = installDummyModule("system.bundle.MF", Constants.SYSTEM_BUNDLE_LOCATION, Constants.SYSTEM_BUNDLE_SYMBOLICNAME, null, null, container);
+		ResolutionReport report = container.resolve(Arrays.asList(systemBundle), true);
+		Assert.assertNull("Failed to resolve system.bundle.", report.getResolutionException());
+
+		// install and resolve used.pkg exporter to force substitution
+		Map<String, String> usedPkgExportManifest = new HashMap<>();
+		usedPkgExportManifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		usedPkgExportManifest.put(Constants.BUNDLE_SYMBOLICNAME, "used.pkg");
+		usedPkgExportManifest.put(Constants.EXPORT_PACKAGE, "used.pkg");
+		Module moduleUsedPkg = installDummyModule(usedPkgExportManifest, "usedPkg", container);
+		report = container.resolve(Arrays.asList(moduleUsedPkg), true);
+		Assert.assertNull("Failed to resolve usedPkg.", report.getResolutionException());
+
+		// install part 1 (ui.workbench)
+		Map<String, String> split1Manifest = new HashMap<>();
+		split1Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		split1Manifest.put(Constants.BUNDLE_SYMBOLICNAME, "split1");
+		split1Manifest.put(Constants.EXPORT_PACKAGE, "split.pkg; uses:=used.pkg, used.pkg");
+		split1Manifest.put(Constants.IMPORT_PACKAGE, "used.pkg");
+		Module moduleSplit1 = installDummyModule(split1Manifest, "split1", container);
+
+		// install part 2 (e4.ui.ide)
+		Map<String, String> split2Manifest = new HashMap<>();
+		split2Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		split2Manifest.put(Constants.BUNDLE_SYMBOLICNAME, "split2");
+		split2Manifest.put(Constants.EXPORT_PACKAGE, "split.pkg");
+		Module moduleSplit2 = installDummyModule(split2Manifest, "split2", container);
+
+		// install part 3 which requires part 1 and 2, reexports 1 and 2 (ui.ide)
+		Map<String, String> split3Manifest = new HashMap<>();
+		split3Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		split3Manifest.put(Constants.BUNDLE_SYMBOLICNAME, "split3");
+		split3Manifest.put(Constants.EXPORT_PACKAGE, "split.pkg");
+		// the reexport here are not necessary; but cause issues for the resolver
+		split3Manifest.put(Constants.REQUIRE_BUNDLE, "split1; visibility:=reexport, split2; visibility:=reexport");
+		Module moduleSplit3 = installDummyModule(split3Manifest, "split3", container);
+
+		// install reexporter of part1 (ui)
+		Map<String, String> reexporterPart1Manifest = new HashMap<>();
+		reexporterPart1Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		reexporterPart1Manifest.put(Constants.BUNDLE_SYMBOLICNAME, "reexport1");
+		reexporterPart1Manifest.put(Constants.REQUIRE_BUNDLE, "split1; visibility:=reexport");
+		Module moduleReexport1 = installDummyModule(reexporterPart1Manifest, "reexport1", container);
+
+		// install reexporter of split3
+		Map<String, String> reexporterSplit3Manifest = new HashMap<>();
+		reexporterSplit3Manifest.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		reexporterSplit3Manifest.put(Constants.BUNDLE_SYMBOLICNAME, "reexportSplit3");
+		reexporterSplit3Manifest.put(Constants.REQUIRE_BUNDLE, "split3; visibility:=reexport");
+		Module moduleReexportSplit3 = installDummyModule(reexporterSplit3Manifest, "reexportSplit3", container);
+
+		// install test export that requires reexportSplit3 (should get access to all 3 parts)
+		Map<String, String> testExporterUses = new HashMap<>();
+		testExporterUses.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		testExporterUses.put(Constants.BUNDLE_SYMBOLICNAME, "test.exporter");
+		testExporterUses.put(Constants.REQUIRE_BUNDLE, "reexportSplit3");
+		testExporterUses.put(Constants.EXPORT_PACKAGE, "export.pkg; uses:=split.pkg");
+		Module testExporter = installDummyModule(testExporterUses, "test.exporter", container);
+
+		// install test requirer that requires the exporter and reexport1 (should get access to only part 1)
+		// part 1 is a subset of what the exporter has access to so it should resolve
+		Map<String, String> testRequireUses = new HashMap<>();
+		testRequireUses.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+		testRequireUses.put(Constants.BUNDLE_SYMBOLICNAME, "test.requirer");
+		testRequireUses.put(Constants.REQUIRE_BUNDLE, "test.exporter, reexport1");
+		Module testRequirer = installDummyModule(testRequireUses, "test.requirer", container);
+
+		report = container.resolve(Arrays.asList(moduleSplit1, moduleSplit2, moduleSplit3, moduleReexport1, moduleReexportSplit3, testExporter, testRequirer), true);
+		Assert.assertNull("Failed to resolve", report.getResolutionException());
 	}
 
 	private static void assertWires(List<ModuleWire> required, List<ModuleWire>... provided) {
@@ -3601,7 +3793,7 @@ public class TestModuleContainer extends AbstractTest {
 	}
 
 	private List<DummyModuleEvent> removeFirstListOfCommonEvents(List<DummyModuleEvent> events) {
-		List<DummyModuleEvent> result = new ArrayList<DummyModuleDatabase.DummyModuleEvent>();
+		List<DummyModuleEvent> result = new ArrayList<>();
 		if (events.isEmpty()) {
 			return result;
 		}

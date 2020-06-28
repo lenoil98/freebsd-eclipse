@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.help.ui.internal;
 
+import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -22,8 +23,6 @@ import org.eclipse.swt.custom.StyledTextContent;
 import org.eclipse.swt.custom.TextChangeListener;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.GC;
-
-import com.ibm.icu.text.BreakIterator;
 
 public class StyledLineWrapper implements StyledTextContent {
 
@@ -102,7 +101,7 @@ public class StyledLineWrapper implements StyledTextContent {
 
 	@Override
 	public int getLineCount() {
-		if (lines.size() == 0)
+		if (lines.isEmpty())
 			return 1;
 		return lines.size();
 	}
@@ -114,7 +113,7 @@ public class StyledLineWrapper implements StyledTextContent {
 
 	@Override
 	public int getOffsetAtLine(int line) {
-		if (lines.size() == 0)
+		if (lines.isEmpty())
 			return 0;
 		int offset = 0;
 		for (int i = 0; i < line; i++)
@@ -181,14 +180,13 @@ public class StyledLineWrapper implements StyledTextContent {
 				// if we reached the end, stop
 				if (start >= textChars.length)
 					break;
-				{ // see if the next character is an LF
-					ch = textChars[start];
-					if (ch == SWT.LF) {
-						start++;
-						i++;
-						if (start >= textChars.length)
-							break;
-					}
+				// see if the next character is an LF
+				ch = textChars[start];
+				if (ch == SWT.LF) {
+					start++;
+					i++;
+					if (start >= textChars.length)
+						break;
 				}
 			} else if (ch == SWT.LF) {
 				lines.add(new String(textChars, start, i - start));

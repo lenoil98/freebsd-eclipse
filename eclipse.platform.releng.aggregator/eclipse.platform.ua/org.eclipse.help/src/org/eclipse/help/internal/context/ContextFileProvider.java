@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2016 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.context;
 
@@ -103,10 +104,10 @@ public class ContextFileProvider extends AbstractContextProvider {
 		default:
 			// Merge the contexts - this is the least common case
 			Context newContext = new Context(matches.get(0), shortContextId);
-		    for (int i = 1; i < matches.size(); i++) {
-		    	newContext.mergeContext(matches.get(i));
-		    }
-		    return newContext;
+			for (int i = 1; i < matches.size(); i++) {
+				newContext.mergeContext(matches.get(i));
+			}
+			return newContext;
 		}
 	}
 
@@ -197,14 +198,14 @@ public class ContextFileProvider extends AbstractContextProvider {
 	private Map<String, Context> loadContexts(ContextFile descriptor, String locale) {
 		// load the file
 		try (InputStream in = ResourceLocator.openFromPlugin(descriptor.getBundleId(), descriptor.getFile(), locale)) {
-	    	if (in != null) {
+			if (in != null) {
 				return loadContextsFromInputStream(descriptor, locale, in);
 			} else {
-	    		throw new FileNotFoundException();
-	    	}
+				throw new FileNotFoundException();
+			}
 		} catch (Throwable t) {
 			String msg = "Error reading context-sensitive help file /\"" + getErrorPath(descriptor, locale) + "\" (skipping file)"; //$NON-NLS-1$ //$NON-NLS-2$
-			HelpPlugin.logError(msg, t);
+			Platform.getLog(getClass()).error(msg, t);
 		}
 		return null;
 	}
@@ -238,7 +239,7 @@ public class ContextFileProvider extends AbstractContextProvider {
 					if (id != null) {
 						Object existingContext =  contexts.get(id);
 						if (existingContext==null)
-						    contexts.put(id, context);
+							contexts.put(id, context);
 						else
 						{
 							((Context)existingContext).mergeContext(context);
@@ -258,7 +259,7 @@ public class ContextFileProvider extends AbstractContextProvider {
 		}
 		else {
 			String msg = "Required root element \"contexts\" missing from context-sensitive help file \"/" + getErrorPath(descriptor, locale) + "\" (skipping)"; //$NON-NLS-1$ //$NON-NLS-2$
-			HelpPlugin.logError(msg);
+			Platform.getLog(getClass()).error(msg);
 		}
 		return null;
 	}
@@ -308,7 +309,7 @@ public class ContextFileProvider extends AbstractContextProvider {
 							}
 							catch (TransformerException e) {
 								String msg = "Internal error while normalizing context-sensitive help descriptions"; //$NON-NLS-1$
-								HelpPlugin.logError(msg, e);
+								Platform.getLog(getClass()).error(msg, e);
 							}
 						}
 						Node old = node;

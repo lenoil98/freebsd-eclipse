@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Alex Blewitt (bug 172969)
@@ -53,16 +53,16 @@ import org.osgi.resource.Resource;
 import org.osgi.util.tracker.ServiceTracker;
 
 /**
- * Special startup class for the Eclipse Platform. This class cannot be 
- * instantiated; all functionality is provided by static methods. 
+ * Special startup class for the Eclipse Platform. This class cannot be
+ * instantiated; all functionality is provided by static methods.
  * <p>
- * The Eclipse Platform makes heavy use of Java class loaders for loading 
+ * The Eclipse Platform makes heavy use of Java class loaders for loading
  * plug-ins. Even the Eclipse Runtime itself and the OSGi framework need
- * to be loaded by special class loaders. The upshot is that a 
- * client program (such as a Java main program, a servlet) cannot  
- * reference any part of Eclipse directly. Instead, a client must use this 
- * loader class to start the platform, invoking functionality defined 
- * in plug-ins, and shutting down the platform when done. 
+ * to be loaded by special class loaders. The upshot is that a
+ * client program (such as a Java main program, a servlet) cannot
+ * reference any part of Eclipse directly. Instead, a client must use this
+ * loader class to start the platform, invoking functionality defined
+ * in plug-ins, and shutting down the platform when done.
  * </p>
  * <p>Note that the fields on this class are not API. </p>
  * @since 3.0
@@ -89,12 +89,12 @@ public class EclipseStarter {
 	private static final String ARCH = "-arch"; //$NON-NLS-1$
 	private static final String NL = "-nl"; //$NON-NLS-1$
 	private static final String NL_EXTENSIONS = "-nlExtensions"; //$NON-NLS-1$
-	private static final String CONFIGURATION = "-configuration"; //$NON-NLS-1$	
+	private static final String CONFIGURATION = "-configuration"; //$NON-NLS-1$
 	private static final String USER = "-user"; //$NON-NLS-1$
 	private static final String NOEXIT = "-noExit"; //$NON-NLS-1$
 	private static final String LAUNCHER = "-launcher"; //$NON-NLS-1$
 
-	// this is more of an Eclipse argument but this OSGi implementation stores its 
+	// this is more of an Eclipse argument but this OSGi implementation stores its
 	// metadata alongside Eclipse's.
 	private static final String DATA = "-data"; //$NON-NLS-1$
 
@@ -232,13 +232,13 @@ public class EclipseStarter {
 
 	/**
 	 * Launches the platform and runs a single application. The application is either identified
-	 * in the given arguments (e.g., -application &lt;app id&gt;) or in the <code>eclipse.application</code> 
-	 * System property.  This convenience method starts 
-	 * up the platform, runs the indicated application, and then shuts down the 
-	 * platform. The platform must not be running already. 
-	 * 
+	 * in the given arguments (e.g., -application &lt;app id&gt;) or in the <code>eclipse.application</code>
+	 * System property.  This convenience method starts
+	 * up the platform, runs the indicated application, and then shuts down the
+	 * platform. The platform must not be running already.
+	 *
 	 * @param args the command line-style arguments used to configure the platform
-	 * @param endSplashHandler the block of code to run to tear down the splash 
+	 * @param endSplashHandler the block of code to run to tear down the splash
 	 * 	screen or <code>null</code> if no tear down is required
 	 * @return the result of running the application
 	 * @throws Exception if anything goes wrong
@@ -300,7 +300,7 @@ public class EclipseStarter {
 	/**
 	 * Starts the platform and sets it up to run a single application. The application is either identified
 	 * in the given arguments (e.g., -application &lt;app id&gt;) or in the <code>eclipse.application</code>
-	 * System property.  The platform must not be running already. 
+	 * System property.  The platform must not be running already.
 	 * <p>
 	 * The given runnable (if not <code>null</code>) is used to tear down the splash screen if required.
 	 * </p>
@@ -371,8 +371,8 @@ public class EclipseStarter {
 	}
 
 	/**
-	 * Runs the application for which the platform was started. The platform 
-	 * must be running. 
+	 * Runs the application for which the platform was started. The platform
+	 * must be running.
 	 * <p>
 	 * The given argument is passed to the application being run.  If it is <code>null</code>
 	 * then the command line arguments used in starting the platform, and not consumed
@@ -390,12 +390,13 @@ public class EclipseStarter {
 			return Integer.valueOf(0);
 		try {
 			if (appLauncher == null) {
-				boolean launchDefault = Boolean.valueOf(getProperty(PROP_APPLICATION_LAUNCHDEFAULT, "true")).booleanValue(); //$NON-NLS-1$
+
+				boolean launchDefault = Boolean.parseBoolean(getProperty(PROP_APPLICATION_LAUNCHDEFAULT, "true")); //$NON-NLS-1$
 				// create the ApplicationLauncher and register it as a service
-				appLauncher = new EclipseAppLauncher(context, Boolean.valueOf(getProperty(PROP_ALLOW_APPRELAUNCH)).booleanValue(), launchDefault, log, equinoxConfig);
+				appLauncher = new EclipseAppLauncher(context, Boolean.parseBoolean(getProperty(PROP_ALLOW_APPRELAUNCH)), launchDefault, log, equinoxConfig);
 				appLauncherRegistration = context.registerService(ApplicationLauncher.class.getName(), appLauncher, null);
-				// must start the launcher AFTER service restration because this method 
-				// blocks and runs the application on the current thread.  This method 
+				// must start the launcher AFTER service restration because this method
+				// blocks and runs the application on the current thread.  This method
 				// will return only after the application has stopped.
 				return appLauncher.start(argument);
 			}
@@ -414,19 +415,19 @@ public class EclipseStarter {
 	}
 
 	/**
-	 * Shuts down the Platform. The state of the Platform is not automatically 
-	 * saved before shutting down. 
+	 * Shuts down the Platform. The state of the Platform is not automatically
+	 * saved before shutting down.
 	 * <p>
-	 * On return, the Platform will no longer be running (but could be re-launched 
+	 * On return, the Platform will no longer be running (but could be re-launched
 	 * with another call to startup). If relaunching, care must be taken to reinitialize
 	 * any System properties which the platform uses (e.g., osgi.instance.area) as
-	 * some policies in the platform do not allow resetting of such properties on 
+	 * some policies in the platform do not allow resetting of such properties on
 	 * subsequent runs.
 	 * </p><p>
-	 * Any objects handed out by running Platform, 
-	 * including Platform runnables obtained via getRunnable, will be 
-	 * permanently invalid. The effects of attempting to invoke methods 
-	 * on invalid objects is undefined. 
+	 * Any objects handed out by running Platform,
+	 * including Platform runnables obtained via getRunnable, will be
+	 * permanently invalid. The effects of attempting to invoke methods
+	 * on invalid objects is undefined.
 	 * </p>
 	 * @throws Exception if anything goes wrong
 	 */
@@ -463,18 +464,18 @@ public class EclipseStarter {
 	}
 
 	private static void ensureBundlesActive(Bundle[] bundles) {
-		for (int i = 0; i < bundles.length; i++) {
-			if (bundles[i].getState() != Bundle.ACTIVE) {
-				if (bundles[i].getState() == Bundle.INSTALLED) {
+		for (Bundle bundle : bundles) {
+			if (bundle.getState() != Bundle.ACTIVE) {
+				if (bundle.getState() == Bundle.INSTALLED) {
 					// Log that the bundle is not resolved
-					log.log(new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_ERROR_BUNDLE_NOT_RESOLVED, bundles[i].getLocation()), 0, null, null));
+					log.log(new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_ERROR_BUNDLE_NOT_RESOLVED, bundle.getLocation()), 0, null, null));
 					continue;
 				}
 				// check that the startlevel allows the bundle to be active (111550)
 				FrameworkStartLevel fwStartLevel = context.getBundle().adapt(FrameworkStartLevel.class);
-				BundleStartLevel bundleStartLevel = bundles[i].adapt(BundleStartLevel.class);
+				BundleStartLevel bundleStartLevel = bundle.adapt(BundleStartLevel.class);
 				if (fwStartLevel != null && (bundleStartLevel.getStartLevel() <= fwStartLevel.getStartLevel())) {
-					log.log(new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_ERROR_BUNDLE_NOT_ACTIVE, bundles[i]), 0, null, null));
+					log.log(new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_ERROR_BUNDLE_NOT_ACTIVE, bundle), 0, null, null));
 				}
 			}
 		}
@@ -515,8 +516,8 @@ public class EclipseStarter {
 			url = createURL(new File(parent).toURL(), name);
 		} catch (MalformedURLException e) {
 			// TODO this is legacy support for non-URL names.  It should be removed eventually.
-			// if name was not a URL then construct one.  
-			// Assume it should be a reference and that it is relative.  This support need not 
+			// if name was not a URL then construct one.
+			// Assume it should be a reference and that it is relative.  This support need not
 			// be robust as it is temporary..
 			File child = new File(name);
 			fileLocation = child.isAbsolute() ? child : new File(parent, name);
@@ -542,7 +543,7 @@ public class EclipseStarter {
 			if (!fileLocation.isAbsolute())
 				fileLocation = new File(parent, fileLocation.toString());
 		}
-		// If the result is a reference then search for the real result and 
+		// If the result is a reference then search for the real result and
 		// reconstruct the answer.
 		if (reference) {
 			String result = searchFor(fileLocation.getName(), new File(fileLocation.getParent()).getAbsolutePath());
@@ -552,7 +553,7 @@ public class EclipseStarter {
 				return null;
 		}
 
-		// finally we have something worth trying	
+		// finally we have something worth trying
 		try {
 			URLConnection result = LocationHelper.getConnection(url);
 			result.connect();
@@ -566,7 +567,7 @@ public class EclipseStarter {
 
 	/*
 	 * Ensure all basic bundles are installed, resolved and scheduled to start. Returns an array containing
-	 * all basic bundles that are marked to start. 
+	 * all basic bundles that are marked to start.
 	 * Returns null if the framework has been shutdown as a result of refreshPackages
 	 */
 	private static Bundle[] loadBasicBundles() throws InterruptedException {
@@ -585,7 +586,7 @@ public class EclipseStarter {
 
 		// list of bundles to be refreshed
 		List<Bundle> toRefresh = new ArrayList<>(curInitBundles.length);
-		// uninstall any of the currently installed bundles that do not exist in the 
+		// uninstall any of the currently installed bundles that do not exist in the
 		// initial bundle list from installEntries.
 		uninstallBundles(curInitBundles, initialBundles, toRefresh);
 
@@ -629,15 +630,13 @@ public class EclipseStarter {
 		if (installLocation == null) {
 			throw new IllegalStateException(Msg.EclipseStarter_InstallLocation);
 		}
-		for (int i = 0; i < installEntries.length; i++) {
-			String name = installEntries[i];
+		for (String name : installEntries) {
 			int level = defaultStartLevel;
 			boolean start = false;
 			int index = name.lastIndexOf('@');
 			if (index >= 0) {
 				String[] attributes = getArrayFromList(name.substring(index + 1, name.length()), ":"); //$NON-NLS-1$
-				for (int j = 0; j < attributes.length; j++) {
-					String attribute = attributes[j];
+				for (String attribute : attributes) {
 					if (attribute.equals("start")) //$NON-NLS-1$
 						start = true;
 					else {
@@ -654,7 +653,7 @@ public class EclipseStarter {
 			try {
 				URL location = searchForBundle(name, syspath);
 				if (location == null) {
-					FrameworkLogEntry entry = new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_BUNDLE_NOT_FOUND, installEntries[i]), 0, null, null);
+					FrameworkLogEntry entry = new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_BUNDLE_NOT_FOUND, name), 0, null, null);
 					log.log(entry);
 					// skip this entry
 					continue;
@@ -662,7 +661,7 @@ public class EclipseStarter {
 				location = makeRelative(installLocation.getURL(), location);
 				String locationString = INITIAL_LOCATION + location.toExternalForm();
 				result.add(new InitialBundle(locationString, location, level, start));
-			} catch (IOException e) {
+			}catch (IOException e) {
 				log.log(new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, e.getMessage(), 0, e, null));
 			}
 		}
@@ -706,7 +705,7 @@ public class EclipseStarter {
 			// check for args without parameters (i.e., a flag arg)
 
 			// check if debug should be enabled for the entire platform
-			// If this is the last arg or there is a following arg (i.e., arg+1 has a leading -), 
+			// If this is the last arg or there is a following arg (i.e., arg+1 has a leading -),
 			// simply enable debug.  Otherwise, assume that that the following arg is
 			// actually the filename of an options file.  This will be processed below.
 			if (args[i].equalsIgnoreCase(DEBUG) && ((i + 1 == args.length) || ((i + 1 < args.length) && (args[i + 1].startsWith("-"))))) { //$NON-NLS-1$
@@ -716,7 +715,7 @@ public class EclipseStarter {
 			}
 
 			// check if development mode should be enabled for the entire platform
-			// If this is the last arg or there is a following arg (i.e., arg+1 has a leading -), 
+			// If this is the last arg or there is a following arg (i.e., arg+1 has a leading -),
 			// simply enable development mode.  Otherwise, assume that that the following arg is
 			// actually some additional development time class path entries.  This will be processed below.
 			if (args[i].equalsIgnoreCase(DEV) && ((i + 1 == args.length) || ((i + 1 < args.length) && (args[i + 1].startsWith("-"))))) { //$NON-NLS-1$
@@ -742,7 +741,7 @@ public class EclipseStarter {
 				found = true;
 			}
 
-			// look for the console with no port.  
+			// look for the console with no port.
 			if (args[i].equalsIgnoreCase(CONSOLE) && ((i + 1 == args.length) || ((i + 1 < args.length) && (args[i + 1].startsWith("-"))))) { //$NON-NLS-1$
 				setProperty(PROP_CONSOLE, ""); //$NON-NLS-1$
 				found = true;
@@ -764,25 +763,25 @@ public class EclipseStarter {
 			}
 			String arg = args[++i];
 
-			// look for the console and port.  
+			// look for the console and port.
 			if (args[i - 1].equalsIgnoreCase(CONSOLE)) {
 				setProperty(PROP_CONSOLE, arg);
 				found = true;
 			}
 
-			// look for the configuration location .  
+			// look for the configuration location .
 			if (args[i - 1].equalsIgnoreCase(CONFIGURATION)) {
 				setProperty(EquinoxLocations.PROP_CONFIG_AREA, arg);
 				found = true;
 			}
 
-			// look for the data location for this instance.  
+			// look for the data location for this instance.
 			if (args[i - 1].equalsIgnoreCase(DATA)) {
 				setProperty(EquinoxLocations.PROP_INSTANCE_AREA, arg);
 				found = true;
 			}
 
-			// look for the user location for this instance.  
+			// look for the user location for this instance.
 			if (args[i - 1].equalsIgnoreCase(USER)) {
 				setProperty(EquinoxLocations.PROP_USER_AREA, arg);
 				found = true;
@@ -793,20 +792,20 @@ public class EclipseStarter {
 				setProperty(EquinoxLocations.PROP_LAUNCHER, arg);
 				found = true;
 			}
-			// look for the development mode and class path entries.  
+			// look for the development mode and class path entries.
 			if (args[i - 1].equalsIgnoreCase(DEV)) {
 				setProperty(PROP_DEV, arg);
 				found = true;
 			}
 
-			// look for the debug mode and option file location.  
+			// look for the debug mode and option file location.
 			if (args[i - 1].equalsIgnoreCase(DEBUG)) {
 				setProperty(PROP_DEBUG, arg);
 				debug = true;
 				found = true;
 			}
 
-			// look for the window system.  
+			// look for the window system.
 			if (args[i - 1].equalsIgnoreCase(WS)) {
 				setProperty(PROP_WS, arg);
 				found = true;
@@ -836,7 +835,7 @@ public class EclipseStarter {
 				found = true;
 			}
 
-			// done checking for args.  Remember where an arg was found 
+			// done checking for args.  Remember where an arg was found
 			if (found) {
 				configArgs[configArgIndex++] = i - 1;
 				configArgs[configArgIndex++] = i;
@@ -866,7 +865,7 @@ public class EclipseStarter {
 
 	/**
 	 * Returns the result of converting a list of comma-separated tokens into an array
-	 * 
+	 *
 	 * @return the array of string tokens
 	 * @param prop the initial comma-separated string
 	 */
@@ -935,8 +934,7 @@ public class EclipseStarter {
 	private static Bundle[] getCurrentBundles(boolean includeInitial) {
 		Bundle[] installed = context.getBundles();
 		List<Bundle> initial = new ArrayList<>();
-		for (int i = 0; i < installed.length; i++) {
-			Bundle bundle = installed[i];
+		for (Bundle bundle : installed) {
 			if (bundle.getLocation().startsWith(INITIAL_LOCATION)) {
 				if (includeInitial)
 					initial.add(bundle);
@@ -947,8 +945,7 @@ public class EclipseStarter {
 	}
 
 	private static Bundle getBundleByLocation(String location, Bundle[] bundles) {
-		for (int i = 0; i < bundles.length; i++) {
-			Bundle bundle = bundles[i];
+		for (Bundle bundle : bundles) {
 			if (location.equalsIgnoreCase(bundle.getLocation()))
 				return bundle;
 		}
@@ -956,35 +953,36 @@ public class EclipseStarter {
 	}
 
 	private static void uninstallBundles(Bundle[] curInitBundles, InitialBundle[] newInitBundles, List<Bundle> toRefresh) {
-		for (int i = 0; i < curInitBundles.length; i++) {
+		for (Bundle curInitBundle : curInitBundles) {
 			boolean found = false;
-			for (int j = 0; j < newInitBundles.length; j++) {
-				if (curInitBundles[i].getLocation().equalsIgnoreCase(newInitBundles[j].locationString)) {
+			for (InitialBundle newInitBundle : newInitBundles) {
+				if (curInitBundle.getLocation().equalsIgnoreCase(newInitBundle.locationString)) {
 					found = true;
 					break;
 				}
 			}
-			if (!found)
+			if (!found) {
 				try {
-					curInitBundles[i].uninstall();
-					toRefresh.add(curInitBundles[i]);
+					curInitBundle.uninstall();
+					toRefresh.add(curInitBundle);
 				} catch (BundleException e) {
-					FrameworkLogEntry entry = new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_FAILED_UNINSTALL, curInitBundles[i].getLocation()), 0, e, null);
+					FrameworkLogEntry entry = new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_FAILED_UNINSTALL, curInitBundle.getLocation()), 0, e, null);
 					log.log(entry);
 				}
+			}
 		}
 	}
 
 	private static void installBundles(InitialBundle[] initialBundles, Bundle[] curInitBundles, List<Bundle> startBundles, List<Bundle> lazyActivationBundles, List<Bundle> toRefresh) {
-		for (int i = 0; i < initialBundles.length; i++) {
-			Bundle osgiBundle = getBundleByLocation(initialBundles[i].locationString, curInitBundles);
+		for (InitialBundle initialBundle : initialBundles) {
+			Bundle osgiBundle = getBundleByLocation(initialBundle.locationString, curInitBundles);
 			try {
 				// don't need to install if it is already installed
 				if (osgiBundle == null) {
-					InputStream in = LocationHelper.getStream(initialBundles[i].location);
+					InputStream in = LocationHelper.getStream(initialBundle.location);
 					try {
-						osgiBundle = context.installBundle(initialBundles[i].locationString, in);
-					} catch (BundleException e) {
+						osgiBundle = context.installBundle(initialBundle.locationString, in);
+					}catch (BundleException e) {
 						if (e.getType() == BundleException.DUPLICATE_BUNDLE_ERROR) {
 							continue;
 							// TODO should attempt to lookup the existing bundle
@@ -992,25 +990,24 @@ public class EclipseStarter {
 						throw e;
 					}
 					// only check for lazy activation header if this is a newly installed bundle and is not marked for persistent start
-					if (!initialBundles[i].start && hasLazyActivationPolicy(osgiBundle))
+					if (!initialBundle.start && hasLazyActivationPolicy(osgiBundle)) {
 						lazyActivationBundles.add(osgiBundle);
+					}
 				}
 				// always set the startlevel incase it has changed (bug 111549)
 				// this is a no-op if the level is the same as previous launch.
-				if ((osgiBundle.getState() & Bundle.UNINSTALLED) == 0 && initialBundles[i].level >= 0) {
-					osgiBundle.adapt(BundleStartLevel.class).setStartLevel(initialBundles[i].level);
+				if ((osgiBundle.getState() & Bundle.UNINSTALLED) == 0 && initialBundle.level >= 0) {
+					osgiBundle.adapt(BundleStartLevel.class).setStartLevel(initialBundle.level);
 				}
 				// if this bundle is supposed to be started then add it to the start list
-				if (initialBundles[i].start)
+				if (initialBundle.start) {
 					startBundles.add(osgiBundle);
+				}
 				// include basic bundles in case they were not resolved before
 				if ((osgiBundle.getState() & Bundle.INSTALLED) != 0)
 					toRefresh.add(osgiBundle);
-			} catch (BundleException e) {
-				FrameworkLogEntry entry = new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_FAILED_INSTALL, initialBundles[i].location), 0, e, null);
-				log.log(entry);
-			} catch (IOException e) {
-				FrameworkLogEntry entry = new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_FAILED_INSTALL, initialBundles[i].location), 0, e, null);
+			} catch (BundleException | IOException e) {
+				FrameworkLogEntry entry = new FrameworkLogEntry(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, 0, NLS.bind(Msg.ECLIPSE_STARTUP_FAILED_INSTALL, initialBundle.location), 0, e, null);
 				log.log(entry);
 			}
 		}
@@ -1056,10 +1053,12 @@ public class EclipseStarter {
 	}
 
 	private static void startBundles(Bundle[] startBundles, Bundle[] lazyBundles) {
-		for (int i = 0; i < startBundles.length; i++)
-			startBundle(startBundles[i], 0);
-		for (int i = 0; i < lazyBundles.length; i++)
-			startBundle(lazyBundles[i], Bundle.START_ACTIVATION_POLICY);
+		for (Bundle startBundle : startBundles) {
+			startBundle(startBundle, 0);
+		}
+		for (Bundle lazyBundle : lazyBundles) {
+			startBundle(lazyBundle, Bundle.START_ACTIVATION_POLICY);
+		}
 	}
 
 	private static void startBundle(Bundle bundle, int options) {
@@ -1077,7 +1076,7 @@ public class EclipseStarter {
 	/**
 	 * Returns a URL which is equivalent to the given URL relative to the
 	 * specified base URL. Works only for file: URLs
-	 * @throws MalformedURLException 
+	 * @throws MalformedURLException
 	 */
 	private static URL makeRelative(URL base, URL location) throws MalformedURLException {
 		if (base == null)
@@ -1091,7 +1090,7 @@ public class EclipseStarter {
 		if (!base.getProtocol().equals(nonReferenceLocation.getProtocol()))
 			return location;
 		File locationPath = new File(nonReferenceLocation.getPath());
-		// if location is not absolute, return original location 
+		// if location is not absolute, return original location
 		if (!locationPath.isAbsolute())
 			return location;
 		File relativePath = makeRelative(new File(base.getPath()), locationPath);
@@ -1099,9 +1098,9 @@ public class EclipseStarter {
 		if (File.separatorChar != '/')
 			urlPath = urlPath.replace(File.separatorChar, '/');
 		if (nonReferenceLocation.getPath().endsWith("/")) //$NON-NLS-1$
-			// restore original trailing slash 
+			// restore original trailing slash
 			urlPath += '/';
-		// couldn't use File to create URL here because it prepends the path with user.dir 
+		// couldn't use File to create URL here because it prepends the path with user.dir
 		URL relativeURL = createURL(base.getProtocol(), base.getHost(), base.getPort(), urlPath);
 		// now make it back to a reference URL
 		relativeURL = createURL(REFERENCE_SCHEME + relativeURL.toExternalForm());
@@ -1155,11 +1154,13 @@ public class EclipseStarter {
 			this.frameworkEventType = frameworkEventType;
 		}
 
+		@Override
 		public void bundleChanged(BundleEvent event) {
 			if (event.getBundle().getBundleId() == 0 && event.getType() == BundleEvent.STOPPING)
 				semaphore.release();
 		}
 
+		@Override
 		public void frameworkEvent(FrameworkEvent event) {
 			if (event.getType() == frameworkEventType)
 				semaphore.release();
@@ -1204,9 +1205,9 @@ public class EclipseStarter {
 
 	/**
 	 * Searches for the given target directory immediately under
-	 * the given start location.  If one is found then this location is returned; 
+	 * the given start location.  If one is found then this location is returned;
 	 * otherwise an exception is thrown.
-	 * 
+	 *
 	 * @return the location where target directory was found
 	 * @param start the location to begin searching
 	 */
@@ -1224,8 +1225,7 @@ public class EclipseStarter {
 		String result = null;
 		Object[] maxVersion = null;
 		boolean resultIsFile = false;
-		for (int i = 0; i < candidates.length; i++) {
-			String candidateName = candidates[i];
+		for (String candidateName : candidates) {
 			if (!candidateName.startsWith(target))
 				continue;
 			boolean simpleJar = false;
@@ -1239,7 +1239,7 @@ public class EclipseStarter {
 					continue;
 			}
 			// Note: directory with version suffix is always > than directory without version suffix
-			String version = candidateName.length() > target.length() + 1 && (versionSep == '_' || versionSep == '-') ? candidateName.substring(target.length() + 1) : ""; //$NON-NLS-1$ 
+			String version = candidateName.length() > target.length() + 1 && (versionSep == '_' || versionSep == '-') ? candidateName.substring(target.length() + 1) : ""; //$NON-NLS-1$
 			Object[] currentVersion = getVersionElements(version);
 			if (currentVersion != null && compareVersion(maxVersion, currentVersion) < 0) {
 				File candidate = new File(start, candidateName);
@@ -1263,7 +1263,7 @@ public class EclipseStarter {
 	 * with suitable defaults.
 	 * @return an array of size 4; first three elements are of type Integer (representing
 	 * major, minor and service) and the fourth element is of type String (representing
-	 * qualifier).  A value of null is returned if there are no valid Integers.  Note, that 
+	 * qualifier).  A value of null is returned if there are no valid Integers.  Note, that
 	 * returning anything else will cause exceptions in the caller.
 	 */
 	private static Object[] getVersionElements(String version) {
@@ -1291,7 +1291,7 @@ public class EclipseStarter {
 	}
 
 	/**
-	 * Compares version strings. 
+	 * Compares version strings.
 	 * @return result of comparison, as integer;
 	 * <code><0</code> if left < right;
 	 * <code>0</code> if left == right;
@@ -1330,12 +1330,12 @@ public class EclipseStarter {
 	}
 
 	/**
-	 * Sets the initial properties for the platform.  
-	 * This method must be called before calling the {@link  #run(String[], Runnable)} or 
-	 * {@link #startup(String[], Runnable)} methods for the properties to be used in 
-	 * a launched instance of the platform.  
+	 * Sets the initial properties for the platform.
+	 * This method must be called before calling the {@link  #run(String[], Runnable)} or
+	 * {@link #startup(String[], Runnable)} methods for the properties to be used in
+	 * a launched instance of the platform.
 	 * <p>
-	 * If the specified properties contains a null value then the key for that value 
+	 * If the specified properties contains a null value then the key for that value
 	 * will be cleared from the properties of the platform.
 	 * </p>
 	 * @param initialProperties the initial properties to set for the platform.
@@ -1353,7 +1353,7 @@ public class EclipseStarter {
 	}
 
 	/**
-	 * Returns the context of the system bundle.  A value of 
+	 * Returns the context of the system bundle.  A value of
 	 * <code>null</code> is returned if the platform is not running.
 	 * @return the context of the system bundle
 	 * @throws java.lang.SecurityException If the caller does not have the
@@ -1373,15 +1373,15 @@ public class EclipseStarter {
 	/*
 	 * NOTE: This is an internal/experimental method used by launchers that need to react when the framework
 	 * is shutdown internally.
-	 * 
+	 *
 	 * Adds a framework shutdown handler. <p>
 	 * A handler implements the {@link Runnable} interface.  When the framework is shutdown
-	 * the {@link Runnable#run()} method is called for each registered handler.  Handlers should 
-	 * make no assumptions on the thread it is being called from.  If a handler object is 
+	 * the {@link Runnable#run()} method is called for each registered handler.  Handlers should
+	 * make no assumptions on the thread it is being called from.  If a handler object is
 	 * registered multiple times it will be called once for each registration.
 	 * <p>
-	 * At the time a handler is called the framework is shutdown.  Handlers must not depend on 
-	 * a running framework to execute or attempt to load additional classes from bundles 
+	 * At the time a handler is called the framework is shutdown.  Handlers must not depend on
+	 * a running framework to execute or attempt to load additional classes from bundles
 	 * installed in the framework.
 	 * @param handler the framework shutdown handler
 	 * @throws IllegalStateException if the platform is already running
@@ -1399,7 +1399,7 @@ public class EclipseStarter {
 	/*
 	 * NOTE: This is an internal/experimental method used by launchers that need to react when the framework
 	 * is shutdown internally.
-	 * 
+	 *
 	 * Removes a framework shutdown handler. <p>
 	 * @param handler the framework shutdown handler
 	 * @throws IllegalStateException if the platform is already running
@@ -1420,6 +1420,7 @@ public class EclipseStarter {
 		for (Iterator<Runnable> it = shutdownHandlers.iterator(); it.hasNext();) {
 			final Runnable handler = it.next();
 			BundleListener listener = new BundleListener() {
+				@Override
 				public void bundleChanged(BundleEvent event) {
 					if (event.getBundle() == systemBundle && event.getType() == BundleEvent.STOPPED) {
 						handler.run();

@@ -22,6 +22,7 @@ import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.ui.PlatformUI;
 
 /**
  * <p>
@@ -31,7 +32,7 @@ import org.eclipse.swt.widgets.Event;
  * <p>
  * The action simply calls the wizard to export breakpoints.
  * </p>
- * 
+ *
  * @see WizardExportBreakpoints
  * @see WizardExportBreakpointsPage
  *
@@ -47,24 +48,18 @@ public class ExportBreakpoints extends AbstractDebugActionDelegate {
 	@Override
 	public void run(IAction action) {
 		WizardExportBreakpoints wiz = new WizardExportBreakpoints();
-		wiz.init(DebugUIPlugin.getDefault().getWorkbench(), getSelection());
+		wiz.init(PlatformUI.getWorkbench(), getSelection());
 		WizardDialog wizdialog = new WizardDialog(DebugUIPlugin.getShell(), wiz);
 		wizdialog.setBlockOnOpen(true);
 		wizdialog.open();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.actions.AbstractDebugActionDelegate#update(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	protected void update(IAction action, ISelection s) {
 		super.update(action, s);
 		getAction().setEnabled(DebugPlugin.getDefault().getBreakpointManager().hasBreakpoints());
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.actions.AbstractDebugActionDelegate#doAction(java.lang.Object)
-	 */
 	@Override
 	protected void doAction(Object element) throws DebugException {}
 

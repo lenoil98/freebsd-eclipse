@@ -28,7 +28,6 @@ import org.eclipse.ui.IEditorRegistry;
 import org.eclipse.ui.IFileEditorMapping;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferenceConstants;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.WorkbenchException;
 import org.eclipse.ui.internal.decorators.DecoratorManager;
@@ -41,16 +40,15 @@ import org.eclipse.ui.internal.util.PrefUtil;
  * preference store and propogates the change for any special cases that require
  * updating of other values within the workbench.
  */
-public class PlatformUIPreferenceListener implements
-		IEclipsePreferences.IPreferenceChangeListener {
+public class PlatformUIPreferenceListener implements IEclipsePreferences.IPreferenceChangeListener {
 
 	private static PlatformUIPreferenceListener singleton;
 
-	public static IEclipsePreferences.IPreferenceChangeListener getSingleton(){
-		if(singleton == null) {
+	public static IEclipsePreferences.IPreferenceChangeListener getSingleton() {
+		if (singleton == null) {
 			singleton = new PlatformUIPreferenceListener();
 		}
-	    return singleton;
+		return singleton;
 	}
 
 	@Override
@@ -58,8 +56,7 @@ public class PlatformUIPreferenceListener implements
 
 		String propertyName = event.getKey();
 		if (IPreferenceConstants.ENABLED_DECORATORS.equals(propertyName)) {
-			DecoratorManager manager = WorkbenchPlugin.getDefault()
-					.getDecoratorManager();
+			DecoratorManager manager = WorkbenchPlugin.getDefault().getDecoratorManager();
 			manager.applyDecoratorsPreference();
 			manager.clearCaches();
 			manager.updateForEnablementChange();
@@ -67,8 +64,8 @@ public class PlatformUIPreferenceListener implements
 		}
 
 		if (IWorkbenchPreferenceConstants.SHOW_SYSTEM_JOBS.equals(propertyName)) {
-			boolean setting = PrefUtil.getAPIPreferenceStore().getBoolean(
-					IWorkbenchPreferenceConstants.SHOW_SYSTEM_JOBS);
+			boolean setting = PrefUtil.getAPIPreferenceStore()
+					.getBoolean(IWorkbenchPreferenceConstants.SHOW_SYSTEM_JOBS);
 
 			ProgressManager.getInstance().setShowSystemJobs(setting);
 		}
@@ -77,59 +74,25 @@ public class PlatformUIPreferenceListener implements
 			IWorkbench workbench = PlatformUI.getWorkbench();
 
 			workbench.getPerspectiveRegistry().setDefaultPerspective(
-					PrefUtil.getAPIPreferenceStore().getString(
-							IWorkbenchPreferenceConstants.DEFAULT_PERSPECTIVE_ID));
-			return;
-		}
-
-		if (IWorkbenchPreferenceConstants.DOCK_PERSPECTIVE_BAR
-				.equals(propertyName)) {
-			// IPreferenceStore apiStore = PrefUtil.getAPIPreferenceStore();
-			IWorkbench workbench = PlatformUI.getWorkbench();
-			for (IWorkbenchWindow window : workbench.getWorkbenchWindows()) {
-				if (window instanceof WorkbenchWindow) {
-					// ((WorkbenchWindow) window)
-					// .setPerspectiveBarLocation(apiStore
-					// .getString(IWorkbenchPreferenceConstants.DOCK_PERSPECTIVE_BAR));
-				}
-			}
-			return;
-		}
-
-		// TODO the banner apperance should have its own preference
-		if (IWorkbenchPreferenceConstants.SHOW_TRADITIONAL_STYLE_TABS
-				.equals(propertyName)) {
-			// boolean newValue = PrefUtil.getAPIPreferenceStore().getBoolean(
-			// IWorkbenchPreferenceConstants.SHOW_TRADITIONAL_STYLE_TABS);
-
-			IWorkbench workbench = PlatformUI.getWorkbench();
-			for (IWorkbenchWindow window : workbench.getWorkbenchWindows()) {
-				if (window instanceof WorkbenchWindow) {
-					// ((WorkbenchWindow) window).setBannerCurve(newValue);
-				}
-			}
+					PrefUtil.getAPIPreferenceStore().getString(IWorkbenchPreferenceConstants.DEFAULT_PERSPECTIVE_ID));
 			return;
 		}
 
 		// Update the file associations if they have changed due to an import
 		if (IPreferenceConstants.RESOURCES.equals(propertyName)) {
-			IEditorRegistry registry = WorkbenchPlugin.getDefault()
-					.getEditorRegistry();
+			IEditorRegistry registry = WorkbenchPlugin.getDefault().getEditorRegistry();
 			if (registry instanceof EditorRegistry) {
 				EditorRegistry editorRegistry = (EditorRegistry) registry;
-				IPreferenceStore store = WorkbenchPlugin.getDefault()
-						.getPreferenceStore();
+				IPreferenceStore store = WorkbenchPlugin.getDefault().getPreferenceStore();
 				Reader reader = null;
 				try {
-					String xmlString = store
-							.getString(IPreferenceConstants.RESOURCES);
+					String xmlString = store.getString(IPreferenceConstants.RESOURCES);
 					if (xmlString != null && xmlString.length() > 0) {
 						reader = new StringReader(xmlString);
 						// Build the editor map.
 						HashMap<String, IEditorDescriptor> editorMap = new HashMap<>();
 						int i = 0;
-						IEditorDescriptor[] descriptors = editorRegistry
-								.getSortedEditorsFromPlugins();
+						IEditorDescriptor[] descriptors = editorRegistry.getSortedEditorsFromPlugins();
 						// Get the internal editors
 						for (i = 0; i < descriptors.length; i++) {
 							IEditorDescriptor descriptor = descriptors[i];
@@ -168,7 +131,6 @@ public class PlatformUIPreferenceListener implements
 
 		// Set Open mode
 		if (IPreferenceConstants.OPEN_ON_SINGLE_CLICK.equals(propertyName)
-				|| IPreferenceConstants.SELECT_ON_HOVER.equals(propertyName)
 				|| IPreferenceConstants.OPEN_AFTER_DELAY.equals(propertyName)
 				|| IPreferenceConstants.SELECT_ON_HOVER.equals(propertyName)) {
 			initializeSingleClickOption();
@@ -181,8 +143,7 @@ public class PlatformUIPreferenceListener implements
 		boolean openOnSingleClick = store.getBoolean(IPreferenceConstants.OPEN_ON_SINGLE_CLICK);
 		boolean selectOnHover = store.getBoolean(IPreferenceConstants.SELECT_ON_HOVER);
 		boolean openAfterDelay = store.getBoolean(IPreferenceConstants.OPEN_AFTER_DELAY);
-		int singleClickMethod = openOnSingleClick ? OpenStrategy.SINGLE_CLICK
-				: OpenStrategy.DOUBLE_CLICK;
+		int singleClickMethod = openOnSingleClick ? OpenStrategy.SINGLE_CLICK : OpenStrategy.DOUBLE_CLICK;
 		if (openOnSingleClick) {
 			if (selectOnHover) {
 				singleClickMethod |= OpenStrategy.SELECT_ON_HOVER;

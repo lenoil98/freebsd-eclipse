@@ -21,6 +21,7 @@ import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.debug.internal.ui.SWTFactory;
 import org.eclipse.jdt.debug.core.IJavaBreakpoint;
+import org.eclipse.jdt.debug.core.IJavaExceptionBreakpoint.SuspendOnRecurrenceStrategy;
 import org.eclipse.jdt.debug.core.JDIDebugModel;
 import org.eclipse.jdt.internal.debug.core.JDIDebugPlugin;
 import org.eclipse.jdt.internal.launching.LaunchingPlugin;
@@ -88,6 +89,7 @@ public class JavaDebugPreferencePage extends PreferencePage implements IWorkbenc
 	private Button fOnlyIncludeExportedEntries;
 	private Combo fSuspendVMorThread;
 	private Combo fWatchpoint;
+	private Combo fSuspendOnRecurringExceptionBreakpoints;
 
 	// Hot code replace preference widgets
 	private Button fEnableHCRButton;
@@ -96,6 +98,7 @@ public class JavaDebugPreferencePage extends PreferencePage implements IWorkbenc
 	private Button fAlertObsoleteButton;
 	private Button fPerformHCRWithCompilationErrors;
 	private Button fShowStepResult;
+	private Button fShowStepResultRemote;
 	private Button fAdvancedSourcelookup;
 
 	// Timeout preference widgets
@@ -131,6 +134,15 @@ public class JavaDebugPreferencePage extends PreferencePage implements IWorkbenc
 		link.getControl().setFont(composite.getFont());
 		Group group = SWTFactory.createGroup(composite, DebugUIMessages.JavaDebugPreferencePage_Suspend_Execution_1, 2, 1, GridData.FILL_HORIZONTAL);
 		fSuspendButton = SWTFactory.createCheckButton(group, DebugUIMessages.JavaDebugPreferencePage_Suspend__execution_on_uncaught_exceptions_1, null, false, 2);
+
+		SWTFactory.createLabel(group, DebugUIMessages.JavaDebugPreferencePage_SuspendOnRecurrencePolicy, 1);
+		fSuspendOnRecurringExceptionBreakpoints = new Combo(group, SWT.BORDER | SWT.READ_ONLY);
+		fSuspendOnRecurringExceptionBreakpoints.setItems(new String[] {
+				DebugUIMessages.JavaDebugPreferencePage_SuspendOnRecurrencePolicy_Unconfigured,
+				DebugUIMessages.JavaDebugPreferencePage_SuspendOnRecurrencePolicy_Always,
+				DebugUIMessages.JavaDebugPreferencePage_SuspendOnRecurrencePolicy_OnlyOnce });
+		fSuspendOnRecurringExceptionBreakpoints.setFont(group.getFont());
+
 		fSuspendOnCompilationErrors = SWTFactory.createCheckButton(group, DebugUIMessages.JavaDebugPreferencePage_Suspend_execution_on_co_mpilation_errors_1, null, false, 2);
 		fSuspendDuringEvaluations = SWTFactory.createCheckButton(group, DebugUIMessages.JavaDebugPreferencePage_14, null, false, 2);
 		fOpenInspector = SWTFactory.createCheckButton(group, DebugUIMessages.JavaDebugPreferencePage_20, null, false, 2);
@@ -159,13 +171,13 @@ public class JavaDebugPreferencePage extends PreferencePage implements IWorkbenc
 		fTimeoutText.setPage(this);
 		fTimeoutText.setValidateStrategy(StringFieldEditor.VALIDATE_ON_KEY_STROKE);
 		fTimeoutText.setValidRange(JDIDebugModel.DEF_REQUEST_TIMEOUT, Integer.MAX_VALUE);
-		fTimeoutText.setErrorMessage(NLS.bind(DebugUIMessages.JavaDebugPreferencePage_Value_must_be_a_valid_integer_greater_than__0__ms_1, new Object[] {new Integer(JDIDebugModel.DEF_REQUEST_TIMEOUT)}));
+		fTimeoutText.setErrorMessage(NLS.bind(DebugUIMessages.JavaDebugPreferencePage_Value_must_be_a_valid_integer_greater_than__0__ms_1, new Object[] {Integer.valueOf(JDIDebugModel.DEF_REQUEST_TIMEOUT)}));
 		fTimeoutText.load();
 		fConnectionTimeoutText = new JavaDebugIntegerFieldEditor(JavaRuntime.PREF_CONNECT_TIMEOUT, DebugUIMessages.JavaDebugPreferencePage__Launch_timeout__ms___1, space);
 		fConnectionTimeoutText.setPage(this);
 		fConnectionTimeoutText.setValidateStrategy(StringFieldEditor.VALIDATE_ON_KEY_STROKE);
 		fConnectionTimeoutText.setValidRange(JavaRuntime.DEF_CONNECT_TIMEOUT, Integer.MAX_VALUE);
-		fConnectionTimeoutText.setErrorMessage(NLS.bind(DebugUIMessages.JavaDebugPreferencePage_Value_must_be_a_valid_integer_greater_than__0__ms_1, new Object[] {new Integer(JavaRuntime.DEF_CONNECT_TIMEOUT)}));
+		fConnectionTimeoutText.setErrorMessage(NLS.bind(DebugUIMessages.JavaDebugPreferencePage_Value_must_be_a_valid_integer_greater_than__0__ms_1, new Object[] {Integer.valueOf(JavaRuntime.DEF_CONNECT_TIMEOUT)}));
 		fConnectionTimeoutText.load();
 
 		SWTFactory.createVerticalSpacer(composite, 1);
@@ -177,15 +189,18 @@ public class JavaDebugPreferencePage extends PreferencePage implements IWorkbenc
 		fOnlyIncludeExportedEntries = SWTFactory.createCheckButton(composite, DebugUIMessages.JavaDebugPreferencePage_only_include_exported_entries, null, false, 1);
 
 		SWTFactory.createVerticalSpacer(composite, 1);
-		fShowStepResult = SWTFactory.createCheckButton(composite, DebugUIMessages.JavaDebugPreferencePage_ShowStepResult_1, null, false, 1);
+		group = SWTFactory.createGroup(composite, DebugUIMessages.JavaDebugPreferencePage_ShowStepResult_1, 1, 1, GridData.FILL_HORIZONTAL);
+		fShowStepResult = SWTFactory.createCheckButton(group, DebugUIMessages.JavaDebugPreferencePage_ShowStepResult_local, null, false, 1);
 
-		Composite space1 = SWTFactory.createComposite(composite, composite.getFont(), 1, 1, GridData.FILL_HORIZONTAL);
+		fShowStepResultRemote = SWTFactory.createCheckButton(group, DebugUIMessages.JavaDebugPreferencePage_ShowStepResult_remote, null, false, 1);
+
+		Composite space1 = SWTFactory.createComposite(group, composite.getFont(), 1, 1, GridData.FILL_HORIZONTAL);
 		fShowStepTimeoutText = new JavaDebugIntegerFieldEditor(JDIDebugModel.PREF_SHOW_STEP_TIMEOUT, DebugUIMessages.JavaDebugPreferencePage_ShowStepTimeout_ms_1, space1);
 		fShowStepTimeoutText.setPage(this);
 		fShowStepTimeoutText.setValidateStrategy(StringFieldEditor.VALIDATE_ON_KEY_STROKE);
 		fShowStepTimeoutText.setValidRange(-1, Integer.MAX_VALUE);
 		fShowStepTimeoutText.setErrorMessage(NLS.bind(DebugUIMessages.JavaDebugPreferencePage_Value_must_be_a_valid_integer_greater_than__0__ms_1, new Object[] {
-				new Integer(-1) }));
+				Integer.valueOf(-1) }));
 		fShowStepTimeoutText.load();
 
 		SWTFactory.createVerticalSpacer(composite, 1);
@@ -224,8 +239,11 @@ public class JavaDebugPreferencePage extends PreferencePage implements IWorkbenc
 			}
 			prefs.putInt(JDIDebugPlugin.PREF_DEFAULT_BREAKPOINT_SUSPEND_POLICY, policy);
 			prefs.putInt(JDIDebugPlugin.PREF_DEFAULT_WATCHPOINT_SUSPEND_POLICY, fWatchpoint.getSelectionIndex());
+			int suspendOnRecurranceIndex = fSuspendOnRecurringExceptionBreakpoints.getSelectionIndex();
+			prefs.put(JDIDebugModel.PREF_SUSPEND_ON_RECURRENCE_STRATEGY, SuspendOnRecurrenceStrategy.values()[suspendOnRecurranceIndex].name());
 			prefs.putBoolean(JDIDebugModel.PREF_HCR_WITH_COMPILATION_ERRORS, fPerformHCRWithCompilationErrors.getSelection());
 			prefs.putBoolean(JDIDebugModel.PREF_SHOW_STEP_RESULT, fShowStepResult.getSelection());
+			prefs.putBoolean(JDIDebugModel.PREF_SHOW_STEP_RESULT_REMOTE, fShowStepResultRemote.getSelection());
 			prefs.putInt(JDIDebugModel.PREF_SHOW_STEP_TIMEOUT, fShowStepTimeoutText.getIntValue());
 			prefs.putInt(JDIDebugModel.PREF_REQUEST_TIMEOUT, fTimeoutText.getIntValue());
 			prefs.putBoolean(JDIDebugModel.PREF_FILTER_BREAKPOINTS_FROM_UNRELATED_SOURCES, fFilterUnrelatedBreakpoints.getSelection());
@@ -269,16 +287,20 @@ public class JavaDebugPreferencePage extends PreferencePage implements IWorkbenc
 			int value = prefs.getInt(JDIDebugPlugin.PREF_DEFAULT_BREAKPOINT_SUSPEND_POLICY, IJavaBreakpoint.SUSPEND_THREAD);
 			fSuspendVMorThread.select((value == IJavaBreakpoint.SUSPEND_THREAD) ? 0 : 1);
 			fWatchpoint.select(prefs.getInt(JDIDebugPlugin.PREF_DEFAULT_WATCHPOINT_SUSPEND_POLICY, 0));
+			String defaultSuspendOnRecurringExceptionBreakpoints = prefs.get(JDIDebugModel.PREF_SUSPEND_ON_RECURRENCE_STRATEGY, SuspendOnRecurrenceStrategy.RECURRENCE_UNCONFIGURED.name());
+			int suspendOnRecurranceIndex = SuspendOnRecurrenceStrategy.valueOf(defaultSuspendOnRecurringExceptionBreakpoints).ordinal();
+			fSuspendOnRecurringExceptionBreakpoints.select(suspendOnRecurranceIndex);
 			fPerformHCRWithCompilationErrors.setSelection(prefs.getBoolean(JDIDebugModel.PREF_HCR_WITH_COMPILATION_ERRORS, true));
 			fShowStepResult.setSelection(prefs.getBoolean(JDIDebugModel.PREF_SHOW_STEP_RESULT, true));
-			fShowStepTimeoutText.setStringValue(new Integer(prefs.getInt(JDIDebugModel.PREF_SHOW_STEP_RESULT, JDIDebugModel.DEF_SHOW_STEP_TIMEOUT)).toString());
-			fTimeoutText.setStringValue(new Integer(prefs.getInt(JDIDebugModel.PREF_REQUEST_TIMEOUT, JDIDebugModel.DEF_REQUEST_TIMEOUT)).toString());
+			fShowStepResultRemote.setSelection(prefs.getBoolean(JDIDebugModel.PREF_SHOW_STEP_RESULT_REMOTE, true));
+			fShowStepTimeoutText.setStringValue(Integer.valueOf(prefs.getInt(JDIDebugModel.PREF_SHOW_STEP_RESULT, JDIDebugModel.DEF_SHOW_STEP_TIMEOUT)).toString());
+			fTimeoutText.setStringValue(Integer.valueOf(prefs.getInt(JDIDebugModel.PREF_REQUEST_TIMEOUT, JDIDebugModel.DEF_REQUEST_TIMEOUT)).toString());
 			fFilterUnrelatedBreakpoints.setSelection(prefs.getBoolean(JDIDebugModel.PREF_FILTER_BREAKPOINTS_FROM_UNRELATED_SOURCES, true));
 			fAdvancedSourcelookup.setSelection(prefs.getBoolean(JDIDebugPlugin.PREF_ENABLE_ADVANCED_SOURCELOOKUP, true));
 		}
 		prefs = DefaultScope.INSTANCE.getNode(LaunchingPlugin.ID_PLUGIN);
 		if(prefs != null) {
-			fConnectionTimeoutText.setStringValue(new Integer(prefs.getInt(JavaRuntime.PREF_CONNECT_TIMEOUT,JavaRuntime.DEF_CONNECT_TIMEOUT)).toString());
+			fConnectionTimeoutText.setStringValue(Integer.valueOf(prefs.getInt(JavaRuntime.PREF_CONNECT_TIMEOUT,JavaRuntime.DEF_CONNECT_TIMEOUT)).toString());
 			fOnlyIncludeExportedEntries.setSelection(prefs.getBoolean(JavaRuntime.PREF_ONLY_INCLUDE_EXPORTED_CLASSPATH_ENTRIES, false));
 		}
 		super.performDefaults();
@@ -307,15 +329,19 @@ public class JavaDebugPreferencePage extends PreferencePage implements IWorkbenc
 		int value = prefs.getInt(bundleId, JDIDebugPlugin.PREF_DEFAULT_BREAKPOINT_SUSPEND_POLICY, IJavaBreakpoint.SUSPEND_THREAD, null);
 		fSuspendVMorThread.select((value == IJavaBreakpoint.SUSPEND_THREAD ? 0 : 1));
 		fWatchpoint.select(prefs.getInt(bundleId, JDIDebugPlugin.PREF_DEFAULT_WATCHPOINT_SUSPEND_POLICY, 0, null));
+		String defaultSuspendOnRecurringExceptionBreakpoints = prefs.getString(bundleId, JDIDebugModel.PREF_SUSPEND_ON_RECURRENCE_STRATEGY, SuspendOnRecurrenceStrategy.RECURRENCE_UNCONFIGURED.name(), null);
+		int suspendOnRecurranceIndex = SuspendOnRecurrenceStrategy.valueOf(defaultSuspendOnRecurringExceptionBreakpoints).ordinal();
+		fSuspendOnRecurringExceptionBreakpoints.select(suspendOnRecurranceIndex);
 		fPerformHCRWithCompilationErrors.setSelection(prefs.getBoolean(bundleId, JDIDebugModel.PREF_HCR_WITH_COMPILATION_ERRORS, true, null));
 		fShowStepResult.setSelection(prefs.getBoolean(bundleId, JDIDebugModel.PREF_SHOW_STEP_RESULT, true, null));
-		fShowStepTimeoutText.setStringValue(new Integer(prefs.getInt(bundleId, JDIDebugModel.PREF_SHOW_STEP_TIMEOUT, JDIDebugModel.DEF_SHOW_STEP_TIMEOUT, null)).toString());
-		fTimeoutText.setStringValue(new Integer(prefs.getInt(bundleId, JDIDebugModel.PREF_REQUEST_TIMEOUT, JDIDebugModel.DEF_REQUEST_TIMEOUT, null)).toString());
+		fShowStepResultRemote.setSelection(prefs.getBoolean(bundleId, JDIDebugModel.PREF_SHOW_STEP_RESULT_REMOTE, false, null));
+		fShowStepTimeoutText.setStringValue(Integer.valueOf(prefs.getInt(bundleId, JDIDebugModel.PREF_SHOW_STEP_TIMEOUT, JDIDebugModel.DEF_SHOW_STEP_TIMEOUT, null)).toString());
+		fTimeoutText.setStringValue(Integer.valueOf(prefs.getInt(bundleId, JDIDebugModel.PREF_REQUEST_TIMEOUT, JDIDebugModel.DEF_REQUEST_TIMEOUT, null)).toString());
 		fFilterUnrelatedBreakpoints.setSelection(prefs.getBoolean(bundleId, JDIDebugModel.PREF_FILTER_BREAKPOINTS_FROM_UNRELATED_SOURCES, true, null));
 		fAdvancedSourcelookup.setSelection(prefs.getBoolean(bundleId, JDIDebugPlugin.PREF_ENABLE_ADVANCED_SOURCELOOKUP, true, null));
 
 		bundleId = LaunchingPlugin.ID_PLUGIN;
-		fConnectionTimeoutText.setStringValue(new Integer(prefs.getInt(bundleId, JavaRuntime.PREF_CONNECT_TIMEOUT, JavaRuntime.DEF_CONNECT_TIMEOUT, null)).toString());
+		fConnectionTimeoutText.setStringValue(Integer.valueOf(prefs.getInt(bundleId, JavaRuntime.PREF_CONNECT_TIMEOUT, JavaRuntime.DEF_CONNECT_TIMEOUT, null)).toString());
 		fOnlyIncludeExportedEntries.setSelection(prefs.getBoolean(bundleId, JavaRuntime.PREF_ONLY_INCLUDE_EXPORTED_CLASSPATH_ENTRIES, false, null));
 	}
 

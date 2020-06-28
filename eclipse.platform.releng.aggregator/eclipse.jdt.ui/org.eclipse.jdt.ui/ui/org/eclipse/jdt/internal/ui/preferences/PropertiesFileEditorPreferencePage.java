@@ -387,8 +387,8 @@ public class PropertiesFileEditorPreferencePage extends PreferencePage implement
 
 		ArrayList<OverlayKey> overlayKeys= new ArrayList<>();
 
-		for (int i= 0; i < fSyntaxColorListModel.length; i++) {
-			String colorKey= fSyntaxColorListModel[i][1];
+		for (String[] c : fSyntaxColorListModel) {
+			String colorKey= c[1];
 			overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.STRING, colorKey));
 			overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.BOOLEAN, colorKey + BOLD));
 			overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.BOOLEAN, colorKey + ITALIC));
@@ -650,8 +650,8 @@ public class PropertiesFileEditorPreferencePage extends PreferencePage implement
 
 		initializeFields();
 
-		for (int i= 0, n= fSyntaxColorListModel.length; i < n; i++)
-			fHighlightingColorList.add(new HighlightingColorListItem (fSyntaxColorListModel[i][0], fSyntaxColorListModel[i][1], fSyntaxColorListModel[i][1] + BOLD, fSyntaxColorListModel[i][1] + ITALIC, fSyntaxColorListModel[i][1] + STRIKETHROUGH, fSyntaxColorListModel[i][1] + UNDERLINE, null));
+		for (String[] syntaxColor : fSyntaxColorListModel)
+			fHighlightingColorList.add(new HighlightingColorListItem (syntaxColor[0], syntaxColor[1], syntaxColor[1] + BOLD, syntaxColor[1] + ITALIC, syntaxColor[1] + STRIKETHROUGH, syntaxColor[1] + UNDERLINE, null));
 
 		fHighlightingColorListViewer.setInput(fHighlightingColorList);
 		fHighlightingColorListViewer.setSelection(new StructuredSelection(fHighlightingColorListViewer.getElementAt(0)));
@@ -714,7 +714,7 @@ public class PropertiesFileEditorPreferencePage extends PreferencePage implement
 
 	private String loadPreviewContentFromFile(String filename) {
 		String line;
-		String separator= System.getProperty("line.separator"); //$NON-NLS-1$
+		String separator= System.lineSeparator();
 		StringBuilder buffer= new StringBuilder(512);
 		BufferedReader reader= null;
 		try {

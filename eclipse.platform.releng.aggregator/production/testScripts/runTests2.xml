@@ -5,7 +5,7 @@
 
   <target
     name="init"
-    depends="initWorkspace, initDownloadHosts, initBuildId, initBuildType, initBasicDirectories, initStreamSpecificVariables, initTargetPlatform, initPlatformSpecificProperties, initCurrentUpdateSite, initconfigure.team.cvs.test,setJavaMajorVersion"
+    depends="initWorkspace, initDownloadHosts, initBuildId, initBuildType, initBasicDirectories, initStreamSpecificVariables, initTargetPlatform, initPlatformSpecificProperties, initCurrentUpdateSite,setJavaMajorVersion"
     unless="runTest2Initialized">
 
     <property
@@ -28,7 +28,7 @@
     </condition>
     <property
       name="buildURL"
-      value="http://${DOWNLOAD_HOST}/eclipse/downloads/${dropsDirSegment}/${buildId}" />
+      value="https://${DOWNLOAD_HOST}/eclipse/downloads/${dropsDirSegment}/${buildId}" />
 
     <!-- if 'baselinePerf' is specified, need to it for "buildId", plus adjust
       URL to it, not what we just built. Only "tests" always get buildURL -->
@@ -50,9 +50,6 @@
       else="${buildURL}">
       <istrue value="${baselinePerf}" />
     </condition>
-    <property
-      name="eclipse.perf.dbloc"
-      value="${eclipse.perf.dbloc.value}" />
     <!-- TODO: Do we need "buildID" coded somewhere, to know WHICH build to
       match with? Or, else will take large number of "baselines" averaged? -->
 
@@ -80,8 +77,8 @@
     <!-- frameworkperfargs is used by library.xml ... probably an easier way? -->
     <condition
       property="frameworkperfargs"
-      value="-Declipse.perf.dbloc=${eclipse.perf.dbloc} -Declipse.perf.config=${eclipse.perf.config} -Declipse.perf.assertAgainst=${eclipse.perf.assertAgainst}"
-      else="-Declipse.perf.dbloc=${eclipse.perf.dbloc} -Declipse.perf.config=${eclipse.perf.config}">
+      value="-DInternalWriteRawPerformanceData=${eclipse.perf.samples.out} -Declipse.perf.config=${eclipse.perf.config} -Declipse.perf.assertAgainst=${eclipse.perf.assertAgainst}"
+      else="-DInternalWriteRawPerformanceData=${eclipse.perf.samples.out} -Declipse.perf.config=${eclipse.perf.config}">
       <isset property="eclipse.perf.assertAgainst" />
     </condition>
     <echo message="setRuntimeArchive os ${os} ws ${ws} arch ${arch}" />
@@ -160,16 +157,16 @@
     unless="skipInstall">
     <get
       verbose="${selectiveVerbose}"
-      src="${archiveLocation}/eclipse-SDK-${buildIdToUse}-linux-gtk-x86_64.tar.gz"
-      dest="${executionDir}/eclipse-SDK-${buildIdToUse}-linux-gtk-x86_64.tar.gz" />
+      src="${archiveLocation}/eclipse-SDK-${buildIdToUse}-linux-gtk-${osgi.arch}.tar.gz"
+      dest="${executionDir}/eclipse-SDK-${buildIdToUse}-linux-gtk-${osgi.arch}.tar.gz" />
     <get
       verbose="${selectiveVerbose}"
-      src="${archiveLocation}/eclipse-platform-${buildIdToUse}-linux-gtk-x86_64.tar.gz"
-      dest="${executionDir}/eclipse-platform-${buildIdToUse}-linux-gtk-x86_64.tar.gz" />
+      src="${archiveLocation}/eclipse-platform-${buildIdToUse}-linux-gtk-${osgi.arch}.tar.gz"
+      dest="${executionDir}/eclipse-platform-${buildIdToUse}-linux-gtk-${osgi.arch}.tar.gz" />
     <get
       verbose="${selectiveVerbose}"
-      src="${previousReleaseLocation}/eclipse-platform-${previousReleaseVersion}-linux-gtk-x86_64.tar.gz"
-      dest="${platformLocation}/eclipse-platform-${previousReleaseVersion}-linux-gtk-x86_64.tar.gz" />
+      src="${previousReleaseLocation}/eclipse-platform-${previousReleaseVersion}-linux-gtk-${osgi.arch}.tar.gz"
+      dest="${platformLocation}/eclipse-platform-${previousReleaseVersion}-linux-gtk-${osgi.arch}.tar.gz" />
   </target>
 
   <target
@@ -191,67 +188,11 @@
   </target>
 
   <target
-    name="initconfigure.team.cvs.test"
-    depends="computeExpectedLocation,getcvstestProperties" />
-
-  <target name="computeExpectedLocation">
-    <condition
-      property="cvstest.properties"
-      value="/shared/eclipse/buildtests/cvstest.properties">
-      <and>
-        <os family="unix" />
-        <not>
-          <os family="mac" />
-        </not>
-      </and>
-    </condition>
-    <condition
-      property="cvstest.properties"
-      value="c:\users\hudsonbuild\cvstest.properties">
-      <os family="windows" />
-    </condition>
-    <condition
-      property="cvstest.properties"
-      value="/Users/hudsonbuild/cvstest.properties">
-      <os family="mac" />
-    </condition>
-  </target>
-
-  <target
-    name="getcvstestProperties"
-    if="cvsPropertiesAvailable"
-    depends="computeExpectedLocation,checkCVSPropExists,logNoExistence"
-    unless="cvstestPropertiesInitialized">
-
-    <echo message="cvstest.properties file: ${cvstest.properties}" />
-    <property file="${cvstest.properties}" />
-    <property
-      name="cvstestPropertiesInitialized"
-      value="true" />
-
-  </target>
-
-  <target
-    name="checkCVSPropExists"
-    depends="computeExpectedLocation">
-    <condition property="cvsPropertiesAvailable">
-      <available file="${cvstest.properties}" />
-    </condition>
-  </target>
-  <target
-    name="logNoExistence"
-    depends="checkCVSPropExists"
-    unless="cvsPropertiesAvailable">
-    <echo message="cvs properties file was not found in this environment. " />
-    <echo message="   expected file: ${cvstest.properties} " />
-  </target>
-
-  <target
     name="initTargetPlatform"
     unless="testPlatform">
     <condition
       property="testPlatform"
-      value="linuxjava12">
+      value="linuxjava14">
       <and>
         <equals
           arg1="${osgi.os}"
@@ -259,30 +200,17 @@
         <equals
           arg1="${osgi.ws}"
           arg2="gtk" />
-        <equals
-          arg1="${osgi.arch}"
-          arg2="x86_64" />
-        <equals
-          arg1="${jvm.version}"
-          arg2="java12" />
-      </and>
-    </condition>
-    <condition
-      property="testPlatform"
-      value="linuxjava10">
-      <and>
-        <equals
-          arg1="${osgi.os}"
-          arg2="linux" />
-        <equals
-          arg1="${osgi.ws}"
-          arg2="gtk" />
-        <equals
-          arg1="${osgi.arch}"
-          arg2="x86_64" />
+        <or>
+        	<equals
+          		arg1="${osgi.arch}"
+          		arg2="x86_64" />
+        	<equals
+          		arg1="${osgi.arch}"
+          		arg2="ppc64le" />
+        </or>
         <equals
           arg1="${jvm.version}"
-          arg2="java10" />
+          arg2="java14" />
       </and>
     </condition>
     <condition
@@ -326,24 +254,14 @@
         <equals
           arg1="${osgi.ws}"
           arg2="gtk" />
-        <equals
-          arg1="${osgi.arch}"
-          arg2="x86_64" />
-      </and>
-    </condition>
-    <condition
-      property="testPlatform"
-      value="linux32">
-      <and>
-        <equals
-          arg1="${osgi.os}"
-          arg2="linux" />
-        <equals
-          arg1="${osgi.ws}"
-          arg2="gtk" />
-        <equals
-          arg1="${osgi.arch}"
-          arg2="x86" />
+        <or>
+        	<equals
+          		arg1="${osgi.arch}"
+          		arg2="x86_64" />
+        	<equals
+          		arg1="${osgi.arch}"
+          		arg2="ppc64le" />
+        </or>
       </and>
     </condition>
     <condition
@@ -359,21 +277,6 @@
         <equals
           arg1="${osgi.arch}"
           arg2="x86_64" />
-      </and>
-    </condition>
-    <condition
-      property="testPlatform"
-      value="macmini">
-      <and>
-        <equals
-          arg1="${osgi.os}"
-          arg2="macosx" />
-        <equals
-          arg1="${osgi.ws}"
-          arg2="cocoa" />
-        <equals
-          arg1="${osgi.arch}"
-          arg2="x86" />
       </and>
     </condition>
     <echo message="[DEBUG] in runTest2.xml: os ws arch ${osgi.os} ${osgi.ws} ${osgi.arch}" />
@@ -420,21 +323,7 @@
       value="getlinzips">
       <equals
         arg1="${testPlatform}"
-        arg2="linuxjava12" />
-    </condition>
-    <condition
-      property="getArtifacts"
-      value="getlinzips">
-      <equals
-        arg1="${testPlatform}"
-        arg2="linuxjava10" />
-    </condition>
-    <condition
-      property="getArtifacts"
-      value="getlinzips32">
-      <equals
-        arg1="${testPlatform}"
-        arg2="linux32" />
+        arg2="linuxjava14" />
     </condition>
 
     <condition
@@ -579,16 +468,12 @@
     <printProperty property="javaMajorVersion" />
     <printProperty property="testedPlatform" />
     <printProperty property="testedPlatformConfig" />
+    <printProperty property="eclipse.perf.samples.out" />
     <printProperty property="eclipse.perf.dbloc" />
     <printProperty property="eclipse.perf.config" />
     <printProperty property="eclipse.perf.assertAgainst" />
     <printProperty property="currentUpdateSite" />
 
-    <!-- The following will leave pw in file, which is not a lot different
-      that leave them printed in log, as we also do. But, could be improved by
-      just leaving filename in properties, and reading them in at the time needed
-      in test.xml. -->
-    <printProperty property="cvstest.properties" />
   </target>
 
   <target
@@ -606,7 +491,7 @@
     unless="currentUpdateSite">
     <property
       name="currentUpdateSite"
-      value="http://${DOWNLOAD_HOST}/eclipse/updates/${updateSiteSegment}-${buildType}-builds/${buildId}" />
+      value="https://${DOWNLOAD_HOST}/eclipse/updates/${updateSiteSegment}-${buildType}-builds/${buildId}" />
   </target>
   <target
     name="checkInstallDir"
@@ -927,6 +812,12 @@
       value="${results}/${testedPlatform}/directorLogs" />
     <mkdir dir="${directorLogs}" />
     <echo message="directorLogs: ${directorLogs}" />
+    
+    <property
+      name="eclipse.perf.samples.out"
+      value="${results}/${testedPlatform}-perf-samples.dat" />
+    <echo message="eclipse.perf.samples.out: ${eclipse.perf.samples.out}" />
+    
 
     <!-- this directory, with some sort files are created during unit tests
       ... need to find where to disable/enable JaCoCo -->
@@ -1113,6 +1004,9 @@
     <printPHPProperty
       phpvar="TEST_TARGET"
       value="test.target" />
+    <printPHPProperty
+      phpvar="ECLIPSE_PERF_SAMPLES_OUT"
+      value="eclipse.perf.samples.out" />
     <printPHPProperty
       phpvar="ECLIPSE_PERF_DBLOC"
       value="eclipse.perf.dbloc" />

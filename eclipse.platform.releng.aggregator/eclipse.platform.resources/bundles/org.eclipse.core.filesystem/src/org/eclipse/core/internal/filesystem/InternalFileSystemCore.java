@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -28,7 +28,7 @@ public class InternalFileSystemCore implements IRegistryChangeListener {
 	private static final InternalFileSystemCore INSTANCE = new InternalFileSystemCore();
 
 	/**
-	 * A map (String -> (IConfigurationElement or IFileSystem)) mapping URI
+	 * A map (String -&gt; (IConfigurationElement or IFileSystem)) mapping URI
 	 * scheme to the file system for that scheme.  If the corresponding file
 	 * system has never been accessed, then the map contains the configuration
 	 * element for the extension.  Once the file system has been created, the
@@ -53,11 +53,11 @@ public class InternalFileSystemCore implements IRegistryChangeListener {
 	}
 
 	/**
-	 * Implements the method EFS#getFileSystem(String)
-	 * 
+	 * Implements the method {@link EFS#getFileSystem(String)}
+	 *
 	 * @param scheme The URI scheme of the file system
 	 * @return The file system
-	 * @throws CoreException
+	 * @throws CoreException on filesystem related errors
 	 */
 	public IFileSystem getFileSystem(String scheme) throws CoreException {
 		if (scheme == null)
@@ -83,8 +83,8 @@ public class InternalFileSystemCore implements IRegistryChangeListener {
 	}
 
 	/**
-	 * Implements the method EFS#getLocalFileSystem()
-	 * 
+	 * Implements the method {@link EFS#getLocalFileSystem()}
+	 *
 	 * @return The local file system
 	 */
 	public IFileSystem getLocalFileSystem() {
@@ -97,11 +97,11 @@ public class InternalFileSystemCore implements IRegistryChangeListener {
 	}
 
 	/**
-	 * Implements the method EFS#getStore(URI)
-	 * 
+	 * Implements the method {@link EFS#getStore(URI)}
+	 *
 	 * @param uri The URI of the store to retrieve
 	 * @return The file store corresponding to the given URI
-	 * @throws CoreException
+	 * @throws CoreException on filesystem related errors or missing URI scheme
 	 */
 	public IFileStore getStore(URI uri) throws CoreException {
 		final String scheme = uri.getScheme();
@@ -119,13 +119,14 @@ public class InternalFileSystemCore implements IRegistryChangeListener {
 			fileSystems = new HashMap<>();
 			IExtensionPoint point = RegistryFactory.getRegistry().getExtensionPoint(EFS.PI_FILE_SYSTEM, EFS.PT_FILE_SYSTEMS);
 			IExtension[] extensions = point.getExtensions();
-			for (int i = 0; i < extensions.length; i++) {
-				IConfigurationElement[] elements = extensions[i].getConfigurationElements();
-				for (int j = 0; j < elements.length; j++) {
-					if ("filesystem".equals(elements[j].getName())) { //$NON-NLS-1$
-						String scheme = elements[j].getAttribute("scheme"); //$NON-NLS-1$
-						if (scheme != null)
-							fileSystems.put(scheme, elements[j]);
+			for (IExtension extension : extensions) {
+				IConfigurationElement[] elements = extension.getConfigurationElements();
+				for (IConfigurationElement element : elements) {
+					if ("filesystem".equals(element.getName())) { //$NON-NLS-1$
+						String scheme = element.getAttribute("scheme"); //$NON-NLS-1$
+						if (scheme != null) {
+							fileSystems.put(scheme, element);
+						}
 					}
 				}
 			}

@@ -12,6 +12,7 @@
  *     IBM Corporation - initial API and implementation
  *     Tom Hofmann, Perspectix AG - https://bugs.eclipse.org/bugs/show_bug.cgi?id=291750
  *     Asma Smaoui - CEA LIST - https://bugs.eclipse.org/bugs/show_bug.cgi?id=517379
+ *     Christoph Läubrich - Bug 552773 - Simplify logging in platform code base
  *******************************************************************************/
 package org.eclipse.ui.internal.cheatsheets.views;
 
@@ -231,7 +232,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 			//set that item as complete.
 			if (markAsCompleted) {
 				if (!currentItem.isCompleted()) {
-				    currentItem.setComplete();
+					currentItem.setComplete();
 				}
 				/* LP-item event */
 				// fireManagerItemEvent(ICheatSheetItemEvent.ITEM_COMPLETED, currentItem);
@@ -260,7 +261,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 			FormToolkit.ensureVisible(currentItem.getMainItemComposite());
 		} else if (indexNextItem == viewItemList.size()) {
 			if (!currentItem.isCompletionMessageExpanded()) { // The event will already have been fired
-			    getManager().fireEvent(ICheatSheetEvent.CHEATSHEET_COMPLETED);
+				getManager().fireEvent(ICheatSheetEvent.CHEATSHEET_COMPLETED);
 			}
 			showIntroItem();
 		}
@@ -341,6 +342,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 		return false;
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private boolean loadState() {
 		try {
 			Properties props = stateManager.getProperties();
@@ -370,8 +372,8 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 			Hashtable<String, String> skippedSubItems = (Hashtable<String, String>) props
 					.get(IParserTags.SUBITEMSKIPPED);
 
-			ArrayList completedSubItemsItemList = new ArrayList();
-			ArrayList skippedSubItemsItemList = new ArrayList();
+			ArrayList completedSubItemsItemList = new ArrayList<>();
+			ArrayList skippedSubItemsItemList = new ArrayList<>();
 
 			Enumeration e = completedSubItems.keys();
 			while (e.hasMoreElements())
@@ -417,10 +419,10 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 					} else {
 						item.setButtonsVisible(true);
 						if (i >currentItemNum || item.isCompleted()) {
-						    item.setCompletionMessageExpanded(i + 1 >= viewItemList.size());
-					    } else {
+							item.setCompletionMessageExpanded(i + 1 >= viewItemList.size());
+						} else {
 							item.setCompletionMessageCollapsed();
-					    }
+						}
 					}
 					if (expandRestoreList.contains(Integer.toString(i))) {
 						item.setCollapsed();
@@ -432,7 +434,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 							CoreItem coreitemws = (CoreItem) item;
 							ArrayList<SubItemCompositeHolder> subItemCompositeHolders = coreitemws
 									.getListOfSubItemCompositeHolders();
-		                    if (subItemCompositeHolders != null) {
+							if (subItemCompositeHolders != null) {
 								while (st.hasMoreTokens()) {
 									String token = st.nextToken();
 									subItemCompositeHolders.get(Integer.parseInt(token)).setCompleted(true);
@@ -444,7 +446,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 									}
 
 								}
-		                    }
+							}
 						}
 					}
 					if (skippedSubItemsItemList.contains(Integer.toString(i))) {
@@ -513,8 +515,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 			// Log the exception
 			String stateFile = saveHelper.getStateFile(currentID).toOSString();
 			String message = NLS.bind(Messages.ERROR_APPLYING_STATE_DATA_LOG, (new Object[] {stateFile, currentID}));
-			IStatus status = new Status(IStatus.ERROR, ICheatSheetResource.CHEAT_SHEET_PLUGIN_ID, IStatus.OK, message, e);
-			CheatSheetPlugin.getPlugin().getLog().log(status);
+			CheatSheetPlugin.getPlugin().getLog().error(message, e);
 
 			// Set the currentID to null so it is not saved during internalDispose()
 			currentID = null;
@@ -611,6 +612,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 	 * </p>
 	 * <p>
 	 * For implementors this is a multi-step process:
+	 * </p>
 	 * <ol>
 	 *   <li>Create one or more controls within the parent.</li>
 	 *   <li>Set the parent layout as needed.</li>
@@ -619,7 +621,6 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 	 *   <li>Register a selection provider with the <code>ISelectionService</code>
 	 *     (optional). </li>
 	 * </ol>
-	 * </p>
 	 *
 	 * @param parent the parent control
 	 */
@@ -859,10 +860,10 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 
 		control.setRedraw(false);
 		if (model instanceof CheatSheet) {
-		    CheatSheet cheatSheetModel = (CheatSheet)model;
+			CheatSheet cheatSheetModel = (CheatSheet)model;
 
-		    if (isRestricted && cheatSheetModel.isContainsCommandOrAction()) {
-		    	boolean isOK = MessageDialog.openConfirm(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+			if (isRestricted && cheatSheetModel.isContainsCommandOrAction()) {
+				boolean isOK = MessageDialog.openConfirm(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
 						Messages.CHEATSHEET_FROM_URL_WITH_EXEC_TITLE,
 						Messages.CHEATSHEET_FROM_URL_WITH_EXEC);
 
@@ -871,22 +872,22 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 					showStartPage();
 					return true;
 				}
-		    }
+			}
 
 			currentPage = new CheatSheetPage(cheatSheetModel, viewItemList, this);
-		    setCollapseExpandButtonEnabled(true);
+			setCollapseExpandButtonEnabled(true);
 		} else if (model instanceof CompositeCheatSheetModel) {
 			CompositeCheatSheetModel compositeCheatSheetModel = ((CompositeCheatSheetModel)model);
 			compositeCheatSheetModel.setId(currentID);
 			currentPage = new CompositeCheatSheetPage(compositeCheatSheetModel, stateManager);
 			compositeCheatSheetModel.setCheatSheetManager(initManager());
 			setCollapseExpandButtonEnabled(false);
-	    }
-	    CheatSheetStopWatch.printLapTime("CheatSheetViewer.initCheatSheetView()", "Time in CheatSheetViewer.initCheatSheetView() after CheatSheetPage() call: "); //$NON-NLS-1$ //$NON-NLS-2$
-	    currentPage.createPart(control);
-	    CheatSheetStopWatch.printLapTime("CheatSheetViewer.initCheatSheetView()", "Time in CheatSheetViewer.initCheatSheetView() after CheatSheetPage.createPart() call: "); //$NON-NLS-1$ //$NON-NLS-2$
+		}
+		CheatSheetStopWatch.printLapTime("CheatSheetViewer.initCheatSheetView()", "Time in CheatSheetViewer.initCheatSheetView() after CheatSheetPage() call: "); //$NON-NLS-1$ //$NON-NLS-2$
+		currentPage.createPart(control);
+		CheatSheetStopWatch.printLapTime("CheatSheetViewer.initCheatSheetView()", "Time in CheatSheetViewer.initCheatSheetView() after CheatSheetPage.createPart() call: "); //$NON-NLS-1$ //$NON-NLS-2$
 
-	    if (model instanceof CheatSheet) {
+		if (model instanceof CheatSheet) {
 			CheatSheetStopWatch.printLapTime("CheatSheetViewer.initCheatSheetView()", "Time in CheatSheetViewer.initCheatSheetView() after fireEvent() call: "); //$NON-NLS-1$ //$NON-NLS-2$
 
 			if(!loadState()) {
@@ -897,7 +898,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 			}
 
 			getManager().fireEvent(ICheatSheetEvent.CHEATSHEET_OPENED);
-	    }
+		}
 		CheatSheetStopWatch.printLapTime("CheatSheetViewer.initCheatSheetView()", "Time in CheatSheetViewer.initCheatSheetView() after checkSavedState() call: "); //$NON-NLS-1$ //$NON-NLS-2$
 
 		currentPage.initialized();
@@ -908,7 +909,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 		if (currentItem != null && !currentItem.isCompleted())
 			currentItem.setFocus();
 		CheatSheetStopWatch.printLapTime("CheatSheetViewer.initCheatSheetView()", "Time in CheatSheetViewer.initCheatSheetView() at end of method: "); //$NON-NLS-1$ //$NON-NLS-2$
-	    return true;
+		return true;
 	}
 
 	private void internalDispose() {
@@ -1043,9 +1044,9 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 				if (status.isOK() && dialogReturnCode != Window.CANCEL) {
 					coreItem.setRestartImage();
 					if (!coreItem.hasConfirm()) {
-					    //set that item as complete.
-					    advanceItem(link, true);
-					    saveCurrentSheet();
+						//set that item as complete.
+						advanceItem(link, true);
+						saveCurrentSheet();
 					}
 				}
 			}
@@ -1089,10 +1090,10 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 		if(currentID != null) {
 			if (currentPage instanceof CheatSheetPage) {
 				Properties properties = saveHelper.createProperties(currentItemNum, viewItemList, getExpandRestoreActionState(), expandRestoreList, currentID, restorePath);
-			    IStatus status = stateManager.saveState(properties, getManager());
-			    if (!status.isOK()) {
-			    	CheatSheetPlugin.getPlugin().getLog().log(status);
-			    }
+				IStatus status = stateManager.saveState(properties, getManager());
+				if (!status.isOK()) {
+					CheatSheetPlugin.getPlugin().getLog().log(status);
+				}
 			} else if (currentPage instanceof CompositeCheatSheetPage) {
 				((CompositeCheatSheetPage)currentPage).saveState();
 			}
@@ -1174,7 +1175,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 				errorMessage = NLS.bind(Messages.ERROR_OPENING_FILE_IN_PARSER, (new Object[] {element.getHref()}));
 			}
 		}
-	    String pluginId = bundle != null ? bundle.getSymbolicName() : null;
+		String pluginId = bundle != null ? bundle.getSymbolicName() : null;
 		parserInput = new ParserInput(contentURL, pluginId, errorMessage);
 	}
 
@@ -1268,7 +1269,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 		setContent(element, inputStateManager);
 	}
 
-    /*package*/ void toggleExpandRestore() {
+	/*package*/ void toggleExpandRestore() {
 		if(expandRestoreAction == null)
 			return;
 
@@ -1321,7 +1322,7 @@ public class CheatSheetViewer implements ICheatSheetViewer, IMenuContributor {
 	public void saveState(IMemento memento) {
 		if (currentPage instanceof CheatSheetPage) {
 			Properties properties = saveHelper.createProperties(currentItemNum, viewItemList, getExpandRestoreActionState(), expandRestoreList, currentID, restorePath);
-		    saveHelper.saveToMemento(properties, getManager(), memento);
+			saveHelper.saveToMemento(properties, getManager(), memento);
 		}
 	}
 

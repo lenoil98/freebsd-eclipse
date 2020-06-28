@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -61,12 +61,17 @@ import org.eclipse.ui.tests.commands.ActiveContextExpression;
 import org.eclipse.ui.tests.harness.util.UITestCase;
 import org.junit.Assume;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.junit.runners.MethodSorters;
 
 /**
  * @since 3.3
  *
  */
+@RunWith(JUnit4.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class EvaluationServiceTest extends UITestCase {
 	/**
@@ -75,11 +80,8 @@ public class EvaluationServiceTest extends UITestCase {
 	private static final String CHECK_HANDLER_ID = "org.eclipse.ui.tests.services.checkHandler";
 	private static final String CONTEXT_ID1 = "org.eclipse.ui.command.contexts.evaluationService1";
 
-	/**
-	 * @param testName
-	 */
-	public EvaluationServiceTest(String testName) {
-		super(testName);
+	public EvaluationServiceTest() {
+		super(EvaluationServiceTest.class.getName());
 	}
 
 	private static class MyEval implements IPropertyChangeListener {
@@ -96,6 +98,7 @@ public class EvaluationServiceTest extends UITestCase {
 		}
 	}
 
+	@Test
 	public void testBug334524() throws Exception {
 		IPerspectiveRegistry registry = PlatformUI.getWorkbench().getPerspectiveRegistry();
 		IPerspectiveDescriptor resourecePerspective = registry.findPerspectiveWithId("org.eclipse.ui.resourcePerspective");
@@ -130,6 +133,7 @@ public class EvaluationServiceTest extends UITestCase {
 
 	}
 
+	@Test
 	public void testBasicService() throws Exception {
 		IWorkbenchWindow window = openTestWindow();
 		waitForJobs(500, 5000);
@@ -199,6 +203,7 @@ public class EvaluationServiceTest extends UITestCase {
 		}
 	}
 
+	@Test
 	public void testTwoEvaluations() throws Exception {
 		IWorkbenchWindow window = openTestWindow();
 		boolean activeShell = forceActive(window.getShell());
@@ -281,8 +286,9 @@ public class EvaluationServiceTest extends UITestCase {
 		}
 	}
 
-	// TODO fix testRestriction
-	public void TODOtestRestriction() {
+	@Test
+	@Ignore // TODO fix testRestriction
+	public void testRestriction() {
 		IWorkbenchWindow window = openTestWindow();
 		IEvaluationService evaluationService = window
 				.getService(IEvaluationService.class);
@@ -297,29 +303,21 @@ public class EvaluationServiceTest extends UITestCase {
 		final boolean[] propertyChanged = new boolean[1];
 		final boolean[] propertyShouldChange = new boolean[1];
 
-		IPropertyChangeListener propertyChangeListener = new IPropertyChangeListener() {
-
-			@Override
-			public void propertyChange(PropertyChangeEvent event) {
-				if (event.getProperty().equals("foo")) {
-					propertyChanged[0] = true;
-				}
-
+		IPropertyChangeListener propertyChangeListener = event -> {
+			if (event.getProperty().equals("foo")) {
+				propertyChanged[0] = true;
 			}
+
 		};
 		IEvaluationReference ref = evaluationService.addEvaluationListener(
 				expression, propertyChangeListener, "foo");
 		((WorkbenchWindow)window).getMenuRestrictions().add(ref);
 
-		IPropertyChangeListener propertyShouldChangeListener = new IPropertyChangeListener() {
-
-			@Override
-			public void propertyChange(PropertyChangeEvent event) {
-				if (event.getProperty().equals("foo")) {
-					propertyShouldChange[0] = true;
-				}
-
+		IPropertyChangeListener propertyShouldChangeListener = event -> {
+			if (event.getProperty().equals("foo")) {
+				propertyShouldChange[0] = true;
 			}
+
 		};
 		evaluationService.addEvaluationListener(expression,
 				propertyShouldChangeListener, "foo");
@@ -361,8 +359,9 @@ public class EvaluationServiceTest extends UITestCase {
 		assertTrue(propertyShouldChange[0]);
 	}
 
-	// TODO fix testScopedService
-	public void TODOtestScopedService() throws Exception {
+	@Test
+	@Ignore // TODO fix testScopedService
+	public void testScopedService() throws Exception {
 		IWorkbenchWindow window = openTestWindow();
 		IEvaluationService service = window
 				.getService(IEvaluationService.class);
@@ -422,6 +421,7 @@ public class EvaluationServiceTest extends UITestCase {
 		}
 	}
 
+	@Test
 	public void testSourceProvider() throws Exception {
 		IWorkbenchWindow window = openTestWindow();
 		IEvaluationService service = window
@@ -454,6 +454,7 @@ public class EvaluationServiceTest extends UITestCase {
 		assertEquals(3, listener.count);
 	}
 
+	@Test
 	@SuppressWarnings("unchecked")
 	public void testSourceProviderPriority() throws Exception {
 		IHandlerService hs = getWorkbench().getService(IHandlerService.class);
@@ -461,29 +462,35 @@ public class EvaluationServiceTest extends UITestCase {
 		Collection<IHandlerActivation> activations = null;
 		// fill in a set of activations
 		String hsClassName = hs.getClass().getName();
-		if (hsClassName.equals("org.eclipse.ui.internal.handlers.HandlerService")) {
-			Field hpField = hs.getClass().getDeclaredField("handlerPersistence");
-			hpField.setAccessible(true);
-
-			HandlerPersistence hp = (HandlerPersistence) hpField.get(hs);
-
-			Field activationsField = hp.getClass().getDeclaredField("handlerActivations");
-			activationsField.setAccessible(true);
-			activations = (Collection<IHandlerActivation>) activationsField.get(hp);
-			assertNotNull(activations);
-		} else if (hsClassName.equals("org.eclipse.ui.internal.handlers.LegacyHandlerService")) {
-			Field hsField = hs.getClass().getDeclaredField("LEGACY_H_ID");
-			String LEGACY_H_ID = (String) hsField.get(null);
-			Field hpField = hs.getClass().getDeclaredField("eclipseContext");
-			hpField.setAccessible(true);
-			Object eclipseContext = hpField.get(hs);
-			assertNotNull(eclipseContext);
-			Method getMethod = eclipseContext.getClass().getDeclaredMethod("get", String.class);
-			activations = (Collection<IHandlerActivation>) getMethod.invoke(eclipseContext,
-					LEGACY_H_ID + CHECK_HANDLER_ID);
-			assertNotNull(activations);
-		} else {
+		switch (hsClassName) {
+		case "org.eclipse.ui.internal.handlers.HandlerService":
+			{
+				Field hpField = hs.getClass().getDeclaredField("handlerPersistence");
+				hpField.setAccessible(true);
+				HandlerPersistence hp = (HandlerPersistence) hpField.get(hs);
+				Field activationsField = hp.getClass().getDeclaredField("handlerActivations");
+				activationsField.setAccessible(true);
+				activations = (Collection<IHandlerActivation>) activationsField.get(hp);
+				assertNotNull(activations);
+				break;
+			}
+		case "org.eclipse.ui.internal.handlers.LegacyHandlerService":
+			{
+				Field hsField = hs.getClass().getDeclaredField("LEGACY_H_ID");
+				String LEGACY_H_ID = (String) hsField.get(null);
+				Field hpField = hs.getClass().getDeclaredField("eclipseContext");
+				hpField.setAccessible(true);
+				Object eclipseContext = hpField.get(hs);
+				assertNotNull(eclipseContext);
+				Method getMethod = eclipseContext.getClass().getDeclaredMethod("get", String.class);
+				activations = (Collection<IHandlerActivation>) getMethod.invoke(eclipseContext,
+						LEGACY_H_ID + CHECK_HANDLER_ID);
+				assertNotNull(activations);
+				break;
+			}
+		default:
 			fail("Incorrect handler service: " + hsClassName);
+			break;
 		}
 
 		IHandlerActivation activation = null;
@@ -501,6 +508,7 @@ public class EvaluationServiceTest extends UITestCase {
 		assertEquals(ISources.ACTIVE_CONTEXT<<1, activation.getSourcePriority());
 	}
 
+	@Test
 	public void testPropertyChange() throws Exception {
 		IWorkbenchWindow window = openTestWindow();
 		IEvaluationService service = window
@@ -538,6 +546,7 @@ public class EvaluationServiceTest extends UITestCase {
 		assertEquals(2, listener.count);
 	}
 
+	@Test
 	public void testPlatformProperty() throws Exception {
 		IEvaluationService evaluationService = PlatformUI
 				.getWorkbench().getService(IEvaluationService.class);
@@ -550,7 +559,9 @@ public class EvaluationServiceTest extends UITestCase {
 		assertEquals(EvaluationResult.TRUE, result);
 	}
 
-	public void XtestSystemProperty() throws Exception {
+	@Test
+	@Ignore
+	public void testSystemProperty() throws Exception {
 		// this is not added, as the ability to test system properties with
 		// no '.' seems unhelpful
 		System.setProperty("isHere", "true");
@@ -598,6 +609,7 @@ public class EvaluationServiceTest extends UITestCase {
 		}
 	}
 
+	@Test
 	public void testWorkbenchProvider() throws Exception {
 
 		IWorkbenchWindow window = openTestWindow();
@@ -618,26 +630,23 @@ public class EvaluationServiceTest extends UITestCase {
 		processEvents();
 
 		final ArrayList<PartSelection> selection = new ArrayList<>();
-		IPropertyChangeListener listener = new IPropertyChangeListener() {
-			@Override
-			public void propertyChange(PropertyChangeEvent event) {
-				IEvaluationContext state = service.getCurrentState();
-				try {
-					ISelection sel = null;
-					IWorkbenchPart part = null;
-					Object o = state
-							.getVariable(ISources.ACTIVE_CURRENT_SELECTION_NAME);
-					if (o instanceof ISelection) {
-						sel = (ISelection) o;
-					}
-					o = state.getVariable(ISources.ACTIVE_PART_NAME);
-					if (o instanceof IWorkbenchPart) {
-						part = (IWorkbenchPart) o;
-					}
-					selection.add(new PartSelection(sel, part));
-				} catch (Exception e) {
-					e.printStackTrace();
+		IPropertyChangeListener listener = event -> {
+			IEvaluationContext state = service.getCurrentState();
+			try {
+				ISelection sel = null;
+				IWorkbenchPart part = null;
+				Object o = state
+						.getVariable(ISources.ACTIVE_CURRENT_SELECTION_NAME);
+				if (o instanceof ISelection) {
+					sel = (ISelection) o;
 				}
+				o = state.getVariable(ISources.ACTIVE_PART_NAME);
+				if (o instanceof IWorkbenchPart) {
+					part = (IWorkbenchPart) o;
+				}
+				selection.add(new PartSelection(sel, part));
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		};
 

@@ -13,9 +13,8 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.text;
 
+import java.text.BreakIterator;
 import java.text.CharacterIterator;
-
-import com.ibm.icu.text.BreakIterator;
 
 import org.eclipse.core.runtime.Assert;
 

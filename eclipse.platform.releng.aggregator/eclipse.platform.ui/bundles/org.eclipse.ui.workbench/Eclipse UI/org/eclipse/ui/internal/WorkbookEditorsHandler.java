@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,7 +11,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Marc-Andre Laperle (Ericsson) - Bug 413278
- *     Patrik Suzzi <psuzzi@itemis.com> - Bug 497618, 368977, 504088, 506019, 486859
+ *     Patrik Suzzi <psuzzi@gmail.com> - Bug 497618, 368977, 504088, 506019, 486859, 552144
  ******************************************************************************/
 
 package org.eclipse.ui.internal;
@@ -24,20 +24,22 @@ import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.e4.ui.model.application.ui.basic.MPart;
 import org.eclipse.e4.ui.workbench.renderers.swt.StackRenderer;
-import org.eclipse.e4.ui.workbench.swt.internal.copy.SearchPattern;
+import org.eclipse.jface.viewers.BoldStylerProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.StyledCellLabelProvider;
+import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.custom.CTabItem;
-import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
+import org.eclipse.ui.dialogs.SearchPattern;
+import org.eclipse.ui.dialogs.StyledStringHighlighter;
 import org.eclipse.ui.themes.ITheme;
 
 /**
@@ -73,8 +75,7 @@ public class WorkbookEditorsHandler extends FilteredTableBaseHandler {
 	private static boolean isMruEnabled() {
 		IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode(ORG_ECLIPSE_E4_UI_WORKBENCH_RENDERERS_SWT);
 		boolean initialMRUValue = preferences.getBoolean(StackRenderer.MRU_KEY_DEFAULT, StackRenderer.MRU_DEFAULT);
-		boolean enableMRU = preferences.getBoolean(StackRenderer.MRU_KEY, initialMRUValue);
-		return enableMRU;
+		return preferences.getBoolean(StackRenderer.MRU_KEY, initialMRUValue);
 	}
 
 	@Override
@@ -111,12 +112,8 @@ public class WorkbookEditorsHandler extends FilteredTableBaseHandler {
 		if (pattern.length() == 0) {
 			searchPattern = null;
 		} else {
-			SearchPattern patternMatcher = new SearchPattern();
-			if (pattern.indexOf("*") != 0 && pattern.indexOf("?") != 0 && pattern.indexOf(".") != 0) {//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-				pattern = "*" + pattern; //$NON-NLS-1$
-			}
-			patternMatcher.setPattern(pattern);
-			searchPattern = patternMatcher;
+			searchPattern = new SearchPattern();
+			searchPattern.setPattern(pattern);
 		}
 	}
 
@@ -130,6 +127,7 @@ public class WorkbookEditorsHandler extends FilteredTableBaseHandler {
 
 		tableViewerColumn.setLabelProvider(new StyledCellLabelProvider() {
 
+			/* called once for each element in the table */
 			@Override
 			public void update(ViewerCell cell) {
 				Object element = cell.getElement();
@@ -138,15 +136,20 @@ public class WorkbookEditorsHandler extends FilteredTableBaseHandler {
 					String text = getWorkbenchPartReferenceText(ref);
 					cell.setText(text);
 					cell.setImage(ref.getTitleImage());
-					// get the model to define the style
-					MPart model = ref.getModel();
-					// build the style range
-					StyleRange style = new StyleRange();
-					style.start = 0;
-					style.length = cell.getText().length();
-					// if hidden use the bold font, if active italic
-					style.font = getFont(isHiddenEditor(model), isActiveEditor(model));
-					cell.setStyleRanges(new StyleRange[] { style });
+
+					SearchPattern matcher = WorkbookEditorsHandler.this.getMatcher();
+					if (matcher == null) {
+						cell.setStyleRanges(null);
+					} else {
+						String pattern = matcher.getPattern();
+						StyledStringHighlighter ssh = new StyledStringHighlighter();
+						StyledString ss = ssh.highlight(text, pattern,
+								new BoldStylerProvider(WorkbookEditorsHandler.this.getFont(false, true))
+										.getBoldStyler());
+						cell.setStyleRanges(ss.getStyleRanges());
+					}
+
+					cell.getControl().redraw();
 				}
 			}
 
@@ -162,17 +165,6 @@ public class WorkbookEditorsHandler extends FilteredTableBaseHandler {
 		});
 
 		ColumnViewerToolTipSupport.enableFor(tableViewerColumn.getViewer());
-	}
-
-	/** Extends generated label adding the resource path for duplicates */
-	@Override
-	protected String getWorkbenchPartReferenceText(WorkbenchPartReference ref) {
-		StringBuilder str = new StringBuilder(super.getWorkbenchPartReferenceText(ref));
-		if (ref instanceof EditorReference) {
-			str.append(" - "); //$NON-NLS-1$
-			str.append(ref.getTitleToolTip());
-		}
-		return str.toString();
 	}
 
 	/** True if the given model represents the active editor */
@@ -238,8 +230,7 @@ public class WorkbookEditorsHandler extends FilteredTableBaseHandler {
 	protected ParameterizedCommand getForwardCommand() {
 		final ICommandService commandService = window.getWorkbench().getService(ICommandService.class);
 		final Command command = commandService.getCommand(ORG_ECLIPSE_UI_WINDOW_OPEN_EDITOR_DROP_DOWN);
-		ParameterizedCommand commandF = new ParameterizedCommand(command, null);
-		return commandF;
+		return new ParameterizedCommand(command, null);
 	}
 
 	@Override

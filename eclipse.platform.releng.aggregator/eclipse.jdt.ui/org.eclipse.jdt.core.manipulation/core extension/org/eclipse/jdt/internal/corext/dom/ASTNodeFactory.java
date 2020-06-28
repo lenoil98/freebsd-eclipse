@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Red Hat Inc. - refactored to jdt.core.manipulation
+ *     Fabrice TIERCELIN - Methods to identify a signature
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.dom;
 
@@ -38,6 +39,8 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.ParenthesizedExpression;
+import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
@@ -46,6 +49,7 @@ import org.eclipse.jdt.core.dom.TypeParameter;
 import org.eclipse.jdt.core.dom.UnionType;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.TypeLocation;
@@ -55,7 +59,7 @@ import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2Core;
 /**
  * JDT-UI-internal helper methods to create new {@link ASTNode}s.
  * Complements <code>AST#new*(..)</code> and <code>ImportRewrite#add*(..)</code>.
- * 
+ *
  * see JDTUIHelperClasses
  */
 public class ASTNodeFactory {
@@ -84,6 +88,112 @@ public class ASTNodeFactory {
 
 	private ASTNodeFactory() {
 		// no instance;
+	}
+
+	/**
+	 * Parenthesizes the provided expression if its type requires it.
+	 *
+	 * @param ast The AST to create the resulting node with.
+	 * @param expression the expression to conditionally return parenthesized
+	 * @return the parenthesized expression of the provided expression to return or this expression
+	 *         itself
+	 */
+	public static Expression parenthesizeIfNeeded(AST ast, Expression expression) {
+		switch (expression.getNodeType()) {
+		case ASTNode.ANNOTATION_TYPE_DECLARATION:
+		case ASTNode.ANNOTATION_TYPE_MEMBER_DECLARATION:
+		case ASTNode.ANONYMOUS_CLASS_DECLARATION:
+		case ASTNode.ARRAY_ACCESS:
+		case ASTNode.ARRAY_CREATION:
+		case ASTNode.ARRAY_INITIALIZER:
+		case ASTNode.BOOLEAN_LITERAL:
+		case ASTNode.CHARACTER_LITERAL:
+		case ASTNode.CLASS_INSTANCE_CREATION:
+		case ASTNode.CREATION_REFERENCE:
+		case ASTNode.EXPRESSION_METHOD_REFERENCE:
+		case ASTNode.FIELD_ACCESS:
+		case ASTNode.MEMBER_REF:
+		case ASTNode.METHOD_INVOCATION:
+		case ASTNode.METHOD_REF:
+		case ASTNode.NULL_LITERAL:
+		case ASTNode.NUMBER_LITERAL:
+		case ASTNode.PARENTHESIZED_EXPRESSION:
+		case ASTNode.POSTFIX_EXPRESSION:
+		case ASTNode.PREFIX_EXPRESSION:
+		case ASTNode.QUALIFIED_NAME:
+		case ASTNode.SIMPLE_NAME:
+		case ASTNode.STRING_LITERAL:
+		case ASTNode.SUPER_FIELD_ACCESS:
+		case ASTNode.SUPER_METHOD_INVOCATION:
+		case ASTNode.SUPER_METHOD_REFERENCE:
+		case ASTNode.THIS_EXPRESSION:
+		case ASTNode.TYPE_LITERAL:
+		case ASTNode.TYPE_METHOD_REFERENCE:
+		case ASTNode.VARIABLE_DECLARATION_EXPRESSION:
+			return expression;
+
+		default:
+			return parenthesize(ast, expression);
+		}
+	}
+
+	/**
+	 * Builds a new {@link ParenthesizedExpression} instance.
+	 *
+	 * @param ast The AST to create the resulting node with.
+	 * @param expression the expression to wrap with parentheses
+	 * @return a new parenthesized expression
+	 */
+	public static ParenthesizedExpression parenthesize(AST ast, Expression expression) {
+		final ParenthesizedExpression pe= ast.newParenthesizedExpression();
+		pe.setExpression(expression);
+		return pe;
+	}
+
+	/**
+	 * Builds a new {@link PrefixExpression} instance using the not operator ('!').
+	 *
+	 * @param ast The AST to create the resulting node with.
+	 * @param expression the expression to negate
+	 * @return a new prefix expression
+	 */
+	public static Expression not(final AST ast, final Expression expression) {
+		final PrefixExpression prefixExpression= ast.newPrefixExpression();
+		prefixExpression.setOperator(PrefixExpression.Operator.NOT);
+		prefixExpression.setOperand(parenthesizeIfNeeded(ast, expression));
+		return prefixExpression;
+	}
+
+	/**
+	 * Negates the provided expression and applies the provided copy operation on
+	 * the returned expression.
+	 *
+	 * @param ast The AST to create the resulting node with.
+	 * @param rewrite the rewrite
+	 * @param expression the expression to negate
+	 * @param isMove the copy operation to perform
+	 * @return the negated expression, copied according to the copy operation
+	 */
+	public static Expression negate(final AST ast, final ASTRewrite rewrite, final Expression expression, final boolean isMove) {
+		Expression exprNoParen= ASTNodes.getUnparenthesedExpression(expression);
+
+		if (exprNoParen.getNodeType() == ASTNode.PREFIX_EXPRESSION) {
+			PrefixExpression prefixExpression= (PrefixExpression) exprNoParen;
+
+			if (ASTNodes.hasOperator(prefixExpression, PrefixExpression.Operator.NOT)) {
+				if (isMove) {
+					return (Expression) rewrite.createMoveTarget(prefixExpression.getOperand());
+				} else {
+					return (Expression) rewrite.createCopyTarget(prefixExpression.getOperand());
+				}
+			}
+		}
+
+		if (isMove) {
+			return not(ast, (Expression) rewrite.createMoveTarget(expression));
+		} else {
+			return not(ast, (Expression) rewrite.createCopyTarget(expression));
+		}
 	}
 
 	public static ASTNode newStatement(AST ast, String content) {
@@ -139,7 +249,7 @@ public class ASTNodeFactory {
 	 * Returns an {@link ArrayType} that adds one dimension to the given type node.
 	 * If the given node is already an ArrayType, then a new {@link Dimension}
 	 * without annotations is inserted at the first position.
-	 * 
+	 *
 	 * @param type the type to be wrapped
 	 * @return the array type
 	 * @since 3.10
@@ -170,13 +280,13 @@ public class ASTNodeFactory {
 	 * Returns the new type node corresponding to the type of the given declaration
 	 * including the extra dimensions. If the type is a {@link UnionType}, use the LUB type.
 	 * If the <code>importRewrite</code> is <code>null</code>, the type may be fully-qualified.
-	 * 
+	 *
 	 * @param ast The AST to create the resulting type with.
 	 * @param declaration The variable declaration to get the type from
 	 * @param importRewrite the import rewrite to use, or <code>null</code>
 	 * @param context the import rewrite context, or <code>null</code>
 	 * @return a new type node created with the given AST.
-	 * 
+	 *
 	 * @since 3.7.1
 	 */
 	public static Type newType(AST ast, VariableDeclaration declaration, ImportRewrite importRewrite, ImportRewriteContext context) {
@@ -206,9 +316,9 @@ public class ASTNodeFactory {
 				return type;
 			}
 		}
-		
+
 		type= (Type) ASTNode.copySubtree(ast, type);
-		
+
 		List<Dimension> extraDimensions= declaration.extraDimensions();
 		if (!extraDimensions.isEmpty()) {
 			ArrayType arrayType;
@@ -281,14 +391,14 @@ public class ASTNodeFactory {
 	/**
 	 * Returns the new type node representing the return type of <code>lambdaExpression</code>
 	 * including the extra dimensions.
-	 * 
+	 *
 	 * @param lambdaExpression the lambda expression
 	 * @param ast the AST to create the return type with
 	 * @param importRewrite the import rewrite to use, or <code>null</code>
 	 * @param context the import rewrite context, or <code>null</code>
 	 * @return a new type node created with the given AST representing the return type of
 	 *         <code>lambdaExpression</code>
-	 * 
+	 *
 	 * @since 3.10
 	 */
 	public static Type newReturnType(LambdaExpression lambdaExpression, AST ast, ImportRewrite importRewrite, ImportRewriteContext context) {
@@ -344,12 +454,18 @@ public class ASTNodeFactory {
 	public static Expression newDefaultExpression(AST ast, ITypeBinding type) {
 		if (type.isPrimitive()) {
 			String name= type.getName();
-			if ("boolean".equals(name)) { //$NON-NLS-1$
+			boolean nomatch= false;
+			if (name != null) switch (name) {
+			case "boolean": //$NON-NLS-1$
 				return ast.newBooleanLiteral(false);
-			} else if ("void".equals(name)) { //$NON-NLS-1$
+			case "void": //$NON-NLS-1$
 				return null;
-			} else {
-				return ast.newNumberLiteral("0"); //$NON-NLS-1$
+			default:
+				nomatch= true;
+				break;
+			}
+			if (nomatch) {
+				return ast.newNumberLiteral("0");//$NON-NLS-1$
 			}
 		}
 		return ast.newNullLiteral();

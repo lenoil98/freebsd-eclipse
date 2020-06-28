@@ -97,8 +97,7 @@ public class FormTextModel {
 		if (paragraphs == null)
 			return ""; //$NON-NLS-1$
 		StringBuilder sbuf = new StringBuilder();
-		for (int i = 0; i < paragraphs.size(); i++) {
-			Paragraph paragraph = paragraphs.get(i);
+		for (Paragraph paragraph : paragraphs) {
 			String text = paragraph.getAccessibleText();
 			sbuf.append(text);
 		}
@@ -125,8 +124,7 @@ public class FormTextModel {
 			taggedText = taggedText.replaceAll("&lt;", "&#060;"); //$NON-NLS-1$//$NON-NLS-2$
 			taggedText = taggedText.replaceAll("&gt;", "&#062;"); //$NON-NLS-1$//$NON-NLS-2$
 			taggedText = taggedText.replaceAll("&amp;", "&#038;"); //$NON-NLS-1$//$NON-NLS-2$
-			taggedText = taggedText.replaceAll("&([^#])", "&#038;$1"); //$NON-NLS-1$//$NON-NLS-2$
-			return taggedText;
+			return taggedText.replaceAll("&([^#])", "&#038;$1"); //$NON-NLS-1$//$NON-NLS-2$
 		} catch (Exception e) {
 			return pTaggedText;
 		}
@@ -145,9 +143,7 @@ public class FormTextModel {
 			InputSource source = new InputSource(is);
 			Document doc = parser.parse(source);
 			processDocument(doc, expandURLs);
-		} catch (ParserConfigurationException e) {
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT, e, " " + e.getMessage()); //$NON-NLS-1$
-		} catch (SAXException e) {
+		} catch (ParserConfigurationException | SAXException e) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT, e, " " + e.getMessage()); //$NON-NLS-1$
 		} catch (IOException e) {
 			SWT.error(SWT.ERROR_IO, e);
@@ -360,12 +356,19 @@ public class FormTextModel {
 		}
 		if (align != null) {
 			String value = align.getNodeValue().toLowerCase();
-			if (value.equals("top")) //$NON-NLS-1$
+			switch (value) {
+			case "top": //$NON-NLS-1$
 				segment.setVerticalAlignment(ObjectSegment.TOP);
-			else if (value.equals("middle")) //$NON-NLS-1$
+				break;
+			case "middle": //$NON-NLS-1$
 				segment.setVerticalAlignment(ObjectSegment.MIDDLE);
-			else if (value.equals("bottom")) //$NON-NLS-1$
+				break;
+			case "bottom": //$NON-NLS-1$
 				segment.setVerticalAlignment(ObjectSegment.BOTTOM);
+				break;
+			default:
+				break;
+			}
 		}
 	}
 
@@ -375,20 +378,27 @@ public class FormTextModel {
 		else {
 			for (int j = 0; j < value.length(); j++) {
 				char c = value.charAt(j);
-				if (c == ' ' || c == '\t') {
+				switch (c) {
+				case ' ':
+				case '\t':
 					// space
 					if (++spaceCounter[0] == 1) {
 						buf.append(c);
 					}
-				} else if (c == '\n' || c == '\r' || c == '\f') {
+					break;
+				case '\n':
+				case '\r':
+				case '\f':
 					// new line
 					if (++spaceCounter[0] == 1) {
 						buf.append(' ');
 					}
-				} else {
+					break;
+				default:
 					// other characters
 					spaceCounter[0] = 0;
 					buf.append(c);
+					break;
 				}
 			}
 		}
@@ -617,9 +627,8 @@ public class FormTextModel {
 		if (selectableSegments != null || paragraphs == null)
 			return selectableSegments;
 		Vector<ParagraphSegment> result = new Vector<>();
-		for (int i = 0; i < paragraphs.size(); i++) {
-			Paragraph p = paragraphs.get(i);
-			ParagraphSegment[] segments = p.getSegments();
+		for (Paragraph paragraph : paragraphs) {
+			ParagraphSegment[] segments = paragraph.getSegments();
 			for (ParagraphSegment segment : segments) {
 				if (segment instanceof IFocusSelectable)
 					result.add(segment);
@@ -670,9 +679,8 @@ public class FormTextModel {
 	}
 
 	public ParagraphSegment findSegmentAt(int x, int y) {
-		for (int i = 0; i < paragraphs.size(); i++) {
-			Paragraph p = paragraphs.get(i);
-			ParagraphSegment segment = p.findSegmentAt(x, y);
+		for (Paragraph paragraph : paragraphs) {
+			ParagraphSegment segment = paragraph.findSegmentAt(x, y);
 			if (segment != null)
 				return segment;
 		}
@@ -680,9 +688,8 @@ public class FormTextModel {
 	}
 
 	public void clearCache(String fontId) {
-		for (int i = 0; i < paragraphs.size(); i++) {
-			Paragraph p = paragraphs.get(i);
-			p.clearCache(fontId);
+		for (Paragraph paragraph : paragraphs) {
+			paragraph.clearCache(fontId);
 		}
 	}
 

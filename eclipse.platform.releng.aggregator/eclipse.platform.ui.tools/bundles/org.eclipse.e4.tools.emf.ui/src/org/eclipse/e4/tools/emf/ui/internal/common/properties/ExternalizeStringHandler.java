@@ -58,13 +58,14 @@ public class ExternalizeStringHandler {
 
 	static class ExtractionDialog extends TitleAreaDialog {
 		private Messages messages;
-		private IObservableList list;
+		private IObservableList<? extends EObject> list;
 		private IResourcePool pool;
 		private IProject project;
 		private CheckboxTableViewer viewer;
 		private IModelResource resource;
 
-		public ExtractionDialog(Shell parentShell, Messages messages, IModelResource resource, IObservableList list, IResourcePool pool, IProject project) {
+		public ExtractionDialog(Shell parentShell, Messages messages, IModelResource resource,
+				IObservableList<? extends EObject> list, IResourcePool pool, IProject project) {
 			super(parentShell);
 			this.messages = messages;
 			this.list = list;
@@ -222,10 +223,10 @@ public class ExternalizeStringHandler {
 				try {
 					IFile f = getBasePropertyFile();
 
-					StringBuilder b = new StringBuilder(System.getProperty("line.separator")); //$NON-NLS-1$
+					StringBuilder b = new StringBuilder(System.lineSeparator());
 					for (Object o : els) {
 						Entry e = (Entry) o;
-						b.append(e.key + " = " + e.value + System.getProperty("line.separator")); //$NON-NLS-1$//$NON-NLS-2$
+						b.append(e.key + " = " + e.value + System.lineSeparator()); //$NON-NLS-1$
 					}
 
 					try (ByteArrayInputStream stream = new ByteArrayInputStream(b.toString().getBytes())) {

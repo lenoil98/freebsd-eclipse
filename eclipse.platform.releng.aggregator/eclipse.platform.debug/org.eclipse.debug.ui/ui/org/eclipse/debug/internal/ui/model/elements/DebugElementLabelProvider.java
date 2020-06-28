@@ -100,28 +100,25 @@ public class DebugElementLabelProvider extends ElementLabelProvider {
 		return null;
 	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.internal.ui.model.elements.ElementLabelProvider#requiresUIJob(org.eclipse.debug.internal.ui.viewers.model.provisional.ILabelUpdate[])
-     */
-    @Override
+	@Override
 	protected boolean requiresUIJob(ILabelUpdate[] updates) {
-    	if (updates.length > 0) {
-	    	ILabelUpdate update = updates[0];
+		if (updates.length > 0) {
+			ILabelUpdate update = updates[0];
 			IPresentationContext context = update.getPresentationContext();
 			if (context instanceof DebugModelPresentationContext) {
-		    	DebugModelPresentationContext debugContext = (DebugModelPresentationContext) context;
+				DebugModelPresentationContext debugContext = (DebugModelPresentationContext) context;
 				IDebugModelPresentation presentation = debugContext.getModelPresentation();
 				if (presentation instanceof IDebugModelPresentationExtension) {
 					IDebugModelPresentationExtension extension = (IDebugModelPresentationExtension) presentation;
-					for (int i = 0; i < updates.length; i++) {
-						if (extension.requiresUIThread(updates[i].getElement())) {
+					for (ILabelUpdate u : updates) {
+						if (extension.requiresUIThread(u.getElement())) {
 							return true;
 						}
 					}
 				}
 			}
-    	}
+		}
 		return false;
-    }
+	}
 
 }

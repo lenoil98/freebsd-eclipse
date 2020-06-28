@@ -14,6 +14,7 @@
 package org.eclipse.ui.internal.console;
 
 import java.lang.reflect.Field;
+import java.text.MessageFormat;
 
 import org.eclipse.core.expressions.EvaluationContext;
 import org.eclipse.core.expressions.EvaluationResult;
@@ -30,7 +31,6 @@ import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IPatternMatchListenerDelegate;
 
-import com.ibm.icu.text.MessageFormat;
 
 public class PatternMatchListenerExtension implements IPluginContribution {
 
@@ -59,9 +59,8 @@ public class PatternMatchListenerExtension implements IPluginContribution {
 			String flags = flagsElement.replaceAll("Pattern.", ""); //$NON-NLS-1$ //$NON-NLS-2$
 			String[] tokens = flags.split("\\s\\|\\s"); //$NON-NLS-1$
 			Class<?> clazz = Class.forName("java.util.regex.Pattern"); //$NON-NLS-1$
-
-			for (int i = 0; i < tokens.length; i++) {
-				Field field = clazz.getDeclaredField(tokens[i]);
+			for (String token : tokens) {
+				Field field = clazz.getDeclaredField(token);
 				val |= field.getInt(null);
 			}
 		} catch (ClassNotFoundException e) {
@@ -126,17 +125,11 @@ public class PatternMatchListenerExtension implements IPluginContribution {
 		return fFlags;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IPluginContribution#getLocalId()
-	 */
 	@Override
 	public String getLocalId() {
 		return fConfig.getAttribute("id"); //$NON-NLS-1$
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IPluginContribution#getPluginId()
-	 */
 	@Override
 	public String getPluginId() {
 		return fConfig.getContributor().getName();

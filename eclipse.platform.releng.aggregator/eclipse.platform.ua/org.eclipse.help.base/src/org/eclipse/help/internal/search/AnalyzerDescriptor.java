@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the
  * accompanying materials are made available under the terms of the Eclipse Public License 2.0
@@ -8,7 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *
- * Contributors: IBM Corporation - initial API and implementation
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.search;
 
@@ -99,21 +101,21 @@ public class AnalyzerDescriptor {
 		// find extension point
 		IConfigurationElement configElements[] = Platform.getExtensionRegistry().getConfigurationElementsFor(
 				HelpBasePlugin.PLUGIN_ID, "luceneAnalyzer"); //$NON-NLS-1$
-		for (int i = 0; i < configElements.length; i++) {
-			if (!configElements[i].getName().equals("analyzer")) //$NON-NLS-1$
+		for (IConfigurationElement configElement : configElements) {
+			if (!configElement.getName().equals("analyzer")) //$NON-NLS-1$
 				continue;
-			String analyzerLocale = configElements[i].getAttribute("locale"); //$NON-NLS-1$
+			String analyzerLocale = configElement.getAttribute("locale"); //$NON-NLS-1$
 			if (analyzerLocale == null || !analyzerLocale.equals(locale))
 				continue;
 			try {
-				Object analyzer = configElements[i].createExecutableExtension("class"); //$NON-NLS-1$
+				Object analyzer = configElement.createExecutableExtension("class"); //$NON-NLS-1$
 				if (analyzer instanceof AnalyzerFactory)
 					this.luceneAnalyzer = ((AnalyzerFactory) analyzer).create();
 				else if (analyzer instanceof Analyzer)
 					this.luceneAnalyzer = (Analyzer) analyzer;
 				else
 					continue;
-				String pluginId = configElements[i].getContributor().getName();
+				String pluginId = configElement.getContributor().getName();
 				String pluginVersion = Platform.getBundle(pluginId).getHeaders()
 						.get(Constants.BUNDLE_VERSION);
 				this.id = pluginId + "#" + pluginVersion + "?locale=" + locale; //$NON-NLS-1$ //$NON-NLS-2$
@@ -129,9 +131,10 @@ public class AnalyzerDescriptor {
 					return this.luceneAnalyzer;
 				}
 			} catch (CoreException ce) {
-				HelpBasePlugin.logError("Exception occurred creating text analyzer " //$NON-NLS-1$
-						+ configElements[i].getAttribute("class") //$NON-NLS-1$
-						+ " for " + locale + " locale.", ce); //$NON-NLS-1$ //$NON-NLS-2$
+				Platform.getLog(getClass()).error(
+						"Exception occurred creating text analyzer " //$NON-NLS-1$
+								+ configElement.getAttribute("class") + " for " + locale + " locale.", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+						ce);
 			}
 		}
 

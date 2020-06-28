@@ -14,7 +14,7 @@
 package org.eclipse.debug.internal.ui.viewers;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.debug.internal.ui.viewers.provisional.IChildrenRequestMonitor;
@@ -30,75 +30,60 @@ import org.eclipse.debug.internal.ui.viewers.provisional.IChildrenRequestMonitor
  */
 class ChildrenRequestMonitor extends AsynchronousRequestMonitor implements IChildrenRequestMonitor {
 
-    private boolean fFirstUpdate = true;
+	private boolean fFirstUpdate = true;
 
 	/**
 	 * Collection of children retrieved
 	 */
 	private List<Object> fChildren = new ArrayList<>();
 
-    /**
-     * Constucts a monitor to retrieve and update the children of the given
-     * node.
-     *
-     * @param parent parent to retrieve children for
-     * @param model model being updated
-     */
-    ChildrenRequestMonitor(ModelNode parent, AsynchronousModel model) {
-        super(parent, model);
-    }
+	/**
+	 * Constucts a monitor to retrieve and update the children of the given
+	 * node.
+	 *
+	 * @param parent parent to retrieve children for
+	 * @param model model being updated
+	 */
+	ChildrenRequestMonitor(ModelNode parent, AsynchronousModel model) {
+		super(parent, model);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.viewers.IChildrenRequestMonitor#addChild(java.lang.Object)
-     */
-    @Override
+	@Override
 	public void addChild(Object child) {
-        synchronized (fChildren) {
-            fChildren.add(child);
-        }
+		synchronized (fChildren) {
+			fChildren.add(child);
+		}
 
-        scheduleViewerUpdate(250);
-    }
+		scheduleViewerUpdate(250);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.viewers.IChildrenRequestMonitor#addChildren(java.lang.Object[])
-     */
-    @Override
+	@Override
 	public void addChildren(Object[] children) {
-        synchronized (fChildren) {
-            for (int i = 0; i < children.length; i++) {
-                fChildren.add(children[i]);
-            }
-        }
+		synchronized (fChildren) {
+			Collections.addAll(fChildren, children);
+		}
 
-        scheduleViewerUpdate(0);
-    }
+		scheduleViewerUpdate(0);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.viewers.AsynchronousRequestMonitor#contains(org.eclipse.debug.ui.viewers.AsynchronousRequestMonitor)
-     */
-    @Override
+	@Override
 	protected boolean contains(AsynchronousRequestMonitor update) {
-        return (update instanceof ChildrenRequestMonitor) && contains(update.getNode());
-    }
+		return (update instanceof ChildrenRequestMonitor) && contains(update.getNode());
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.viewers.AsynchronousRequestMonitor#performUpdate()
-     */
-    @Override
+	@Override
 	protected void performUpdate() {
-        synchronized (fChildren) {
-            if (fFirstUpdate) {
-            	getModel().setChildren(getNode(), fChildren);
-                fFirstUpdate = false;
-            } else {
-				for (Iterator<Object> iter = fChildren.iterator(); iter.hasNext();) {
-                    Object child = iter.next();
-                    getModel().add(getNode(), child);
-                }
-            }
-            fChildren.clear();
-        }
-    }
+		synchronized (fChildren) {
+			if (fFirstUpdate) {
+				getModel().setChildren(getNode(), fChildren);
+				fFirstUpdate = false;
+			} else {
+				for (Object child : fChildren) {
+					getModel().add(getNode(), child);
+				}
+			}
+			fChildren.clear();
+		}
+	}
 
 }

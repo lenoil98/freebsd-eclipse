@@ -32,7 +32,6 @@ import org.eclipse.jdt.internal.corext.refactoring.reorg.ReorgUtils;
 import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
 
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
-import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.refactoring.RefactoringMessages;
 import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
 
@@ -45,7 +44,7 @@ public class CutAction extends SelectionDispatchAction{
 		setText(ReorgMessages.CutAction_text);
 		fCopyToClipboardAction= new CopyToClipboardAction(site);
 
-		ISharedImages workbenchImages= JavaPlugin.getDefault().getWorkbench().getSharedImages();
+		ISharedImages workbenchImages= PlatformUI.getWorkbench().getSharedImages();
 		setDisabledImageDescriptor(workbenchImages.getImageDescriptor(ISharedImages.IMG_TOOL_CUT_DISABLED));
 		setImageDescriptor(workbenchImages.getImageDescriptor(ISharedImages.IMG_TOOL_CUT));
 		setHoverImageDescriptor(workbenchImages.getImageDescriptor(ISharedImages.IMG_TOOL_CUT));
@@ -70,7 +69,8 @@ public class CutAction extends SelectionDispatchAction{
 	private static boolean containsOnlyElementsInsideCompilationUnits(IStructuredSelection selection) {
 		for (Iterator<?> iter = selection.iterator(); iter.hasNext();) {
 			Object object= iter.next();
-			if (! (object instanceof IJavaElement && ReorgUtils.isInsideCompilationUnit((IJavaElement)object)))
+			if (!(object instanceof IJavaElement)
+					|| !ReorgUtils.isInsideCompilationUnit((IJavaElement)object))
 				return false;
 		}
 		return true;

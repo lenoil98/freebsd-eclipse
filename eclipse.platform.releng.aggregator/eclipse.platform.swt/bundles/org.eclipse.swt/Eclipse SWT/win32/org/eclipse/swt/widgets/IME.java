@@ -16,6 +16,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.ole.win32.*;
 import org.eclipse.swt.internal.win32.*;
 
 /**
@@ -49,17 +50,6 @@ public class IME extends Widget {
 	TextStyle [] styles;
 
 	static final int WM_MSIME_MOUSE = OS.RegisterWindowMessage (new TCHAR (0, "MSIMEMouseOperation", true)); //$NON-NLS-1$
-
-	static final byte [] IID_ITfInputProcessorProfiles = new byte [16];
-	static final byte [] IID_ITfDisplayAttributeProvider = new byte [16];
-	static final byte [] CLSID_TF_InputProcessorProfiles = new byte [16];
-	static final byte [] GUID_TFCAT_TIP_KEYBOARD = new byte [16];
-	static {
-		OS.IIDFromString ("{1F02B6C5-7842-4EE6-8A0B-9A24183A95CA}\0".toCharArray (), IID_ITfInputProcessorProfiles); //$NON-NLS-1$
-		OS.IIDFromString ("{fee47777-163c-4769-996a-6e9c50ad8f54}\0".toCharArray (), IID_ITfDisplayAttributeProvider); //$NON-NLS-1$
-		OS.IIDFromString ("{33C53A50-F456-4884-B049-85FD643ECFED}\0".toCharArray (), CLSID_TF_InputProcessorProfiles); //$NON-NLS-1$
-		OS.IIDFromString ("{34745C63-B2F0-4784-8B67-5E12C8701A31}\0".toCharArray (), GUID_TFCAT_TIP_KEYBOARD); //$NON-NLS-1$
-	}
 
 	/* TextLayout has a copy of these constants */
 	static final int UNDERLINE_IME_DOT = 1 << 16;
@@ -115,6 +105,7 @@ void createWidget () {
 
 /**
  * Returns the offset of the caret from the start of the document.
+ * -1 means that there is currently no active composition.
  * The caret is within the current composition.
  *
  * @return the caret offset
@@ -168,44 +159,37 @@ public int getCompositionOffset () {
 }
 
 TF_DISPLAYATTRIBUTE getDisplayAttribute (short langid, int attInfo) {
-	long /*int*/ [] pProfiles = new long /*int*/ [1];
-	int hr = OS.CoCreateInstance (CLSID_TF_InputProcessorProfiles, 0, OS.CLSCTX_INPROC_SERVER, IID_ITfInputProcessorProfiles, pProfiles);
+	long [] ppv = new long [1];
+	int hr = COM.CoCreateInstance (COM.CLSID_TF_InputProcessorProfiles, 0, COM.CLSCTX_INPROC_SERVER, COM.IID_ITfInputProcessorProfiles, ppv);
 	TF_DISPLAYATTRIBUTE pda = null;
 	if (hr == OS.S_OK) {
-		byte [] pclsid = new byte [16];
-		byte [] pguidProfile = new byte [16];
-		/* pProfiles.GetDefaultLanguageProfile () */
-		hr = OS.VtblCall (8, pProfiles [0], langid, GUID_TFCAT_TIP_KEYBOARD, pclsid, pguidProfile);
+		ITfInputProcessorProfiles pProfiles = new ITfInputProcessorProfiles (ppv [0]);
+		GUID pclsid = new GUID ();
+		GUID pguidProfile = new GUID ();
+		hr = pProfiles.GetDefaultLanguageProfile (langid, COM.GUID_TFCAT_TIP_KEYBOARD, pclsid, pguidProfile);
 		if (hr == OS.S_OK) {
-			long /*int*/ [] pProvider = new long /*int*/ [1];
-			hr = OS.CoCreateInstance (pclsid, 0, OS.CLSCTX_INPROC_SERVER, IID_ITfDisplayAttributeProvider, pProvider);
+			hr = COM.CoCreateInstance (pclsid, 0, COM.CLSCTX_INPROC_SERVER, COM.IID_ITfDisplayAttributeProvider, ppv);
 			if (hr == OS.S_OK) {
-				long /*int*/ [] pEnum = new long /*int*/ [1];
-				/* pProvider.EnumDisplayAttributeInfo () */
-				hr = OS.VtblCall (3, pProvider [0], pEnum);
+				ITfDisplayAttributeProvider pProvider = new ITfDisplayAttributeProvider (ppv [0]);
+				hr = pProvider.EnumDisplayAttributeInfo (ppv);
 				if (hr == OS.S_OK) {
-					long /*int*/ [] pDispInfo = new long /*int*/ [1];
+					IEnumTfDisplayAttributeInfo pEnum = new IEnumTfDisplayAttributeInfo (ppv [0]);
 					TF_DISPLAYATTRIBUTE tempPda = new TF_DISPLAYATTRIBUTE ();
-					/* pEnum.Next () */
-					while ((hr = OS.VtblCall (4, pEnum [0], 1, pDispInfo, (int[])null)) == OS.S_OK) {
-						/* pDispInfo.GetAttributeInfo(); */
-						OS.VtblCall (5, pDispInfo [0], tempPda);
-						/* pDispInfo.Release () */
-						OS.VtblCall (2, pDispInfo [0]);
+					while ((hr = pEnum.Next (1, ppv, null)) == OS.S_OK) {
+						ITfDisplayAttributeInfo pDispInfo = new ITfDisplayAttributeInfo (ppv [0]);
+						pDispInfo.GetAttributeInfo (tempPda);
+						pDispInfo.Release ();
 						if (tempPda.bAttr == attInfo) {
 							pda = tempPda;
 							break;
 						}
 					}
-					/* pEnum.Release () */
-					hr = OS.VtblCall (2, pEnum [0]);
+					pEnum.Release ();
 				}
-				/* pProvider.Release () */
-				hr = OS.VtblCall (2, pProvider [0]);
+				pProvider.Release ();
 			}
 		}
-		/* pProfiles.Release () */
-		hr = OS.VtblCall (2, pProfiles [0]);
+		pProfiles.Release ();
 	}
 	if (pda == null) {
 		pda = new TF_DISPLAYATTRIBUTE ();
@@ -313,7 +297,7 @@ public String getText () {
  */
 public boolean getWideCaret() {
 	checkWidget ();
-	long /*int*/ layout = OS.GetKeyboardLayout (0);
+	long layout = OS.GetKeyboardLayout (0);
 	short langID = (short)OS.LOWORD (layout);
 	return OS.PRIMARYLANGID (langID) == OS.LANG_KOREAN;
 }
@@ -361,20 +345,19 @@ public void setCompositionOffset (int offset) {
 	}
 }
 
-LRESULT WM_IME_COMPOSITION (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_IME_COMPOSITION (long wParam, long lParam) {
 	if (!isInlineEnabled ()) return null;
 	ranges = null;
 	styles = null;
 	caretOffset = commitCount = 0;
-	long /*int*/ hwnd = parent.handle;
-	long /*int*/ hIMC = OS.ImmGetContext (hwnd);
-	int codePage = parent.getCodePage ();
+	long hwnd = parent.handle;
+	long hIMC = OS.ImmGetContext (hwnd);
 	if (hIMC != 0) {
-		TCHAR buffer = null;
+		char [] buffer = null;
 		if ((lParam & OS.GCS_RESULTSTR) != 0) {
-			int length = OS.ImmGetCompositionString (hIMC, OS.GCS_RESULTSTR, (TCHAR)null, 0);
+			int length = OS.ImmGetCompositionString (hIMC, OS.GCS_RESULTSTR, (char [])null, 0);
 			if (length > 0) {
-				buffer = new TCHAR (codePage, length / TCHAR.sizeof);
+				buffer = new char [length / TCHAR.sizeof];
 				OS.ImmGetCompositionString (hIMC, OS.GCS_RESULTSTR, buffer, length);
 				if (startOffset == -1) {
 					Event event = new Event ();
@@ -386,7 +369,7 @@ LRESULT WM_IME_COMPOSITION (long /*int*/ wParam, long /*int*/ lParam) {
 				event.detail = SWT.COMPOSITION_CHANGED;
 				event.start = startOffset;
 				event.end = startOffset + text.length();
-				event.text = text = buffer != null ? buffer.toString () : ""; //$NON-NLS-1$
+				event.text = text = buffer != null ? new String (buffer) : ""; //$NON-NLS-1$
 				commitCount = text.length ();
 				sendEvent (SWT.ImeComposition, event);
 				String chars = text;
@@ -411,12 +394,12 @@ LRESULT WM_IME_COMPOSITION (long /*int*/ wParam, long /*int*/ lParam) {
 		}
 		buffer = null;
 		if ((lParam & OS.GCS_COMPSTR) != 0) {
-			int length = OS.ImmGetCompositionString (hIMC, OS.GCS_COMPSTR, (TCHAR)null, 0);
+			int length = OS.ImmGetCompositionString (hIMC, OS.GCS_COMPSTR, (char [])null, 0);
 			if (length > 0) {
-				buffer = new TCHAR (codePage, length / TCHAR.sizeof);
+				buffer = new char [length / TCHAR.sizeof];
 				OS.ImmGetCompositionString (hIMC, OS.GCS_COMPSTR, buffer, length);
 				if ((lParam & OS.GCS_CURSORPOS) != 0) {
-					caretOffset = OS.ImmGetCompositionString (hIMC, OS.GCS_CURSORPOS, (TCHAR) null, 0);
+					caretOffset = OS.ImmGetCompositionString (hIMC, OS.GCS_CURSORPOS, (char [])null, 0);
 				}
 				int [] clauses = null;
 				if ((lParam & OS.GCS_COMPCLAUSE) != 0) {
@@ -434,7 +417,7 @@ LRESULT WM_IME_COMPOSITION (long /*int*/ wParam, long /*int*/ lParam) {
 						length = clauses.length - 1;
 						ranges = new int [length * 2];
 						styles = new TextStyle [length];
-						long /*int*/ layout = OS.GetKeyboardLayout (0);
+						long layout = OS.GetKeyboardLayout (0);
 						short langID = (short)OS.LOWORD (layout);
 						TF_DISPLAYATTRIBUTE attr = null;
 						TextStyle style = null;
@@ -508,7 +491,7 @@ LRESULT WM_IME_COMPOSITION (long /*int*/ wParam, long /*int*/ lParam) {
 		event.detail = SWT.COMPOSITION_CHANGED;
 		event.start = startOffset;
 		event.end = end;
-		event.text = text = buffer != null ? buffer.toString () : ""; //$NON-NLS-1$
+		event.text = text = buffer != null ? new String (buffer) : ""; //$NON-NLS-1$
 		sendEvent (SWT.ImeComposition, event);
 		if (text.length() == 0) {
 			startOffset = -1;
@@ -519,17 +502,20 @@ LRESULT WM_IME_COMPOSITION (long /*int*/ wParam, long /*int*/ lParam) {
 	return LRESULT.ONE;
 }
 
-LRESULT WM_IME_COMPOSITION_START (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_IME_COMPOSITION_START (long wParam, long lParam) {
 	return isInlineEnabled () ? LRESULT.ONE : null;
 }
 
-LRESULT WM_IME_ENDCOMPOSITION (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_IME_ENDCOMPOSITION (long wParam, long lParam) {
+	// Reset defaults. Otherwise the next composition overwrites the previous one.
+	startOffset = -1;
+	caretOffset = 0;
 	return isInlineEnabled () ? LRESULT.ONE : null;
 }
 
-LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_KEYDOWN (long wParam, long lParam) {
 	if (wParam == OS.VK_HANJA) {
-		long /*int*/ hKL = OS.GetKeyboardLayout (0);
+		long hKL = OS.GetKeyboardLayout (0);
 		short langID = (short)OS.LOWORD (hKL);
 		if (OS.PRIMARYLANGID (langID) == OS.LANG_KOREAN) {
 			Event event = new Event ();
@@ -542,13 +528,13 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 			}
 			if (event.text != null && event.text.length() > 0) {
 				int length = event.text.length();
-	            if (length > 1) {
-	            	event.end = event.start + 1;
-	            }
-				long /*int*/ hwnd = parent.handle;
-				long /*int*/ hIMC = OS.ImmGetContext (hwnd);
+				if (length > 1) {
+					event.end = event.start + 1;
+				}
+				long hwnd = parent.handle;
+				long hIMC = OS.ImmGetContext (hwnd);
 				TCHAR buffer = new TCHAR (0, event.text, true);
-				long /*int*/ rc = OS.ImmEscape(hKL, hIMC, OS.IME_ESC_HANJA_MODE, buffer);
+				long rc = OS.ImmEscape(hKL, hIMC, OS.IME_ESC_HANJA_MODE, buffer);
 				if (rc != 0) {
 					sendEvent (SWT.ImeComposition, event);
 				}
@@ -558,10 +544,10 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 	return null;
 }
 
-LRESULT WM_KILLFOCUS (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_KILLFOCUS (long wParam, long lParam) {
 	if (!isInlineEnabled ()) return null;
-	long /*int*/ hwnd = parent.handle;
-	long /*int*/ hIMC = OS.ImmGetContext (hwnd);
+	long hwnd = parent.handle;
+	long hIMC = OS.ImmGetContext (hwnd);
 	if (hIMC != 0) {
 		if (OS.ImmGetOpenStatus (hIMC)) {
 			OS.ImmNotifyIME (hIMC, OS.NI_COMPOSITIONSTR, OS.CPS_COMPLETE, 0);
@@ -571,13 +557,13 @@ LRESULT WM_KILLFOCUS (long /*int*/ wParam, long /*int*/ lParam) {
 	return null;
 }
 
-LRESULT WM_LBUTTONDOWN (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_LBUTTONDOWN (long wParam, long lParam) {
 	if (!isInlineEnabled ()) return null;
-	long /*int*/ hwnd = parent.handle;
-	long /*int*/ hIMC = OS.ImmGetContext (hwnd);
+	long hwnd = parent.handle;
+	long hIMC = OS.ImmGetContext (hwnd);
 	if (hIMC != 0) {
 		if (OS.ImmGetOpenStatus (hIMC)) {
-			if (OS.ImmGetCompositionString (hIMC, OS.GCS_COMPSTR, (TCHAR)null, 0) > 0) {
+			if (OS.ImmGetCompositionString (hIMC, OS.GCS_COMPSTR, (char [])null, 0) > 0) {
 				Event event = new Event ();
 				event.detail = SWT.COMPOSITION_OFFSET;
 				event.setLocationInPixels(OS.GET_X_LPARAM (lParam), OS.GET_Y_LPARAM (lParam));
@@ -585,10 +571,10 @@ LRESULT WM_LBUTTONDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 				int offset = event.index;
 				int length = text.length();
 				if (offset != -1 && startOffset != -1 && startOffset <= offset && offset < startOffset + length) {
-					long /*int*/ imeWnd = OS.ImmGetDefaultIMEWnd (hwnd);
+					long imeWnd = OS.ImmGetDefaultIMEWnd (hwnd);
 					offset = event.index + event.count - startOffset;
 					int trailing = event.count > 0 ? 1 : 2;
-					long /*int*/ param = OS.MAKEWPARAM (OS.MAKEWORD (OS.IMEMOUSE_LDOWN, trailing), offset);
+					long param = OS.MAKEWPARAM (OS.MAKEWORD (OS.IMEMOUSE_LDOWN, trailing), offset);
 					OS.SendMessage (imeWnd, WM_MSIME_MOUSE, param, hIMC);
 				} else {
 					OS.ImmNotifyIME (hIMC, OS.NI_COMPOSITIONSTR, OS.CPS_COMPLETE, 0);

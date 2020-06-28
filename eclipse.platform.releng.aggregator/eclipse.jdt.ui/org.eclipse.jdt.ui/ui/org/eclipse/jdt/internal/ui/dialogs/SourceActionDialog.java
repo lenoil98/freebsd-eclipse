@@ -83,7 +83,7 @@ public class SourceActionDialog extends CheckedTreeSelectionDialog {
 	 * <li>{@link #INSERT_LAST_INDEX}</li>
 	 * <li>{@link #INSERT_POSITION_FROM_EDITOR}</li>
 	 * </ul>
-	 * 
+	 *
 	 * <strong>Note:</strong> Since 3.4.2 the key is "InsertPosition.v2" instead of "InsertPosition"
 	 * in order to reset to the new defaults.
 	 */
@@ -167,8 +167,7 @@ public class SourceActionDialog extends CheckedTreeSelectionDialog {
 		fLabels.add(ActionMessages.SourceActionDialog_first);
 		fLabels.add(ActionMessages.SourceActionDialog_last);
 
-		for (int i = 0; i < members.length; i++) {
-			IJavaElement curr= members[i];
+		for (IJavaElement curr : members) {
 			String methodLabel= JavaElementLabels.getElementLabel(curr, JavaElementLabels.M_PARAMETER_TYPES);
 			fLabels.add(Messages.format(ActionMessages.SourceActionDialog_after, methodLabel));
 			fInsertPositions.add(findSibling(curr, members));
@@ -425,10 +424,10 @@ public class SourceActionDialog extends CheckedTreeSelectionDialog {
 		return composite;
 	}
 
-	protected Text createFilterComposite(@SuppressWarnings("unused") Composite inner) {
+	protected Text createFilterComposite(Composite inner) {
 		return null; // No filter as default
 	}
-		
+
 	/**
 	 * Clients override to provide link control
 	 *
@@ -510,8 +509,8 @@ public class SourceActionDialog extends CheckedTreeSelectionDialog {
 
 	private List<Integer> convertToIntegerList(int[] array) {
 		List<Integer> result= new ArrayList<>(array.length);
-		for (int i= 0; i < array.length; i++) {
-			result.add(Integer.valueOf(array[i]));
+		for (int element : array) {
+			result.add(Integer.valueOf(element));
 		}
 		return result;
 	}
@@ -526,9 +525,9 @@ public class SourceActionDialog extends CheckedTreeSelectionDialog {
 		if (items.length > 0) {
 			Object revealedElement= items[0];
 
-			for (int i= 0; i < items.length; i++) {
-				if (items[i].getChecked()) {
-					revealedElement= items[i].getData();
+			for (TreeItem item : items) {
+				if (item.getChecked()) {
+					revealedElement= item.getData();
 					break;
 				}
 			}
@@ -718,8 +717,7 @@ public class SourceActionDialog extends CheckedTreeSelectionDialog {
 	protected IDialogSettings getDialogBoundsSettings() {
 		return JavaPlugin.getDefault().getDialogSettingsSection("DialogBounds_" + getClass().getSimpleName()); //$NON-NLS-1$
 	}
-	
-	@SuppressWarnings("unused")
+
 	protected void addMethodSearchFilter(Text filterText, CheckboxTreeViewer treeViewer) {
 		//Default is do nothing
 	}

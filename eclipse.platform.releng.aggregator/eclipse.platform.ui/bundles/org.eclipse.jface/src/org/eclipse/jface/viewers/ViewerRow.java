@@ -16,6 +16,8 @@
 
 package org.eclipse.jface.viewers;
 
+import java.util.Objects;
+
 import org.eclipse.jface.util.Policy;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.graphics.Color;
@@ -59,7 +61,7 @@ public abstract class ViewerRow implements Cloneable {
 	/**
 	 * Get the bounds of the entry at the columnIndex,
 	 *
-	 * @param columnIndex
+	 * @param columnIndex column index of interest
 	 * @return {@link Rectangle}
 	 */
 	public abstract Rectangle getBounds(int columnIndex);
@@ -88,7 +90,7 @@ public abstract class ViewerRow implements Cloneable {
 	/**
 	 * Return the image at the columnIndex.
 	 *
-	 * @param columnIndex
+	 * @param columnIndex column index of interest
 	 * @return {@link Image} or <code>null</code>
 	 */
 	public abstract Image getImage(int columnIndex);
@@ -96,15 +98,15 @@ public abstract class ViewerRow implements Cloneable {
 	/**
 	 * Set the image at the columnIndex
 	 *
-	 * @param columnIndex
-	 * @param image
+	 * @param columnIndex column index to set image for
+	 * @param image       image to set
 	 */
 	public abstract void setImage(int columnIndex, Image image);
 
 	/**
 	 * Get the text at the columnIndex.
 	 *
-	 * @param columnIndex
+	 * @param columnIndex column index of interest
 	 * @return {@link String}
 	 */
 	public abstract String getText(int columnIndex);
@@ -112,15 +114,15 @@ public abstract class ViewerRow implements Cloneable {
 	/**
 	 * Set the text at the columnIndex
 	 *
-	 * @param columnIndex
-	 * @param text
+	 * @param columnIndex column index to set text for
+	 * @param text        text to set
 	 */
 	public abstract void setText(int columnIndex, String text);
 
 	/**
 	 * Get the background at the columnIndex,
 	 *
-	 * @param columnIndex
+	 * @param columnIndex column index of interest
 	 * @return {@link Color} or <code>null</code>
 	 */
 	public abstract Color getBackground(int columnIndex);
@@ -128,15 +130,15 @@ public abstract class ViewerRow implements Cloneable {
 	/**
 	 * Set the background at the columnIndex.
 	 *
-	 * @param columnIndex
-	 * @param color
+	 * @param columnIndex column index to set color for
+	 * @param color       color to set
 	 */
 	public abstract void setBackground(int columnIndex, Color color);
 
 	/**
 	 * Get the foreground at the columnIndex.
 	 *
-	 * @param columnIndex
+	 * @param columnIndex column index of interest
 	 * @return {@link Color} or <code>null</code>
 	 */
 	public abstract Color getForeground(int columnIndex);
@@ -144,15 +146,15 @@ public abstract class ViewerRow implements Cloneable {
 	/**
 	 * Set the foreground at the columnIndex.
 	 *
-	 * @param columnIndex
-	 * @param color
+	 * @param columnIndex column index to set color for
+	 * @param color       color to set
 	 */
 	public abstract void setForeground(int columnIndex, Color color);
 
 	/**
 	 * Get the font at the columnIndex.
 	 *
-	 * @param columnIndex
+	 * @param columnIndex column index of interest
 	 * @return {@link Font} or <code>null</code>
 	 */
 	public abstract Font getFont(int columnIndex);
@@ -160,15 +162,15 @@ public abstract class ViewerRow implements Cloneable {
 	/**
 	 * Set the {@link Font} at the columnIndex.
 	 *
-	 * @param columnIndex
-	 * @param font
+	 * @param columnIndex column index to set font for
+	 * @param font        font to set
 	 */
 	public abstract void setFont(int columnIndex, Font font);
 
 	/**
 	 * Get the ViewerCell at point.
 	 *
-	 * @param point
+	 * @param point position to get cell for
 	 * @return {@link ViewerCell} or <code>null</code> if the point is not in the
 	 *         bounds of a cell
 	 */
@@ -180,7 +182,7 @@ public abstract class ViewerRow implements Cloneable {
 	/**
 	 * Get the columnIndex of the point.
 	 *
-	 * @param point
+	 * @param point position to get column index for
 	 * @return int or -1 if it cannot be found.
 	 */
 	public int getColumnIndex(Point point) {
@@ -203,7 +205,7 @@ public abstract class ViewerRow implements Cloneable {
 	/**
 	 * Get a ViewerCell for the column at index.
 	 *
-	 * @param column
+	 * @param column column index of interest
 	 * @return {@link ViewerCell} or <code>null</code> if the index is negative.
 	 */
 	public ViewerCell getCell(int column) {
@@ -251,11 +253,7 @@ public abstract class ViewerRow implements Cloneable {
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result
-				+ ((getItem() == null) ? 0 : getItem().hashCode());
-		return result;
+		return Objects.hashCode(getItem());
 	}
 
 	@Override
@@ -267,12 +265,7 @@ public abstract class ViewerRow implements Cloneable {
 		if (getClass() != obj.getClass())
 			return false;
 		final ViewerRow other = (ViewerRow) obj;
-		if (getItem() == null) {
-			if (other.getItem() != null)
-				return false;
-		} else if (!getItem().equals(other.getItem()))
-			return false;
-		return true;
+		return Objects.equals(getItem(), other.getItem());
 	}
 
 	/**

@@ -13,10 +13,9 @@
  *******************************************************************************/
 package org.eclipse.text.templates;
 
+import java.text.MessageFormat;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-
-import com.ibm.icu.text.MessageFormat;
 
 /*
  * @since 3.0
@@ -38,7 +37,7 @@ class TextTemplateMessages {
 	}
 
 	public static String getFormattedString(String key, Object arg) {
-		return MessageFormat.format(getString(key), new Object[] { arg });
+		return MessageFormat.format(getString(key), arg);
 	}
 
 

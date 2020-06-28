@@ -158,7 +158,7 @@ public final class XMLRootElementContentDescriber2 extends XMLContentDescriber i
 
 	@Override
 	public int describe(InputStream contents, IContentDescription description) throws IOException {
-		return describe(contents, description, new HashMap<String, Object>());
+		return describe(contents, description, new HashMap<>());
 	}
 
 	/**
@@ -176,7 +176,7 @@ public final class XMLRootElementContentDescriber2 extends XMLContentDescriber i
 
 	@Override
 	public int describe(Reader contents, IContentDescription description) throws IOException {
-		return describe(contents, description, new HashMap<String, Object>());
+		return describe(contents, description, new HashMap<>());
 	}
 
 	/**
@@ -254,9 +254,7 @@ public final class XMLRootElementContentDescriber2 extends XMLContentDescriber i
 
 			// create list of qualified elements
 			if (elements != null) {
-				for (QualifiedElement qualifiedElement : elements) {
-					qualifiedElements.add(qualifiedElement);
-				}
+				qualifiedElements.addAll(elements);
 			}
 			elementsToFind = qualifiedElements.toArray(new QualifiedElement[qualifiedElements.size()]);
 		}

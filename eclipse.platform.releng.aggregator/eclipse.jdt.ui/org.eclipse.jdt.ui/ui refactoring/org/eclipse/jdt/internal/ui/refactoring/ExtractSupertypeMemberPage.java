@@ -114,7 +114,7 @@ public final class ExtractSupertypeMemberPage extends PullUpMemberPage {
 			createMessageArea(control);
 			fViewer= new TableViewer(control, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
 			fViewer.setLabelProvider(createLabelProvider());
-			fViewer.setContentProvider(new ArrayContentProvider());
+			fViewer.setContentProvider(ArrayContentProvider.getInstance());
 			fViewer.setComparator(new SupertypeSelectionViewerSorter());
 			fViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 				@Override
@@ -303,8 +303,7 @@ public final class ExtractSupertypeMemberPage extends PullUpMemberPage {
 				final LinkedList<IType> list= new LinkedList<>(Arrays.asList(fCandidateTypes));
 				for (final Iterator<IType> outer= list.iterator(); outer.hasNext();) {
 					final IType first= outer.next();
-					for (final Iterator<IType> inner= fTypesToExtract.iterator(); inner.hasNext();) {
-						final IType second= inner.next();
+					for (IType second : fTypesToExtract) {
 						if (second.getFullyQualifiedName().equals(first.getFullyQualifiedName()))
 							outer.remove();
 					}
@@ -316,8 +315,8 @@ public final class ExtractSupertypeMemberPage extends PullUpMemberPage {
 				if (result == Window.OK) {
 					final Object[] objects= dialog.getResult();
 					if (objects != null && objects.length > 0) {
-						for (int index= 0; index < objects.length; index++) {
-							fTypesToExtract.add((IType) objects[index]);
+						for (Object object : objects) {
+							fTypesToExtract.add((IType) object);
 						}
 						fTableViewer.setInput(fTypesToExtract.toArray());
 						handleTypesChanged();
@@ -455,7 +454,7 @@ public final class ExtractSupertypeMemberPage extends PullUpMemberPage {
 		data.heightHint= SWTUtil.getTableHeightHint(fTableViewer.getTable(), 3);
 		fTableViewer.getTable().setLayoutData(data);
 		fTableViewer.setLabelProvider(createLabelProvider());
-		fTableViewer.setContentProvider(new ArrayContentProvider());
+		fTableViewer.setContentProvider(ArrayContentProvider.getInstance());
 		fTableViewer.setComparator(new JavaElementComparator());
 		fTypesToExtract.add(getDeclaringType());
 		fTableViewer.setInput(fTypesToExtract.toArray());

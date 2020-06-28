@@ -19,7 +19,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.eclipse.swt.graphics.Image;
 
@@ -145,7 +144,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 			try {
 				MultiFixTarget[] problems= getCleanUpTargets(markers);
 
-				if (fProposal instanceof CreatePackageInfoWithDefaultNullnessProposal) {					
+				if (fProposal instanceof CreatePackageInfoWithDefaultNullnessProposal) {
 					((CreatePackageInfoWithDefaultNullnessProposal) fProposal).resolve(problems, monitor);
 					return;
 				}
@@ -166,8 +165,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 
 		public static MultiFixTarget[] getCleanUpTargets(IMarker[] markers) {
 			Hashtable<ICompilationUnit, List<IProblemLocation>> problemLocations= new Hashtable<>();
-			for (int i= 0; i < markers.length; i++) {
-				IMarker marker= markers[i];
+			for (IMarker marker : markers) {
 				ICompilationUnit cu= getCompilationUnit(marker);
 
 				if (cu != null) {
@@ -186,8 +184,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 
 			MultiFixTarget[] result= new MultiFixTarget[problemLocations.size()];
 			int i= 0;
-			for (Iterator<Map.Entry<ICompilationUnit, List<IProblemLocation>>> iterator= problemLocations.entrySet().iterator(); iterator.hasNext();) {
-				Map.Entry<ICompilationUnit, List<IProblemLocation>> entry= iterator.next();
+			for (Map.Entry<ICompilationUnit, List<IProblemLocation>> entry : problemLocations.entrySet()) {
 				ICompilationUnit cu= entry.getKey();
 				List<IProblemLocation> locations= entry.getValue();
 				result[i]= new MultiFixTarget(cu, locations.toArray(new IProblemLocation[locations.size()]));
@@ -228,7 +225,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 					if (createPackageInfoWithDefaultNullnessProposal.fProblemId == id)
 						result.add(marker);
 				}
-				if (result.size() == 0)
+				if (result.isEmpty())
 					return NO_MARKERS;
 
 				return result.toArray(new IMarker[result.size()]);
@@ -249,8 +246,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 
 			final List<IMarker> result= new ArrayList<>();
 
-			for (Iterator<Entry<IFile, List<IMarker>>> iterator= fileMarkerTable.entrySet().iterator(); iterator.hasNext();) {
-				Map.Entry<IFile, List<IMarker>> entry= iterator.next();
+			for (Map.Entry<IFile, List<IMarker>> entry : fileMarkerTable.entrySet()) {
 				IFile file= entry.getKey();
 				List<IMarker> fileMarkers= entry.getValue();
 
@@ -268,7 +264,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 				}
 			}
 
-			if (result.size() == 0)
+			if (result.isEmpty())
 				return NO_MARKERS;
 
 			return result.toArray(new IMarker[result.size()]);
@@ -290,8 +286,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 				return result;
 			}
 
-			for (int i= 0; i < markers.length; i++) {
-				IMarker marker= markers[i];
+			for (IMarker marker : markers) {
 				if (!marker.equals(fMarker)) {
 					String currMarkerType= null;
 					try {
@@ -376,8 +371,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 	}
 
 	private static boolean hasProblem(IProblem[] problems, IProblemLocation location) {
-		for (int i= 0; i < problems.length; i++) {
-			IProblem problem= problems[i];
+		for (IProblem problem : problems) {
 			if (problem.getID() == location.getProblemId() && problem.getSourceStart() == location.getOffset())
 				return true;
 		}
@@ -408,9 +402,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 					}
 					// no existing package-info.java found, return any writeable compilation unit in packageFragment as placeholder
 					// (there must be one, or the error wouldn't exist.)
-					ICompilationUnit[] compilationUnits= packageFragment.getCompilationUnits();
-					for (int i= 0; i < compilationUnits.length; i++) {
-						ICompilationUnit compilationUnit= compilationUnits[i];
+					for (ICompilationUnit compilationUnit : packageFragment.getCompilationUnits()) {
 						if (compilationUnit.exists()) {
 							return compilationUnit;
 						}

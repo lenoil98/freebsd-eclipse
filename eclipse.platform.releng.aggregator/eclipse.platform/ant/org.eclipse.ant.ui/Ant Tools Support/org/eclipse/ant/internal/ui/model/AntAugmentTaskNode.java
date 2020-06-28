@@ -39,11 +39,6 @@ public class AntAugmentTaskNode extends AntTaskNode {
 		attrId = (String) wrapper.getAttributeMap().get(IAntCoreConstants.ID);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ant.internal.ui.model.AntTaskNode#configure(boolean)
-	 */
 	@Override
 	public boolean configure(boolean validateFully) {
 		if (fConfigured) {
@@ -70,11 +65,6 @@ public class AntAugmentTaskNode extends AntTaskNode {
 		return false;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ant.internal.ui.model.AntTaskNode#containsOccurrence(java.lang.String)
-	 */
 	@Override
 	public boolean containsOccurrence(String identifier) {
 		if (identifier != null) {
@@ -83,16 +73,11 @@ public class AntAugmentTaskNode extends AntTaskNode {
 			if (!prop) {
 				return identifier.equals(attrId);
 			}
-			return attrId != null && identifier.indexOf(attrId) > -1;
+			return attrId != null && identifier.contains(attrId);
 		}
 		return false;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ant.internal.ui.model.AntTaskNode#computeIdentifierOffsets(java.lang.String)
-	 */
 	@Override
 	public List<Integer> computeIdentifierOffsets(String identifier) {
 		// augment nodes can only contain an occurrence of the id of the task

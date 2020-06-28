@@ -152,7 +152,7 @@ public abstract class StructureCreator implements IStructureCreator2 {
 	 * @param monitor a progress monitor or <code>null</code> if progress is not required
 	 *
 	 * @return a structure comparator
-	 * @throws CoreException
+	 * @throws CoreException if creating the comparator failed; depends on actual implementation
 	 */
 	protected abstract IStructureComparator createStructureComparator(
 			final Object element, IDocument document,
@@ -378,8 +378,8 @@ public abstract class StructureCreator implements IStructureCreator2 {
 		if (tree != null) {
 			Object[] children= tree.getChildren();
 			if (children != null) {
-				for (int i= 0; i < children.length; i++) {
-					IStructureComparator child= (IStructureComparator) children[i];
+				for (Object c : children) {
+					IStructureComparator child = (IStructureComparator) c;
 					if (child instanceof ITypedElement && child instanceof DocumentRangeNode) {
 						String n1= ((DocumentRangeNode)child).getId();
 						if (n1 == null) {
@@ -439,21 +439,19 @@ public abstract class StructureCreator implements IStructureCreator2 {
 	 * <code>compareFilters</code> is not empty, the filters are applied to each
 	 * line of each node's text representation.
 	 *
-	 * @param node1
-	 * @param contributor1
-	 *            either 'A', 'L', or 'R' for ancestor, left or right
-	 *            contributor
-	 * @param node2
-	 * @param contributor2
-	 *            either 'A', 'L', or 'R' for ancestor, left or right
-	 *            contributor
-	 * @param ignoreWhitespace
-	 *            if <code>true</code> whitespace characters will be ignored
-	 *            when determining equality. Note: Will bypass any custom ignore
-	 *            whitespace behaviors contributed through implementations of
-	 *            <code>org.eclipse.compare.structuremergeviewer.IStructureCreator.getContents()</code>
-	 * @param compareFilters
-	 *            the filters used to customize the comparison of lines of text.
+	 * @param node1            first node
+	 * @param contributor1     either 'A', 'L', or 'R' for ancestor, left or right
+	 *                         contributor
+	 * @param node2            second node
+	 * @param contributor2     either 'A', 'L', or 'R' for ancestor, left or right
+	 *                         contributor
+	 * @param ignoreWhitespace if <code>true</code> whitespace characters will be
+	 *                         ignored when determining equality. Note: Will bypass
+	 *                         any custom ignore whitespace behaviors contributed
+	 *                         through implementations of
+	 *                         <code>org.eclipse.compare.structuremergeviewer.IStructureCreator.getContents()</code>
+	 * @param compareFilters   the filters used to customize the comparison of lines
+	 *                         of text.
 	 * @return whether the two nodes are equal for comparison purposes
 	 * @noreference This method is not intended to be referenced by clients.
 	 * @since 3.6

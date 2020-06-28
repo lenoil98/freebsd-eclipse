@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -104,6 +104,7 @@ class OSGiFrameworkHooks {
 				notifyCollisionHooksPriviledged(operationType, target, shrinkable);
 			} else {
 				AccessController.doPrivileged(new PrivilegedAction<Void>() {
+					@Override
 					public Void run() {
 						notifyCollisionHooksPriviledged(operationType, target, shrinkable);
 						return null;
@@ -114,23 +115,26 @@ class OSGiFrameworkHooks {
 
 		void notifyCollisionHooksPriviledged(final int operationType, final Bundle target, final Collection<Bundle> collisionCandidates) {
 			if (debug.DEBUG_HOOKS) {
-				Debug.println("notifyCollisionHooks(" + operationType + ", " + target + ", " + collisionCandidates + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ 
+				Debug.println("notifyCollisionHooks(" + operationType + ", " + target + ", " + collisionCandidates + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 			}
 			ServiceRegistry registry = container.getServiceRegistry();
 			if (registry != null) {
 				registry.notifyHooksPrivileged(new HookContext() {
+					@Override
 					public void call(Object hook, ServiceRegistration<?> hookRegistration) throws Exception {
 						if (hook instanceof CollisionHook) {
 							((CollisionHook) hook).filterCollisions(operationType, target, collisionCandidates);
 						}
 					}
 
+					@Override
 					public String getHookClassName() {
 						return collisionHookName;
 					}
 
+					@Override
 					public String getHookMethodName() {
-						return "filterCollisions"; //$NON-NLS-1$ 
+						return "filterCollisions"; //$NON-NLS-1$
 					}
 
 					@Override
@@ -146,7 +150,7 @@ class OSGiFrameworkHooks {
 	 * This class encapsulates the delegation to ResolverHooks that are registered with the service
 	 * registry.  This way the resolver implementation only has to call out to a single hook
 	 * which does all the necessary service registry lookups.
-	 * 
+	 *
 	 * This class is not thread safe and expects external synchronization.
 	 *
 	 */
@@ -203,6 +207,7 @@ class OSGiFrameworkHooks {
 
 		}
 
+		@Override
 		public ResolverHook begin(Collection<BundleRevision> triggers) {
 			if (debug.DEBUG_HOOKS) {
 				Debug.println("ResolverHook.begin"); //$NON-NLS-1$
@@ -252,6 +257,7 @@ class OSGiFrameworkHooks {
 				this.systemModule = systemModule;
 			}
 
+			@Override
 			public void filterResolvable(Collection<BundleRevision> candidates) {
 				if (debug.DEBUG_HOOKS) {
 					Debug.println("ResolverHook.filterResolvable(" + candidates + ")"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -273,8 +279,7 @@ class OSGiFrameworkHooks {
 				if (hooks.isEmpty())
 					return;
 				candidates = new ShrinkableCollection<>(candidates);
-				for (Iterator<HookReference> iHooks = hooks.iterator(); iHooks.hasNext();) {
-					HookReference hookRef = iHooks.next();
+				for (HookReference hookRef : hooks) {
 					if (hookRef.reference.getBundle() == null) {
 						handleHookException(null, hookRef.hook, "filterResolvable"); //$NON-NLS-1$
 					} else {
@@ -291,6 +296,7 @@ class OSGiFrameworkHooks {
 				return systemModule == null || !Module.RESOLVED_SET.contains(systemModule.getState()) || (systemModule.getState().equals(State.STARTING) && inInit);
 			}
 
+			@Override
 			public void filterSingletonCollisions(BundleCapability singleton, Collection<BundleCapability> collisionCandidates) {
 				if (debug.DEBUG_HOOKS) {
 					Debug.println("ResolverHook.filterSingletonCollisions(" + singleton + ", " + collisionCandidates + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -298,8 +304,7 @@ class OSGiFrameworkHooks {
 				if (hooks.isEmpty())
 					return;
 				collisionCandidates = new ShrinkableCollection<>(collisionCandidates);
-				for (Iterator<HookReference> iHooks = hooks.iterator(); iHooks.hasNext();) {
-					HookReference hookRef = iHooks.next();
+				for (HookReference hookRef : hooks) {
 					if (hookRef.reference.getBundle() == null) {
 						handleHookException(null, hookRef.hook, "filterSingletonCollisions"); //$NON-NLS-1$
 					} else {
@@ -312,6 +317,7 @@ class OSGiFrameworkHooks {
 				}
 			}
 
+			@Override
 			public void filterMatches(BundleRequirement requirement, Collection<BundleCapability> candidates) {
 				if (debug.DEBUG_HOOKS) {
 					Debug.println("ResolverHook.filterMatches(" + requirement + ", " + candidates + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -319,8 +325,7 @@ class OSGiFrameworkHooks {
 				if (hooks.isEmpty())
 					return;
 				candidates = new ShrinkableCollection<>(candidates);
-				for (Iterator<HookReference> iHooks = hooks.iterator(); iHooks.hasNext();) {
-					HookReference hookRef = iHooks.next();
+				for (HookReference hookRef : hooks) {
 					if (hookRef.reference.getBundle() == null) {
 						handleHookException(null, hookRef.hook, "filterMatches"); //$NON-NLS-1$
 					} else {
@@ -333,6 +338,7 @@ class OSGiFrameworkHooks {
 				}
 			}
 
+			@Override
 			public void end() {
 				if (debug.DEBUG_HOOKS) {
 					Debug.println("ResolverHook.end"); //$NON-NLS-1$
@@ -343,8 +349,7 @@ class OSGiFrameworkHooks {
 					HookReference missingHook = null;
 					Throwable endError = null;
 					HookReference endBadHook = null;
-					for (Iterator<HookReference> iHooks = hooks.iterator(); iHooks.hasNext();) {
-						HookReference hookRef = iHooks.next();
+					for (HookReference hookRef : hooks) {
 						// We do not remove unregistered services here because we are going to remove all of them at the end
 						if (hookRef.reference.getBundle() == null) {
 							if (missingHook == null)

@@ -18,8 +18,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.filesystem.*;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.*;
@@ -29,18 +27,6 @@ import org.eclipse.core.tests.internal.localstore.LocalStoreTest;
  * Basic tests for the IFileStore API
  */
 public class FileStoreTest extends LocalStoreTest {
-	public static Test suite() {
-		return new TestSuite(FileStoreTest.class);
-	}
-
-	public FileStoreTest() {
-		super();
-	}
-
-	public FileStoreTest(String name) {
-		super(name);
-	}
-
 	private IFileStore createDir(IFileStore store, boolean clear) throws CoreException {
 		if (clear && store.fetchInfo().exists()) {
 			store.delete(EFS.NONE, null);
@@ -340,10 +326,10 @@ public class FileStoreTest extends LocalStoreTest {
 			target.openOutputStream(EFS.NONE, null).close();
 			assertEquals("1.0", 0, target.fetchInfo().getLength());
 
-			// add a byte
-			OutputStream out = target.openOutputStream(EFS.NONE, null);
-			out.write(5);
-			out.close();
+			try ( // add a byte
+					OutputStream out = target.openOutputStream(EFS.NONE, null)) {
+				out.write(5);
+			}
 			assertEquals("1.0", 1, target.fetchInfo().getLength());
 		} finally {
 			/* remove trash */

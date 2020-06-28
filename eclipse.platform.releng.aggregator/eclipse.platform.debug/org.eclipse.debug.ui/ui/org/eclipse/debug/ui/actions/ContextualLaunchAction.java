@@ -86,8 +86,7 @@ public abstract class ContextualLaunchAction implements IObjectActionDelegate, I
 		fMode = mode;
 		ILaunchGroup[] groups = DebugUITools.getLaunchGroups();
 		fGroupsByCategory = new HashMap<>(3);
-		for (int i = 0; i < groups.length; i++) {
-			ILaunchGroup group = groups[i];
+		for (ILaunchGroup group : groups) {
 			if (group.getMode().equals(mode)) {
 				if (group.getCategory() == null) {
 					fGroup = group;
@@ -105,24 +104,18 @@ public abstract class ContextualLaunchAction implements IObjectActionDelegate, I
 	public void setActivePart(IAction action, IWorkbenchPart targetPart) {
 		// We don't have a need for the active part.
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IMenuCreator#dispose()
-	 */
+
 	@Override
 	public void dispose() {
 		// nothing to do
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Control)
-	 */
+
 	@Override
 	public Menu getMenu(Control parent) {
 		// never called
 		return null;
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Menu)
-	 */
+
 	@Override
 	public Menu getMenu(Menu parent) {
 		//Create the new menu. The menu will get filled when it is about to be shown. see fillMenu(Menu).
@@ -138,8 +131,8 @@ public abstract class ContextualLaunchAction implements IObjectActionDelegate, I
 				if (fFillMenu) {
 					Menu m = (Menu)e.widget;
 					MenuItem[] items = m.getItems();
-					for (int i=0; i < items.length; i++) {
-						items[i].dispose();
+					for (MenuItem item : items) {
+						item.dispose();
 					}
 					fillMenu(m);
 					fFillMenu = false;
@@ -185,10 +178,10 @@ public abstract class ContextualLaunchAction implements IObjectActionDelegate, I
 		return DebugPlugin.getDefault().getLaunchManager();
 	}
 
-    /**
-     * Fills the menu with applicable launch shortcuts
-     * @param menu The menu to fill
-     */
+	/**
+	 * Fills the menu with applicable launch shortcuts
+	 * @param menu The menu to fill
+	 */
 	protected void fillMenu(Menu menu) {
 		IStructuredSelection ss = SelectedResourceManager.getDefault().getCurrentSelection();
 		int accelerator = 1;
@@ -196,10 +189,10 @@ public abstract class ContextualLaunchAction implements IObjectActionDelegate, I
 			try {
 				//try to add the shared config it the context is one.
 				ILaunchConfiguration config = getLaunchConfigurationManager().isSharedConfig(ss.getFirstElement());
-		        if(config != null && config.exists() && config.supportsMode(fMode)) {
-		        	IAction action = new LaunchConfigurationAction(config, fMode, config.getName(), DebugUITools.getDefaultImageDescriptor(config), accelerator++);
-		            ActionContributionItem item = new ActionContributionItem(action);
-		            item.fill(menu, -1);
+				if(config != null && config.exists() && config.supportsMode(fMode)) {
+					IAction action = new LaunchConfigurationAction(config, fMode, config.getName(), DebugUITools.getDefaultImageDescriptor(config), accelerator++);
+					ActionContributionItem item = new ActionContributionItem(action);
+					item.fill(menu, -1);
 				}
 			}
 			catch (CoreException ce) {}
@@ -253,8 +246,8 @@ public abstract class ContextualLaunchAction implements IObjectActionDelegate, I
 				new MenuItem(menu, SWT.SEPARATOR);
 			}
 			IAction action = new OpenLaunchDialogAction(fGroup.getIdentifier());
-		    ActionContributionItem item = new ActionContributionItem(action);
-		    item.fill(menu, -1);
+			ActionContributionItem item = new ActionContributionItem(action);
+			item.fill(menu, -1);
 		} else {
 			boolean addedSep = false;
 			for (String category : categories) {
@@ -267,9 +260,9 @@ public abstract class ContextualLaunchAction implements IObjectActionDelegate, I
 						new MenuItem(menu, SWT.SEPARATOR);
 						addedSep = true;
 					}
-				    IAction action = new OpenLaunchDialogAction(group.getIdentifier());
-				    ActionContributionItem item= new ActionContributionItem(action);
-				    item.fill(menu, -1);
+					IAction action = new OpenLaunchDialogAction(group.getIdentifier());
+					ActionContributionItem item= new ActionContributionItem(action);
+					item.fill(menu, -1);
 				}
 			}
 		}
@@ -304,7 +297,7 @@ public abstract class ContextualLaunchAction implements IObjectActionDelegate, I
 		if (helpContextId != null) {
 			PlatformUI.getWorkbench().getHelpSystem().setHelp(action, helpContextId);
 		}
-		StringBuffer label= new StringBuffer();
+		StringBuilder label= new StringBuilder();
 		if (accelerator >= 0 && accelerator < 10) {
 			//add the numerical accelerator
 			label.append('&');

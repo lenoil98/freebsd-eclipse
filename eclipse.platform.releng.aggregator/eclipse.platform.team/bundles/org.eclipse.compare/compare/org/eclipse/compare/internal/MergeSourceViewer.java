@@ -12,6 +12,7 @@
  *     IBM Corporation - initial API and implementation
  *     Max Weninger (max.weninger@windriver.com) - Bug 131895 [Edit] Undo in compare
  *     Max Weninger (max.weninger@windriver.com) - Bug 72936 [Viewers] Show line numbers in comparision
+ *     Stefan Dirix (sdirix@eclipsesource.com) - Bug 473847: Minimum E4 Compatibility of Compare
  *******************************************************************************/
 package org.eclipse.compare.internal;
 
@@ -64,7 +65,6 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -301,14 +301,12 @@ public class MergeSourceViewer implements ISelectionChangedListener,
 
 			StyledText widget= MergeSourceViewer.this.getSourceViewer().getTextWidget();
 			widget.setRedraw(false);
-			{
-				adjustHighlightRange(revealStart, revealLength);
-				MergeSourceViewer.this.getSourceViewer().revealRange(revealStart, revealLength);
+			adjustHighlightRange(revealStart, revealLength);
+			MergeSourceViewer.this.getSourceViewer().revealRange(revealStart, revealLength);
 
-				MergeSourceViewer.this.getSourceViewer().setSelectedRange(selectionStart, selectionLength);
+			MergeSourceViewer.this.getSourceViewer().setSelectedRange(selectionStart, selectionLength);
 
-				 markInNavigationHistory();
-			}
+			markInNavigationHistory();
 			widget.setRedraw(true);
 		}
 
@@ -497,7 +495,7 @@ public class MergeSourceViewer implements ISelectionChangedListener,
 		fContainer.registerContextMenu(menu, getSourceViewer());
 
 		// for listening to editor show/hide line number preference value
-		fPreferenceChangeListener= event -> MergeSourceViewer.this.handlePropertyChangeEvent(event);
+		fPreferenceChangeListener= MergeSourceViewer.this::handlePropertyChangeEvent;
 		EditorsUI.getPreferenceStore().addPropertyChangeListener(fPreferenceChangeListener);
 		fShowLineNumber= EditorsUI.getPreferenceStore().getBoolean(AbstractDecoratedTextEditorPreferenceConstants.EDITOR_LINE_NUMBER_RULER);
 		if(fShowLineNumber){
@@ -557,10 +555,6 @@ public class MergeSourceViewer implements ISelectionChangedListener,
 			StyledText c= getSourceViewer().getTextWidget();
 			if (c != null) {
 				c.setEnabled(enabled);
-				Display d= c.getDisplay();
-				if (enabled) {
-					c.setBackground(d.getSystemColor(SWT.COLOR_LIST_BACKGROUND));
-				}
 			}
 		}
 	}
@@ -855,8 +849,7 @@ public class MergeSourceViewer implements ISelectionChangedListener,
 		menu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 
 		menu.add(new Separator("text")); //$NON-NLS-1$
-		for (Iterator<IAction> iterator = textActions.iterator(); iterator.hasNext();) {
-			IAction action = iterator.next();
+		for (IAction action : textActions) {
 			menu.add(action);
 		}
 
@@ -1043,7 +1036,7 @@ public class MergeSourceViewer implements ISelectionChangedListener,
 	}
 
 	private IOperationHistory getHistory() {
-		if (PlatformUI.getWorkbench() == null) {
+		if (!PlatformUI.isWorkbenchRunning()) {
 			return null;
 		}
 		return PlatformUI.getWorkbench().getOperationSupport()
@@ -1056,7 +1049,7 @@ public class MergeSourceViewer implements ISelectionChangedListener,
 		// when the undo history changes. It could be localized to UNDO and REDO.
 		IUndoContext context = getUndoContext();
 		if (context != null && event.getOperation().hasContext(context)) {
-			Display.getDefault().asyncExec(() -> updateContentDependantActions());
+			Display.getDefault().asyncExec(this::updateContentDependantActions);
 		}
 	}
 

@@ -44,13 +44,10 @@ import org.eclipse.ui.progress.UIJob;
  */
 public class DataStackView extends AbstractDebugView implements IDebugContextListener {
 
-    private PDAThread fThread;
+	private PDAThread fThread;
 
 	class StackViewContentProvider implements ITreeContentProvider {
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
-		 */
 		@Override
 		public Object[] getChildren(Object parentElement) {
 			if (parentElement instanceof PDAThread) {
@@ -62,9 +59,6 @@ public class DataStackView extends AbstractDebugView implements IDebugContextLis
 			return new Object[0];
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
-		 */
 		@Override
 		public Object getParent(Object element) {
 			if (element instanceof PDAThread) {
@@ -74,41 +68,26 @@ public class DataStackView extends AbstractDebugView implements IDebugContextLis
 			}
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
-		 */
 		@Override
 		public boolean hasChildren(Object element) {
 			return element instanceof PDAThread;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-		 */
 		@Override
 		public Object[] getElements(Object inputElement) {
 			return getChildren(inputElement);
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IContentProvider#dispose()
-		 */
 		@Override
 		public void dispose() {
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-		 */
 		@Override
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		}
 
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.AbstractDebugView#createViewer(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected Viewer createViewer(Composite parent) {
 		TreeViewer viewer = new TreeViewer(parent);
@@ -118,77 +97,67 @@ public class DataStackView extends AbstractDebugView implements IDebugContextLis
 		getSite().setSelectionProvider(viewer);
 		return viewer;
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.AbstractDebugView#createActions()
-	 */
+
 	@Override
 	protected void createActions() {
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.AbstractDebugView#getHelpContextId()
-	 */
+
 	@Override
 	protected String getHelpContextId() {
 		return null;
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.AbstractDebugView#fillContextMenu(org.eclipse.jface.action.IMenuManager)
-	 */
+
 	@Override
 	protected void fillContextMenu(IMenuManager menu) {
 		menu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.AbstractDebugView#configureToolBar(org.eclipse.jface.action.IToolBarManager)
-	 */
+
 	@Override
 	protected void configureToolBar(IToolBarManager tbm) {
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWorkbenchPart#dispose()
-	 */
+
 	@Override
 	public void dispose() {
-        DebugUITools.getDebugContextManager().getContextService(getSite().getWorkbenchWindow()).removeDebugContextListener(this);
+		DebugUITools.getDebugContextManager().getContextService(getSite().getWorkbenchWindow()).removeDebugContextListener(this);
 		super.dispose();
 	}
 
 	@Override
 	public void debugContextChanged(final DebugContextEvent event) {
 		new UIJob(getSite().getShell().getDisplay(), "DataStackView update") { //$NON-NLS-1$
-	        {
-	            setSystem(true);
-	        }
+			{
+				setSystem(true);
+			}
 
-	        @Override
+			@Override
 			public IStatus runInUIThread(IProgressMonitor monitor) {
-	        	if (getViewer() != null) { // runs asynchronously, view may be disposed
-	        		update(event.getContext());
-	        	}
-	            return Status.OK_STATUS;
-	        }
-	    }.schedule();
+				if (getViewer() != null) { // runs asynchronously, view may be disposed
+					update(event.getContext());
+				}
+				return Status.OK_STATUS;
+			}
+		}.schedule();
 	}
 
-    /**
-     * Updates the view for the selected thread (if suspended)
-     */
-    private void update(ISelection context) {
-        fThread = null;
+	/**
+	 * Updates the view for the selected thread (if suspended)
+	 */
+	private void update(ISelection context) {
+		fThread = null;
 
-        if (context instanceof IStructuredSelection) {
-            Object element = ((IStructuredSelection)context).getFirstElement();
-            if (element instanceof PDAThread) {
-                fThread = (PDAThread)element;
-            } else if (element instanceof PDAStackFrame) {
-                fThread = (PDAThread)((PDAStackFrame)element).getThread();
-            }
-        }
+		if (context instanceof IStructuredSelection) {
+			Object element = ((IStructuredSelection)context).getFirstElement();
+			if (element instanceof PDAThread) {
+				fThread = (PDAThread)element;
+			} else if (element instanceof PDAStackFrame) {
+				fThread = (PDAThread)((PDAStackFrame)element).getThread();
+			}
+		}
 		Object input = null;
 		if (fThread != null && fThread.isSuspended()) {
-		    input = fThread;
+			input = fThread;
 		}
 		getViewer().setInput(input);
 		getViewer().refresh();
-    }
+	}
 }

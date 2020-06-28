@@ -13,7 +13,7 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.preferences;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
 
 import org.eclipse.jface.preference.IPreferenceNode;
 import org.eclipse.jface.preference.IPreferencePage;
@@ -21,12 +21,15 @@ import org.eclipse.jface.preference.PreferenceDialog;
 import org.eclipse.jface.preference.PreferenceManager;
 import org.eclipse.jface.preference.PreferenceNode;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.jface.tests.preferences.SamplePreferencePage;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.dialogs.FilteredPreferenceDialog;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Added as a result of the bug 226547:
@@ -34,31 +37,30 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
  *
  * @since 3.5
  */
-public class PreferencesDialogTest extends TestCase {
+public class PreferencesDialogTest {
 
-	static ImageDescriptor descriptor = AbstractUIPlugin.imageDescriptorFromPlugin("org.eclipse.ui.tests",
-					"icons/anything.gif");
+	static ImageDescriptor descriptor = ResourceLocator
+			.imageDescriptorFromBundle("org.eclipse.ui.tests", "icons/anything.gif").orElse(null);
 
 	public Shell shell;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		shell = new Shell();
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		if (shell != null) {
 			shell.dispose();
 			shell = null;
 		}
-		super.tearDown();
 	}
 
 	/**
 	 * Test preference dialog with a custom manager, custom nodes.
 	 */
+	@Test
 	public void testCustomManager() {
 		PreferenceManager manager = new PreferenceManager();
 
@@ -88,6 +90,7 @@ public class PreferencesDialogTest extends TestCase {
 	/**
 	 * Test preference dialog with a Workbench manager adding custom nodes to it.
 	 */
+	@Test
 	public void testMixedNodes() {
 		PreferenceManager manager = PlatformUI.getWorkbench().getPreferenceManager();
 
@@ -120,6 +123,7 @@ public class PreferencesDialogTest extends TestCase {
 	 * Test preference dialog with a custom manager, custom nodes, this time
 	 * using an icon.
 	 */
+	@Test
 	public void testWithIcons() {
 		PreferenceManager manager = new PreferenceManager();
 
@@ -157,6 +161,7 @@ public class PreferencesDialogTest extends TestCase {
 	 * but using it would bring all workbench pages into this test which could
 	 * impact sorting.
 	 */
+	@Test
 	public void testWithSorting() {
 		PreferenceManager manager = new PreferenceManager();
 

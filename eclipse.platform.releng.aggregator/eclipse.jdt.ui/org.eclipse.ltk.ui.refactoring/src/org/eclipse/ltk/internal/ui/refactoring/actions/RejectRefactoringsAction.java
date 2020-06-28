@@ -20,11 +20,9 @@ import org.eclipse.team.core.mapping.IMergeContext;
 import org.eclipse.team.core.mapping.ISynchronizationContext;
 
 import org.eclipse.core.runtime.Assert;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 
 import org.eclipse.ui.PlatformUI;
 
@@ -64,9 +62,9 @@ public final class RejectRefactoringsAction extends Action {
 	@Override
 	public boolean isEnabled() {
 		if (fProxies != null && fProxies.length > 0 && fContext instanceof IMergeContext) {
-			for (int index= 0; index < fProxies.length; index++) {
-				if (fProxies[index] instanceof RefactoringDescriptorSynchronizationProxy) {
-					final RefactoringDescriptorSynchronizationProxy proxy= (RefactoringDescriptorSynchronizationProxy) fProxies[index];
+			for (RefactoringDescriptorProxy fproxy : fProxies) {
+				if (fproxy instanceof RefactoringDescriptorSynchronizationProxy) {
+					final RefactoringDescriptorSynchronizationProxy proxy= (RefactoringDescriptorSynchronizationProxy) fproxy;
 					if (proxy.getDirection() == IThreeWayDiff.INCOMING)
 						return true;
 				}
@@ -79,18 +77,15 @@ public final class RejectRefactoringsAction extends Action {
 	public void run() {
 		if (fProxies != null) {
 			try {
-				PlatformUI.getWorkbench().getProgressService().run(true, true, new IRunnableWithProgress() {
-
-					@Override
-					public final void run(final IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-						try {
-							monitor.beginTask("", fProxies.length + 100); //$NON-NLS-1$
-							final RefactoringHistoryService service= RefactoringHistoryService.getInstance();
-							for (int index= 0; index < fProxies.length; index++)
-								service.addRefactoringDescriptor(fProxies[index], new SubProgressMonitor(monitor, 1));
-						} finally {
-							monitor.done();
+				PlatformUI.getWorkbench().getProgressService().run(true, true, monitor -> {
+					try {
+						monitor.beginTask("", fProxies.length + 100); //$NON-NLS-1$
+						final RefactoringHistoryService service= RefactoringHistoryService.getInstance();
+						for (RefactoringDescriptorProxy proxy : fProxies) {
+							service.addRefactoringDescriptor(proxy, new SubProgressMonitor(monitor, 1));
 						}
+					} finally {
+						monitor.done();
 					}
 				});
 			} catch (InvocationTargetException exception) {

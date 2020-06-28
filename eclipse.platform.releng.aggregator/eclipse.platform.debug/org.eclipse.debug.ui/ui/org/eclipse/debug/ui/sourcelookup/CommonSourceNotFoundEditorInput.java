@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.debug.ui.sourcelookup;
 
+import java.text.MessageFormat;
+
 import org.eclipse.core.runtime.PlatformObject;
 import org.eclipse.debug.internal.core.IInternalDebugCoreConstants;
 import org.eclipse.debug.internal.ui.sourcelookup.SourceLookupUIMessages;
@@ -21,8 +23,6 @@ import org.eclipse.debug.ui.IDebugModelPresentation;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IPersistableElement;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Editor input for the <code>CommonSourceNotFoundEditor</code>. The editor
@@ -61,41 +61,26 @@ public class CommonSourceNotFoundEditorInput extends PlatformObject implements I
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IEditorInput#exists()
-	 */
 	@Override
 	public boolean exists() {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IEditorInput#getImageDescriptor()
-	 */
 	@Override
 	public ImageDescriptor getImageDescriptor() {
 		return DebugUITools.getDefaultImageDescriptor(fArtifact);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IEditorInput#getName()
-	 */
 	@Override
 	public String getName() {
 		return fLabel;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IEditorInput#getPersistable()
-	 */
 	@Override
 	public IPersistableElement getPersistable() {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IEditorInput#getToolTipText()
-	 */
 	@Override
 	public String getToolTipText() {
 		return MessageFormat.format(SourceLookupUIMessages.addSourceLocation_editorMessage, new Object[] { fLabel });

@@ -15,6 +15,7 @@ package org.eclipse.ui.internal.editors.text;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -78,7 +79,7 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 
 		void filterElements(Collection<Object> elements) throws InterruptedException;
 
-	    void filterElements(Object[] elements) throws InterruptedException;
+		void filterElements(Object[] elements) throws InterruptedException;
 	}
 
 
@@ -151,8 +152,7 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 	 * @param elements the elements
 	 */
 	private void checkNewTreeElements(Object[] elements) {
-		for (int i= 0; i < elements.length; ++i) {
-			Object currentElement= elements[i];
+		for (Object currentElement : elements) {
 			boolean checked= checkedStateStore.containsKey(currentElement);
 			treeViewer.setChecked(currentElement, checked);
 			treeViewer.setGrayed(currentElement, checked && !whiteCheckedTreeItems.contains(currentElement));
@@ -254,7 +254,7 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 		gc.dispose();
 		return width;
 	}
-	
+
 	/**
 	 * Returns a boolean indicating whether the passed tree element should be at
 	 * LEAST gray-checked. Note that this method does not consider whether it
@@ -276,9 +276,8 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 		// treeElement
 		// must remain gray-checked as well. Only ask expanded nodes
 		if (expandedTreeNodes.contains(treeElement)) {
-			Object[] children= treeContentProvider.getChildren(treeElement);
-			for (int i= 0; i < children.length; ++i) {
-				if (checkedStateStore.containsKey(children[i]))
+			for (Object element : treeContentProvider.getChildren(treeElement)) {
+				if (checkedStateStore.containsKey(element))
 					return true;
 			}
 		}
@@ -305,10 +304,8 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 				if (whiteCheckedTreeItems.contains(element)) {
 					//If this is the first expansion and this is a white
 					// checked node then check the children
-					Object[] children= treeContentProvider.getChildren(element);
-					for (int i= 0; i < children.length; ++i) {
-						if (!whiteCheckedTreeItems.contains(children[i])) {
-							Object child= children[i];
+					for (Object child : treeContentProvider.getChildren(element)) {
+						if (!whiteCheckedTreeItems.contains(child)) {
 							setWhiteChecked(child, true);
 							treeViewer.setChecked(child, true);
 							checkedStateStore.put(child, new ArrayList<>());
@@ -345,8 +342,7 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 		}
 
 		Object[] treeChildren= treeContentProvider.getChildren(treeElement);
-		for (int i= 0; i < treeChildren.length; i++) {
-			Object child= treeChildren[i];
+		for (Object child : treeChildren) {
 			if (addAll)
 				findAllSelectedListElements(child, fullLabel, true, filter);
 			else { //Only continue for those with checked state
@@ -375,9 +371,8 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 			if (listChildren == null)
 				return;
 			result.addAll(listChildren);
-			Object[] children= treeContentProvider.getChildren(treeElement);
-			for (int i= 0; i < children.length; ++i) {
-				findAllWhiteCheckedItems(children[i], result);
+			for (Object element : treeContentProvider.getChildren(treeElement)) {
+				findAllWhiteCheckedItems(element, result);
 			}
 		}
 	}
@@ -391,10 +386,9 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 	 * @throws InterruptedException in case of interruption
 	 */
 	private void getAllCheckedListItems(IElementFilter filter) throws InterruptedException {
-		//Iterate through the children of the root as the root is not in the store
-		Object[] children= treeContentProvider.getChildren(root);
-		for (int i= 0; i < children.length; ++i) {
-			findAllSelectedListElements(children[i], null, whiteCheckedTreeItems.contains(children[i]), filter);
+		//Loop through the children of the root as the root is not in the store
+		for (Object element : treeContentProvider.getChildren(root)) {
+			findAllSelectedListElements(element, null, whiteCheckedTreeItems.contains(element), filter);
 		}
 	}
 
@@ -417,9 +411,7 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 
 			@Override
 			public void filterElements(Object[] elements) throws InterruptedException {
-				for (int i= 0; i < elements.length; i++) {
-					returnValue.add(elements[i]);
-				}
+				Collections.addAll(returnValue, elements);
 			}
 		};
 
@@ -443,11 +435,10 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 
 		List<Object> result= new ArrayList<>();
 
-		//Iterate through the children of the root as the root is not in the
+		//Loop through the children of the root as the root is not in the
 		// store
-		Object[] children= treeContentProvider.getChildren(root);
-		for (int i= 0; i < children.length; ++i) {
-			findAllWhiteCheckedItems(children[i], result);
+		for (Object element : treeContentProvider.getChildren(root)) {
+			findAllWhiteCheckedItems(element, result);
 		}
 
 		return result;
@@ -550,7 +541,7 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 		}
 
 		//Update the list with the selections if there are any
-		if (checkedListItems.size() > 0)
+		if (!checkedListItems.isEmpty())
 			checkedStateStore.put(currentTreeSelection, checkedListItems);
 		if (updatingFromSelection)
 			grayUpdateHierarchy(currentTreeSelection);
@@ -679,7 +670,7 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 			listViewer.setAllChecked(selection);
 		});
 	}
-	
+
 	public void refresh() {
 		//Potentially long operation - show a busy cursor
 		BusyIndicator.showWhile(treeViewer.getControl().getDisplay(), () -> {
@@ -698,9 +689,7 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 
 		Object[] listItems= listContentProvider.getElements(treeElement);
 		List<Object> listItemsChecked= new ArrayList<>();
-		for (int i= 0; i < listItems.length; ++i) {
-			listItemsChecked.add(listItems[i]);
-		}
+		Collections.addAll(listItemsChecked, listItems);
 
 		checkedStateStore.put(treeElement, listItemsChecked);
 	}
@@ -740,9 +729,8 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 		// now logically check/uncheck all children as well if it has been
 		// expanded
 		if (expandedTreeNodes.contains(treeElement)) {
-			Object[] children= treeContentProvider.getChildren(treeElement);
-			for (int i= 0; i < children.length; ++i) {
-				setTreeChecked(children[i], state);
+			for (Object element : treeContentProvider.getChildren(treeElement)) {
+				setTreeChecked(element, state);
 			}
 		}
 	}
@@ -855,13 +843,13 @@ class SelectResourcesBlock implements ICheckStateListener, ISelectionChangedList
 
 		// Update the store before the hierarchy to prevent updating parents
 		// before all of the children are done
-		
+
 		for (Entry<IContainer, List<Object>> entry : items.entrySet()) {
 			Object key = entry.getKey();
 			primeHierarchyForSelection(key, selectedNodes);
 			checkedStateStore.put(key, entry.getValue());
 		}
-			
+
 
 		// Update the checked tree items. Since each tree item has a selected
 		// item, all the tree items will be gray checked.

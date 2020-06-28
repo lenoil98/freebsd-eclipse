@@ -15,6 +15,7 @@ package org.eclipse.pde.api.tools.ui.internal.preferences;
 
 import java.awt.Checkbox;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -76,8 +77,6 @@ import org.eclipse.ui.preferences.IWorkbenchPreferenceContainer;
 import org.eclipse.ui.preferences.IWorkingCopyManager;
 import org.eclipse.ui.preferences.WorkingCopyManager;
 import org.osgi.service.prefs.BackingStoreException;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * This block is used to add the API Tools notification settings UI to a parent
@@ -1221,13 +1220,7 @@ public class ApiErrorsWarningsConfigurationBlock extends ConfigurationBlock {
 					IHandlerService handlerService = PlatformUI.getWorkbench().getService(IHandlerService.class);
 					try {
 						handlerService.executeCommand(P2_INSTALL_COMMAND_HANDLER, null);
-					} catch (ExecutionException ex) {
-						handleCommandException();
-					} catch (NotDefinedException ex) {
-						handleCommandException();
-					} catch (NotEnabledException ex) {
-						handleCommandException();
-					} catch (NotHandledException ex) {
+					} catch (ExecutionException | NotDefinedException | NotEnabledException | NotHandledException ex) {
 						handleCommandException();
 					}
 				}));

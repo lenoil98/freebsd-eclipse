@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2017 IBM Corporation and others.
+ * Copyright (c) 2007, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,12 +15,18 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.refactoring;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 
@@ -41,26 +47,17 @@ import org.eclipse.jdt.core.refactoring.descriptors.ExtractClassDescriptor.Field
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
+import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
-public class ExtractClassTests extends RefactoringTest {
-
+public class ExtractClassTests extends GenericRefactoringTest {
 	private static final String REFACTORING_PATH= "ExtractClass/";
 	protected IPackageFragment fPack;
 	protected ExtractClassDescriptor fDescriptor;
 
-	public ExtractClassTests(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return new RefactoringTestSetup(new TestSuite(ExtractClassTests.class));
-	}
-
-	public static Test setUpTest(Test someTest) {
-		return new RefactoringTestSetup(someTest);
-	}
+	@Rule
+	public RefactoringTestSetup rts= new RefactoringTestSetup();
 
 	protected IType setupType() throws Exception {
 		ICompilationUnit cu= createCUfromTestFile(getPackageP(), getCUName(), true);
@@ -113,7 +110,7 @@ public class ExtractClassTests extends RefactoringTest {
 	}
 
 	protected String getCUName() {
-		StringBuffer sb= new StringBuffer();
+		StringBuilder sb= new StringBuilder();
 		String name= getName();
 		if (name.startsWith("test"))
 			name= name.substring(4);
@@ -122,7 +119,7 @@ public class ExtractClassTests extends RefactoringTest {
 	}
 
 	protected String getCUFileName() {
-		StringBuffer sb= new StringBuffer();
+		StringBuilder sb= new StringBuilder();
 		sb.append(getCUName());
 		sb.append(".java");
 		return sb.toString();
@@ -162,9 +159,8 @@ public class ExtractClassTests extends RefactoringTest {
 		return status;
 	}
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void before() throws Exception {
 		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
 		store.setValue(PreferenceConstants.CODEGEN_ADD_COMMENTS, false);
 		fDescriptor= RefactoringSignatureDescriptorFactory.createExtractClassDescriptor();
@@ -172,33 +168,36 @@ public class ExtractClassTests extends RefactoringTest {
 		fPack= getPackageP();
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
-		super.tearDown();
+	@After
+	public void after() throws Exception {
 		fDescriptor= null;
 		fPack= null;
 		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
 		store.setToDefault(PreferenceConstants.CODEGEN_ADD_COMMENTS);
 	}
 
+	@Test
 	public void testComplexExtract() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setClassName("ComplexExtractParameter");
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testInitializerProblem() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setClassName("InitializerProblemParameter");
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testMethodUpdate() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setClassName("MethodUpdateParameter");
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testInheritanceUpdate() throws Exception {
 		createAdditionalFile("InheritanceUpdateImpl");
 		fDescriptor.setType(setupType());
@@ -207,6 +206,7 @@ public class ExtractClassTests extends RefactoringTest {
 		checkAdditionalFile("InheritanceUpdateImpl");
 	}
 
+	@Test
 	public void testInheritanceUpdateGetterSetter() throws Exception {
 		createAdditionalFile("InheritanceUpdateImplGetterSetter");
 		fDescriptor.setType(setupType());
@@ -216,6 +216,7 @@ public class ExtractClassTests extends RefactoringTest {
 		checkAdditionalFile("InheritanceUpdateImplGetterSetter");
 	}
 
+	@Test
 	public void testComplexExtractGetterSetter() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateGetterSetter(true);
@@ -223,6 +224,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testComplexExtractNested() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateTopLevel(false);
@@ -230,6 +232,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testStaticInstanceFields() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setClassName("StaticInstanceFieldsParameter");
@@ -237,18 +240,19 @@ public class ExtractClassTests extends RefactoringTest {
 		RefactoringStatusEntry[] entries= status.getEntries();
 		//Warning for no IFields moved
 		assertEquals(1, entries.length);
-		for (int i= 0; i < entries.length; i++) {
-			RefactoringStatusEntry refactoringStatusEntry= entries[i];
-			assertEquals("Status was:" + refactoringStatusEntry, true, refactoringStatusEntry.isFatalError());
+		for (RefactoringStatusEntry refactoringStatusEntry : entries) {
+			assertTrue("Status was:" + refactoringStatusEntry, refactoringStatusEntry.isFatalError());
 		}
 	}
 
+	@Test
 	public void testImportRemove() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setClassName("ImportRemoveParameter");
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testSwitchCase() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setClassName("SwitchCaseParameter");
@@ -256,12 +260,12 @@ public class ExtractClassTests extends RefactoringTest {
 		RefactoringStatusEntry[] entries= status.getEntries();
 		//Error for usage in Switch case
 		assertEquals(1, entries.length);
-		for (int i= 0; i < entries.length; i++) {
-			RefactoringStatusEntry refactoringStatusEntry= entries[i];
-			assertEquals(true, refactoringStatusEntry.isError());
+		for (RefactoringStatusEntry refactoringStatusEntry : entries) {
+			assertTrue(refactoringStatusEntry.isError());
 		}
 	}
 
+	@Test
 	public void testCopyModifierAnnotations() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setClassName("CopyModifierAnnotationsParameter");
@@ -270,17 +274,16 @@ public class ExtractClassTests extends RefactoringTest {
 		//Warning for transient
 		//Warning for volatile
 		assertEquals(2, entries.length);
-		for (int i= 0; i < entries.length; i++) {
-			RefactoringStatusEntry refactoringStatusEntry= entries[i];
-			assertEquals(true, refactoringStatusEntry.isWarning());
+		for (RefactoringStatusEntry refactoringStatusEntry : entries) {
+			assertTrue(refactoringStatusEntry.isWarning());
 		}
 	}
 
+	@Test
 	public void testUFOGetter() throws Exception {
 		fDescriptor.setType(setupType());
 		Field[] fields= ExtractClassDescriptor.getFields(fDescriptor.getType());
-		for (int i= 0; i < fields.length; i++) {
-			Field field= fields[i];
+		for (Field field : fields) {
 			if ("homePlanet".equals(field.getFieldName()))
 				field.setCreateField(false);
 		}
@@ -291,6 +294,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testControlBodyUpdates() throws Exception {
 		IJavaProject javaProject= getRoot().getJavaProject();
 		Map<String, String> originalOptions= javaProject.getOptions(true);
@@ -307,6 +311,7 @@ public class ExtractClassTests extends RefactoringTest {
 		}
 	}
 
+	@Test
 	public void testArrayInitializer() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateGetterSetter(true);
@@ -314,6 +319,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testVariableDeclarationInitializer() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateGetterSetter(true);
@@ -321,6 +327,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testUpdateSimpleName() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateGetterSetter(true);
@@ -328,6 +335,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testArrayLengthAccess() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateGetterSetter(true);
@@ -335,6 +343,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testInnerDocumentedClass() throws Exception {
 		IType outer= setupType();
 		IType inner= outer.getType("InnerClass");
@@ -345,6 +354,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testPackageReferences() throws Exception {
 		createAdditionalFile("subPack","PackEx");
 		fDescriptor.setType(setupType());
@@ -355,12 +365,12 @@ public class ExtractClassTests extends RefactoringTest {
 		//Error for privateInner reference
 		//Error for OtherPackageProteced reference
 		assertEquals(2, entries.length);
-		for (int i= 0; i < entries.length; i++) {
-			RefactoringStatusEntry refactoringStatusEntry= entries[i];
-			assertEquals(true, refactoringStatusEntry.isError());
+		for (RefactoringStatusEntry refactoringStatusEntry : entries) {
+			assertTrue(refactoringStatusEntry.isError());
 		}
 	}
 
+	@Test
 	public void testDuplicateParamName() throws Exception {
 		IJavaProject javaProject= getRoot().getJavaProject();
 		Map<String, String> originalOptions= javaProject.getOptions(true);
@@ -377,6 +387,7 @@ public class ExtractClassTests extends RefactoringTest {
 		}
 	}
 
+	@Test
 	public void testLowestVisibility() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateGetterSetter(true);
@@ -384,6 +395,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testSwitchCaseUpdates() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateGetterSetter(true);
@@ -391,6 +403,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testFieldsWithJavadoc() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setFieldName("data");
@@ -398,6 +411,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 
+	@Test
 	public void testQualifiedIncrements() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateGetterSetter(true);
@@ -406,19 +420,20 @@ public class ExtractClassTests extends RefactoringTest {
 		RefactoringStatusEntry[] entries= status.getEntries();
 		//3*Warning for semantic change
 		assertEquals(3, entries.length);
-		for (int i= 0; i < entries.length; i++) {
-			RefactoringStatusEntry refactoringStatusEntry= entries[i];
-			assertEquals(true, refactoringStatusEntry.isWarning());
+		for (RefactoringStatusEntry refactoringStatusEntry : entries) {
+			assertTrue(refactoringStatusEntry.isWarning());
 		}
 	}
 
+	@Test
 	public void testComment() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateTopLevel(false);
 		runRefactoring(false);
 	}
-	
+
 	// see bug 394547
+	@Test
 	public void testNested1() throws Exception {
 		IType outer= setupType();
 		IType inner= outer.getType("Inner");
@@ -430,6 +445,7 @@ public class ExtractClassTests extends RefactoringTest {
 	}
 
 	// see bug 394547
+	@Test
 	public void testNested2() throws Exception {
 		IType outer= setupType();
 		IType inner= outer.getType("Inner");
@@ -440,6 +456,7 @@ public class ExtractClassTests extends RefactoringTest {
 		runRefactoring(false);
 	}
 	// see bug 394548
+	@Test
 	public void testTypeParameter() throws Exception {
 		fDescriptor.setType(setupType());
 		fDescriptor.setCreateTopLevel(false);

@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Copyright (c) 2018 IBM Corporation and others.
- * 
+ *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -105,7 +105,7 @@ public class ChangeCorrectionProposalCore {
 
 	@SuppressWarnings("unused")
 	public Object getAdditionalProposalInfo(IProgressMonitor monitor) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("<p>"); //$NON-NLS-1$
 		try {
 			Change change= getChange();

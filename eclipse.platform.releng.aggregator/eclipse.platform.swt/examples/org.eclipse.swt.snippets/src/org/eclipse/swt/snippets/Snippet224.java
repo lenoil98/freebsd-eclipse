@@ -30,6 +30,7 @@ public class Snippet224 {
 public static void main (String [] args) {
 	Display display = new Display ();
 	final Shell shell = new Shell (display);
+	shell.setText("Snippet 224");
 	shell.setLayout (new RowLayout (SWT.VERTICAL));
 	for (int i=0; i<8; i++) {
 		Button button = new Button (shell, SWT.RADIO);
@@ -41,8 +42,7 @@ public static void main (String [] args) {
 	button.addListener (SWT.Selection, event -> {
 		Control [] children = shell.getChildren ();
 		Button newButton = (Button) children [4];
-		for (int i=0; i<children.length; i++) {
-			Control child = children [i];
+		for (Control child : children) {
 			if (child instanceof Button && (child.getStyle () & SWT.RADIO) != 0) {
 				((Button) child).setSelection (false);
 			}

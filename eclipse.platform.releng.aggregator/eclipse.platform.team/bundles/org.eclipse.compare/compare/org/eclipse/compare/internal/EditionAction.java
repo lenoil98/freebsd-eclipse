@@ -24,6 +24,10 @@ import org.eclipse.compare.IEncodedStreamContentAccessor;
 import org.eclipse.compare.IStreamContentAccessor;
 import org.eclipse.compare.ITypedElement;
 import org.eclipse.compare.ResourceNode;
+import org.eclipse.core.filebuffers.FileBuffers;
+import org.eclipse.core.filebuffers.ITextFileBuffer;
+import org.eclipse.core.filebuffers.ITextFileBufferManager;
+import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFileState;
 import org.eclipse.core.runtime.CoreException;
@@ -106,8 +110,9 @@ public class EditionAction extends BaseCompareAction {
 	@Override
 	protected void run(ISelection selection) {
 		IFile[] files= Utilities.getFiles(selection);
-		for (int i= 0; i < files.length; i++)
-			doFromHistory(files[i]);
+		for (IFile file : files) {
+			doFromHistory(file);
+		}
 	}
 
 	private void doFromHistory(final IFile file) {
@@ -211,14 +216,30 @@ public class EditionAction extends BaseCompareAction {
 		try {
 			String text= Utilities.readString(sa);
 			document.replace(0, document.getLength(), text);
-		} catch (CoreException e) {
-			throw new InvocationTargetException(e);
-		} catch (BadLocationException e) {
+		} catch (CoreException | BadLocationException e) {
 			throw new InvocationTargetException(e);
 		}
 	}
 
 	private IDocument getDocument(IFile file) {
+		if (file == null) {
+			return null;
+		}
+
+		// first try FileBuffer API
+		ITextFileBufferManager bufferManager = FileBuffers.getTextFileBufferManager();
+		ITextFileBuffer buffer = bufferManager.getTextFileBuffer(file.getFullPath(), LocationKind.IFILE);
+		if (buffer != null) {
+			IDocument document = buffer.getDocument();
+			if (document != null) {
+				return document;
+			}
+		}
+
+		// if unsuccessful, try open editors
+		if (!PlatformUI.isWorkbenchRunning()) {
+			return null;
+		}
 		IWorkbench wb= PlatformUI.getWorkbench();
 		if (wb == null)
 			return null;
@@ -228,12 +249,10 @@ public class EditionAction extends BaseCompareAction {
 
 		FileEditorInput test= new FileEditorInput(file);
 
-		for (int i= 0; i < ws.length; i++) {
-			IWorkbenchWindow w= ws[i];
+		for (IWorkbenchWindow w : ws) {
 			IWorkbenchPage[] wps= w.getPages();
 			if (wps != null) {
-				for (int j= 0; j < wps.length; j++) {
-					IWorkbenchPage wp= wps[j];
+				for (IWorkbenchPage wp : wps) {
 					IEditorPart ep= wp.findEditor(test);
 					if (ep instanceof ITextEditor) {
 						ITextEditor te= (ITextEditor) ep;

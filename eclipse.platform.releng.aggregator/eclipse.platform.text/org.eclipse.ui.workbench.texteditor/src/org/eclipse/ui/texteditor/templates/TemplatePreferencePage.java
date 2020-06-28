@@ -23,6 +23,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,8 +32,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import com.ibm.icu.text.Collator;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
@@ -275,7 +274,7 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 		public void create() {
 			super.create();
 			// update initial OK button to be disabled for new templates
-			boolean valid= fNameText == null || fNameText.getText().trim().length() != 0;
+			boolean valid= fNameText == null || !fNameText.getText().trim().isEmpty();
 			if (!valid) {
 				StatusInfo status = new StatusInfo();
 				status.setError(TemplatesMessages.EditTemplateDialog_error_noname);
@@ -329,8 +328,8 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 				createLabel(composite, TemplatesMessages.EditTemplateDialog_context);
 				fContextCombo= new Combo(composite, SWT.READ_ONLY);
 
-				for (int i= 0; i < fContextTypes.length; i++) {
-					fContextCombo.add(fContextTypes[i][1]);
+				for (String[] fContextType : fContextTypes) {
+					fContextCombo.add(fContextType[1]);
 				}
 
 				fContextCombo.addModifyListener(listener);
@@ -406,9 +405,9 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 		private String getContextId() {
 			if (fContextCombo != null && !fContextCombo.isDisposed()) {
 				String name= fContextCombo.getText();
-				for (int i= 0; i < fContextTypes.length; i++) {
-					if (name.equals(fContextTypes[i][1])) {
-						return fContextTypes[i][0];
+				for (String[] fContextType : fContextTypes) {
+					if (name.equals(fContextType[1])) {
+						return fContextType[0];
 					}
 				}
 			}
@@ -586,7 +585,7 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 			// create context menu
 			MenuManager manager= new MenuManager(null, null);
 			manager.setRemoveAllWhenShown(true);
-			manager.addMenuListener(mgr -> fillContextMenu(mgr));
+			manager.addMenuListener(this::fillContextMenu);
 
 			StyledText text= fPatternEditor.getTextWidget();
 			Menu menu= manager.createContextMenu(text);
@@ -636,7 +635,7 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 		private void updateButtons() {
 			StatusInfo status;
 
-			boolean valid= fNameText == null || fNameText.getText().trim().length() != 0;
+			boolean valid= fNameText == null || !fNameText.getText().trim().isEmpty();
 			if (!valid) {
 				status = new StatusInfo();
 				if (!fSuppressError)
@@ -832,24 +831,24 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 		layout.marginWidth= 0;
 		parent.setLayout(layout);
 
-        Composite innerParent= new Composite(parent, SWT.NONE);
-        GridLayout innerLayout= new GridLayout();
-        innerLayout.numColumns= 2;
-        innerLayout.marginHeight= 0;
-        innerLayout.marginWidth= 0;
-        innerParent.setLayout(innerLayout);
-        GridData gd= new GridData(GridData.FILL_BOTH);
-        gd.horizontalSpan= 2;
-        innerParent.setLayoutData(gd);
+		Composite innerParent= new Composite(parent, SWT.NONE);
+		GridLayout innerLayout= new GridLayout();
+		innerLayout.numColumns= 2;
+		innerLayout.marginHeight= 0;
+		innerLayout.marginWidth= 0;
+		innerParent.setLayout(innerLayout);
+		GridData gd= new GridData(GridData.FILL_BOTH);
+		gd.horizontalSpan= 2;
+		innerParent.setLayoutData(gd);
 
-        Composite tableComposite= new Composite(innerParent, SWT.NONE);
-        GridData data= new GridData(GridData.FILL_BOTH);
-        data.widthHint= 360;
-        data.heightHint= convertHeightInCharsToPixels(10);
-        tableComposite.setLayoutData(data);
+		Composite tableComposite= new Composite(innerParent, SWT.NONE);
+		GridData data= new GridData(GridData.FILL_BOTH);
+		data.widthHint= 360;
+		data.heightHint= convertHeightInCharsToPixels(10);
+		tableComposite.setLayoutData(data);
 
-        ColumnLayout columnLayout= new ColumnLayout();
-        tableComposite.setLayout(columnLayout);
+		ColumnLayout columnLayout= new ColumnLayout();
+		tableComposite.setLayout(columnLayout);
 		Table table= new Table(tableComposite, SWT.CHECK | SWT.BORDER | SWT.MULTI | SWT.FULL_SELECTION | SWT.H_SCROLL | SWT.V_SCROLL);
 
 		table.setHeaderVisible(true);
@@ -959,10 +958,10 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 		if (isShowFormatterSetting()) {
 			fFormatButton= new Button(parent, SWT.CHECK);
 			fFormatButton.setText(TemplatesMessages.TemplatePreferencePage_use_code_formatter);
-	        GridData gd1= new GridData();
-	        gd1.horizontalSpan= 2;
-	        fFormatButton.setLayoutData(gd1);
-	        fFormatButton.setSelection(getPreferenceStore().getBoolean(getFormatterPreferenceKey()));
+			GridData gd1= new GridData();
+			gd1.horizontalSpan= 2;
+			fFormatButton.setLayoutData(gd1);
+			fFormatButton.setSelection(getPreferenceStore().getBoolean(getFormatterPreferenceKey()));
 		}
 
 		fTableViewer.setInput(fTemplateStore);
@@ -1027,9 +1026,10 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 	private TemplatePersistenceData[] getEnabledTemplates() {
 		List<TemplatePersistenceData> enabled= new ArrayList<>();
 		TemplatePersistenceData[] datas= fTemplateStore.getTemplateData(false);
-		for (int i= 0; i < datas.length; i++) {
-			if (datas[i].isEnabled())
-				enabled.add(datas[i]);
+		for (TemplatePersistenceData data : datas) {
+			if (data.isEnabled()) {
+				enabled.add(data);
+			}
 		}
 		return enabled.toArray(new TemplatePersistenceData[enabled.size()]);
 	}
@@ -1202,9 +1202,7 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 		if (newTemplate != null) {
 
 			if (!newTemplate.getName().equals(oldTemplate.getName()) &&
-				MessageDialog.openQuestion(getShell(),
-				TemplatesMessages.TemplatePreferencePage_question_create_new_title,
-				TemplatesMessages.TemplatePreferencePage_question_create_new_message))
+					openCreateNewOrRenameDialog())
 			{
 				data= new TemplatePersistenceData(newTemplate, true);
 				fTemplateStore.add(data);
@@ -1235,8 +1233,7 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 			if (file.exists()) {
 				try (InputStream input = new BufferedInputStream(new FileInputStream(file))) {
 					TemplatePersistenceData[] datas= reader.read(input, null);
-					for (int i= 0; i < datas.length; i++) {
-						TemplatePersistenceData data= datas[i];
+					for (TemplatePersistenceData data : datas) {
 						fTemplateStore.add(data);
 						String id= data.getId();
 						if (id == null) {
@@ -1434,6 +1431,15 @@ public abstract class TemplatePreferencePage extends PreferencePage implements I
 		String title= TemplatesMessages.TemplatePreferencePage_error_write_title;
 		String message= TemplatesMessages.TemplatePreferencePage_error_write_message;
 		MessageDialog.openError(getShell(), title, message);
+	}
+
+	private boolean openCreateNewOrRenameDialog() {
+		MessageDialog dialog = new MessageDialog(getShell(),
+				TemplatesMessages.TemplatePreferencePage_question_create_new_title, null,
+				TemplatesMessages.TemplatePreferencePage_question_create_new_message, MessageDialog.QUESTION, 0,
+				TemplatesMessages.TemplatePreferencePage_question_create_new_button_create,
+				TemplatesMessages.TemplatePreferencePage_question_create_new_button_rename);
+		return dialog.open() == 0;
 	}
 
 	protected SourceViewer getViewer() {

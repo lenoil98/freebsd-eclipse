@@ -120,7 +120,7 @@ public abstract class DisplayHelper {
 	/**
 	 * The condition which has to be met in order for {@link #waitForCondition(Display, long)} to
 	 * return before the timeout elapses.
-	 * 
+	 *
 	 * @return <code>true</code> if the condition is met, <code>false</code> if the event loop
 	 *         should be driven some more
 	 */
@@ -572,7 +572,7 @@ final class DisplayWaiter {
 	 * @return a string representation of the states
 	 */
 	private String name(int states) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		boolean comma= false;
 		if ((states & RUNNING) == RUNNING) {
 			buf.append("RUNNING");

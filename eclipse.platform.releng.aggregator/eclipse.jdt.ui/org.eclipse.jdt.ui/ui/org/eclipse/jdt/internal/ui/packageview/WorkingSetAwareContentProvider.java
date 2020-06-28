@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -88,27 +87,26 @@ public class WorkingSetAwareContentProvider extends PackageExplorerContentProvid
 	}
 
 	private Object[] getWorkingSetChildren(IWorkingSet set) {
-		IAdaptable[] elements= fWorkingSetModel.getChildren(set);
-		Set<IAdaptable> result= new HashSet<>(elements.length);
-		for (int i= 0; i < elements.length; i++) {
-			IAdaptable element= elements[i];
-			if (element instanceof IProject) {
-				processResource((IProject) element, result); // also add closed projects
-			} else if (element instanceof IResource) {
-				IProject project= ((IResource) element).getProject();
+		IAdaptable[] children= fWorkingSetModel.getChildren(set);
+		Set<IAdaptable> result= new HashSet<>(children.length);
+		for (IAdaptable child : children) {
+			if (child instanceof IProject) {
+				processResource((IProject) child, result); // also add closed projects
+			} else if (child instanceof IResource) {
+				IProject project= ((IResource) child).getProject();
 				if (project.isOpen()) {
-					processResource((IResource) element, result);
+					processResource((IResource) child, result);
 				}
-			} else if (element instanceof IJavaProject) {
-				result.add(element); // also add closed projects
-			} else if (element instanceof IJavaElement) {
-				IJavaElement elem= (IJavaElement) element;
+			} else if (child instanceof IJavaProject) {
+				result.add(child); // also add closed projects
+			} else if (child instanceof IJavaElement) {
+				IJavaElement elem= (IJavaElement) child;
 				IProject project= getProject(elem);
 				if (project != null && project.isOpen()) {
 					result.add(elem);
 				}
 			} else {
-				IProject project= element.getAdapter(IProject.class);
+				IProject project= child.getAdapter(IProject.class);
 				if (project != null) {
 					processResource(project, result);
 				}
@@ -165,11 +163,11 @@ public class WorkingSetAwareContentProvider extends PackageExplorerContentProvid
 		List<TreePath> result= new ArrayList<>();
 		Object input= getViewerInput();
 		Object element= modelParents.get(index);
-		Object[] parents= fWorkingSetModel.getAllParents(element);
-		for (int i= 0; i < parents.length; i++) {
+		for (Object parent : fWorkingSetModel.getAllParents(element)) {
 			List<Object> chain= new ArrayList<>();
-			if (!parents[i].equals(input))
-				chain.add(parents[i]);
+			if (!parent.equals(input)) {
+				chain.add(parent);
+			}
 			for (int m= index; m < modelParents.size(); m++) {
 				chain.add(modelParents.get(m));
 			}
@@ -203,8 +201,8 @@ public class WorkingSetAwareContentProvider extends PackageExplorerContentProvid
 		if (nonProjetTopLevelElemens.isEmpty())
 			return;
 		List<Object> toAdd= new ArrayList<>();
-		for (Iterator<IAdaptable> iter= nonProjetTopLevelElemens.iterator(); iter.hasNext();) {
-			Object element= iter.next();
+		for (IAdaptable iAdaptable : nonProjetTopLevelElemens) {
+			Object element= iAdaptable;
 			if (isChildOf(element, toRefresh))
 				toAdd.add(element);
 		}
@@ -215,12 +213,18 @@ public class WorkingSetAwareContentProvider extends PackageExplorerContentProvid
 		String property= event.getProperty();
 		Object newValue= event.getNewValue();
 		List<Object> toRefresh= new ArrayList<>(1);
-		if (WorkingSetModel.CHANGE_WORKING_SET_MODEL_CONTENT.equals(property)) {
-			toRefresh.add(fWorkingSetModel);
-		} else if (IWorkingSetManager.CHANGE_WORKING_SET_CONTENT_CHANGE.equals(property)) {
-			toRefresh.add(newValue);
-		} else if (IWorkingSetManager.CHANGE_WORKING_SET_LABEL_CHANGE.equals(property)) {
-			toRefresh.add(newValue);
+		if (property != null) {
+			switch (property) {
+				case WorkingSetModel.CHANGE_WORKING_SET_MODEL_CONTENT:
+					toRefresh.add(fWorkingSetModel);
+					break;
+				case IWorkingSetManager.CHANGE_WORKING_SET_CONTENT_CHANGE:
+				case IWorkingSetManager.CHANGE_WORKING_SET_LABEL_CHANGE:
+					toRefresh.add(newValue);
+					break;
+				default:
+					break;
+			}
 		}
 		ArrayList<Runnable> runnables= new ArrayList<>();
 		postRefresh(toRefresh, true, runnables);
@@ -232,8 +236,7 @@ public class WorkingSetAwareContentProvider extends PackageExplorerContentProvid
 		Object parent= super.getParent(element);
 		if (parent == null)
 			return false;
-		for (Iterator<Object> iter= potentialParents.iterator(); iter.hasNext();) {
-			Object potentialParent= iter.next();
+		for (Object potentialParent : potentialParents) {
 			while(parent != null) {
 				if (parent.equals(potentialParent))
 					return true;

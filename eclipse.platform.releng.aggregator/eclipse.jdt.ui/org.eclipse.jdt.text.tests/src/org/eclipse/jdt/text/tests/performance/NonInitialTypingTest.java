@@ -102,7 +102,7 @@ public abstract class NonInitialTypingTest extends TextPerformanceTestCase {
 
 	/**
 	 * Measures the time to type in one single method into a large file.
-	 * 
+	 *
 	 * @throws BadLocationException if the insert position can't be detected
 	 */
 	public void testTypeAMethod() throws BadLocationException {
@@ -120,8 +120,8 @@ public abstract class NonInitialTypingTest extends TextPerformanceTestCase {
 			if (i >= warmUpRuns)
 				fMeter.start();
 
-			for (int j= 0; j < METHOD.length; j++) {
-				keyboardProbe.pressChar(METHOD[j], display);
+			for (char element : METHOD) {
+				keyboardProbe.pressChar(element, display);
 				EditorTestHelper.runEventQueue();
 			}
 

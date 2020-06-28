@@ -21,6 +21,7 @@ import org.eclipse.core.databinding.observable.Observables;
 import org.eclipse.core.databinding.observable.list.IObservableList;
 import org.eclipse.core.databinding.observable.set.IObservableSet;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
+import org.eclipse.jface.databinding.viewers.typed.ViewerProperties;
 import org.eclipse.jface.internal.databinding.viewers.ViewerObservableValueDecorator;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
@@ -36,6 +37,7 @@ import org.eclipse.jface.viewers.Viewer;
  *
  * @since 1.1
  */
+@SuppressWarnings("rawtypes")
 public class ViewersObservables {
 	private static void checkNull(Object obj) {
 		if (obj == null)
@@ -63,10 +65,9 @@ public class ViewersObservables {
 	 *
 	 * @since 1.3
 	 */
-	public static IViewerObservableValue observeDelayedValue(int delay,
-			IViewerObservableValue observable) {
-		return new ViewerObservableValueDecorator(Observables
-				.observeDelayedValue(delay, observable), observable.getViewer());
+	public static <T> IViewerObservableValue<T> observeDelayedValue(int delay, IViewerObservableValue<T> observable) {
+		return new ViewerObservableValueDecorator<>(Observables.observeDelayedValue(delay, observable),
+				observable.getViewer());
 	}
 
 	/**
@@ -76,10 +77,13 @@ public class ViewersObservables {
 	 * first element of the structured selection as returned by
 	 * {@link IStructuredSelection#getFirstElement()}.
 	 *
-	 * @param selectionProvider
+	 * @param selectionProvider provider to get selection from; not <code>null</code>
 	 * @return the observable value tracking the (single) selection of the given
 	 *         selection provider
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IObservableValue observeSingleSelection(
 			ISelectionProvider selectionProvider) {
 		checkNull(selectionProvider);
@@ -100,7 +104,10 @@ public class ViewersObservables {
 	 *         of the given post selection provider
 	 *
 	 * @since 1.4
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IObservableValue observeSinglePostSelection(
 			IPostSelectionProvider selectionProvider) {
 		checkNull(selectionProvider);
@@ -120,12 +127,15 @@ public class ViewersObservables {
 	 * based on the requested change to the observable list. The affected
 	 * methods are <code>add</code>, <code>addAll</code>, and <code>set</code>.
 	 *
-	 * @param selectionProvider
+	 * @param selectionProvider provider to get selection from; not <code>null</code>
 	 * @return the observable value tracking the (multi) selection of the given
 	 *         selection provider
 	 *
 	 * @since 1.2
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IObservableList observeMultiSelection(
 			ISelectionProvider selectionProvider) {
 		checkNull(selectionProvider);
@@ -151,7 +161,10 @@ public class ViewersObservables {
 	 *         of the given post selection provider
 	 *
 	 * @since 1.4
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IObservableList observeMultiPostSelection(
 			IPostSelectionProvider selectionProvider) {
 		checkNull(selectionProvider);
@@ -171,7 +184,10 @@ public class ViewersObservables {
 	 * @return the observable value tracking the (single) selection of the given
 	 *         viewer
 	 * @since 1.2
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IViewerObservableValue observeSingleSelection(Viewer viewer) {
 		checkNull(viewer);
 		return ViewerProperties.singleSelection().observe(viewer);
@@ -190,7 +206,10 @@ public class ViewersObservables {
 	 *         of the given structured viewer
 	 *
 	 * @since 1.4
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IViewerObservableValue observeSinglePostSelection(
 			StructuredViewer viewer) {
 		checkNull(viewer);
@@ -209,11 +228,15 @@ public class ViewersObservables {
 	 * methods are <code>add</code>, <code>addAll</code>, and <code>set</code>.
 	 *
 	 * @param viewer
+	 *            The viewer on which to track the selection.
 	 * @return the observable value tracking the (multi) selection of the given
 	 *         selection provider
 	 *
 	 * @since 1.2
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IViewerObservableList observeMultiSelection(Viewer viewer) {
 		checkNull(viewer);
 		return ViewerProperties.multipleSelection().observe(viewer);
@@ -236,7 +259,10 @@ public class ViewersObservables {
 	 *         of the given structured viewer
 	 *
 	 * @since 1.4
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IViewerObservableList observeMultiPostSelection(
 			StructuredViewer viewer) {
 		checkNull(viewer);
@@ -253,10 +279,13 @@ public class ViewersObservables {
 	 *            the viewer to observe
 	 * @return an observable value tracking the input of the given viewer
 	 * @since 1.2
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IObservableValue observeInput(Viewer viewer) {
 		checkNull(viewer);
-		return ViewerProperties.input().observe(viewer);
+		return ViewerProperties.<StructuredViewer, Object>input().observe(viewer);
 	}
 
 	/**
@@ -270,7 +299,10 @@ public class ViewersObservables {
 	 * @return an observable set tracking the checked elements of the given
 	 *         checkable.
 	 * @since 1.2
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IObservableSet observeCheckedElements(ICheckable checkable,
 			Object elementType) {
 		checkNull(checkable);
@@ -289,11 +321,13 @@ public class ViewersObservables {
 	 * @return an observable set that tracks the checked elements of the given
 	 *         viewer.
 	 * @since 1.2
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
-	public static IViewerObservableSet observeCheckedElements(
-			CheckboxTableViewer viewer, Object elementType) {
+	@Deprecated
+	public static IViewerObservableSet observeCheckedElements(CheckboxTableViewer viewer, Object elementType) {
 		checkNull(viewer);
-		return ViewerProperties.checkedElements(elementType).observe(viewer);
+		return ViewerProperties.checkedElements(elementType).observe((Viewer) viewer);
 	}
 
 	/**
@@ -308,11 +342,13 @@ public class ViewersObservables {
 	 * @return an observable set that tracks the checked elements of the given
 	 *         viewer.
 	 * @since 1.2
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
-	public static IViewerObservableSet observeCheckedElements(
-			CheckboxTreeViewer viewer, Object elementType) {
+	@Deprecated
+	public static IViewerObservableSet observeCheckedElements(CheckboxTreeViewer viewer, Object elementType) {
 		checkNull(viewer);
-		return ViewerProperties.checkedElements(elementType).observe(viewer);
+		return ViewerProperties.checkedElements(elementType).observe((Viewer) viewer);
 	}
 
 	/**
@@ -331,9 +367,12 @@ public class ViewersObservables {
 	 *            viewer containing the filters to be tracked
 	 * @return an observable set that tracks the filters of the given viewer.
 	 * @since 1.3
+	 *
+	 * @deprecated use <code>ViewerProperties</code> instead
 	 */
+	@Deprecated
 	public static IViewerObservableSet observeFilters(StructuredViewer viewer) {
 		checkNull(viewer);
-		return ViewerProperties.filters().observe(viewer);
+		return ViewerProperties.filters().observe((Viewer) viewer);
 	}
 }

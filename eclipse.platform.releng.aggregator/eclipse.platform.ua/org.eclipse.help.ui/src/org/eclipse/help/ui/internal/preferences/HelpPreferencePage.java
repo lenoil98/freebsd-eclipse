@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.ui.internal.preferences;
 
@@ -22,7 +23,6 @@ import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.help.internal.base.HelpBasePlugin;
 import org.eclipse.help.internal.base.IHelpBaseConstants;
 import org.eclipse.help.internal.browser.BrowserManager;
-import org.eclipse.help.ui.internal.HelpUIPlugin;
 import org.eclipse.help.ui.internal.IHelpUIConstants;
 import org.eclipse.help.ui.internal.Messages;
 import org.eclipse.jface.dialogs.Dialog;
@@ -121,21 +121,21 @@ public class HelpPreferencePage extends PreferencePage implements
 		searchLocationCombo.add(Messages.HelpPreferencePage_openInBrowser);
 		searchLocationCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		boolean searchFromBrowser = Platform.getPreferencesService().getBoolean
-		    (HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_SEARCH_FROM_BROWSER, false, null);
+			(HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_SEARCH_FROM_BROWSER, false, null);
 		searchLocationCombo.setText(searchFromBrowser ? Messages.HelpPreferencePage_openInBrowser : Messages.HelpPreferencePage_view);
 	}
 
 	private void createOpenContents(Composite mainComposite) {
 		if (BrowserManager.getInstance().isEmbeddedBrowserPresent()) {
-		    Label isExternalLabel = new Label(mainComposite, SWT.NONE);
-		    isExternalLabel.setText(Messages.HelpPreferencePage_openContents);
-		    isExternalLabel.setLayoutData(createLabelData());
+			Label isExternalLabel = new Label(mainComposite, SWT.NONE);
+			isExternalLabel.setText(Messages.HelpPreferencePage_openContents);
+			isExternalLabel.setLayoutData(createLabelData());
 			useExternalCombo = new Combo(mainComposite, SWT.READ_ONLY);
 			useExternalCombo.add(Messages.HelpPreferencePage_helpBrowser);
 			useExternalCombo.add(Messages.HelpPreferencePage_externalBrowser);
 			useExternalCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 			boolean useExternal = Platform.getPreferencesService().getBoolean
-			    (HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_ALWAYS_EXTERNAL_BROWSER, false, null);
+				(HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_ALWAYS_EXTERNAL_BROWSER, false, null);
 			useExternalCombo.setText(useExternal ? Messages.HelpPreferencePage_externalBrowser : Messages.HelpPreferencePage_helpBrowser);
 		}
 	}
@@ -181,7 +181,7 @@ public class HelpPreferencePage extends PreferencePage implements
 		dialogHelpCombo.add(Messages.HelpPreferencePage_infopop);
 		dialogHelpCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		boolean dinfopop = Platform.getPreferencesService().getBoolean
-		    (HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_DIALOG_INFOPOP, false, null);
+			(HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_DIALOG_INFOPOP, false, null);
 		dialogHelpCombo.setText(dinfopop ? Messages.HelpPreferencePage_infopop : Messages.HelpPreferencePage_tray);
 	}
 
@@ -195,7 +195,7 @@ public class HelpPreferencePage extends PreferencePage implements
 		windowHelpCombo.add(Messages.HelpPreferencePage_infopop);
 		windowHelpCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		boolean winfopop = Platform.getPreferencesService().getBoolean
-		    (HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_WINDOW_INFOPOP, false, null);
+			(HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_WINDOW_INFOPOP, false, null);
 		windowHelpCombo.setText(winfopop ? Messages.HelpPreferencePage_infopop : Messages.HelpPreferencePage_view);
 	}
 
@@ -248,9 +248,9 @@ public class HelpPreferencePage extends PreferencePage implements
 		dialogHelpCombo.setText(dinfopop ? Messages.HelpPreferencePage_infopop : Messages.HelpPreferencePage_tray);
 
 		if (openModeCombo !=null) {
-		   String openMode = defaults.get(
+			String openMode = defaults.get(
 						IHelpBaseConstants.P_KEY_HELP_VIEW_OPEN_MODE, IHelpBaseConstants.P_IN_PLACE);
-		   openModeCombo.setText(openModeToString(openMode));
+			openModeCombo.setText(openModeToString(openMode));
 		}
 
 		super.performDefaults();
@@ -281,27 +281,27 @@ public class HelpPreferencePage extends PreferencePage implements
 		try {
 			pref.flush();
 		} catch (BackingStoreException e) {
-			HelpUIPlugin.logError("Failed to save preferences", e); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Failed to save preferences", e); //$NON-NLS-1$
 		}
 
 		return true;
 	}
 
 	private String openModeToString(String openMode) {
-	    if (IHelpBaseConstants.P_IN_BROWSER.equals(openMode)) {
-		    return Messages.HelpPreferencePage_openInBrowser;
-	   } else if (IHelpBaseConstants.P_IN_EDITOR.equals(openMode)) {
-		    return Messages.HelpPreferencePage_openInEditor;
+		if (IHelpBaseConstants.P_IN_BROWSER.equals(openMode)) {
+			return Messages.HelpPreferencePage_openInBrowser;
+		} else if (IHelpBaseConstants.P_IN_EDITOR.equals(openMode)) {
+			return Messages.HelpPreferencePage_openInEditor;
 		} else {
 			return Messages.HelpPreferencePage_openInPlace;
 		}
 	}
 
 	private String openModeFromString(String openMode) {
-	    if (Messages.HelpPreferencePage_openInBrowser.equals(openMode)) {
-		    return IHelpBaseConstants.P_IN_BROWSER;
-	   } else if (Messages.HelpPreferencePage_openInEditor.equals(openMode)) {
-		    return IHelpBaseConstants.P_IN_EDITOR;
+		if (Messages.HelpPreferencePage_openInBrowser.equals(openMode)) {
+			return IHelpBaseConstants.P_IN_BROWSER;
+		} else if (Messages.HelpPreferencePage_openInEditor.equals(openMode)) {
+			return IHelpBaseConstants.P_IN_EDITOR;
 		} else {
 			return IHelpBaseConstants.P_IN_PLACE;
 		}

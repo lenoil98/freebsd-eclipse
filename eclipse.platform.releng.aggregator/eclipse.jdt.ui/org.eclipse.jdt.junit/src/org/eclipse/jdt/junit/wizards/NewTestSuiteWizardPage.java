@@ -107,10 +107,10 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 
 	/** Field ID of the class in suite field. */
 	public final static String CLASSES_IN_SUITE= PAGE_NAME + ".classesinsuite"; //$NON-NLS-1$
-	
+
 	/**
 	 * Field ID of the junit4 toggle field.
-	 *  
+	 *
 	 * @since 3.7
 	 */
 	public final static String JUNIT4TOGGLE= PAGE_NAME + ".junit4toggle"; //$NON-NLS-1$
@@ -126,7 +126,7 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 	private Button fJUnit3Toggle;
 	private boolean fIsJunit4;
 	private boolean fIsJunit4Enabled;
-	
+
 	/**
 	 * Creates a new <code>NewTestSuiteWizardPage</code>.
 	 */
@@ -362,7 +362,7 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 	 */
 	private String getSuiteMethodString(IType type) {
 		String typeName= type.getElementName();
-		StringBuffer suite= new StringBuffer("public static Test suite () {TestSuite suite= new TestSuite(" + typeName + ".class.getName());\n"); //$NON-NLS-1$ //$NON-NLS-2$ 
+		StringBuilder suite= new StringBuilder("public static Test suite () {TestSuite suite= new TestSuite(" + typeName + ".class.getName());\n"); //$NON-NLS-1$ //$NON-NLS-2$
 		suite.append(getUpdatableString());
 		suite.append("\nreturn suite;}"); //$NON-NLS-1$
 		return suite.toString();
@@ -475,7 +475,7 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 			status.setError(WizardMessages.NewTestSuiteWizPage_typeName_error_name_qualified);
 			return status;
 		}
-		
+
 		IPackageFragment pack= getPackageFragment();
 		if (pack != null) {
 			ICompilationUnit cu= pack.getCompilationUnit(typeName + ".java"); //$NON-NLS-1$
@@ -509,7 +509,7 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 			if (cu.exists()) {
 				status.setWarning(isJUnit4()
 						? WizardMessages.NewTestSuiteWizPage_typeName_warning_already_exists_junit4
-						: WizardMessages.NewTestSuiteWizPage_typeName_warning_already_exists);					
+						: WizardMessages.NewTestSuiteWizPage_typeName_warning_already_exists);
 				return status;
 			}
 			IResource resource= cu.getResource();
@@ -527,9 +527,8 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 		String typeName= getTypeName();
 		JUnitStatus status= new JUnitStatus();
 		Object[] checkedClasses= fClassesInSuiteTable.getCheckedElements();
-		for (int i= 0; i < checkedClasses.length; i++) {
-			IType checkedClass= (IType)checkedClasses[i];
-			if (checkedClass.getElementName().equals(typeName)){
+		for (Object checkedClass : checkedClasses) {
+			if (((IType)checkedClass).getElementName().equals(typeName)){
 				status.setWarning(WizardMessages.NewTestSuiteCreationWizardPage_infinite_recursion);
 				return status;
 			}
@@ -551,7 +550,7 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 			imports.addImport("org.junit.runners.Suite.SuiteClasses"); //$NON-NLS-1$
 		} else {
 			imports.addImport("junit.framework.Test"); //$NON-NLS-1$
-			imports.addImport("junit.framework.TestSuite"); //$NON-NLS-1$	
+			imports.addImport("junit.framework.TestSuite"); //$NON-NLS-1$
 		}
 	}
 
@@ -568,9 +567,9 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 	 */
 	private void saveWidgetValues() {
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Creates the controls for the JUnit 4 toggle control. Expects a <code>GridLayout</code> with
 	 * at least 3 columns.
@@ -609,10 +608,10 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 		fJUnit4Toggle.setLayoutData(new GridData(GridData.FILL, GridData.CENTER, false, false, 1, 1));
 		fJUnit4Toggle.addSelectionListener(listener);
 	}
-	
+
 	/**
 	 * Specifies if the test should be created as JUnit 4 test.
-	 * 
+	 *
 	 * @param isJUnit4 If set, a JUnit 4 test will be created
 	 * @param isEnabled if <code>true</code> the modifier fields are
 	 * editable; otherwise they are read-only
@@ -625,7 +624,7 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 			fJUnit4Toggle.setSelection(isJUnit4);
 			fJUnit3Toggle.setSelection(!isJUnit4);
 			fJUnit4Toggle.setEnabled(isEnabled || isJUnit4);
-			fJUnit3Toggle.setEnabled(isEnabled || !isJUnit4); 
+			fJUnit3Toggle.setEnabled(isEnabled || !isJUnit4);
 		}
 		internalSetJUnit4(isJUnit4);
 	}
@@ -655,19 +654,19 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 		}
 		handleFieldChanged(JUNIT4TOGGLE);
 	}
-	
+
 	@Override
 	protected String constructCUContent(ICompilationUnit cu, String typeContent, String lineDelimiter) throws CoreException {
 		if (isJUnit4()) {
 			typeContent= appendAnnotations(typeContent, lineDelimiter);
 		}
-		
+
 		return super.constructCUContent(cu, typeContent, lineDelimiter);
 	}
 
 	private String appendAnnotations(String typeContent, String lineDelimiter) {
 		Object[] checkedElements= fClassesInSuiteTable.getCheckedElements();
-		StringBuffer buffer = new StringBuffer("@RunWith(Suite.class)"); //$NON-NLS-1$
+		StringBuilder buffer = new StringBuilder("@RunWith(Suite.class)"); //$NON-NLS-1$
 		buffer.append(lineDelimiter);
 		buffer.append("@SuiteClasses({"); //$NON-NLS-1$
 		for (int i= 0; i < checkedElements.length; i++) {
@@ -677,7 +676,7 @@ public class NewTestSuiteWizardPage extends NewTypeWizardPage {
 				buffer.append(".class"); //$NON-NLS-1$
 				if(i<checkedElements.length-1)
 					buffer.append(',');
-				
+
 			}
 		}
 		buffer.append("})"); //$NON-NLS-1$

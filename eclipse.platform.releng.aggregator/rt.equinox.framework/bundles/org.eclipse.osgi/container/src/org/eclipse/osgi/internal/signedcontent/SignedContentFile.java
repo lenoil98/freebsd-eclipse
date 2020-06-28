@@ -20,9 +20,9 @@ import java.util.*;
 import org.eclipse.osgi.signedcontent.*;
 
 /*
- * This class is used by the SignedContentFactory to create SignedContent objects from File objects.  This is needed 
- * to avoid leaving the underlying ZipFiles open for the SignedContent objects returned from the 
- * SignedContentFactory (bug 225090) 
+ * This class is used by the SignedContentFactory to create SignedContent objects from File objects.  This is needed
+ * to avoid leaving the underlying ZipFiles open for the SignedContent objects returned from the
+ * SignedContentFactory (bug 225090)
  */
 public class SignedContentFile implements SignedContent {
 
@@ -39,10 +39,12 @@ public class SignedContentFile implements SignedContent {
 		this.signedContent = signedContent;
 	}
 
+	@Override
 	public void checkValidity(SignerInfo signerInfo) throws CertificateExpiredException, CertificateNotYetValidException {
 		signedContent.checkValidity(signerInfo);
 	}
 
+	@Override
 	public synchronized SignedContentEntry[] getSignedEntries() {
 		SignedContentEntry[] entries = signedContent.getSignedEntries();
 		if (signedContent == null)
@@ -66,6 +68,7 @@ public class SignedContentFile implements SignedContent {
 		return results;
 	}
 
+	@Override
 	public synchronized SignedContentEntry getSignedEntry(String name) {
 		if (getEntryExceptions(false) == null)
 			getSignedEntries(); // populate the entry exceptions
@@ -73,18 +76,22 @@ public class SignedContentFile implements SignedContent {
 		return entry == null ? null : new SignedContentFileEntry(entry);
 	}
 
+	@Override
 	public SignerInfo[] getSignerInfos() {
 		return signedContent.getSignerInfos();
 	}
 
+	@Override
 	public Date getSigningTime(SignerInfo signerInfo) {
 		return signedContent.getSigningTime(signerInfo);
 	}
 
+	@Override
 	public SignerInfo getTSASignerInfo(SignerInfo signerInfo) {
 		return signedContent.getTSASignerInfo(signerInfo);
 	}
 
+	@Override
 	public boolean isSigned() {
 		return signedContent.isSigned();
 	}
@@ -102,18 +109,22 @@ public class SignedContentFile implements SignedContent {
 			this.entry = entry;
 		}
 
+		@Override
 		public String getName() {
 			return entry.getName();
 		}
 
+		@Override
 		public SignerInfo[] getSignerInfos() {
 			return entry.getSignerInfos();
 		}
 
+		@Override
 		public boolean isSigned() {
 			return entry.isSigned();
 		}
 
+		@Override
 		public void verify() throws IOException, InvalidContentException {
 			// check the entry exceptions map for the entry name
 			Map<String, Throwable> exceptions = getEntryExceptions(false);

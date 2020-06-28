@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.typehierarchy;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Composite;
@@ -63,16 +64,13 @@ public class SubTypeHierarchyViewer extends TypeHierarchyViewer {
 			if (hierarchy != null) {
 				IType[] types= hierarchy.getSubtypes(type);
 				if (isObject(type)) {
-					for (int i= 0; i < types.length; i++) {
-						IType curr= types[i];
-						if (!isAnonymousFromInterface(curr)) {
-							res.add(curr);
+					for (IType t : types) {
+						if (!isAnonymousFromInterface(t)) {
+							res.add(t);
 						}
 					}
 				} else {
-					for (int i= 0; i < types.length; i++) {
-						res.add(types[i]);
-					}
+					res.addAll(Arrays.asList(types));
 				}
 			}
 

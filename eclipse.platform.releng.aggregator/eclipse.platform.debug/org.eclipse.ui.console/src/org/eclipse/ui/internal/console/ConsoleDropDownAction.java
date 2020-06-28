@@ -96,7 +96,7 @@ class ConsoleDropDownAction extends Action implements IMenuCreator, IConsoleList
 
 	private void addActionToMenu(Menu parent, Action action, int accelerator) {
 		if (accelerator < 10) {
-			StringBuffer label= new StringBuffer();
+			StringBuilder label= new StringBuilder();
 			//add the numerical accelerator
 			label.append('&');
 			label.append(accelerator);
@@ -169,12 +169,9 @@ class ConsoleDropDownAction extends Action implements IMenuCreator, IConsoleList
 		job.schedule();
 	}
 
-	/* (non-Javadoc)
-	 *
-	 * Dispose the menu when a launch is removed, such that the actions in this
-	 * menu do not hang on to associated resources.
-	 *
-	 * @see org.eclipse.ui.console.IConsoleListener#consolesRemoved(org.eclipse.ui.console.IConsole[])
+	/*
+	 * Dispose the menu when a launch is removed, such that the actions in this menu
+	 * do not hang on to associated resources.
 	 */
 	@Override
 	public void consolesRemoved(IConsole[] consoles) {

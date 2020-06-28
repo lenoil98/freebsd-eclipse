@@ -8,8 +8,8 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
- * Contributors: 
+ *
+ * Contributors:
  * 	IBM Corporation - initial API and implementation
  * 	Band XI - add more commands
  *		Composent, Inc. - command additions
@@ -47,27 +47,28 @@ public class ProvCommandProvider implements CommandProvider {
 
 	// holds the mapping between command name and command description
 	private Map<String, String> commandsHelp = null;
-	// hold the mappings between command groups and the command names of the commands in the group
+	// hold the mappings between command groups and the command names of the
+	// commands in the group
 	private Map<String, String[]> commandGroups = null;
 
 	private final IProvisioningAgent agent;
 
-	//	private Profile profile;
+	// private Profile profile;
 
 	public ProvCommandProvider(String profileId, IProvisioningAgent agent) {
 		this.agent = agent;
 		// look up the profile we are currently running and use it as the
 		// default.
 		// TODO define a way to spec the default profile to manage
-		//		if (profileId != null) {
-		//			profile = registry.getProfile(profileId);
-		//			if (profile != null)
-		//				return;
-		//		}
-		//		// A default was not defined so manage the first profile we can find
-		//		Profile[] profiles = registry.getProfiles();
-		//		if (profiles.length > 0)
-		//			profile = profiles[0];
+		// if (profileId != null) {
+		// profile = registry.getProfile(profileId);
+		// if (profile != null)
+		// return;
+		// }
+		// // A default was not defined so manage the first profile we can find
+		// Profile[] profiles = registry.getProfiles();
+		// if (profiles.length > 0)
+		// profile = profiles[0];
 	}
 
 	/**
@@ -196,7 +197,7 @@ public class ProvCommandProvider implements CommandProvider {
 	}
 
 	private String flattenStatus(IStatus[] childs, String indent) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		for (int i = 0; (childs != null) && (i < childs.length); i++) {
 			sb.append(indent).append(childs[i].getMessage()).append(NEW_LINE);
@@ -243,7 +244,7 @@ public class ProvCommandProvider implements CommandProvider {
 
 	/**
 	 * Lists the installable units that match the given URL, id, and/or version.
-	 * 
+	 *
 	 * @param interpreter
 	 */
 	public void _provliu(CommandInterpreter interpreter) {
@@ -253,16 +254,19 @@ public class ProvCommandProvider implements CommandProvider {
 		URI repoURL = null;
 		if (urlString != null && !urlString.equals(WILDCARD_ANY))
 			repoURL = toURI(interpreter, urlString);
-		IInstallableUnit[] units = sort(ProvisioningHelper.getInstallableUnits(agent, repoURL, QueryUtil.createIUQuery(id, VersionRange.create(version)), null));
-		for (int i = 0; i < units.length; i++)
-			println(interpreter, units[i]);
+		IInstallableUnit[] units = sort(ProvisioningHelper.getInstallableUnits(agent, repoURL,
+				QueryUtil.createIUQuery(id, VersionRange.create(version)), null));
+		for (IInstallableUnit unit : units) {
+			println(interpreter, unit);
+		}
 	}
 
 	/**
 	 * Lists the installable units that match the given URL and query. A third
-	 * boolean argument can be provided where <code>true</code> means &quot;full query&quot;
-	 * and <code>false</code> means &quote;match query&quote;. The default is <code>false</code>.
-	 * 
+	 * boolean argument can be provided where <code>true</code> means &quot;full
+	 * query&quot; and <code>false</code> means &quote;match query&quote;. The
+	 * default is <code>false</code>.
+	 *
 	 * @param interpreter
 	 */
 	public void _provlquery(CommandInterpreter interpreter) {
@@ -277,21 +281,23 @@ public class ProvCommandProvider implements CommandProvider {
 		if (urlString != null && !urlString.equals(WILDCARD_ANY))
 			repoURL = toURI(interpreter, urlString);
 
-		IQuery<IInstallableUnit> query = useFull ? QueryUtil.createQuery(expression) : QueryUtil.createMatchQuery(expression);
+		IQuery<IInstallableUnit> query = useFull ? QueryUtil.createQuery(expression)
+				: QueryUtil.createMatchQuery(expression);
 		IInstallableUnit[] units = sort(ProvisioningHelper.getInstallableUnits(agent, repoURL, query, null));
 		// Now print out results
 		if (units.length == 0)
 			interpreter.println("No units found");
 		else {
-			for (int i = 0; i < units.length; i++)
-				println(interpreter, units[i]);
+			for (IInstallableUnit unit : units) {
+				println(interpreter, unit);
+			}
 		}
 	}
 
 	/**
-	 * Lists the known metadata repositories, or the contents of a given
-	 * metadata repository.
-	 * 
+	 * Lists the known metadata repositories, or the contents of a given metadata
+	 * repository.
+	 *
 	 * @param interpreter
 	 */
 	public void _provlr(CommandInterpreter interpreter) {
@@ -301,29 +307,32 @@ public class ProvCommandProvider implements CommandProvider {
 		if (urlString == null) {
 			URI[] repositories = ProvisioningHelper.getMetadataRepositories(agent);
 			if (repositories != null)
-				for (int i = 0; i < repositories.length; i++)
-					interpreter.println(repositories[i]);
+				for (URI repository : repositories) {
+					interpreter.println(repository);
+				}
 			return;
 		}
 		URI repoLocation = toURI(interpreter, urlString);
 		if (repoLocation == null)
 			return;
-		IInstallableUnit[] units = sort(ProvisioningHelper.getInstallableUnits(agent, repoLocation, QueryUtil.createIUQuery(id, VersionRange.create(version)), null));
-		for (int i = 0; i < units.length; i++)
-			println(interpreter, units[i]);
+		IInstallableUnit[] units = sort(ProvisioningHelper.getInstallableUnits(agent, repoLocation,
+				QueryUtil.createIUQuery(id, VersionRange.create(version)), null));
+		for (IInstallableUnit unit : units) {
+			println(interpreter, unit);
+		}
 	}
 
 	/**
 	 * Lists the group IUs in all known metadata repositories, or in the given
 	 * metadata repository.
-	 * 
+	 *
 	 * @param interpreter
 	 */
 	public void _provlg(CommandInterpreter interpreter) {
 		String urlString = processArgument(interpreter.nextArgument());
 		IQueryable<IInstallableUnit> queryable = null;
 		if (urlString == null) {
-			queryable = (IMetadataRepositoryManager) agent.getService(IMetadataRepositoryManager.SERVICE_NAME);
+			queryable = agent.getService(IMetadataRepositoryManager.class);
 			if (queryable == null)
 				return;
 		} else {
@@ -335,14 +344,15 @@ public class ProvCommandProvider implements CommandProvider {
 				return;
 		}
 		IInstallableUnit[] units = sort(queryable.query(QueryUtil.createIUGroupQuery(), null));
-		for (int i = 0; i < units.length; i++)
-			println(interpreter, units[i]);
+		for (IInstallableUnit unit : units) {
+			println(interpreter, unit);
+		}
 	}
 
 	/**
-	 * Lists the known artifact repositories, or the contents of a given
-	 * artifact repository.
-	 * 
+	 * Lists the known artifact repositories, or the contents of a given artifact
+	 * repository.
+	 *
 	 * @param interpreter
 	 */
 	public void _provlar(CommandInterpreter interpreter) {
@@ -351,8 +361,9 @@ public class ProvCommandProvider implements CommandProvider {
 			URI[] repositories = ProvisioningHelper.getArtifactRepositories(agent);
 			if (repositories == null)
 				return;
-			for (int i = 0; i < repositories.length; i++)
-				interpreter.println(repositories[i]);
+			for (URI repository : repositories) {
+				interpreter.println(repository);
+			}
 			return;
 		}
 		URI repoURL = toURI(interpreter, urlString);
@@ -371,11 +382,9 @@ public class ProvCommandProvider implements CommandProvider {
 			return;
 		}
 		IFileArtifactRepository fileRepo = repo.getAdapter(IFileArtifactRepository.class);
-		for (Iterator<IArtifactKey> iterator = keys.iterator(); iterator.hasNext();) {
-			IArtifactKey key = iterator.next();
+		for (IArtifactKey key : keys) {
 			IArtifactDescriptor[] descriptors = repo.getArtifactDescriptors(key);
-			for (int j = 0; j < descriptors.length; j++) {
-				IArtifactDescriptor descriptor = descriptors[j];
+			for (IArtifactDescriptor descriptor : descriptors) {
 				File location = null;
 				if (fileRepo != null)
 					location = fileRepo.getArtifactFile(descriptor);
@@ -386,8 +395,8 @@ public class ProvCommandProvider implements CommandProvider {
 	}
 
 	/**
-	 * Returns the given string as an URL, or <code>null</code> if the string
-	 * could not be interpreted as an URL.
+	 * Returns the given string as an URL, or <code>null</code> if the string could
+	 * not be interpreted as an URL.
 	 */
 	private URI toURI(CommandInterpreter interpreter, String urlString) {
 		try {
@@ -407,7 +416,7 @@ public class ProvCommandProvider implements CommandProvider {
 
 	/**
 	 * Lists the known profiles, or the contents of a given profile.
-	 * 
+	 *
 	 * @param interpreter
 	 */
 	public void _provlp(CommandInterpreter interpreter) {
@@ -420,8 +429,9 @@ public class ProvCommandProvider implements CommandProvider {
 				interpreter.println("No profile found");
 				return;
 			}
-			for (int i = 0; i < profiles.length; i++)
-				interpreter.println(profiles[i].getProfileId());
+			for (IProfile profile : profiles) {
+				interpreter.println(profile.getProfileId());
+			}
 			return;
 		}
 		// determine which profile is to be listed
@@ -440,14 +450,15 @@ public class ProvCommandProvider implements CommandProvider {
 
 		// list the profile contents
 		IInstallableUnit[] result = sort(target.query(QueryUtil.createIUQuery(id, VersionRange.create(range)), null));
-		for (int i = 0; i < result.length; i++)
-			interpreter.println(result[i]);
+		for (IInstallableUnit unit : result) {
+			interpreter.println(unit);
+		}
 	}
 
 	/**
-	 * Lists the profile timestamps for a given profile id, if no profile id, the default profile
-	 * is used.
-	 * 
+	 * Lists the profile timestamps for a given profile id, if no profile id, the
+	 * default profile is used.
+	 *
 	 * @param interpreter
 	 */
 	public void _provlpts(CommandInterpreter interpreter) {
@@ -469,9 +480,9 @@ public class ProvCommandProvider implements CommandProvider {
 		// else if there are some timestamps then print them out on separate line
 		interpreter.print("Timestamps for profile ");
 		interpreter.println(profileId);
-		for (int i = 0; i < profileTimestamps.length; i++) {
+		for (long profileTimestamp : profileTimestamps) {
 			interpreter.print("\t"); //$NON-NLS-1$
-			interpreter.println(Long.valueOf(profileTimestamps[i]));
+			interpreter.println(Long.valueOf(profileTimestamp));
 		}
 	}
 
@@ -481,14 +492,16 @@ public class ProvCommandProvider implements CommandProvider {
 	public void _provrevert(CommandInterpreter interpreter) {
 		String timestamp = interpreter.nextArgument();
 		if (timestamp == null) {
-			interpreter.println("Valid timestamp must be provided.  Timestamps can be retrieved via 'provlpts' command.");
+			interpreter
+					.println("Valid timestamp must be provided.  Timestamps can be retrieved via 'provlpts' command.");
 			return;
 		}
 		Long ts = null;
 		try {
 			ts = Long.valueOf(timestamp);
 		} catch (NumberFormatException e) {
-			interpreter.println("Timestamp " + timestamp + " not valid.  Timestamps can be retrieved via 'provlpts' command.");
+			interpreter.println(
+					"Timestamp " + timestamp + " not valid.  Timestamps can be retrieved via 'provlpts' command.");
 			return;
 		}
 		String profileId = interpreter.nextArgument();
@@ -542,16 +555,18 @@ public class ProvCommandProvider implements CommandProvider {
 		}
 		IInstallableUnit[] units = sort(profile.query(QueryUtil.createIUGroupQuery(), new NullProgressMonitor()));
 		// Now print out results
-		for (int i = 0; i < units.length; i++)
-			println(interpreter, units[i]);
+		for (IInstallableUnit unit : units) {
+			println(interpreter, unit);
+		}
 	}
 
 	/**
-	 * Lists the installable units that match the given profile id and query. The id can be
-	 * &quot;this&quot; to denote the self profile. A third boolean argument can be provided
-	 * where <code>true</code> means &quot;full query&quot; and <code>false</code> means
-	 * &quote;match query&quote;. The default is <code>false</code>.
-	 * 
+	 * Lists the installable units that match the given profile id and query. The id
+	 * can be &quot;this&quot; to denote the self profile. A third boolean argument
+	 * can be provided where <code>true</code> means &quot;full query&quot; and
+	 * <code>false</code> means &quote;match query&quote;. The default is
+	 * <code>false</code>.
+	 *
 	 * @param interpreter
 	 */
 	public void _provlpquery(CommandInterpreter interpreter) {
@@ -567,7 +582,8 @@ public class ProvCommandProvider implements CommandProvider {
 		}
 
 		boolean useFull = Boolean.parseBoolean(processArgument(interpreter.nextArgument()));
-		IQuery<IInstallableUnit> query = useFull ? QueryUtil.createQuery(expression) : QueryUtil.createMatchQuery(expression);
+		IQuery<IInstallableUnit> query = useFull ? QueryUtil.createQuery(expression)
+				: QueryUtil.createMatchQuery(expression);
 
 		IProfile profile = ProvisioningHelper.getProfile(agent, profileId);
 		if (profile == null) {
@@ -583,8 +599,9 @@ public class ProvCommandProvider implements CommandProvider {
 		if (units.length == 0)
 			interpreter.println("No units found");
 		else {
-			for (int i = 0; i < units.length; i++)
-				println(interpreter, units[i]);
+			for (IInstallableUnit unit : units) {
+				println(interpreter, unit);
+			}
 		}
 	}
 
@@ -628,9 +645,10 @@ public class ProvCommandProvider implements CommandProvider {
 
 	/**
 	 * Handles the help command
-	 * 
+	 *
 	 * @param intp
-	 * @return description for a particular command or false if there is no command with the specified name
+	 * @return description for a particular command or false if there is no command
+	 *         with the specified name
 	 */
 	public Object _help(CommandInterpreter intp) {
 		String commandName = intp.nextArgument();
@@ -648,18 +666,18 @@ public class ProvCommandProvider implements CommandProvider {
 		interpreter.print(",code=" + status.getCode());
 		String severityString = null;
 		switch (status.getSeverity()) {
-			case IStatus.INFO :
-				severityString = "INFO";
-				break;
-			case IStatus.CANCEL :
-				severityString = "CANCEL";
-				break;
-			case IStatus.WARNING :
-				severityString = "WARNING";
-				break;
-			case IStatus.ERROR :
-				severityString = "ERROR";
-				break;
+		case IStatus.INFO:
+			severityString = "INFO";
+			break;
+		case IStatus.CANCEL:
+			severityString = "CANCEL";
+			break;
+		case IStatus.WARNING:
+			severityString = "WARNING";
+			break;
+		case IStatus.ERROR:
+			severityString = "ERROR";
+			break;
 		}
 		interpreter.print(",severity=" + severityString);
 		interpreter.print(",bundle=" + status.getPlugin());
@@ -670,8 +688,8 @@ public class ProvCommandProvider implements CommandProvider {
 		IStatus[] children = status.getChildren();
 		if (children != null && children.length > 0) {
 			interpreter.println("Error status children:");
-			for (int i = 0; i < children.length; i++) {
-				printErrorStatus(interpreter, children[i]);
+			for (IStatus child : children) {
+				printErrorStatus(interpreter, child);
 			}
 		}
 		interpreter.println("--End Error Status--");
@@ -683,8 +701,8 @@ public class ProvCommandProvider implements CommandProvider {
 	}
 
 	/*
-	 * Returns either the help message for a particular command, 
-	 * or returns the help messages for all commands (if command is not specified)
+	 * Returns either the help message for a particular command, or returns the help
+	 * messages for all commands (if command is not specified)
 	 */
 	private String getHelp(String commandName) {
 		StringBuffer help = new StringBuffer();
@@ -762,15 +780,18 @@ public class ProvCommandProvider implements CommandProvider {
 
 	private void initializeCommandGroups() {
 		commandGroups = new LinkedHashMap<>();
-		commandGroups.put(Messages.Console_help_repository_header, new String[] {"provaddrepo", "provdelrepo", "provaddmetadatarepo", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-				"provdelmetadatarepo", "provaddartifactrepo", "provdelartifactrepo", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-				"provlg", "provlr", "provlar", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-				"provliu", "provlquery"}); //$NON-NLS-1$ //$NON-NLS-2$
+		commandGroups.put(Messages.Console_help_repository_header,
+				new String[] { "provaddrepo", "provdelrepo", "provaddmetadatarepo", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+						"provdelmetadatarepo", "provaddartifactrepo", "provdelartifactrepo", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+						"provlg", "provlr", "provlar", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+						"provliu", "provlquery" }); //$NON-NLS-1$ //$NON-NLS-2$
 
-		commandGroups.put(Messages.Console_help_profile_registry_header, new String[] {"provaddprofile", "provdelprofile", //$NON-NLS-1$ //$NON-NLS-2$
-				"provlp", "provlgp", "provlpts", "provlpquery"}); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		commandGroups.put(Messages.Console_help_profile_registry_header,
+				new String[] { "provaddprofile", "provdelprofile", //$NON-NLS-1$ //$NON-NLS-2$
+						"provlp", "provlgp", "provlpts", "provlpquery" }); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 
-		commandGroups.put(Messages.Console_help_install_header, new String[] {"provinstall", "provremove", "provrevert"}); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		commandGroups.put(Messages.Console_help_install_header,
+				new String[] { "provinstall", "provremove", "provrevert" }); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	}
 
 	/**

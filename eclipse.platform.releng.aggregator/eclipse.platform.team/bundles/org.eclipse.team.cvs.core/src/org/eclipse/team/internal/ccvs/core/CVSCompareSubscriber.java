@@ -60,13 +60,12 @@ public class CVSCompareSubscriber extends CVSSyncTreeSubscriber implements ISubs
 	 */
 	public void resetRoots(IResource[] resources, CVSTag[] tags) {
 		if (this.resources != null) {
-			List removed = new ArrayList();
-			for (int i = 0; i < this.resources.length; i++) {
-				IResource resource = this.resources[i];
+			List<ISubscriberChangeEvent> removed = new ArrayList<>();
+			for (IResource resource : this.resources) {
 				removed.add(new SubscriberChangeEvent(this, ISubscriberChangeEvent.ROOT_REMOVED, resource));
 			}
 			this.resources = new IResource[0];
-			fireTeamResourceChange((ISubscriberChangeEvent[]) removed.toArray(new ISubscriberChangeEvent[removed.size()]));
+			fireTeamResourceChange(removed.toArray(new ISubscriberChangeEvent[removed.size()]));
 			if (tree != null) {
 				tree.dispose();
 				tree = null;
@@ -94,42 +93,31 @@ public class CVSCompareSubscriber extends CVSSyncTreeSubscriber implements ISubs
 		return new QualifiedName(QUALIFIED_NAME, UNIQUE_ID_PREFIX + uniqueId); 
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.CVSSyncTreeSubscriber#getBaseSynchronizationCache()
-	 */
+	@Override
 	protected IResourceVariantTree getBaseTree() {
 		// No base cache needed since it's a two way compare
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.CVSSyncTreeSubscriber#getRemoteSynchronizationCache()
-	 */
+	@Override
 	protected IResourceVariantTree getRemoteTree() {
 		return tree;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.subscribers.TeamSubscriber#isThreeWay()
-	 */
+	@Override
 	public boolean isThreeWay() {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.subscribers.TeamSubscriber#roots()
-	 */
+	@Override
 	public IResource[] roots() {
 		return resources;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.subscribers.ITeamResourceChangeListener#teamResourceChanged(org.eclipse.team.core.subscribers.TeamDelta[])
-	 */
+	@Override
 	public void subscriberResourceChanged(ISubscriberChangeEvent[] deltas) {
-		List outgoingDeltas = new ArrayList(deltas.length);
-		for (int i = 0; i < deltas.length; i++) {
-			ISubscriberChangeEvent delta = deltas[i];
+		List<ISubscriberChangeEvent> outgoingDeltas = new ArrayList<>(deltas.length);
+		for (ISubscriberChangeEvent delta : deltas) {
 			if ((delta.getFlags() & ISubscriberChangeEvent.ROOT_REMOVED) != 0) {
 				IResource resource = delta.getResource();
 				outgoingDeltas.addAll(Arrays.asList(handleRemovedRoot(resource)));
@@ -146,14 +134,13 @@ public class CVSCompareSubscriber extends CVSSyncTreeSubscriber implements ISubs
 			}
 		}
 		
-		fireTeamResourceChange((SubscriberChangeEvent[]) outgoingDeltas.toArray(new SubscriberChangeEvent[outgoingDeltas.size()]));
+		fireTeamResourceChange(outgoingDeltas.toArray(new SubscriberChangeEvent[outgoingDeltas.size()]));
 	}
 
 	private SubscriberChangeEvent[] handleRemovedRoot(IResource removedRoot) {
 		// Determine if any of the roots of the compare are affected
-		List removals = new ArrayList(resources.length);
-		for (int j = 0; j < resources.length; j++) {
-			IResource root = resources[j];
+		List<IResource> removals = new ArrayList<>(resources.length);
+		for (IResource root : resources) {
 			if (removedRoot.getFullPath().isPrefixOf(root.getFullPath())) {
 				// The root is no longer managed by CVS
 				removals.add(root);
@@ -169,22 +156,20 @@ public class CVSCompareSubscriber extends CVSSyncTreeSubscriber implements ISubs
 		}
 		
 		// Adjust the roots of the subscriber
-		List newRoots = new ArrayList(resources.length);
+		List<IResource> newRoots = new ArrayList<>(resources.length);
 		newRoots.addAll(Arrays.asList(resources));
 		newRoots.removeAll(removals);
-		resources = (IResource[]) newRoots.toArray(new IResource[newRoots.size()]);
-		 
+		resources = newRoots.toArray(new IResource[newRoots.size()]);
+		
 		// Create the deltas for the removals
 		SubscriberChangeEvent[] deltas = new SubscriberChangeEvent[removals.size()];
 		for (int i = 0; i < deltas.length; i++) {
-			deltas[i] = new SubscriberChangeEvent(this, ISubscriberChangeEvent.ROOT_REMOVED, (IResource)removals.get(i));
+			deltas[i] = new SubscriberChangeEvent(this, ISubscriberChangeEvent.ROOT_REMOVED, removals.get(i));
 		}
 		return deltas;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.subscribers.TeamSubscriber#isSupervised(org.eclipse.core.resources.IResource)
-	 */
+	@Override
 	public boolean isSupervised(IResource resource) throws TeamException {
 		if (super.isSupervised(resource)) {
 			if (!resource.exists() && !getRemoteTree().hasResourceVariant(resource)) {
@@ -192,8 +177,7 @@ public class CVSCompareSubscriber extends CVSSyncTreeSubscriber implements ISubs
 				return false;
 			}
 			if (this.resources != null) {
-				for (int i = 0; i < resources.length; i++) {
-					IResource root = resources[i];
+				for (IResource root : resources) {
 					if (root.getFullPath().isPrefixOf(resource.getFullPath())) {
 						return true;
 					}
@@ -203,9 +187,7 @@ public class CVSCompareSubscriber extends CVSSyncTreeSubscriber implements ISubs
 		return false;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.CVSSyncTreeSubscriber#getCacheFileContentsHint()
-	 */
+	@Override
 	protected boolean getCacheFileContentsHint() {
 		return true;
 	}
@@ -214,9 +196,7 @@ public class CVSCompareSubscriber extends CVSSyncTreeSubscriber implements ISubs
 		return tree.getTag(ResourcesPlugin.getWorkspace().getRoot());
 	}
 		
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
+	@Override
 	public boolean equals(Object other) {
 		if(this == other) return true;
 		if(! (other instanceof CVSCompareSubscriber)) return false;
@@ -237,8 +217,7 @@ public class CVSCompareSubscriber extends CVSSyncTreeSubscriber implements ISubs
 	 *
 	 */
 	public void primeRemoteTree() throws CVSException {
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			ICVSResource cvsResource = CVSWorkspaceRoot.getCVSResourceFor(resource);
 			cvsResource.accept(new ICVSResourceVisitor() {
 				public void visitFile(ICVSFile file) throws CVSException {
@@ -261,24 +240,24 @@ public class CVSCompareSubscriber extends CVSSyncTreeSubscriber implements ISubs
 		}
 	}
 
-    /**
-     * Return the tag associated with the given root resource
-     * or <code>null</code> if there is only a single tag
-     * for the subscriber.
-     * @param root the root resource
-     * @return the tag associated with the given root resource
-     */
-    public CVSTag getTag(IResource root) {
-        return tree.getTag(root);
-    }
-    
-    /**
-     * Return <code>true</code> if the tag against which each
-     * root is compared may differ. 
-     * @return whether the tag on each root may differ.
-     */
-    public boolean isMultipleTagComparison() {
-        return getTag() == null;
-    }
+	/**
+	 * Return the tag associated with the given root resource
+	 * or <code>null</code> if there is only a single tag
+	 * for the subscriber.
+	 * @param root the root resource
+	 * @return the tag associated with the given root resource
+	 */
+	public CVSTag getTag(IResource root) {
+		return tree.getTag(root);
+	}
+
+	/**
+	 * Return <code>true</code> if the tag against which each
+	 * root is compared may differ. 
+	 * @return whether the tag on each root may differ.
+	 */
+	public boolean isMultipleTagComparison() {
+		return getTag() == null;
+	}
 
 }

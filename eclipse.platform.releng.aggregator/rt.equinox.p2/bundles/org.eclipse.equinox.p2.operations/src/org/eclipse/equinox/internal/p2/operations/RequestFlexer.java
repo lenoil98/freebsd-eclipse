@@ -322,15 +322,15 @@ public class RequestFlexer {
 		SubMonitor subMonitor = SubMonitor.convert(monitor, 1);
 		Collection<IInstallableUnit> availableUpdates = new HashSet<>();
 		IQueryResult<IInstallableUnit> updatesAvailable = planner.updatesFor(iu, provisioningContext, subMonitor.split(1));
-		for (Iterator<IInstallableUnit> iterator = updatesAvailable.iterator(); iterator.hasNext();) {
-			availableUpdates.add(iterator.next());
+		for (IInstallableUnit unit : updatesAvailable) {
+			availableUpdates.add(unit);
 		}
 		return availableUpdates;
 	}
 
 	//Create an OR expression that is matching all the entries from the given collection
 	private IRequirement createORRequirement(Collection<IInstallableUnit> findUpdates, boolean optional) {
-		StringBuffer expression = new StringBuffer();
+		StringBuilder expression = new StringBuilder();
 		Object[] expressionParameters = new Object[findUpdates.size() * 2];
 		int count = 0;
 		for (IInstallableUnit iu : findUpdates) {

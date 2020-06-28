@@ -19,9 +19,6 @@ package org.eclipse.ant.tests.ui.editor;
 
 import java.util.List;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import org.eclipse.ant.internal.ui.model.AntElementNode;
 import org.eclipse.ant.internal.ui.model.AntModel;
 import org.eclipse.ant.internal.ui.model.IAntElement;
@@ -147,7 +144,7 @@ public class AntEditorContentOutlineTests extends AbstractAntUITest {
 	}
 
 	/**
-	 * Tests whether the outline can handle a build file with only the <project></project> tags.
+	 * Tests whether the outline can handle a build file with only the {@literal <project></project>} tags.
 	 */
 	public void testWithProjectOnlyBuildFile() {
 		AntModel model = getAntModel("projectOnly.xml"); //$NON-NLS-1$
@@ -202,9 +199,5 @@ public class AntEditorContentOutlineTests extends AbstractAntUITest {
 		assertTrue("Target with name starting with '-' should be internal", model.getTargetNode("-internal2").isInternal()); //$NON-NLS-1$ //$NON-NLS-2$
 		assertFalse("Target with description attribute should not be internal", model.getTargetNode("non-internal").isInternal()); //$NON-NLS-1$ //$NON-NLS-2$
 		assertFalse("Default target should not be internal", model.getTargetNode("-default").isInternal()); //$NON-NLS-1$ //$NON-NLS-2$
-	}
-
-	public static Test suite() {
-		return new TestSuite(AntEditorContentOutlineTests.class);
 	}
 }

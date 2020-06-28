@@ -18,7 +18,7 @@ import java.io.IOException;
 import org.eclipse.core.tools.metadata.IStringDumpingStrategy;
 
 /**
- * A strategy for reading .location files. 
+ * A strategy for reading .location files.
  */
 class LocationStrategy implements IStringDumpingStrategy {
 
@@ -27,11 +27,11 @@ class LocationStrategy implements IStringDumpingStrategy {
 	 */
 	@Override
 	public String dumpStringContents(DataInputStream dataInput) throws IOException {
-		StringBuffer contents = new StringBuffer(100);
+		StringBuilder contents = new StringBuilder(100);
 		String location = dataInput.readUTF();
 		contents.append("Location: '"); //$NON-NLS-1$
 		contents.append(location);
-		contents.append('\''); 
+		contents.append('\'');
 		//try to read the dynamic references
 		int numRefs = dataInput.readInt();
 		if (numRefs < 0)

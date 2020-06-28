@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -73,25 +72,24 @@ public class PluginVersionInfo extends HelpProperties {
 
 	protected void createTable(Collection<String> docBundleIds) {
 		// create table of current contributions
-		for (Iterator<String> it = docBundleIds.iterator(); it.hasNext();) {
-			String bundleId = it.next();
+		for (String bundleId : docBundleIds) {
 			Bundle pluginBundle = Platform.getBundle(bundleId);
 			if (pluginBundle == null) {
 				continue;
 			}
-			StringBuffer pluginVersionAndFragments = new StringBuffer();
+			StringBuilder pluginVersionAndFragments = new StringBuilder();
 			appendBundleInformation(pluginVersionAndFragments, bundleId,
 					pluginBundle.getHeaders().get(
 							Constants.BUNDLE_VERSION));
 			Bundle[] fragmentBundles = Platform.getFragments(pluginBundle);
 			if (fragmentBundles != null) {
-				for (int f = 0; f < fragmentBundles.length; f++) {
-					if (fragmentBundles[f].getState() == Bundle.INSTALLED
-							|| fragmentBundles[f].getState() == Bundle.UNINSTALLED)
+				for (Bundle fragmentBundle : fragmentBundles) {
+					if (fragmentBundle.getState() == Bundle.INSTALLED
+							|| fragmentBundle.getState() == Bundle.UNINSTALLED)
 						continue;
 					appendBundleInformation(pluginVersionAndFragments,
-							fragmentBundles[f].getSymbolicName(),
-							fragmentBundles[f].getHeaders().get(
+							fragmentBundle.getSymbolicName(),
+							fragmentBundle.getHeaders().get(
 									Constants.BUNDLE_VERSION));
 				}
 			}
@@ -99,7 +97,7 @@ public class PluginVersionInfo extends HelpProperties {
 		}
 	}
 
-	protected void appendBundleInformation(StringBuffer buffer, String id,
+	protected void appendBundleInformation(StringBuilder buffer, String id,
 			String version) {
 		if (buffer.length()>0)
 			buffer.append(SEPARATOR);

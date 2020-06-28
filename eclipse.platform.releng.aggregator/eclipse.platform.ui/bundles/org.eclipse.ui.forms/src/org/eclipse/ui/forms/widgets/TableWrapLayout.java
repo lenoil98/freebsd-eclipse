@@ -261,7 +261,7 @@ public final class TableWrapLayout extends Layout implements ILayoutExtension {
 				columnWidths = maxColumnWidths;
 			} else {
 				columnWidths = new int[numColumns];
-			    int extra = parentWidth - maxWidth;
+				int extra = parentWidth - maxWidth;
 				int colExtra = extra / growingColumns.length;
 				for (int i = 0; i < numColumns; i++) {
 					columnWidths[i] = maxColumnWidths[i];
@@ -425,12 +425,18 @@ public final class TableWrapLayout extends Layout implements ILayoutExtension {
 			xloc = x + colWidth - width;
 		}
 		// align vertically
-		if (td.valign == TableWrapData.MIDDLE) {
+		switch (td.valign) {
+		case TableWrapData.MIDDLE:
 			yloc = y + (slotHeight - height) / 2;
-		} else if (td.valign == TableWrapData.BOTTOM) {
+			break;
+		case TableWrapData.BOTTOM:
 			yloc = y + slotHeight - height;
-		} else if (td.valign == TableWrapData.FILL) {
+			break;
+		case TableWrapData.FILL:
 			height = slotHeight;
+			break;
+		default:
+			break;
 		}
 		control.setBounds(xloc, yloc, width, height);
 	}
@@ -542,8 +548,7 @@ public final class TableWrapLayout extends Layout implements ILayoutExtension {
 	private void updateGrowingColumns(ArrayList<Integer> growingColumns,
 			TableWrapData spec, int column) {
 		int affectedColumn = column + spec.colspan - 1;
-		for (int i = 0; i < growingColumns.size(); i++) {
-			Integer col = growingColumns.get(i);
+		for (Integer col : growingColumns) {
 			if (col.intValue() == affectedColumn)
 				return;
 		}
@@ -553,8 +558,7 @@ public final class TableWrapLayout extends Layout implements ILayoutExtension {
 	private void updateGrowingRows(ArrayList<Integer> growingRows, TableWrapData spec,
 			int row) {
 		int affectedRow = row + spec.rowspan - 1;
-		for (int i = 0; i < growingRows.size(); i++) {
-			Integer irow = growingRows.get(i);
+		for (Integer irow : growingRows) {
 			if (irow.intValue() == affectedRow)
 				return;
 		}
@@ -759,8 +763,7 @@ public final class TableWrapLayout extends Layout implements ILayoutExtension {
 	void calculateColumnWidths(Composite parent, int [] columnWidths, boolean max, boolean changed, boolean makeColumnsEqualWidth2) {
 		boolean secondPassNeeded=false;
 		int widestColumnWidth = 0;
-		for (int i = 0; i < grid.size(); i++) {
-			TableWrapData[] row = grid.get(i);
+		for (TableWrapData[] row : grid) {
 			for (int j = 0; j < numColumns; j++) {
 				TableWrapData td = row[j];
 				if (td.isItemData == false)
@@ -793,8 +796,7 @@ public final class TableWrapLayout extends Layout implements ILayoutExtension {
 		if (!secondPassNeeded) return;
 
 		// Second pass for controls with multi-column horizontal span
-		for (int i = 0; i < grid.size(); i++) {
-			TableWrapData[] row = grid.get(i);
+		for (TableWrapData[] row : grid) {
 			for (int j = 0; j < numColumns; j++) {
 				TableWrapData td = row[j];
 				if (td.isItemData == false || td.colspan==1)

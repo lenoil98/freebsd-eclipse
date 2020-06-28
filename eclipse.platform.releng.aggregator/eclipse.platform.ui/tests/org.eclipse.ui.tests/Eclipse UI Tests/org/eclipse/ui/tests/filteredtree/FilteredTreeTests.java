@@ -29,7 +29,11 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.FilteredTree;
 import org.eclipse.ui.dialogs.PatternFilter;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class FilteredTreeTests extends UITestCase {
 	private FilteredTree fTreeViewer;
 	private TestElement fRootElement;
@@ -72,18 +76,17 @@ public class FilteredTreeTests extends UITestCase {
 
 	}
 
-	/**
-	 * @param testName
-	 */
-	public FilteredTreeTests(String testName) {
-		super(testName);
+	public FilteredTreeTests() {
+		super(FilteredTreeTests.class.getSimpleName());
 	}
 
+	@Test
 	public void testCreateFilteredTree(){
 		runFilteredTreeTest(SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL
 				| SWT.BORDER);
 	}
 
+	@Test
 	public void testCreateCheckboxFilteredTree(){
 		runFilteredTreeTest(SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL
 				| SWT.BORDER | SWT.CHECK);
@@ -91,6 +94,7 @@ public class FilteredTreeTests extends UITestCase {
 	/*
 	 * Tests creation of a subclass of filtered tree, using alternate constructor.
 	 */
+	@Test
 	public void testCreateMyFilteredTree(){
 		fRootElement = TestElement.createModel(DEPTH, NUM_ITEMS);
 		final int treeStyle = SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL |SWT.FLAT;
@@ -110,6 +114,7 @@ public class FilteredTreeTests extends UITestCase {
 		dialog.close();
 	}
 
+	@Test
 	public void testAddAndRemovePattern() {
 		Dialog dialog = createFilteredTreeDialog();
 
@@ -156,25 +161,25 @@ public class FilteredTreeTests extends UITestCase {
 	}
 
 	private FilteredTree createFilteredTree(Composite parent, int style){
-	      Composite c = new Composite(parent, SWT.NONE);
-	      c.setLayout(new GridLayout());
-	      FilteredTree fTree = new FilteredTree(c, style, new PatternFilter());
+		Composite c = new Composite(parent, SWT.NONE);
+		c.setLayout(new GridLayout());
+		FilteredTree fTree = new FilteredTree(c, style, new PatternFilter());
 
-	      GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
-		  gd.widthHint = 400;
-		  gd.heightHint = 500;
-		  fTree.setLayoutData(gd);
-		  fTree.getViewer().setContentProvider(new TestModelContentProvider());
-		  fTree.getViewer().setLabelProvider(new LabelProvider());
+		GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
+		gd.widthHint = 400;
+		gd.heightHint = 500;
+		fTree.setLayoutData(gd);
+		fTree.getViewer().setContentProvider(new TestModelContentProvider());
+		fTree.getViewer().setLabelProvider(new LabelProvider());
 
-	      return fTree;
+		return fTree;
 	}
 
 	private FilteredTree createMyFilteredTree(Composite parent, int style){
 		Composite c = new Composite(parent, SWT.NONE);
-	    c.setLayout(new GridLayout());
-	    FilteredTree fTree = new MyFilteredTree(c, style);
-	    GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
+		c.setLayout(new GridLayout());
+		FilteredTree fTree = new MyFilteredTree(c, style);
+		GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
 		gd.widthHint = 400;
 		gd.heightHint = 500;
 		fTree.setLayoutData(gd);

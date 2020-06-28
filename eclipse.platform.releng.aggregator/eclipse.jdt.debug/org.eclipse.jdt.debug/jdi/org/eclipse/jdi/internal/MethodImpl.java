@@ -20,6 +20,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,7 +35,6 @@ import org.eclipse.jdi.internal.jdwp.JdwpCommandPacket;
 import org.eclipse.jdi.internal.jdwp.JdwpMethodID;
 import org.eclipse.jdi.internal.jdwp.JdwpReplyPacket;
 
-import com.ibm.icu.text.MessageFormat;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ClassLoaderReference;
 import com.sun.jdi.ClassNotLoadedException;
@@ -136,7 +136,7 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 		}
 		getLineTable();
 
-		return fLineToCodeIndexes.get(new Integer(line));
+		return fLineToCodeIndexes.get(Integer.valueOf(line));
 	}
 
 	/**
@@ -186,9 +186,9 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 			fJavaStratumLineNumberTable = new int[nrOfElements];
 			for (int i = 0; i < nrOfElements; i++) {
 				long lineCodeIndex = readLong("code index", replyData); //$NON-NLS-1$
-				Long lineCodeIndexLong = new Long(lineCodeIndex);
+				Long lineCodeIndexLong = Long.valueOf(lineCodeIndex);
 				int lineNr = readInt("line nr", replyData); //$NON-NLS-1$
-				Integer lineNrInt = new Integer(lineNr);
+				Integer lineNrInt = Integer.valueOf(lineNr);
 
 				// Add entry to code-index to line mapping.
 				fCodeIndexToLine.put(lineCodeIndexLong, lineNrInt);
@@ -231,14 +231,14 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 		long index = lineCodeIndex;
 		// Search for the line where this code index is located.
 		do {
-			lineCodeIndexObj = new Long(index);
+			lineCodeIndexObj = Long.valueOf(index);
 			lineNrObj = javaStratumCodeIndexToLine().get(lineCodeIndexObj);
 		} while (lineNrObj == null && --index >= fLowestValidCodeIndex);
 		if (lineNrObj == null) {
 			if (lineCodeIndex >= fLowestValidCodeIndex) {
 				index = lineCodeIndex;
 				do {
-					lineCodeIndexObj = new Long(index);
+					lineCodeIndexObj = Long.valueOf(index);
 					lineNrObj = javaStratumCodeIndexToLine().get(lineCodeIndexObj);
 				} while (lineNrObj == null && ++index <= fHighestValidCodeIndex);
 				if (lineNrObj != null) {
@@ -274,8 +274,9 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 		Iterator<LocalVariable> iter = variables().iterator();
 		while (iter.hasNext()) {
 			LocalVariable var = iter.next();
-			if (var.isArgument())
+			if (var.isArgument()) {
 				result.add(var);
+			}
 		}
 		fArguments = result;
 		return fArguments;
@@ -290,10 +291,9 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 		if (fArgumentTypeNames != null) {
 			return fArgumentTypeNames;
 		}
-		List<String> argumentTypeSignatures = argumentTypeSignatures();
 		List<String> result = new ArrayList<>();
-		for (Iterator<String> iter = argumentTypeSignatures.iterator(); iter.hasNext();) {
-			result.add(TypeImpl.signatureToName(iter.next()));
+		for (String signature : argumentTypeSignatures()) {
+			result.add(TypeImpl.signatureToName(signature));
 		}
 
 		fArgumentTypeNames = result;
@@ -394,15 +394,17 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 	 */
 	@Override
 	public int compareTo(Method method) {
-		if (method == null || !method.getClass().equals(this.getClass()))
+		if (method == null || !method.getClass().equals(this.getClass())) {
 			throw new ClassCastException(
 					JDIMessages.MethodImpl_Can__t_compare_method_to_given_object_6);
+		}
 
 		// See if declaring types are the same, if not return comparison between
 		// declaring types.
 		Method type2 = method;
-		if (!declaringType().equals(type2.declaringType()))
+		if (!declaringType().equals(type2.declaringType())) {
 			return declaringType().compareTo(type2.declaringType());
+		}
 
 		// Return comparison of position within declaring type.
 		int index1 = declaringType().methods().indexOf(this);
@@ -465,7 +467,7 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 			return null;
 		}
 		try {
-			Integer lineNrInt = javaStratumCodeIndexToLine().get(new Long(index));
+			Integer lineNrInt = javaStratumCodeIndexToLine().get(Long.valueOf(index));
 			if (lineNrInt == null) {
 				throw new AbsentInformationException(MessageFormat.format(JDIMessages.MethodImpl_No_valid_location_at_the_specified_code_index__0__2, new Object[] { Long.toString(index) }));
 			}
@@ -699,8 +701,9 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 		// See Location.
 		ReferenceTypeImpl referenceType = ReferenceTypeImpl.readWithTypeTag(
 				target, in);
-		if (referenceType == null)
+		if (referenceType == null) {
 			return null;
+		}
 
 		JdwpMethodID ID = new JdwpMethodID(vmImpl);
 		if (target.fVerboseWriter != null) {
@@ -877,16 +880,15 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 	 */
 	protected List<Location> javaStratumLocationsOfLines(List<Integer> javaLines)	throws AbsentInformationException {
 		Set<Long> tmpLocations = new TreeSet<>();
-		for (Iterator<Integer> iter = javaLines.iterator(); iter.hasNext();) {
-			Integer key = iter.next();
+		for (Integer key : javaLines) {
 			List<Long> indexes = javaStratumLineToCodeIndexes(key.intValue());
 			if (indexes != null) {
 				tmpLocations.addAll(indexes);
 			}
 		}
 		List<Location> locations = new ArrayList<>();
-		for (Iterator<Long> iter = tmpLocations.iterator(); iter.hasNext();) {
-			long index = iter.next().longValue();
+		for (Long location : tmpLocations) {
+			long index = location.longValue();
 			int position = Arrays.binarySearch(fCodeIndexTable, index);
 			if(position < 0) {
 				//https://bugs.eclipse.org/bugs/show_bug.cgi?id=388172
@@ -895,7 +897,7 @@ public class MethodImpl extends TypeComponentImpl implements Method, Locatable {
 				//See http://docs.oracle.com/javase/6/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_Method_LineTable for more information
 				continue;
 			}
-			if (position == 0 || !tmpLocations.contains(new Long(fCodeIndexTable[position - 1]))) {
+			if (position == 0 || !tmpLocations.contains(Long.valueOf(fCodeIndexTable[position - 1]))) {
 				locations.add(new LocationImpl(virtualMachineImpl(), this, index));
 			}
 		}

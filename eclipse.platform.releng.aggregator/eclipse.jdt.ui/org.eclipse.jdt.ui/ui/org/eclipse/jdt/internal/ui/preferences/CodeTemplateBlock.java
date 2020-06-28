@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -159,44 +159,53 @@ public class CodeTemplateBlock extends OptionsConfigurationBlock {
 			TemplatePersistenceData data= (TemplatePersistenceData) element;
 			String id= data.getId();
 
-			if (CodeTemplateContextType.NEWTYPE_ID.equals(id)) {
-				return 101;
-			} else if (CodeTemplateContextType.CLASSBODY_ID.equals(id)) {
-				return 102;
-			} else if (CodeTemplateContextType.INTERFACEBODY_ID.equals(id)) {
-				return 103;
-			} else if (CodeTemplateContextType.ENUMBODY_ID.equals(id)) {
-				return 104;
-			} else if (CodeTemplateContextType.ANNOTATIONBODY_ID.equals(id)) {
-				return 105;
-			} else if (CodeTemplateContextType.METHODSTUB_ID.equals(id)) {
-				return 106;
-			} else if (CodeTemplateContextType.CONSTRUCTORSTUB_ID.equals(id)) {
-				return 107;
-			} else if (CodeTemplateContextType.GETTERSTUB_ID.equals(id)) {
-				return 108;
-			} else if (CodeTemplateContextType.SETTERSTUB_ID.equals(id)) {
-				return 109;
-			} else if (CodeTemplateContextType.CATCHBLOCK_ID.equals(id)) {
-				return 110;
-			} else if (CodeTemplateContextType.FILECOMMENT_ID.equals(id)) {
-				return 1;
-			} else if (CodeTemplateContextType.TYPECOMMENT_ID.equals(id)) {
-				return 2;
-			} else if (CodeTemplateContextType.FIELDCOMMENT_ID.equals(id)) {
-				return 3;
-			} else if (CodeTemplateContextType.CONSTRUCTORCOMMENT_ID.equals(id)) {
-				return 4;
-			} else if (CodeTemplateContextType.METHODCOMMENT_ID.equals(id)) {
-				return 5;
-			} else if (CodeTemplateContextType.OVERRIDECOMMENT_ID.equals(id)) {
-				return 6;
-			} else if (CodeTemplateContextType.DELEGATECOMMENT_ID.equals(id)) {
-				return 7;
-			} else if (CodeTemplateContextType.GETTERCOMMENT_ID.equals(id)) {
-				return 8;
-			} else if (CodeTemplateContextType.SETTERCOMMENT_ID.equals(id)) {
-				return 9;
+			if (id != null) {
+				switch (id) {
+					case CodeTemplateContextType.NEWTYPE_ID:
+						return 101;
+					case CodeTemplateContextType.CLASSBODY_ID:
+						return 102;
+					case CodeTemplateContextType.INTERFACEBODY_ID:
+						return 103;
+					case CodeTemplateContextType.ENUMBODY_ID:
+						return 104;
+					case CodeTemplateContextType.ANNOTATIONBODY_ID:
+						return 105;
+					case CodeTemplateContextType.METHODSTUB_ID:
+						return 106;
+					case CodeTemplateContextType.CONSTRUCTORSTUB_ID:
+						return 107;
+					case CodeTemplateContextType.GETTERSTUB_ID:
+						return 108;
+					case CodeTemplateContextType.SETTERSTUB_ID:
+						return 109;
+					case CodeTemplateContextType.CATCHBLOCK_ID:
+						return 110;
+					case CodeTemplateContextType.RECORDBODY_ID:
+						return 111;
+					case CodeTemplateContextType.FILECOMMENT_ID:
+						return 1;
+					case CodeTemplateContextType.TYPECOMMENT_ID:
+						return 2;
+					case CodeTemplateContextType.FIELDCOMMENT_ID:
+						return 3;
+					case CodeTemplateContextType.CONSTRUCTORCOMMENT_ID:
+						return 4;
+					case CodeTemplateContextType.METHODCOMMENT_ID:
+						return 5;
+					case CodeTemplateContextType.OVERRIDECOMMENT_ID:
+						return 6;
+					case CodeTemplateContextType.DELEGATECOMMENT_ID:
+						return 7;
+					case CodeTemplateContextType.GETTERCOMMENT_ID:
+						return 8;
+					case CodeTemplateContextType.SETTERCOMMENT_ID:
+						return 9;
+					case CodeTemplateContextType.MODULECOMMENT_ID:
+						return 10;
+					default:
+						break;
+				}
 			}
 			return 1000;
 		}
@@ -217,44 +226,53 @@ public class CodeTemplateBlock extends OptionsConfigurationBlock {
 			}
 			TemplatePersistenceData data= (TemplatePersistenceData) element;
 			String id=data.getId();
-			if (CodeTemplateContextType.CATCHBLOCK_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_catchblock_label;
-			} else if (CodeTemplateContextType.METHODSTUB_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_methodstub_label;
-			} else if (CodeTemplateContextType.CONSTRUCTORSTUB_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_constructorstub_label;
-			} else if (CodeTemplateContextType.GETTERSTUB_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_getterstub_label;
-			} else if (CodeTemplateContextType.SETTERSTUB_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_setterstub_label;
-			} else if (CodeTemplateContextType.NEWTYPE_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_newtype_label;
-			} else if (CodeTemplateContextType.CLASSBODY_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_classbody_label;
-			} else if (CodeTemplateContextType.INTERFACEBODY_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_interfacebody_label;
-			} else if (CodeTemplateContextType.ENUMBODY_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_enumbody_label;
-			} else if (CodeTemplateContextType.ANNOTATIONBODY_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_annotationbody_label;
-			} else if (CodeTemplateContextType.FILECOMMENT_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_filecomment_label;
-			} else if (CodeTemplateContextType.TYPECOMMENT_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_typecomment_label;
-			} else if (CodeTemplateContextType.FIELDCOMMENT_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_fieldcomment_label;
-			} else if (CodeTemplateContextType.METHODCOMMENT_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_methodcomment_label;
-			} else if (CodeTemplateContextType.OVERRIDECOMMENT_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_overridecomment_label;
-			} else if (CodeTemplateContextType.DELEGATECOMMENT_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_delegatecomment_label;
-			} else if (CodeTemplateContextType.CONSTRUCTORCOMMENT_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_constructorcomment_label;
-			} else if (CodeTemplateContextType.GETTERCOMMENT_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_gettercomment_label;
-			} else if (CodeTemplateContextType.SETTERCOMMENT_ID.equals(id)) {
-				return PreferencesMessages.CodeTemplateBlock_settercomment_label;
+			if (id != null) {
+				switch (id) {
+					case CodeTemplateContextType.CATCHBLOCK_ID:
+						return PreferencesMessages.CodeTemplateBlock_catchblock_label;
+					case CodeTemplateContextType.METHODSTUB_ID:
+						return PreferencesMessages.CodeTemplateBlock_methodstub_label;
+					case CodeTemplateContextType.CONSTRUCTORSTUB_ID:
+						return PreferencesMessages.CodeTemplateBlock_constructorstub_label;
+					case CodeTemplateContextType.GETTERSTUB_ID:
+						return PreferencesMessages.CodeTemplateBlock_getterstub_label;
+					case CodeTemplateContextType.SETTERSTUB_ID:
+						return PreferencesMessages.CodeTemplateBlock_setterstub_label;
+					case CodeTemplateContextType.NEWTYPE_ID:
+						return PreferencesMessages.CodeTemplateBlock_newtype_label;
+					case CodeTemplateContextType.CLASSBODY_ID:
+						return PreferencesMessages.CodeTemplateBlock_classbody_label;
+					case CodeTemplateContextType.INTERFACEBODY_ID:
+						return PreferencesMessages.CodeTemplateBlock_interfacebody_label;
+					case CodeTemplateContextType.ENUMBODY_ID:
+						return PreferencesMessages.CodeTemplateBlock_enumbody_label;
+					case CodeTemplateContextType.RECORDBODY_ID:
+						return PreferencesMessages.CodeTemplateBlock_recordbody_label;
+					case CodeTemplateContextType.ANNOTATIONBODY_ID:
+						return PreferencesMessages.CodeTemplateBlock_annotationbody_label;
+					case CodeTemplateContextType.FILECOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_filecomment_label;
+					case CodeTemplateContextType.TYPECOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_typecomment_label;
+					case CodeTemplateContextType.FIELDCOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_fieldcomment_label;
+					case CodeTemplateContextType.METHODCOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_methodcomment_label;
+					case CodeTemplateContextType.OVERRIDECOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_overridecomment_label;
+					case CodeTemplateContextType.DELEGATECOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_delegatecomment_label;
+					case CodeTemplateContextType.CONSTRUCTORCOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_constructorcomment_label;
+					case CodeTemplateContextType.GETTERCOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_gettercomment_label;
+					case CodeTemplateContextType.SETTERCOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_settercomment_label;
+					case CodeTemplateContextType.MODULECOMMENT_ID:
+						return PreferencesMessages.CodeTemplateBlock_modulecomment_label;
+					default:
+						break;
+				}
 			}
 			return data.getTemplate().getDescription();
 		}
@@ -423,9 +441,7 @@ public class CodeTemplateBlock extends OptionsConfigurationBlock {
 
 	protected TemplatePersistenceData[] getTemplateOfCategory(boolean isComment) {
 		ArrayList<TemplatePersistenceData> res=  new ArrayList<>();
-		TemplatePersistenceData[] templates= fTemplateStore.getTemplateData();
-		for (int i= 0; i < templates.length; i++) {
-			TemplatePersistenceData curr= templates[i];
+		for (TemplatePersistenceData curr : fTemplateStore.getTemplateData()) {
 			if (isComment == curr.getTemplate().getName().endsWith(CodeTemplateContextType.COMMENT_SUFFIX)) {
 				res.add(curr);
 			}
@@ -453,14 +469,21 @@ public class CodeTemplateBlock extends OptionsConfigurationBlock {
 	}
 
 	protected void doButtonPressed(int buttonIndex, List<Object> selected) {
-		if (buttonIndex == IDX_EDIT) {
+		switch (buttonIndex) {
+		case IDX_EDIT:
 			edit((TemplatePersistenceData) selected.get(0));
-		} else if (buttonIndex == IDX_EXPORT) {
+			break;
+		case IDX_EXPORT:
 			export(selected);
-		} else if (buttonIndex == IDX_EXPORTALL) {
+			break;
+		case IDX_EXPORTALL:
 			exportAll();
-		} else if (buttonIndex == IDX_IMPORT) {
+			break;
+		case IDX_IMPORT:
 			import_();
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -490,9 +513,8 @@ public class CodeTemplateBlock extends OptionsConfigurationBlock {
 			if (file.exists()) {
 				InputStream input= new BufferedInputStream(new FileInputStream(file));
 				try {
-					TemplatePersistenceData[] datas= reader.read(input, null);
-					for (int i= 0; i < datas.length; i++) {
-						updateTemplate(datas[i]);
+					for (TemplatePersistenceData data : reader.read(input, null)) {
+						updateTemplate(data);
 					}
 				} finally {
 					try {
@@ -514,11 +536,10 @@ public class CodeTemplateBlock extends OptionsConfigurationBlock {
 	}
 
 	private void updateTemplate(TemplatePersistenceData data) {
-		TemplatePersistenceData[] datas= fTemplateStore.getTemplateData();
-		for (int i= 0; i < datas.length; i++) {
-			String id= datas[i].getId();
+		for (TemplatePersistenceData templatePersistenceData : fTemplateStore.getTemplateData()) {
+			String id= templatePersistenceData.getId();
 			if (id != null && id.equals(data.getId())) {
-				datas[i].setTemplate(data.getTemplate());
+				templatePersistenceData.setTemplate(data.getTemplate());
 				break;
 			}
 		}
@@ -530,8 +551,7 @@ public class CodeTemplateBlock extends OptionsConfigurationBlock {
 
 	private void export(List<Object> selected) {
 		Set<Object> datas= new HashSet<>();
-		for (int i= 0; i < selected.size(); i++) {
-			Object curr= selected.get(i);
+		for (Object curr : selected) {
 			if (curr instanceof TemplatePersistenceData) {
 				datas.add(curr);
 			} else {
@@ -613,9 +633,8 @@ public class CodeTemplateBlock extends OptionsConfigurationBlock {
 			return false;
 
 		if (fProject != null) {
-			TemplatePersistenceData[] templateData= fTemplateStore.getTemplateData();
-			for (int i= 0; i < templateData.length; i++) {
-				fTemplateStore.setProjectSpecific(templateData[i].getId(), enabled);
+			for (TemplatePersistenceData td : fTemplateStore.getTemplateData()) {
+				fTemplateStore.setProjectSpecific(td.getId(), enabled);
 			}
 		}
 		try {

@@ -38,7 +38,6 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.edit.command.SetCommand;
 import org.eclipse.jface.databinding.viewers.ObservableListContentProvider;
-import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.fieldassist.AutoCompleteField;
 import org.eclipse.jface.fieldassist.ComboContentAdapter;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -53,6 +52,10 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.FocusAdapter;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
@@ -70,16 +73,16 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
 
-public class FindParentReferenceElementDialog extends TitleAreaDialog {
+public class FindParentReferenceElementDialog extends SaveDialogBoundsSettingsDialog {
 
 	private static final String XPATH_URI = "xpath:/"; //$NON-NLS-1$
 
 	private final MStringModelFragment fragment;
-	private final AbstractComponentEditor editor;
+	private final AbstractComponentEditor<?> editor;
 	private TableViewer viewer;
 	private final Messages Messages;
 	private ModelResultHandlerImpl currentResultHandler;
-	private WritableList list;
+	private WritableList<Object> list;
 	private ComboViewer eClassViewer;
 	private Text searchText;
 	private EClass selectedContainer;
@@ -88,7 +91,7 @@ public class FindParentReferenceElementDialog extends TitleAreaDialog {
 	/** Remember of classes that can be used for a fragment definition. */
 	private static List<EClass> extendableClasses = null;
 
-	public FindParentReferenceElementDialog(Shell parentShell, AbstractComponentEditor editor,
+	public FindParentReferenceElementDialog(Shell parentShell, AbstractComponentEditor<?> editor,
 			MStringModelFragment fragment, Messages Messages, EClass previousSelection) {
 		super(parentShell);
 		this.fragment = fragment;
@@ -106,11 +109,6 @@ public class FindParentReferenceElementDialog extends TitleAreaDialog {
 			return (ClassContributionCollector) context.getService(ref);
 		}
 		return null;
-	}
-
-	@Override
-	protected boolean isResizable() {
-		return true;
 	}
 
 	@Override
@@ -140,12 +138,8 @@ public class FindParentReferenceElementDialog extends TitleAreaDialog {
 		final Combo combo = new Combo(parentForCombo, SWT.NONE);
 		eClassViewer = new ComboViewer(combo);
 		combo.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-		eClassViewer.setLabelProvider(new LabelProvider() {
-			@Override
-			public String getText(Object element) {
-				return ((EClass) element).getName();
-			}
-		});
+		eClassViewer.setLabelProvider(LabelProvider.createTextProvider(element -> ((EClass) element).getName()));
+
 		eClassViewer.setContentProvider(new ArrayContentProvider());
 		final List<EClass> eClassList = getExtendableClasses();
 		eClassViewer.setComparator(new ViewerComparator() {
@@ -199,7 +193,7 @@ public class FindParentReferenceElementDialog extends TitleAreaDialog {
 			@Override
 			public void update(ViewerCell cell) {
 				final EObject o = (EObject) cell.getElement();
-				final AbstractComponentEditor editor = FindParentReferenceElementDialog.this.editor.getEditor()
+				final AbstractComponentEditor<?> editor = FindParentReferenceElementDialog.this.editor.getEditor()
 						.getEditor(o.eClass());
 				cell.setImage(editor.getImage(o));
 
@@ -221,11 +215,38 @@ public class FindParentReferenceElementDialog extends TitleAreaDialog {
 				cell.setText(styledString.getString());
 			}
 		});
-		viewer.setContentProvider(new ObservableListContentProvider());
+		viewer.setContentProvider(new ObservableListContentProvider<>());
 		viewer.addDoubleClickListener(event -> okPressed());
 
-		list = new WritableList();
+		list = new WritableList<>();
 		viewer.setInput(list);
+		viewer.getControl().addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusGained(FocusEvent e) {
+				if (viewer.getTable().getItemCount() > 0) {
+					viewer.getTable().select(0);
+				}
+			}
+		});
+
+		viewer.getTable().addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				super.keyPressed(e);
+				if (e.keyCode == SWT.ARROW_UP && viewer.getTable().getSelectionIndex() == 0) {
+					searchText.setFocus();
+				}
+			}
+		});
+
+		searchText.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.keyCode == SWT.ARROW_DOWN) {
+					viewer.getTable().setFocus();
+				}
+			}
+		});
 
 		searchText.addModifyListener(e -> updateSearch());
 

@@ -31,7 +31,6 @@ import org.eclipse.core.runtime.IContributor;
 import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.ILog;
-import org.eclipse.core.runtime.ILogListener;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
@@ -77,9 +76,10 @@ public class MarkerAnnotationOrderTest {
 		// remove the marker updater extension point
 		IExtensionRegistry registry= Platform.getExtensionRegistry();
 		IExtension[] extensions = registry.getExtensions(pointContributor);
-		for (int i= 0; i < extensions.length; i++) {
-			if ("org.eclipse.ui.editors.markerUpdaters".equals(extensions[i].getExtensionPointUniqueIdentifier()))
-				registry.removeExtension(extensions[i], masterToken);
+		for (IExtension extension : extensions) {
+			if ("org.eclipse.ui.editors.markerUpdaters".equals(extension.getExtensionPointUniqueIdentifier())) {
+				registry.removeExtension(extension, masterToken);
+			}
 		}
 		TestUtil.cleanUp();
 	}
@@ -89,13 +89,7 @@ public class MarkerAnnotationOrderTest {
 		final ArrayList<IStatus> list= new ArrayList<>(2);
 		Bundle bundle= Platform.getBundle(EditorsUI.PLUGIN_ID);
 		ILog log= Platform.getLog(bundle);
-		log.addLogListener(new ILogListener() {
-
-			@Override
-			public void logging(IStatus status, String plugin) {
-				list.add(status);
-			}
-		});
+		log.addLogListener((status, plugin) -> list.add(status));
 
 		TestMarkerAnnotationModel t1= new TestMarkerAnnotationModel();
 		Position position= new Position(0);

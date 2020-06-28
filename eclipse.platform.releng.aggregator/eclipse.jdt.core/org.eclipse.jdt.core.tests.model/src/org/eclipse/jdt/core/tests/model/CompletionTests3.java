@@ -24,9 +24,11 @@ public class CompletionTests3 extends AbstractJavaModelCompletionTests {
 public CompletionTests3(String name) {
 	super(name);
 }
+@Override
 public void setUpSuite() throws Exception {
 	super.setUpSuite();
 }
+@Override
 public void tearDownSuite() throws Exception {
 	super.tearDownSuite();
 }
@@ -39,7 +41,7 @@ public static Test suite() {
 //https://bugs.eclipse.org/bugs/show_bug.cgi?id=338398
 public void testBug338398a() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[2];
 		this.workingCopies[0] = getWorkingCopy(
 			"/P/src/a/A.java",
@@ -50,7 +52,7 @@ public void testBug338398a() throws CoreException {
 			"		 assertno\n" +
 			"   }" +
 			"}\n");
-		
+
 		this.workingCopies[1] = getWorkingCopy(
 				"/P/src/b/B.java",
 				"package b;\n"+
@@ -74,7 +76,7 @@ public void testBug338398a() throws CoreException {
 }
 public void _testBug338398b() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[2];
 		this.workingCopies[0] = getWorkingCopy(
 			"/P/src/a/A_CLASS.java",
@@ -85,7 +87,7 @@ public void _testBug338398b() throws CoreException {
 			" 	 * A_CLASS#a_cl"  +
 			"	 */\n" +
 			"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		String str = this.workingCopies[0].getSource();
 		String completeBehind = "A_CLASS#a_cl";
@@ -100,7 +102,7 @@ public void _testBug338398b() throws CoreException {
 }
 public void _testBug338398c() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[2];
 		this.workingCopies[0] = getWorkingCopy(
 			"/P/src/a/A_CLASS.java",
@@ -111,7 +113,7 @@ public void _testBug338398c() throws CoreException {
 			"	 */\n" +
 			"	public A_CLASS(String MY_STring) {}\n" +
 			"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		String str = this.workingCopies[0].getSource();
 		String completeBehind = "@param my_s";
@@ -126,7 +128,7 @@ public void _testBug338398c() throws CoreException {
 }
 public void testBug504095() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[2];
 		this.workingCopies[0] = getWorkingCopy(
 			"/P/src/a/Bug504095.java",
@@ -140,7 +142,7 @@ public void testBug504095() throws CoreException {
 			"		}\n" +
 			"	}\n" +
 			"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		String str = this.workingCopies[0].getSource();
 		String completeBehind = "memb";
@@ -155,7 +157,7 @@ public void testBug504095() throws CoreException {
 }
 public void testBug425035a() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -176,7 +178,7 @@ public void testBug425035a() throws CoreException {
 				"@Annotation()\n" +
 				"public class Test {\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -184,10 +186,10 @@ public void testBug425035a() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
-				"value[ANNOTATION_ATTRIBUTE_REF]{value = , La.Annotation;, [La.Values;, value, null, 52}\n" + 
-				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
+				"value[ANNOTATION_ATTRIBUTE_REF]{value = , La.Annotation;, [La.Values;, value, null, 52}\n" +
+				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -196,7 +198,7 @@ public void testBug425035a() throws CoreException {
 }
 public void testBug425035b() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -217,7 +219,7 @@ public void testBug425035b() throws CoreException {
 				"@Annotation({})\n" +
 				"public class Test {\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -225,9 +227,9 @@ public void testBug425035b() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
-				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
+				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -236,7 +238,7 @@ public void testBug425035b() throws CoreException {
 }
 public void testBug425035c() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -258,7 +260,7 @@ public void testBug425035c() throws CoreException {
 				"@Annotation({Values.SOME_VALUE, })\n" +
 				"public class Test {\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -266,9 +268,9 @@ public void testBug425035c() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
-				"Values[TYPE_REF]{Values, a, La.Values;, null, null, 102}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
+				"Values[TYPE_REF]{Values, a, La.Values;, null, null, 102}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -277,7 +279,7 @@ public void testBug425035c() throws CoreException {
 }
 public void testBug425035d() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -298,7 +300,7 @@ public void testBug425035d() throws CoreException {
 				"@Annotation(x=)\n" +
 				"public class Test {\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -306,9 +308,9 @@ public void testBug425035d() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
-				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
+				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -317,7 +319,7 @@ public void testBug425035d() throws CoreException {
 }
 public void testBug425035e() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -338,7 +340,7 @@ public void testBug425035e() throws CoreException {
 				"@Annotation(x={})\n" +
 				"public class Test {\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -346,9 +348,9 @@ public void testBug425035e() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
-				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
+				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -357,7 +359,7 @@ public void testBug425035e() throws CoreException {
 }
 public void testBug425035f() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -379,7 +381,7 @@ public void testBug425035f() throws CoreException {
 				"@Annotation(x={Values.SOME_VALUE, })\n" +
 				"public class Test {\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -387,9 +389,9 @@ public void testBug425035f() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
-				"Values[TYPE_REF]{Values, a, La.Values;, null, null, 102}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
+				"Values[TYPE_REF]{Values, a, La.Values;, null, null, 102}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -398,7 +400,7 @@ public void testBug425035f() throws CoreException {
 }
 public void testBug425035_method_a() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -421,7 +423,7 @@ public void testBug425035_method_a() throws CoreException {
 				"	@Annotation()\n" +
 				"	void f() {}\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -429,11 +431,11 @@ public void testBug425035_method_a() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
 				"i[FIELD_REF]{i, Lb.Test;, I, i, null, 52}\n" +
-				"value[ANNOTATION_ATTRIBUTE_REF]{value = , La.Annotation;, [La.Values;, value, null, 52}\n" + 
-				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"value[ANNOTATION_ATTRIBUTE_REF]{value = , La.Annotation;, [La.Values;, value, null, 52}\n" +
+				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -442,7 +444,7 @@ public void testBug425035_method_a() throws CoreException {
 }
 public void testBug425035_method_b() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -465,7 +467,7 @@ public void testBug425035_method_b() throws CoreException {
 				"	@Annotation({})\n" +
 				"	void f() {}\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -473,10 +475,10 @@ public void testBug425035_method_b() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
 				"i[FIELD_REF]{i, Lb.Test;, I, i, null, 52}\n" +
-				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -485,7 +487,7 @@ public void testBug425035_method_b() throws CoreException {
 }
 public void testBug425035_method_c() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -509,7 +511,7 @@ public void testBug425035_method_c() throws CoreException {
 				"	@Annotation({Values.SOME_VALUE, })\n" +
 				"	void f() {}\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -517,10 +519,10 @@ public void testBug425035_method_c() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
 				"i[FIELD_REF]{i, Lb.Test;, I, i, null, 52}\n" +
-				"Values[TYPE_REF]{Values, a, La.Values;, null, null, 102}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Values[TYPE_REF]{Values, a, La.Values;, null, null, 102}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -529,7 +531,7 @@ public void testBug425035_method_c() throws CoreException {
 }
 public void testBug425035_method_d() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -552,7 +554,7 @@ public void testBug425035_method_d() throws CoreException {
 				"	@Annotation(x=)\n" +
 				"	void f() {}\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -560,10 +562,10 @@ public void testBug425035_method_d() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
 				"i[FIELD_REF]{i, Lb.Test;, I, i, null, 52}\n" +
-				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -572,7 +574,7 @@ public void testBug425035_method_d() throws CoreException {
 }
 public void testBug425035_method_e() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -595,7 +597,7 @@ public void testBug425035_method_e() throws CoreException {
 				"	@Annotation(x={})\n" +
 				"	void f() {}\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -603,10 +605,10 @@ public void testBug425035_method_e() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
 				"i[FIELD_REF]{i, Lb.Test;, I, i, null, 52}\n" +
-				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Values[TYPE_REF]{a.Values, a, La.Values;, null, null, 99}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
 	} finally {
@@ -615,7 +617,7 @@ public void testBug425035_method_e() throws CoreException {
 }
 public void testBug425035_method_f() throws CoreException {
 	try {
-		createJavaProject("P", new String[] {"src"}, new String[]{"JCL_LIB"}, "bin", "1.7");
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
 		this.workingCopies = new ICompilationUnit[3];
 		this.workingCopies[0] = getWorkingCopy(
 				"/P/src/a/Values.java",
@@ -639,7 +641,7 @@ public void testBug425035_method_f() throws CoreException {
 				"	@Annotation(x={Values.SOME_VALUE, })\n" +
 				"	void f() {}\n" +
 				"}\n");
-		
+
 		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
 		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_IMPORT, true);
 		String str = this.workingCopies[2].getSource();
@@ -647,12 +649,45 @@ public void testBug425035_method_f() throws CoreException {
 		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
 		this.workingCopies[2].codeComplete(cursorLocation, requestor, this.wcOwner);
 		assertResults(
-				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" + 
+				"Test[TYPE_REF]{Test, b, Lb.Test;, null, null, 52}\n" +
 				"i[FIELD_REF]{i, Lb.Test;, I, i, null, 52}\n" +
-				"Values[TYPE_REF]{Values, a, La.Values;, null, null, 102}\n" + 
-				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" + 
+				"Values[TYPE_REF]{Values, a, La.Values;, null, null, 102}\n" +
+				"OTHER_VALUE[FIELD_REF]{Values.OTHER_VALUE, La.Values;, La.Values;, OTHER_VALUE, null, 104}\n" +
 				"SOME_VALUE[FIELD_REF]{Values.SOME_VALUE, La.Values;, La.Values;, SOME_VALUE, null, 104}",
 				requestor.getResults());
+	} finally {
+		deleteProject("P");
+	}
+}
+public void testBug547256() throws CoreException {
+	try {
+		createJavaProject("P", new String[] {"src"}, new String[]{"JCL17_LIB"}, "bin", "1.7");
+		this.workingCopies = new ICompilationUnit[1];
+		this.workingCopies[0] = getWorkingCopy(
+				"/P/src/jdt/Something.java",
+				"package jdt;\n" +
+				"public class Something {\n" +
+				"	public static void main(String[] args) {\n" +
+				"		done: for (int i = 0; i < 5; ++i) {\n" +
+				"			if (i == 3) {\n" +
+				"				break done;\n" +
+				"			}\n" +
+				"			System.out.println(i);\n" +
+				"		}\n" +
+				"		arg\n" +
+				"		System.out.println(\"done\");\n" +
+				"	}\n" +
+				"}\n");
+		CompletionTestsRequestor2 requestor = new CompletionTestsRequestor2(true);
+		requestor.setAllowsRequiredProposals(CompletionProposal.FIELD_REF, CompletionProposal.TYPE_REF, true);
+		String str = this.workingCopies[0].getSource();
+		String completeBehind = "arg";
+		int cursorLocation = str.lastIndexOf(completeBehind) + completeBehind.length();
+		this.workingCopies[0].codeComplete(cursorLocation, requestor, this.wcOwner);
+		assertResults(
+				"args[LOCAL_VARIABLE_REF]{args, null, [Ljava.lang.String;, args, null, 52}",
+				requestor.getResults());
+
 	} finally {
 		deleteProject("P");
 	}

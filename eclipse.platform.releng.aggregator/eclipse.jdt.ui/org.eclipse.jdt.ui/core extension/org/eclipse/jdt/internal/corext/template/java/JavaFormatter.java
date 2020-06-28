@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -51,6 +51,7 @@ import org.eclipse.jdt.ui.text.IJavaPartitions;
 import org.eclipse.jdt.internal.ui.javaeditor.IndentUtil;
 import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 import org.eclipse.jdt.internal.ui.text.FastJavaPartitionScanner;
+import org.eclipse.jdt.internal.ui.text.FastJavaPartitioner;
 
 /**
  * A template editor using the Java formatter to format a template buffer.
@@ -81,16 +82,16 @@ public class JavaFormatter {
 
 		/**
 		 * Creates a new tracker.
-		 * 
+		 *
 		 * @param buffer the buffer to track
 		 * @throws MalformedTreeException
 		 * @throws BadLocationException
 		 */
-		public VariableTracker(TemplateBuffer buffer) throws MalformedTreeException, BadLocationException {
+		public VariableTracker(TemplateBuffer buffer, IJavaProject project) throws MalformedTreeException, BadLocationException {
 			Assert.isLegal(buffer != null);
 			fBuffer= buffer;
 			fDocument= new Document(fBuffer.getString());
-			installJavaStuff(fDocument);
+			installJavaStuff(fDocument, project);
 			fDocument.addPositionCategory(CATEGORY);
 			fDocument.addPositionUpdater(new ExclusivePositionUpdater(CATEGORY));
 			fPositions= createRangeMarkers(fBuffer.getVariables(), fDocument);
@@ -100,17 +101,19 @@ public class JavaFormatter {
 		 * Installs a java partitioner with <code>document</code>.
 		 *
 		 * @param document the document
+		 * @param project the project associated with the document
 		 */
-		private static void installJavaStuff(Document document) {
+		private static void installJavaStuff(Document document, IJavaProject project) {
 			String[] types= new String[] {
 										  IJavaPartitions.JAVA_DOC,
 										  IJavaPartitions.JAVA_MULTI_LINE_COMMENT,
 										  IJavaPartitions.JAVA_SINGLE_LINE_COMMENT,
 										  IJavaPartitions.JAVA_STRING,
 										  IJavaPartitions.JAVA_CHARACTER,
+										  IJavaPartitions.JAVA_MULTI_LINE_STRING,
 										  IDocument.DEFAULT_CONTENT_TYPE
 			};
-			FastPartitioner partitioner= new FastPartitioner(new FastJavaPartitionScanner(), types);
+			FastPartitioner partitioner= new FastJavaPartitioner(new FastJavaPartitionScanner(project), types);
 			partitioner.connect(document);
 			document.setDocumentPartitioner(IJavaPartitions.JAVA_PARTITIONING, partitioner);
 		}
@@ -188,8 +191,7 @@ public class JavaFormatter {
 			}
 
 			List<TypedPosition> positions= new ArrayList<>();
-			for (Iterator<TextEdit> it= edits.iterator(); it.hasNext();) {
-				TextEdit edit= it.next();
+			for (TextEdit edit : edits) {
 				try {
 					// abuse TypedPosition to piggy back the original contents of the position
 					final TypedPosition pos= new TypedPosition(edit.getOffset(), edit.getLength(), markerToOriginal.get(edit));
@@ -211,8 +213,7 @@ public class JavaFormatter {
 		private void removeRangeMarkers(List<TypedPosition> positions, IDocument document, TemplateVariable[] variables) throws MalformedTreeException, BadLocationException, BadPositionCategoryException {
 
 			// revert previous changes
-			for (Iterator<TypedPosition> it= positions.iterator(); it.hasNext();) {
-				TypedPosition position= it.next();
+			for (TypedPosition position : positions) {
 				// remove and re-add in order to not confuse ExclusivePositionUpdater
 				document.removePosition(CATEGORY, position);
 				final String original= position.getType();
@@ -260,7 +261,7 @@ public class JavaFormatter {
 	 */
 	public void format(TemplateBuffer buffer, TemplateContext context) throws BadLocationException {
 		try {
-			VariableTracker tracker= new VariableTracker(buffer);
+			VariableTracker tracker= new VariableTracker(buffer, fProject);
 			IDocument document= tracker.getDocument();
 
 			internalFormat(document, context);

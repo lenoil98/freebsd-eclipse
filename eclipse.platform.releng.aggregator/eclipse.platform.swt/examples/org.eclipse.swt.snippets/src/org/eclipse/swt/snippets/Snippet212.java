@@ -48,6 +48,7 @@ public class Snippet212 {
 	public static void main(String [] args) {
 		final Display display = new Display();
 		final Shell shell = new Shell(display);
+		shell.setText("Snippet 212");
 		shell.setLayout(new GridLayout());
 		styledText = new StyledText(shell, SWT.WRAP | SWT.BORDER);
 		styledText.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -83,8 +84,7 @@ public class Snippet212 {
 		});
 		styledText.addListener(SWT.Dispose, event -> {
 			StyleRange[] styles = styledText.getStyleRanges();
-			for (int i = 0; i < styles.length; i++) {
-				StyleRange style = styles[i];
+			for (StyleRange style : styles) {
 				if (style.data != null) {
 					Image image = (Image)style.data;
 					if (image != null) image.dispose();

@@ -46,9 +46,9 @@ public class CVSURI {
 	 * note, that URIs with the pipe separator are currently not supported.
 	 * 
 	 * <ul>
-	 * <li>cvs://[:]method:user[:password]@host:[port]/root/path#project/path[,tagName]</li>
-	 * <li>cvs://_method_user[_password]~host_[port]!root!path/project/path[?<version,branch,date,revision>=tagName]</li>
-	 * <li>scm:cvs<delimiter>method<delimiter>[user[<delimiter>password]@]host[<delimiter>port]<delimiter>/root/path<delimiter>project/path[;project="projectName"][;tag=tagName]</li>
+	 * <li>{@literal cvs://[:]method:user[:password]@host:[port]/root/path#project/path[,tagName]}</li>
+	 * <li>{@literal cvs://_method_user[_password]~host_[port]!root!path/project/path[?<version,branch,date,revision>=tagName]}</li>
+	 * <li>{@literal scm:cvs<delimiter>method<delimiter>[user[<delimiter>password]@]host[<delimiter>port]<delimiter>/root/path<delimiter>project/path[;project="projectName"][;tag=tagName]}</li>
 	 * </ul>
 	 * @param uri the URI
 	 * @return a CVS URI
@@ -78,7 +78,7 @@ public class CVSURI {
 	}
 
 	private static URI convert(URI uri) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		String ssp = uri.getSchemeSpecificPart();
 		int i = ssp.lastIndexOf(':');
 		sb.append(ssp.substring(0, i)).append('#');
@@ -87,15 +87,15 @@ public class CVSURI {
 			sb.append(ssp.substring(i + 1, j));
 			String[] params = ssp.substring(j).split(";"); //$NON-NLS-1$
 			String projectName = ""; //$NON-NLS-1$
-			for (int k = 0; k < params.length; k++) {
+			for (String param : params) {
 				// PDE way of providing tags
-				if (params[k].startsWith("tag=")) { //$NON-NLS-1$
+				if (param.startsWith("tag=")) { //$NON-NLS-1$
 					sb.append(",version="); //$NON-NLS-1$
-					sb.append(params[k].substring(params[k].indexOf('=') + 1));
-				} else if (params[k].startsWith("version=")) { //$NON-NLS-1$
-					sb.append(',').append(params[k]);
-				} else if (params[k].startsWith("project=")) { //$NON-NLS-1$
-					projectName = params[k].substring(params[k].indexOf('=') + 1);
+					sb.append(param.substring(param.indexOf('=') + 1));
+				} else if (param.startsWith("version=")) { //$NON-NLS-1$
+					sb.append(',').append(param);
+				} else if (param.startsWith("project=")) { //$NON-NLS-1$
+					projectName = param.substring(param.indexOf('=') + 1);
 				}
 			}
 			sb.append(',').append(projectName); // can be ""
@@ -181,7 +181,7 @@ public class CVSURI {
 			int i = f.lastIndexOf(',');
 			if (i != -1) {
 				String s = f.substring(i + 1);
-				if (!s.equals("")) //$NON-NLS-1$
+				if (!s.isEmpty())
 					return s;
 			}
 		}

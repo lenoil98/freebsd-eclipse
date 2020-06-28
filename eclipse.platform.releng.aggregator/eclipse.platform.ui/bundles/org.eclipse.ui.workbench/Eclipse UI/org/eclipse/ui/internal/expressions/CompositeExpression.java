@@ -15,7 +15,6 @@ package org.eclipse.ui.internal.expressions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import org.eclipse.core.expressions.EvaluationResult;
 import org.eclipse.core.expressions.Expression;
@@ -30,11 +29,11 @@ public abstract class CompositeExpression extends Expression {
 
 	private static final Expression[] EMPTY_ARRAY = new Expression[0];
 
-	protected List fExpressions;
+	protected List<Expression> fExpressions;
 
 	public void add(Expression expression) {
 		if (fExpressions == null) {
-			fExpressions = new ArrayList(2);
+			fExpressions = new ArrayList<>(2);
 		}
 		fExpressions.add(expression);
 	}
@@ -43,18 +42,15 @@ public abstract class CompositeExpression extends Expression {
 		if (fExpressions == null) {
 			return EMPTY_ARRAY;
 		}
-		return (Expression[]) fExpressions.toArray(new Expression[fExpressions
-				.size()]);
+		return fExpressions.toArray(new Expression[fExpressions.size()]);
 	}
 
-	protected EvaluationResult evaluateAnd(IEvaluationContext scope)
-			throws CoreException {
+	protected EvaluationResult evaluateAnd(IEvaluationContext scope) throws CoreException {
 		if (fExpressions == null) {
 			return EvaluationResult.TRUE;
 		}
 		EvaluationResult result = EvaluationResult.TRUE;
-		for (Iterator iter = fExpressions.iterator(); iter.hasNext();) {
-			Expression expression = (Expression) iter.next();
+		for (Expression expression : fExpressions) {
 			result = result.and(expression.evaluate(scope));
 			// keep iterating even if we have a not loaded found. It can be
 			// that we find a false which will result in a better result.
@@ -65,14 +61,12 @@ public abstract class CompositeExpression extends Expression {
 		return result;
 	}
 
-	protected EvaluationResult evaluateOr(IEvaluationContext scope)
-			throws CoreException {
+	protected EvaluationResult evaluateOr(IEvaluationContext scope) throws CoreException {
 		if (fExpressions == null) {
 			return EvaluationResult.TRUE;
 		}
 		EvaluationResult result = EvaluationResult.FALSE;
-		for (Iterator iter = fExpressions.iterator(); iter.hasNext();) {
-			Expression expression = (Expression) iter.next();
+		for (Expression expression : fExpressions) {
 			result = result.or(expression.evaluate(scope));
 			if (result == EvaluationResult.TRUE) {
 				return result;
@@ -86,8 +80,7 @@ public abstract class CompositeExpression extends Expression {
 		if (fExpressions == null) {
 			return;
 		}
-		for (Iterator iter = fExpressions.iterator(); iter.hasNext();) {
-			Expression expression = (Expression) iter.next();
+		for (Expression expression : fExpressions) {
 			expression.collectExpressionInfo(info);
 		}
 	}
@@ -105,4 +98,3 @@ public abstract class CompositeExpression extends Expression {
 	}
 
 }
-

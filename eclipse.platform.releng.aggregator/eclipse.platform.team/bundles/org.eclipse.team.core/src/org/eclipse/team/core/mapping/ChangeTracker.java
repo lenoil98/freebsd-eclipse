@@ -24,7 +24,6 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
-import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.team.core.RepositoryProvider;
@@ -59,8 +58,7 @@ public abstract class ChangeTracker {
 			if (disposed) return;
 			IResourceDelta delta = event.getDelta();
 			IResourceDelta[] projectDeltas = delta.getAffectedChildren(IResourceDelta.ADDED | IResourceDelta.CHANGED | IResourceDelta.REMOVED);
-			for (int i = 0; i < projectDeltas.length; i++) {
-				IResourceDelta projectDelta = projectDeltas[i];
+			for (IResourceDelta projectDelta : projectDeltas) {
 				IResource resource = projectDelta.getResource();
 				if (resource.getType() == IResource.PROJECT) {
 					IProject project = (IProject)resource;
@@ -117,8 +115,7 @@ public abstract class ChangeTracker {
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(changeListener, IResourceChangeEvent.POST_CHANGE);
 		RepositoryProviderManager.getInstance().addListener(changeListener);
 		IProject[] allProjects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-		for (int i = 0; i < allProjects.length; i++) {
-			IProject project = allProjects[i];
+		for (IProject project : allProjects) {
 			if (isProjectOfInterest(project))
 				trackProject(project);
 		}
@@ -137,14 +134,11 @@ public abstract class ChangeTracker {
 	private IResource[] getProjectChanges(IProject project, IResourceDelta projectDelta) {
 		final List<IResource> result = new ArrayList<>();
 		try {
-			projectDelta.accept(new IResourceDeltaVisitor() {
-				@Override
-				public boolean visit(IResourceDelta delta) throws CoreException {
-					if (isResourceOfInterest(delta.getResource()) & isChangeOfInterest(delta)) {
-						result.add(delta.getResource());
-					}
-					return true;
+			projectDelta.accept(delta -> {
+				if (isResourceOfInterest(delta.getResource()) & isChangeOfInterest(delta)) {
+					result.add(delta.getResource());
 				}
+				return true;
 			});
 		} catch (CoreException e) {
 			TeamPlugin.log(e);
@@ -271,7 +265,7 @@ public abstract class ChangeTracker {
 	 * @param project the project
 	 * @param name the unique name used to identify the change set
 	 * @param files the change files to be grouped
-	 * @throws CoreException
+	 * @throws CoreException if an error occurs
 	 */
 	protected void ensureGrouped(IProject project, String name, IFile[] files) throws CoreException {
 		IChangeGroupingRequestor collector = getCollector(project);
@@ -289,7 +283,8 @@ public abstract class ChangeTracker {
 	 * repository provider associated with the file's project.
 	 * @param file the file
 	 * @return whether the given file is modified
-	 * @throws CoreException
+	 * @throws CoreException if an error occurs while trying to determine the modification state
+	 * of the file
 	 */
 	protected boolean isModified(IFile file) throws CoreException {
 		IChangeGroupingRequestor collector = getCollector(file.getProject());

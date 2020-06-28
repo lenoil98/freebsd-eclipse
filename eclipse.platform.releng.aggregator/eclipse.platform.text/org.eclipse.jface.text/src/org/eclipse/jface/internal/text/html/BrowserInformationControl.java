@@ -64,11 +64,11 @@ import org.eclipse.jface.text.TextPresentation;
  * </p>
  * <p>
  * Current problems:
+ * </p>
  * <ul>
  * <li>the size computation is too small</li>
  * <li>focusLost event is not sent - see https://bugs.eclipse.org/bugs/show_bug.cgi?id=84532</li>
  * </ul>
- * </p>
  *
  * @since 3.2
  */
@@ -280,7 +280,7 @@ public class BrowserInformationControl extends AbstractInformationControl implem
 		if (fInput != null)
 			content= fInput.getHtml();
 
-		fBrowserHasContent= content != null && content.length() > 0;
+		fBrowserHasContent= content != null && !content.isEmpty();
 
 		if (!fBrowserHasContent)
 			content= "<html><body ></html>"; //$NON-NLS-1$

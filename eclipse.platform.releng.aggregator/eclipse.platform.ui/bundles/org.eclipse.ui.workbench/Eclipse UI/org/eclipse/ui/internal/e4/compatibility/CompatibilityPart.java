@@ -99,8 +99,7 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 		// being unset
 		if (event.getProperty(UIEvents.EventTags.ELEMENT) == part
 				&& event.getProperty(UIEvents.EventTags.NEW_VALUE) == null) {
-			 Assert.isTrue(!composite.isDisposed(),
-									"The widget should not have been disposed at this point"); //$NON-NLS-1$
+			Assert.isTrue(!composite.isDisposed(), "The widget should not have been disposed at this point"); //$NON-NLS-1$
 			beingDisposed = true;
 			WorkbenchPartReference reference = getReference();
 			// notify the workbench we're being closed
@@ -111,8 +110,7 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 	};
 
 	/**
-	 * This handler will be notified when the part's client object has been
-	 * un/set.
+	 * This handler will be notified when the part's client object has been un/set.
 	 */
 	private EventHandler objectSetHandler = event -> {
 		// check that we're looking at our own part and that the object is
@@ -181,7 +179,7 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 				// failed to create the error part, log it
 				logger.error(ex);
 			} catch (PartInitException ex) {
-				WorkbenchPlugin.log("Unable to initialize error part", ex.getStatus()); //$NON-NLS-1$
+				WorkbenchPlugin.log("Unable to initialize error part", ex); //$NON-NLS-1$
 			}
 		}
 
@@ -191,8 +189,7 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 				selectionProvider.addSelectionChangedListener(this);
 
 				if (selectionProvider instanceof IPostSelectionProvider) {
-					((IPostSelectionProvider) selectionProvider)
-							.addPostSelectionChangedListener(postListener);
+					((IPostSelectionProvider) selectionProvider).addPostSelectionChangedListener(postListener);
 				} else {
 					selectionProvider.addSelectionChangedListener(postListener);
 				}
@@ -247,8 +244,7 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 					selectionProvider.removeSelectionChangedListener(this);
 
 					if (selectionProvider instanceof IPostSelectionProvider) {
-						((IPostSelectionProvider) selectionProvider)
-								.removePostSelectionChangedListener(postListener);
+						((IPostSelectionProvider) selectionProvider).removePostSelectionChangedListener(postListener);
 					} else {
 						selectionProvider.removeSelectionChangedListener(postListener);
 					}
@@ -287,9 +283,8 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 	}
 
 	/**
-	 * Returns whether this part is being disposed. This is used for
-	 * invalidating this part so that it is not returned when a method expects a
-	 * "working" part.
+	 * Returns whether this part is being disposed. This is used for invalidating
+	 * this part so that it is not returned when a method expects a "working" part.
 	 * <p>
 	 * See bug 308492.
 	 * </p>
@@ -306,6 +301,7 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 	}
 
 	boolean handlePartInitException(PartInitException e) {
+		WorkbenchPlugin.log("Unable to create part", e); //$NON-NLS-1$
 		WorkbenchPartReference reference = getReference();
 		IWorkbenchPartSite site = reference.getSite();
 		reference.invalidate();
@@ -320,13 +316,12 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 		internalDisposeSite(site);
 
 		alreadyDisposed = false;
-		WorkbenchPlugin.log("Unable to create part", e.getStatus()); //$NON-NLS-1$
 
 		wrapped = reference.createErrorPart(e.getStatus());
 		try {
 			reference.initialize(wrapped);
 		} catch (PartInitException ex) {
-			WorkbenchPlugin.log("Unable to initialize error part", ex.getStatus()); //$NON-NLS-1$
+			WorkbenchPlugin.log("Unable to initialize error part", ex); //$NON-NLS-1$
 			return false;
 		}
 		return true;
@@ -347,9 +342,8 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 			if (!handlePartInitException(e)) {
 				return;
 			}
-		} catch (Exception e) {
-			WorkbenchPlugin.log("Unable to initialize part", e); //$NON-NLS-1$
-			if (!handlePartInitException(new PartInitException(e.getMessage()))) {
+		} catch (RuntimeException e) {
+			if (!handlePartInitException(new PartInitException(e.getMessage(), e))) {
 				return;
 			}
 		}
@@ -387,8 +381,7 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 
 				if (wrapped.getTitleImage() != null) {
 					Image newImage = wrapped.getTitleImage();
-					part.getTransientData().put(IPresentationEngine.OVERRIDE_ICON_IMAGE_KEY,
-							newImage);
+					part.getTransientData().put(IPresentationEngine.OVERRIDE_ICON_IMAGE_KEY, newImage);
 				}
 				String titleToolTip = wrapped.getTitleToolTip();
 				if (titleToolTip != null) {
@@ -429,8 +422,8 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 	}
 
 	/**
-	 * Disposes of the 3.x part's site if it has one. Subclasses may override
-	 * but must call <code>super.disposeSite()</code> in its implementation.
+	 * Disposes of the 3.x part's site if it has one. Subclasses may override but
+	 * must call <code>super.disposeSite()</code> in its implementation.
 	 */
 	private void internalDisposeSite(IWorkbenchPartSite site) {
 		if (site instanceof PartSite) {
@@ -439,8 +432,8 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 	}
 
 	/**
-	 * Disposes of the 3.x part's site if it has one. Subclasses may override
-	 * but must call <code>super.disposeSite()</code> in its implementation.
+	 * Disposes of the 3.x part's site if it has one. Subclasses may override but
+	 * must call <code>super.disposeSite()</code> in its implementation.
 	 */
 	void disposeSite(PartSite site) {
 		site.dispose();
@@ -454,10 +447,10 @@ public abstract class CompatibilityPart implements ISelectionChangedListener {
 	void doSave() {
 		ISaveablePart saveable = SaveableHelper.getSaveable(wrapped);
 		if (saveable != null) {
-			SaveableHelper.savePart(saveable, wrapped, getReference().getSite()
-					.getWorkbenchWindow(), false);
+			SaveableHelper.savePart(saveable, wrapped, getReference().getSite().getWorkbenchWindow(), false);
 		}
-		// ContextInjectionFactory.invoke(wrapped, Persist.class, part.getContext(), null);
+		// ContextInjectionFactory.invoke(wrapped, Persist.class, part.getContext(),
+		// null);
 	}
 
 	public IWorkbenchPart getPart() {

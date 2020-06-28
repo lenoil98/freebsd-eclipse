@@ -18,7 +18,6 @@ import java.util.Iterator;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IMarkerDelta;
@@ -123,8 +122,7 @@ public class ResourceMarkerAnnotationModel extends AbstractMarkerAnnotationModel
 		HashSet<IMarker> removedMarkers= new HashSet<>(markerDeltas.length);
 		HashSet<IMarker> modifiedMarkers= new HashSet<>(markerDeltas.length);
 
-		for (int i= 0; i < markerDeltas.length; i++) {
-			IMarkerDelta delta= markerDeltas[i];
+		for (IMarkerDelta delta : markerDeltas) {
 			switch (delta.getKind()) {
 				case IResourceDelta.ADDED:
 					addMarkerAnnotation(delta.getMarker());
@@ -180,12 +178,9 @@ public class ResourceMarkerAnnotationModel extends AbstractMarkerAnnotationModel
 
 	@Override
 	protected void deleteMarkers(final IMarker[] markers) throws CoreException {
-		fWorkspace.run(new IWorkspaceRunnable() {
-			@Override
-			public void run(IProgressMonitor monitor) throws CoreException {
-				for (int i= 0; i < markers.length; ++i) {
-					markers[i].delete();
-				}
+		fWorkspace.run((IWorkspaceRunnable) monitor -> {
+			for (IMarker marker : markers) {
+				marker.delete();
 			}
 		}, null, IWorkspace.AVOID_UPDATE, null);
 	}

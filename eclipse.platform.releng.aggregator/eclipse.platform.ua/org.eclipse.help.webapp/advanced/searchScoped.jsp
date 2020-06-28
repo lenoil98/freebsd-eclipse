@@ -43,8 +43,8 @@ BODY {
 }
 
 TABLE {
-	font: <%=prefs.getToolbarFont()%>;
 	background:<%=prefs.getToolbarBackground()%>;
+	font: <%=prefs.getToolbarFont()%>;
 	margin: 0px;
 	padding: 0px;
 	height:100%;
@@ -107,7 +107,7 @@ A {
 
 #scopeLabel {
 	text-decoration:underline; 
-	color:#0066FF; 
+	color:#005FFF; 
 	cursor:pointer;
 	padding-left:15px;   /* This should be the same for both RTL and LTR. */
 }
@@ -129,6 +129,7 @@ A {
 <%
 	}
 %>
+<%@ include file="darkTheme.css"%>
 </style>
 
 <script type="text/javascript">

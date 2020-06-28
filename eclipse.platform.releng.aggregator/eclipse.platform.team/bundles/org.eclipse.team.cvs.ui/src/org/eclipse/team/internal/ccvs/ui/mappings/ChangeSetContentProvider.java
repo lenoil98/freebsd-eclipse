@@ -44,9 +44,6 @@ import org.eclipse.ui.navigator.*;
 public class ChangeSetContentProvider extends ResourceModelContentProvider implements ITreePathContentProvider {
 
 	private final class CollectorListener implements IChangeSetChangeListener, BatchingChangeSetManager.IChangeSetCollectorChangeListener {
-		/* (non-Javadoc)
-		 * @see org.eclipse.team.internal.core.subscribers.IChangeSetChangeListener#setAdded(org.eclipse.team.internal.core.subscribers.ChangeSet)
-		 */
 		@Override
 		public void setAdded(final ChangeSet set) {
 			// We only react here for active change sets.
@@ -66,9 +63,6 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 			getUnassignedSet().remove(set.getResources());
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.team.internal.core.subscribers.IChangeSetChangeListener#defaultSetChanged(org.eclipse.team.internal.core.subscribers.ChangeSet, org.eclipse.team.internal.core.subscribers.ChangeSet)
-		 */
 		@Override
 		public void defaultSetChanged(final ChangeSet previousDefault, final ChangeSet set) {
 			if (isVisibleInMode(set) || isVisibleInMode(previousDefault)) {
@@ -86,9 +80,6 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 			}
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.team.internal.core.subscribers.IChangeSetChangeListener#setRemoved(org.eclipse.team.internal.core.subscribers.ChangeSet)
-		 */
 		@Override
 		public void setRemoved(final ChangeSet set) {
 			// We only react here for active change sets.
@@ -105,8 +96,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 		private void handleSetRemoval(final ChangeSet set) {
 			IResource[] resources = set.getResources();
 			List toAdd = new ArrayList();
-			for (int i = 0; i < resources.length; i++) {
-				IResource resource = resources[i];
+			for (IResource resource : resources) {
 				IDiff diff = getContext().getDiffTree().getDiff(resource);
 				if (diff != null && !isContainedInSet(diff))
 					toAdd.add(diff);
@@ -114,9 +104,6 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 			getUnassignedSet().add((IDiff[]) toAdd.toArray(new IDiff[toAdd.size()]));
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.team.internal.core.subscribers.IChangeSetChangeListener#nameChanged(org.eclipse.team.internal.core.subscribers.ChangeSet)
-		 */
 		@Override
 		public void nameChanged(final ChangeSet set) {
 			if (isVisibleInMode(set)) {
@@ -125,9 +112,6 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 			}
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.team.internal.core.subscribers.IChangeSetChangeListener#resourcesChanged(org.eclipse.team.internal.core.subscribers.ChangeSet, org.eclipse.core.runtime.IPath[])
-		 */
 		@Override
 		public void resourcesChanged(final ChangeSet set, final IPath[] paths) {
 			// We only react here for active change sets.
@@ -151,21 +135,20 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 		private void handleSetChange(final ChangeSet set, final IPath[] paths) {
 			try {
 				getTheRest().beginInput();
-			    for (int i = 0; i < paths.length; i++) {
-					IPath path = paths[i];
-			        boolean isContained = ((DiffChangeSet)set).contains(path);
+				for (IPath path : paths) {
+					boolean isContained = ((DiffChangeSet)set).contains(path);
 					if (isContained) {
 						IDiff diff = ((DiffChangeSet)set).getDiffTree().getDiff(path);
 						if (diff != null) {
 							getTheRest().remove(ResourceDiffTree.getResourceFor(diff));
 						}
 					} else {
-			            IDiff diff = getContext().getDiffTree().getDiff(path);
-			            if (diff != null && !isContainedInSet(diff)) {
-			                getTheRest().add(diff);
-			            }
-			        }   
-			    }
+						IDiff diff = getContext().getDiffTree().getDiff(path);
+						if (diff != null && !isContainedInSet(diff)) {
+							getTheRest().add(diff);
+						}
+					}   
+				}
 			} finally {
 				getTheRest().endInput(null);
 			}
@@ -174,9 +157,9 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 		@Override
 		public void changeSetChanges(final CollectorChangeEvent event, IProgressMonitor monitor) {
 			ChangeSet[] addedSets = event.getAddedSets();
-			final ChangeSet[] visibleAddedSets = getVisibleSets(addedSets);
+			final Object[] visibleAddedSets = getVisibleSets(addedSets);
 			ChangeSet[] removedSets = event.getRemovedSets();
-			final ChangeSet[] visibleRemovedSets = getVisibleSets(removedSets);
+			final Object[] visibleRemovedSets = getVisibleSets(removedSets);
 			ChangeSet[] changedSets = event.getChangedSets();
 			final ChangeSet[] visibleChangedSets = getVisibleSets(changedSets);
 			if (visibleAddedSets.length > 0 || visibleRemovedSets.length > 0 || visibleChangedSets.length > 0) {
@@ -189,8 +172,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 						}
 						if (visibleRemovedSets.length > 0)
 							((AbstractTreeViewer) getViewer()).remove(visibleRemovedSets);
-						for (int i = 0; i < visibleChangedSets.length; i++) {
-							ChangeSet set = visibleChangedSets[i];
+						for (ChangeSet set : visibleChangedSets) {
 							((AbstractTreeViewer) getViewer()).refresh(set, true);
 						}
 					} finally {
@@ -200,8 +182,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 			}
 			try {
 				getTheRest().beginInput();
-				for (int i = 0; i < addedSets.length; i++) {
-					ChangeSet set = addedSets[i];
+				for (ChangeSet set : addedSets) {
 					handleSetAddition(set);
 				}
 				if (removedSets.length > 0) {
@@ -211,16 +192,14 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 					// See bug 173138
 					addAllUnassignedToUnassignedSet();
 				}
-				for (int i = 0; i < changedSets.length; i++) {
-					ChangeSet set = changedSets[i];
+				for (ChangeSet set : changedSets) {
 					IPath[] paths = event.getChangesFor(set);
 					if (event.getSource().contains(set)) {
 						handleSetChange(set, paths);
 					} else {
 						try {
 							getTheRest().beginInput();
-							for (int j = 0; j < paths.length; j++) {
-								IPath path = paths[j];
+							for (IPath path : paths) {
 								IDiff diff = getContext().getDiffTree().getDiff(path);
 								if (diff != null && !isContainedInSet(diff))
 									getTheRest().add(diff);
@@ -237,8 +216,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 
 		private ChangeSet[] getVisibleSets(ChangeSet[] sets) {
 			List result = new ArrayList(sets.length);
-			for (int i = 0; i < sets.length; i++) {
-				ChangeSet set = sets[i];
+			for (ChangeSet set : sets) {
 				if (isVisibleInMode(set)) {
 					result.add(set);
 				}
@@ -257,9 +235,6 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 	
 	private IDiffChangeListener diffTreeListener = new IDiffChangeListener() {
 	
-		/* (non-Javadoc)
-		 * @see org.eclipse.team.core.diff.IDiffChangeListener#propertyChanged(org.eclipse.team.core.diff.IDiffTree, int, org.eclipse.core.runtime.IPath[])
-		 */
 		@Override
 		public void propertyChanged(IDiffTree tree, int property, IPath[] paths) {
 			// Ignore
@@ -269,9 +244,6 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 			return getVisibleSetsInViewer().contains(set);
 		}
 		
-		/* (non-Javadoc)
-		 * @see org.eclipse.team.core.diff.IDiffChangeListener#diffsChanged(org.eclipse.team.core.diff.IDiffChangeEvent, org.eclipse.core.runtime.IProgressMonitor)
-		 */
 		@Override
 		public void diffsChanged(IDiffChangeEvent event, IProgressMonitor monitor) {
 			Object input = getViewer().getInput();
@@ -293,9 +265,6 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 	private CheckedInChangeSetCollector checkedInCollector;
 	private boolean collectorInitialized;
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ui.mapping.ResourceModelContentProvider#getModelProviderId()
-	 */
 	@Override
 	protected String getModelProviderId() {
 		return ChangeSetModelProvider.ID;
@@ -319,9 +288,6 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 		return (input instanceof ChangeSetModelProvider);
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ui.mapping.ResourceModelContentProvider#getElements(java.lang.Object)
-	 */
 	@Override
 	public Object[] getElements(Object parent) {
 		if (parent instanceof ISynchronizationContext) {
@@ -343,8 +309,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 		}
 		List result = new ArrayList();
 		ChangeSet[] sets = getAllSets();
-		for (int i = 0; i < sets.length; i++) {
-			ChangeSet set = sets[i];
+		for (ChangeSet set : sets) {
 			if (hasChildren(TreePath.EMPTY.createChildPath(set)))
 				result.add(set);
 		}
@@ -389,8 +354,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 	 */
 	protected boolean isContainedInSet(IDiff diff) {
 		ChangeSet[] sets = getAllSets();
-		for (int i = 0; i < sets.length; i++) {
-			ChangeSet set = sets[i];
+		for (ChangeSet set : sets) {
 			if (set.contains(ResourceDiffTree.getResourceFor(diff))) {
 				return true;
 			}
@@ -398,9 +362,6 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ui.mapping.ResourceModelContentProvider#getTraversals(org.eclipse.team.core.mapping.ISynchronizationContext, java.lang.Object)
-	 */
 	@Override
 	protected ResourceTraversal[] getTraversals(
 			ISynchronizationContext context, Object object) {
@@ -435,8 +396,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 		}
 		Object[] children = getChildren(parent);
 		Set result = new HashSet();
-		for (int i = 0; i < children.length; i++) {
-			Object child = children[i];
+		for (Object child : children) {
 			if (isVisible(child, diffTree)) {
 				result.add(child);
 			}
@@ -508,8 +468,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 				return true;
 			int depth = getTraversalCalculator().getLayoutDepth(resource, null);
 			IDiff[] diffs = tree.getDiffs(resource, depth);
-			for (int i = 0; i < diffs.length; i++) {
-				IDiff child = diffs[i];
+			for (IDiff child : diffs) {
 				if (isVisible(child)) {
 					return true;
 				}
@@ -531,8 +490,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 
 	private boolean hasChildrenInContext(ChangeSet set) {
 		IResource[] resources = set.getResources();
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			if (getContext().getDiffTree().getDiff(resource) != null)
 				return true;
 		}
@@ -549,8 +507,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 			DiffChangeSet[] sets = getSetsContaining(resource);
 			if (sets.length > 0) {
 				List result = new ArrayList();
-				for (int i = 0; i < sets.length; i++) {
-					DiffChangeSet set = sets[i];
+				for (DiffChangeSet set : sets) {
 					TreePath path = getPathForElement(set, resource.getParent());
 					if (path != null)
 						result.add(path);
@@ -569,8 +526,7 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 	private DiffChangeSet[] getSetsContaining(IResource resource) {
 		List result = new ArrayList();
 		DiffChangeSet[] allSets = getAllSets();
-		for (int i = 0; i < allSets.length; i++) {
-			DiffChangeSet set = allSets[i];
+		for (DiffChangeSet set : allSets) {
 			if (isVisible(resource, set.getDiffTree())) {
 				result.add(set);
 			}
@@ -589,17 +545,11 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 		if (csc.supportsActiveChangeSets()) {
 			ActiveChangeSetManager collector = csc.getActiveChangeSetManager();
 			ChangeSet[] sets = collector.getSets();	
-			for (int i = 0; i < sets.length; i++) {
-				ChangeSet set = sets[i];
-				result.add(set);
-			}
+			Collections.addAll(result, sets);
 		}
 		if (checkedInCollector != null) {
 			ChangeSet[] sets = checkedInCollector.getSets();	
-			for (int i = 0; i < sets.length; i++) {
-				ChangeSet set = sets[i];
-				result.add(set);
-			}
+			Collections.addAll(result, sets);
 		}
 		return (DiffChangeSet[]) result.toArray(new DiffChangeSet[result.size()]);
 	}
@@ -728,19 +678,16 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 		// Only adjust the set of the rest. The others will be handled by the collectors
 		try {
 			getTheRest().beginInput();
-			for (int i = 0; i < removed.length; i++) {
-				IPath path = removed[i];
+			for (IPath path : removed) {
 				getTheRest().remove(path);
 			}
-			for (int i = 0; i < added.length; i++) {
-				IDiff diff = added[i];
+			for (IDiff diff : added) {
 				// Only add the diff if it is not already in another set
 				if (!isContainedInSet(diff)) {
 					getTheRest().add(diff);
 				}
 			}
-			for (int i = 0; i < changed.length; i++) {
-				IDiff diff = changed[i];
+			for (IDiff diff : changed) {
 				// Only add the diff if it is already contained in the free set
 				if (getTheRest().getDiff(diff.getPath()) != null) {
 					getTheRest().add(diff);
@@ -768,24 +715,19 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 	}
 	
 	
-    private ChangeSet[] getSetsShowingPropogatedStateFrom(IPath[] paths) {
+	private ChangeSet[] getSetsShowingPropogatedStateFrom(IPath[] paths) {
 		Set result = new HashSet();
-		for (int i = 0; i < paths.length; i++) {
-			IPath path = paths[i];
+		for (IPath path : paths) {
 			ChangeSet[] sets = getSetsShowingPropogatedStateFrom(path);
-			for (int j = 0; j < sets.length; j++) {
-				ChangeSet set = sets[j];
-				result.add(set);
-			}
+			Collections.addAll(result, sets);
 		}
 		return (ChangeSet[]) result.toArray(new ChangeSet[result.size()]);
 	}
-    
+	
 	protected DiffChangeSet[] getSetsShowingPropogatedStateFrom(IPath path) {
 		List result = new ArrayList();
 		DiffChangeSet[] allSets = getAllSets();
-		for (int i = 0; i < allSets.length; i++) {
-			DiffChangeSet set = allSets[i];
+		for (DiffChangeSet set : allSets) {
 			if (set.getDiffTree().getDiff(path) != null || set.getDiffTree().getChildren(path).length > 0) {
 				result.add(set);
 			}
@@ -794,21 +736,20 @@ public class ChangeSetContentProvider extends ResourceModelContentProvider imple
 	}
 
 	public ChangeSetCapability getChangeSetCapability() {
-        ISynchronizeParticipant participant = getConfiguration().getParticipant();
-        if (participant instanceof IChangeSetProvider) {
-            IChangeSetProvider provider = (IChangeSetProvider) participant;
-            return provider.getChangeSetCapability();
-        }
-        return null;
-    }
+		ISynchronizeParticipant participant = getConfiguration().getParticipant();
+		if (participant instanceof IChangeSetProvider) {
+			IChangeSetProvider provider = (IChangeSetProvider) participant;
+			return provider.getChangeSetCapability();
+		}
+		return null;
+	}
 	
 	private Set getVisibleSetsInViewer() {
 		TreeViewer viewer = (TreeViewer)getViewer();
 		Tree tree = viewer.getTree();
 		TreeItem[] children = tree.getItems();
 		Set result = new HashSet();
-		for (int i = 0; i < children.length; i++) {
-			TreeItem control = children[i];
+		for (TreeItem control : children) {
 			Object data = control.getData();
 			if (data instanceof ChangeSet) {
 				ChangeSet set = (ChangeSet) data;

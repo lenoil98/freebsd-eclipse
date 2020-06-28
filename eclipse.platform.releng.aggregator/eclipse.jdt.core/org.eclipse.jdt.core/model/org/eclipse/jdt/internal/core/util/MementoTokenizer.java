@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2017 IBM Corporation and others.
+ * Copyright (c) 2004, 2018 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -36,6 +36,7 @@ public class MementoTokenizer {
 	public static final String LAMBDA_EXPRESSION = Character.toString(JavaElement.JEM_LAMBDA_EXPRESSION);
 	public static final String LAMBDA_METHOD = Character.toString(JavaElement.JEM_LAMBDA_METHOD);
 	public static final String STRING = Character.toString(JavaElement.JEM_STRING);
+	public static final String CLASSPATH_ATTRIBUTE = JAVAPROJECT+PACKAGEFRAGMENTROOT;
 
 	private final char[] memento;
 	private final int length;
@@ -62,9 +63,9 @@ public class MementoTokenizer {
 			case JavaElement.JEM_COUNT:
 				return COUNT;
 			case JavaElement.JEM_JAVAPROJECT:
-				// Also covers JavaElement#JEM_DELIMITER_ESCAPE, in which case, 
+				// Also covers JavaElement#JEM_DELIMITER_ESCAPE, in which case,
 				// we seek ahead by one char and check if it's an escaped delimiter
-				// and if that's true, we return that as the token. 
+				// and if that's true, we return that as the token.
 				// Else, we decide that JEM_JAVAPROJECT is the current token.
 				if (this.index < this.length) {
 					char nextChar = this.memento[this.index++];
@@ -75,6 +76,8 @@ public class MementoTokenizer {
 							return LAMBDA_METHOD;
 						case JavaElement.JEM_STRING:
 							return STRING;
+						case JavaElement.JEM_PACKAGEFRAGMENTROOT:
+							return CLASSPATH_ATTRIBUTE;
 						default:
 							this.index--;
 							break;
@@ -149,4 +152,12 @@ public class MementoTokenizer {
 		}
 	}
 
+	public String getStringDelimitedBy(String delimiter) {
+		String token = nextToken();
+		if (token == delimiter)
+			return ""; //$NON-NLS-1$
+		String separator = nextToken();
+		assert separator == delimiter;
+		return token;
+	}
 }

@@ -144,7 +144,7 @@ public class AlternateUserValidationDialog extends Dialog {
 		data.widthHint = 70;
 		b.setLayoutData(data);
 		b.addListener(SWT.Selection, event -> cancelPressed());
-        Dialog.applyDialogFont(parent);
+		Dialog.applyDialogFont(parent);
 		return main;
 	}
 
@@ -188,7 +188,7 @@ public class AlternateUserValidationDialog extends Dialog {
 		fd.setStyle(SWT.BOLD);
 		fd.setHeight(10);
 		// On Windows, set the font to Sans Serif for an authentic look
-		if (System.getProperty("os.name").indexOf("Windows") != -1) { //$NON-NLS-1$ //$NON-NLS-2$
+		if (System.getProperty("os.name").contains("Windows")) { //$NON-NLS-1$ //$NON-NLS-2$
 			fd.setName("Microsoft Sans Serif"); //$NON-NLS-1$
 		}
 	}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -77,21 +77,10 @@ public class ProgramLaunchDelegate extends LaunchConfigurationDelegate {
 			return;
 		}
 
-		// resolve arguments
-		String[] arguments = ExternalToolsCoreUtil.getArguments(configuration);
+		String[] cmdLine = buildCommandLine(configuration, location);
 
 		if (monitor.isCanceled()) {
 			return;
-		}
-
-		int cmdLineLength = 1;
-		if (arguments != null) {
-			cmdLineLength += arguments.length;
-		}
-		String[] cmdLine = new String[cmdLineLength];
-		cmdLine[0] = location.toOSString();
-		if (arguments != null) {
-			System.arraycopy(arguments, 0, cmdLine, 1, arguments.length);
 		}
 
 		File workingDir = null;
@@ -110,7 +99,8 @@ public class ProgramLaunchDelegate extends LaunchConfigurationDelegate {
 			return;
 		}
 
-		Process p = DebugPlugin.exec(cmdLine, workingDir, envp);
+		boolean mergeOutput = configuration.getAttribute(DebugPlugin.ATTR_MERGE_OUTPUT, false);
+		Process p = DebugPlugin.exec(cmdLine, workingDir, envp, mergeOutput);
 		IProcess process = null;
 
 		// add process type to process attributes
@@ -140,8 +130,8 @@ public class ProgramLaunchDelegate extends LaunchConfigurationDelegate {
 					IExternalToolConstants.ERR_INTERNAL_ERROR,
 					ExternalToolsProgramMessages.ProgramLaunchDelegate_4, null));
 		}
-		process.setAttribute(IProcess.ATTR_CMDLINE,
-				generateCommandLine(cmdLine));
+		process.setAttribute(IProcess.ATTR_CMDLINE, generateCommandLine(cmdLine));
+		process.setAttribute(DebugPlugin.ATTR_LAUNCH_TIMESTAMP, Long.toString(System.currentTimeMillis()));
 
 		if (configuration.getAttribute(ATTR_LAUNCH_IN_BACKGROUND, true)) {
 			// refresh resources after process finishes
@@ -168,18 +158,34 @@ public class ProgramLaunchDelegate extends LaunchConfigurationDelegate {
 		}
 	}
 
+	private String[] buildCommandLine(ILaunchConfiguration configuration, IPath location) throws CoreException {
+		// resolve arguments
+		String[] arguments = ExternalToolsCoreUtil.getArguments(configuration);
+
+		int cmdLineLength = 1;
+		if (arguments != null) {
+			cmdLineLength += arguments.length;
+		}
+		String[] cmdLine = new String[cmdLineLength];
+		cmdLine[0] = location.toOSString();
+		if (arguments != null) {
+			System.arraycopy(arguments, 0, cmdLine, 1, arguments.length);
+		}
+		return cmdLine;
+	}
+
 	private String generateCommandLine(String[] commandLine) {
 		if (commandLine.length < 1) {
 			return IExternalToolConstants.EMPTY_STRING;
 		}
 		StringBuilder buf = new StringBuilder();
-		for (int i = 0; i < commandLine.length; i++) {
-			buf.append(' ');
-			char[] characters = commandLine[i].toCharArray();
+		for (String c : commandLine) {
+			if (buf.length() > 0) {
+				buf.append(' ');
+			}
 			StringBuilder command = new StringBuilder();
 			boolean containsSpace = false;
-			for (int j = 0; j < characters.length; j++) {
-				char character = characters[j];
+			for (char character : c.toCharArray()) {
 				if (character == '\"') {
 					command.append('\\');
 				} else if (character == ' ') {
@@ -198,13 +204,6 @@ public class ProgramLaunchDelegate extends LaunchConfigurationDelegate {
 		return buf.toString();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * org.eclipse.debug.core.model.LaunchConfigurationDelegate#getBuildOrder
-	 * (org.eclipse.debug.core.ILaunchConfiguration, java.lang.String)
-	 */
 	@Override
 	protected IProject[] getBuildOrder(ILaunchConfiguration configuration,
 			String mode) throws CoreException {
@@ -221,13 +220,6 @@ public class ProgramLaunchDelegate extends LaunchConfigurationDelegate {
 		return computeBuildOrder(projects);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.core.model.LaunchConfigurationDelegate#saveBeforeLaunch
-	 * (org.eclipse.debug.core.ILaunchConfiguration, java.lang.String,
-	 * org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected boolean saveBeforeLaunch(ILaunchConfiguration configuration,
 			String mode, IProgressMonitor monitor) throws CoreException {
@@ -239,4 +231,11 @@ public class ProgramLaunchDelegate extends LaunchConfigurationDelegate {
 		return super.saveBeforeLaunch(configuration, mode, monitor);
 	}
 
+	@Override
+	public String showCommandLine(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
+		IPath location = ExternalToolsCoreUtil.getLocation(configuration);
+		String[] cmd = buildCommandLine(configuration, location);
+		String cmdLine = generateCommandLine(cmd);
+		return cmdLine;
+	}
 }

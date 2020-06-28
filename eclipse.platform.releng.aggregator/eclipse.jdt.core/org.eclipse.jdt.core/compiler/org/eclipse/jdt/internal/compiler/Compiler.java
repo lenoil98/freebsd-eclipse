@@ -10,7 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
- *     Stephan Herrmann - contributions for 
+ *     Stephan Herrmann - contributions for
  *     							bug 337868 - [compiler][model] incomplete support for package-info.java when using SearchableEnvironment
  *     							bug 186342 - [compiler][null] Using annotations for null checking
  *******************************************************************************/
@@ -44,7 +44,7 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 	//public CompilationUnitResult currentCompilationUnitResult;
 	public CompilationUnitDeclaration[] unitsToProcess;
 	public int totalUnits; // (totalUnits-1) gives the last unit in unitToProcess
-	
+
 	private Map<String, APTProblem[]> aptProblems;
 
 	// name lookup
@@ -507,7 +507,7 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 			this.context = context;
 		}
 	}
-	
+
 	protected void backupAptProblems() {
 		if (this.unitsToProcess == null) return;
 		for (int i = 0; i < this.totalUnits; i++) {
@@ -536,7 +536,7 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 			}
 		}
 	}
-	
+
 	protected void restoreAptProblems() {
 		if (this.unitsToProcess != null && this.aptProblems!= null) {
 			for (int i = 0; i < this.totalUnits; i++) {
@@ -605,10 +605,7 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 				while (true) {
 					try {
 						unit = processingTask.removeNextUnit(); // waits if no units are in the processed queue
-					} catch (Error e) {
-						unit = processingTask.unitToProcess;
-						throw e;
-					} catch (RuntimeException e) {
+					} catch (Error | RuntimeException e) {
 						unit = processingTask.unitToProcess;
 						throw e;
 					}
@@ -640,10 +637,7 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 			}
 		} catch (AbortCompilation e) {
 			this.handleInternalException(e, unit);
-		} catch (Error e) {
-			this.handleInternalException(e, unit, null);
-			throw e; // rethrow
-		} catch (RuntimeException e) {
+		} catch (Error | RuntimeException e) {
 			this.handleInternalException(e, unit, null);
 			throw e; // rethrow
 		} finally {
@@ -654,6 +648,7 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 			reset();
 			this.annotationProcessorStartIndex  = 0;
 			this.stats.endTime = System.currentTimeMillis();
+			this.stats.overallTime += this.stats.endTime - this.stats.startTime;
 		}
 	}
 
@@ -809,14 +804,29 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 		this.parser = new Parser(this.problemReporter, this.options.parseLiteralExpressionsAsConstants);
 	}
 
+	private  void abortIfPreviewNotAllowed(ICompilationUnit[] sourceUnits, int maxUnits) {
+		if (!this.options.enablePreviewFeatures)
+			return;
+		try {
+			if (this.options.sourceLevel != ClassFileConstants.getLatestJDKLevel()) {
+				this.problemReporter.abortDueToPreviewEnablingNotAllowed(CompilerOptions.versionFromJdkLevel(this.options.sourceLevel), CompilerOptions.getLatestVersion());
+			}
+		} catch (AbortCompilation a) {
+			// best effort to find a way for reporting this problem: report on the first source
+			if (a.compilationResult == null) {
+				a.compilationResult = new CompilationResult(sourceUnits[0], 0, maxUnits, this.options.maxProblemsPerUnit);
+			}
+			throw a;
+		}
+	}
 	/**
 	 * Add the initial set of compilation units into the loop
 	 *  ->  build compilation unit declarations, their bindings and record their results.
 	 */
 	protected void internalBeginToCompile(ICompilationUnit[] sourceUnits, int maxUnits) {
+		abortIfPreviewNotAllowed(sourceUnits,maxUnits);
 		if (!this.useSingleThread && maxUnits >= ReadManager.THRESHOLD)
 			this.parser.readManager = new ReadManager(sourceUnits, maxUnits);
-
 		// Switch the current policy and compilation result for this unit to the requested one.
 		for (int i = 0; i < maxUnits; i++) {
 			CompilationResult unitResult = null;
@@ -893,15 +903,15 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 
 		long analyzeStart = System.currentTimeMillis();
 		this.stats.resolveTime += analyzeStart - resolveStart;
-		
-		//No need of analysis or generation of code if statements are not required		
+
+		//No need of analysis or generation of code if statements are not required
 		if (!this.options.ignoreMethodBodies) unit.analyseCode(); // flow analysis
 
 		long generateStart = System.currentTimeMillis();
 		this.stats.analyzeTime += generateStart - analyzeStart;
-	
+
 		if (!this.options.ignoreMethodBodies) unit.generateCode(); // code generation
-		
+
 		// reference info
 		if (this.options.produceReferenceInfo && unit.scope != null)
 			unit.scope.storeDependencyInfo();
@@ -918,6 +928,14 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 	}
 
 	protected void processAnnotations() {
+		try {
+			processAnnotationsInternal();
+		} finally {
+			this.annotationProcessorManager.cleanUp();
+		}
+	}
+
+	private void processAnnotationsInternal() {
 		int newUnitSize = 0;
 		int newClassFilesSize = 0;
 		int bottom = this.annotationProcessorStartIndex;
@@ -974,9 +992,9 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 				this.annotationProcessorManager.reset();
 			}
 		} while (newUnitSize != 0 || newClassFilesSize != 0);
-		
+
 		this.annotationProcessorManager.processAnnotations(null, null, true);
-		// process potential units added in the final round see 329156 
+		// process potential units added in the final round see 329156
 		ICompilationUnit[] newUnits = this.annotationProcessorManager.getNewUnits();
 		newUnitSize = newUnits.length;
 		if (newUnitSize != 0) {
@@ -1069,10 +1087,7 @@ public class Compiler implements ITypeRequestor, ProblemSeverities {
 		} catch (AbortCompilation e) {
 			this.handleInternalException(e, unit);
 			return unit == null ? this.unitsToProcess[0] : unit;
-		} catch (Error e) {
-			this.handleInternalException(e, unit, null);
-			throw e; // rethrow
-		} catch (RuntimeException e) {
+		} catch (Error | RuntimeException e) {
 			this.handleInternalException(e, unit, null);
 			throw e; // rethrow
 		} finally {

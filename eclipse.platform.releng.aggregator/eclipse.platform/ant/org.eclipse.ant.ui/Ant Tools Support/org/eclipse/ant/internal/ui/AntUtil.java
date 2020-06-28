@@ -16,6 +16,7 @@ package org.eclipse.ant.internal.ui;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -81,8 +82,6 @@ import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.ITextEditor;
 
-import com.ibm.icu.text.MessageFormat;
-
 /**
  * General utility class dealing with Ant build files
  */
@@ -131,7 +130,7 @@ public final class AntUtil {
 	 * 
 	 * @param configuration
 	 *            launch configuration
-	 * @return map of properties (name --> value), or <code>null</code>
+	 * @return map of properties (name --&gt; value), or <code>null</code>
 	 * @throws CoreException
 	 *             if unable to access the associated attribute
 	 */
@@ -200,13 +199,11 @@ public final class AntUtil {
 		String allArgs = config.getAttribute(IExternalToolConstants.ATTR_TOOL_ARGUMENTS, (String) null);
 		Map<String, String> properties = new HashMap<>();
 		if (allArgs != null) {
-			String[] arguments = ExternalToolsUtil.parseStringIntoList(allArgs);
 			// filter arguments to avoid resolving variables that will prompt the user
 			List<String> filtered = new ArrayList<>();
 			Pattern pattern = Pattern.compile("\\$\\{.*_prompt.*\\}"); //$NON-NLS-1$
 			IStringVariableManager manager = VariablesPlugin.getDefault().getStringVariableManager();
-			for (int i = 0; i < arguments.length; i++) {
-				String arg = arguments[i];
+			for (String arg : ExternalToolsUtil.parseStringIntoList(allArgs)) {
 				if (arg.startsWith("-D")) { //$NON-NLS-1$
 					if (!pattern.matcher(arg).find()) {
 						filtered.add(manager.performStringSubstitution(arg, false));
@@ -238,7 +235,7 @@ public final class AntUtil {
 				targets.add(node);
 			}
 		}
-		if (targets.size() == 0) {
+		if (targets.isEmpty()) {
 			return null;
 		}
 		return targets.toArray(new AntTargetNode[targets.size()]);
@@ -296,21 +293,11 @@ public final class AntUtil {
 		}
 		final IFile file = getFileForLocation(buildFile.getAbsolutePath(), null);
 		LocationProvider provider = new LocationProvider(null) {
-			/*
-			 * (non-Javadoc)
-			 * 
-			 * @see org.eclipse.ant.internal.ui.model.LocationProvider#getFile()
-			 */
 			@Override
 			public IFile getFile() {
 				return file;
 			}
 
-			/*
-			 * (non-Javadoc)
-			 * 
-			 * @see org.eclipse.ant.internal.ui.model.LocationProvider#getLocation()
-			 */
 			@Override
 			public IPath getLocation() {
 				if (file == null) {
@@ -747,7 +734,7 @@ public final class AntUtil {
 		if (extns.length == 0) {
 			return IAntCoreConstants.XML_EXTENSION;
 		}
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < extns.length; i++) {
 			if (i > 0)
 				sb.append('|');
@@ -765,7 +752,7 @@ public final class AntUtil {
 	 * @since 3.8
 	 */
 	public static boolean isKnownAntFileName(String name) {
-		StringBuffer buf = new StringBuffer(".*.("); //$NON-NLS-1$
+		StringBuilder buf = new StringBuilder(".*.("); //$NON-NLS-1$
 		buf.append(getKnownBuildFileExtensionsAsPattern());
 		buf.append(")"); //$NON-NLS-1$
 		try {

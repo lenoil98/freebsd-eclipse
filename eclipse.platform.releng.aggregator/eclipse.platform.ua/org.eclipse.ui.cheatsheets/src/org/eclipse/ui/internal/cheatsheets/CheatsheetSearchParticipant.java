@@ -76,7 +76,7 @@ public class CheatsheetSearchParticipant extends SearchParticipantXML {
 		HashSet<String> set = new HashSet<>();
 		for (IConfigurationElement element : elements) {
 			if (element.getName().equals(CheatSheetRegistryReader.TAG_CHEATSHEET)) {
-			    set.add(element.getContributor().getName());
+				set.add(element.getContributor().getName());
 			}
 		}
 		return set;
@@ -85,20 +85,28 @@ public class CheatsheetSearchParticipant extends SearchParticipantXML {
 	@Override
 	protected void handleStartElement(String name, Attributes attributes,
 			IParsedXMLContent data) {
-		if (name.equals(IParserTags.CHEATSHEET)) {
+		switch (name) {
+		case IParserTags.CHEATSHEET:
 			data.setTitle(attributes.getValue(IParserTags.TITLE));
 			data.addText(attributes.getValue(IParserTags.TITLE));
-		} else if (name.equals(ICompositeCheatsheetTags.COMPOSITE_CHEATSHEET)) {
+			break;
+		case ICompositeCheatsheetTags.COMPOSITE_CHEATSHEET:
 			data.addText(attributes.getValue(ICompositeCheatsheetTags.NAME));
 			data.setTitle(attributes.getValue(ICompositeCheatsheetTags.NAME));
-		} else if (name.equals(IParserTags.ITEM)) {
+			break;
+		case IParserTags.ITEM:
 			data.addText(attributes.getValue(IParserTags.TITLE));
-	    } else if (name.equals(IParserTags.SUBITEM)) {
-		    data.addText(attributes.getValue(IParserTags.LABEL));
-	    } else if (name.equals(ICompositeCheatsheetTags.TASK )
-	    		|| name.equals(ICompositeCheatsheetTags.TASK_GROUP)) {
-		    data.addText(attributes.getValue(ICompositeCheatsheetTags.NAME));
-	    }
+			break;
+		case IParserTags.SUBITEM:
+			data.addText(attributes.getValue(IParserTags.LABEL));
+			break;
+		case ICompositeCheatsheetTags.TASK:
+		case ICompositeCheatsheetTags.TASK_GROUP:
+			data.addText(attributes.getValue(ICompositeCheatsheetTags.NAME));
+			break;
+		default:
+			break;
+		}
 	}
 
 	@Override

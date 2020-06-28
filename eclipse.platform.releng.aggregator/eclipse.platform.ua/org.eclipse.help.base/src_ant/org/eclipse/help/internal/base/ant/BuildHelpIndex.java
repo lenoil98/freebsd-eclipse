@@ -59,25 +59,24 @@ public class BuildHelpIndex extends Task {
 		builder.setDestination(target);
 		IProgressMonitor monitor = (IProgressMonitor) getProject()
 				.getReferences().get(AntCorePlugin.ECLIPSE_PROGRESS_MONITOR);
-        if (monitor == null)
-            monitor = new NullProgressMonitor();
+		if (monitor == null)
+			monitor = new NullProgressMonitor();
 		try {
 			builder.execute(monitor);
 		} catch (CoreException e) {
+			printStatus(e);
 			if (e.getStatus().getSeverity()==IStatus.ERROR)
 				throw new BuildException(e.getMessage(), e.getCause());
-			printStatus(e);
 		}
 	}
 
 	private void printStatus(CoreException e) {
 		IStatus status = e.getStatus();
-		System.out.println(e.getMessage());
+		System.err.println(e.getMessage());
 		if (status.isMultiStatus()) {
 			IStatus [] children = status.getChildren();
-			for (int i=0; i<children.length; i++) {
-				IStatus child = children[i];
-				System.out.println("    "+child.getMessage()); //$NON-NLS-1$
+			for (IStatus child : children) {
+				System.err.println("    " + child.getMessage()); //$NON-NLS-1$
 			}
 		}
 	}

@@ -71,7 +71,7 @@ public abstract class SafeRunnable implements ISafeRunnable {
 	/**
 	 * Flag to avoid interactive error dialogs during automated testing.
 	 *
-	 * @param flag
+	 * @param flag unused
 	 * @return true if errors should be ignored
 	 * @deprecated use getIgnoreErrors()
 	 */
@@ -127,9 +127,7 @@ public abstract class SafeRunnable implements ISafeRunnable {
 			public void run(ISafeRunnable code) {
 				try {
 					code.run();
-				} catch (Exception e) {
-					handleException(code, e);
-				} catch (LinkageError e) {
+				} catch (Exception | LinkageError e) {
 					handleException(code, e);
 				}
 			}

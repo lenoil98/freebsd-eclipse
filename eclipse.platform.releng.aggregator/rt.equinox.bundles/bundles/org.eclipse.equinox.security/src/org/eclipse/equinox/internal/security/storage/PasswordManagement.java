@@ -131,13 +131,7 @@ public class PasswordManagement {
 			CryptoData encryptedData = new CryptoData(node.internalGet(PASSWORD_RECOVERY_KEY));
 			byte[] data = root.getCipher().decrypt(internalPasswordExt, encryptedData);
 			return StorageUtils.getString(data);
-		} catch (IllegalStateException e) {
-			return null;
-		} catch (IllegalBlockSizeException e) {
-			return null;
-		} catch (BadPaddingException e) {
-			return null;
-		} catch (StorageException e) {
+		} catch (IllegalStateException | IllegalBlockSizeException | BadPaddingException | StorageException e) {
 			return null;
 		}
 	}
@@ -158,12 +152,12 @@ public class PasswordManagement {
 	 */
 	static private String mashPassword(String[] answers) {
 		// form a string composing answers
-		StringBuffer tmp = new StringBuffer();
-		for (int i = 0; i < answers.length; i++) {
-			tmp.append(answers[i].trim());
+		StringBuilder tmp = new StringBuilder();
+		for (String answer : answers) {
+			tmp.append(answer.trim());
 		}
 		// mix it up
-		StringBuffer mix = new StringBuffer();
+		StringBuilder mix = new StringBuilder();
 		int pos = tmp.length() - 1;
 		for (int i = 0; i <= pos; i++) {
 			mix.append(tmp.charAt(i));

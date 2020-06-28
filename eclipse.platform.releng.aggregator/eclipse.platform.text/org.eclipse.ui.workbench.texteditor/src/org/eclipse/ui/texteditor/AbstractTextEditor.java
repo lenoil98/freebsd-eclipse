@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -26,11 +26,13 @@ package org.eclipse.ui.texteditor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.osgi.framework.Bundle;
 
@@ -119,6 +121,7 @@ import org.eclipse.jface.viewers.StructuredSelection;
 
 import org.eclipse.jface.text.AbstractInformationControlManager;
 import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.BlockTextSelection;
 import org.eclipse.jface.text.DefaultLineTracker;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
@@ -969,7 +972,7 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 				 * http://dev.eclipse.org/bugs/show_bug.cgi?id=11731
 				 * Will be removed when SWT has solved the problem.
 				 */
-				window.getShell().getDisplay().asyncExec(() -> handleActivation());
+				window.getShell().getDisplay().asyncExec(this::handleActivation);
 			}
 		}
 
@@ -1860,7 +1863,7 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 				return false;
 
 			return getInformationPresenter().openFocusedAnnotationHover(annotationHover, line);
-        }
+		}
 
 		/**
 		 * Returns the information presenter (creates it if necessary).
@@ -2227,6 +2230,26 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 	 */
 	public static final String PREFERENCE_WORD_WRAP_ENABLED= "wordwrap.enabled"; //$NON-NLS-1$
 
+	/**
+	 * A named preference to control the initial caret offset visibility on the status line.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.13
+	 */
+	public static final String PREFERENCE_SHOW_CARET_OFFSET = "showCaretOffset"; //$NON-NLS-1$
+
+	/**
+	 * A named preference to control the selection visibility on the status line.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 *
+	 * @since 3.13
+	 */
+	public static final String PREFERENCE_SHOW_SELECTION_SIZE = "showSelectionSize"; //$NON-NLS-1$
+
 	/** Menu id for the editor context menu. */
 	public static final String DEFAULT_EDITOR_CONTEXT_MENU_ID= "#EditorContext"; //$NON-NLS-1$
 	/** Menu id for the ruler context menu. */
@@ -2324,8 +2347,10 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 	private final PositionLabelValue fLineLabel= new PositionLabelValue();
 	/** The position label value of the current column. */
 	private final PositionLabelValue fColumnLabel= new PositionLabelValue();
+	/** The position label value of the current offset. */
+	private final PositionLabelValue fOffsetLabel = new PositionLabelValue();
 	/** The arguments for the position label pattern. */
-	private final Object[] fPositionLabelPatternArguments= new Object[] { fLineLabel, fColumnLabel };
+	private final Object[] fPositionLabelPatternArguments = new Object[] { fLineLabel, fColumnLabel, fOffsetLabel };
 	/**
 	 * The column support of this editor.
 	 * @since 3.3
@@ -2975,7 +3000,25 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 				private long fMouseUpDelta= 0;
 
 				private void triggerAction(String actionID, MouseEvent e) {
-					IAction action= getAction(actionID);
+					// ActionId can be prefixed with modifiers
+					StringBuilder newActionId = new StringBuilder(""); //$NON-NLS-1$
+					if ((e.stateMask & SWT.MOD1) > 0) {
+						newActionId.append("M1+"); //$NON-NLS-1$
+					}
+					if ((e.stateMask & SWT.MOD2) > 0) {
+						newActionId.append("M2+"); //$NON-NLS-1$
+					}
+					if ((e.stateMask & SWT.MOD3) > 0) {
+						newActionId.append("M3+"); //$NON-NLS-1$
+					}
+					newActionId.append(actionID);
+					IAction action = getAction(newActionId.toString());
+					// If action does not exist with specified
+					// modifiers+actionId, try to retrieve action with only
+					// actionId
+					if (action == null) {
+						action = getAction(actionID);
+					}
 					if (action != null) {
 						if (action instanceof IUpdate)
 							((IUpdate) action).update();
@@ -3156,16 +3199,16 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 		} catch (InvocationTargetException x) {
 			Throwable t= x.getTargetException();
 			if (t instanceof CoreException) {
-                /*
-                /* XXX: Remove unpacking of CoreException once the following bug is
-                 *		fixed: https://bugs.eclipse.org/bugs/show_bug.cgi?id=81640
-                 */
-                CoreException e= (CoreException)t;
-                IStatus status= e.getStatus();
-                if (status.getException() != null)
-                    throw new PartInitException(status);
-               	throw new PartInitException(new Status(status.getSeverity(), status.getPlugin(), status.getCode(), status.getMessage(), t));
-            }
+				/*
+				/* XXX: Remove unpacking of CoreException once the following bug is
+				 *		fixed: https://bugs.eclipse.org/bugs/show_bug.cgi?id=81640
+				 */
+				CoreException e= (CoreException)t;
+				IStatus status= e.getStatus();
+				if (status.getException() != null)
+					throw new PartInitException(status);
+				throw new PartInitException(new Status(status.getSeverity(), status.getPlugin(), status.getCode(), status.getMessage(), t));
+			}
 			throw new PartInitException(new Status(IStatus.ERROR, TextEditorPlugin.PLUGIN_ID, IStatus.OK, EditorMessages.Editor_error_init, t));
 		}
 	}
@@ -3477,7 +3520,7 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 		// Install drag source
 		final ISelectionProvider selectionProvider= viewer.getSelectionProvider();
 		final DragSource source= new DragSource(st, DND.DROP_COPY | DND.DROP_MOVE);
-		source.setTransfer(new Transfer[] {TextTransfer.getInstance()});
+		source.setTransfer(TextTransfer.getInstance());
 		source.addDragListener(new DragSourceAdapter() {
 			String fSelectedText;
 			Point fSelection;
@@ -3667,14 +3710,14 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 	}
 
 	/**
-     * Tells whether the editor input should be included when adding object
-     * contributions to this editor's context menu.
-     * <p>
-     * This implementation always returns <code>true</code>.
-     * </p>
-     *
+	 * Tells whether the editor input should be included when adding object
+	 * contributions to this editor's context menu.
+	 * <p>
+	 * This implementation always returns <code>true</code>.
+	 * </p>
+	 *
 	 * @return <code>true</code> if the editor input should be considered
-     * @since 3.2
+	 * @since 3.2
 	 */
 	protected boolean isEditorInputIncludedInContextMenu() {
 		return true;
@@ -4541,18 +4584,28 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 			// There is a separate handler for font preference changes
 			return;
 
-		if (PREFERENCE_COLOR_FOREGROUND.equals(property) || PREFERENCE_COLOR_FOREGROUND_SYSTEM_DEFAULT.equals(property) ||
-				PREFERENCE_COLOR_BACKGROUND.equals(property) ||	PREFERENCE_COLOR_BACKGROUND_SYSTEM_DEFAULT.equals(property) ||
-				PREFERENCE_COLOR_SELECTION_FOREGROUND.equals(property) || PREFERENCE_COLOR_SELECTION_FOREGROUND_SYSTEM_DEFAULT.equals(property) ||
-				PREFERENCE_COLOR_SELECTION_BACKGROUND.equals(property) ||	PREFERENCE_COLOR_SELECTION_BACKGROUND_SYSTEM_DEFAULT.equals(property))
-		{
-			initializeViewerColors(fSourceViewer);
-		} else if (PREFERENCE_COLOR_FIND_SCOPE.equals(property)) {
-			initializeFindScopeColor(fSourceViewer);
-		} else if (PREFERENCE_USE_CUSTOM_CARETS.equals(property)) {
-			updateCaret();
-		} else if (PREFERENCE_WIDE_CARET.equals(property)) {
-			updateCaret();
+		if (property != null) {
+			switch (property) {
+			case PREFERENCE_COLOR_FOREGROUND:
+			case PREFERENCE_COLOR_FOREGROUND_SYSTEM_DEFAULT:
+			case PREFERENCE_COLOR_BACKGROUND:
+			case PREFERENCE_COLOR_BACKGROUND_SYSTEM_DEFAULT:
+			case PREFERENCE_COLOR_SELECTION_FOREGROUND:
+			case PREFERENCE_COLOR_SELECTION_FOREGROUND_SYSTEM_DEFAULT:
+			case PREFERENCE_COLOR_SELECTION_BACKGROUND:
+			case PREFERENCE_COLOR_SELECTION_BACKGROUND_SYSTEM_DEFAULT:
+				initializeViewerColors(fSourceViewer);
+				break;
+			case PREFERENCE_COLOR_FIND_SCOPE:
+				initializeFindScopeColor(fSourceViewer);
+				break;
+			case PREFERENCE_USE_CUSTOM_CARETS:
+			case PREFERENCE_WIDE_CARET:
+				updateCaret();
+				break;
+			default:
+				break;
+			}
 		}
 
 		if (affectsTextPresentation(event))
@@ -4710,8 +4763,8 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 			msg= NLSUtility.format(EditorMessages.Editor_error_activated_outofsync_message, inputName);
 
 			if (MessageDialog.open(MessageDialog.QUESTION, shell, title, msg, SWT.NONE,
-					new String[] { EditorMessages.Editor_error_replace_button_label,
-							EditorMessages.Editor_error_dontreplace_button_label }) == 0) {
+					EditorMessages.Editor_error_replace_button_label,
+					EditorMessages.Editor_error_dontreplace_button_label) == 0) {
 
 				try {
 					if (provider instanceof IDocumentProviderExtension) {
@@ -6032,11 +6085,11 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 	 * @param newGroup the new group
 	 */
 	protected final void addGroup(IMenuManager menu, String existingGroup, String newGroup) {
- 		IMenuManager subMenu= menu.findMenuUsingPath(existingGroup);
- 		if (subMenu != null)
- 			subMenu.add(new Separator(newGroup));
- 		else
- 			menu.appendToGroup(existingGroup, new Separator(newGroup));
+		IMenuManager subMenu= menu.findMenuUsingPath(existingGroup);
+		if (subMenu != null)
+			subMenu.add(new Separator(newGroup));
+		else
+			menu.appendToGroup(existingGroup, new Separator(newGroup));
 	}
 
 	/**
@@ -6292,14 +6345,12 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 
 		StyledText widget= fSourceViewer.getTextWidget();
 		widget.setRedraw(false);
-		{
-			adjustHighlightRange(revealStart, revealLength);
-			fSourceViewer.revealRange(revealStart, revealLength);
+		adjustHighlightRange(revealStart, revealLength);
+		fSourceViewer.revealRange(revealStart, revealLength);
 
-			fSourceViewer.setSelectedRange(selectionStart, selectionLength);
+		fSourceViewer.setSelectedRange(selectionStart, selectionLength);
 
-			markInNavigationHistory();
-		}
+		markInNavigationHistory();
 		widget.setRedraw(true);
 	}
 
@@ -6578,7 +6629,7 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 			styledText.setCaret(fNonDefaultCaret);
 			fNonDefaultCaretImage= fNonDefaultCaret.getImage();
 		} else if (fInitialCaret != styledText.getCaret())
-		    styledText.setCaret(fInitialCaret);
+			styledText.setCaret(fInitialCaret);
 	}
 
 	private void disposeNonDefaultCaret() {
@@ -6645,11 +6696,14 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 
 			String text= null;
 
-			if (ITextEditorActionConstants.STATUS_CATEGORY_INPUT_POSITION.equals(category))
+			switch (category) {
+			case ITextEditorActionConstants.STATUS_CATEGORY_INPUT_POSITION:
 				text= getCursorPosition();
-			else if (ITextEditorActionConstants.STATUS_CATEGORY_ELEMENT_STATE.equals(category))
+				break;
+			case ITextEditorActionConstants.STATUS_CATEGORY_ELEMENT_STATE:
 				text= isEditorInputReadOnly() ? fReadOnlyLabel : fWritableLabel;
-			else if (ITextEditorActionConstants.STATUS_CATEGORY_INPUT_MODE.equals(category)) {
+				break;
+			case ITextEditorActionConstants.STATUS_CATEGORY_INPUT_MODE:
 				InsertMode mode= getInsertMode();
 				if (fIsOverwriting)
 					text= fOverwriteModeLabel;
@@ -6657,6 +6711,9 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 					text= fInsertModeLabel;
 				else if (SMART_INSERT == mode)
 					text= fSmartInsertModeLabel;
+				break;
+			default:
+				break;
 			}
 
 			field.setText(text == null ? fErrorLabel : text);
@@ -6690,7 +6747,6 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 		StyledText styledText= fSourceViewer.getTextWidget();
 		int caret= widgetOffset2ModelOffset(fSourceViewer, styledText.getCaretOffset());
 		IDocument document= fSourceViewer.getDocument();
-
 		if (document == null)
 			return fErrorLabel;
 
@@ -6709,8 +6765,32 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 
 			fLineLabel.fValue= line + 1;
 			fColumnLabel.fValue= column + 1;
-			return NLSUtility.format(fPositionLabelPattern, fPositionLabelPatternArguments);
-
+			boolean showSelection = getPreferenceStore().getBoolean(PREFERENCE_SHOW_SELECTION_SIZE);
+			boolean showOffset = getPreferenceStore().getBoolean(PREFERENCE_SHOW_CARET_OFFSET);
+			Point selectedRange = fSourceViewer.getSelectedRange();
+			int selectionLength = selectedRange != null ? selectedRange.y : 0;
+			showSelection = showSelection && selectionLength > 0;
+			fOffsetLabel.fValue = showSelection ? selectionLength : caret;
+			if (!showSelection) {
+				if (!showOffset) {
+					// shows line : column
+					return NLSUtility.format(fPositionLabelPattern, fPositionLabelPatternArguments);
+				}
+				// shows line : column : offset
+				return NLSUtility.format(EditorMessages.Editor_statusline_position_pattern_offset,
+						fPositionLabelPatternArguments);
+			}
+			// To show *right* selection, we first need to know if we are in the
+			// block selection mode or not
+			if (isBlockSelectionModeSupported() && isBlockSelectionModeEnabled()) {
+				BlockTextSelection block = (BlockTextSelection) fSourceViewer.getSelectionProvider().getSelection();
+				AtomicInteger sum = new AtomicInteger();
+				Arrays.asList(block.getRegions()).forEach(r -> sum.addAndGet(r.getLength()));
+				fOffsetLabel.fValue = sum.intValue();
+			}
+			// shows line : column [selection size]
+			return NLSUtility.format(EditorMessages.Editor_statusline_position_pattern_selection,
+					fPositionLabelPatternArguments);
 		} catch (BadLocationException x) {
 			return fErrorLabel;
 		}
@@ -7114,12 +7194,31 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 
 		@Override
 		public void doSave(IProgressMonitor monitor) throws CoreException {
-			fTextEditor.doSave(monitor);
+			try {
+				fTextEditor.doSave(monitor);
+			} catch (NullPointerException e) {
+				// This should not happen. Code added to handle the below bug.
+				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=550336
+				Bundle bundle = Platform.getBundle(PlatformUI.PLUGIN_ID);
+				ILog log = Platform.getLog(bundle);
+				Status status = new Status(IStatus.ERROR, TextEditorPlugin.PLUGIN_ID, null, e);
+				log.log(status);
+			}
 		}
 
 		@Override
 		public boolean isDirty() {
-			return fTextEditor.isDirty();
+			try {
+				return fTextEditor.isDirty();
+			} catch (NullPointerException e) {
+				// This should not happen. Code added to handle the below bug.
+				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=550336
+				Bundle bundle = Platform.getBundle(PlatformUI.PLUGIN_ID);
+				ILog log = Platform.getLog(bundle);
+				Status status = new Status(IStatus.ERROR, TextEditorPlugin.PLUGIN_ID, null, e);
+				log.log(status);
+				return false;
+			}
 		}
 
 		/*
@@ -7191,6 +7290,7 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 			TabsToSpacesConverter tabToSpacesConverter= new TabsToSpacesConverter();
 			tabToSpacesConverter.setLineTracker(new DefaultLineTracker());
 			tabToSpacesConverter.setNumberOfSpacesPerTab(tabWidth);
+			tabToSpacesConverter.setDeleteSpacesAsTab(isSpacesAsTabsDeletionEnabled());
 			((ITextViewerExtension7)fSourceViewer).setTabsToSpacesConverter(tabToSpacesConverter);
 			updateIndentPrefixes();
 		}
@@ -7221,6 +7321,22 @@ public abstract class AbstractTextEditor extends EditorPart implements ITextEdit
 	 * @since 3.3
 	 */
 	protected boolean isTabsToSpacesConversionEnabled() {
+		return false;
+	}
+
+	/**
+	 * Tells whether delete and backspace keys should remove multiple spaces as
+	 * if they were a tab. Only relevant when
+	 * {@link #isTabsToSpacesConversionEnabled()} returns true.
+	 *
+	 * <p>
+	 * Subclasses may override this method.
+	 * </p>
+	 *
+	 * @return <code>true</code> if spaces should be removed as tabs
+	 * @since 3.14
+	 */
+	protected boolean isSpacesAsTabsDeletionEnabled() {
 		return false;
 	}
 

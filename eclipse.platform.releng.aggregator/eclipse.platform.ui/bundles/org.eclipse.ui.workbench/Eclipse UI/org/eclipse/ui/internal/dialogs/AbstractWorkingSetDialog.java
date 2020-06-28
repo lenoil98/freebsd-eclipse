@@ -18,13 +18,14 @@ package org.eclipse.ui.internal.dialogs;
 import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.widgets.WidgetFactory;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.SWT;
@@ -87,9 +88,7 @@ public abstract class AbstractWorkingSetDialog extends SelectionDialog implement
 		super(parentShell);
 		if (workingSetIds != null) {
 			this.workingSetIds = new HashSet<>();
-			for (String workingSetId : workingSetIds) {
-				this.workingSetIds.add(workingSetId);
-			}
+			this.workingSetIds.addAll(Arrays.asList(workingSetIds));
 		}
 		this.canEdit = canEdit;
 	}
@@ -106,18 +105,15 @@ public abstract class AbstractWorkingSetDialog extends SelectionDialog implement
 	/**
 	 * Adds the modify buttons to the dialog.
 	 *
-	 * @param composite
-	 *            Composite to add the buttons to
+	 * @param composite Composite to add the buttons to
 	 */
 	protected void addModifyButtons(Composite composite) {
-		Composite buttonComposite = new Composite(composite, SWT.RIGHT);
 		GridLayout layout = new GridLayout();
 		layout.marginHeight = layout.marginWidth = 0;
 		layout.verticalSpacing = convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_SPACING);
-		buttonComposite.setLayout(layout);
 		GridData data = new GridData(GridData.VERTICAL_ALIGN_BEGINNING | GridData.GRAB_VERTICAL);
-		buttonComposite.setLayoutData(data);
-
+		Composite buttonComposite = WidgetFactory.composite(SWT.RIGHT).layout(layout).layoutData(data)
+				.create(composite);
 		newButton = createButton(buttonComposite, ID_NEW, WorkbenchMessages.WorkingSetSelectionDialog_newButton_label,
 				false);
 		newButton.addSelectionListener(widgetSelectedAdapter(e -> createWorkingSet()));
@@ -142,17 +138,15 @@ public abstract class AbstractWorkingSetDialog extends SelectionDialog implement
 	/**
 	 * Add the select/deselect buttons.
 	 *
-	 * @param composite
-	 *            Composite to add the buttons to
+	 * @param composite Composite to add the buttons to
 	 */
 	protected void addSelectionButtons(Composite composite) {
-		Composite buttonComposite = new Composite(composite, SWT.NONE);
 		GridLayout layout = new GridLayout(2, false);
 		layout.marginHeight = layout.marginWidth = 0;
 		layout.horizontalSpacing = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_SPACING);
-		buttonComposite.setLayout(layout);
-		GridData data = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
-		buttonComposite.setLayoutData(data);
+
+		Composite buttonComposite = WidgetFactory.composite(SWT.NONE).layout(layout)
+				.layoutData(new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING)).create(composite);
 
 		selectAllButton = createButton(buttonComposite, ID_SELECTALL, WorkbenchMessages.SelectionDialog_selectLabel,
 				false);
@@ -174,8 +168,7 @@ public abstract class AbstractWorkingSetDialog extends SelectionDialog implement
 	protected abstract void deselectAllSets();
 
 	/**
-	 * Opens a working set wizard for editing the currently selected working
-	 * set.
+	 * Opens a working set wizard for editing the currently selected working set.
 	 *
 	 * @see org.eclipse.ui.dialogs.IWorkingSetPage
 	 */
@@ -238,13 +231,12 @@ public abstract class AbstractWorkingSetDialog extends SelectionDialog implement
 	protected abstract List<IWorkingSet> getSelectedWorkingSets();
 
 	/**
-	 * Notifies the dialog that there has been a change to the sets available
-	 * for use. In other words, the user has either added, deleted or renamed a
-	 * set.
+	 * Notifies the dialog that there has been a change to the sets available for
+	 * use. In other words, the user has either added, deleted or renamed a set.
 	 * <p>
 	 * Subclasses should override, but should call
-	 * <code>super.availableWorkingSetsChanged</code> to update the selection
-	 * button enablements.
+	 * <code>super.availableWorkingSetsChanged</code> to update the selection button
+	 * enablements.
 	 * </p>
 	 */
 	protected void availableWorkingSetsChanged() {
@@ -259,16 +251,15 @@ public abstract class AbstractWorkingSetDialog extends SelectionDialog implement
 
 	/**
 	 * Notifies the dialog that the given working set was added to the sets
-	 * available for use. In other words, the user has just added the given
-	 * working set.
+	 * available for use. In other words, the user has just added the given working
+	 * set.
 	 *
 	 * <p>
 	 * This implementation doesn't do anything. Subclasses can override it to
 	 * auto-select the added working set.
 	 * </p>
 	 *
-	 * @param addedSet
-	 *            the added working set.
+	 * @param addedSet the added working set.
 	 */
 	protected void workingSetAdded(IWorkingSet addedSet) {
 	}
@@ -313,8 +304,8 @@ public abstract class AbstractWorkingSetDialog extends SelectionDialog implement
 	}
 
 	/**
-	 * Return the list of working sets that were removed from the MRU list
-	 * during the life of this dialog.
+	 * Return the list of working sets that were removed from the MRU list during
+	 * the life of this dialog.
 	 *
 	 * @return the working sets
 	 */
@@ -369,17 +360,14 @@ public abstract class AbstractWorkingSetDialog extends SelectionDialog implement
 	}
 
 	/**
-	 * Remove the working sets contained in the provided selection from the
-	 * working set manager.
+	 * Remove the working sets contained in the provided selection from the working
+	 * set manager.
 	 *
-	 * @param selection
-	 *            the sets
+	 * @param selection the sets
 	 */
 	protected void removeSelectedWorkingSets(List<IWorkingSet> selection) {
 		IWorkingSetManager manager = WorkbenchPlugin.getDefault().getWorkingSetManager();
-		Iterator iter = selection.iterator();
-		while (iter.hasNext()) {
-			IWorkingSet workingSet = (IWorkingSet) iter.next();
+		for (IWorkingSet workingSet : selection) {
 			if (getAddedWorkingSets().contains(workingSet)) {
 				getAddedWorkingSets().remove(workingSet);
 			} else {

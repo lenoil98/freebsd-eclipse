@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,7 +19,7 @@ public NSPrintInfo() {
 	super();
 }
 
-public NSPrintInfo(long /*int*/ id) {
+public NSPrintInfo(long id) {
 	super(id);
 }
 
@@ -27,21 +27,21 @@ public NSPrintInfo(id id) {
 	super(id);
 }
 
-public long /*int*/ PMPrintSession() {
+public long PMPrintSession() {
 	return OS.objc_msgSend(this.id, OS.sel_PMPrintSession);
 }
 
-public long /*int*/ PMPrintSettings() {
+public long PMPrintSettings() {
 	return OS.objc_msgSend(this.id, OS.sel_PMPrintSettings);
 }
 
 public static NSPrinter defaultPrinter() {
-	long /*int*/ result = OS.objc_msgSend(OS.class_NSPrintInfo, OS.sel_defaultPrinter);
+	long result = OS.objc_msgSend(OS.class_NSPrintInfo, OS.sel_defaultPrinter);
 	return result != 0 ? new NSPrinter(result) : null;
 }
 
 public NSMutableDictionary dictionary() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_dictionary);
+	long result = OS.objc_msgSend(this.id, OS.sel_dictionary);
 	return result != 0 ? new NSMutableDictionary(result) : null;
 }
 
@@ -51,17 +51,12 @@ public NSRect imageablePageBounds() {
 	return result;
 }
 
-public NSPrintInfo initWithDictionary(NSDictionary attributes) {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_initWithDictionary_, attributes != null ? attributes.id : 0);
-	return result == this.id ? this : (result != 0 ? new NSPrintInfo(result) : null);
-}
-
 public boolean isSelectionOnly() {
 	return OS.objc_msgSend_bool(this.id, OS.sel_isSelectionOnly);
 }
 
 public NSString jobDisposition() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_jobDisposition);
+	long result = OS.objc_msgSend(this.id, OS.sel_jobDisposition);
 	return result != 0 ? new NSString(result) : null;
 }
 
@@ -71,13 +66,8 @@ public NSSize paperSize() {
 	return result;
 }
 
-public NSMutableDictionary printSettings() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_printSettings);
-	return result != 0 ? new NSMutableDictionary(result) : null;
-}
-
 public NSPrinter printer() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_printer);
+	long result = OS.objc_msgSend(this.id, OS.sel_printer);
 	return result != 0 ? new NSPrinter(result) : null;
 }
 
@@ -98,7 +88,7 @@ public void setUpPrintOperationDefaultValues() {
 }
 
 public static NSPrintInfo sharedPrintInfo() {
-	long /*int*/ result = OS.objc_msgSend(OS.class_NSPrintInfo, OS.sel_sharedPrintInfo);
+	long result = OS.objc_msgSend(OS.class_NSPrintInfo, OS.sel_sharedPrintInfo);
 	return result != 0 ? new NSPrintInfo(result) : null;
 }
 

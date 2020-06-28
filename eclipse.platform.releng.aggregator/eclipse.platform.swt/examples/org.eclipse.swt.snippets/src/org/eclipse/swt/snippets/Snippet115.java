@@ -28,6 +28,7 @@ public class Snippet115 {
 public static void main (String [] args) {
 	Display display = new Display ();
 	Shell shell = new Shell (display);
+	shell.setText("Snippet 115");
 	shell.setLayout (new RowLayout (SWT.VERTICAL));
 	Composite c1 = new Composite (shell, SWT.BORDER | SWT.NO_RADIO_GROUP);
 	c1.setLayout (new RowLayout ());
@@ -35,11 +36,9 @@ public static void main (String [] args) {
 	c2.setLayout (new RowLayout ());
 	final Composite [] composites = new Composite [] {c1, c2};
 	Listener radioGroup = event -> {
-		for (int i=0; i<composites.length; i++) {
-			Composite composite = composites [i];
+		for (Composite composite : composites) {
 			Control [] children = composite.getChildren ();
-			for (int j=0; j<children.length; j++) {
-				Control child = children [j];
+			for (Control child : children) {
 				if (child instanceof Button) {
 					Button button1 = (Button) child;
 					if ((button1.getStyle () & SWT.RADIO) != 0) button1.setSelection (false);

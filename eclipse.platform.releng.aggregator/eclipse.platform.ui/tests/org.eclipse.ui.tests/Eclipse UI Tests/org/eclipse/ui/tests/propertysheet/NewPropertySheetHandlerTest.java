@@ -37,17 +37,21 @@ import org.eclipse.ui.part.ShowInContext;
 import org.eclipse.ui.tests.SelectionProviderView;
 import org.eclipse.ui.views.properties.PropertySheet;
 import org.eclipse.ui.views.properties.PropertyShowInContext;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * @since 3.5
  *
  */
+@RunWith(JUnit4.class)
 public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 
 	private TestNewPropertySheetHandler testNewPropertySheetHandler;
 
-	public NewPropertySheetHandlerTest(String testName) {
-		super(testName);
+	public NewPropertySheetHandlerTest() {
+		super(NewPropertySheetHandlerTest.class.getSimpleName());
 	}
 
 	@Override
@@ -64,9 +68,8 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 		IEvaluationContext evalContext = handlerService.getCurrentState();
 		Command command = commandService
 				.getCommand(TestNewPropertySheetHandler.ID);
-		ExecutionEvent executionEvent = new ExecutionEvent(command,
+		return new ExecutionEvent(command,
 				new HashMap<>(), null, evalContext);
-		return executionEvent;
 	}
 
 	/**
@@ -78,6 +81,7 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 	 * @throws PartInitException
 	 *             StructuredSelection.EMPTY,
 	 */
+	@Test
 	public final void testGetShowInContextFromPropertySheet()
 			throws ExecutionException, PartInitException {
 		activePage.showView(IPageLayout.ID_PROP_SHEET);
@@ -98,6 +102,7 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 	 * @throws ExecutionException
 	 * @throws PartInitException
 	 */
+	@Test
 	public final void testGetShowInContextFromAShowInSource()
 			throws ExecutionException, PartInitException {
 		IAdapterFactory factory = new IAdapterFactory() {
@@ -139,6 +144,7 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 	 * @throws ExecutionException
 	 * @throws PartInitException
 	 */
+	@Test
 	public final void testGetShowInContextWithNoShowInSource()
 			throws PartInitException, ExecutionException {
 		SelectionProviderView selectionProviderView = (SelectionProviderView) activePage
@@ -177,6 +183,7 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 	 * {@link org.eclipse.ui.tests.propertysheet.TestNewPropertySheetHandler#getShowInContext(org.eclipse.core.commands.ExecutionEvent)}
 	 * .
 	 */
+	@Test
 	public final void testGetShowInContextWithNoActivePart() {
 		hideAndAssertNoParts();
 
@@ -196,6 +203,7 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 	 * @throws ExecutionException
 	 * @throws PartInitException
 	 */
+	@Test
 	public final void testFindPropertySheetWithoutActivePart()
 			throws PartInitException, ExecutionException {
 		hideAndAssertNoParts();
@@ -217,6 +225,7 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 	 * @throws ExecutionException
 	 * @throws PartInitException
 	 */
+	@Test
 	public final void testFindPropertySheetWithOtherSheetActive()
 			throws PartInitException, ExecutionException {
 		propertySheet = (PropertySheet) activePage
@@ -240,6 +249,7 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 	 * @throws ExecutionException
 	 * @throws PartInitException
 	 */
+	@Test
 	public final void testFindPropertySheetWithSPVActive()
 			throws PartInitException, ExecutionException {
 		IViewPart showView = activePage.showView(IPageLayout.ID_PROP_SHEET);
@@ -263,6 +273,7 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 	 * @throws ExecutionException
 	 * @throws PartInitException
 	 */
+	@Test
 	public final void testFindPropertySheetWithPinnedPSandSPVActive()
 			throws PartInitException, ExecutionException {
 		PropertySheet sheet = (PropertySheet) activePage
@@ -288,9 +299,10 @@ public class NewPropertySheetHandlerTest extends AbstractPropertySheetTest {
 	 * @throws ExecutionException
 	 * @throws PartInitException
 	 */
+	@Test
 	public final void testFindPropertySheetWithUnpinnedPSandSPVActive()
 			throws PartInitException, ExecutionException {
-	    PropertySheetPerspectiveFactory.applyPerspective(activePage);
+		PropertySheetPerspectiveFactory.applyPerspective(activePage);
 
 		PropertySheet sheet = (PropertySheet) activePage
 				.showView(IPageLayout.ID_PROP_SHEET);

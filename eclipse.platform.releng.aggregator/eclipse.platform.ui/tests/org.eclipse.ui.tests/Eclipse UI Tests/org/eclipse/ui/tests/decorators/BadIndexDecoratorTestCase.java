@@ -16,55 +16,60 @@ package org.eclipse.ui.tests.decorators;
 
 import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.internal.decorators.DecoratorDefinition;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * @since 3.2
  *
  */
+@RunWith(JUnit4.class)
 public class BadIndexDecoratorTestCase extends DecoratorEnablementTestCase {
 
-	 /**
+	/**
 	 * @param testName
 	 */
-	public BadIndexDecoratorTestCase(String testName) {
-		super(testName);
+	public BadIndexDecoratorTestCase() {
+		super(BadIndexDecoratorTestCase.class.getSimpleName());
 	}
 
 	/**
-     * Sets up the hierarchy.
-     */
-    @Override
+	 * Sets up the hierarchy.
+	 */
+	@Override
 	protected void doSetUp() throws Exception {
-        super.doSetUp();
-        createTestFile();
-        showNav();
+		super.doSetUp();
+		createTestFile();
+		showNav();
 
-        WorkbenchPlugin.getDefault().getDecoratorManager().addListener(this);
+		WorkbenchPlugin.getDefault().getDecoratorManager().addListener(this);
 
-        DecoratorDefinition[] definitions = WorkbenchPlugin.getDefault()
-                .getDecoratorManager().getAllDecoratorDefinitions();
-        for (DecoratorDefinition definition2 : definitions) {
-            if (definition2.getId().equals(
-                    "org.eclipse.ui.tests.decorators.badIndexDecorator")) {
+		DecoratorDefinition[] definitions = WorkbenchPlugin.getDefault()
+				.getDecoratorManager().getAllDecoratorDefinitions();
+		for (DecoratorDefinition definition2 : definitions) {
+			if (definition2.getId().equals(
+					"org.eclipse.ui.tests.decorators.badIndexDecorator")) {
 				definition = definition2;
 			}
-        }
-    }
+		}
+	}
 
-    /**
-     * Turn off an on the bad index decorator without
-     * generating an exception.
-     */
-    public void testNoException() {
+	/**
+	 * Turn off an on the bad index decorator without
+	 * generating an exception.
+	 */
+	@Test
+	public void testNoException() {
 
-        updated = false;
-        getDecoratorManager().clearCaches();
-        definition.setEnabled(true);
-        getDecoratorManager().updateForEnablementChange();
-        definition.setEnabled(false);
-        getDecoratorManager().updateForEnablementChange();
-        updated = false;
+		updated = false;
+		getDecoratorManager().clearCaches();
+		definition.setEnabled(true);
+		getDecoratorManager().updateForEnablementChange();
+		definition.setEnabled(false);
+		getDecoratorManager().updateForEnablementChange();
+		updated = false;
 
-    }
+	}
 
 }

@@ -53,27 +53,18 @@ public class LaunchProxy extends AbstractModelProxy implements ILaunchesListener
 		fLaunch = launch;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.AbstractModelProxy#init(org.eclipse.debug.internal.ui.viewers.IPresentationContext)
-	 */
 	@Override
 	public void init(IPresentationContext context) {
 		super.init(context);
 		DebugPlugin.getDefault().getLaunchManager().addLaunchListener(this);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.provisional.AbstractModelProxy#installed(org.eclipse.jface.viewers.Viewer)
-	 */
 	@Override
 	public void installed(Viewer viewer) {
 		// install model proxies for existing children
 		installModelProxies();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.AbstractModelProxy#dispose()
-	 */
 	@Override
 	public void dispose() {
 		super.dispose();
@@ -82,46 +73,34 @@ public class LaunchProxy extends AbstractModelProxy implements ILaunchesListener
 		fLaunch = null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchesListener2#launchesTerminated(org.eclipse.debug.core.ILaunch[])
-	 */
 	@Override
 	public void launchesTerminated(ILaunch[] launches) {
-		for (int i = 0; i < launches.length; i++) {
-			if (launches[i] == fLaunch) {
+		for (ILaunch launch : launches) {
+			if (launch == fLaunch) {
 				fireDelta(IModelDelta.STATE | IModelDelta.CONTENT | IModelDelta.UNINSTALL);
 				break;
 			}
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchesListener#launchesRemoved(org.eclipse.debug.core.ILaunch[])
-	 */
 	@Override
 	public void launchesRemoved(ILaunch[] launches) {
-		for (int i = 0; i < launches.length; i++) {
-			if (launches[i] == fLaunch) {
+		for (ILaunch launch : launches) {
+			if (launch == fLaunch) {
 				fireDelta(IModelDelta.UNINSTALL);
 				break;
 			}
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchesListener#launchesAdded(org.eclipse.debug.core.ILaunch[])
-	 */
 	@Override
 	public void launchesAdded(ILaunch[] launches) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchesListener#launchesChanged(org.eclipse.debug.core.ILaunch[])
-	 */
 	@Override
 	public void launchesChanged(ILaunch[] launches) {
-		for (int i = 0; i < launches.length; i++) {
-			if (launches[i] == fLaunch) {
+		for (ILaunch launch : launches) {
+			if (launch == fLaunch) {
 				fireDelta(IModelDelta.STATE | IModelDelta.CONTENT);
 				installModelProxies();
 				break;
@@ -142,8 +121,7 @@ public class LaunchProxy extends AbstractModelProxy implements ILaunchesListener
 		synchronized(this) {
 			Object[] children = fLaunch.getChildren();
 			ModelDelta launchDelta = root.addNode(fLaunch, indexOf(fLaunch, allLaunches), IModelDelta.EXPAND, children.length);
-			for (int j = 0; j < children.length; j++) {
-				Object child = children[j];
+			for (Object child : children) {
 				if (fPrevChildren.add(child)) {
 					changes = true;
 					launchDelta.addNode(child, indexOf(child, children), IModelDelta.INSTALL, -1);
@@ -151,13 +129,13 @@ public class LaunchProxy extends AbstractModelProxy implements ILaunchesListener
 			}
 			List<Object> childrenList = Arrays.asList(children);
 			for (Iterator<Object> itr = fPrevChildren.iterator(); itr.hasNext();) {
-	            Object child = itr.next();
-	            if (!childrenList.contains(child)) {
-	                itr.remove();
-	                changes = true;
-	                launchDelta.addNode(child, IModelDelta.UNINSTALL);
-	            }
-	        }
+				Object child = itr.next();
+				if (!childrenList.contains(child)) {
+					itr.remove();
+					changes = true;
+					launchDelta.addNode(child, IModelDelta.UNINSTALL);
+				}
+			}
 		}
 		if (changes) {
 			fireModelChanged(root);

@@ -14,6 +14,7 @@
 package org.eclipse.debug.internal.ui.views.console;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.debug.core.DebugPlugin;
@@ -58,25 +59,19 @@ public class ConsoleTerminateAction extends Action implements IUpdate {
 		update();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.texteditor.IUpdate#update()
-	 */
 	@Override
 	public void update() {
 		IProcess process = fConsole.getProcess();
 		setEnabled(process.canTerminate());
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run() {
 		IProcess process = fConsole.getProcess();
 		List<ITerminate> targets = collectTargets(process);
 		targets.add(process);
-        DebugCommandService service = DebugCommandService.getService(fWindow);
-        service.executeCommand(ITerminateHandler.class, targets.toArray(), null);
+		DebugCommandService service = DebugCommandService.getService(fWindow);
+		service.executeCommand(ITerminateHandler.class, targets.toArray(), null);
 	}
 
 	/**
@@ -86,28 +81,22 @@ public class ConsoleTerminateAction extends Action implements IUpdate {
 	 * @return associated targets
 	 */
 	private List<ITerminate> collectTargets(IProcess process) {
-        ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
-        ILaunch[] launches = launchManager.getLaunches();
+		ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
 		List<ITerminate> targets = new ArrayList<>();
-        for (int i = 0; i < launches.length; i++) {
-            ILaunch launch = launches[i];
-            IProcess[] processes = launch.getProcesses();
-            for (int j = 0; j < processes.length; j++) {
-                IProcess process2 = processes[j];
-                if (process2.equals(process)) {
-                    IDebugTarget[] debugTargets = launch.getDebugTargets();
-                    for (int k = 0; k < debugTargets.length; k++) {
-                        targets.add(debugTargets[k]);
-                    }
-                    return targets; // all possible targets have been terminated for the launch.
-                }
-            }
-        }
-        return targets;
-    }
+		for (ILaunch launch : launchManager.getLaunches()) {
+			for (IProcess proc : launch.getProcesses()) {
+				if (proc.equals(process)) {
+					IDebugTarget[] debugTargets = launch.getDebugTargets();
+					Collections.addAll(targets, debugTargets);
+					return targets; // all possible targets have been terminated for the launch.
+				}
+			}
+		}
+		return targets;
+	}
 
-    public void dispose() {
-	    fConsole = null;
+	public void dispose() {
+		fConsole = null;
 	}
 
 }

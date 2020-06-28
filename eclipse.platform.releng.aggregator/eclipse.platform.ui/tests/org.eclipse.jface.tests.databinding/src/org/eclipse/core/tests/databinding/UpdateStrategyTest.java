@@ -24,8 +24,8 @@ import java.util.Date;
 
 import org.eclipse.core.databinding.UpdateValueStrategy;
 import org.eclipse.core.databinding.conversion.IConverter;
-import org.eclipse.core.databinding.conversion.NumberToStringConverter;
-import org.eclipse.core.databinding.conversion.StringToNumberConverter;
+import org.eclipse.core.databinding.conversion.text.NumberToStringConverter;
+import org.eclipse.core.databinding.conversion.text.StringToNumberConverter;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.observable.value.WritableValue;
 import org.eclipse.core.internal.databinding.conversion.DateToStringConverter;
@@ -308,27 +308,18 @@ public class UpdateStrategyTest extends AbstractDefaultRealmTestCase {
 	private void assertFromNumberToNumberConverter(Class<?> toType, Class<?> toCounterPrimitiveType,
 			Class<?> converterType) {
 
-		for (int i = 0; i < primitiveNumberTypes.length; i++) {
-			Class<?> primitiveType = primitiveNumberTypes[i];
-
-			if (!primitiveType.equals(toType)
-					&& !primitiveType.equals(toCounterPrimitiveType)) {
+		for (Class<?> primitiveType : primitiveNumberTypes) {
+			if (!primitiveType.equals(toType) && !primitiveType.equals(toCounterPrimitiveType)) {
 				assertDefaultConverter(primitiveType, toType, converterType);
 			} else if (!primitiveType.equals(toType)) {
-				assertDefaultConverter(primitiveType, toType,
-						IdentityConverter.class);
+				assertDefaultConverter(primitiveType, toType, IdentityConverter.class);
 			}
 		}
-
-		for (int i = 0; i < boxedNumberTypes.length; i++) {
-			Class<?> boxedType = boxedNumberTypes[i];
-
-			if (!boxedType.equals(toType)
-					&& !boxedType.equals(toCounterPrimitiveType)) {
+		for (Class<?> boxedType : boxedNumberTypes) {
+			if (!boxedType.equals(toType) && !boxedType.equals(toCounterPrimitiveType)) {
 				assertDefaultConverter(boxedType, toType, converterType);
 			} else if (!boxedType.equals(toType)) {
-				assertDefaultConverter(boxedType, toType,
-						IdentityConverter.class);
+				assertDefaultConverter(boxedType, toType, IdentityConverter.class);
 			}
 		}
 	}

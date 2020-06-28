@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2017 IBM Corporation and others.
+ * Copyright (c) 2009, 2020 IBM Corporation and others.
  *
  * This
  * program and the accompanying materials are made available under the terms of
@@ -8,7 +8,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors: IBM Corporation - initial API and implementation
  ******************************************************************************/
 package org.eclipse.equinox.p2.publisher;
@@ -71,7 +71,8 @@ public class AdviceFileParser {
 	private static final String UPDATE_DESCRIPTOR_PREFIX = "update."; //$NON-NLS-1$
 
 	public static final Version COMPATIBLE_VERSION = Version.createOSGi(1, 0, 0);
-	public static final VersionRange VERSION_TOLERANCE = new VersionRange(COMPATIBLE_VERSION, true, Version.createOSGi(2, 0, 0), false);
+	public static final VersionRange VERSION_TOLERANCE = new VersionRange(COMPATIBLE_VERSION, true,
+			Version.createOSGi(2, 0, 0), false);
 
 	private Map<String, String> adviceProperties = new HashMap<>();
 	private List<IProvidedCapability> adviceProvides = new ArrayList<>();
@@ -99,7 +100,7 @@ public class AdviceFileParser {
 			checkAdviceVersion(adviceVersion);
 
 		List<String> keys = new ArrayList<>(advice.keySet());
-		Collections.sort(keys);
+		keys.sort(null);
 
 		keysIterator = keys.iterator();
 		next();
@@ -157,12 +158,16 @@ public class AdviceFileParser {
 		String propertyValue = null;
 		while (current != null && current.startsWith(prefix)) {
 			String token = current.substring(prefix.length());
-			if (token.equals(NAME)) {
+			switch (token) {
+			case NAME:
 				propertyName = currentValue();
-			} else if (token.equals(VALUE)) {
+				break;
+			case VALUE:
 				propertyValue = currentValue();
-			} else {
-				// we ignore elements we do not understand
+				break;
+			// we ignore elements we do not understand
+			default:
+				break;
 			}
 			next();
 		}
@@ -173,35 +178,43 @@ public class AdviceFileParser {
 	private IUpdateDescriptor parseUpdateDescriptor(String prefix, String id) {
 		String name = id;
 		String description = null;
-		String range = "[0.0.0,$version$)"; //$NON-NLS-1$ 
+		String range = "[0.0.0,$version$)"; //$NON-NLS-1$
 		String severity = "0"; //$NON-NLS-1$
 		String match = null;
 
 		while (current != null && current.startsWith(prefix)) {
 			String token = current;
-			if (token.equals(UPDATE_MATCH_EXP)) {
+			switch (token) {
+			case UPDATE_MATCH_EXP:
 				match = currentValue();
-			} else if (token.equals(UPDATE_ID)) {
+				break;
+			case UPDATE_ID:
 				name = currentValue();
-			} else if (token.equals(UPDATE_DESCRIPTION)) {
+				break;
+			case UPDATE_DESCRIPTION:
 				description = currentValue();
-			} else if (token.equals(UPDATE_RANGE)) {
+				break;
+			case UPDATE_RANGE:
 				range = currentValue();
-			} else if (token.equals(UPDATE_SEVERITY)) {
+				break;
+			case UPDATE_SEVERITY:
 				severity = currentValue();
-			} else {
-				// ignore
+				break;
+			// ignore
+			default:
+				break;
 			}
 			next();
 		}
 
 		if (match != null) {
-			//When update.match is specified, versionRange and id are ignored
+			// When update.match is specified, versionRange and id are ignored
 			IExpression expr = ExpressionUtil.parse(substituteVersionAndQualifier(match));
 			IMatchExpression<IInstallableUnit> matchExpression = ExpressionUtil.getFactory().matchExpression(expr);
 			Collection<IMatchExpression<IInstallableUnit>> descriptors = new ArrayList<>(1);
 			descriptors.add(matchExpression);
-			return MetadataFactory.createUpdateDescriptor(descriptors, Integer.valueOf(severity), description, (URI) null);
+			return MetadataFactory.createUpdateDescriptor(descriptors, Integer.valueOf(severity), description,
+					(URI) null);
 		}
 		range = substituteVersionAndQualifier(range);
 		VersionRange versionRange = VersionRange.create(range);
@@ -224,14 +237,19 @@ public class AdviceFileParser {
 		Version capabilityVersion = null;
 		while (current != null && current.startsWith(prefix)) {
 			String token = current.substring(prefix.length());
-			if (token.equals(NAME)) {
+			switch (token) {
+			case NAME:
 				name = currentValue();
-			} else if (token.equals(NAMESPACE)) {
+				break;
+			case NAMESPACE:
 				namespace = currentValue();
-			} else if (token.equals(VERSION)) {
+				break;
+			case VERSION:
 				capabilityVersion = Version.parseVersion(substituteVersionAndQualifier(currentValue()));
-			} else {
-				// we ignore elements we do not understand
+				break;
+			// we ignore elements we do not understand
+			default:
+				break;
 			}
 			next();
 		}
@@ -266,28 +284,40 @@ public class AdviceFileParser {
 
 		while (current != null && current.startsWith(prefix)) {
 			String token = current.substring(prefix.length());
-			if (token.equals(GREEDY)) {
+			switch (token) {
+			case GREEDY:
 				greedy = Boolean.parseBoolean(currentValue());
-			} else if (token.equals(OPTIONAL)) {
+				break;
+			case OPTIONAL:
 				optional = Boolean.parseBoolean(currentValue());
-			} else if (token.equals(MULTIPLE)) {
+				break;
+			case MULTIPLE:
 				multiple = Boolean.parseBoolean(currentValue());
-			} else if (token.equals(FILTER)) {
+				break;
+			case FILTER:
 				filter = currentValue();
-			} else if (token.equals(NAME)) {
+				break;
+			case NAME:
 				name = currentValue();
-			} else if (token.equals(NAMESPACE)) {
+				break;
+			case NAMESPACE:
 				namespace = currentValue();
-			} else if (token.equals(RANGE)) {
+				break;
+			case RANGE:
 				range = VersionRange.create(substituteVersionAndQualifier(currentValue()));
-			} else if (token.equals(MIN)) {
+				break;
+			case MIN:
 				min = Integer.valueOf(currentValue()).intValue();
-			} else if (token.equals(MAX)) {
+				break;
+			case MAX:
 				max = Integer.valueOf(currentValue()).intValue();
-			} else if (token.equals(MATCH_EXP)) {
+				break;
+			case MATCH_EXP:
 				matchExp = currentValue();
-			} else {
-				// we ignore elements we do not understand
+				break;
+			// we ignore elements we do not understand
+			default:
+				break;
 			}
 			next();
 		}
@@ -299,7 +329,8 @@ public class AdviceFileParser {
 				capability = createRequirement(namespace, name, range, filter, optional, multiple, greedy);
 			}
 		} else {
-			//When a match expression is specified, namespace, name and versionRange are ignored
+			// When a match expression is specified, namespace, name and versionRange are
+			// ignored
 			if (optional && min == -1 && max == -1) {
 				min = 0;
 				max = 1;
@@ -311,19 +342,22 @@ public class AdviceFileParser {
 		}
 	}
 
-	protected IRequirement createRequirement(String requirement, String filter, int min, int max, boolean greedy, String description) {
+	protected IRequirement createRequirement(String requirement, String filter, int min, int max, boolean greedy,
+			String description) {
 		IExpression expr = ExpressionUtil.parse(substituteVersionAndQualifier(requirement));
 		IMatchExpression<IInstallableUnit> requirementExp = ExpressionUtil.getFactory().matchExpression(expr);
 		IMatchExpression<IInstallableUnit> filterExp = InstallableUnit.parseFilter(filter);
 		return MetadataFactory.createRequirement(requirementExp, filterExp, min, max, greedy, description);
 	}
 
-	protected IRequirement createRequirement(String namespace, String name, VersionRange range, String filter, int min, int max, boolean greedy) {
+	protected IRequirement createRequirement(String namespace, String name, VersionRange range, String filter, int min,
+			int max, boolean greedy) {
 		IMatchExpression<IInstallableUnit> filterExpression = InstallableUnit.parseFilter(filter);
 		return MetadataFactory.createRequirement(namespace, name, range, filterExpression, min, max, greedy);
 	}
 
-	protected IRequirement createRequirement(String namespace, String name, VersionRange range, String filter, boolean optional, boolean multiple, boolean greedy) {
+	protected IRequirement createRequirement(String namespace, String name, VersionRange range, String filter,
+			boolean optional, boolean multiple, boolean greedy) {
 		return MetadataFactory.createRequirement(namespace, name, range, filter, optional, multiple, greedy);
 	}
 
@@ -389,7 +423,7 @@ public class AdviceFileParser {
 		List<IRequirement> unitMetaRequirements = new ArrayList<>();
 		List<ILicense> unitLicenses = new ArrayList<>();
 		Map<String, ITouchpointInstruction> unitInstructions = new HashMap<>();
-		//		updatedescriptor ??
+		// updatedescriptor ??
 
 		while (current != null && current.startsWith(prefix)) {
 			String token = current.substring(prefix.length());
@@ -451,7 +485,8 @@ public class AdviceFileParser {
 			}
 		}
 
-		InstallableUnitDescription description = unitHostRequirements.isEmpty() ? new InstallableUnitDescription() : new InstallableUnitFragmentDescription();
+		InstallableUnitDescription description = unitHostRequirements.isEmpty() ? new InstallableUnitDescription()
+				: new InstallableUnitFragmentDescription();
 		description.setId(unitId);
 		description.setVersion(unitVersion);
 		description.setSingleton(unitSingleton);
@@ -465,10 +500,12 @@ public class AdviceFileParser {
 			}
 		}
 		if (unitTouchpointId != null)
-			description.setTouchpointType(MetadataFactory.createTouchpointType(unitTouchpointId, unitTouchpointVersion));
+			description
+					.setTouchpointType(MetadataFactory.createTouchpointType(unitTouchpointId, unitTouchpointVersion));
 
 		if (unitUpdateId != null)
-			description.setUpdateDescriptor(MetadataFactory.createUpdateDescriptor(unitUpdateId, unitUpdateRange, unitUpdateSeverity, unitUpdateDescription));
+			description.setUpdateDescriptor(MetadataFactory.createUpdateDescriptor(unitUpdateId, unitUpdateRange,
+					unitUpdateSeverity, unitUpdateDescription));
 
 		if (!unitLicenses.isEmpty())
 			description.setLicenses(unitLicenses.toArray(new ILicense[unitLicenses.size()]));
@@ -477,7 +514,8 @@ public class AdviceFileParser {
 			description.setArtifacts(unitArtifacts.toArray(new IArtifactKey[unitArtifacts.size()]));
 
 		if (!unitHostRequirements.isEmpty())
-			((InstallableUnitFragmentDescription) description).setHost(unitHostRequirements.toArray(new IRequirement[unitHostRequirements.size()]));
+			((InstallableUnitFragmentDescription) description)
+					.setHost(unitHostRequirements.toArray(new IRequirement[unitHostRequirements.size()]));
 
 		if (!unitProperties.isEmpty()) {
 			for (Entry<String, String> entry : unitProperties.entrySet()) {
@@ -492,7 +530,8 @@ public class AdviceFileParser {
 			description.setRequirements(unitRequires.toArray(new IRequirement[unitRequires.size()]));
 
 		if (!unitMetaRequirements.isEmpty())
-			description.setMetaRequirements(unitMetaRequirements.toArray(new IRequirement[unitMetaRequirements.size()]));
+			description
+					.setMetaRequirements(unitMetaRequirements.toArray(new IRequirement[unitMetaRequirements.size()]));
 
 		if (!unitInstructions.isEmpty())
 			description.addTouchpointData(MetadataFactory.createTouchpointData(unitInstructions));
@@ -550,14 +589,19 @@ public class AdviceFileParser {
 		Version artifactVersion = null;
 		while (current != null && current.startsWith(prefix)) {
 			String token = current.substring(prefix.length());
-			if (token.equals(CLASSIFIER)) {
+			switch (token) {
+			case CLASSIFIER:
 				artifactClassifier = currentValue();
-			} else if (token.equals(ID)) {
+				break;
+			case ID:
 				artifactId = currentValue();
-			} else if (token.equals(VERSION)) {
+				break;
+			case VERSION:
 				artifactVersion = Version.parseVersion(substituteVersionAndQualifier(currentValue()));
-			} else {
-				// we ignore elements we do not understand
+				break;
+			// we ignore elements we do not understand
+			default:
+				break;
 			}
 
 			next();
@@ -567,11 +611,11 @@ public class AdviceFileParser {
 	}
 
 	private String substituteVersionAndQualifier(String version) {
-		if (version.indexOf(VERSION_SUBSTITUTION) != -1) {
+		if (version.contains(VERSION_SUBSTITUTION)) {
 			version = replace(version, VERSION_SUBSTITUTION, hostVersion.toString());
 		}
 
-		if (version.indexOf(QUALIFIER_SUBSTITUTION) != -1) {
+		if (version.contains(QUALIFIER_SUBSTITUTION)) {
 			try {
 				String qualifier = PublisherHelper.toOSGiVersion(hostVersion).getQualifier();
 				if (qualifier == null)
@@ -593,7 +637,7 @@ public class AdviceFileParser {
 	public static String replace(String source, String from, String to) {
 		if (from.length() == 0)
 			return source;
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		int current = 0;
 		int pos = 0;
 		while (pos != -1) {

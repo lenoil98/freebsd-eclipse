@@ -27,6 +27,7 @@ public class Snippet358 {
 public static void main(String [] args) {
 	Display display = new Display();
 	Shell shell = new Shell(display);
+	shell.setText("Snippet 358");
 	shell.setLayout(new GridLayout ());
 	final Tree tree = new Tree(shell, SWT.NONE);
 	tree.setLayoutData(new GridData(200, 200));
@@ -46,12 +47,10 @@ public static void main(String [] args) {
 		treeBounds.width = treeSize.x;
 		treeBounds.height = treeSize.y;
 		TreeItem[] rootItems = tree.getItems();
-		for (int i = 0; i < rootItems.length; i++) {
-			TreeItem rootItem = rootItems[i];
+		for (TreeItem rootItem : rootItems) {
 			System.out.println(rootItem.getText() + " is at least partially visible? " + treeBounds.intersects(rootItem.getBounds()));
 			TreeItem[] childItems = rootItem.getItems();
-			for (int j = 0; j < childItems.length; j++) {
-				TreeItem childItem = childItems[j];
+			for (TreeItem childItem : childItems) {
 				System.out.println(childItem.getText() + " is at least partially visible? " + treeBounds.intersects(childItem.getBounds()));
 			}
 		}

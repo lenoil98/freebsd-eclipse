@@ -21,32 +21,23 @@ import org.eclipse.debug.core.model.IWatchpoint;
  */
 public class AccessWatchpointToggleAction extends ModifyWatchpointAction {
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.internal.ui.actions.ModifyWatchpointAction#isEnabled(org.eclipse.debug.core.model.IWatchpoint)
-     */
-    @Override
+	@Override
 	protected boolean isEnabled(IWatchpoint watchpoint) {
-        return watchpoint.supportsAccess();
-    }
+		return watchpoint.supportsAccess();
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.internal.ui.actions.ModifyWatchpointAction#toggleWatchpoint(org.eclipse.debug.core.model.IWatchpoint, boolean)
-     */
-    @Override
+	@Override
 	protected void toggleWatchpoint(IWatchpoint watchpoint, boolean b) throws CoreException {
-        watchpoint.setAccess(b);
-    }
+		watchpoint.setAccess(b);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.internal.ui.actions.ModifyWatchpointAction#isChecked(org.eclipse.debug.core.model.IWatchpoint)
-     */
-    @Override
+	@Override
 	protected boolean isChecked(IWatchpoint watchpoint) {
-        try {
-            return watchpoint.isAccess();
-        } catch (CoreException e) {
-        }
-        return false;
-    }
+		try {
+			return watchpoint.isAccess();
+		} catch (CoreException e) {
+		}
+		return false;
+	}
 
 }

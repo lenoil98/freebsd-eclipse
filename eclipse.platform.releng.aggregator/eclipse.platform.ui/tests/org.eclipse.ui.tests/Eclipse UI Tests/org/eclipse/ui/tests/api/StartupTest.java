@@ -15,29 +15,34 @@ package org.eclipse.ui.tests.api;
 
 import org.eclipse.ui.tests.TestPlugin;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class StartupTest extends UITestCase {
 
-    /**
-     * Construct an instance.
-     */
-    public StartupTest(String arg) {
-        super(arg);
-    }
+	/**
+	 * Construct an instance.
+	 */
+	public StartupTest() {
+		super(StartupTest.class.getSimpleName());
+	}
 
-    public void testStartup() {
-        assertTrue("Startup - explicit", StartupClass.getEarlyStartupCalled());
-        assertTrue("Startup - implicit", TestPlugin.getEarlyStartupCalled());
-        assertTrue("Startup - completed before tests", StartupClass.getEarlyStartupCompleted());
-    }
+	@Test
+	public void testStartup() {
+		assertTrue("Startup - explicit", StartupClass.getEarlyStartupCalled());
+		assertTrue("Startup - implicit", TestPlugin.getEarlyStartupCalled());
+		assertTrue("Startup - completed before tests", StartupClass.getEarlyStartupCompleted());
+	}
 
-    @Override
+	@Override
 	protected void doTearDown() throws Exception {
-        super.doTearDown();
-        // NOTE:  tearDown will run after each test.  Therefore, we
-        // only want one test in this suite (or the values set when
-        // this plugin started up will be lost).
-        StartupClass.reset();
-        TestPlugin.clearEarlyStartup();
-    }
+		super.doTearDown();
+		// NOTE:  tearDown will run after each test.  Therefore, we
+		// only want one test in this suite (or the values set when
+		// this plugin started up will be lost).
+		StartupClass.reset();
+		TestPlugin.clearEarlyStartup();
+	}
 }

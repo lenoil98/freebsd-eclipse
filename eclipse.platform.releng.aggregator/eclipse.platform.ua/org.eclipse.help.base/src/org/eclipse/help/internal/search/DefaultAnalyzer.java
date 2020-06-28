@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the
  * accompanying materials are made available under the terms of the Eclipse Public License 2.0
@@ -12,9 +12,11 @@
  *     IBM Corporation - initial API and implementation
  *     Alexander Kurtakov - Bug 460787
  *     Sopot Cela - Bug 466829
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.search;
 
+import java.text.BreakIterator;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
@@ -23,13 +25,9 @@ import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.help.internal.base.HelpBasePlugin;
-
-import com.ibm.icu.text.BreakIterator;
-
 
 /**
- * Lucene Analyzer. LowerCaseFilter->StandardTokenizer
+ * Lucene Analyzer. LowerCaseFilter-&gt;StandardTokenizer
  */
 public final class DefaultAnalyzer extends Analyzer {
 
@@ -46,8 +44,8 @@ public final class DefaultAnalyzer extends Analyzer {
 		// Check if the locale is supported by BreakIterator
 		// check here to do it only once.
 		Locale[] availableLocales = BreakIterator.getAvailableLocales();
-		for (int i = 0; i < availableLocales.length; i++) {
-			if (userLocale.equals(availableLocales[i])) {
+		for (Locale availableLocale : availableLocales) {
+			if (userLocale.equals(availableLocale)) {
 				locale = userLocale;
 				break;
 			}
@@ -55,8 +53,8 @@ public final class DefaultAnalyzer extends Analyzer {
 		if (locale == null && userLocale.getDisplayVariant().length() > 0) {
 			// Check if the locale without variant is supported by BreakIterator
 			Locale countryLocale = new Locale(userLocale.getLanguage(), userLocale.getCountry());
-			for (int i = 0; i < availableLocales.length; i++) {
-				if (countryLocale.equals(availableLocales[i])) {
+			for (Locale availableLocale : availableLocales) {
+				if (countryLocale.equals(availableLocale)) {
 					locale = countryLocale;
 					break;
 				}
@@ -65,8 +63,8 @@ public final class DefaultAnalyzer extends Analyzer {
 		if (locale == null && userLocale.getCountry().length() > 0) {
 			// Check if at least the language is supported by BreakIterator
 			Locale language = new Locale(userLocale.getLanguage(), ""); //$NON-NLS-1$
-			for (int i = 0; i < availableLocales.length; i++) {
-				if (language.equals(availableLocales[i])) {
+			for (Locale availableLocale : availableLocales) {
+				if (language.equals(availableLocale)) {
 					locale = language;
 					break;
 				}
@@ -75,8 +73,7 @@ public final class DefaultAnalyzer extends Analyzer {
 
 		if (locale == null) {
 			// Locale is not supported, will use en_US
-			HelpBasePlugin
-					.logError(
+			Platform.getLog(getClass()).error(
 							"Text Analyzer could not be created for locale {0}.  An analyzer that extends org.eclipse.help.luceneAnalyzer extension point needs to be plugged in for locale " //$NON-NLS-1$
 									+ localeString
 									+ ", or Java Virtual Machine needs to be upgraded to version with proper support for locale {0}.", //$NON-NLS-1$

@@ -28,28 +28,21 @@ import org.eclipse.core.commands.common.NotDefinedException;
 import org.eclipse.core.expressions.IEvaluationContext;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchCommandConstants;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
 import org.eclipse.ui.handlers.IHandlerService;
-import org.eclipse.ui.tests.harness.util.UITestCase;
 import org.junit.Test;
 
 /**
  * @since 3.5
  *
  */
-public class Bug417762Test extends UITestCase {
-
-	/**
-	 * @param testName
-	 */
-	public Bug417762Test(String testName) {
-		super(testName);
-	}
+public class Bug417762Test {
 
 	@Test
 	public void testAsReported() throws ExecutionException,
 			NotDefinedException, NotEnabledException, NotHandledException {
-		IWorkbench workbench = getWorkbench();
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		ICommandService commandService = workbench
 				.getService(ICommandService.class);
 		IHandlerService handlerService = workbench
@@ -69,7 +62,7 @@ public class Bug417762Test extends UITestCase {
 	@Test
 	public void testSuggestionUseExecuteCommand() throws ExecutionException,
 			NotDefinedException, NotEnabledException, NotHandledException {
-		IWorkbench workbench = getWorkbench();
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		ICommandService commandService = workbench
 				.getService(ICommandService.class);
 		IHandlerService handlerService = workbench
@@ -98,7 +91,7 @@ public class Bug417762Test extends UITestCase {
 	@Test
 	public void testSuggestionUseExecuteCommandInContext() throws ExecutionException,
 			NotDefinedException, NotEnabledException, NotHandledException {
-		IWorkbench workbench = getWorkbench();
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		ICommandService commandService = workbench
 				.getService(ICommandService.class);
 		IHandlerService handlerService = workbench
@@ -127,7 +120,7 @@ public class Bug417762Test extends UITestCase {
 	@Test
 	public void testSuggestionUseParameterizedCommandExecuteWithChecks() throws ExecutionException,
 			NotDefinedException, NotEnabledException, NotHandledException {
-		IWorkbench workbench = getWorkbench();
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		ICommandService commandService = workbench
 				.getService(ICommandService.class);
 		IHandlerService handlerService = workbench

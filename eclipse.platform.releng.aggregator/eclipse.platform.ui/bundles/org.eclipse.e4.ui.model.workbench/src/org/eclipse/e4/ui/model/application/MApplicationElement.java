@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *      IBM Corporation - initial API and implementation
  *      vogella GmbH - ongoing maintenance
@@ -26,6 +26,7 @@ import java.util.Map;
  * <p>
  * This is the root element for all UI Model elements, defining common attributes
  * to every element; the element's id as well as three general storage elements:
+ * </p>
  * <ul>
  * <li>Tags: This is a set of strings which can be used to classify a particular
  * element. Tags can be specified in element searches and can also be referred
@@ -35,7 +36,6 @@ import java.util.Map;
  * <li>TransientData: A string to object map which can be used to store runtime data
  * relevant to a particular model element.</li>
  * </ul>
- * </p>
  * @since 1.0
  * @noimplement This interface is not intended to be implemented by clients.
  * <!-- end-model-doc -->
@@ -62,8 +62,8 @@ public interface MApplicationElement {
 	 * <!-- begin-model-doc -->
 	 * <p>
 	 * <strong>Developers</strong>:
-	 * Add more detailed documentation by editing this comment in 
-	 * org.eclipse.ui.model.workbench/model/UIElements.ecore. 
+	 * Add more detailed documentation by editing this comment in
+	 * org.eclipse.ui.model.workbench/model/UIElements.ecore.
 	 * There is a GenModel/documentation node under each type and attribute.
 	 * </p>
 	 * <!-- end-model-doc -->

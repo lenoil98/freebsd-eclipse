@@ -16,6 +16,8 @@
  *******************************************************************************/
 package org.eclipse.e4.ui.workbench.renderers.swt;
 
+import static org.eclipse.jface.viewers.LabelProvider.createTextProvider;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -65,7 +67,6 @@ import org.eclipse.jface.util.Geometry;
 import org.eclipse.jface.util.Util;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
-import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.window.IShellProvider;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
@@ -469,8 +470,8 @@ public class WBWRenderer extends SWTPartRenderer {
 					Arrays.fill(response, Save.CANCEL);
 				} else {
 					Arrays.fill(response, Save.NO);
-					for (int i = 0; i < elements.length; i++) {
-						response[parts.indexOf(elements[i])] = Save.YES;
+					for (Object element : elements) {
+						response[parts.indexOf(element)] = Save.YES;
 					}
 				}
 				return response;
@@ -501,7 +502,7 @@ public class WBWRenderer extends SWTPartRenderer {
 		// no direct model parent, must be a detached window
 		if (window.getParent() == null) {
 			context.set(IWindowCloseHandler.class,
-					window1 -> closeDetachedWindow(window1));
+					this::closeDetachedWindow);
 		} else {
 			context.set(IWindowCloseHandler.class,
 					window1 -> {
@@ -732,7 +733,7 @@ public class WBWRenderer extends SWTPartRenderer {
 			}
 		});
 
-		 try {
+		try {
 			// Apply the correct shell state
 			if (shellME.getTags().contains(ShellMaximizedTag)) {
 				shell.setMaximized(true);
@@ -742,13 +743,13 @@ public class WBWRenderer extends SWTPartRenderer {
 
 			shell.layout(true);
 			forceLayout(shell);
-		 } finally {
+		} finally {
 			if (shellME.isVisible()) {
 				shell.open();
 			} else {
 				shell.setVisible(false);
 			}
-		 }
+		}
 	}
 
 	private Object[] promptForSave(Shell parentShell,
@@ -807,12 +808,8 @@ public class WBWRenderer extends SWTPartRenderer {
 			data.heightHint = 250;
 			data.widthHint = 300;
 			tableViewer.getControl().setLayoutData(data);
-			tableViewer.setLabelProvider(new LabelProvider() {
-				@Override
-				public String getText(Object element) {
-					return ((MPart) element).getLocalizedLabel();
-				}
-			});
+			tableViewer.setLabelProvider(createTextProvider(element -> ((MPart) element).getLocalizedLabel()));
+
 			tableViewer.setContentProvider(ArrayContentProvider.getInstance());
 			tableViewer.setInput(collection);
 			tableViewer.setAllChecked(true);

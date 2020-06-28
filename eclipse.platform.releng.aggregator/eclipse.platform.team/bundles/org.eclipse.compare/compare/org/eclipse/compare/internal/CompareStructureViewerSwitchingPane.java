@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Stefan Dirix (sdirix@eclipsesource.com) - Bug 473847: Minimum E4 Compatibility of Compare
  *******************************************************************************/
 package org.eclipse.compare.internal;
 
@@ -43,7 +44,6 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
-import org.eclipse.ui.PlatformUI;
 
 public class CompareStructureViewerSwitchingPane extends
 		CompareViewerSwitchingPane {
@@ -111,8 +111,7 @@ public class CompareStructureViewerSwitchingPane extends
 		toolBar = new ToolBar(composite, SWT.FLAT);
 		toolBar.setVisible(false); // hide by default
 		final ToolItem toolItem = new ToolItem(toolBar, SWT.PUSH, 0);
-		toolItem.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(
-				/* IWorkbenchGraphicConstants */"IMG_LCL_VIEW_MENU")); //$NON-NLS-1$
+		Utilities.setMenuImage(toolItem);
 		toolItem
 				.setToolTipText(CompareMessages.CompareStructureViewerSwitchingPane_switchButtonTooltip);
 		toolItem.addSelectionListener(new SelectionAdapter() {
@@ -171,10 +170,9 @@ public class CompareStructureViewerSwitchingPane extends
 		new MenuItem(menu, SWT.SEPARATOR);
 
 		// add others
-		for (int i = 0; i < vd.length; i++) {
-			final ViewerDescriptor vdi = vd[i];
+		for (ViewerDescriptor vdi : vd) {
 			label = vdi.getLabel();
-			if (label == null || label.equals("")) { //$NON-NLS-1$
+			if (label == null || label.isEmpty()) {
 				String l = CompareUIPlugin.getDefault().findStructureTypeNameOrType((ICompareInput) getInput(), vdi, getCompareConfiguration());
 				if (l == null)
 					// couldn't figure out the label, skip the viewer
@@ -227,9 +225,9 @@ public class CompareStructureViewerSwitchingPane extends
 	public void setText(String label) {
 		Composite c = (Composite) getTopLeft();
 		Control[] children = c.getChildren();
-		for (int i = 0; i < children.length; i++) {
-			if (children[i] instanceof CLabel) {
-				CLabel cl = (CLabel) children[i];
+		for (Control child : children) {
+			if (child instanceof CLabel) {
+				CLabel cl = (CLabel) child;
 				if (cl != null && !cl.isDisposed()) {
 					cl.setText(label);
 					c.layout();
@@ -243,9 +241,9 @@ public class CompareStructureViewerSwitchingPane extends
 	public void setImage(Image image) {
 		Composite c = (Composite) getTopLeft();
 		Control[] children = c.getChildren();
-		for (int i = 0; i < children.length; i++) {
-			if (children[i] instanceof CLabel) {
-				CLabel cl = (CLabel) children[i];
+		for (Control child : children) {
+			if (child instanceof CLabel) {
+				CLabel cl = (CLabel) child;
 				if (cl != null && !cl.isDisposed())
 					cl.setImage(image);
 				return;
@@ -257,9 +255,9 @@ public class CompareStructureViewerSwitchingPane extends
 	public void addMouseListener(MouseListener listener) {
 		Composite c = (Composite) getTopLeft();
 		Control[] children = c.getChildren();
-		for (int i = 0; i < children.length; i++) {
-			if (children[i] instanceof CLabel) {
-				CLabel cl = (CLabel) children[i];
+		for (Control child : children) {
+			if (child instanceof CLabel) {
+				CLabel cl = (CLabel) child;
 				cl.addMouseListener(listener);
 			}
 		}

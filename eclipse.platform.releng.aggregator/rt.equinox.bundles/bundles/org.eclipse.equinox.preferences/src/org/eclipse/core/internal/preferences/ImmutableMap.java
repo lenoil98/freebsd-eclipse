@@ -98,9 +98,11 @@ public abstract class ImmutableMap implements Cloneable {
 				return EMPTY_STRING_ARRAY;
 			String[] result = new String[elementSize];
 			int next = 0;
-			for (int i = 0; i < keyTable.length; i++)
-				if (keyTable[i] != null)
-					result[next++] = keyTable[i];
+			for (String key : keyTable) {
+				if (key != null) {
+					result[next++] = key;
+				}
+			}
 			return result;
 		}
 
@@ -279,10 +281,9 @@ public abstract class ImmutableMap implements Cloneable {
 
 	@Override
 	public String toString() {
-		StringBuffer s = new StringBuffer();
-		String[] keys = keys();
-		for (int i = 0, length = keys.length; i < length; i++)
-			s.append(keys[i]).append(" -> ").append(get(keys[i])).append("\n"); //$NON-NLS-2$ //$NON-NLS-1$
+		StringBuilder s = new StringBuilder();
+		for (String key : keys())
+			s.append(key).append(" -> ").append(get(key)).append("\n"); //$NON-NLS-2$ //$NON-NLS-1$
 		return s.toString();
 	}
 }

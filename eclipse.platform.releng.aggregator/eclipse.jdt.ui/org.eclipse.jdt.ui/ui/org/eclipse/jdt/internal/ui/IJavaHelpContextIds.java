@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -72,6 +72,8 @@ public interface IJavaHelpContextIds {
 	public static final String OPEN_INTERFACE_WIZARD_ACTION= 							PREFIX + "open_interface_wizard_action"; //$NON-NLS-1$
 	/** @since 3.2 */
 	public static final String OPEN_ENUM_WIZARD_ACTION= 							PREFIX + "open_enum_wizard_action"; //$NON-NLS-1$
+	/** @since 3.20 */
+	public static final String OPEN_RECORD_WIZARD_ACTION= 							PREFIX + "open_record_wizard_action"; //$NON-NLS-1$
 	/** @since 3.2 */
 	public static final String OPEN_ANNOTATION_WIZARD_ACTION= 							PREFIX + "open_annotation_wizard_action"; //$NON-NLS-1$
 
@@ -195,6 +197,7 @@ public interface IJavaHelpContextIds {
 	public static final String SELF_ENCAPSULATE_ACTION=									PREFIX + "self_encapsulate_action"; //$NON-NLS-1$
 	public static final String SHOW_IN_NAVIGATOR_VIEW_ACTION= 						PREFIX + "show_in_navigator_action"; //$NON-NLS-1$
 	public static final String SURROUND_WITH_TRY_CATCH_ACTION= 						PREFIX + "surround_with_try_catch_action"; //$NON-NLS-1$
+	public static final String SURROUND_WITH_TRY_WITH_RESOURCES_ACTION= 						PREFIX + "surround_with_try_with_resources_action"; //$NON-NLS-1$
 	public static final String OPEN_RESOURCE_ACTION= 										PREFIX + "open_resource_action"; //$NON-NLS-1$
 	public static final String SELECT_WORKING_SET_ACTION= 								PREFIX + "select_working_set_action"; //$NON-NLS-1$
 	public static final String STRUCTURED_SELECTION_HISTORY_ACTION= 				PREFIX + "structured_selection_history_action"; //$NON-NLS-1$
@@ -243,6 +246,7 @@ public interface IJavaHelpContextIds {
 	public static final String OPEN_HIERARCHY_ACTION= 						PREFIX + "open_hierarchy_action"; 	 //$NON-NLS-1$
 	public static final String TOGGLE_SMART_TYPING_ACTION= 					PREFIX + "toggle_smart_typing_action"; //$NON-NLS-1$
 	public static final String INDENT_ACTION= 								PREFIX + "indent_action"; //$NON-NLS-1$
+	public static final String ADD_TEXTBLOCK_ACTION= 						PREFIX + "add_textblock__action"; //$NON-NLS-1$
 
 	// Dialogs
 	public static final String MAINTYPE_SELECTION_DIALOG= PREFIX + "maintype_selection_dialog_context"; //$NON-NLS-1$
@@ -424,6 +428,12 @@ public interface IJavaHelpContextIds {
 	public static final String MOVE_MEMBERS_WIZARD_PAGE= 						PREFIX + "move_members_wizard_page_context"; //$NON-NLS-1$
 	public static final String MOVE_INNER_TO_TOP_WIZARD_PAGE= 				PREFIX + "move_inner_to_top_wizard_page_context"; //$NON-NLS-1$
 	public static final String PULL_UP_WIZARD_PAGE= 									PREFIX + "pull_up_wizard_page_context"; //$NON-NLS-1$
+
+	/**
+	 * @noreference This field is not intended to be referenced by clients.
+	 */
+	public static final String NEW_RECORD_WIZARD_PAGE= PREFIX + "new_record_wizard_page_context"; //$NON-NLS-1$
+
 	/**
 	 * @since 3.2
 	 */

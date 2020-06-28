@@ -47,7 +47,7 @@ import org.eclipse.swt.widgets.Widget;
  * <p>
  * As of 3.2, TreeViewer supports multiple equal elements (each with a
  * different parent chain) in the tree. This support requires that clients
- * enable the element map by calling <code>setUseHashLookup(true)</code>.
+ * enable the element map by calling <code>setUseHashlookup(true)</code>.
  * </p>
  * <p>
  * Content providers for tree viewers must implement either the
@@ -374,7 +374,7 @@ public class TreeViewer extends AbstractTreeViewer {
 	 *
 	 * @param elementOrTreePath
 	 *            the element, or tree path
-	 * @param count
+	 * @param count new number of children
 	 *
 	 * @since 3.2
 	 */
@@ -868,7 +868,7 @@ public class TreeViewer extends AbstractTreeViewer {
 
 	@Override
 	protected void handleTreeExpand(TreeEvent event) {
-	    // Fix for Bug 271744 because windows expanding doesn't fire a focus lost
+		// Fix for Bug 271744 because windows expanding doesn't fire a focus lost
 		if( isCellEditorActive() ) {
 			applyEditorValue();
 		}
@@ -923,7 +923,7 @@ public class TreeViewer extends AbstractTreeViewer {
 	 *
 	 * @param elementOrTreePath
 	 *            the element, or tree path
-	 * @param hasChildren
+	 * @param hasChildren the new state for the element or tree path
 	 *
 	 * @since 3.3
 	 */
@@ -954,8 +954,8 @@ public class TreeViewer extends AbstractTreeViewer {
 						}
 						item.clear(0, true);
 					} else {
-		                virtualLazyUpdateChildCount(item, item.getItemCount());
-		            }
+						virtualLazyUpdateChildCount(item, item.getItemCount());
+					}
 				}
 			}
 		});

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.core.manipulation.dom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -62,7 +61,6 @@ import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.PrimitiveType.Code;
-import org.eclipse.jdt.core.manipulation.TypeKinds;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.QualifiedType;
 import org.eclipse.jdt.core.dom.SimpleName;
@@ -73,6 +71,7 @@ import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SwitchCase;
+import org.eclipse.jdt.core.dom.SwitchExpression;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.TagElement;
 import org.eclipse.jdt.core.dom.TryStatement;
@@ -85,6 +84,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.WildcardType;
+import org.eclipse.jdt.core.manipulation.TypeKinds;
 
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
@@ -94,6 +94,8 @@ import org.eclipse.jdt.internal.corext.dom.ScopeAnalyzer;
 import org.eclipse.jdt.internal.corext.dom.TypeBindingVisitor;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 
+import org.eclipse.jdt.internal.ui.util.ASTHelper;
+
 /**
  * Helper methods to find AST nodes or bindings.
  */
@@ -101,7 +103,12 @@ import org.eclipse.jdt.internal.corext.util.JdtFlags;
 // @see org.eclipse.jdt.internal.ui.text.correction.ASTResolving (subclass of this one)
 public class ASTResolving {
 
+	@SuppressWarnings("nls")
 	public static ITypeBinding guessBindingForReference(ASTNode node) {
+		String i= "";
+		if ((((i))).equals(((("a"))))) {
+			return Bindings.normalizeTypeBinding(null);
+		}
 		return Bindings.normalizeTypeBinding(getPossibleReferenceBinding(node));
 	}
 
@@ -294,8 +301,15 @@ public class ASTResolving {
 			}
 			break;
 		case ASTNode.SWITCH_CASE:
-			if (node.equals(((SwitchCase) parent).getExpression()) && parent.getParent() instanceof SwitchStatement) {
-				return ((SwitchStatement) parent.getParent()).getExpression().resolveTypeBinding();
+			SwitchCase switchCase= (SwitchCase) parent;
+			if (node.equals(switchCase.getExpression()) || (ASTHelper.isSwitchCaseExpressionsSupportedInAST(switchCase.getAST()) && switchCase.expressions().contains(node))) {
+				ASTNode caseParent= switchCase.getParent();
+				if (caseParent instanceof SwitchStatement) {
+					return ((SwitchStatement) caseParent).getExpression().resolveTypeBinding();
+				}
+				if (caseParent instanceof SwitchExpression) {
+					return ((SwitchExpression) caseParent).getExpression().resolveTypeBinding();
+				}
 			}
 			break;
 		case ASTNode.ASSERT_STATEMENT:
@@ -475,8 +489,7 @@ public class ASTResolving {
 	}
 
 	public static ITypeBinding guessVariableType(List<VariableDeclarationFragment> fragments) {
-		for (Iterator<VariableDeclarationFragment> iter= fragments.iterator(); iter.hasNext();) {
-			VariableDeclarationFragment frag= iter.next();
+		for (VariableDeclarationFragment frag : fragments) {
 			if (frag.getInitializer() != null) {
 				return Bindings.normalizeTypeBinding(frag.getInitializer().resolveTypeBinding());
 			}
@@ -498,9 +511,7 @@ public class ASTResolving {
 
 		// test if selector is a object method
 		ITypeBinding binding= searchRoot.getAST().resolveWellKnownType("java.lang.Object"); //$NON-NLS-1$
-		IMethodBinding[] objectMethods= binding.getDeclaredMethods();
-		for (int i= 0; i < objectMethods.length; i++) {
-			IMethodBinding meth= objectMethods[i];
+		for (IMethodBinding meth : binding.getDeclaredMethods()) {
 			if (meth.getName().equals(selector) && meth.getParameterTypes().length == nArgs) {
 				return new ITypeBinding[] { binding };
 			}
@@ -526,9 +537,7 @@ public class ASTResolving {
 					return true;
 				}
 
-				IMethodBinding[] methods= node.getDeclaredMethods();
-				for (int i= 0; i < methods.length; i++) {
-					IMethodBinding meth= methods[i];
+				for (IMethodBinding meth : node.getDeclaredMethods()) {
 					if (meth.getName().equals(selector) && meth.getParameterTypes().length == nArgs) {
 						result.add(node);
 					}
@@ -661,7 +670,7 @@ public class ASTResolving {
 	/**
 	 * The node's enclosing method declaration or <code>null</code> if
 	 * the node is not inside a method and is not a method declaration itself.
-	 * 
+	 *
 	 * @param node a node
 	 * @return the enclosing method declaration or <code>null</code>
 	 */
@@ -680,11 +689,11 @@ public class ASTResolving {
 	/**
 	 * Returns the lambda expression node which encloses the given <code>node</code>, or
 	 * <code>null</code> if none.
-	 * 
+	 *
 	 * @param node the node
 	 * @return the enclosing lambda expression node for the given <code>node</code>, or
 	 *         <code>null</code> if none
-	 * 
+	 *
 	 * @since 3.10
 	 */
 	public static LambdaExpression findEnclosingLambdaExpression(ASTNode node) {
@@ -711,7 +720,7 @@ public class ASTResolving {
 	 * </p>
 	 * @param node the node
 	 * @param nodeType the node type constant from {@link ASTNode}
-	 * @return the closest ancestor of <code>node</code> (including <code>node</code> itself) 
+	 * @return the closest ancestor of <code>node</code> (including <code>node</code> itself)
 	 *         whose type is <code>nodeType</code>, or <code>null</code> if none
 	 */
 	public static ASTNode findAncestor(ASTNode node, int nodeType) {
@@ -865,12 +874,12 @@ public class ASTResolving {
 		} else if (type.isPrimitive()) {
 			Code code= PrimitiveType.toCode(type.getName());
 			boolean found= false;
-			for (int i= 0; i < CODE_ORDER.length; i++) {
+			for (Code order : CODE_ORDER) {
 				if (found) {
-					String typeName= CODE_ORDER[i].toString();
+					String typeName= order.toString();
 					res.add(ast.resolveWellKnownType(typeName));
 				}
-				if (code == CODE_ORDER[i]) {
+				if (code == order) {
 					found= true;
 				}
 			}
@@ -881,9 +890,7 @@ public class ASTResolving {
 	}
 
 	private static void collectRelaxingTypes(Collection<ITypeBinding> res, ITypeBinding type) {
-		ITypeBinding[] interfaces= type.getInterfaces();
-		for (int i= 0; i < interfaces.length; i++) {
-			ITypeBinding curr= interfaces[i];
+		for (ITypeBinding curr : type.getInterfaces()) {
 			if (!res.contains(curr)) {
 				res.add(curr);
 			}
@@ -945,18 +952,16 @@ public class ASTResolving {
 			return isVariableDefinedInContext(context, type);
 		}
 		if (type.isGenericType()) {
-			ITypeBinding[] typeParameters= type.getTypeParameters();
-			for (int i= 0; i < typeParameters.length; i++) {
-				if (!isUseableTypeInContext(typeParameters[i], context, noWildcards)) {
+			for (ITypeBinding typeParameter : type.getTypeParameters()) {
+				if (!isUseableTypeInContext(typeParameter, context, noWildcards)) {
 					return false;
 				}
 			}
 			return true;
 		}
 		if (type.isParameterizedType()) {
-			ITypeBinding[] typeArguments= type.getTypeArguments();
-			for (int i= 0; i < typeArguments.length; i++) {
-				if (!isUseableTypeInContext(typeArguments[i], context, noWildcards)) {
+			for (ITypeBinding typeArgument : type.getTypeArguments()) {
+				if (!isUseableTypeInContext(typeArgument, context, noWildcards)) {
 					return false;
 				}
 			}
@@ -985,7 +990,7 @@ public class ASTResolving {
 	 *     if false, the type of an expression x (R r= x)
 	 * @param ast the current AST
 	 * @return the normalized binding or null when only the 'null' binding
-	 * 
+	 *
 	 * @see Bindings#normalizeForDeclarationUse(ITypeBinding, AST)
 	 */
 	public static ITypeBinding normalizeWildcardType(ITypeBinding wildcardType, boolean isBindingToAssign, AST ast) {

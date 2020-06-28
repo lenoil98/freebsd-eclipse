@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2017 BestSolution.at and others.
+ * Copyright (c) 2010, 2019 BestSolution.at and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -58,6 +58,7 @@ import org.eclipse.jface.fieldassist.FieldDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.pde.internal.core.PDEExtensionRegistry;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Control;
 
 public class Util {
@@ -326,7 +327,7 @@ public class Util {
 						IResource r = rd.getResource();
 						if (r instanceof IFile)
 						{
-							if ("e4xmi".equals(((IFile) r).getFileExtension())) {
+							if ("e4xmi".equals(((IFile) r).getFileExtension())) { //$NON-NLS-1$
 								modelResourceSet = null;
 								break;
 							}
@@ -365,6 +366,40 @@ public class Util {
 	}
 
 	/**
+	 * Scales an {@link Image} to the the given size preserving the original aspect
+	 * ratio. If a new Image is created, the given Image is disposed.
+	 *
+	 * @param img     Original Image
+	 * @param maxSize Maximum size of the resulting image (maximum width if the
+	 *                original image has landscape format and vice versa)
+	 * @return Scaled Image or the original image if it is already smaller than
+	 *         maxSize x maxSize
+	 */
+	public static Image scaleImage(Image img, int maxSize) {
+		Image result = img;
+
+		double scale1 = (double) maxSize / img.getImageData().height;
+		final double scale2 = (double) maxSize / img.getImageData().width;
+		if (scale2 < scale1) {
+			scale1 = scale2;
+		}
+		if (scale1 < 1) {
+			int width = (int) (img.getImageData().width * scale1);
+			if (width == 0) {
+				width = 1;
+			}
+			int height = (int) (img.getImageData().height * scale1);
+			if (height == 0) {
+				height = 1;
+			}
+			Image img2 = new Image(img.getDevice(), img.getImageData().scaledTo(width, height));
+			img.dispose();
+			result = img2;
+		}
+		return result;
+	}
+
+	/**
 	 * This method checks if an EClass can be extended using a fragment. ie : it
 	 * must have containment EReference to a model object.
 	 *
@@ -384,23 +419,23 @@ public class Util {
 	}
 
 	/**
-	 * This method checks if an EReference can be considered in a model fragment
-	 * ie : it must be containment EReference to a model object.
+	 * This method checks if an EReference can be considered in a model fragment ie
+	 * : it must be containment EReference to a model object.
 	 *
-	 * @param c
+	 * @param r
 	 * @return true if the reference is containment and type is not a
 	 *         StringStringToMap or other no editable type
 	 */
 	public static boolean referenceIsModelFragmentCompliant(EReference r) {
 		String t = r.getEReferenceType().getName();
-		return (r.isContainment() && !t.equals("StringToStringMap") && !t.equals("StringToObjectMap"));
+		return (r.isContainment() && !t.equals("StringToStringMap") && !t.equals("StringToObjectMap")); //$NON-NLS-1$ //$NON-NLS-2$
 
 	}
 
 	public static final void addDecoration(Control control, Binding binding) {
 		final ControlDecoration dec = new ControlDecoration(control, SWT.BOTTOM);
 		binding.getValidationStatus().addValueChangeListener(event -> {
-			final IStatus s = (IStatus) event.getObservableValue().getValue();
+			final IStatus s = event.getObservableValue().getValue();
 			if (s.isOK()) {
 				dec.setDescriptionText(null);
 				dec.setImage(null);

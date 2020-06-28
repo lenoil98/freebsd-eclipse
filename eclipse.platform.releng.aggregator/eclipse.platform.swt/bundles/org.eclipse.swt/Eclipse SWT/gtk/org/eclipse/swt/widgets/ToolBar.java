@@ -52,11 +52,7 @@ public class ToolBar extends Composite {
 	ToolItem [] tabItemList;
 	ImageList imageList;
 	boolean hasChildFocus;
-	static Callback menuItemSelectedFunc;
-	static {
-		menuItemSelectedFunc = new Callback(ToolBar.class, "MenuItemSelectedProc", 2);
-		if (menuItemSelectedFunc.getAddress() == 0) SWT.error(SWT.ERROR_NO_MORE_CALLBACKS);
-	}
+	static Callback menuItemSelectedFunc = new Callback(ToolBar.class, "MenuItemSelectedProc", 2);
 	String cssBackground, cssForeground = " ";
 
 /**
@@ -220,12 +216,12 @@ Widget [] computeTabList () {
 }
 
 @Override
-long /*int*/ eventHandle () {
+long eventHandle () {
 	return fixedHandle;
 }
 
 @Override
-long /*int*/ enterExitHandle() {
+long enterExitHandle() {
 	return handle;
 }
 
@@ -245,10 +241,10 @@ void fixChildren (Shell newShell, Shell oldShell, Decorations newDecorations, De
 }
 
 @Override
-boolean forceFocus (long /*int*/ focusHandle) {
+boolean forceFocus (long focusHandle) {
 	int dir = GTK.GTK_DIR_TAB_FORWARD;
 	if ((style & SWT.MIRRORED) != 0) dir = GTK.GTK_DIR_TAB_BACKWARD;
-	long /*int*/ childHandle = handle;
+	long childHandle = handle;
 	if (currentFocusItem != null)  childHandle = currentFocusItem.handle;
 	/*
 	 * Feature in GTK. GtkToolBar takes care of navigating through
@@ -322,7 +318,7 @@ ToolItem getItemInPixels (Point point) {
  */
 public int getItemCount () {
 	checkWidget();
-	long /*int*/ list = GTK.gtk_container_get_children (handle);
+	long list = GTK.gtk_container_get_children (handle);
 	if (list == 0) return 0;
 	int itemCount = OS.g_list_length (list);
 	OS.g_list_free (list);
@@ -351,14 +347,14 @@ public ToolItem [] getItems () {
 }
 
 ToolItem [] _getItems () {
-	long /*int*/ list = GTK.gtk_container_get_children (handle);
+	long list = GTK.gtk_container_get_children (handle);
 	if (list == 0) return new ToolItem [0];
 	int count = OS.g_list_length (list);
 	ToolItem [] items = new ToolItem [count];
-	long /*int*/ originalList = list;
+	long originalList = list;
 	int index = 0;
 	for (int i=0; i<count; i++) {
-		long /*int*/ data = OS.g_list_data (list);
+		long data = OS.g_list_data (list);
 		Widget widget = display.getWidget (data);
 		if (widget != null) items [index++] = (ToolItem) widget;
 		list = OS.g_list_next (list);
@@ -387,7 +383,7 @@ ToolItem [] _getItems () {
  */
 public int getRowCount () {
 	checkWidget();
-	 /* On GTK, toolbars cannot wrap */
+	/* On GTK, toolbars cannot wrap */
 	return 1;
 }
 
@@ -410,14 +406,14 @@ ToolItem [] _getTabItemList () {
 }
 
 @Override
-long /*int*/ gtk_key_press_event (long /*int*/ widget, long /*int*/ eventPtr) {
+long gtk_key_press_event (long widget, long eventPtr) {
 	if (!hasFocus ()) return 0;
-	long /*int*/ result = super.gtk_key_press_event (widget, eventPtr);
+	long result = super.gtk_key_press_event (widget, eventPtr);
 	return result;
 }
 
 @Override
-long /*int*/ gtk_focus (long /*int*/ widget, long /*int*/ directionType) {
+long gtk_focus (long widget, long directionType) {
 	return 0;
 }
 
@@ -455,7 +451,7 @@ public int indexOf (ToolItem item) {
 	return -1;
 }
 
-static long /*int*/ MenuItemSelectedProc (long /*int*/ widget, long /*int*/	user_data) {
+static long MenuItemSelectedProc (long widget, long /*int*/	user_data) {
 	Display display = Display.getCurrent ();
 	ToolItem item = (ToolItem) display.getWidget (user_data);
 	if (item != null) {
@@ -464,7 +460,7 @@ static long /*int*/ MenuItemSelectedProc (long /*int*/ widget, long /*int*/	user
 	return 0;
 }
 
-long /*int*/ menuItemSelected (long /*int*/ widget, ToolItem item) {
+long menuItemSelected (long widget, ToolItem item) {
 	Event event = new Event ();
 	switch (item.style) {
 		case SWT.DROP_DOWN :
@@ -497,7 +493,7 @@ long /*int*/ menuItemSelected (long /*int*/ widget, ToolItem item) {
 boolean mnemonicHit (char key) {
 	ToolItem [] items = getItems ();
 	for (int i=0; i<items.length; i++) {
-		long /*int*/ labelHandle = items [i].labelHandle;
+		long labelHandle = items [i].labelHandle;
 		if (labelHandle != 0 && mnemonicHit (labelHandle, key)) return true;
 	}
 	return false;
@@ -507,7 +503,7 @@ boolean mnemonicHit (char key) {
 boolean mnemonicMatch (char key) {
 	ToolItem [] items = getItems ();
 	for (int i=0; i<items.length; i++) {
-		long /*int*/ labelHandle = items [i].labelHandle;
+		long labelHandle = items [i].labelHandle;
 		if (labelHandle != 0 && mnemonicMatch (labelHandle, key)) return true;
 	}
 	return false;
@@ -590,21 +586,16 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 }
 
 @Override
-void setBackgroundGdkRGBA (long /*int*/ context, long /*int*/ handle, GdkRGBA rgba) {
-	if (GTK.GTK_VERSION >= OS.VERSION(3, 14, 0)) {
-		// Form background string
-		String name = GTK.GTK_VERSION >= OS.VERSION(3, 20, 0) ? "toolbar" : "GtkToolbar";
-		String css = name + " {background-color: " + display.gtk_rgba_to_css_string(rgba) + "}";
+void setBackgroundGdkRGBA (long context, long handle, GdkRGBA rgba) {
+	// Form background string
+	String css = "toolbar {background-color: " + display.gtk_rgba_to_css_string(rgba) + "}";
 
-		// Cache background color
-		this.cssBackground = css;
+	// Cache background color
+	this.cssBackground = css;
 
-		// Apply background color and any foreground color
-		String finalCss = display.gtk_css_create_css_color_string (this.cssBackground, this.cssForeground, SWT.BACKGROUND);
-		gtk_css_provider_load_from_css(context, finalCss);
-	} else {
-		super.setBackgroundGdkRGBA(context, handle, rgba);
-	}
+	// Apply background color and any foreground color
+	String finalCss = display.gtk_css_create_css_color_string (this.cssBackground, this.cssForeground, SWT.BACKGROUND);
+	gtk_css_provider_load_from_css(context, finalCss);
 }
 
 @Override
@@ -614,37 +605,31 @@ void setParentBackground () {
 }
 
 @Override
-void setForegroundGdkRGBA (long /*int*/ handle, GdkRGBA rgba) {
-	if (GTK.GTK_VERSION >= OS.VERSION(3, 14, 0)) {
-		GdkRGBA toSet = new GdkRGBA();
-		if (rgba != null) {
-			toSet = rgba;
-		} else {
-			toSet = display.COLOR_WIDGET_FOREGROUND_RGBA;
-		}
-		long /*int*/ context = GTK.gtk_widget_get_style_context (handle);
-		// Form foreground string
-		String color = display.gtk_rgba_to_css_string(toSet);
-		String name = GTK.GTK_VERSION >= OS.VERSION(3, 20, 0) ? display.gtk_widget_class_get_css_name(handle)
-	    		: display.gtk_widget_get_name(handle);
-		GdkRGBA selectedForeground = display.COLOR_LIST_SELECTION_TEXT_RGBA;
-		String selection = GTK.GTK_VERSION >= OS.VERSION(3, 20, 0) ? " selection" : ":selected";
-		String css = "* {color: " + color + ";}\n"
-				+ name + selection + " {color: " + display.gtk_rgba_to_css_string(selectedForeground) + ";}";
-
-		// Cache foreground color
-		this.cssForeground = css;
-
-		// Apply foreground color and any cached background color
-		String finalCss = display.gtk_css_create_css_color_string (this.cssBackground, this.cssForeground, SWT.FOREGROUND);
-		gtk_css_provider_load_from_css(context, finalCss);
+void setForegroundGdkRGBA (long handle, GdkRGBA rgba) {
+	GdkRGBA toSet = new GdkRGBA();
+	if (rgba != null) {
+		toSet = rgba;
 	} else {
-		super.setForegroundGdkRGBA(handle, rgba);
+		toSet = display.COLOR_WIDGET_FOREGROUND_RGBA;
 	}
+	long context = GTK.gtk_widget_get_style_context (handle);
+	// Form foreground string
+	String color = display.gtk_rgba_to_css_string(toSet);
+	String name = display.gtk_widget_class_get_css_name(handle);
+	GdkRGBA selectedForeground = display.COLOR_LIST_SELECTION_TEXT_RGBA;
+	String css = "* {color: " + color + ";}\n"
+			+ name + " selection {color: " + display.gtk_rgba_to_css_string(selectedForeground) + ";}";
+
+	// Cache foreground color
+	this.cssForeground = css;
+
+	// Apply foreground color and any cached background color
+	String finalCss = display.gtk_css_create_css_color_string (this.cssBackground, this.cssForeground, SWT.FOREGROUND);
+	gtk_css_provider_load_from_css(context, finalCss);
 }
 
 @Override
-void setFontDescription (long /*int*/ font) {
+void setFontDescription (long font) {
 	super.setFontDescription (font);
 	ToolItem [] items = getItems ();
 	for (int i = 0; i < items.length; i++) {
@@ -659,7 +644,7 @@ void restoreBackground () {
 	 * setting the foreground color from overriding the background color
 	 * (or replacing it with black).
 	 */
-	long /*int*/ context = GTK.gtk_widget_get_style_context(handle);
+	long context = GTK.gtk_widget_get_style_context(handle);
 	String finalCss = display.gtk_css_create_css_color_string (this.cssBackground, this.cssForeground, SWT.BACKGROUND);
 	gtk_css_provider_load_from_css (context, finalCss);
 }

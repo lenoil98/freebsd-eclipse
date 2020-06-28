@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -56,6 +56,7 @@ public class SystemBundleActivator implements BundleActivator {
 	private SecurityManager setSecurityManagner;
 
 	@SuppressWarnings("deprecation")
+	@Override
 	public void start(BundleContext bc) throws Exception {
 		registrations.clear();
 		EquinoxBundle bundle = (EquinoxBundle) bc.getBundle();
@@ -183,6 +184,7 @@ public class SystemBundleActivator implements BundleActivator {
 		}
 	}
 
+	@Override
 	public void stop(BundleContext bc) throws Exception {
 		EquinoxBundle bundle = (EquinoxBundle) bc.getBundle();
 
@@ -218,9 +220,7 @@ public class SystemBundleActivator implements BundleActivator {
 
 	private void register(BundleContext context, String serviceClass, Object service, boolean setRanking, Dictionary<String, Object> properties) {
 		if (properties == null)
-			properties = new Hashtable<>(7);
-		Dictionary<String, String> headers = context.getBundle().getHeaders();
-		properties.put(Constants.SERVICE_VENDOR, headers.get(Constants.BUNDLE_VENDOR));
+			properties = new Hashtable<>();
 		if (setRanking) {
 			properties.put(Constants.SERVICE_RANKING, Integer.valueOf(Integer.MAX_VALUE));
 		}

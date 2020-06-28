@@ -32,9 +32,6 @@ public class DynamicVariable extends StringVariable implements IDynamicVariable 
 	 */
 	private IDynamicVariableResolver fResolver;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IContextVariable#getValue(java.lang.String)
-	 */
 	@Override
 	public String getValue(String argument) throws CoreException {
 		if (!supportsArgument()) {
@@ -56,9 +53,9 @@ public class DynamicVariable extends StringVariable implements IDynamicVariable 
 			}
 		}
 		try {
-		    return fResolver.resolveValue(this, argument);
+			return fResolver.resolveValue(this, argument);
 		} catch (RuntimeException e) {
-            throw new CoreException(new Status(IStatus.ERROR, VariablesPlugin.getUniqueIdentifier(), VariablesPlugin.INTERNAL_ERROR, NLS.bind("Error while evaluating variable {0}.",new String[]{getName()}), e)); //$NON-NLS-1$
+			throw new CoreException(new Status(IStatus.ERROR, VariablesPlugin.getUniqueIdentifier(), VariablesPlugin.INTERNAL_ERROR, NLS.bind("Error while evaluating variable {0}.",new String[]{getName()}), e)); //$NON-NLS-1$
 		}
 	}
 
@@ -73,9 +70,6 @@ public class DynamicVariable extends StringVariable implements IDynamicVariable 
 		super(name, description, configurationElement);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.variables.IDynamicVariable#supportsArgument()
-	 */
 	@Override
 	public boolean supportsArgument() {
 		String arg = getConfigurationElement().getAttribute("supportsArgument"); //$NON-NLS-1$

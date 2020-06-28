@@ -14,7 +14,6 @@
 package org.eclipse.ui.internal.about;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -48,17 +47,17 @@ public class AboutUtils {
 	/**
 	 * Scan the contents of the about text
 	 *
-	 * @param s
-	 * @return
+	 * @param aboutText
+	 * @return AboutItem
 	 */
-	public static AboutItem scan(String s) {
+	public static AboutItem scan(String aboutText) {
 		ArrayList<int[]> linkRanges = new ArrayList<>();
 		ArrayList<String> links = new ArrayList<>();
 
 		// slightly modified version of jface url detection
 		// see org.eclipse.jface.text.hyperlink.URLHyperlinkDetector
 
-		int urlSeparatorOffset = s.indexOf("://"); //$NON-NLS-1$
+		int urlSeparatorOffset = aboutText.indexOf("://"); //$NON-NLS-1$
 		while (urlSeparatorOffset >= 0) {
 
 			boolean startDoubleQuote = false;
@@ -70,24 +69,22 @@ public class AboutUtils {
 				urlOffset--;
 				ch = ' ';
 				if (urlOffset > -1)
-					ch = s.charAt(urlOffset);
+					ch = aboutText.charAt(urlOffset);
 				startDoubleQuote = ch == '"';
 			} while (Character.isUnicodeIdentifierStart(ch));
 			urlOffset++;
 
 			// Right to "://"
-			StringTokenizer tokenizer = new StringTokenizer(s
-					.substring(urlSeparatorOffset + 3), " \t\n\r\f<>", false); //$NON-NLS-1$
+			StringTokenizer tokenizer = new StringTokenizer(aboutText.substring(urlSeparatorOffset + 3), " \t\n\r\f<>", false); //$NON-NLS-1$
 			if (!tokenizer.hasMoreTokens())
 				return null;
 
-			int urlLength = tokenizer.nextToken().length() + 3
-					+ urlSeparatorOffset - urlOffset;
+			int urlLength = tokenizer.nextToken().length() + 3 + urlSeparatorOffset - urlOffset;
 
 			if (startDoubleQuote) {
 				int endOffset = -1;
-				int nextDoubleQuote = s.indexOf('"', urlOffset);
-				int nextWhitespace = s.indexOf(' ', urlOffset);
+				int nextDoubleQuote = aboutText.indexOf('"', urlOffset);
+				int nextWhitespace = aboutText.indexOf(' ', urlOffset);
 				if (nextDoubleQuote != -1 && nextWhitespace != -1)
 					endOffset = Math.min(nextDoubleQuote, nextWhitespace);
 				else if (nextDoubleQuote != -1)
@@ -99,23 +96,22 @@ public class AboutUtils {
 			}
 
 			linkRanges.add(new int[] { urlOffset, urlLength });
-			links.add(s.substring(urlOffset, urlOffset + urlLength));
+			links.add(aboutText.substring(urlOffset, urlOffset + urlLength));
 
-			urlSeparatorOffset = s.indexOf("://", urlOffset + urlLength + 1); //$NON-NLS-1$
+			urlSeparatorOffset = aboutText.indexOf("://", urlOffset + urlLength + 1); //$NON-NLS-1$
 		}
-		return new AboutItem(s, linkRanges.toArray(new int[linkRanges
-				.size()][2]), links
-				.toArray(new String[links.size()]));
+		return new AboutItem(aboutText, linkRanges.toArray(new int[linkRanges.size()][2]),
+				links.toArray(new String[links.size()]));
 	}
 
 	/**
-	 * Open a browser with the argument title on the argument url. If the url
-	 * refers to a resource within a bundle, then a temp copy of the file will
-	 * be extracted and opened.
+	 * Open a browser with the argument title on the argument url. If the url refers
+	 * to a resource within a bundle, then a temp copy of the file will be extracted
+	 * and opened.
 	 *
-	 * @see <code>Platform.asLocalUrl</code>
-	 * @param url
-	 *            The target url to be displayed, null will be safely ignored
+	 * @see Platform#asLocalURL(URL)
+	 *
+	 * @param url The target url to be displayed, null will be safely ignored
 	 * @return true if the url was successfully displayed and false otherwise
 	 */
 	public static boolean openBrowser(Shell shell, URL url) {
@@ -146,22 +142,18 @@ public class AboutUtils {
 			}
 			href = "file:///" + href; //$NON-NLS-1$
 		}
-		IWorkbenchBrowserSupport support = PlatformUI.getWorkbench()
-				.getBrowserSupport();
+		IWorkbenchBrowserSupport support = PlatformUI.getWorkbench().getBrowserSupport();
 		try {
 			IWebBrowser browser = support.getExternalBrowser();
 			browser.openURL(new URL(urlEncodeForSpaces(href.toCharArray())));
-		} catch (MalformedURLException e) {
-			openWebBrowserError(shell, href, e);
-		} catch (PartInitException e) {
+		} catch (MalformedURLException | PartInitException e) {
 			openWebBrowserError(shell, href, e);
 		}
 	}
 
 	/**
-	 * This method encodes the url, removes the spaces from the url and replaces
-	 * the same with <code>"%20"</code>. This method is required to fix Bug
-	 * 77840.
+	 * This method encodes the url, removes the spaces from the url and replaces the
+	 * same with <code>"%20"</code>. This method is required to fix Bug 77840.
 	 *
 	 * @since 3.0.2
 	 */
@@ -180,12 +172,9 @@ public class AboutUtils {
 	/**
 	 * display an error message
 	 */
-	private static void openWebBrowserError(Shell shell, final String href,
-			final Throwable t) {
+	private static void openWebBrowserError(Shell shell, final String href, final Throwable t) {
 		String title = WorkbenchMessages.ProductInfoDialog_errorTitle;
-		String msg = NLS.bind(
-				WorkbenchMessages.ProductInfoDialog_unableToOpenWebBrowser,
-				href);
+		String msg = NLS.bind(WorkbenchMessages.ProductInfoDialog_unableToOpenWebBrowser, href);
 		IStatus status = WorkbenchPlugin.getStatus(t);
 		StatusUtil.handleStatus(status, title + ": " + msg, StatusManager.SHOW, //$NON-NLS-1$
 				shell);
@@ -203,8 +192,7 @@ public class AboutUtils {
 			// See https://bugs.eclipse.org/bugs/show_bug.cgi?id=97783
 			File logCopy = makeDisplayCopy(log);
 			if (logCopy != null) {
-				AboutUtils.openLink(shell,
-						"file:///" + logCopy.getAbsolutePath()); //$NON-NLS-1$
+				AboutUtils.openLink(shell, "file:///" + logCopy.getAbsolutePath()); //$NON-NLS-1$
 				return;
 			}
 			// Couldn't make copy, try to open the original log.
@@ -220,10 +208,8 @@ public class AboutUtils {
 			AboutUtils.openLink(shell, "file:///" + filename); //$NON-NLS-1$
 			return;
 		}
-		MessageDialog.openInformation(shell,
-				WorkbenchMessages.AboutSystemDialog_noLogTitle, NLS.bind(
-						WorkbenchMessages.AboutSystemDialog_noLogMessage,
-						filename));
+		MessageDialog.openInformation(shell, WorkbenchMessages.AboutSystemDialog_noLogTitle,
+				NLS.bind(WorkbenchMessages.AboutSystemDialog_noLogMessage, filename));
 	}
 
 	/**
@@ -249,8 +235,6 @@ public class AboutUtils {
 			while ((count = in.read(buffer, 0, buffer.length)) > 0) {
 				out.write(buffer, 0, count);
 			}
-		} catch (FileNotFoundException e) {
-			return null;
 		} catch (IOException e) {
 			return null;
 		} finally {

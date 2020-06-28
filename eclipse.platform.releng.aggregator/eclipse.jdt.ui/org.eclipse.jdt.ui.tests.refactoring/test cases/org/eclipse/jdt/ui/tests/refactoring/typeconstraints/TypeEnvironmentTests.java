@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,11 +13,18 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.refactoring.typeconstraints;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
@@ -35,31 +42,25 @@ import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 import org.eclipse.jdt.internal.corext.dom.HierarchicalASTVisitor;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.refactoring.typeconstraints.types.TType;
 import org.eclipse.jdt.internal.corext.refactoring.typeconstraints.types.TypeEnvironment;
 
-import org.eclipse.jdt.ui.tests.refactoring.RefactoringTestSetup;
-import org.eclipse.jdt.ui.tests.refactoring.infra.AbstractCUTestCase;
+import org.eclipse.jdt.ui.tests.refactoring.infra.AbstractJunit4CUTestCase;
 import org.eclipse.jdt.ui.tests.refactoring.infra.RefactoringTestPlugin;
+import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;
 
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
-public class TypeEnvironmentTests extends AbstractCUTestCase {
+public class TypeEnvironmentTests extends AbstractJunit4CUTestCase {
 
 	private static final boolean BUG_83616_core_wildcard_assignments= true;
 
 	private static class MyTestSetup extends RefactoringTestSetup {
 		private static IPackageFragment fSignaturePackage;
 		private static IPackageFragment fGenericPackage;
-		public MyTestSetup(Test test) {
-			super(test);
-		}
+
 		@Override
-		protected void setUp() throws Exception {
-			super.setUp();
+		public void before() throws Exception {
+			super.before();
 			fSignaturePackage= getDefaultSourceFolder().createPackageFragment("signature", true, null);
 			fGenericPackage= getDefaultSourceFolder().createPackageFragment("generic", true, null);
 		}
@@ -91,7 +92,7 @@ public class TypeEnvironmentTests extends AbstractCUTestCase {
 				assertNotNull("Refactoring type is null", refType);
 				assertEquals("Not same name", type.getName(), refType.getName());
 				assertEquals("Not same signature", PrettySignatures.get(type), refType.getPrettySignature());
-				assertTrue("Not same type", refType == fTypeEnvironment.create(type));
+				assertSame("Not same type", refType, fTypeEnvironment.create(type));
 			}
 		}
 		@Override
@@ -117,13 +118,11 @@ public class TypeEnvironmentTests extends AbstractCUTestCase {
 		}
 		@Override
 		public void endVisit(CompilationUnit node) {
-			for (Iterator<ITypeBinding> iter= fResult.iterator(); iter.hasNext();) {
-				ITypeBinding binding= iter.next();
+			for (ITypeBinding binding : fResult) {
 				if (binding.isParameterizedType()) {
-					ITypeBinding[] args= binding.getTypeArguments();
-					for (int i= 0; i < args.length; i++) {
-						if (args[i].isWildcardType()) {
-							fWildcards.add(args[i]);
+					for (ITypeBinding arg : binding.getTypeArguments()) {
+						if (arg.isWildcardType()) {
+							fWildcards.add(arg);
 						}
 					}
 				}
@@ -150,9 +149,7 @@ public class TypeEnvironmentTests extends AbstractCUTestCase {
 		private void collectTypeArgumentBindings(ITypeBinding typeBinding, List<ITypeBinding> result) {
 			if (! typeBinding.isParameterizedType())
 				return;
-			ITypeBinding[] typeArguments= typeBinding.getTypeArguments();
-			for (int i= 0; i < typeArguments.length; i++) {
-				ITypeBinding typeArgument= typeArguments[i];
+			for (ITypeBinding typeArgument : typeBinding.getTypeArguments()) {
 				if (BUG_83616_core_wildcard_assignments && typeArgument.isParameterizedType() && typeArgument.getTypeArguments()[0].isWildcardType())
 					continue;
 				result.add(typeArgument);
@@ -164,18 +161,8 @@ public class TypeEnvironmentTests extends AbstractCUTestCase {
 		}
 	}
 
-
-	public TypeEnvironmentTests(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return new MyTestSetup(new TestSuite(TypeEnvironmentTests.class));
-	}
-
-	public static Test setUpTest(Test someTest) {
-		return new MyTestSetup(someTest);
-	}
+	@Rule
+	public MyTestSetup mts=new MyTestSetup();
 
 	@Override
 	protected InputStream getFileInputStream(String fileName) throws IOException {
@@ -208,30 +195,37 @@ public class TypeEnvironmentTests extends AbstractCUTestCase {
 		createAST(MyTestSetup.getSignaturePackage()).accept(new CreationChecker());
 	}
 
+	@Test
 	public void testArrays() throws Exception {
 		performCreationTest();
 	}
 
+	@Test
 	public void testStandardTypes() throws Exception {
 		performCreationTest();
 	}
 
+	@Test
 	public void testRawTypes() throws Exception {
 		performCreationTest();
 	}
 
+	@Test
 	public void testGenericTypes() throws Exception {
 		performCreationTest();
 	}
 
+	@Test
 	public void testWildcardTypes() throws Exception {
 		performCreationTest();
 	}
 
+	@Test
 	public void testPrimitiveTypes() throws Exception {
 		performCreationTest();
 	}
 
+	@Test
 	public void testTypeVariables() throws Exception {
 		performCreationTest();
 	}
@@ -257,7 +251,7 @@ public class TypeEnvironmentTests extends AbstractCUTestCase {
 			testFlags(bindings[i], types[i]);
 			assertTrue("Not same erasure", types[i].getErasure().isEqualTo(bindings[i].getErasure()));
 			assertTrue("Not same type declaration", types[i].getTypeDeclaration().isEqualTo(bindings[i].getTypeDeclaration()));
-			assertTrue("Not same type", types[i] == environment.create(bindings[i]));
+			assertSame("Not same type", types[i], environment.create(bindings[i]));
 
 		}
 		for (int o= 0; o < bindings.length; o++) {
@@ -267,7 +261,7 @@ public class TypeEnvironmentTests extends AbstractCUTestCase {
 		}
 		TypeEnvironment secondEnvironment= new TypeEnvironment();
 		for (int i= 0; i < bindings.length; i++) {
-			assertTrue("Equal to second environment", types[i].equals(secondEnvironment.create(bindings[i])));
+			assertEquals("Equal to second environment", types[i], secondEnvironment.create(bindings[i]));
 		}
 		ITypeBinding[] restoredBindings= TypeEnvironment.createTypeBindings(types, RefactoringTestSetup.getProject());
 		assertEquals("Not same length", restoredBindings.length, bindings.length);
@@ -323,18 +317,22 @@ public class TypeEnvironmentTests extends AbstractCUTestCase {
 		assertEquals("Different anonymous flag", binding.isAnonymous(), type.isAnonymous());
 	}
 
+	@Test
 	public void testStandardAssignments() throws Exception {
 		performGenericAssignmentTest();
 	}
 
+	@Test
 	public void testWildcardAssignments() throws Exception {
 		performGenericAssignmentTest();
 	}
 
+	@Test
 	public void testTypeVariableAssignments() throws Exception {
 		performGenericAssignmentTest();
 	}
 
+	@Test
 	public void testCaptureAssignments() throws Exception {
 		ASTNode node= createAST(MyTestSetup.getGenericPackage());
 		CaptureTypeBindingCollector collector= new CaptureTypeBindingCollector();

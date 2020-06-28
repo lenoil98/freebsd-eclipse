@@ -177,18 +177,10 @@ public class TreeAndListGroup implements ISelectionChangedListener {
 		listViewer.setContentProvider(listContentProvider);
 		listViewer.setLabelProvider(listLabelProvider);
 		listViewer.setComparator(new ResourceComparator(ResourceComparator.NAME));
-		listViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				notifySelectionListeners(event);
-			}
-		});
-		listViewer.addDoubleClickListener(new IDoubleClickListener() {
-			@Override
-			public void doubleClick(DoubleClickEvent event) {
-				if (!event.getSelection().isEmpty()) {
-					notifyDoubleClickListeners(event);
-				}
+		listViewer.addSelectionChangedListener(event -> notifySelectionListeners(event));
+		listViewer.addDoubleClickListener(event -> {
+			if (!event.getSelection().isEmpty()) {
+				notifyDoubleClickListeners(event);
 			}
 		});
 	}
@@ -206,7 +198,7 @@ public class TreeAndListGroup implements ISelectionChangedListener {
 		treeViewer = new TreeViewer(tree);
 		treeViewer.setContentProvider(treeContentProvider);
 		treeViewer.setLabelProvider(treeLabelProvider);
-        treeViewer.setComparator(new ResourceComparator(ResourceComparator.NAME));
+		treeViewer.setComparator(new ResourceComparator(ResourceComparator.NAME));
 		treeViewer.addSelectionChangedListener(this);
 	}
 

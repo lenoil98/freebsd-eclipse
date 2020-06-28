@@ -109,15 +109,19 @@ public class JUnitContainerInitializer extends ClasspathContainerInitializer {
 		IClasspathEntry entry= null;
 		IClasspathEntry entry2= null;
 		String version= containerPath.segment(1);
-		if (JUNIT3_8_1.equals(version) || JUNIT3.equals(version)) {
+		if (null != version) switch (version) {
+		case JUNIT3_8_1:
+		case JUNIT3:
 			entry= BuildPathSupport.getJUnit3LibraryEntry();
 			if (entry == null) { // JUnit 4 includes most of JUnit 3, so let's cheat
 				entry= BuildPathSupport.getJUnit4as3LibraryEntry();
 			}
-		} else if (JUNIT4.equals(version)) {
+			break;
+		case JUNIT4:
 			entry= BuildPathSupport.getJUnit4LibraryEntry();
 			entry2= BuildPathSupport.getHamcrestCoreLibraryEntry();
-		} else if (JUNIT5.equals(version)) {
+			break;
+		case JUNIT5:
 			entriesList.add(BuildPathSupport.getJUnitJupiterApiLibraryEntry());
 			entriesList.add(BuildPathSupport.getJUnitJupiterEngineLibraryEntry());
 			entriesList.add(BuildPathSupport.getJUnitJupiterMigrationSupportLibraryEntry());
@@ -132,6 +136,9 @@ public class JUnitContainerInitializer extends ClasspathContainerInitializer {
 			entriesList.add(BuildPathSupport.getJUnitApiGuardianLibraryEntry());
 			entriesList.add(BuildPathSupport.getJUnit4LibraryEntry());
 			entriesList.add(BuildPathSupport.getHamcrestCoreLibraryEntry());
+			break;
+		default:
+			break;
 		}
 		IClasspathEntry[] entries;
 		if (!entriesList.isEmpty() ) {
@@ -178,16 +185,14 @@ public class JUnitContainerInitializer extends ClasspathContainerInitializer {
 	@Override
 	public void requestClasspathContainerUpdate(IPath containerPath, IJavaProject project, IClasspathContainer containerSuggestion) throws CoreException {
 		IEclipsePreferences preferences= InstanceScope.INSTANCE.getNode(JUnitCorePlugin.CORE_PLUGIN_ID);
-		
+
 		IClasspathEntry[] entries= containerSuggestion.getClasspathEntries();
 		if (entries.length >= 1 && isValidJUnitContainerPath(containerPath)) {
 			String version= containerPath.segment(1);
-			
+
 			// only modifiable entry is Javadoc location
-			for (int i= 0; i < entries.length; i++) {
-				IClasspathEntry entry= entries[i];
+			for (IClasspathEntry entry : entries) {
 				String preferenceKey= getPreferenceKey(entry, version);
-				
 				IClasspathAttribute[] extraAttributes= entry.getExtraAttributes();
 				if (extraAttributes.length == 0) {
 					// Revert to default
@@ -195,16 +200,15 @@ public class JUnitContainerInitializer extends ClasspathContainerInitializer {
 					if (!defaultValue.equals(preferences.get(preferenceKey, defaultValue))) {
 						preferences.put(preferenceKey, defaultValue);
 					}
-					
-					/* 
-					 * The following would be correct, but would not allow to revert to the default.
-					 * There's no concept of "default value" for a classpath attribute, see
-					 * org.eclipse.jdt.internal.ui.preferences.JavadocConfigurationBlock.performDefaults()
-					 */
+
+					/*
+					* The following would be correct, but would not allow to revert to the default.
+					* There's no concept of "default value" for a classpath attribute, see
+					* org.eclipse.jdt.internal.ui.preferences.JavadocConfigurationBlock.performDefaults()
+					*/
 					// preferenceStore.setValue(preferenceKey, "");
 				} else {
-					for (int j= 0; j < extraAttributes.length; j++) {
-						IClasspathAttribute attrib= extraAttributes[j];
+					for (IClasspathAttribute attrib : extraAttributes) {
 						if (attrib.getName().equals(IClasspathAttribute.JAVADOC_LOCATION_ATTRIBUTE_NAME)) {
 							if (preferenceKey != null) {
 								preferences.put(preferenceKey, attrib.getValue());
@@ -224,37 +228,37 @@ public class JUnitContainerInitializer extends ClasspathContainerInitializer {
 		} else {
 			String lastSegment= entry.getPath().lastSegment();
 			if (JUNIT4.equals(version)) {
-				if (lastSegment.indexOf("junit") != -1) { //$NON-NLS-1$
+				if (lastSegment.contains("junit")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT4_JAVADOC;
 				} else {
 					return JUnitPreferencesConstants.HAMCREST_CORE_JAVADOC;
 				}
 			} else if (JUNIT5.equals(version)) {
-				if (lastSegment.indexOf("jupiter.api") != -1) { //$NON-NLS-1$
+				if (lastSegment.contains("jupiter.api")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_JUPITER_API_JAVADOC;
-				} else if (lastSegment.indexOf("jupiter.engine") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("jupiter.engine")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_JUPITER_ENGINE_JAVADOC;
-				} else if (lastSegment.indexOf("jupiter.migrationsupport") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("jupiter.migrationsupport")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_JUPITER_MIGRATIONSUPPORT_JAVADOC;
-				} else if (lastSegment.indexOf("jupiter.params") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("jupiter.params")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_JUPITER_PARAMS_JAVADOC;
-				} else if (lastSegment.indexOf("platform.commons") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("platform.commons")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_PLATFORM_COMMONS_JAVADOC;
-				} else if (lastSegment.indexOf("platform.engine") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("platform.engine")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_PLATFORM_ENGINE_JAVADOC;
-				} else if (lastSegment.indexOf("platform.launcher") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("platform.launcher")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_PLATFORM_LAUNCHER_JAVADOC;
-				} else if (lastSegment.indexOf("platform.runner") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("platform.runner")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_PLATFORM_RUNNER_JAVADOC;
-				} else if (lastSegment.indexOf("platform.suite.api") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("platform.suite.api")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_PLATFORM_SUITE_API_JAVADOC;
-				} else if (lastSegment.indexOf("vintage.engine") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("vintage.engine")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_VINTAGE_ENGINE_JAVADOC;
-				} else if (lastSegment.indexOf("opentest4j") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("opentest4j")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_OPENTEST4J_JAVADOC;
-				} else if (lastSegment.indexOf("apiguardian") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("apiguardian")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT_APIGUARDIAN_JAVADOC;
-				} else if (lastSegment.indexOf("junit") != -1) { //$NON-NLS-1$
+				} else if (lastSegment.contains("junit")) { //$NON-NLS-1$
 					return JUnitPreferencesConstants.JUNIT4_JAVADOC;
 				} else {
 					return JUnitPreferencesConstants.HAMCREST_CORE_JAVADOC;
@@ -268,11 +272,9 @@ public class JUnitContainerInitializer extends ClasspathContainerInitializer {
 		ArrayList<IJavaProject> affectedProjects= new ArrayList<>();
 
 		IJavaProject[] projects= model.getJavaProjects();
-		for (int i= 0; i < projects.length; i++) {
-			IJavaProject project= projects[i];
+		for (IJavaProject project : projects) {
 			IClasspathEntry[] entries= project.getRawClasspath();
-			for (int k= 0; k < entries.length; k++) {
-				IClasspathEntry curr= entries[k];
+			for (IClasspathEntry curr : entries) {
 				if (curr.getEntryKind() == IClasspathEntry.CPE_CONTAINER && containerPath.equals(curr.getPath())) {
 					affectedProjects.add(project);
 				}
@@ -295,12 +297,16 @@ public class JUnitContainerInitializer extends ClasspathContainerInitializer {
 	public String getDescription(IPath containerPath, IJavaProject project) {
 		if (isValidJUnitContainerPath(containerPath)) {
 			String version= containerPath.segment(1);
-			if (JUNIT3_8_1.equals(version) || JUNIT3.equals(version)) {
+			if (null != version) switch (version) {
+			case JUNIT3_8_1:
+			case JUNIT3:
 				return JUnitMessages.JUnitContainerInitializer_description_initializer_junit3;
-			} else if (JUNIT4.equals(version)) {
+			case JUNIT4:
 				return JUnitMessages.JUnitContainerInitializer_description_initializer_junit4;
-			} else if (JUNIT5.equals(version)) {
+			case JUNIT5:
 				return JUnitMessages.JUnitContainerInitializer_description_initializer_junit5;
+			default:
+				break;
 			}
 		}
 		return JUnitMessages.JUnitContainerInitializer_description_initializer_unresolved;

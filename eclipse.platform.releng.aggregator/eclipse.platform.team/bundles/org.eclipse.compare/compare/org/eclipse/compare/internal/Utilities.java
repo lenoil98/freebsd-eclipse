@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Stefan Dirix (sdirix@eclipsesource.com) - Bug 473847: Minimum E4 Compatibility of Compare
  *******************************************************************************/
 package org.eclipse.compare.internal;
 
@@ -23,6 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +62,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.core.runtime.MultiStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.SafeRunner;
@@ -69,6 +72,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.operation.IRunnableContext;
+import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
@@ -77,9 +81,11 @@ import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.custom.BusyIndicator;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.IActionBars;
@@ -88,10 +94,9 @@ import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.IWorkbenchSite;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.eclipse.ui.texteditor.IDocumentProvider;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Convenience and utility methods.
@@ -127,8 +132,9 @@ public class Utilities {
 
 	public static void setEnableComposite(Composite composite, boolean enable) {
 		Control[] children= composite.getChildren();
-		for (int i= 0; i < children.length; i++)
-			children[i].setEnabled(enable);
+		for (Control c : children) {
+			c.setEnabled(enable);
+		}
 	}
 
 	public static boolean getBoolean(CompareConfiguration cc, String key, boolean dflt) {
@@ -188,20 +194,20 @@ public class Utilities {
 		if (selection instanceof IStructuredSelection) {
 			Object[] s= ((IStructuredSelection) selection).toArray();
 
-			for (int i= 0; i < s.length; i++) {
+			for (Object o : s) {
 				IResource resource= null;
-				Object o= s[i];
 				if (type.isInstance(o)) {
 					resource= (IResource) o;
 				} else if (o instanceof ResourceMapping) {
 					try {
 						ResourceTraversal[] travs= ((ResourceMapping)o).getTraversals(ResourceMappingContext.LOCAL_CONTEXT, null);
 						if (travs != null) {
-							for (int k= 0; k < travs.length; k++) {
-								IResource[] resources= travs[k].getResources();
-								for (int j= 0; j < resources.length; j++) {
-									if (type.isInstance(resources[j]) && resources[j].isAccessible())
-										tmp.add(resources[j]);
+							for (ResourceTraversal trav : travs) {
+								IResource[] resources = trav.getResources();
+								for (IResource r : resources) {
+									if (type.isInstance(r) && r.isAccessible()) {
+										tmp.add(r);
+									}
 								}
 							}
 						}
@@ -294,7 +300,7 @@ public class Utilities {
 			String dPath;
 			String ePath;
 
-			if (relPath.indexOf("/") >= 0) { //$NON-NLS-1$
+			if (relPath.contains("/")) { //$NON-NLS-1$
 				String path= relPath.substring(1);
 				dPath= 'd' + path;
 				ePath= 'e' + path;
@@ -429,7 +435,7 @@ public class Utilities {
 					for (Iterator it = validPaths.iterator(); it.hasNext();) {
 						IPath path = (IPath) it.next();
 						if(path.isPrefixOf(resourceFullPath) ||
-					       resourceFullPath.isPrefixOf(path)) {
+							resourceFullPath.isPrefixOf(path)) {
 							return false;
 						}
 					}
@@ -517,7 +523,7 @@ public class Utilities {
 	public static boolean validateResources(IResource[] resources, Shell shell, String title) {
 		// get all readonly files
 		List<IResource> readOnlyFiles= getReadonlyFiles(resources);
-		if (readOnlyFiles.size() == 0)
+		if (readOnlyFiles.isEmpty())
 			return true;
 
 		// get timestamps of readonly files before validateEdit
@@ -579,7 +585,7 @@ public class Utilities {
 	}
 
 	private static Map<IFile, Long> createModificationStampMap(List<IResource> files) {
-		Map<IFile, Long> map= new HashMap<IFile, Long>();
+		Map<IFile, Long> map= new HashMap<>();
 		for (IResource file : files) {
 			map.put((IFile) file, file.getModificationStamp());
 		}
@@ -809,10 +815,10 @@ public class Utilities {
 	 */
 	public static boolean setReadTimeout(URLConnection connection, int timeout) {
 		Method[] methods = connection.getClass().getMethods();
-		for (int i = 0; i < methods.length; i++) {
-			if (methods[i].getName().equals("setReadTimeout")) { //$NON-NLS-1$
+		for (Method method : methods) {
+			if (method.getName().equals("setReadTimeout")) { //$NON-NLS-1$
 				try {
-					methods[i].invoke(connection, new Object[] {Integer.valueOf(timeout)});
+					method.invoke(connection, new Object[] {Integer.valueOf(timeout)});
 					return true;
 				} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
 					// ignore
@@ -891,12 +897,12 @@ public class Utilities {
 		}
 
 		boolean[] ignored = new boolean[thisLine.length()];
-		for (int j = 0; j < ignoredRegions.length; j++) {
-			if (ignoredRegions[j] != null) {
-				for (int k = 0; k < ignoredRegions[j].length; k++) {
-					if (ignoredRegions[j][k] != null) {
-						for (int l = 0; l < ignoredRegions[j][k].getLength(); l++) {
-							ignored[ignoredRegions[j][k].getOffset() + l] = true;
+		for (IRegion[] regions : ignoredRegions) {
+			if (regions != null) {
+				for (IRegion region : regions) {
+					if (region != null) {
+						for (int l = 0; l < region.getLength(); l++) {
+							ignored[region.getOffset() + l] = true;
 						}
 					}
 				}
@@ -909,5 +915,63 @@ public class Utilities {
 			}
 		}
 		return buffer.toString();
+	}
+
+	/**
+	 * Executes the given runnable. Uses the {@link org.eclipse.ui.progress.IProgressService IProgressService}
+	 * if available.
+	 *
+	 * @param runnable
+	 *            The {@link IRunnableWithProgress} to execute.
+	 * @throws InvocationTargetException
+	 * @throws InterruptedException
+	 */
+	public static void executeRunnable(IRunnableWithProgress runnable) throws InvocationTargetException,
+			InterruptedException {
+		executeRunnable(runnable, true, true);
+	}
+
+	/**
+	 * Executes the given runnable. Uses the {@link org.eclipse.ui.progress.IProgressService IProgressService}
+	 * if available.
+	 *
+	 * @param runnable
+	 *            The {@link IRunnableWithProgress} to execute.
+	 * @param fork indicates whether to run within a separate thread.
+	 * @param cancelable indicates whether the operation shall be cancelable
+	 * @throws InvocationTargetException
+	 * @throws InterruptedException
+	 */
+	public static void executeRunnable(IRunnableWithProgress runnable, boolean fork, boolean cancelable) throws InvocationTargetException,
+			InterruptedException {
+		if (PlatformUI.isWorkbenchRunning()) {
+			PlatformUI.getWorkbench().getProgressService().run(fork, cancelable, runnable);
+		} else {
+			runnable.run(new NullProgressMonitor());
+		}
+	}
+
+	/**
+	 * Sets the menu image for the given {@link Item}. Uses the workbench shared image if available, otherwise
+	 * creates a new image and adds a dispose listener.
+	 *
+	 * @param item
+	 *            The {@link Item} for which the menu image is to be set.
+	 */
+	public static void setMenuImage(final Item item) {
+		final Image image;
+		if (PlatformUI.isWorkbenchRunning()) {
+			image = PlatformUI.getWorkbench().getSharedImages().getImage(
+			/* IWorkbenchGraphicConstants */"IMG_LCL_VIEW_MENU"); //$NON-NLS-1$
+		} else {
+			image = CompareUIPlugin.getImageDescriptor("elcl16/view_menu.png").createImage(); //$NON-NLS-1$
+			item.addDisposeListener(e -> {
+				Image img = item.getImage();
+				if ((img != null) && (!img.isDisposed())) {
+					img.dispose();
+				}
+			});
+		}
+		item.setImage(image);
 	}
 }

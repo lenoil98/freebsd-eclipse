@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.jdt.core.tests.eval;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,6 +46,7 @@ public class EvaluationSetup extends CompilerTestSetup {
 		super(complianceLevel);
 	}
 
+	@Override
 	protected void setUp() {
 		if (this.context == null) { // non null if called from subclass
 			try (ServerSocket server = new ServerSocket(0)) {
@@ -56,31 +59,41 @@ public class EvaluationSetup extends CompilerTestSetup {
 					launcher.setEvalTargetPath(EVAL_DIRECTORY);
 					this.launchedVM = launcher.launch();
 				} catch (TargetException e) {
-					throw new Error(e.getMessage());
+					e.printStackTrace();
+					throw new Error(e.getMessage(), e);
 				}
-	
+
 				// Thread that read the stout of the VM so that the VM doesn't block
 				try {
 					startReader("VM's stdout reader", this.launchedVM.getInputStream(), System.out);
 				} catch (TargetException e) {
+					e.printStackTrace();
 				}
-	
+
 				// Thread that read the sterr of the VM so that the VM doesn't block
 				try {
 					startReader("VM's sterr reader", this.launchedVM.getErrorStream(), System.err);
 				} catch (TargetException e) {
+					e.printStackTrace();
 				}
-	
+
 				// Create context
 				this.context = new EvaluationContext();
-	
+
 				// Create target
 				this.target = new TargetInterface();
-				this.target.connect(server, 30000); // allow 30s max to connect (see https://bugs.eclipse.org/bugs/show_bug.cgi?id=188127)
-	
+				// allow 30s max to connect (see https://bugs.eclipse.org/bugs/show_bug.cgi?id=188127)
+				// Increased to 60 s for https://bugs.eclipse.org/bugs/show_bug.cgi?id=547417
+				this.target.connect(server, 60000);
+
+				assertTrue("Failed to connect VM server", this.target.isConnected());
+
+				System.out.println(getName() + ": connected to target");
+
 				// Create name environment
 				this.env = new FileSystem(Util.getJavaClassLibs(), new String[0], null);
 			} catch (IOException e1) {
+				e1.printStackTrace();
 				throw new Error("Failed to open socket", e1);
 			}
 		}
@@ -89,6 +102,7 @@ public class EvaluationSetup extends CompilerTestSetup {
 
 	protected void startReader(String name, final InputStream in, final PrintStream out) {
 		(new Thread(name) {
+			@Override
 			public void run() {
 				int read = 0;
 				while (read != -1) {
@@ -105,7 +119,8 @@ public class EvaluationSetup extends CompilerTestSetup {
 		}).start();
 	}
 
-	protected void tearDown() {
+	@Override
+	final protected void tearDown() {
 		if (this.context != null) {
 			LocalVirtualMachine vm = this.launchedVM;
 			if (vm != null) {
@@ -125,7 +140,8 @@ public class EvaluationSetup extends CompilerTestSetup {
 					}
 					this.context = null;
 				} catch (TargetException e) {
-					throw new Error(e.getMessage());
+					e.printStackTrace();
+					throw new Error(e.getMessage(), e);
 				}
 			}
 		}

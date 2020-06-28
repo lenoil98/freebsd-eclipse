@@ -412,7 +412,7 @@ public final class GIFFileFormat extends FileFormat {
 	@Override
 	void unloadIntoByteStream(ImageLoader loader) {
 
- 		/* Step 1: Acquire GIF parameters. */
+		/* Step 1: Acquire GIF parameters. */
 		ImageData[] data = loader.data;
 		int frameCount = data.length;
 		boolean multi = frameCount > 1;
@@ -454,7 +454,7 @@ public final class GIFFileFormat extends FileFormat {
 		}
 
 		try {
- 			/* Step 3: Write the GIF89a Header and Logical Screen Descriptor. */
+			/* Step 3: Write the GIF89a Header and Logical Screen Descriptor. */
 			outputStream.write(GIF89a);
 			int bitField = globalTable*128 + (depth-1)*16 + depth-1;
 			outputStream.writeShort((short)logicalScreenWidth);
@@ -577,8 +577,7 @@ public final class GIFFileFormat extends FileFormat {
 	void writePalette(PaletteData palette, int depth) {
 		byte[] bytes = new byte[(1 << depth) * 3];
 		int offset = 0;
-		for (int i = 0; i < palette.colors.length; i++) {
-			RGB color = palette.colors[i];
+		for (RGB color : palette.colors) {
 			bytes[offset] = (byte)color.red;
 			bytes[offset + 1] = (byte)color.green;
 			bytes[offset + 2] = (byte)color.blue;

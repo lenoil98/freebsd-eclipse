@@ -20,8 +20,7 @@ package org.eclipse.swt.snippets;
  * http://git.eclipse.org/c/platform/eclipse.platform.swt.git/tree/examples/org.eclipse.swt.snippets/src/org/eclipse/swt/snippets/Snippet362.java .
  *
  * This snippet works for all supported browser types (ie.- Browsers created with style
- * SWT.NONE).  For a Browser created with style SWT.MOZILLA an alternate approach would
- * be to use JavaXPCOM to hook the DOM listeners.
+ * SWT.NONE).
  *
  * For a list of all SWT example snippets see
  * http://www.eclipse.org/swt/snippets/
@@ -37,6 +36,7 @@ public static void main(String [] args) {
 	final String SCRIPT = "document.onmousedown = function(e) {if (!e) {e = window.event;} if (e) {window.status = 'MOUSEDOWN: ' + e.clientX + ',' + e.clientY;}}";
 	Display display = new Display();
 	final Shell shell = new Shell(display);
+	shell.setText("Snippet 303");
 	shell.setLayout(new FillLayout());
 	final Browser browser;
 	try {

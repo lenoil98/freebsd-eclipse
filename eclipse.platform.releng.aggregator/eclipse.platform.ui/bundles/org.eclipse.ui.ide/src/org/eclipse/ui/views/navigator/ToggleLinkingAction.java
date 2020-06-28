@@ -21,30 +21,36 @@ import org.eclipse.ui.IWorkbenchCommandConstants;
  * editor.
  *
  * @since 2.1
+ * @noextend This class is not intended to be subclassed by clients.
+ * @noinstantiate This class is not intended to be instantiated by clients.
+ * @noreference This class is not intended to be referenced by clients.
+ *
+ *              Planned to be deleted, please see Bug
+ *              https://bugs.eclipse.org/bugs/show_bug.cgi?id=549953
+ *
  * @deprecated as of 3.5, use the Common Navigator Framework classes instead
  */
 @Deprecated
 public class ToggleLinkingAction extends ResourceNavigatorAction {
 
-
 	/**
 	 * Constructs a new action.
 	 *
 	 * @param navigator the resource navigator
-	 * @param label the label
+	 * @param label     the label
 	 */
-    public ToggleLinkingAction(IResourceNavigator navigator, String label) {
-        super(navigator, label);
+	public ToggleLinkingAction(IResourceNavigator navigator, String label) {
+		super(navigator, label);
 		setActionDefinitionId(IWorkbenchCommandConstants.NAVIGATE_TOGGLE_LINK_WITH_EDITOR);
-        setChecked(navigator.isLinkingEnabled());
-    }
+		setChecked(navigator.isLinkingEnabled());
+	}
 
-    /**
-     * Runs the action.
-     */
-    @Override
+	/**
+	 * Runs the action.
+	 */
+	@Override
 	public void run() {
-        getNavigator().setLinkingEnabled(isChecked());
-    }
+		getNavigator().setLinkingEnabled(isChecked());
+	}
 
 }

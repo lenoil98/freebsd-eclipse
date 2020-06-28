@@ -350,9 +350,9 @@ public class MarkerRulerAction extends ResourceAction implements IUpdate {
 			try {
 				IMarker[] allMarkers= resource.findMarkers(fMarkerType, true, IResource.DEPTH_ZERO);
 				if (allMarkers != null) {
-					for (int i= 0; i < allMarkers.length; i++) {
-						if (includesRulerLine(model.getMarkerPosition(allMarkers[i]), document)) {
-							markers.add(allMarkers[i]);
+					for (IMarker allMarker : allMarkers) {
+						if (includesRulerLine(model.getMarkerPosition(allMarker), document)) {
+							markers.add(allMarker);
 						}
 					}
 				}
@@ -406,12 +406,7 @@ public class MarkerRulerAction extends ResourceAction implements IUpdate {
 		String title= getString(fBundle, fPrefix + "add.dialog.title", fPrefix + "add.dialog.title"); //$NON-NLS-2$ //$NON-NLS-1$
 		String message= getString(fBundle, fPrefix + "add.dialog.message", fPrefix + "add.dialog.message"); //$NON-NLS-2$ //$NON-NLS-1$
 		String addButtonText= getString(fBundle, fPrefix + "add.dialog.addbutton", fPrefix + "add.dialog.addbutton"); //$NON-NLS-1$ //$NON-NLS-2$
-		IInputValidator inputValidator= new IInputValidator() {
-			@Override
-			public String isValid(String newText) {
-				return (newText == null || newText.trim().length() == 0) ? " " : null; //$NON-NLS-1$
-			}
-		};
+		IInputValidator inputValidator= newText -> (newText == null || newText.trim().isEmpty()) ? " " : null;
 		AddBookmarkDialog dialog= new AddBookmarkDialog(fTextEditor.getSite().getShell(), title, message, proposal, inputValidator, addButtonText);
 
 		String label= null;
@@ -422,7 +417,7 @@ public class MarkerRulerAction extends ResourceAction implements IUpdate {
 			return false;
 
 		label= label.trim();
-		if (label.length() == 0)
+		if (label.isEmpty())
 			return false;
 
 		MarkerUtilities.setMessage(attributes, label);

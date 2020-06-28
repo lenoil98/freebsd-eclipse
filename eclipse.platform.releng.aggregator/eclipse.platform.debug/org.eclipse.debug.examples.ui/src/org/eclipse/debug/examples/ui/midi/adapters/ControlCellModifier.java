@@ -25,9 +25,6 @@ import org.eclipse.jface.viewers.ICellModifier;
  */
 public class ControlCellModifier implements ICellModifier {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ICellModifier#canModify(java.lang.Object, java.lang.String)
-	 */
 	@Override
 	public boolean canModify(Object element, String property) {
 		if (SequencerColumnPresentation.COL_VALUE.equals(property)) {
@@ -38,9 +35,6 @@ public class ControlCellModifier implements ICellModifier {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ICellModifier#getValue(java.lang.Object, java.lang.String)
-	 */
 	@Override
 	public Object getValue(Object element, String property) {
 		if (SequencerColumnPresentation.COL_VALUE.equals(property)) {
@@ -52,21 +46,18 @@ public class ControlCellModifier implements ICellModifier {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ICellModifier#modify(java.lang.Object, java.lang.String, java.lang.Object)
-	 */
 	@Override
 	public void modify(Object element, String property, Object value) {
 		Object oldValue = getValue(element, property);
-        if (!value.equals(oldValue)) {
-        	if (SequencerColumnPresentation.COL_VALUE.equals(property)) {
+		if (!value.equals(oldValue)) {
+			if (SequencerColumnPresentation.COL_VALUE.equals(property)) {
 				if (element instanceof SequencerControl) {
 					if (value instanceof String) {
 						SequencerControl control = (SequencerControl) element;
 						control.setValue((String) value);
 					}
 				}
-	        }
+			}
 		}
 	}
 

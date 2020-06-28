@@ -72,11 +72,7 @@ public class UITestHelper {
 			dialog = new PreferenceDialogWrapper(getShell(), manager);
 			dialog.create();
 
-			for (Iterator<IPreferenceNode> iterator = manager.getElements(PreferenceManager.PRE_ORDER)
-					.iterator();
-			     iterator.hasNext();)
-			{
-				IPreferenceNode node = iterator.next();
+			for (IPreferenceNode node : manager.getElements(PreferenceManager.PRE_ORDER)) {
 				if ( node.getId().equals(id) ) {
 					dialog.showPage(node);
 					break;
@@ -193,7 +189,7 @@ public class UITestHelper {
 		if (preferred.x > size.x) {
 			//close the dialog
 			button.getShell().dispose();
-			Assert.assertTrue(message.toString(), false);
+			Assert.assertTrue(message, false);
 		}
 	}
 
@@ -221,7 +217,7 @@ public class UITestHelper {
 		if (preferred.x > size.x) {
 			//close the dialog
 			label.getShell().dispose();
-			Assert.assertTrue(message.toString(), false);
+			Assert.assertTrue(message, false);
 		}
 	}
 

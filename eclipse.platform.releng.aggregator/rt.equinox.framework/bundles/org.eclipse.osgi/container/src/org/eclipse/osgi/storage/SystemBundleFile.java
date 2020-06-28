@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -39,26 +39,32 @@ public class SystemBundleFile extends BundleFile {
 		if (BundleInfo.OSGI_BUNDLE_MANIFEST.equals(path)) {
 			return new BundleEntry() {
 
+				@Override
 				public InputStream getInputStream() throws IOException {
 					return getManifestURL().openStream();
 				}
 
+				@Override
 				public long getSize() {
 					return 0;
 				}
 
+				@Override
 				public String getName() {
 					return BundleInfo.OSGI_BUNDLE_MANIFEST;
 				}
 
+				@Override
 				public long getTime() {
 					return 0;
 				}
 
+				@Override
 				public URL getLocalURL() {
 					return getManifestURL();
 				}
 
+				@Override
 				public URL getFileURL() {
 					return null;
 				}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,9 +14,13 @@
 package org.eclipse.debug.core.model;
 
 
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.PlatformObject;
@@ -203,12 +207,12 @@ public class RuntimeProcess extends PlatformObject implements IProcess {
 			}
 			Process process = getSystemProcess();
 			if (process != null) {
-			    process.destroy();
+				process.destroy();
 			}
 			int attempts = 0;
 			while (attempts < MAX_WAIT_FOR_DEATH_ATTEMPTS) {
 				try {
-				    process = getSystemProcess();
+					process = getSystemProcess();
 					if (process != null) {
 						fExitValue = process.exitValue(); // throws exception if process not exited
 					}
@@ -216,7 +220,11 @@ public class RuntimeProcess extends PlatformObject implements IProcess {
 				} catch (IllegalThreadStateException ie) {
 				}
 				try {
-					Thread.sleep(TIME_TO_WAIT_FOR_THREAD_DEATH);
+					if (process != null) {
+						process.waitFor(TIME_TO_WAIT_FOR_THREAD_DEATH, TimeUnit.MILLISECONDS);
+					} else {
+						Thread.sleep(TIME_TO_WAIT_FOR_THREAD_DEATH);
+					}
 				} catch (InterruptedException e) {
 				}
 				attempts++;
@@ -236,24 +244,26 @@ public class RuntimeProcess extends PlatformObject implements IProcess {
 	 * has terminated.
 	 */
 	protected void terminated() {
-        if (fStreamsProxy instanceof StreamsProxy) {
-            ((StreamsProxy)fStreamsProxy).close();
-        }
+		setAttribute(DebugPlugin.ATTR_TERMINATE_TIMESTAMP, Long.toString(System.currentTimeMillis()));
+
+		if (fStreamsProxy instanceof StreamsProxy) {
+			((StreamsProxy)fStreamsProxy).close();
+		}
 
 
-        // Avoid calling IProcess.exitValue() inside a sync section (Bug 311813).
-        int exitValue = -1;
-        boolean running = false;
-        try {
-            exitValue = fProcess.exitValue();
-        } catch (IllegalThreadStateException ie) {
-            running = true;
-        }
+		// Avoid calling IProcess.exitValue() inside a sync section (Bug 311813).
+		int exitValue = -1;
+		boolean running = false;
+		try {
+			exitValue = fProcess.exitValue();
+		} catch (IllegalThreadStateException ie) {
+			running = true;
+		}
 
 		synchronized (this) {
 			fTerminated= true;
 			if (!running) {
-			    fExitValue = exitValue;
+				fExitValue = exitValue;
 			}
 			fProcess= null;
 		}
@@ -265,9 +275,9 @@ public class RuntimeProcess extends PlatformObject implements IProcess {
 	 */
 	@Override
 	public IStreamsProxy getStreamsProxy() {
-	    if (!fCaptureOutput) {
-	        return null;
-	    }
+		if (!fCaptureOutput) {
+			return null;
+		}
 		return fStreamsProxy;
 	}
 
@@ -277,11 +287,19 @@ public class RuntimeProcess extends PlatformObject implements IProcess {
 	 * @return streams proxy
 	 */
 	protected IStreamsProxy createStreamsProxy() {
-	    if (!fCaptureOutput) {
-	        return new NullStreamsProxy(getSystemProcess());
-	    }
+		if (!fCaptureOutput) {
+			return new NullStreamsProxy(getSystemProcess());
+		}
 		String encoding = getLaunch().getAttribute(DebugPlugin.ATTR_CONSOLE_ENCODING);
-		return new StreamsProxy(getSystemProcess(), encoding);
+		Charset charset = null;
+		if (encoding != null) {
+			try {
+				charset = Charset.forName(encoding);
+			} catch (UnsupportedCharsetException | IllegalCharsetNameException e) {
+				DebugPlugin.log(e);
+			}
+		}
+		return new StreamsProxy(getSystemProcess(), charset);
 	}
 
 	/**
@@ -354,9 +372,9 @@ public class RuntimeProcess extends PlatformObject implements IProcess {
 		if (adapter.equals(IDebugTarget.class)) {
 			ILaunch launch = getLaunch();
 			IDebugTarget[] targets = launch.getDebugTargets();
-			for (int i = 0; i < targets.length; i++) {
-				if (this.equals(targets[i].getProcess())) {
-					return (T) targets[i];
+			for (IDebugTarget target : targets) {
+				if (this.equals(target.getProcess())) {
+					return (T) target;
 				}
 			}
 			return null;

@@ -30,6 +30,7 @@ import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 import org.eclipse.ltk.core.refactoring.RefactoringCore;
@@ -91,14 +92,11 @@ public class RefactoringUIPlugin extends AbstractUIPlugin {
 
 	public static IEditorPart[] getInstanciatedEditors() {
 		List<IEditorPart> result= new ArrayList<>(0);
-		IWorkbench workbench= getDefault().getWorkbench();
-		IWorkbenchWindow[] windows= workbench.getWorkbenchWindows();
-		for (int windowIndex= 0; windowIndex < windows.length; windowIndex++) {
-			IWorkbenchPage[] pages= windows[windowIndex].getPages();
-			for (int pageIndex= 0; pageIndex < pages.length; pageIndex++) {
-				IEditorReference[] references= pages[pageIndex].getEditorReferences();
-				for (int refIndex= 0; refIndex < references.length; refIndex++) {
-					IEditorPart editor= references[refIndex].getEditor(false);
+		IWorkbench workbench= PlatformUI.getWorkbench();
+		for (IWorkbenchWindow window : workbench.getWorkbenchWindows()) {
+			for (IWorkbenchPage page : window.getPages()) {
+				for (IEditorReference reference : page.getEditorReferences()) {
+					IEditorPart editor= reference.getEditor(false);
 					if (editor != null)
 						result.add(editor);
 				}

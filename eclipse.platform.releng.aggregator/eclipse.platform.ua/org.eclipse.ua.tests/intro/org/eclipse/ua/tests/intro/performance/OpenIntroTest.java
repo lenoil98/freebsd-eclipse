@@ -24,25 +24,15 @@ import org.eclipse.ui.intro.IIntroManager;
 import org.eclipse.ui.intro.IIntroPart;
 import org.eclipse.ui.intro.config.CustomizableIntroPart;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 public class OpenIntroTest extends PerformanceTestCase {
-
-	/*
-	 * Returns an instance of this Test.
-	 */
-	public static Test suite() {
-		return new TestSuite(OpenIntroTest.class);
-	}
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		closeIntro();
 		// test extensions filter by this system property
-        System.setProperty("org.eclipse.ua.tests.property.isTesting", "true"); //$NON-NLS-1$ //$NON-NLS-2$
-        ExtensionPointManager.getInst().setExtensionFilter(UserAssistanceTestPlugin.getPluginId());
+		System.setProperty("org.eclipse.ua.tests.property.isTesting", "true"); //$NON-NLS-1$ //$NON-NLS-2$
+		ExtensionPointManager.getInst().setExtensionFilter(UserAssistanceTestPlugin.getPluginId());
 	}
 
 	@Override
@@ -50,8 +40,8 @@ public class OpenIntroTest extends PerformanceTestCase {
 		super.tearDown();
 		closeIntro();
 		// test extensions filter by this system property
-        System.setProperty("org.eclipse.ua.tests.property.isTesting", "false"); //$NON-NLS-1$ //$NON-NLS-2$
-        ExtensionPointManager.getInst().setExtensionFilter(null);
+		System.setProperty("org.eclipse.ua.tests.property.isTesting", "false"); //$NON-NLS-1$ //$NON-NLS-2$
+		ExtensionPointManager.getInst().setExtensionFilter(null);
 	}
 
 	public void testOpenIntro() throws Exception {

@@ -68,7 +68,7 @@ public class FileSystemResourceManager implements ICoreConstants, IManager, Pref
 		// First, try the canonical version of the inputLocation.
 		// If the inputLocation is different from the canonical version, it will be tried second
 		ArrayList<IPath> results = allPathsForLocationNonCanonical(canonicalLocation);
-		if (results.size() == 0 && canonicalLocation != inputLocation) {
+		if (results.isEmpty() && canonicalLocation != inputLocation) {
 			results = allPathsForLocationNonCanonical(inputLocation);
 		}
 		return results;
@@ -525,8 +525,9 @@ public class FileSystemResourceManager implements ICoreConstants, IManager, Pref
 	}
 
 	/**
-	 * Never returns null
-	 * @param target
+	 * Never returns null.
+	 *
+	 * @param target the resource to get a store for
 	 * @return The file store for this resource
 	 */
 	public IFileStore getStore(IResource target) {
@@ -711,9 +712,10 @@ public class FileSystemResourceManager implements ICoreConstants, IManager, Pref
 				//check sync on child projects.
 				depth = depth == IResource.DEPTH_ONE ? IResource.DEPTH_ZERO : depth;
 				IProject[] projects = ((IWorkspaceRoot) target).getProjects(IContainer.INCLUDE_HIDDEN);
-				for (int i = 0; i < projects.length; i++) {
-					if (!isSynchronized(projects[i], depth))
+				for (IProject project : projects) {
+					if (!isSynchronized(project, depth)) {
 						return false;
+					}
 				}
 				return true;
 			case IResource.PROJECT :
@@ -820,7 +822,7 @@ public class FileSystemResourceManager implements ICoreConstants, IManager, Pref
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		if (ResourcesPlugin.PREF_LIGHTWEIGHT_AUTO_REFRESH.equals(event.getProperty()))
-			lightweightAutoRefreshEnabled = Boolean.valueOf(event.getNewValue().toString());
+			lightweightAutoRefreshEnabled = Boolean.parseBoolean(event.getNewValue().toString());
 	}
 
 	public InputStream read(IFile target, boolean force, IProgressMonitor monitor) throws CoreException {
@@ -1038,9 +1040,10 @@ public class FileSystemResourceManager implements ICoreConstants, IManager, Pref
 
 	/**
 	 * The storage location for a resource has changed; update the location.
-	 * @param target
-	 * @param info
-	 * @param location
+	 *
+	 * @param target   the changed resource
+	 * @param info     the resource info to update
+	 * @param location the new storage location
 	 */
 	public void setLocation(IResource target, ResourceInfo info, URI location) {
 		FileStoreRoot oldRoot = info.getFileStoreRoot();
@@ -1146,8 +1149,13 @@ public class FileSystemResourceManager implements ICoreConstants, IManager, Pref
 			if (BitMask.isSet(updateFlags, IResource.KEEP_HISTORY) && fileInfo.exists())
 				//never move to the history store, because then the file is missing if write fails
 				getHistoryStore().addState(target.getFullPath(), store, fileInfo, false);
-			if (!fileInfo.exists())
-				store.getParent().mkdir(EFS.NONE, null);
+			if (!fileInfo.exists()) {
+				IFileStore parent = store.getParent();
+				IFileInfo parentInfo = parent.fetchInfo();
+				if (!parentInfo.exists()) {
+					parent.mkdir(EFS.NONE, null);
+				}
+			}
 
 			// On Windows an attempt to open an output stream on a hidden file results in FileNotFoundException.
 			// See https://bugs.eclipse.org/bugs/show_bug.cgi?id=194216

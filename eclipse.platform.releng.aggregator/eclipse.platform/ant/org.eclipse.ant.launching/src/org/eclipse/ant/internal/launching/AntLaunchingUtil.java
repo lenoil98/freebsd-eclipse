@@ -17,6 +17,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,13 +50,11 @@ import org.eclipse.jdt.launching.IRuntimeClasspathEntry;
 import org.eclipse.jdt.launching.IRuntimeClasspathEntry2;
 import org.eclipse.jdt.launching.JavaRuntime;
 
-import com.ibm.icu.text.MessageFormat;
-
 /**
  * General utility class dealing with Ant build files
  */
 public final class AntLaunchingUtil {
-	public static final String ATTRIBUTE_SEPARATOR = ","; //$NON-NLS-1$;
+	public static final String ATTRIBUTE_SEPARATOR = ","; //$NON-NLS-1$
 	public static final char ANT_CLASSPATH_DELIMITER = '*';
 	public static final String ANT_HOME_CLASSPATH_PLACEHOLDER = "G"; //$NON-NLS-1$
 	public static final String ANT_GLOBAL_USER_CLASSPATH_PLACEHOLDER = "UG"; //$NON-NLS-1$
@@ -81,7 +80,7 @@ public final class AntLaunchingUtil {
 		if (strings.length == 1)
 			return strings[0];
 
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < strings.length - 1; i++) {
 			buf.append(strings[i]);
 			buf.append(ATTRIBUTE_SEPARATOR);
@@ -137,7 +136,7 @@ public final class AntLaunchingUtil {
 	 * 
 	 * @param configuration
 	 *            launch configuration
-	 * @return map of properties (name --> value), or <code>null</code>
+	 * @return map of properties (name --&gt; value), or <code>null</code>
 	 * @throws CoreException
 	 *             if unable to access the associated attribute
 	 */
@@ -158,8 +157,7 @@ public final class AntLaunchingUtil {
 	 */
 	public static String getAntHome(ILaunchConfiguration configuration) throws CoreException {
 		IRuntimeClasspathEntry[] entries = JavaRuntime.computeUnresolvedRuntimeClasspath(configuration);
-		for (int i = 0; i < entries.length; i++) {
-			IRuntimeClasspathEntry entry = entries[i];
+		for (IRuntimeClasspathEntry entry : entries) {
 			if (entry.getType() == IRuntimeClasspathEntry.OTHER) {
 				IRuntimeClasspathEntry2 entry2 = (IRuntimeClasspathEntry2) entry;
 				if (entry2.getTypeId().equals(AntHomeClasspathEntry.TYPE_ID)) {
@@ -212,8 +210,7 @@ public final class AntLaunchingUtil {
 		IRuntimeClasspathEntry[] unresolved = JavaRuntime.computeUnresolvedRuntimeClasspath(config);
 		// don't consider bootpath entries
 		List<IRuntimeClasspathEntry> userEntries = new ArrayList<>(unresolved.length);
-		for (int i = 0; i < unresolved.length; i++) {
-			IRuntimeClasspathEntry entry = unresolved[i];
+		for (IRuntimeClasspathEntry entry : unresolved) {
 			if (entry.getClasspathProperty() == IRuntimeClasspathEntry.USER_CLASSES) {
 				userEntries.add(entry);
 			}
@@ -368,8 +365,7 @@ public final class AntLaunchingUtil {
 			if (oldAntHome != null) {
 				IRuntimeClasspathEntry[] entries = JavaRuntime.computeUnresolvedRuntimeClasspath(workingCopy);
 				List<String> mementos = new ArrayList<>(entries.length);
-				for (int i = 0; i < entries.length; i++) {
-					IRuntimeClasspathEntry entry = entries[i];
+				for (IRuntimeClasspathEntry entry : entries) {
 					if (entry.getType() == IRuntimeClasspathEntry.OTHER) {
 						IRuntimeClasspathEntry2 entry2 = (IRuntimeClasspathEntry2) entry;
 						if (entry2.getTypeId().equals(AntHomeClasspathEntry.TYPE_ID)) {

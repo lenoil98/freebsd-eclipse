@@ -70,7 +70,7 @@ public class CheatSheetSaveHelper {
 	 * the registry, otherwise it is the url of the cheatsheet content file.
 	 */
 	public Properties createProperties(int currentItemNum, ArrayList<ViewItem> items,
-			boolean buttonIsDown, ArrayList expandRestoreStates, String csID, String contentPath) {
+			boolean buttonIsDown, ArrayList<String> expandRestoreStates, String csID, String contentPath) {
 		Properties props = new Properties();
 		Hashtable<String, String> subcompletedTable = new Hashtable<>(10);
 		Hashtable<String, String> subskippedTable = new Hashtable<>(10);
@@ -88,7 +88,7 @@ public class CheatSheetSaveHelper {
 		ArrayList<String> expandedList = new ArrayList<>();
 
 		if (expandRestoreStates == null)
-			expandRestoreStates = new ArrayList();
+			expandRestoreStates = new ArrayList<>();
 
 		// Assemble lists of expanded items and completed items.
 		for (int i = 0; i < items.size(); i++) {
@@ -206,13 +206,14 @@ public class CheatSheetSaveHelper {
 	public IStatus saveState(Properties properties, CheatSheetManager csm) {
 		String csID = (String) properties.get(IParserTags.ID);
 		XMLMemento writeMemento = XMLMemento.createWriteRoot(IParserTags.CHEATSHEET_STATE);
-        IStatus status = saveToMemento(properties, csm, writeMemento);
-        if (!status.isOK()) {
-        	return status;
-        }
+		IStatus status = saveToMemento(properties, csm, writeMemento);
+		if (!status.isOK()) {
+			return status;
+		}
 		return CheatSheetPlugin.getPlugin().saveMemento(writeMemento, csID + DOT_XML);
 	}
 
+	@SuppressWarnings("unchecked")
 	public IStatus saveToMemento(Properties properties, CheatSheetManager csm, IMemento writeMemento) {
 
 		String csID = (String) properties.get(IParserTags.ID);
@@ -223,7 +224,7 @@ public class CheatSheetSaveHelper {
 			writeMemento.putString(IParserTags.ID, (String)properties.get(IParserTags.ID));
 			String contentPath = (String)properties.get(IParserTags.CONTENT_URL);
 			if (contentPath != null) {
-			    writeMemento.putString(IParserTags.CONTENT_URL, contentPath);
+				writeMemento.putString(IParserTags.CONTENT_URL, contentPath);
 			}
 
 			addListOfStringsToMemento(writeMemento,  properties, IParserTags.COMPLETED);
@@ -267,7 +268,7 @@ public class CheatSheetSaveHelper {
 		properties.put(IParserTags.ID, memento.getString(IParserTags.ID));
 		String contentURL = memento.getString(IParserTags.CONTENT_URL);
 		if (contentURL != null) {
-		    properties.put(IParserTags.CONTENT_URL, contentURL);
+			properties.put(IParserTags.CONTENT_URL, contentURL);
 		}
 
 		getListOfStringsFromMemento(memento,  properties, IParserTags.COMPLETED);
@@ -281,6 +282,7 @@ public class CheatSheetSaveHelper {
 	}
 
 	private void addListOfStringsToMemento(IMemento memento, Properties properties, String key) {
+		@SuppressWarnings("unchecked")
 		List<String> list = (List<String>) properties.get(key);
 		if (list == null) {
 			return;
@@ -296,10 +298,11 @@ public class CheatSheetSaveHelper {
 		if (map == null) {
 			return;
 		}
-		for (String itemKey : map.keySet()) {
+		for (Map.Entry<String, String> entry : map.entrySet()) {
+			String itemKey = entry.getKey();
 			IMemento childMemento = memento.createChild(mapName);
 			childMemento.putString(IParserTags.MANAGERDATAKEY,(itemKey));
-			childMemento.putString(IParserTags.MANAGERDATAVALUE, map.get(itemKey));
+			childMemento.putString(IParserTags.MANAGERDATAVALUE, entry.getValue());
 		}
 	}
 

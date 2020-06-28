@@ -7,7 +7,7 @@
  *  https://www.eclipse.org/legal/epl-2.0/
  *
  *  SPDX-License-Identifier: EPL-2.0
- * 
+ *
  *  Contributors:
  *     Sonatype, Inc. - initial API and implementation
  *******************************************************************************/
@@ -20,9 +20,11 @@ import org.eclipse.equinox.p2.core.spi.IAgentServiceFactory;
 
 public class CacheManagerComponent implements IAgentServiceFactory {
 
+	@Override
 	public Object createService(IProvisioningAgent agent) {
-		final IProvisioningEventBus eventBus = (IProvisioningEventBus) agent.getService(IProvisioningEventBus.SERVICE_NAME);
-		CacheManager cache = new CacheManager((IAgentLocation) agent.getService(IAgentLocation.SERVICE_NAME), (Transport) agent.getService(Transport.SERVICE_NAME));
+		final IProvisioningEventBus eventBus = agent.getService(IProvisioningEventBus.class);
+		CacheManager cache = new CacheManager(agent.getService(IAgentLocation.class),
+				agent.getService(Transport.class));
 		cache.setEventBus(eventBus);
 		return cache;
 	}

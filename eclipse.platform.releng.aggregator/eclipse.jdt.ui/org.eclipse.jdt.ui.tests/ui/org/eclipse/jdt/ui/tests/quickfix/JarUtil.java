@@ -125,11 +125,10 @@ public class JarUtil {
                 flushDirectoryContent(dir);
             } else {
                 // remove only old sub-dirs
-                File[] testDirs = dir.listFiles();
-                for (int i=0,l=testDirs.length; i<l; i++) {
-                    if (testDirs[i].isDirectory()) {
-                        if ((now - testDirs[i].lastModified()) > delay) {
-                            delete(testDirs[i]);
+                for (File testDir : dir.listFiles()) {
+                    if (testDir.isDirectory()) {
+                        if ((now - testDir.lastModified()) > delay) {
+                            delete(testDir);
                         }
                     }
                 }
@@ -169,7 +168,7 @@ private static class Requestor implements ICompilerRequestor {
 	public String outputPath;
 	public String problemLog = "";
 	private ClassFileFilter classFileFilter= null;
-	
+
 	public Requestor(ClassFileFilter classFileFilter) {
 		if (classFileFilter != null) {
 			this.classFileFilter = classFileFilter;
@@ -192,11 +191,8 @@ private static class Requestor implements ICompilerRequestor {
 	}
 	protected void outputClassFiles(CompilationResult unitResult) {
 		if (this.classFileFilter.include(unitResult)) {
-			ClassFile[] classFiles = unitResult.getClassFiles();
 			if (this.outputPath != null) {
-				for (int i = 0, fileCount = classFiles.length; i < fileCount; i++) {
-					// retrieve the key and the corresponding classfile
-					ClassFile classFile = classFiles[i];
+				for (ClassFile classFile : unitResult.getClassFiles()) {
 					String relativeName =
 						new String(classFile.fileName()).replace('/', File.separatorChar) + ".class";
 					try {
@@ -223,7 +219,7 @@ public static void compile(String[] pathsAndContents, Map<String, String> option
         } else {
         	classpath = classLibs;
         }
-        
+
         INameEnvironment nameEnvironment = new FileSystem(classpath, new String[] {}, null);
         IErrorHandlingPolicy errorHandlingPolicy =
             new IErrorHandlingPolicy() {
@@ -258,11 +254,8 @@ public static void compile(String[] pathsAndContents, Map<String, String> option
 	        System.err.print(requestor.problemLog); // problem log empty if no problems
 }
 public static void createFile(String path, String contents) throws IOException {
-    FileOutputStream output = new FileOutputStream(path);
-    try {
+    try (FileOutputStream output = new FileOutputStream(path)) {
         output.write(contents.getBytes());
-    } finally {
-        output.close();
     }
 }
 public static void createJar(String[] pathsAndContents, String[] extraPathsAndContents, Map<String, String> options, ClassFileFilter classFileFilter, String[] classpath, String jarPath) throws IOException {
@@ -329,8 +322,8 @@ public static boolean delete(File file) {
 public static void flushDirectoryContent(File dir) {
     File[] files = dir.listFiles();
     if (files == null) return;
-    for (int i = 0, max = files.length; i < max; i++) {
-        delete(files[i]);
+    for (File file : files) {
+        delete(file);
     }
 }
 private static Map<String, String> getCompileOptions(String compliance) {
@@ -417,8 +410,8 @@ public static String[] getJavaClassLibs() {
 	return jars;
 }
 private static void addJarEntries(String jreDir, String[] jarNames, ArrayList<String> paths) {
-	for (int i = 0, max = jarNames.length; i < max; i++) {
-		final String currentName = jreDir + jarNames[i];
+	for (String jarName : jarNames) {
+		final String currentName = jreDir + jarName;
 		File f = new File(currentName);
 		if (f.exists()) {
 			paths.add(toNativePath(currentName));
@@ -736,8 +729,7 @@ public static void zip(File rootDir, String zipPath) throws IOException {
 private static void zip(File dir, ZipOutputStream zip, int rootPathLength) throws IOException {
     File[] files = dir.listFiles();
     if (files != null) {
-        for (int i = 0, length = files.length; i < length; i++) {
-            File file = files[i];
+        for (File file : files) {
             if (file.isFile()) {
                 String path = file.getPath();
                 path = path.substring(rootPathLength);
@@ -751,4 +743,7 @@ private static void zip(File dir, ZipOutputStream zip, int rootPathLength) throw
         }
     }
 }
+
+	private JarUtil() {
+	}
 }

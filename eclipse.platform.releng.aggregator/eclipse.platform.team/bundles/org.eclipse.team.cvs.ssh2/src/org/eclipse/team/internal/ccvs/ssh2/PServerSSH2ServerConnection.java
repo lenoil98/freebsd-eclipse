@@ -37,17 +37,21 @@ public class PServerSSH2ServerConnection implements IServerConnection {
 		this.password = password;
 	}
 
+	@Override
 	public void close() throws IOException {
 		psc.close();
 	}
 
+	@Override
 	public InputStream getInputStream() {
 		return psc.getInputStream();
 	}
+	@Override
 	public OutputStream getOutputStream() {
 		return psc.getOutputStream();
 	}
 
+	@Override
 	public void open(IProgressMonitor monitor) throws IOException, CVSAuthenticationException {
 		monitor.subTask("PServerSSH2ServerConnection.open"); //$NON-NLS-1$
 		monitor.worked(1);
@@ -95,10 +99,10 @@ public class PServerSSH2ServerConnection implements IServerConnection {
 				String[] list = session.getPortForwardingL();
 				String name = ":" + rhost + ":" + rport; //$NON-NLS-1$ //$NON-NLS-2$
 				boolean done = false;
-				for (int i = 0; i < list.length; i++) {
-					if (list[i].endsWith(name)) {
+				for (String l : list) {
+					if (l.endsWith(name)) {
 						try {
-							String foo = list[i].substring(0, list[i].indexOf(':'));
+							String foo = l.substring(0, l.indexOf(':'));
 							lport = Integer.parseInt(foo);
 						} catch (Exception ee) {
 							// Ignore
@@ -112,20 +116,20 @@ public class PServerSSH2ServerConnection implements IServerConnection {
 					session.setPortForwardingL(lport, rhost, rport);
 				}
 			} catch (JSchException ee) {
-				  retry--;
-				  if(retry<0){
-				    throw new CVSAuthenticationException(CVSSSH2Messages.CVSSSH2ServerConnection_3, CVSAuthenticationException.NO_RETRY, location); 
-				  }
-				  if(session != null && session.isConnected()){
-				    session.disconnect();
-				  }
-				  continue;
+				retry--;
+				if(retry<0){
+					throw new CVSAuthenticationException(CVSSSH2Messages.CVSSSH2ServerConnection_3, CVSAuthenticationException.NO_RETRY, location);
+				}
+				if(session != null && session.isConnected()){
+					session.disconnect();
+				}
+				continue;
 			}
 			break;
 		}
 		// password for location will be over-written in JSchSession ;-<
 		((CVSRepositoryLocation)location).setPassword(password);
-		
+
 		// CVSROOT=":pserver:localhost:"+lport+""cvs_root
 		try {
 			// If user does not give a password, it must be null.

@@ -47,6 +47,13 @@ public static boolean DEBUG = false;
 public static boolean SHOW_STATS = false;
 
 /**
+ * Bug 549457: In case auto-building on a JDT core settings change (e.g. compiler compliance) is not desired,
+ * specify VM property: {@code -Dorg.eclipse.disableAutoBuildOnSettingsChange=true}
+ */
+private static final boolean DISABLE_AUTO_BUILDING_ON_SETTINGS_CHANGE = Boolean.getBoolean("org.eclipse.disableAutoBuildOnSettingsChange"); //$NON-NLS-1$
+private static final IPath JDT_CORE_SETTINGS_PATH = Path.fromPortableString(JavaProject.DEFAULT_PREFERENCES_DIRNAME + IPath.SEPARATOR + JavaProject.JAVA_CORE_PREFS_FILE);
+
+/**
  * A list of project names that have been built.
  * This list is used to reset the JavaModel.existingExternalFiles cache when a build cycle begins
  * so that deleted external jars are discovered.
@@ -197,7 +204,13 @@ protected IProject[] build(int kind, Map ignored, IProgressMonitor monitor) thro
 							System.out.println("JavaBuilder: Performing full build since deltas are missing after incremental request"); //$NON-NLS-1$
 						buildAll();
 					} else if (deltas.elementSize > 0) {
-						buildDeltas(deltas);
+						if (hasJdtCoreSettingsChange(deltas) && !DISABLE_AUTO_BUILDING_ON_SETTINGS_CHANGE) {
+							if (DEBUG)
+								System.out.println("JavaBuilder: Performing full build since project settings have changed"); //$NON-NLS-1$
+							buildAll();
+						} else {
+							buildDeltas(deltas);
+						}
 					} else if (DEBUG) {
 						System.out.println("JavaBuilder: Nothing to build since deltas were empty"); //$NON-NLS-1$
 					}
@@ -261,7 +274,7 @@ private void buildAll() {
 	BatchImageBuilder testImageBuilder = new BatchImageBuilder(imageBuilder, true, CompilationGroup.TEST);
 	imageBuilder.build();
 	if (testImageBuilder.sourceLocations.length > 0) {
-		// Note: testImageBuilder *MUST* have a separate output folder, or it will delete the files created by imageBuilder.build() 
+		// Note: testImageBuilder *MUST* have a separate output folder, or it will delete the files created by imageBuilder.build()
 		testImageBuilder.build();
 	} else {
 		testImageBuilder.cleanUp();
@@ -498,8 +511,16 @@ boolean hasBuildpathErrors() throws CoreException {
 	return false;
 }
 
+private boolean hasJdtCoreSettingsChange(SimpleLookupTable deltas) {
+	Object resourceDelta = deltas.get(this.currentProject);
+	if (resourceDelta instanceof IResourceDelta) {
+		return ((IResourceDelta) resourceDelta).findMember(JDT_CORE_SETTINGS_PATH) != null;
+	}
+	return false;
+}
+
 private boolean hasClasspathChanged() {
-	return hasClasspathChanged(CompilationGroup.MAIN) || hasClasspathChanged(CompilationGroup.TEST);	
+	return hasClasspathChanged(CompilationGroup.MAIN) || hasClasspathChanged(CompilationGroup.TEST);
 }
 
 private boolean hasClasspathChanged(CompilationGroup compilationGroup) {
@@ -757,7 +778,7 @@ private boolean isWorthBuilding() throws CoreException {
  */
 void mustPropagateStructuralChanges() {
 	LinkedHashSet cycleParticipants = new LinkedHashSet(3);
-	this.javaProject.updateCycleParticipants(new ArrayList(), cycleParticipants, this.workspaceRoot, new HashSet(3), null);
+	this.javaProject.updateCycleParticipants(new ArrayList(), cycleParticipants, new HashMap<>(), this.workspaceRoot, new HashSet(3), null);
 	IPath currentPath = this.javaProject.getPath();
 	Iterator i= cycleParticipants.iterator();
 	while (i.hasNext()) {

@@ -67,13 +67,12 @@ public class ArtifactDescriptor implements IArtifactDescriptor, IMemberProvider 
 		this.key = key;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.p2.repository.artifact.IArtifactDescriptor#getArtifactKey()
-	 */
+	@Override
 	public IArtifactKey getArtifactKey() {
 		return key;
 	}
 
+	@Override
 	public String getProperty(String propertyKey) {
 		return properties.get(propertyKey);
 	}
@@ -93,10 +92,12 @@ public class ArtifactDescriptor implements IArtifactDescriptor, IMemberProvider 
 	 * Returns a read-only collection of the properties of the artifact descriptor.
 	 * @return the properties of this artifact descriptor.
 	 */
+	@Override
 	public Map<String, String> getProperties() {
 		return OrderedProperties.unmodifiableProperties(properties);
 	}
 
+	@Override
 	public IProcessingStepDescriptor[] getProcessingSteps() {
 		return processingSteps;
 	}
@@ -105,6 +106,7 @@ public class ArtifactDescriptor implements IArtifactDescriptor, IMemberProvider 
 		processingSteps = value == null || value.length == 0 ? EMPTY_STEPS : value;
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
@@ -133,6 +135,7 @@ public class ArtifactDescriptor implements IArtifactDescriptor, IMemberProvider 
 		return true;
 	}
 
+	@Override
 	public int hashCode() {
 		String format = getProperty(FORMAT);
 
@@ -144,6 +147,7 @@ public class ArtifactDescriptor implements IArtifactDescriptor, IMemberProvider 
 		return result;
 	}
 
+	@Override
 	public IArtifactRepository getRepository() {
 		return repository;
 	}
@@ -152,6 +156,7 @@ public class ArtifactDescriptor implements IArtifactDescriptor, IMemberProvider 
 		repository = value;
 	}
 
+	@Override
 	public String toString() {
 		String format = getProperty(IArtifactDescriptor.FORMAT);
 		if (format == null)
@@ -159,6 +164,7 @@ public class ArtifactDescriptor implements IArtifactDescriptor, IMemberProvider 
 		return format + ": " + key.toString(); //$NON-NLS-1$
 	}
 
+	@Override
 	public Object getMember(String memberName) {
 		if (memberName == MEMBER_ARTIFACT_KEY)
 			return key;

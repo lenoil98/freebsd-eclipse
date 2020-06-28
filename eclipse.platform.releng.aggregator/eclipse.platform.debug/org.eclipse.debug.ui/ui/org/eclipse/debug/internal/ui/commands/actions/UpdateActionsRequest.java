@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.ui.commands.actions;
 
+import java.util.Arrays;
+
 import org.eclipse.debug.core.commands.IEnabledStateRequest;
 import org.eclipse.debug.internal.core.commands.DebugCommandRequest;
 
@@ -33,24 +35,25 @@ public class UpdateActionsRequest extends DebugCommandRequest implements IEnable
 		fActions = actions;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.actions.provisional.IBooleanRequestMonitor#setResult(boolean)
-	 */
 	@Override
 	public synchronized void setEnabled(boolean result) {
 		fEnabled = result;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.runtime.IProgressMonitor#done()
-	 */
 	@Override
 	public synchronized void done() {
 		if (!isCanceled()) {
-			for (int i = 0; i < fActions.length; i++) {
-				fActions[i].setEnabled(fEnabled);
+			for (IEnabledTarget action : fActions) {
+				action.setEnabled(fEnabled);
 			}
 		}
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + " on " + fActions.length //$NON-NLS-1$
+				+ " actions from " //$NON-NLS-1$
+				+ Arrays.toString(getElements());
 	}
 
 }

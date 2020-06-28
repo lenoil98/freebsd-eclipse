@@ -32,12 +32,6 @@ import org.eclipse.ui.dialogs.IWorkingSetSelectionDialog;
  */
 public class WorkingSetSourceContainerBrowser extends AbstractSourceContainerBrowser {
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.sourcelookup.ISourceContainerBrowser#
-	 * createSourceContainers(org.eclipse.swt.widgets.Shell,
-	 * org.eclipse.debug.core.ILaunchConfiguration)
-	 */
 	@Override
 	public ISourceContainer[] addSourceContainers(Shell shell, ISourceLookupDirector director) {
 		ArrayList<ISourceContainer> containers = new ArrayList<>();
@@ -46,8 +40,8 @@ public class WorkingSetSourceContainerBrowser extends AbstractSourceContainerBro
 		if (dialog.open() == Window.OK) {
 			IWorkingSet[] selections = dialog.getSelection();
 			if (selections != null) {
-				for (int i = 0; i < selections.length; i++) {
-					containers.add(new WorkingSetSourceContainer(selections[i]));
+				for (IWorkingSet selection : selections) {
+					containers.add(new WorkingSetSourceContainer(selection));
 				}
 			}
 		}

@@ -36,17 +36,11 @@ public class PatchProjectDiffNode extends PatchDiffNode {
 		this.configuration = configuration;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.compare.structuremergeviewer.DiffNode#getName()
-	 */
 	@Override
 	public String getName() {
 		return project.getName();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.compare.structuremergeviewer.DiffNode#getImage()
-	 */
 	@Override
 	public Image getImage() {
 		Image image = CompareUI.getImage(Utilities.getProject(project));
@@ -59,8 +53,7 @@ public class PatchProjectDiffNode extends PatchDiffNode {
 
 	private boolean containsProblems() {
 		IDiffElement[] elements = getChildren();
-		for (int i = 0; i < elements.length; i++) {
-			IDiffElement diffElement = elements[i];
+		for (IDiffElement diffElement : elements) {
 			if (diffElement instanceof PatchFileDiffNode) {
 				PatchFileDiffNode node = (PatchFileDiffNode) diffElement;
 				if (node.getDiffResult().containsProblems())
@@ -70,9 +63,6 @@ public class PatchProjectDiffNode extends PatchDiffNode {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.compare.structuremergeviewer.DiffNode#getType()
-	 */
 	@Override
 	public String getType() {
 		return ITypedElement.FOLDER_TYPE;

@@ -55,11 +55,10 @@ public class Menu extends Widget {
 	 *
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
-	public long /*int*/ handle;
+	public long handle;
 
 	int x, y;
-	long /*int*/ hBrush;
-	int id0, id1;
+	long hBrush;
 	int foreground = -1, background = -1;
 	Image backgroundImage;
 	boolean hasLocation;
@@ -195,31 +194,16 @@ public Menu (MenuItem parentItem) {
 	this (checkNull (parentItem).parent);
 }
 
-Menu (Decorations parent, int style, long /*int*/ handle) {
+Menu (Decorations parent, int style, long handle) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	this.handle = handle;
-	/*
-	* Bug in IBM JVM 1.3.1.  For some reason, when the checkOrientation() is
-	* called from createWidget(), the JVM issues this error:
-	*
-	* JVM Exception 0x2 (subcode 0x0) occurred in thread "main" (TID:0x9F19D8)
-	*
-	* In addition, on Windows XP, a dialog appears with following error message,
-	* indicating that the problem may be in the JIT:
-	*
-	* AppName: java.exe	 AppVer: 0.0.0.0	 ModName: jitc.dll
-	* ModVer: 0.0.0.0	 Offset: 000b6912
-	*
-	* The fix is to call checkOrientation() from here.
-	*/
-	checkOrientation (parent);
 	createWidget ();
 }
 
 void _setVisible (boolean visible) {
 	if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0) return;
-	long /*int*/ hwndParent = parent.handle;
+	long hwndParent = parent.handle;
 	if (visible) {
 		int flags = OS.TPM_LEFTBUTTON;
 		if (OS.GetKeyState (OS.VK_LBUTTON) >= 0) flags |= OS.TPM_RIGHTBUTTON;
@@ -264,7 +248,7 @@ void _setVisible (boolean visible) {
 	* is not returned to the focus control.  This causes confusion for AT users.
 	* The fix is to explicitly set the accessibility focus back to the focus control.
 	*/
-	long /*int*/ hFocus = OS.GetFocus();
+	long hFocus = OS.GetFocus();
 	if (hFocus != 0) {
 		OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, hFocus, OS.OBJID_CLIENT, 0);
 	}
@@ -350,6 +334,7 @@ void createHandle () {
 		handle = OS.CreatePopupMenu ();
 	}
 	if (handle == 0) error (SWT.ERROR_NO_HANDLES);
+	updateBackground ();
 }
 
 void createItem (MenuItem item, int index) {
@@ -368,8 +353,8 @@ void createItem (MenuItem item, int index) {
 	* becomes unexpectedly disabled.  The fix is to insert a
 	* space.
 	*/
-	long /*int*/ hHeap = OS.GetProcessHeap ();
-	long /*int*/ pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, 4);
+	long hHeap = OS.GetProcessHeap ();
+	long pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, 4);
 	OS.MoveMemory (pszText, new char [] {' ', '\0'}, 4);
 	MENUITEMINFO info = new MENUITEMINFO ();
 	info.cbSize = MENUITEMINFO.sizeof;
@@ -384,25 +369,25 @@ void createItem (MenuItem item, int index) {
 		display.removeMenuItem (item);
 		error (SWT.ERROR_ITEM_NOT_ADDED);
 	}
+
+	if (needsMenuCallback()) {
+		/*
+		 * Bug in Windows: when MIIM_BITMAP is used together with MFT_STRING,
+		 * InsertMenuItem() fails. The workaround is to set MIIM_BITMAP with
+		 * a separate SetMenuItemInfo().
+		 */
+
+		info.fMask = OS.MIIM_BITMAP;
+		info.hbmpItem = OS.HBMMENU_CALLBACK;
+		OS.SetMenuItemInfo (handle, index, true, info);
+	}
+
 	redraw ();
 }
 
 void createWidget () {
-	/*
-	* Bug in IBM JVM 1.3.1.  For some reason, when the following code is called
-	* from this method, the JVM issues this error:
-	*
-	* JVM Exception 0x2 (subcode 0x0) occurred in thread "main" (TID:0x9F19D8)
-	*
-	* In addition, on Windows XP, a dialog appears with following error message,
-	* indicating that the problem may be in the JIT:
-	*
-	* AppName: java.exe	 AppVer: 0.0.0.0	 ModName: jitc.dll
-	* ModVer: 0.0.0.0	 Offset: 000b6912
-	*
-	* The fix is to move the code to the caller of this method.
-	*/
-//	checkOrientation (parent);
+	checkOrientation (parent);
+	initThemeColors ();
 	createHandle ();
 	parent.addMenu (this);
 }
@@ -429,7 +414,7 @@ void destroyItem (MenuItem item) {
 @Override
 void destroyWidget () {
 	MenuItem cascade = this.cascade;
-	long /*int*/ hMenu = handle;
+	long hMenu = handle;
 	releaseHandle ();
 	if (cascade != null) {
 		cascade.setMenu (null, true);
@@ -442,9 +427,8 @@ void fixMenus (Decorations newParent) {
 	if (isDisposed()) {
 		return;
 	}
-	MenuItem [] items = getItems ();
-	for (int i=0; i<items.length; i++) {
-		items [i].fixMenus (newParent);
+	for (MenuItem item : getItems ()) {
+		item.fixMenus (newParent);
 	}
 	parent.removeMenu (this);
 	newParent.addMenu (this);
@@ -511,7 +495,7 @@ void fixMenus (Decorations newParent) {
 		if (parent.menuBar != this) {
 			return new Rectangle (0, 0, 0, 0);
 		}
-		long /*int*/ hwndShell = parent.handle;
+		long hwndShell = parent.handle;
 		MENUBARINFO info = new MENUBARINFO ();
 		info.cbSize = MENUBARINFO.sizeof;
 		if (OS.GetMenuBarInfo (hwndShell, OS.OBJID_MENU, 0, info)) {
@@ -620,7 +604,7 @@ public MenuItem getItem (int index) {
 	if (!OS.GetMenuItemInfo (handle, index, true, info)) {
 		error (SWT.ERROR_INVALID_RANGE);
 	}
-	id = (int)/*64*/info.dwItemData;
+	id = (int)info.dwItemData;
 	return display.getMenuItem (id);
 }
 
@@ -673,7 +657,7 @@ public MenuItem [] getItems () {
 			System.arraycopy (items, 0, newItems, 0, count);
 			items = newItems;
 		}
-		MenuItem item = display.getMenuItem ((int)/*64*/info.dwItemData);
+		MenuItem item = display.getMenuItem ((int)info.dwItemData);
 		if (item != null) items [count++] = item;
 		index++;
 	}
@@ -811,8 +795,8 @@ public boolean getVisible () {
 	if ((style & SWT.POP_UP) != 0) {
 		Menu [] popups = display.popups;
 		if (popups == null) return false;
-		for (int i=0; i<popups.length; i++) {
-			if (popups [i] == this) return true;
+		for (Menu popup : popups) {
+			if (popup == this) return true;
 		}
 	}
 	Shell shell = getShell ();
@@ -862,6 +846,13 @@ public int indexOf (MenuItem item) {
 	return -1;
 }
 
+void initThemeColors () {
+	if ((style & SWT.BAR) != 0) {
+		foreground = display.menuBarForegroundPixel;
+		background = display.menuBarBackgroundPixel;
+	}
+}
+
 /**
  * Returns <code>true</code> if the receiver is enabled and all
  * of the receiver's ancestors are enabled, and <code>false</code>
@@ -905,6 +896,34 @@ public boolean isVisible () {
 	return getVisible ();
 }
 
+
+boolean needsMenuCallback() {
+	/*
+	 * Note: using `HBMMENU_CALLBACK` disables XP theme for entire menu
+	 * containing the menu item. This has at least the following side
+	 * effects:
+	 * 1) Menu bar: items are no longer highlighted when mouse hovers
+	 * 2) Menu bar: text is now left-aligned without any margin
+	 * 3) Popup menu: Images and checkboxes are no longer merged into a single column
+	 */
+
+	if ((background != -1) || (backgroundImage != null)) {
+		/*
+		 * Since XP theming, `MENUINFO.hbrBack` has two issues:
+		 * 1) Menu bar completely ignores it
+		 * 2) Popup menus ignore it for image/checkbox area
+		 * The workaround is to disable XP theme via `HBMMENU_CALLBACK`.
+		 */
+		return true;
+	}
+
+	/*
+	 * Otherwise, if menu has foreground color configured, use
+	 * `HBMMENU_CALLBACK` to set color in `MenuItem.wmDrawChild` callback.
+	 */
+	return (foreground != -1);
+}
+
 void redraw () {
 	if (!isVisible ()) return;
 	if ((style & SWT.BAR) != 0) {
@@ -923,9 +942,7 @@ void releaseHandle () {
 
 @Override
 void releaseChildren (boolean destroy) {
-	MenuItem [] items = getItems ();
-	for (int i=0; i<items.length; i++) {
-		MenuItem item = items [i];
+	for (MenuItem item : getItems ()) {
 		if (item != null && !item.isDisposed ()) {
 			item.release (false);
 		}
@@ -1009,9 +1026,7 @@ public void removeMenuListener (MenuListener listener) {
 
 @Override
 void reskinChildren (int flags) {
-	MenuItem [] items = getItems ();
-	for (int i=0; i<items.length; i++) {
-		MenuItem item = items [i];
+	for (MenuItem item : getItems ()) {
 		item.reskin (flags);
 	}
 	super.reskinChildren (flags);
@@ -1232,21 +1247,20 @@ public void setLocation (Point location) {
  * @since 3.7
  */
 public void setOrientation (int orientation) {
-    checkWidget ();
-    if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0) return;
-    _setOrientation (orientation);
+	checkWidget ();
+	if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0) return;
+	_setOrientation (orientation);
 }
 
 void _setOrientation (int orientation) {
-   int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
-   if ((orientation & flags) == 0 || (orientation & flags) == flags) return;
-   style &= ~flags;
-   style |= orientation & flags;
-   style &= ~SWT.FLIP_TEXT_DIRECTION;
-   MenuItem [] itms = getItems ();
-   for (int i=0; i<itms.length; i++) {
-       itms [i].setOrientation (orientation);
-   }
+	int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
+	if ((orientation & flags) == 0 || (orientation & flags) == flags) return;
+	style &= ~flags;
+	style |= orientation & flags;
+	style &= ~SWT.FLIP_TEXT_DIRECTION;
+	for (MenuItem itm : getItems ()) {
+		itm.setOrientation (orientation);
+	}
 }
 
 /**
@@ -1282,9 +1296,7 @@ void update () {
 		return;
 	}
 	boolean hasCheck = false, hasImage = false;
-	MenuItem [] items = getItems ();
-	for (int i=0; i<items.length; i++) {
-		MenuItem item = items [i];
+	for (MenuItem item : getItems ()) {
 		if (item.image != null) {
 			if ((hasImage = true) && hasCheck) break;
 		}
@@ -1309,11 +1321,12 @@ void update () {
 void updateBackground () {
 	if (hBrush != 0) OS.DeleteObject (hBrush);
 	hBrush = 0;
-	if (backgroundImage != null) {
+
+	if (backgroundImage != null)
 		hBrush = OS.CreatePatternBrush (backgroundImage.handle);
-	} else {
-		if (background != -1) hBrush = OS.CreateSolidBrush (background);
-	}
+	else if (background != -1)
+		hBrush = OS.CreateSolidBrush (background);
+
 	MENUINFO lpcmi = new MENUINFO ();
 	lpcmi.cbSize = MENUINFO.sizeof;
 	lpcmi.fMask = OS.MIM_BACKGROUND;
@@ -1334,7 +1347,7 @@ void updateForeground () {
 	redraw ();
 }
 
-LRESULT wmTimer (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmTimer (long wParam, long lParam) {
 	if (wParam == ID_TOOLTIP_TIMER) {
 		POINT pt = new POINT ();
 		OS.GetCursorPos (pt);

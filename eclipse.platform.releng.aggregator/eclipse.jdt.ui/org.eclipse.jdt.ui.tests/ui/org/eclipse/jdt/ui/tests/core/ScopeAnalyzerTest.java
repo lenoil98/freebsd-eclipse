@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,10 +13,15 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Hashtable;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.TestOptions;
@@ -31,33 +36,23 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IBinding;
 
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.ScopeAnalyzer;
 
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 /**
   */
 public class ScopeAnalyzerTest extends CoreTests {
 
-	private static final Class<ScopeAnalyzerTest> THIS= ScopeAnalyzerTest.class;
+	@Rule
+	public ProjectTestSetup pts= new ProjectTestSetup();
 
 	private IJavaProject fJProject1;
 	private IPackageFragmentRoot fSourceFolder;
 
-	public ScopeAnalyzerTest(String name) {
-		super(name);
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 
 		fJProject1= ProjectTestSetup.getProject();
 		fSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
@@ -69,14 +64,15 @@ public class ScopeAnalyzerTest extends CoreTests {
 		JavaCore.setOptions(options);
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
 	}
 
+	@Test
 	public void testVariableDeclarations1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    int[] fGlobal;\n");
@@ -131,9 +127,10 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testVariableDeclarations2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("import java.io.IOException;\n");
 		buf.append("public class E {\n");
@@ -212,10 +209,11 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testVariableDeclarations3() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    private int fVar1, fVar2;\n");
@@ -258,6 +256,7 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testVariableDeclarations4() throws Exception {
 		IPackageFragment pack0= fSourceFolder.createPackageFragment("pack1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -297,6 +296,7 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testVariableDeclarations5() throws Exception {
 
 		IPackageFragment pack0= fSourceFolder.createPackageFragment("pack1", false, null);
@@ -357,9 +357,10 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testVariableDeclarations6() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    int[] fGlobal;\n");
@@ -439,10 +440,11 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testVariableDeclarations7() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    public void goo() {\n");
@@ -468,9 +470,10 @@ public class ScopeAnalyzerTest extends CoreTests {
 		}
 	}
 
+	@Test
 	public void testSwitchOnEnum() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public enum E {\n");
 		buf.append("    A, B, C;\n");
@@ -508,10 +511,11 @@ public class ScopeAnalyzerTest extends CoreTests {
 		}
 	}
 
+	@Test
 	public void testDeclarationsAfter() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    public int goo(final int param0) {\n");
@@ -575,10 +579,11 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testTypeDeclarations1() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    public static class A {\n");
@@ -651,10 +656,11 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testTypeDeclarations2() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    public static class E1 extends G {\n");
@@ -688,6 +694,7 @@ public class ScopeAnalyzerTest extends CoreTests {
 		}
 	}
 
+	@Test
 	public void testTypeDeclarationsTypeParameters() throws Exception {
 
 		IPackageFragment pack0= fSourceFolder.createPackageFragment("test0.ae", false, null);
@@ -723,9 +730,10 @@ public class ScopeAnalyzerTest extends CoreTests {
 		}
 	}
 
+	@Test
 	public void testClassInstanceCreation() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    public Object foo(G g) {\n");
@@ -759,10 +767,11 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 
 
+	@Test
 	public void testMethodDeclarations1() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    public void foo() {\n");
@@ -793,10 +802,11 @@ public class ScopeAnalyzerTest extends CoreTests {
 
 	}
 
+	@Test
 	public void testMethodDeclarations2() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1.ae", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1.ae;\n");
 		buf.append("public class E {\n");
 		buf.append("    int fVar1, fVar2;\n");
@@ -877,10 +887,11 @@ public class ScopeAnalyzerTest extends CoreTests {
 		assertEqualStringsIgnoreOrder(names, expected);
 	}
 
+	@Test
 	public void testEnumConstantDeclaration1() throws Exception {
 
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test;\n");
 		buf.append("\n");
 		buf.append("public enum TestEnum {\n");
@@ -901,12 +912,10 @@ public class ScopeAnalyzerTest extends CoreTests {
 			int offset= buf.toString().indexOf(str);
 
 			int flags= ScopeAnalyzer.METHODS;
-			IBinding[] res= new ScopeAnalyzer(astRoot).getDeclarationsInScope(offset, flags);
-			for (int i= 0; i < res.length; i++) {
-				if ("getDefaultValue".equals(res[i].getName())) {
+			for (IBinding binding : new ScopeAnalyzer(astRoot).getDeclarationsInScope(offset, flags)) {
+				if ("getDefaultValue".equals(binding.getName())) {
 					return;
 				}
-
 			}
 			assertFalse("getDefaultValue not found", true);
 		}
@@ -924,9 +933,9 @@ public class ScopeAnalyzerTest extends CoreTests {
 	private void assertNoProblems(CompilationUnit astRoot) {
 		IProblem[] problems= astRoot.getProblems();
 		if (problems.length > 0) {
-			StringBuffer buf= new StringBuffer();
-			for (int i= 0; i < problems.length; i++) {
-				buf.append(problems[i].getMessage()).append('\n');
+			StringBuilder buf= new StringBuilder();
+			for (IProblem problem : problems) {
+				buf.append(problem.getMessage()).append('\n');
 			}
 			assertTrue(buf.toString(), false);
 		}

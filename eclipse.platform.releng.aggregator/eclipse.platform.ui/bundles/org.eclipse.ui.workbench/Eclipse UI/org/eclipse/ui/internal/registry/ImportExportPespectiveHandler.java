@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 IBM Corporation and others.
+ * Copyright (c) 2015, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
@@ -32,6 +33,7 @@ import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.core.di.extensions.Preference;
 import org.eclipse.e4.core.services.events.IEventBroker;
 import org.eclipse.e4.core.services.log.Logger;
+import org.eclipse.e4.ui.internal.workbench.E4XMIResource;
 import org.eclipse.e4.ui.internal.workbench.E4XMIResourceFactory;
 import org.eclipse.e4.ui.model.application.MAddon;
 import org.eclipse.e4.ui.model.application.MApplication;
@@ -50,7 +52,6 @@ import org.eclipse.ui.internal.wizards.preferences.PreferencesExportWizard;
 import org.eclipse.ui.internal.wizards.preferences.PreferencesImportWizard;
 import org.osgi.service.event.EventHandler;
 
-@SuppressWarnings("restriction")
 public class ImportExportPespectiveHandler {
 
 	private static final String PERSPECTIVE_SUFFIX_4X = "_e4persp"; //$NON-NLS-1$
@@ -73,7 +74,8 @@ public class ImportExportPespectiveHandler {
 	@Inject
 	private Logger logger;
 
-	@Inject @Preference(nodePath="org.eclipse.ui.workbench")
+	@Inject
+	@Preference(nodePath = "org.eclipse.ui.workbench")
 	private IEclipsePreferences preferences;
 
 	@Inject
@@ -234,7 +236,9 @@ public class ImportExportPespectiveHandler {
 		resource.getContents().add((EObject) persp);
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		try {
-			resource.save(output, null);
+			Map<String, Object> options = new HashMap<>();
+			options.put(E4XMIResource.OPTION_FILTER_PERSIST_STATE, Boolean.TRUE);
+			resource.save(output, options);
 		} finally {
 			try {
 				output.close();

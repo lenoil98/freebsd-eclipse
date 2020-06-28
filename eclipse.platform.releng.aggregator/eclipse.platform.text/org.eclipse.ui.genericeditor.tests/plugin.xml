@@ -35,6 +35,10 @@
 	        </test>
 	      </enabledWhen>
 		</contentAssistProcessor>
+	<contentAssistProcessor
+		class="org.eclipse.ui.genericeditor.tests.contributions.ToUpperCaseContentAssistProcessor"
+		contentType="org.eclipse.ui.genericeditor.tests.content-type">
+	</contentAssistProcessor>
 	</extension>
 	<extension
 			point="org.eclipse.ui.genericeditor.hoverProviders">
@@ -263,4 +267,23 @@
 				type="org.eclipse.ui.internal.genericeditor.ExtensionBasedTextEditor">
     	</propertyTester>
 	</extension>
+    <extension
+          point="org.eclipse.ui.genericeditor.icons">
+        <icon
+             contentType="org.eclipse.ui.genericeditor.tests.content-type"
+             icon="icons/newfile_wiz.png"/>
+        <icon
+             contentType="org.eclipse.ui.genericeditor.tests.specialized-content-type"
+             icon="icons/newfolder_wiz.png"/>
+        <icon
+             contentType="org.eclipse.ui.genericeditor.tests.sub-specialized-content-type"
+             icon="platform:/plugin/org.eclipse.ui.ide/icons/full/etool16/newprj_wiz.png"/>
+    </extension>
+    <extension
+          point="org.eclipse.ui.genericeditor.quickAssistProcessors">
+       <quickAssistProcessor
+             class="org.eclipse.ui.genericeditor.tests.contributions.MockQuickAssistProcessor"
+             contentType="org.eclipse.ui.genericeditor.tests.content-type">
+       </quickAssistProcessor>
+    </extension>
 </plugin>

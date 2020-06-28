@@ -78,6 +78,7 @@ import org.eclipse.jdt.internal.ui.viewsupport.ImageDescriptorRegistry;
  * <p>
  * The lifecycle of a <code>CompletionProposalCollector</code> instance is very
  * simple:
+ * </p>
  * <pre>
  * ICompilationUnit unit= ...
  * int offset= ...
@@ -89,6 +90,7 @@ import org.eclipse.jdt.internal.ui.viewsupport.ImageDescriptorRegistry;
  *
  * &#x2f;&#x2f; display &#x2f; process proposals
  * </pre>
+ * <p>
  * Note that after a code completion operation, the collector will store any
  * received proposals, which may require a considerable amount of memory, so the
  * collector should not be kept as a reference after a completion operation.
@@ -172,7 +174,7 @@ public class CompletionProposalCollector extends CompletionRequestor {
 		super(ignoreAll);
 		fJavaProject= project;
 		fCompilationUnit= cu;
-		
+
 		fIsTestCodeExcluded = cu != null && !isTestSource(project, cu);
 
 		fUserReplacementLength= -1;
@@ -180,7 +182,7 @@ public class CompletionProposalCollector extends CompletionRequestor {
 			setRequireExtendedContext(true);
 		}
 	}
-	
+
 	private boolean isTestSource(IJavaProject project, ICompilationUnit cu) {
 		try {
 			IClasspathEntry[] resolvedClasspath= project.getResolvedClasspath(true);
@@ -442,10 +444,9 @@ public class CompletionProposalCollector extends CompletionRequestor {
 			case CompletionProposal.PACKAGE_REF:
 				return createPackageProposal(proposal);
 			case CompletionProposal.MODULE_REF:
-				return createModuleProposal(proposal);
-			case CompletionProposal.MODULE_DECLARATION:
-				return createModuleProposal(proposal);
-			case CompletionProposal.TYPE_REF:
+		case CompletionProposal.MODULE_DECLARATION:
+			return createModuleProposal(proposal);
+		case CompletionProposal.TYPE_REF:
 				return createTypeProposal(proposal);
 			case CompletionProposal.JAVADOC_TYPE_REF:
 				return createJavadocLinkTypeProposal(proposal);

@@ -82,7 +82,7 @@ protected boolean buildStructure(OpenableElementInfo info, IProgressMonitor pm, 
 		info.setChildren(JavaElement.NO_ELEMENTS);
 		return false;
 	}
-	
+
 	// Make the type
 	IType type = getType();
 	info.setChildren(new IJavaElement[] {type});
@@ -146,11 +146,7 @@ public boolean existsUsingJarTypeCache() {
 		}
 		try {
 			info = getJarBinaryTypeInfo();
-		} catch (CoreException e) {
-			// leave info null
-		} catch (IOException e) {
-			// leave info null
-		} catch (ClassFormatException e) {
+		} catch (CoreException | IOException | ClassFormatException e) {
 			// leave info null
 		}
 		manager.putJarTypeInfo(type, info == null ? JavaModelCache.NON_EXISTING_JAR_TYPE_INFO : info);
@@ -238,7 +234,7 @@ private IBinaryType getJarBinaryTypeInfo() throws CoreException, IOException, Cl
 	} else {
 		result = BinaryTypeFactory.readType(descriptor, null);
 	}
-		
+
 	if (result == null) {
 		return null;
 	}
@@ -262,7 +258,7 @@ private IBinaryType getJarBinaryTypeInfo() throws CoreException, IOException, Cl
 			IProject project = javaProject.getProject();
 			IPath externalAnnotationPath = ClasspathEntry.getExternalAnnotationPath(entry, project, false); // unresolved for use in ExternalAnnotationTracker
 			if (externalAnnotationPath != null) {
-				result = setupExternalAnnotationProvider(project, externalAnnotationPath, result, 
+				result = setupExternalAnnotationProvider(project, externalAnnotationPath, result,
 						entryName.substring(0, entryName.length() - SuffixConstants.SUFFIX_CLASS.length));
 			} else if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
 				result = new ExternalAnnotationDecorator(result, true);

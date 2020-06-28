@@ -29,8 +29,8 @@ import org.eclipse.help.internal.search.SearchProgressMonitor;
 import org.eclipse.help.internal.webapp.data.SearchData;
 import org.eclipse.help.internal.webapp.data.UrlUtil;
 import org.eclipse.help.internal.webapp.parser.SearchParser;
-import org.eclipse.help.internal.webapp.utils.Utils;
 import org.eclipse.help.internal.webapp.utils.SearchXMLGenerator;
+import org.eclipse.help.internal.webapp.utils.Utils;
 
 /**
  * Returns the search hits in <code>xml</code> or <code>json</code>
@@ -127,7 +127,7 @@ public class AdvancedSearchService extends HttpServlet {
 			}
 		}
 
-        // Call after the catch.
+		// Call after the catch.
 		// An empty JSON is created if any Exception is thrown
 		// Else returns the complete JSON
 		return searchParser.toJSON();

@@ -20,7 +20,7 @@ import org.eclipse.core.databinding.DataBindingContext;
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.core.databinding.property.value.IValueProperty;
 import org.eclipse.jface.databinding.swt.DisplayRealm;
-import org.eclipse.jface.databinding.swt.WidgetProperties;
+import org.eclipse.jface.databinding.swt.typed.WidgetProperties;
 import org.eclipse.jface.databinding.util.JFaceProperties;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
@@ -36,31 +36,28 @@ public class Snippet031JFaceObservable {
 	public static final String NAME_PROPERTY = "name_property";
 
 	public static void main(String[] args) {
-		Display display = new Display();
-		final ViewModel viewModel = new ViewModel();
+		final Display display = new Display();
 
 		Realm.runWithDefault(DisplayRealm.getRealm(display), () -> {
-			final Shell shell = new View(viewModel).createShell();
-			// The SWT event loop
-			Display display1 = Display.getCurrent();
+			final Shell shell = new View(new ViewModel()).createShell();
+
 			while (!shell.isDisposed()) {
-				if (!display1.readAndDispatch()) {
-					display1.sleep();
+				if (!display.readAndDispatch()) {
+					display.sleep();
 				}
 			}
 		});
 		// Print the results
-		System.out.println("person.getName() = "
-				+ viewModel.getPerson().getName());
+		System.out.println("person.getName() = " + new ViewModel().getPerson().getName());
 	}
 
-	// The data model class. This is normally a persistent class of some sort.
-	//
-	// In this example, we extend the EventManager class
-	// to manage our listeners and we fire a property change
-	// event when the object state changes.
+	/**
+	 * The data model class.
+	 * <p>
+	 * In this example, we extend the EventManager class to manage our listeners and
+	 * we fire a property change event when the object state changes.
+	 */
 	public static class Person extends EventManager {
-		// A property...
 		String name = "HelloWorld";
 
 		public String getName() {
@@ -68,34 +65,29 @@ public class Snippet031JFaceObservable {
 		}
 
 		public void setName(String name) {
-			fireChange(new PropertyChangeEvent(this, NAME_PROPERTY, this.name,
-					this.name = name));
+			fireChange(new PropertyChangeEvent(this, NAME_PROPERTY, this.name, this.name = name));
 		}
 
 		public void addPropertyChangeListener(IPropertyChangeListener listener) {
 			addListenerObject(listener);
 		}
 
-		public void removePropertyChangeListener(
-				IPropertyChangeListener listener) {
+		public void removePropertyChangeListener(IPropertyChangeListener listener) {
 			removeListenerObject(listener);
 		}
 
 		private void fireChange(PropertyChangeEvent event) {
 			final Object[] list = getListeners();
-			for (int i = 0; i < list.length; ++i) {
-				((IPropertyChangeListener) list[i]).propertyChange(event);
+			for (Object element : list) {
+				((IPropertyChangeListener) element).propertyChange(event);
 			}
 		}
 
 	}
 
-	// The View's model--the root of our Model graph for this particular GUI.
-	//
-	// Typically each View class has a corresponding ViewModel class.
-	// The ViewModel is responsible for getting the objects to edit from the
-	// DAO. Since this snippet doesn't have any persistent objects to
-	// retrieve, this ViewModel just instantiates a model object to edit.
+	/**
+	 * The View's model--the root of our Model graph for this particular GUI.
+	 */
 	static class ViewModel {
 		// The model to bind
 		private Person person = new Person();
@@ -105,7 +97,7 @@ public class Snippet031JFaceObservable {
 		}
 	}
 
-	// The GUI view
+	/** The GUI view. */
 	static class View {
 		private ViewModel viewModel;
 		private Text name;
@@ -125,15 +117,13 @@ public class Snippet031JFaceObservable {
 			DataBindingContext bindingContext = new DataBindingContext();
 			Person person = viewModel.getPerson();
 
-			IValueProperty nameProperty = JFaceProperties.value(Person.class,
-					"name", NAME_PROPERTY);
+			IValueProperty<Person, String> nameProperty = JFaceProperties.value(Person.class, "name", NAME_PROPERTY);
 
 			bindingContext.bindValue(WidgetProperties.text(SWT.Modify).observe(name), nameProperty.observe(person));
 
 			Label label = new Label(shell, SWT.NONE);
 			bindingContext.bindValue(WidgetProperties.text().observe(label), nameProperty.observe(person));
 
-			// Open and return the Shell
 			shell.pack();
 			shell.open();
 			return shell;

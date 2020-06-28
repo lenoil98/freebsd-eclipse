@@ -14,7 +14,7 @@
 package org.eclipse.help.internal.workingset;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.help.internal.criteria.CriterionResource;
@@ -59,17 +59,13 @@ public class WorkingSet {
 			elements = new AdaptableHelpResource[0];
 
 		this.elements = new ArrayList<>(elements.length);
-		for (int i = 0; i < elements.length; i++) {
-			this.elements.add(elements[i]);
-		}
+		Collections.addAll(this.elements, elements);
 
 		if (criteria == null)
 			criteria = new CriterionResource[0];
 
 		this.criteria = new ArrayList<>(criteria.length);
-		for (int j = 0; j < criteria.length; j++) {
-			this.criteria.add(criteria[j]);
-		}
+		Collections.addAll(this.criteria, criteria);
 	}
 
 	public void removeElement(AdaptableHelpResource element) {
@@ -97,16 +93,13 @@ public class WorkingSet {
 
 	public void setElements(AdaptableHelpResource[] elements) {
 		this.elements = new ArrayList<>(elements.length);
-		for (int i = 0; i < elements.length; i++)
-			this.elements.add(elements[i]);
+		Collections.addAll(this.elements, elements);
 	}
 
 
 	public void setCriteria(CriterionResource[] criteria) {
 		this.criteria = new ArrayList<>(criteria.length);
-		for(int i = 0; i < criteria.length; i++) {
-			this.criteria.add(criteria[i]);
-		}
+		Collections.addAll(this.criteria, criteria);
 	}
 
 	public CriterionResource[] getCriteria(){
@@ -123,9 +116,8 @@ public class WorkingSet {
 
 		Element contents = doc.createElement("contents"); //$NON-NLS-1$
 		ws.appendChild(contents);
-		for (Iterator<AdaptableHelpResource> it = elements.iterator(); it.hasNext();) {
+		for (AdaptableHelpResource helpResource : elements) {
 			Element child = doc.createElement("item"); //$NON-NLS-1$
-			AdaptableHelpResource helpResource = it.next();
 			helpResource.saveState(child);
 			contents.appendChild(child);
 		}
@@ -134,16 +126,14 @@ public class WorkingSet {
 			Element criteriaElement = doc.createElement("criteria"); //$NON-NLS-1$
 			ws.appendChild(criteriaElement);
 
-			for(Iterator<CriterionResource> iterator = criteria.iterator(); iterator.hasNext();){
+			for (CriterionResource criterion : criteria) {
 				Element criterionItem = doc.createElement("criterion"); //$NON-NLS-1$
 				criteriaElement.appendChild(criterionItem);
-				CriterionResource criterion = iterator.next();
 				String criterionName = criterion.getCriterionName();
 				criterionItem.setAttribute("name", criterionName);//$NON-NLS-1$
 				List<String> criterionValues = criterion.getCriterionValues();
 				if(!criterionValues.isEmpty()){
-					for(Iterator<String> iter = criterionValues.iterator(); iter.hasNext();){
-						String value = iter.next();
+					for (String value : criterionValues) {
 						if(value != null){
 							Element item = doc.createElement("item"); //$NON-NLS-1$
 							criterionItem.appendChild(item);

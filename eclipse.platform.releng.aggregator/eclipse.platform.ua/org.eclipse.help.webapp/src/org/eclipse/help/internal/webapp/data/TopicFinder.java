@@ -62,10 +62,10 @@ public class TopicFinder {
 				}
 				// if there was an anchor, search again without it
 			} while (foundTopicPath == null && index != -1);
-	    } else {
-	    	selectedToc = -1;
+		} else {
+			selectedToc = -1;
 			foundTopicPath = null;
-	    }
+		}
 	}
 
 	public ITopic[] getTopicPathFromNav(String nav) {
@@ -90,22 +90,22 @@ public class TopicFinder {
 		}
 	}
 
-    public ITopic[] getTopicPath() {
+	public ITopic[] getTopicPath() {
 		return foundTopicPath;
 	}
 
-    public int getSelectedToc() {
-    	return selectedToc;
-    }
+	public int getSelectedToc() {
+		return selectedToc;
+	}
 
-    public String getNumericPath() {
-    	return numericPath;
-    }
+	public String getNumericPath() {
+		return numericPath;
+	}
 
 	/*
-     * Finds a path of ITopics in the given IToc to the given topic. If the
-     * toc doesn't contain the topic, returns null.
-     */
+	 * Finds a path of ITopics in the given IToc to the given topic. If the
+	 * toc doesn't contain the topic, returns null.
+	 */
 	private ITopic[] getTopicPathInToc(ITopic topicToFind, IToc toc) {
 		if (topicToFind.getLabel().equals(toc.getLabel())) {
 			return new ITopic[0];
@@ -215,7 +215,7 @@ public class TopicFinder {
 	 * @return -1 if the toc is not found
 	 */
 	private int findTocContainingTopic(String topic) {
-		if (topic == null || topic.equals("")) //$NON-NLS-1$
+		if (topic == null || topic.isEmpty())
 			return -1;
 
 		int index = topic.indexOf("/topic/"); //$NON-NLS-1$
@@ -246,7 +246,7 @@ public class TopicFinder {
 		if (index != -1)
 			topic = topic.substring(0, index);
 
-		if (topic == null || topic.equals("")) //$NON-NLS-1$
+		if (topic == null || topic.isEmpty())
 			return -1;
 
 		// try to find in enabled tocs first
@@ -303,7 +303,7 @@ public class TopicFinder {
 		if (index != -1)
 			topic = topic.substring(0, index);
 
-		if (topic == null || topic.equals("")) //$NON-NLS-1$
+		if (topic == null || topic.isEmpty())
 			return null;
 
 		if (selectedToc < 0)

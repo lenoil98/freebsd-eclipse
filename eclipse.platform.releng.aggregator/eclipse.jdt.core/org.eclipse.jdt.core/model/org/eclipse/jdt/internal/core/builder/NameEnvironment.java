@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,7 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
- *     Terry Parker <tparker@google.com> 
+ *     Terry Parker <tparker@google.com>
  *           - Contribution for https://bugs.eclipse.org/bugs/show_bug.cgi?id=372418
  *           -  Another problem with inner classes referenced from jars or class folders: "The type ... cannot be resolved"
  *     Stephan Herrmann - Contribution for
@@ -127,7 +127,7 @@ private void computeClasspathLocations(
 	}
 	IModuleDescription projectModule = javaProject.getModuleDescription();
 
-	String patchedModuleName = ModuleEntryProcessor.pushPatchToFront(classpathEntries);
+	String patchedModuleName = ModuleEntryProcessor.pushPatchToFront(classpathEntries, javaProject);
 	IModule patchedModule = null;
 
 	nextEntry : for (int i = 0, l = classpathEntries.length; i < l; i++) {
@@ -177,9 +177,9 @@ private void computeClasspathLocations(
 					bLocation.patchModuleName = patchedModuleName;
 				} else {
 					ClasspathLocation sourceLocation = ClasspathLocation.forSourceFolder(
-								(IContainer) target, 
+								(IContainer) target,
 								outputFolder,
-								entry.fullInclusionPatternChars(), 
+								entry.fullInclusionPatternChars(),
 								entry.fullExclusionPatternChars(),
 								entry.ignoreOptionalProblems());
 					if (patchedModule != null) {
@@ -305,7 +305,7 @@ private void computeClasspathLocations(
 							&& JavaCore.IGNORE.equals(javaProject.getOption(JavaCore.COMPILER_PB_DISCOURAGED_REFERENCE, true)))
 								? null
 								: entry.getAccessRuleSet();
-					String release = JavaCore.DISABLED.equals(javaProject.getOption(JavaCore.COMPILER_RELEASE, true)) ? null : compliance;
+					String release = JavaCore.ENABLED.equals(javaProject.getOption(JavaCore.COMPILER_RELEASE, false)) ? compliance : null;
 					ClasspathLocation bLocation = null;
 					String libPath = path.toOSString();
 					if (Util.isJrt(libPath)) {
@@ -378,7 +378,7 @@ private void computeClasspathLocations(
 		this.binaryLocations[index++] = (ClasspathLocation) outputFolders.get(i);
 	for (int i = 0, l = bLocations.size(); i < l; i++)
 		this.binaryLocations[index++] = (ClasspathLocation) bLocations.get(i);
-	
+
 	if (moduleEntries != null && !moduleEntries.isEmpty())
 		this.modulePathEntries = moduleEntries;
 }
@@ -482,7 +482,7 @@ private NameEnvironmentAnswer findClass(String qualifiedTypeName, char[] typeNam
 		// if we answer X.java & it no longer defines Y then the binary type looking for Y will think the class path is wrong
 		// let the recompile loop fix up dependents when the secondary type Y has been deleted from X.java
 		// Only enclosing type names are present in the additional units table, so strip off inner class specifications
-		// when doing the lookup (https://bugs.eclipse.org/372418). 
+		// when doing the lookup (https://bugs.eclipse.org/372418).
 		// Also take care of $ in the name of the class (https://bugs.eclipse.org/377401)
 		// and prefer name with '$' if unit exists rather than failing to search for nested class (https://bugs.eclipse.org/392727)
 		SourceFile unit = (SourceFile) this.additionalUnits.get(qualifiedTypeName); // doesn't have file extension
@@ -545,7 +545,7 @@ public NameEnvironmentAnswer findType(char[][] compoundName, char[] moduleName) 
 	if (compoundName != null)
 		return findClass(
 			String.valueOf(CharOperation.concatWith(compoundName, '/')),
-			compoundName[compoundName.length - 1], 
+			compoundName[compoundName.length - 1],
 			LookupStrategy.get(moduleName),
 			LookupStrategy.getStringName(moduleName));
 	return null;
@@ -561,8 +561,8 @@ public NameEnvironmentAnswer findType(char[] typeName, char[][] packageName, cha
 }
 
 @Override
-public char[][] getModulesDeclaringPackage(char[][] parentPackageName, char[] name, char[] moduleName) {
-	String pkgName = new String(CharOperation.concatWith(parentPackageName, name, '/'));
+public char[][] getModulesDeclaringPackage(char[][] packageName, char[] moduleName) {
+	String pkgName = new String(CharOperation.concatWith(packageName, '/'));
 	String modName = new String(moduleName);
 	LookupStrategy strategy = LookupStrategy.get(moduleName);
 	switch (strategy) {
@@ -685,7 +685,19 @@ public boolean isPackage(String qualifiedPackageName, char[] moduleName) {
 	}
 	return false;
 }
-
+@Override
+public char[][] listPackages(char[] moduleName) {
+	LookupStrategy strategy = LookupStrategy.get(moduleName);
+	switch (strategy) {
+		case Named:
+			IModulePathEntry entry = this.modulePathEntries.get(String.valueOf(moduleName));
+			if (entry == null)
+				return CharOperation.NO_CHAR_CHAR;
+			return entry.listPackages();
+		default:
+			throw new UnsupportedOperationException("can list packages only of a named module"); //$NON-NLS-1$
+	}
+}
 void setNames(String[] typeNames, SourceFile[] additionalFiles) {
 	// convert the initial typeNames to a set
 	if (typeNames == null) {

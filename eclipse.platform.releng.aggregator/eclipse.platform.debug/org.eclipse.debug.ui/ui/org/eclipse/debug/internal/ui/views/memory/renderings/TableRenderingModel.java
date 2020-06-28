@@ -16,6 +16,7 @@ package org.eclipse.debug.internal.ui.views.memory.renderings;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
@@ -165,8 +166,7 @@ public class TableRenderingModel extends AbstractVirtualContentTableModel implem
 
 	@Override
 	public void cache(Object[] elements) {
-		for (int i = 0; i < elements.length; i++) {
-			Object obj = elements[i];
+		for (Object obj : elements) {
 			if (obj instanceof MemorySegment) {
 				cache(((MemorySegment) obj).getAddress(), obj);
 			}
@@ -186,8 +186,7 @@ public class TableRenderingModel extends AbstractVirtualContentTableModel implem
 			return newElements;
 		}
 
-		for (int j = 0; j < newElements.length; j++) {
-			Object obj = newElements[j];
+		for (Object obj : newElements) {
 			if (obj instanceof MemorySegment) {
 				MemorySegment newSegment = (MemorySegment) obj;
 				MemorySegment oldSegment = (MemorySegment) fCache.get(newSegment.getAddress());
@@ -274,8 +273,8 @@ public class TableRenderingModel extends AbstractVirtualContentTableModel implem
 		}
 
 		MemorySegment[] newSegments = convertMemoryBytesToSegments(address, bytes, bytesPerLine, numAddressableUnitPerLine, addressableSize, alignAddress);
-		for (int i = 0; i < newSegments.length; i++) {
-			cache(newSegments[i].getAddress(), newSegments[i]);
+		for (MemorySegment newSegment : newSegments) {
+			cache(newSegment.getAddress(), newSegment);
 		}
 	}
 
@@ -289,8 +288,7 @@ public class TableRenderingModel extends AbstractVirtualContentTableModel implem
 
 		ArrayList<Object> segments = new ArrayList<>();
 		Object[] elements = getElements();
-		for (int i = 0; i < elements.length; i++) {
-			Object element = elements[i];
+		for (Object element : elements) {
 			if (element instanceof MemorySegment) {
 				segments.add(element);
 			}
@@ -321,11 +319,9 @@ public class TableRenderingModel extends AbstractVirtualContentTableModel implem
 
 	private MemoryByte[] convertSegmentsToBytes(MemorySegment[] segments) {
 		ArrayList<MemoryByte> toReturn = new ArrayList<>();
-		for (int i = 0; i < segments.length; i++) {
-			MemoryByte[] temp = segments[i].getBytes();
-			for (int j = 0; j < temp.length; j++) {
-				toReturn.add(temp[j]);
-			}
+		for (MemorySegment segment : segments) {
+			MemoryByte[] temp = segment.getBytes();
+			Collections.addAll(toReturn, temp);
 		}
 		return toReturn.toArray(new MemoryByte[0]);
 	}
@@ -405,9 +401,7 @@ public class TableRenderingModel extends AbstractVirtualContentTableModel implem
 		if (computeChanges()) {
 			Object[] newContent = compare(kids.toArray());
 			ArrayList<Object> newList = new ArrayList<>();
-			for (int i = 0; i < newContent.length; i++) {
-				newList.add(newContent[i]);
-			}
+			Collections.addAll(newList, newContent);
 			super.setChildren(parentNode, newList);
 		} else {
 			super.setChildren(parentNode, kids);

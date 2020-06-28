@@ -45,8 +45,7 @@ import org.eclipse.ui.progress.UIJob;
  *
  * @since 3.2
  */
-public class LinkEditorAction extends Action implements
-		ISelectionChangedListener, IPropertyListener {
+public class LinkEditorAction extends Action implements ISelectionChangedListener, IPropertyListener {
 
 	private IPartListener partListener;
 
@@ -59,8 +58,7 @@ public class LinkEditorAction extends Action implements
 	private boolean ignoreSelectionChanged;
 	private boolean ignoreEditorActivation;
 
-	private UIJob activateEditorJob = new UIJob(
-			CommonNavigatorMessages.Link_With_Editor_Job_) {
+	private UIJob activateEditorJob = new UIJob(CommonNavigatorMessages.Link_With_Editor_Job_) {
 		@Override
 		public IStatus runInUIThread(IProgressMonitor monitor) {
 
@@ -69,15 +67,13 @@ public class LinkEditorAction extends Action implements
 				if (selection != null && !selection.isEmpty()) {
 
 					if (selection.size() == 1) {
-						final ILinkHelper[] helpers = linkService
-								.getLinkHelpersFor(selection.getFirstElement());
+						ILinkHelper[] helpers = linkService.getLinkHelpersFor(selection.getFirstElement());
 						if (helpers.length > 0) {
 							ignoreEditorActivation = true;
 							SafeRunner.run(new NavigatorSafeRunnable() {
 								@Override
 								public void run() throws Exception {
-									helpers[0].activateEditor(commonNavigator.getSite()
-											.getPage(), selection);
+									helpers[0].activateEditor(commonNavigator.getSite().getPage(), selection);
 								}
 							});
 							ignoreEditorActivation = false;
@@ -89,8 +85,7 @@ public class LinkEditorAction extends Action implements
 		}
 	};
 
-	private UIJob updateSelectionJob = new UIJob(
-			CommonNavigatorMessages.Link_With_Editor_Job_) {
+	private UIJob updateSelectionJob = new UIJob(CommonNavigatorMessages.Link_With_Editor_Job_) {
 		@Override
 		public IStatus runInUIThread(IProgressMonitor monitor) {
 
@@ -98,14 +93,12 @@ public class LinkEditorAction extends Action implements
 				SafeRunner.run(new NavigatorSafeRunnable() {
 					@Override
 					public void run() throws Exception {
-						IWorkbenchPage page = commonNavigator.getSite()
-								.getPage();
+						IWorkbenchPage page = commonNavigator.getSite().getPage();
 						if (page != null) {
 							IEditorPart editor = page.getActiveEditor();
 							if (editor != null) {
 								IEditorInput input = editor.getEditorInput();
-								IStructuredSelection newSelection = linkService
-										.getSelectionFor(input);
+								IStructuredSelection newSelection = linkService.getSelectionFor(input);
 								if (!newSelection.isEmpty()) {
 									ignoreSelectionChanged = true;
 									commonNavigator.selectReveal(newSelection);
@@ -132,22 +125,19 @@ public class LinkEditorAction extends Action implements
 	 *            {@link INavigatorContentService}.
 	 * @param linkHelperService
 	 */
-	public LinkEditorAction(CommonNavigator aNavigator, CommonViewer aViewer,
-			LinkHelperService linkHelperService) {
+	public LinkEditorAction(CommonNavigator aNavigator, CommonViewer aViewer, LinkHelperService linkHelperService) {
 		super(CommonNavigatorMessages.LinkEditorActionDelegate_0);
+		activateEditorJob.setSystem(true);
+		updateSelectionJob.setSystem(true);
 		linkService = linkHelperService;
 		setToolTipText(CommonNavigatorMessages.LinkEditorActionDelegate_1);
 		commonNavigator = aNavigator;
 		commonViewer = aViewer;
 		setActionDefinitionId(IWorkbenchCommandConstants.NAVIGATE_TOGGLE_LINK_WITH_EDITOR);
-		PlatformUI.getWorkbench().getHelpSystem()
-				.setHelp(this, NavigatorPlugin.PLUGIN_ID + ".link_editor_action"); //$NON-NLS-1$
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, NavigatorPlugin.PLUGIN_ID + ".link_editor_action"); //$NON-NLS-1$
 		init();
 	}
 
-	/**
-	 * @see org.eclipse.ui.IViewActionDelegate#init(org.eclipse.ui.IViewPart)
-	 */
 	protected void init() {
 		partListener = new IPartListener() {
 
@@ -183,8 +173,6 @@ public class LinkEditorAction extends Action implements
 
 		commonNavigator.addPropertyListener(this);
 
-		// linkHelperRegistry = new
-		// LinkHelperManager(commonViewer.getNavigatorContentService());
 	}
 
 	/**
@@ -194,15 +182,11 @@ public class LinkEditorAction extends Action implements
 		commonNavigator.removePropertyListener(this);
 		if (isChecked()) {
 			commonViewer.removePostSelectionChangedListener(this);
-			commonNavigator.getSite().getPage()
-					.removePartListener(partListener);
+			commonNavigator.getSite().getPage().removePartListener(partListener);
 		}
 
 	}
 
-	/**
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run() {
 		commonNavigator.setLinkingEnabled(!commonNavigator.isLinkingEnabled());
@@ -251,8 +235,7 @@ public class LinkEditorAction extends Action implements
 			commonNavigator.getSite().getPage().addPartListener(partListener);
 		} else {
 			commonViewer.removePostSelectionChangedListener(this);
-			commonNavigator.getSite().getPage()
-					.removePartListener(partListener);
+			commonNavigator.getSite().getPage().removePartListener(partListener);
 		}
 	}
 

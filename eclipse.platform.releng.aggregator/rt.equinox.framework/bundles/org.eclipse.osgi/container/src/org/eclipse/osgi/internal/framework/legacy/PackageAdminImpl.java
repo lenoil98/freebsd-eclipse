@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -35,8 +35,8 @@ import org.eclipse.osgi.internal.container.Capabilities;
 import org.eclipse.osgi.internal.container.InternalUtils;
 import org.eclipse.osgi.internal.framework.EquinoxContainer;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleReference;
 import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.Version;
 import org.osgi.framework.VersionRange;
 import org.osgi.framework.namespace.BundleNamespace;
@@ -57,7 +57,7 @@ import org.osgi.service.packageadmin.RequiredBundle;
 public class PackageAdminImpl implements PackageAdmin {
 	private final ModuleContainer container;
 
-	/* 
+	/*
 	 * We need to make sure that the GetBundleAction class loads early to prevent a ClassCircularityError when checking permissions.
 	 * See bug 161561
 	 */
@@ -76,6 +76,7 @@ public class PackageAdminImpl implements PackageAdmin {
 			this.clazz = clazz;
 		}
 
+		@Override
 		public Bundle run() {
 			return impl.getBundlePriv(clazz);
 		}
@@ -90,6 +91,7 @@ public class PackageAdminImpl implements PackageAdmin {
 		this.container = container;
 	}
 
+	@Override
 	public ExportedPackage[] getExportedPackages(Bundle bundle) {
 		if (bundle == null) {
 			return getExportedPackages((String) null);
@@ -112,26 +114,29 @@ public class PackageAdminImpl implements PackageAdmin {
 		return allExports.isEmpty() ? null : allExports.toArray(new ExportedPackage[allExports.size()]);
 	}
 
+	@Override
 	public ExportedPackage getExportedPackage(String name) {
 		ExportedPackage[] allExports = getExportedPackages(name);
 		if (allExports == null)
 			return null;
 		ExportedPackage result = null;
-		for (int i = 0; i < allExports.length; i++) {
-			if (name.equals(allExports[i].getName())) {
+		for (ExportedPackage allExport : allExports) {
+			if (name.equals(allExport.getName())) {
 				if (result == null) {
-					result = allExports[i];
+					result = allExport;
 				} else {
 					Version curVersion = result.getVersion();
-					Version newVersion = allExports[i].getVersion();
-					if (newVersion.compareTo(curVersion) >= 0)
-						result = allExports[i];
+					Version newVersion = allExport.getVersion();
+					if (newVersion.compareTo(curVersion) >= 0) {
+						result = allExport;
+					}
 				}
 			}
 		}
 		return result;
 	}
 
+	@Override
 	public ExportedPackage[] getExportedPackages(String name) {
 		String filter = "(" + PackageNamespace.PACKAGE_NAMESPACE + "=" + (name == null ? "*" : name) + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$//$NON-NLS-4$
 		Map<String, String> directives = Collections.<String, String> singletonMap(Namespace.REQUIREMENT_FILTER_DIRECTIVE, filter);
@@ -170,14 +175,17 @@ public class PackageAdminImpl implements PackageAdmin {
 		return (result.size() == 0 ? null : result.toArray(new ExportedPackage[result.size()]));
 	}
 
+	@Override
 	public void refreshPackages(Bundle[] input) {
 		container.getFrameworkWiring().refreshBundles(input == null ? null : Arrays.asList(input));
 	}
 
+	@Override
 	public boolean resolveBundles(Bundle[] input) {
 		return container.getFrameworkWiring().resolveBundles(input == null ? null : Arrays.asList(input));
 	}
 
+	@Override
 	public RequiredBundle[] getRequiredBundles(String symbolicName) {
 		String filter = "(" + BundleNamespace.BUNDLE_NAMESPACE + "=" + (symbolicName == null ? "*" : symbolicName) + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$//$NON-NLS-4$
 		Map<String, String> directives = Collections.<String, String> singletonMap(Namespace.REQUIREMENT_FILTER_DIRECTIVE, filter);
@@ -195,6 +203,7 @@ public class PackageAdminImpl implements PackageAdmin {
 		return result.isEmpty() ? null : result.toArray(new RequiredBundle[result.size()]);
 	}
 
+	@Override
 	public Bundle[] getBundles(String symbolicName, String versionRange) {
 		if (symbolicName == null) {
 			throw new IllegalArgumentException();
@@ -233,6 +242,7 @@ public class PackageAdminImpl implements PackageAdmin {
 		return sorted.toArray(new Bundle[sorted.size()]);
 	}
 
+	@Override
 	public Bundle[] getFragments(Bundle bundle) {
 		ModuleWiring wiring = getWiring(bundle);
 		if (wiring == null) {
@@ -253,6 +263,7 @@ public class PackageAdminImpl implements PackageAdmin {
 		return fragments.isEmpty() ? null : fragments.toArray(new Bundle[fragments.size()]);
 	}
 
+	@Override
 	public Bundle[] getHosts(Bundle bundle) {
 		ModuleWiring wiring = getWiring(bundle);
 		if (wiring == null) {
@@ -288,22 +299,21 @@ public class PackageAdminImpl implements PackageAdmin {
 	}
 
 	Bundle getBundlePriv(Class<?> clazz) {
-		ClassLoader cl = clazz.getClassLoader();
-		if (cl instanceof BundleReference) {
-			return ((BundleReference) cl).getBundle();
-		}
-		if (cl == getClass().getClassLoader()) {
+		Bundle b = FrameworkUtil.getBundle(clazz);
+		if (b == null && clazz.getClassLoader() == getClass().getClassLoader()) {
 			return container.getModule(0).getBundle();
 		}
-		return null;
+		return b;
 	}
 
+	@Override
 	public Bundle getBundle(final Class<?> clazz) {
 		if (System.getSecurityManager() == null)
 			return getBundlePriv(clazz);
 		return AccessController.doPrivileged(new GetBundleAction(this, clazz));
 	}
 
+	@Override
 	public int getBundleType(Bundle bundle) {
 		Module module = StartLevelImpl.getModule(bundle);
 		if (module == null) {
@@ -334,16 +344,19 @@ public class PackageAdminImpl implements PackageAdmin {
 			this.providerWiring = providerWiring;
 		}
 
+		@Override
 		public String getName() {
 			return (String) packageCapability.getAttributes().get(PackageNamespace.PACKAGE_NAMESPACE);
 		}
 
+		@Override
 		public Bundle getExportingBundle() {
 			if (!providerWiring.isInUse())
 				return null;
 			return providerWiring.getBundle();
 		}
 
+		@Override
 		public Bundle[] getImportingBundles() {
 			if (!providerWiring.isInUse()) {
 				return null;
@@ -408,19 +421,23 @@ public class PackageAdminImpl implements PackageAdmin {
 		/**
 		 * @deprecated
 		 */
+		@Override
 		public String getSpecificationVersion() {
 			return getVersion().toString();
 		}
 
+		@Override
 		public Version getVersion() {
 			Version version = (Version) packageCapability.getAttributes().get(PackageNamespace.CAPABILITY_VERSION_ATTRIBUTE);
 			return version == null ? Version.emptyVersion : version;
 		}
 
+		@Override
 		public boolean isRemovalPending() {
 			return !providerWiring.isCurrent();
 		}
 
+		@Override
 		public String toString() {
 			return packageCapability.toString();
 		}
@@ -484,10 +501,12 @@ public class PackageAdminImpl implements PackageAdmin {
 			return version == null ? Version.emptyVersion : version;
 		}
 
+		@Override
 		public boolean isRemovalPending() {
 			return !providerWiring.isCurrent();
 		}
 
+		@Override
 		public String toString() {
 			return bundleCapability.toString();
 		}

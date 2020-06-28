@@ -415,10 +415,10 @@ public class DefaultJavaFoldingStructureProvider implements IJavaFoldingStructur
 			}
 
 			if (caretLine > 0) {
-				IProblem[] problems= ast.getProblems();
-				for (int i= 0; i < problems.length; i++) {
-					if (problems[i].isError() && caretLine == problems[i].getSourceLineNumber())
+				for (IProblem problem : ast.getProblems()) {
+					if (problem.isError() && caretLine == problem.getSourceLineNumber()) {
 						return true;
+					}
 				}
 			}
 
@@ -438,10 +438,8 @@ public class DefaultJavaFoldingStructureProvider implements IJavaFoldingStructur
 			if (target.equals(element))
 				return delta;
 
-			IJavaElementDelta[] children= delta.getAffectedChildren();
-
-			for (int i= 0; i < children.length; i++) {
-				IJavaElementDelta d= findElement(target, children[i]);
+			for (IJavaElementDelta child : delta.getAffectedChildren()) {
+				IJavaElementDelta d= findElement(target, child);
 				if (d != null)
 					return d;
 			}
@@ -968,7 +966,7 @@ public class DefaultJavaFoldingStructureProvider implements IJavaFoldingStructur
 		ctx.getModel().modifyAnnotations(deletedArray, additions, changedArray);
 
 		ctx.fScanner.setSource(null);
-    }
+	}
 
 	private void computeFoldingStructure(FoldingStructureComputationContext ctx) {
 		IParent parent= (IParent) fInput;
@@ -986,9 +984,7 @@ public class DefaultJavaFoldingStructureProvider implements IJavaFoldingStructur
 	}
 
 	private void computeFoldingStructure(IJavaElement[] elements, FoldingStructureComputationContext ctx) throws JavaModelException {
-		for (int i= 0; i < elements.length; i++) {
-			IJavaElement element= elements[i];
-
+		for (IJavaElement element : elements) {
 			computeFoldingStructure(element, ctx);
 
 			if (element instanceof IParent) {
@@ -1006,13 +1002,13 @@ public class DefaultJavaFoldingStructureProvider implements IJavaFoldingStructur
 	 * <p>
 	 * Subclasses may extend or replace. The default implementation creates projection annotations
 	 * for the following elements:
+	 * </p>
 	 * <ul>
 	 * <li>true members (not for top-level types)</li>
 	 * <li>the javadoc comments of any member</li>
 	 * <li>header comments (javadoc or multi-line comments appearing before the first type's
 	 * javadoc or before the package or import declarations).</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @param element the java element to compute the folding structure for
 	 * @param ctx the computation context
@@ -1188,7 +1184,11 @@ public class DefaultJavaFoldingStructureProvider implements IJavaFoldingStructur
 		try {
 			boolean foundComment= false;
 			int terminal= scanner.getNextToken();
-			while (terminal != ITerminalSymbols.TokenNameEOF && !(terminal == ITerminalSymbols.TokenNameclass || terminal == ITerminalSymbols.TokenNameinterface || terminal == ITerminalSymbols.TokenNameenum || (foundComment && (terminal == ITerminalSymbols.TokenNameimport || terminal == ITerminalSymbols.TokenNamepackage)))) {
+			while (terminal != ITerminalSymbols.TokenNameEOF
+					&& (terminal != ITerminalSymbols.TokenNameclass)
+					&& (terminal != ITerminalSymbols.TokenNameinterface)
+					&& (terminal != ITerminalSymbols.TokenNameenum)
+					&& (!foundComment || ((terminal != ITerminalSymbols.TokenNameimport) && (terminal != ITerminalSymbols.TokenNamepackage)))) {
 
 				if (terminal == ITerminalSymbols.TokenNameCOMMENT_JAVADOC || terminal == ITerminalSymbols.TokenNameCOMMENT_BLOCK || terminal == ITerminalSymbols.TokenNameCOMMENT_LINE) {
 					if (!foundComment)
@@ -1417,8 +1417,7 @@ public class DefaultJavaFoldingStructureProvider implements IJavaFoldingStructur
 				return o1.position.getOffset() - o2.position.getOffset();
 			}
 		};
-		for (Iterator<List<Tuple>> it= map.values().iterator(); it.hasNext();) {
-			List<Tuple> list= it.next();
+		for (List<Tuple> list : map.values()) {
 			Collections.sort(list, comparator);
 		}
 		return map;

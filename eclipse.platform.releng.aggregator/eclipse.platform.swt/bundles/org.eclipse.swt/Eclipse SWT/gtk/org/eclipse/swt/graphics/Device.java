@@ -38,10 +38,10 @@ public abstract class Device implements Drawable {
 	 */
 	protected static final int CHANGE_SCALEFACTOR = 1;
 	/* Settings callbacks */
-	long /*int*/ gsettingsProc;
+	long gsettingsProc;
 	Callback gsettingsCallback;
 	boolean isConnected = false;
-	long /*int*/ displaySettings; //gsettings Dictionary
+	long displaySettings; //gsettings Dictionary
 
 	/**
 	 * the handle to the X Display
@@ -55,8 +55,8 @@ public abstract class Device implements Drawable {
 	 *
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
-	protected long /*int*/ xDisplay;
-	long /*int*/ shellHandle;
+	protected long xDisplay;
+	long shellHandle;
 
 	/* Debugging */
 	public static boolean DEBUG;
@@ -70,7 +70,7 @@ public abstract class Device implements Drawable {
 	boolean disposed;
 
 	/* Warning and Error Handlers */
-	long /*int*/ logProc;
+	long logProc;
 	Callback logCallback;
 	//NOT DONE - get list of valid names
 	String [] log_domains = {"", "GLib-GObject", "GLib", "GObject", "Pango", "ATK", "GdkPixbuf", "Gdk", "Gtk", "GnomeVFS", "GIO"};
@@ -79,7 +79,7 @@ public abstract class Device implements Drawable {
 
 	/* X Warning and Error Handlers */
 	static Callback XErrorCallback, XIOErrorCallback;
-	static long /*int*/ XErrorProc, XIOErrorProc, XNullErrorProc, XNullIOErrorProc;
+	static long XErrorProc, XIOErrorProc, XNullErrorProc, XNullIOErrorProc;
 	static Device[] Devices = new Device[4];
 
 	/*
@@ -104,7 +104,7 @@ public abstract class Device implements Drawable {
 	 */
 	protected int scaleFactor;
 
-	long /*int*/ emptyTab;
+	long emptyTab;
 
 	/*
 	* TEMPORARY CODE. When a graphics object is
@@ -260,7 +260,7 @@ void dispose_Object (Object object) {
 	}
 }
 
-static synchronized Device findDevice (long /*int*/ xDisplay) {
+static synchronized Device findDevice (long xDisplay) {
 	for (int i=0; i<Devices.length; i++) {
 		Device device = Devices [i];
 		if (device != null && device.xDisplay == xDisplay) {
@@ -418,15 +418,15 @@ public Point getDPI () {
 public FontData[] getFontList (String faceName, boolean scalable) {
 	checkDevice ();
 	if (!scalable) return new FontData[0];
-	long /*int*/[] family = new long /*int*/[1];
-	long /*int*/[] face = new long /*int*/[1];
-	long /*int*/[] families = new long /*int*/[1];
+	long [] family = new long [1];
+	long [] face = new long [1];
+	long [] families = new long [1];
 	int[] n_families = new int[1];
-	long /*int*/[] faces = new long /*int*/[1];
+	long [] faces = new long [1];
 	int[] n_faces = new int[1];
-	long /*int*/ context;
+	long context;
 	if (GTK.GTK4) {
-		long /*int*/ fontMap = OS.pango_cairo_font_map_get_default ();
+		long fontMap = OS.pango_cairo_font_map_get_default ();
 		context = OS.pango_font_map_create_context (fontMap);
 	} else {
 		context = GDK.gdk_pango_context_get();
@@ -438,7 +438,7 @@ public FontData[] getFontList (String faceName, boolean scalable) {
 		C.memmove(family, families[0] + i * C.PTR_SIZEOF, C.PTR_SIZEOF);
 		boolean match = true;
 		if (faceName != null) {
-			long /*int*/ familyName = OS.pango_font_family_get_name(family[0]);
+			long familyName = OS.pango_font_family_get_name(family[0]);
 			int length = C.strlen(familyName);
 			byte[] buffer = new byte[length];
 			C.memmove(buffer, familyName, length);
@@ -446,12 +446,12 @@ public FontData[] getFontList (String faceName, boolean scalable) {
 			match = faceName.equalsIgnoreCase(name);
 		}
 		if (match) {
-		    OS.pango_font_family_list_faces(family[0], faces, n_faces);
-		    for (int j=0; j<n_faces[0]; j++) {
-		        C.memmove(face, faces[0] + j * C.PTR_SIZEOF, C.PTR_SIZEOF);
-		        long /*int*/ fontDesc = OS.pango_font_face_describe(face[0]);
-		        Font font = Font.gtk_new(this, fontDesc);
-		        FontData data = font.getFontData()[0];
+			OS.pango_font_family_list_faces(family[0], faces, n_faces);
+			for (int j=0; j<n_faces[0]; j++) {
+				C.memmove(face, faces[0] + j * C.PTR_SIZEOF, C.PTR_SIZEOF);
+				long fontDesc = OS.pango_font_face_describe(face[0]);
+				Font font = Font.gtk_new(this, fontDesc);
+				FontData data = font.getFontData()[0];
 				if (nFds == fds.length) {
 					FontData[] newFds = new FontData[fds.length + n_families[0]];
 					System.arraycopy(fds, 0, newFds, 0, nFds);
@@ -459,9 +459,9 @@ public FontData[] getFontList (String faceName, boolean scalable) {
 				}
 				fds[nFds++] = data;
 				OS.pango_font_description_free(fontDesc);
-		    }
-		    OS.g_free(faces[0]);
-		    if (faceName != null) break;
+			}
+			OS.g_free(faces[0]);
+			if (faceName != null) break;
 		}
 	}
 	OS.g_free(families[0]);
@@ -473,21 +473,10 @@ public FontData[] getFontList (String faceName, boolean scalable) {
 }
 
 Point getScreenDPI () {
-	int dpi = 96; //default value
-	if (GTK.GTK_VERSION >= OS.VERSION(3, 22, 0)) {
-		long /*int*/ display = GDK.gdk_display_get_default();
-		long /*int*/ pMonitor = GDK.gdk_display_get_primary_monitor(display);
-		if (pMonitor == 0) {
-			pMonitor = GDK.gdk_display_get_monitor(display, 0);
-		}
-		int widthMM = GDK.gdk_monitor_get_width_mm(pMonitor);
-		if (widthMM == 0) return new Point (dpi, dpi);
-		int scaleFactor = GDK.gdk_monitor_get_scale_factor(pMonitor);
-		GdkRectangle monitorGeometry = new GdkRectangle ();
-		GDK.gdk_monitor_get_geometry(pMonitor, monitorGeometry);
-		dpi = Compatibility.round (254 * monitorGeometry.width * scaleFactor, widthMM * 10);
-	}
-	return new Point (dpi, dpi);
+	long screen = GDK.gdk_screen_get_default();
+	int dpi = (int) GDK.gdk_screen_get_resolution(screen);
+	Point ptDPI = dpi == -1 ? new Point (96, 96) : new Point (dpi, dpi);
+	return ptDPI;
 }
 
 /**
@@ -603,10 +592,8 @@ protected void init () {
 				if (index == Devices.length) {
 					XErrorCallback = new Callback (clazz, "XErrorProc", 2);
 					XNullErrorProc = XErrorCallback.getAddress ();
-					if (XNullErrorProc == 0) SWT.error (SWT.ERROR_NO_MORE_CALLBACKS);
 					XIOErrorCallback = new Callback (clazz, "XIOErrorProc", 1);
 					XNullIOErrorProc = XIOErrorCallback.getAddress ();
-					if (XNullIOErrorProc == 0) SWT.error (SWT.ERROR_NO_MORE_CALLBACKS);
 					XErrorProc = OS.XSetErrorHandler (XNullErrorProc);
 					XIOErrorProc = OS.XSetIOErrorHandler (XNullIOErrorProc);
 				}
@@ -619,7 +606,6 @@ protected void init () {
 	if (xDisplay != 0) {
 		logCallback = new Callback (this, "logProc", 4);
 		logProc = logCallback.getAddress ();
-		if (logProc == 0) SWT.error (SWT.ERROR_NO_MORE_CALLBACKS);
 
 		/* Set GTK warning and error handlers */
 		if (debug) {
@@ -661,8 +647,8 @@ protected void init () {
 	if (GTK.GTK_VERSION >= OS.VERSION(3, 22, 0)) {
 		double sx[] = new double[1];
 		double sy[] = new double[1];
-		long /*int*/ gdkResource;
-		long /*int*/ surface;
+		long gdkResource;
+		long surface;
 		if (GTK.GTK4) {
 			surface = Cairo.cairo_image_surface_create(Cairo.CAIRO_FORMAT_RGB24, 10, 10);
 		} else {
@@ -670,16 +656,16 @@ protected void init () {
 			surface = GDK.gdk_window_create_similar_surface(gdkResource, Cairo.CAIRO_CONTENT_COLOR, 10, 10);
 		}
 		Cairo.cairo_surface_get_device_scale(surface, sx, sy);
-		DPIUtil.setUseCairoAutoScale((sx[0]*100) == scaleFactor);
+		DPIUtil.setUseCairoAutoScale((sx[0]*100) == scaleFactor || OS.isGNOME);
 	}
 
 	/* Initialize the system font slot */
-	long /*int*/ [] defaultFontArray = new long /*int*/ [1];
-	long /*int*/ defaultFont;
-	long /*int*/ context = GTK.gtk_widget_get_style_context (shellHandle);
+	long [] defaultFontArray = new long [1];
+	long defaultFont;
+	long context = GTK.gtk_widget_get_style_context (shellHandle);
 	if ("ppc64le".equals(System.getProperty("os.arch"))) {
 		defaultFont = GTK.gtk_style_context_get_font (context, GTK.GTK_STATE_FLAG_NORMAL);
-	} else if (GTK.GTK_VERSION >= OS.VERSION(3, 18, 0)) {
+	} else {
 		GTK.gtk_style_context_save(context);
 		GTK.gtk_style_context_set_state(context, GTK.GTK_STATE_FLAG_NORMAL);
 		if (GTK.GTK4) {
@@ -688,9 +674,6 @@ protected void init () {
 			GTK.gtk_style_context_get(context, GTK.GTK_STATE_FLAG_NORMAL, GTK.gtk_style_property_font, defaultFontArray, 0);
 		}
 		GTK.gtk_style_context_restore(context);
-		defaultFont = defaultFontArray [0];
-	} else {
-		GTK.gtk_style_context_get(context, GTK.GTK_STATE_FLAG_NORMAL, GTK.gtk_style_property_font, defaultFontArray, 0);
 		defaultFont = defaultFontArray [0];
 	}
 	defaultFont = OS.pango_font_description_copy (defaultFont);
@@ -721,7 +704,7 @@ protected void init () {
  * Note that much of eclipse 'dark theme' is done by platform.ui's CSS engine, not by SWT.
  */
 private void overrideThemeValues () {
-	long /*int*/ provider = GTK.gtk_css_provider_new();
+	long provider = GTK.gtk_css_provider_new();
 
 	BiFunction <String, Boolean, String> load = (path, isResource) -> {
 		try  {
@@ -741,11 +724,7 @@ private void overrideThemeValues () {
 	StringBuilder combinedCSS = new StringBuilder();
 
 	// Load functional CSS fixes. Such as keyboard functionality for some widgets.
-	combinedCSS.append(load.apply(
-		GTK.GTK_VERSION < OS.VERSION(3, 20, 0) ?
-				"/org/eclipse/swt/internal/gtk/swt_functional_gtk_pre320.css" :
-				"/org/eclipse/swt/internal/gtk/swt_functional_gtk_320.css"
-			, true));
+	combinedCSS.append(load.apply("/org/eclipse/swt/internal/gtk/swt_functional_gtk_3_20.css", true));
 
 	// By default, load CSS theme fixes to overcome things such as excessive padding that breaks SWT otherwise.
 	// Initially designed for Adwaita light/dark theme, but after investigation other themes (like Ubuntu's Ambiance + dark) seem to benefit from this also.
@@ -756,16 +735,15 @@ private void overrideThemeValues () {
 	// - These fixes should not contain any color information, otherwise it might break a light/dark variant of the theme.
 	//   Color fixes should be put either into the theme itself or via swt user api.
 	if (System.getProperty("org.eclipse.swt.internal.gtk.noThemingFixes") == null) {
-		combinedCSS.append(load.apply(
-				GTK.GTK_VERSION < OS.VERSION(3, 20, 0) ?
-						"/org/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_pre320.css" :
-						"/org/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_320.css"
-					, true));
+		combinedCSS.append(load.apply("/org/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_3_20.css", true));
+		if (GTK.GTK_VERSION >= OS.VERSION(3, 24, 5)) {
+			combinedCSS.append(load.apply("/org/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_3_24_5.css", true));
+		}
 	}
 
 	// Load CSS from user-defined CSS file.
 	String additionalCSSPath = System.getProperty("org.eclipse.swt.internal.gtk.cssFile");
-	if (GTK.GTK_VERSION >= OS.VERSION(3, 14, 0) && additionalCSSPath != null){
+	if (additionalCSSPath != null){
 		// Warning:
 		// - gtk css syntax changed in 3.20. If you load custom css, it could break things depending on gtk version on system.
 		// - Also, a lot of custom css/themes are buggy and may result in additional console warnings.
@@ -773,14 +751,14 @@ private void overrideThemeValues () {
 	}
 
 	if (GTK.GTK4) {
-		long /*int*/ display = GDK.gdk_display_get_default();
+		long display = GDK.gdk_display_get_default();
 		if (display == 0 || provider == 0) {
 			System.err.println("SWT Warning: Override of theme values failed. Reason: could not acquire display or provider.");
 			return;
 		}
 		GTK.gtk_style_context_add_provider_for_display (display, provider, GTK.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 	} else {
-		long /*int*/ screen = GDK.gdk_screen_get_default();
+		long screen = GDK.gdk_screen_get_default();
 		if (screen == 0 || provider == 0) {
 			System.err.println("SWT Warning: Override of theme values failed. Reason: could not acquire screen or provider.");
 			return;
@@ -810,7 +788,7 @@ private void overrideThemeValues () {
  * @noreference This method is not intended to be referenced by clients.
  */
 @Override
-public abstract long /*int*/ internal_new_GC (GCData data);
+public abstract long internal_new_GC (GCData data);
 
 /**
  * Invokes platform specific functionality to dispose a GC handle.
@@ -828,7 +806,7 @@ public abstract long /*int*/ internal_new_GC (GCData data);
  * @noreference This method is not intended to be referenced by clients.
  */
 @Override
-public abstract void internal_dispose_GC (long /*int*/ hDC, GCData data);
+public abstract void internal_dispose_GC (long hDC, GCData data);
 
 /**
  * Returns <code>true</code> if the device has been disposed,
@@ -869,7 +847,7 @@ public boolean loadFont (String path) {
 	return OS.FcConfigAppFontAddFile (0, buffer);
 }
 
-long /*int*/ logProc (long /*int*/ log_domain, long /*int*/ log_level, long /*int*/ message, long /*int*/ user_data) {
+long logProc (long log_domain, long log_level, long message, long user_data) {
 	if (DEBUG) {
 		new Error ().printStackTrace ();
 	}
@@ -877,7 +855,7 @@ long /*int*/ logProc (long /*int*/ log_domain, long /*int*/ log_level, long /*in
 		if (DEBUG || debug) {
 			new Error ().printStackTrace ();
 		}
-		OS.g_log_default_handler (log_domain, (int)/*64*/log_level, message, 0);
+		OS.g_log_default_handler (log_domain, (int)log_level, message, 0);
 	}
 	return 0;
 }
@@ -1033,7 +1011,7 @@ public void setWarnings (boolean warnings) {
 	}
 }
 
-static long /*int*/ XErrorProc (long /*int*/ xDisplay, long /*int*/ xErrorEvent) {
+static long XErrorProc (long xDisplay, long xErrorEvent) {
 	Device device = findDevice (xDisplay);
 	if (device != null) {
 		if (device.warningLevel == 0) {
@@ -1049,7 +1027,7 @@ static long /*int*/ XErrorProc (long /*int*/ xDisplay, long /*int*/ xErrorEvent)
 	return 0;
 }
 
-static long /*int*/ XIOErrorProc (long /*int*/ xDisplay) {
+static long XIOErrorProc (long xDisplay) {
 	Device device = findDevice (xDisplay);
 	if (device != null) {
 		if (DEBUG || device.debug) {
@@ -1086,12 +1064,12 @@ protected int getDeviceZoom() {
 	 */
 	int dpi = 96;
 	if (GTK.GTK_VERSION >= OS.VERSION(3, 22, 0)) {
-		long /*int*/ display = GDK.gdk_display_get_default();
-		long /*int*/ monitor = GDK.gdk_display_get_monitor_at_point(display, 0, 0);
+		long display = GDK.gdk_display_get_default();
+		long monitor = GDK.gdk_display_get_monitor_at_point(display, 0, 0);
 		int scale = GDK.gdk_monitor_get_scale_factor(monitor);
 		dpi = dpi * scale;
 	} else {
-		long /*int*/ screen = GDK.gdk_screen_get_default();
+		long screen = GDK.gdk_screen_get_default();
 		dpi = (int) GDK.gdk_screen_get_resolution (screen);
 		if (dpi <= 0) dpi = 96; // gdk_screen_get_resolution returns -1 in case of error
 		int monitor_num = GDK.gdk_screen_get_monitor_at_point (screen, 0, 0);
@@ -1105,8 +1083,8 @@ protected int getDeviceZoom() {
  * @nooverride This method is not intended to be re-implemented or extended by clients.
  * @since 3.105
  */
-protected long /*int*/ gsettingsProc (long /*int*/ gobject, long /*int*/ arg1, long /*int*/ user_data) {
-	switch((int)/*64*/user_data) {
+protected long gsettingsProc (long gobject, long arg1, long user_data) {
+	switch((int)user_data) {
 		case CHANGE_SCALEFACTOR:
 			this.scaleFactor = getDeviceZoom ();
 			DPIUtil.setDeviceZoom (scaleFactor);

@@ -39,9 +39,7 @@ public class RemoteFolderSandbox extends RemoteFolder {
 		setChildren(new ICVSRemoteResource[0]);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.ICVSFolder#getFile(java.lang.String)
-	 */
+	@Override
 	public ICVSFile getFile(String name) throws CVSException {
 		try {
 			return super.getFile(name);
@@ -78,9 +76,7 @@ public class RemoteFolderSandbox extends RemoteFolder {
 		return parent;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.ICVSFolder#getFolder(java.lang.String)
-	 */
+	@Override
 	public ICVSFolder getFolder(String name) throws CVSException {
 		try {
 			return super.getFolder(name);
@@ -97,32 +93,28 @@ public class RemoteFolderSandbox extends RemoteFolder {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.resources.RemoteFolder#getMembers(org.eclipse.core.runtime.IProgressMonitor)
-	 */
+	@Override
 	public ICVSRemoteResource[] getMembers(IProgressMonitor monitor) throws TeamException {
 		return getChildren();
 	}
 
-	/*
-	 * @see ICVSFolder#acceptChildren(ICVSResourceVisitor)
-	 */
+	@Override
 	public void acceptChildren(ICVSResourceVisitor visitor) throws CVSException {
 		ICVSRemoteResource[] children = getChildren();
 		if (children == null) return;
-		for (int i=0; i<children.length; i++) {
-			((ICVSResource)children[i]).accept(visitor);
+		for (ICVSRemoteResource c : children) {
+			((ICVSResource) c).accept(visitor);
 		}
 	}
 
 	public void remove(RemoteFile file) {
 		ICVSRemoteResource[] children = getChildren();
 		ArrayList<ICVSRemoteResource> results = new ArrayList<>();
-		for (int i = 0; i < children.length; i++) {
-			if (children[i] != file){
-				results.add(children[i]);
+		for (ICVSRemoteResource c : children) {
+			if (c != file) {
+				results.add(c);
 			}
 		}
-		setChildren((ICVSRemoteResource[]) results.toArray(new ICVSRemoteResource[results.size()]));		
+		setChildren(results.toArray(new ICVSRemoteResource[results.size()]));		
 	}
 }

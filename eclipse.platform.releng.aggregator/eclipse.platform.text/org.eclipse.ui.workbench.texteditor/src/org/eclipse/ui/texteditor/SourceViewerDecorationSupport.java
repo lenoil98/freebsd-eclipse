@@ -262,12 +262,7 @@ public class SourceViewerDecorationSupport {
 
 		fPreferenceStore= store;
 		if (fPreferenceStore != null) {
-			fPropertyChangeListener= new IPropertyChangeListener() {
-				@Override
-				public void propertyChange(PropertyChangeEvent event) {
-					handlePreferenceStoreChanged(event);
-				}
-			};
+			fPropertyChangeListener= this::handlePreferenceStoreChanged;
 			fPreferenceStore.addPropertyChangeListener(fPropertyChangeListener);
 		}
 
@@ -507,7 +502,7 @@ public class SourceViewerDecorationSupport {
 
 	/*
 	 * @see AbstractTextEditor#handlePreferenceStoreChanged(PropertyChangeEvent)
- 	 */
+	 */
 	protected void handlePreferenceStoreChanged(PropertyChangeEvent event) {
 
 		String p= event.getProperty();

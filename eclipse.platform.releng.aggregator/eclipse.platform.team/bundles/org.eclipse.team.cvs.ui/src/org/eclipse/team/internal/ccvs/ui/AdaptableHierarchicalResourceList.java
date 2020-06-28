@@ -16,9 +16,7 @@ package org.eclipse.team.internal.ccvs.ui;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.core.resources.IContainer;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -40,9 +38,7 @@ public class AdaptableHierarchicalResourceList extends AdaptableResourceList {
 		this.root = root;
 	}
 
-	/**
-	 * @see org.eclipse.ui.model.IWorkbenchAdapter#getChildren(java.lang.Object)
-	 */
+	@Override
 	public Object[] getChildren(Object o) {
 		return getChildenFor(root);
 	}
@@ -50,8 +46,7 @@ public class AdaptableHierarchicalResourceList extends AdaptableResourceList {
 	private IResource[] getChildenFor(IContainer parent) {
 		Set children = new HashSet();
 		IPath parentPath = parent.getFullPath();
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			IPath resourcePath = resource.getFullPath();
 			if (parent instanceof IWorkspaceRoot) {
 				children.add(((IWorkspaceRoot)parent).getProject(resourcePath.segment(0)));
@@ -73,6 +68,7 @@ public class AdaptableHierarchicalResourceList extends AdaptableResourceList {
 	 */
 	public ITreeContentProvider getTreeContentProvider() {
 		return new WorkbenchContentProvider() {
+			@Override
 			public Object[] getChildren(Object o) {
 				if (o instanceof IContainer) {
 					return getChildenFor((IContainer) o);

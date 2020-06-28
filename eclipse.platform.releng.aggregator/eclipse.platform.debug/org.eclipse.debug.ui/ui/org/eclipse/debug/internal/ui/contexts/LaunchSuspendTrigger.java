@@ -54,40 +54,30 @@ public class LaunchSuspendTrigger implements ISuspendTrigger, IDebugEventSetList
 		fFactory.dispose(this);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.contexts.ISuspendTrigger#addSuspendTriggerListener(org.eclipse.debug.ui.contexts.ISuspendTriggerListener)
-	 */
 	@Override
 	public void addSuspendTriggerListener(ISuspendTriggerListener listener) {
-        if (fListeners != null) {
-            fListeners.add(listener);
-        }
+		if (fListeners != null) {
+			fListeners.add(listener);
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.contexts.ISuspendTrigger#removeSuspendTriggerListener(org.eclipse.debug.ui.contexts.ISuspendTriggerListener)
-	 */
 	@Override
 	public void removeSuspendTriggerListener(ISuspendTriggerListener listener) {
-        if (fListeners != null) {
-            fListeners.remove(listener);
-        }
-        if (fListeners.size() == 0) {
-        	dispose();
-        }
+		if (fListeners != null) {
+			fListeners.remove(listener);
+		}
+		if (fListeners.size() == 0) {
+			dispose();
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.IDebugEventSetListener#handleDebugEvents(org.eclipse.debug.core.DebugEvent[])
-	 */
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
 		// open the debugger if this is a suspend event and the debug view is not yet open
 		// and the preferences are set to switch
-		for (int i = 0; i < events.length; i++) {
-			DebugEvent event = events[i];
+		for (DebugEvent event : events) {
 			if (event.getKind() == DebugEvent.SUSPEND && !event.isEvaluation() && event.getDetail() != DebugEvent.STEP_END) {
-//				 Don't switch perspective for evaluations or stepping
+				//				 Don't switch perspective for evaluations or stepping
 				Object source = event.getSource();
 				if (source instanceof IAdaptable) {
 					IAdaptable adaptable = (IAdaptable) source;
@@ -120,23 +110,23 @@ public class LaunchSuspendTrigger implements ISuspendTrigger, IDebugEventSetList
 			}
 			final Object temp = context;
 			ListenerList<ISuspendTriggerListener> list = fListeners;
-            if (list != null) {
+			if (list != null) {
 				for (ISuspendTriggerListener iSuspendTriggerListener : list) {
 					final ISuspendTriggerListener listener = iSuspendTriggerListener;
-        			SafeRunner.run(new ISafeRunnable() {
-        				@Override
+					SafeRunner.run(new ISafeRunnable() {
+						@Override
 						public void run() throws Exception {
-        					listener.suspended(launch, temp);
-        				}
+							listener.suspended(launch, temp);
+						}
 
-        				@Override
+						@Override
 						public void handleException(Throwable exception) {
-        					DebugUIPlugin.log(exception);
-        				}
+							DebugUIPlugin.log(exception);
+						}
 
-        			});
-        		}
-            }
+					});
+				}
+			}
 
 		}
 

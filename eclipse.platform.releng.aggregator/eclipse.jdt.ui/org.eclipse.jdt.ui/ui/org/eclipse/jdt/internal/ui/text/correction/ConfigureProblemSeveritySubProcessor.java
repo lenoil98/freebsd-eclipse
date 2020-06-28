@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2018 IBM Corporation and others.
+ * Copyright (c) 2016, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -41,28 +41,27 @@ public class ConfigureProblemSeveritySubProcessor {
 
 	public static void addConfigureProblemSeverityProposal(final IInvocationContext context, final IProblemLocation problem, Collection<ICommandAccess> proposals) {
 		final int problemId= problem.getProblemId();
-	
-		String optionId;
-		if (problemId == IProblem.ProblemNotAnalysed) {
-			String[] options= problem.getProblemArguments();
-			if (options != null && options.length > 0) {
-				optionId= options[0];
-			} else {
-				optionId= null;
-			}
-		} else {
-			optionId= JavaCore.getOptionForConfigurableSeverity(problemId);
-		}
+
+		String optionId= JavaCore.getOptionForConfigurableSeverity(problemId);
 		if (optionId == null)
 			return;
 
 		ChangeCorrectionProposal proposal= new ChangeCorrectionProposal(CorrectionMessages.ConfigureProblemSeveritySubProcessor_name, null, IProposalRelevance.CONFIGURE_PROBLEM_SEVERITY,
 				JavaPluginImages.get(JavaPluginImages.IMG_CONFIGURE_PROBLEM_SEVERITIES)) {
 
+
 			@Override
 			public void apply(IDocument document) {
+				PreferencePage preferencePage;
+				if ((problemId & IProblem.Javadoc) != 0) {
+					preferencePage= PreferencePage.JAVADOC;
+				} else if ((problemId & IProblem.Compliance) != 0) {
+					preferencePage= PreferencePage.COMPILER;
+				} else {
+					preferencePage= PreferencePage.ERRORS_WARNINGS;
+				}
 				ConfigureProblemSeverityAction problemSeverityAction= new ConfigureProblemSeverityAction(context.getCompilationUnit().getJavaProject(), optionId, JavaCore.PLUGIN_ID,
-						(problemId & IProblem.Javadoc) != 0 ? PreferencePage.JAVADOC : PreferencePage.ERRORS_WARNINGS,
+						preferencePage,
 						null);
 				problemSeverityAction.run();
 			}
@@ -78,10 +77,17 @@ public class ConfigureProblemSeveritySubProcessor {
 						break;
 					}
 				}
-				return Messages.format(CorrectionMessages.ConfigureProblemSeveritySubProcessor_info, new String[] { problemMsg });
+				String msg= CorrectionMessages.ConfigureProblemSeveritySubProcessor_info;
+				if ((problemId & IProblem.Compliance) != 0) {
+					msg= CorrectionMessages.ConfigureProblemSeveritySubProcessor_compiler_info;
+				}
+				return Messages.format(msg, new String[] { problemMsg });
 			}
 		};
 
 		proposals.add(proposal);
+	}
+
+	private ConfigureProblemSeveritySubProcessor() {
 	}
 }

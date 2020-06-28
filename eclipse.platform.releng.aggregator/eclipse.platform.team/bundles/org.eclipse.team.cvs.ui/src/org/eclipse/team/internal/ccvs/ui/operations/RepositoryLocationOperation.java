@@ -13,12 +13,7 @@
  *******************************************************************************/
 package org.eclipse.team.internal.ccvs.ui.operations;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.internal.ccvs.core.*;
@@ -34,9 +29,7 @@ public abstract class RepositoryLocationOperation extends RemoteOperation {
 		super(part, remoteResources);
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.CVSOperation#execute(org.eclipse.core.runtime.IProgressMonitor)
-	 */
+	@Override
 	public void execute(IProgressMonitor monitor) throws CVSException, InterruptedException {
 		Map table = getLocationMapping(getRemoteResources());
 		Set keySet = table.keySet();
@@ -65,8 +58,7 @@ public abstract class RepositoryLocationOperation extends RemoteOperation {
 	 */
 	private Map getLocationMapping(ICVSRemoteResource[] remoteResources) {
 		Map locationsMap = new HashMap();
-		for (int i = 0; i < remoteResources.length; i++) {
-			ICVSRemoteResource resource = remoteResources[i];
+		for (ICVSRemoteResource resource : remoteResources) {
 			ICVSRepositoryLocation location = resource.getRepository();
 			List resources = (List)locationsMap.get(location);
 			if (resources == null) {

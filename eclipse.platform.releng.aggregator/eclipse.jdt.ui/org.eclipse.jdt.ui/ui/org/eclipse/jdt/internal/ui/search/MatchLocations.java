@@ -137,11 +137,11 @@ public class MatchLocations {
 			if (fSearchFor == IJavaSearchConstants.METHOD || fSearchFor == IJavaSearchConstants.FIELD) {
 				createButton(composite, SearchMessages.MatchLocations_this_label, IJavaSearchConstants.THIS_REFERENCE);
 				createButton(composite, SearchMessages.MatchLocations_implicit_this_label, IJavaSearchConstants.IMPLICIT_THIS_REFERENCE);
-	
+
 				createButton(composite, SearchMessages.MatchLocations_super_label, IJavaSearchConstants.SUPER_REFERENCE);
 				createButton(composite, SearchMessages.MatchLocations_qualified_label, IJavaSearchConstants.QUALIFIED_REFERENCE);
 			}
-			
+
 			if (fSearchFor == IJavaSearchConstants.METHOD || fSearchFor == IJavaSearchConstants.CONSTRUCTOR) {
 				createButton(composite, SearchMessages.MatchLocations_method_reference_label, IJavaSearchConstants.METHOD_REFERENCE_EXPRESSION);
 			}
@@ -156,14 +156,14 @@ public class MatchLocations {
 			createButton(group, SearchMessages.MatchLocations_imports_label, IJavaSearchConstants.IMPORT_DECLARATION_TYPE_REFERENCE);
 			createButton(group, SearchMessages.MatchLocations_super_types_label, IJavaSearchConstants.SUPERTYPE_TYPE_REFERENCE);
 			addSeparator(group);
-			
+
 			createButton(group, SearchMessages.MatchLocations_annotations_label , IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE);
 			addSeparator(group);
 
 			createButton(group, SearchMessages.MatchLocations_field_types_label, IJavaSearchConstants.FIELD_DECLARATION_TYPE_REFERENCE);
 			createButton(group, SearchMessages.MatchLocations_local_types_label, IJavaSearchConstants.LOCAL_VARIABLE_DECLARATION_TYPE_REFERENCE);
 			addSeparator(group);
-			
+
 			createButton(group, SearchMessages.MatchLocations_method_types_label, IJavaSearchConstants.RETURN_TYPE_REFERENCE);
 			createButton(group, SearchMessages.MatchLocations_parameter_types_label, IJavaSearchConstants.PARAMETER_DECLARATION_TYPE_REFERENCE);
 			createButton(group, SearchMessages.MatchLocations_thrown_exceptions_label, IJavaSearchConstants.THROWS_CLAUSE_TYPE_REFERENCE);
@@ -191,8 +191,7 @@ public class MatchLocations {
 		}
 
 		protected final void performSelectAction(boolean selectAll) {
-			for (int i= 0; i < fButtons.size(); i++) {
-				Button button= fButtons.get(i);
+			for (Button button : fButtons) {
 				button.setSelection(selectAll);
 			}
 			validateSettings();
@@ -245,8 +244,7 @@ public class MatchLocations {
 
 		private void validateSettings() {
 			int selected= 0;
-			for (int i= 0; i < fButtons.size(); i++) {
-				Button button= fButtons.get(i);
+			for (Button button : fButtons) {
 				if (button.getSelection()) {
 					selected |= getIntValue(button);
 				}
@@ -345,16 +343,18 @@ public class MatchLocations {
 	}
 
 	public static int getTotalNumberOfSettings(int searchFor) {
-		if (searchFor == IJavaSearchConstants.TYPE) {
-			return 15;
-		} else if (searchFor == IJavaSearchConstants.CONSTRUCTOR) {
-			return 1;
-		} else if (searchFor == IJavaSearchConstants.METHOD) {
-			return 5;
-		} else if (searchFor == IJavaSearchConstants.FIELD) {
-			return 4;
+		switch (searchFor) {
+			case IJavaSearchConstants.TYPE:
+				return 15;
+			case IJavaSearchConstants.CONSTRUCTOR:
+				return 1;
+			case IJavaSearchConstants.METHOD:
+				return 5;
+			case IJavaSearchConstants.FIELD:
+				return 4;
+			default:
+				return 0;
 		}
-		return 0;
 	}
 
 	public static int getNumberOfSelectedSettings(int locations, int searchFor) {
@@ -426,5 +426,8 @@ public class MatchLocations {
 			}
 		}
 		return count;
+	}
+
+	private MatchLocations() {
 	}
 }

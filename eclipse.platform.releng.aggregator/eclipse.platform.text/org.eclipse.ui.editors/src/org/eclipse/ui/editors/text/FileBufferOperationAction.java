@@ -152,14 +152,13 @@ public class FileBufferOperationAction extends Action implements IWorkbenchWindo
 	/**
 	 * Collect the files to process. This method may show a dialog to ask the user.
 	 * Subclasses may extend or reimplement.
-	 * 
+	 *
 	 * @param resources selected resources
 	 * @return the files to process, can be <code>null</code>
 	 */
 	protected IFile[] collectFiles(IResource[] resources) {
 		Set<IResource> files= new HashSet<>();
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
+		for (IResource resource : resources) {
 			if ((IResource.FILE & resource.getType()) > 0)
 				files.add(resource);
 		}
@@ -206,8 +205,8 @@ public class FileBufferOperationAction extends Action implements IWorkbenchWindo
 		progressMonitor.beginTask(TextEditorMessages.FileBufferOperationAction_collectionFiles_label, files.length);
 		try {
 			Set<IPath> locations= new HashSet<>();
-			for (int i= 0; i < files.length; i++) {
-				IPath fullPath= files[i].getFullPath();
+			for (IFile file : files) {
+				IPath fullPath = file.getFullPath();
 				if (isAcceptableLocation(fullPath))
 					locations.add(fullPath);
 				progressMonitor.worked(1);

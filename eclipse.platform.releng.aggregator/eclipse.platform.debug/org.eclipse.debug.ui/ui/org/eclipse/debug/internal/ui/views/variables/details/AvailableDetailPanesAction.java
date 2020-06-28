@@ -77,16 +77,10 @@ public class AvailableDetailPanesAction extends Action implements IMenuCreator {
 		init();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run() {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IMenuCreator#dispose()
-	 */
 	@Override
 	public void dispose() {
 		if (fMenu != null) {
@@ -95,9 +89,6 @@ public class AvailableDetailPanesAction extends Action implements IMenuCreator {
 		fAvailableIDs.clear();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Control)
-	 */
 	@Override
 	public Menu getMenu(Control parent) {
 		return null;
@@ -108,9 +99,6 @@ public class AvailableDetailPanesAction extends Action implements IMenuCreator {
 		item.fill(parent, -1);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Menu)
-	 */
 	@Override
 	public Menu getMenu(Menu parent) {
 		if (fMenu != null) {
@@ -119,14 +107,14 @@ public class AvailableDetailPanesAction extends Action implements IMenuCreator {
 		fMenu= new Menu(parent);
 		int i = 0;
 		for (String currentID : fAvailableIDs) {
-			StringBuffer name = new StringBuffer();
+			StringBuilder name = new StringBuilder();
 			//add the numerical accelerator
-            i++;
+			i++;
 			if (i < 9) {
-                name.append('&');
-                name.append(i);
-                name.append(' ');
-            }
+				name.append('&');
+				name.append(i);
+				name.append(' ');
+			}
 
 			String typeName = DetailPaneManager.getDefault().getNameFromID(currentID);
 			if (typeName != null && typeName.length() > 0){
@@ -147,9 +135,6 @@ public class AvailableDetailPanesAction extends Action implements IMenuCreator {
 		return fMenu;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ISelectionChangedListener#selectionChanged(org.eclipse.jface.viewers.SelectionChangedEvent)
-	 */
 	public void init() {
 		fAvailableIDs = DetailPaneManager.getDefault().getAvailablePaneIDs(fDetailPaneContainer.getCurrentSelection());
 		if (fAvailableIDs.size() > 1){

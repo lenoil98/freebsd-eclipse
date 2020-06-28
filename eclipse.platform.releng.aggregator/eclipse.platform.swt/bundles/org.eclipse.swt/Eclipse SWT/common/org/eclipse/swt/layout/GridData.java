@@ -238,7 +238,7 @@ public final class GridData {
 	 * exclude informs the layout to ignore this control when sizing
 	 * and positioning controls.  If this value is <code>true</code>,
 	 * the size and position of the control will not be managed by the
-	 * layout.  If this	value is <code>false</code>, the size and
+	 * layout.  If this value is <code>false</code>, the size and
 	 * position of the control will be computed and assigned.
 	 *
 	 * The default value is <code>false</code>.
@@ -556,22 +556,22 @@ public String toString () {
 		case CENTER: vAlign = "GridData.CENTER"; break;
 		default: vAlign = "Undefined "+verticalAlignment; break;
 	}
- 	String string = getName()+" {";
- 	string += "horizontalAlignment="+hAlign+" ";
- 	if (horizontalIndent != 0) string += "horizontalIndent="+horizontalIndent+" ";
- 	if (horizontalSpan != 1) string += "horizontalSpan="+horizontalSpan+" ";
- 	if (grabExcessHorizontalSpace) string += "grabExcessHorizontalSpace="+grabExcessHorizontalSpace+" ";
- 	if (widthHint != SWT.DEFAULT) string += "widthHint="+widthHint+" ";
- 	if (minimumWidth != 0) string += "minimumWidth="+minimumWidth+" ";
- 	string += "verticalAlignment="+vAlign+" ";
- 	if (verticalIndent != 0) string += "verticalIndent="+verticalIndent+" ";
+	String string = getName()+" {";
+	string += "horizontalAlignment="+hAlign+" ";
+	if (horizontalIndent != 0) string += "horizontalIndent="+horizontalIndent+" ";
+	if (horizontalSpan != 1) string += "horizontalSpan="+horizontalSpan+" ";
+	if (grabExcessHorizontalSpace) string += "grabExcessHorizontalSpace="+grabExcessHorizontalSpace+" ";
+	if (widthHint != SWT.DEFAULT) string += "widthHint="+widthHint+" ";
+	if (minimumWidth != 0) string += "minimumWidth="+minimumWidth+" ";
+	string += "verticalAlignment="+vAlign+" ";
+	if (verticalIndent != 0) string += "verticalIndent="+verticalIndent+" ";
 	if (verticalSpan != 1) string += "verticalSpan="+verticalSpan+" ";
- 	if (grabExcessVerticalSpace) string += "grabExcessVerticalSpace="+grabExcessVerticalSpace+" ";
- 	if (heightHint != SWT.DEFAULT) string += "heightHint="+heightHint+" ";
- 	if (minimumHeight != 0) string += "minimumHeight="+minimumHeight+" ";
- 	if (exclude) string += "exclude="+exclude+" ";
- 	string = string.trim();
- 	string += "}";
+	if (grabExcessVerticalSpace) string += "grabExcessVerticalSpace="+grabExcessVerticalSpace+" ";
+	if (heightHint != SWT.DEFAULT) string += "heightHint="+heightHint+" ";
+	if (minimumHeight != 0) string += "minimumHeight="+minimumHeight+" ";
+	if (exclude) string += "exclude="+exclude+" ";
+	string = string.trim();
+	string += "}";
 	return string;
 }
 }

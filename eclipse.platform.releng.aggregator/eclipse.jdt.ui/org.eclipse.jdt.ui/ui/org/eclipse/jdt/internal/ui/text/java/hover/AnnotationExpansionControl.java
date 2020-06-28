@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.ui.text.java.hover;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -510,13 +509,13 @@ public class AnnotationExpansionControl implements IInformationControl, IInforma
 			public void mouseExit(MouseEvent e) {
 				if (fComposite == null)
 						return;
-				Control[] children= fComposite.getChildren();
 				Rectangle bounds= null;
-				for (int i= 0; i < children.length; i++) {
-					if (bounds == null)
-						bounds= children[i].getBounds();
-					else
-						bounds.add(children[i].getBounds());
+				for (Control child : fComposite.getChildren()) {
+					if (bounds == null) {
+						bounds= child.getBounds();
+					} else {
+						bounds.add(child.getBounds());
+					}
 					if (bounds.contains(e.x, e.y))
 						return;
 				}
@@ -801,8 +800,8 @@ public class AnnotationExpansionControl implements IInformationControl, IInforma
 		StyleRange[] ranges= text.getStyleRanges(region.getOffset(), region.getLength());
 
 		List<StyleRange> undoRanges= new ArrayList<>(ranges.length);
-		for (int i= 0; i < ranges.length; i++) {
-			undoRanges.add((StyleRange)ranges[i].clone());
+		for (StyleRange range : ranges) {
+			undoRanges.add((StyleRange) range.clone());
 		}
 
 		int offset= region.getOffset();
@@ -839,15 +838,15 @@ public class AnnotationExpansionControl implements IInformationControl, IInforma
 
 		// create modified styles (with background)
 		List<StyleRange> shadedRanges= new ArrayList<>(undoRanges.size());
-		for (Iterator<StyleRange> it= undoRanges.iterator(); it.hasNext(); ) {
-			StyleRange range= (StyleRange) it.next().clone();
+		for (StyleRange styleRange : undoRanges) {
+			StyleRange range= (StyleRange) styleRange.clone();
 			shadedRanges.add(range);
 			range.background= getHighlightColor(disp);
 		}
 
 		// set the ranges one by one
-		for (Iterator<StyleRange> iter= shadedRanges.iterator(); iter.hasNext(); ) {
-			text.setStyleRange(iter.next());
+		for (StyleRange styleRange : shadedRanges) {
+			text.setStyleRange(styleRange);
 
 		}
 
@@ -867,8 +866,8 @@ public class AnnotationExpansionControl implements IInformationControl, IInforma
 			return;
 
 		// set the ranges one by one
-		for (int i= 0; i < oldRanges.length; i++) {
-			text.setStyleRange(oldRanges[i]);
+		for (StyleRange oldRange : oldRanges) {
+			text.setStyleRange(oldRange);
 		}
 	}
 

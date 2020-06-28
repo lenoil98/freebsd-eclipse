@@ -156,8 +156,7 @@ public class EclipseLauncherParser {
 	private void getJVMArgs(List<String> lines, LauncherData launcherData) {
 		ArrayList<String> vmargs = new ArrayList<>(lines.size());
 		boolean foundVmArgs = false;
-		for (Iterator<String> iterator = lines.iterator(); iterator.hasNext();) {
-			String line = iterator.next();
+		for (String line : lines) {
 			if (!foundVmArgs) {
 				if (EquinoxConstants.OPTION_VMARGS.equals(line))
 					foundVmArgs = true;
@@ -176,15 +175,14 @@ public class EclipseLauncherParser {
 			return;
 		String[] args = launcherData.getJvmArgs();
 		lines.add(EquinoxConstants.OPTION_VMARGS);
-		for (int i = 0; i < args.length; i++) {
-			lines.add(args[i]);
+		for (String arg : args) {
+			lines.add(arg);
 		}
 	}
 
 	private void getProgramArgs(List<String> lines, LauncherData launcherData) {
 		ArrayList<String> args = new ArrayList<>(lines.size());
-		for (Iterator<String> iterator = lines.iterator(); iterator.hasNext();) {
-			String line = iterator.next();
+		for (String line : lines) {
 			if (EquinoxConstants.OPTION_VMARGS.equals(line))
 				break;
 			args.add(line);
@@ -318,7 +316,7 @@ public class EclipseLauncherParser {
 		//append jvm args
 		setJVMArgs(newlines, launcherData);
 
-		// backup file if exists.		
+		// backup file if exists.
 		if (backup)
 			if (launcherConfigFile.exists()) {
 				File dest = Utils.getSimpleDataFormattedFile(launcherConfigFile);
@@ -330,8 +328,7 @@ public class EclipseLauncherParser {
 		//only write the file if we actually have content
 		if (newlines.size() > 0) {
 			try (BufferedWriter bw = new BufferedWriter(new FileWriter(launcherConfigFile));) {
-				for (int j = 0; j < newlines.size(); j++) {
-					String arg = newlines.get(j);
+				for (String arg : newlines) {
 					if (arg == null)
 						continue;
 					bw.write(arg);

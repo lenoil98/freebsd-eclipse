@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -25,34 +25,39 @@ public class MultiSourcePackage extends PackageSource {
 		this.suppliers = suppliers;
 	}
 
+	@Override
 	public SingleSourcePackage[] getSuppliers() {
 		return suppliers;
 	}
 
+	@Override
 	public Class<?> loadClass(String name) throws ClassNotFoundException {
 		Class<?> result = null;
-		for (int i = 0; i < suppliers.length; i++) {
-			result = suppliers[i].loadClass(name);
+		for (SingleSourcePackage supplier : suppliers) {
+			result = supplier.loadClass(name);
 			if (result != null)
 				return result;
 		}
 		return result;
 	}
 
+	@Override
 	public URL getResource(String name) {
 		URL result = null;
-		for (int i = 0; i < suppliers.length; i++) {
-			result = suppliers[i].getResource(name);
+		for (SingleSourcePackage supplier : suppliers) {
+			result = supplier.getResource(name);
 			if (result != null)
 				return result;
 		}
 		return result;
 	}
 
+	@Override
 	public Enumeration<URL> getResources(String name) {
 		Enumeration<URL> results = null;
-		for (int i = 0; i < suppliers.length; i++)
-			results = BundleLoader.compoundEnumerations(results, suppliers[i].getResources(name));
+		for (SingleSourcePackage supplier : suppliers) {
+			results = BundleLoader.compoundEnumerations(results, supplier.getResources(name));
+		}
 		return results;
 	}
 

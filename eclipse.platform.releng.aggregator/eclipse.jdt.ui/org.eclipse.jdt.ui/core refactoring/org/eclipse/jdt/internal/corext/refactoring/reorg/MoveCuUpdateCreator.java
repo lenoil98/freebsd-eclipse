@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,13 +10,13 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Microsoft Corporation - Move CU should not remove import for the inner class - https://bugs.eclipse.org/bugs/show_bug.cgi?id=549674
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.refactoring.reorg;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -111,9 +111,9 @@ public class MoveCuUpdateCreator {
 	}
 
 	private void addImportRewriteUpdates(TextChangeManager changeManager) throws CoreException {
-		for (Iterator<ICompilationUnit> iter= fImportRewrites.keySet().iterator(); iter.hasNext();) {
-			ICompilationUnit cu= iter.next();
-			ImportRewrite importRewrite= fImportRewrites.get(cu);
+		for (Map.Entry<ICompilationUnit, ImportRewrite> entry : fImportRewrites.entrySet()) {
+			ICompilationUnit cu = entry.getKey();
+			ImportRewrite importRewrite= entry.getValue();
 			if (importRewrite != null && importRewrite.hasRecordedChanges()) {
 				TextChangeCompatibility.addTextEdit(changeManager.get(cu), RefactoringCoreMessages.MoveCuUpdateCreator_update_imports, importRewrite.rewriteImports(null));
 			}
@@ -122,11 +122,10 @@ public class MoveCuUpdateCreator {
 
 	private void addUpdates(TextChangeManager changeManager, IProgressMonitor pm, RefactoringStatus status) throws CoreException {
 		pm.beginTask("", fCus.length);  //$NON-NLS-1$
-		for (int i= 0; i < fCus.length; i++){
+		for (ICompilationUnit cu : fCus) {
 			if (pm.isCanceled())
 				throw new OperationCanceledException();
-
-			addUpdates(changeManager, fCus[i], new SubProgressMonitor(pm, 1), status);
+			addUpdates(changeManager, cu, new SubProgressMonitor(pm, 1), status);
 		}
 	}
 
@@ -150,21 +149,17 @@ public class MoveCuUpdateCreator {
 
 	private void addReferenceUpdates(TextChangeManager changeManager, ICompilationUnit movedUnit, IProgressMonitor pm, RefactoringStatus status) throws JavaModelException, CoreException {
 		List<ICompilationUnit> cuList= Arrays.asList(fCus);
-		SearchResultGroup[] references= getReferences(movedUnit, pm, status);
-		for (int i= 0; i < references.length; i++) {
-			SearchResultGroup searchResultGroup= references[i];
+		for (SearchResultGroup searchResultGroup : getReferences(movedUnit, pm, status)) {
 			ICompilationUnit referencingCu= searchResultGroup.getCompilationUnit();
 			if (referencingCu == null)
 				continue;
-
 			boolean simpleReferencesNeedNewImport= simpleReferencesNeedNewImport(movedUnit, referencingCu, cuList);
-			SearchMatch[] results= searchResultGroup.getSearchResults();
-			for (int j= 0; j < results.length; j++) {
+			for (SearchMatch result : searchResultGroup.getSearchResults()) {
 				// TODO: should update type references with results from addImport
-				TypeReference reference= (TypeReference) results[j];
+				TypeReference reference= (TypeReference) result;
 				if (reference.isImportDeclaration()) {
 					ImportRewrite rewrite= getImportRewrite(referencingCu);
-					IImportDeclaration importDecl= (IImportDeclaration) SearchUtils.getEnclosingJavaElement(results[j]);
+					IImportDeclaration importDecl= (IImportDeclaration) SearchUtils.getEnclosingJavaElement(result);
 					if (Flags.isStatic(importDecl.getFlags())) {
 						rewrite.removeStaticImport(importDecl.getElementName());
 						addStaticImport(movedUnit, importDecl, rewrite);
@@ -225,18 +220,17 @@ public class MoveCuUpdateCreator {
 
 	private void removeImportsToDestinationPackageTypes(ICompilationUnit movedUnit) throws CoreException{
 		ImportRewrite importEdit= getImportRewrite(movedUnit);
-		IType[] destinationTypes= getDestinationPackageTypes();
-		for (int i= 0; i < destinationTypes.length; i++) {
-			importEdit.removeImport(destinationTypes[i].getFullyQualifiedName('.'));
+		for (IType destinationType : getDestinationPackageTypes()) {
+			importEdit.removeImport(destinationType.getFullyQualifiedName('.'));
 		}
+		importEdit.removeImport(fDestination.getElementName().concat(".*")); //$NON-NLS-1$
 	}
 
 	private IType[] getDestinationPackageTypes() throws JavaModelException {
 		List<IType> types= new ArrayList<>();
 		if (fDestination.exists()) {
-			ICompilationUnit[] cus= fDestination.getCompilationUnits();
-			for (int i= 0; i < cus.length; i++) {
-				types.addAll(Arrays.asList(cus[i].getAllTypes()));
+			for (ICompilationUnit cu : fDestination.getCompilationUnits()) {
+				types.addAll(Arrays.asList(cu.getTypes()));
 			}
 		}
 		return types.toArray(new IType[types.size()]);
@@ -245,19 +239,17 @@ public class MoveCuUpdateCreator {
 	private void addImportToSourcePackageTypes(ICompilationUnit movedUnit, IProgressMonitor pm) throws CoreException{
 		List<ICompilationUnit> cuList= Arrays.asList(fCus);
 		IType[] allCuTypes= movedUnit.getAllTypes();
-		IType[] referencedTypes= ReferenceFinderUtil.getTypesReferencedIn(allCuTypes, pm);
 		ImportRewrite importEdit= getImportRewrite(movedUnit);
 		importEdit.setFilterImplicitImports(false);
 		IPackageFragment srcPack= (IPackageFragment)movedUnit.getParent();
-		for (int i= 0; i < referencedTypes.length; i++) {
-				IType iType= referencedTypes[i];
-				if (! iType.exists())
-					continue;
-				if (!JavaModelUtil.isSamePackage(iType.getPackageFragment(), srcPack))
-					continue;
-				if (cuList.contains(iType.getCompilationUnit()))
-					continue;
-				importEdit.addImport(iType.getFullyQualifiedName('.'));
+		for (IType type : ReferenceFinderUtil.getTypesReferencedIn(allCuTypes, pm)) {
+			if (! type.exists())
+				continue;
+			if (!JavaModelUtil.isSamePackage(type.getPackageFragment(), srcPack))
+				continue;
+			if (cuList.contains(type.getCompilationUnit()))
+				continue;
+			importEdit.addImport(type.getFullyQualifiedName('.'));
 		}
 	}
 

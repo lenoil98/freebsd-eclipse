@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2018 IBM Corporation and others.
+ * Copyright (c) 2008, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,10 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.osgi.tests.bundles;
+
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.createFile;
+import static java.nio.file.Files.write;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +32,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
+import java.nio.file.Path;
 import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -37,9 +42,11 @@ import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
@@ -66,7 +73,9 @@ import junit.framework.TestSuite;
 import org.eclipse.core.runtime.adaptor.EclipseStarter;
 import org.eclipse.equinox.log.ExtendedLogReaderService;
 import org.eclipse.equinox.log.ExtendedLogService;
+import org.eclipse.equinox.log.test.TestListener;
 import org.eclipse.equinox.log.test.TestListener2;
+import org.eclipse.osgi.container.Module;
 import org.eclipse.osgi.framework.util.FilePath;
 import org.eclipse.osgi.internal.debug.Debug;
 import org.eclipse.osgi.internal.framework.EquinoxConfiguration;
@@ -113,6 +122,7 @@ import org.osgi.resource.Requirement;
 import org.osgi.service.log.LogEntry;
 import org.osgi.service.log.LogLevel;
 import org.osgi.service.log.LogReaderService;
+import org.osgi.service.log.LogService;
 import org.osgi.service.packageadmin.ExportedPackage;
 import org.osgi.service.packageadmin.PackageAdmin;
 import org.osgi.service.startlevel.StartLevel;
@@ -128,7 +138,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testSystemBundle01() {
 		// simple test to create an embedded framework
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle01"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -153,23 +163,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 		URL configURL = configLocation.getURL();
 		assertTrue("incorrect configuration location", configURL.toExternalForm().endsWith("testSystemBundle01/")); //$NON-NLS-1$ //$NON-NLS-2$
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle02() {
 		// create/start/stop/start/stop test
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle02"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 
@@ -180,16 +181,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			fail("Failed to start the framework", e); //$NON-NLS-1$
 		}
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox.getState()); //$NON-NLS-1$
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 
 		try {
@@ -198,23 +190,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 			fail("Failed to start the framework", e); //$NON-NLS-1$
 		}
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox.getState()); //$NON-NLS-1$
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle03() {
 		// create/stop/ test
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle03"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -230,23 +213,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertNotNull("config property is null", configArea); //$NON-NLS-1$
 		assertTrue("Wrong configuration area", configArea.endsWith("testSystemBundle03/")); //$NON-NLS-1$ //$NON-NLS-2$
 		// don't do anything; just put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected error stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle04() {
 		// create/start/stop/start/stop test
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle04"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -279,23 +253,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox.getState()); //$NON-NLS-1$
 		assertEquals("Wrong state for installed bundle", Bundle.ACTIVE, substitutesA.getState()); //$NON-NLS-1$
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle05_1() {
 		// create/install/start/stop test
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle05_1"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -329,23 +294,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 		}
 		assertEquals("Wrong state for active bundle", Bundle.ACTIVE, substitutesA.getState()); //$NON-NLS-1$
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle05_2() {
 		// create/install/start/stop/start/stop test
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle05_2"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -379,16 +335,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		}
 		assertEquals("Wrong state for active bundle", Bundle.ACTIVE, substitutesA.getState()); //$NON-NLS-1$
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 
 		try {
@@ -408,16 +355,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		// no need to start the bundle again it should have been persistently started
 		assertEquals("Wrong state for active bundle", Bundle.ACTIVE, substitutesA2.getState()); //$NON-NLS-1$
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 
 	}
@@ -425,7 +363,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testSystemBundle06() {
 		// create multiple instances test
 		File config1 = OSGiTestsActivator.getContext().getDataFile("testSystemBundle06_1"); //$NON-NLS-1$
-		Map<String, Object> configuration1 = new HashMap<String, Object>();
+		Map<String, Object> configuration1 = new HashMap<>();
 		configuration1.put(Constants.FRAMEWORK_STORAGE, config1.getAbsolutePath());
 		Equinox equinox1 = new Equinox(configuration1);
 		try {
@@ -437,7 +375,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertEquals("Wrong state for SystemBundle", Bundle.STARTING, equinox1.getState()); //$NON-NLS-1$
 
 		File config2 = OSGiTestsActivator.getContext().getDataFile("testSystemBundle06_2"); //$NON-NLS-1$
-		Map<String, Object> configuration2 = new HashMap<String, Object>();
+		Map<String, Object> configuration2 = new HashMap<>();
 		configuration2.put(Constants.FRAMEWORK_STORAGE, config2.getAbsolutePath());
 		Equinox equinox2 = new Equinox(configuration2);
 		try {
@@ -471,36 +409,18 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox2.getState()); //$NON-NLS-1$
 
 		// put the framework 1 back to the RESOLVED state
-		try {
-			equinox1.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox1.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox1);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox1.getState()); //$NON-NLS-1$
 
 		// put the framework 2 back to the RESOLVED state
-		try {
-			equinox2.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox2.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox2);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox2.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle07() {
 		// test init twice
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle07_01"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -541,23 +461,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 		URL configURL = configLocation.getURL();
 		assertTrue("incorrect configuration location", configURL.toExternalForm().endsWith("testSystemBundle07_01/")); //$NON-NLS-1$ //$NON-NLS-2$
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle08() {
 		// create/start/stop/start/stop test
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle08_1"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -567,20 +478,11 @@ public class SystemBundleTests extends AbstractBundleTests {
 			fail("Failed to start the framework", e); //$NON-NLS-1$
 		}
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox.getState()); //$NON-NLS-1$
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 
 		config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle08_2"); //$NON-NLS-1$
-		configuration = new HashMap<String, Object>();
+		configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		equinox = new Equinox(configuration);
 		try {
@@ -603,23 +505,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 		URL configURL = configLocation.getURL();
 		assertTrue("incorrect configuration location", configURL.toExternalForm().endsWith("testSystemBundle08_2/")); //$NON-NLS-1$ //$NON-NLS-2$
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle09() {
 		// test FrameworkUtil.createFilter
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle09"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -640,23 +533,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 		} catch (BundleException e) {
 			fail("Unexpected exception starting test bundle", e); //$NON-NLS-1$
 		}
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle10() {
 		// create/start/update/stop test
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle10"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		final Equinox equinox = new Equinox(configuration);
 		try {
@@ -665,38 +549,9 @@ public class SystemBundleTests extends AbstractBundleTests {
 			fail("Failed to start the framework", e); //$NON-NLS-1$
 		}
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox.getState()); //$NON-NLS-1$
-		final Exception[] failureException = new BundleException[1];
-		final FrameworkEvent[] success = new FrameworkEvent[] {null};
-		Thread t = new Thread(new Runnable() {
-			public void run() {
-				try {
-					success[0] = equinox.waitForStop(10000);
-				} catch (InterruptedException e) {
-					failureException[0] = e;
-				}
-			}
-		}, "test waitForStop thread"); //$NON-NLS-1$
-		t.start();
-		try {
-			// delay hack to allow t thread to block on waitForStop before we update.
-			Thread.sleep(500);
-		} catch (InterruptedException e) {
-			fail("unexpected interuption", e);
-		}
-		try {
-			equinox.update();
-		} catch (BundleException e) {
-			fail("Failed to update the framework", e); //$NON-NLS-1$
-		}
-		try {
-			t.join();
-		} catch (InterruptedException e) {
-			fail("unexpected interuption", e); //$NON-NLS-1$
-		}
-		if (failureException[0] != null)
-			fail("Error occurred while waiting", failureException[0]); //$NON-NLS-1$
-		assertNotNull("Wait for stop event is null", success[0]); //$NON-NLS-1$
-		assertEquals("Wait for stop event type is wrong", FrameworkEvent.STOPPED_UPDATE, success[0].getType()); //$NON-NLS-1$
+
+		FrameworkEvent success = update(equinox);
+		assertEquals("Wait for stop event type is wrong", FrameworkEvent.STOPPED_UPDATE, success.getType()); //$NON-NLS-1$
 		// TODO delay hack to allow the framework to get started again
 		for (int i = 0; i < 5 && Bundle.ACTIVE != equinox.getState(); i++)
 			try {
@@ -705,23 +560,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 				// nothing
 			}
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox.getState()); //$NON-NLS-1$
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle11() {
 		// test extra packages property
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle11"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA, "test.pkg1, test.pkg2"); //$NON-NLS-1$
 		Equinox equinox = new Equinox(configuration);
@@ -745,23 +591,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertEquals("Wrong number of exports", 1, pkg2.length); //$NON-NLS-1$
 		assertEquals("Wrong package name", "test.pkg2", pkg2[0].getName()); //$NON-NLS-1$ //$NON-NLS-2$
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle12() {
 		// Test stop FrameworkEvent
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle12"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 
@@ -782,16 +619,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertEquals("Wrong stopEvent", FrameworkEvent.WAIT_TIMEDOUT, stopEvent.getType()); //$NON-NLS-1$
 
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox.getState()); //$NON-NLS-1$
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			stopEvent = equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stopEvent = stop(equinox);
 		assertNotNull("Stop event is null", stopEvent); //$NON-NLS-1$
 		assertEquals("Wrong stopEvent", FrameworkEvent.STOPPED, stopEvent.getType()); //$NON-NLS-1$
 	}
@@ -799,7 +627,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testSystemBundle13() {
 		// create/install/start/stop clean test
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle13"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -833,20 +661,11 @@ public class SystemBundleTests extends AbstractBundleTests {
 		}
 		assertEquals("Wrong state for active bundle", Bundle.ACTIVE, substitutesA.getState()); //$NON-NLS-1$
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 
 		// initialize the framework again to the same configuration
-		configuration = new HashMap<String, Object>();
+		configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		equinox = new Equinox(configuration);
 		try {
@@ -859,20 +678,11 @@ public class SystemBundleTests extends AbstractBundleTests {
 		// make sure the bundle is there
 		assertNotNull("missing installed bundle", substitutesA); //$NON-NLS-1$
 		assertEquals("Unexpected symbolic name", "substitutes.a", substitutesA.getSymbolicName()); //$NON-NLS-1$ //$NON-NLS-2$
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 
 		// initialize the framework again to the same configuration but use clean option
-		configuration = new HashMap<String, Object>();
+		configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(Constants.FRAMEWORK_STORAGE_CLEAN, Constants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT);
 		equinox = new Equinox(configuration);
@@ -885,23 +695,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 		// make sure the bundle is there
 		assertNull("Unexpected bundle is installed", substitutesA); //$NON-NLS-1$
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testSystemBundle14() {
 		// Test startlevel property
 		File config = OSGiTestsActivator.getContext().getDataFile("testSystemBundle14"); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(Constants.FRAMEWORK_BEGINNING_STARTLEVEL, "10"); //$NON-NLS-1$
 		Equinox equinox = new Equinox(configuration);
@@ -917,18 +718,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertNotNull("StartLevel service is null", st); //$NON-NLS-1$
 		assertEquals("Unexpected start level", 10, st.getStartLevel()); //$NON-NLS-1$
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox.getState()); //$NON-NLS-1$
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-
-		FrameworkEvent stopEvent = null;
-		try {
-			stopEvent = equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		FrameworkEvent stopEvent = stop(equinox);
 		assertNotNull("Stop event is null", stopEvent); //$NON-NLS-1$
 		assertEquals("Wrong stopEvent", FrameworkEvent.STOPPED, stopEvent.getType()); //$NON-NLS-1$
 	}
@@ -936,7 +726,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testSystemBundle16() {
 		// test parent boot
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(Constants.FRAMEWORK_BUNDLE_PARENT, Constants.FRAMEWORK_BUNDLE_PARENT_BOOT);
 		checkParentClassLoader(configuration);
@@ -945,7 +735,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testSystemBundle17() {
 		// test parent app
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(Constants.FRAMEWORK_BUNDLE_PARENT, Constants.FRAMEWORK_BUNDLE_PARENT_APP);
 		checkParentClassLoader(configuration);
@@ -954,7 +744,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testSystemBundle18() {
 		// test parent ext
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(Constants.FRAMEWORK_BUNDLE_PARENT, Constants.FRAMEWORK_BUNDLE_PARENT_EXT);
 		checkParentClassLoader(configuration);
@@ -963,7 +753,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testSystemBundle19() {
 		// test parent framework
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(Constants.FRAMEWORK_BUNDLE_PARENT, Constants.FRAMEWORK_BUNDLE_PARENT_FRAMEWORK);
 		checkParentClassLoader(configuration);
@@ -999,20 +789,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		} catch (ClassNotFoundException e) {
 			fail("failed to load class", e); //$NON-NLS-1$
 		}
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-
-		FrameworkEvent stopEvent = null;
-		try {
-			stopEvent = equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
-		assertNotNull("Stop event is null", stopEvent); //$NON-NLS-1$
-		assertEquals("Wrong stopEvent", FrameworkEvent.STOPPED, stopEvent.getType()); //$NON-NLS-1$
+		stop(equinox, FrameworkEvent.STOPPED);
 	}
 
 	public void testChangeEE() throws IOException, BundleException {
@@ -1021,7 +798,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 		// configure equinox for javaSE 8
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put("osgi.java.profile", javaSE8Profile.toExternalForm()); //$NON-NLS-1$
 
@@ -1031,7 +808,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		// install a bundle that requires java 8
 		BundleContext systemContext = equinox.getBundleContext();
 		assertNotNull("System context is null", systemContext); //$NON-NLS-1$
-		Map<String, String> testHeaders = new HashMap<String, String>();
+		Map<String, String> testHeaders = new HashMap<>();
 		testHeaders.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		testHeaders.put(Constants.BUNDLE_SYMBOLICNAME, getName());
 		testHeaders.put(Constants.BUNDLE_REQUIREDEXECUTIONENVIRONMENT, "JavaSE-1.8");
@@ -1043,12 +820,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		Assert.assertTrue("Could not resolve bundle.", equinox.adapt(FrameworkWiring.class).resolveBundles(Collections.singleton(b)));
 
 		// put the framework back to the RESOLVED state
-		equinox.stop();
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 
 		// configure equinox for java 7
 		configuration.put("osgi.java.profile", javaSE7Profile.toExternalForm());
@@ -1063,12 +835,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		Assert.assertFalse("Could resolve bundle.", equinox.adapt(FrameworkWiring.class).resolveBundles(Collections.singleton(b)));
 
 		// put the framework back to the RESOLVED state
-		equinox.stop();
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 
 		// move back to java 8
 		configuration.put("osgi.java.profile", javaSE8Profile.toExternalForm());
@@ -1083,12 +850,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		Assert.assertTrue("Could not resolve bundle.", equinox.adapt(FrameworkWiring.class).resolveBundles(Collections.singleton(b)));
 
 		// put the framework back to the RESOLVED state
-		equinox.stop();
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 	}
 
 	public void testMRUBundleFileList() {
@@ -1102,7 +864,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	private void doMRUBundleFileList(int limit) {
 		// create/start/stop/start/stop test
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put("osgi.bundlefile.limit", Integer.toString(limit)); //$NON-NLS-1$//$NON-NLS-2$
 
@@ -1129,24 +891,15 @@ public class SystemBundleTests extends AbstractBundleTests {
 		} catch (IOException e) {
 			fail("Unexpected error creating budnles", e); //$NON-NLS-1$
 		}
-		for (int i = 0; i < testBundles.length; i++) {
+		for (File testBundle : testBundles) {
 			try {
-				systemContext.installBundle("reference:file:///" + testBundles[i].getAbsolutePath()); //$NON-NLS-1$
+				systemContext.installBundle("reference:file:///" + testBundle.getAbsolutePath()); //$NON-NLS-1$
 			} catch (BundleException e) {
 				fail("Unexpected install error", e); //$NON-NLS-1$
 			}
 		}
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 
 		try {
 			equinox.start();
@@ -1156,36 +909,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 		openAllBundleFiles(equinox.getBundleContext());
 
-		final Exception[] failureException = new BundleException[1];
-		final FrameworkEvent[] success = new FrameworkEvent[] {null};
-		Thread waitForUpdate = new Thread(new Runnable() {
-			public void run() {
-				try {
-					success[0] = equinox.waitForStop(10000);
-				} catch (InterruptedException e) {
-					failureException[0] = e;
-				}
-			}
-		}, "test waitForStop thread"); //$NON-NLS-1$
-		waitForUpdate.start();
-		try {
-			// delay hack to allow waitForUpdate thread to block on waitForStop before we update.
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-			fail("unexpected interuption", e);
-		}
-		try {
-			equinox.update();
-		} catch (BundleException e) {
-			fail("Failed to update the framework", e); //$NON-NLS-1$
-		}
-		try {
-			waitForUpdate.join();
-		} catch (InterruptedException e) {
-			fail("unexpected interuption", e); //$NON-NLS-1$
-		}
-		if (failureException[0] != null)
-			fail("Error occurred while waiting", failureException[0]); //$NON-NLS-1$
+		update(equinox);
 
 		// we can either have a hack here that waits until the system bundle is active
 		// or we can just try to start it and race with the update() call above
@@ -1197,16 +921,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 		openAllBundleFiles(equinox.getBundleContext());
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
@@ -1214,11 +929,11 @@ public class SystemBundleTests extends AbstractBundleTests {
 		Bundle[] bundles = context.getBundles();
 		// get an entry from each bundle to ensure each one gets opened.
 		try {
-			for (int i = 0; i < bundles.length; i++) {
-				assertNotNull("No manifest for: " + bundles[i], bundles[i].getEntry("/META-INF/MANIFEST.MF"));
+			for (Bundle bundle : bundles) {
+				assertNotNull("No manifest for: " + bundle, bundle.getEntry("/META-INF/MANIFEST.MF"));
 			}
 		} catch (Throwable t) {
-			// An exception used to get thrown here when we tried to close 
+			// An exception used to get thrown here when we tried to close
 			// the least used bundle file
 			fail("Failed to get bundle entries", t);
 		}
@@ -1227,7 +942,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testURLExternalFormat01() {
 		// create multiple instances test
 		File config1 = OSGiTestsActivator.getContext().getDataFile("testURLExternalFormat01_1"); //$NON-NLS-1$
-		Map<String, Object> configuration1 = new HashMap<String, Object>();
+		Map<String, Object> configuration1 = new HashMap<>();
 		configuration1.put(Constants.FRAMEWORK_STORAGE, config1.getAbsolutePath());
 		Equinox equinox1 = new Equinox(configuration1);
 		try {
@@ -1239,7 +954,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertEquals("Wrong state for SystemBundle", Bundle.STARTING, equinox1.getState()); //$NON-NLS-1$
 
 		File config2 = OSGiTestsActivator.getContext().getDataFile("testURLExternalFormat01_2"); //$NON-NLS-1$
-		Map<String, Object> configuration2 = new HashMap<String, Object>();
+		Map<String, Object> configuration2 = new HashMap<>();
 		configuration2.put(Constants.FRAMEWORK_STORAGE, config2.getAbsolutePath());
 		Equinox equinox2 = new Equinox(configuration2);
 		try {
@@ -1291,29 +1006,11 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertFalse("URL is equal: " + entry1.toExternalForm(), entry1.equals(entry2)); //$NON-NLS-1$
 
 		// put the framework 1 back to the RESOLVED state
-		try {
-			equinox1.stop();
-		} catch (BundleException e) {
-			fail("Unexpected error stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox1.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox1);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox1.getState()); //$NON-NLS-1$
 
 		// put the framework 2 back to the RESOLVED state
-		try {
-			equinox2.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox2.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox2);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox2.getState()); //$NON-NLS-1$
 	}
 
@@ -1333,7 +1030,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testURLMultiplexing01() throws BundleException {
 		// create multiple instances of Equinox to test
 		File config1 = OSGiTestsActivator.getContext().getDataFile(getName() + "_1");
-		Map<String, Object> configuration1 = new HashMap<String, Object>();
+		Map<String, Object> configuration1 = new HashMap<>();
 		configuration1.put(Constants.FRAMEWORK_STORAGE, config1.getAbsolutePath());
 		Equinox equinox1 = new Equinox(configuration1);
 		try {
@@ -1345,7 +1042,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertEquals("Wrong state for SystemBundle", Bundle.ACTIVE, equinox1.getState()); //$NON-NLS-1$
 
 		File config2 = OSGiTestsActivator.getContext().getDataFile(getName() + "_2"); //$NON-NLS-1$
-		Map<String, Object> configuration2 = new HashMap<String, Object>();
+		Map<String, Object> configuration2 = new HashMap<>();
 		configuration2.put(Constants.FRAMEWORK_STORAGE, config2.getAbsolutePath());
 		Equinox equinox2 = new Equinox(configuration2);
 		try {
@@ -1385,29 +1082,11 @@ public class SystemBundleTests extends AbstractBundleTests {
 		}
 
 		// put the framework 1 back to the RESOLVED state
-		try {
-			equinox1.stop();
-		} catch (BundleException e) {
-			fail("Unexpected error stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox1.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox1);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox1.getState()); //$NON-NLS-1$
 
 		// put the framework 2 back to the RESOLVED state
-		try {
-			equinox2.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox2.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox2);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox2.getState()); //$NON-NLS-1$
 		handlerReg.unregister();
 		System.getProperties().remove("test.url");
@@ -1440,17 +1119,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 		assertFalse("UUIDs are the same: " + uuid1_1, uuid1_1.equals(uuid2_1));
 
+		stop(equinox1);
+		stop(equinox2);
+
 		try {
-			equinox1.stop();
-			equinox2.stop();
-			equinox1.waitForStop(1000);
-			equinox2.waitForStop(1000);
 			equinox1.init();
 			equinox2.init();
 		} catch (BundleException e) {
 			fail("Failed to re-init frameworks.", e);
-		} catch (InterruptedException e) {
-			fail("Failed to stop frameworks.", e);
 		}
 
 		String uuid1_2 = equinox1.getBundleContext().getProperty(Constants.FRAMEWORK_UUID);
@@ -1461,16 +1137,8 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertFalse("UUIDs are the same: " + uuid1_2, uuid1_2.equals(uuid2_2));
 		assertFalse("UUIDs are the same: " + uuid2_1, uuid2_1.equals(uuid2_2));
 
-		try {
-			equinox1.stop();
-			equinox2.stop();
-			equinox1.waitForStop(1000);
-			equinox2.waitForStop(1000);
-		} catch (BundleException e) {
-			fail("Failed to re-init frameworks.", e);
-		} catch (InterruptedException e) {
-			fail("Failed to stop frameworks.", e);
-		}
+		stop(equinox1);
+		stop(equinox2);
 	}
 
 	private void verifyUUID(String uuid) {
@@ -1525,7 +1193,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testBug304213() {
 		// test installing bundle with empty manifest
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 
 		Equinox equinox = new Equinox(configuration);
@@ -1560,16 +1228,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		}
 
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 
 		try {
 			equinox.start();
@@ -1582,25 +1241,16 @@ public class SystemBundleTests extends AbstractBundleTests {
 		Bundle[] bundles = systemContext.getBundles();
 		// get the headers from each bundle
 		try {
-			for (int i = 0; i < bundles.length; i++) {
-				bundles[i].getHeaders(); //$NON-NLS-1$
+			for (Bundle bundle : bundles) {
+				bundle.getHeaders(); //$NON-NLS-1$
 			}
 		} catch (Throwable t) {
-			// An exception used to get thrown here when we tried to close 
+			// An exception used to get thrown here when we tried to close
 			// the least used bundle file
 			fail("Failed to get bundle entries", t);
 		}
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
@@ -1610,7 +1260,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 		try {
 			File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-			Map<String, Object> configuration = new HashMap<String, Object>();
+			Map<String, Object> configuration = new HashMap<>();
 			configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 			configuration.put("osgi.dev", "../devCP");
 			Equinox equinox = new Equinox(configuration);
@@ -1631,16 +1281,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			URL resource = tb1.getResource("tb1/resource.txt");
 			assertNotNull("Resource is null", resource);
 
-			try {
-				equinox.stop();
-			} catch (BundleException e) {
-				fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-			}
-			try {
-				equinox.waitForStop(10000);
-			} catch (InterruptedException e) {
-				fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-			}
+			stop(equinox);
 			assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 		} finally {
 			testBundleInstaller.shutdown();
@@ -1650,7 +1291,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testBug352275() {
 		// simple test to create an embedded framework
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(Constants.FRAMEWORK_SYSTEMPACKAGES_EXTRA, "");
 		Equinox equinox = new Equinox(configuration);
@@ -1660,16 +1301,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		} catch (BundleException e) {
 			fail("Failed to start the framework", e); //$NON-NLS-1$
 		}
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
@@ -1689,7 +1321,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 	public void testWeavingPersistence() {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -1730,16 +1362,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			reg.unregister();
 		}
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected error stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 
 		try {
 			equinox.start();
@@ -1780,16 +1403,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		}
 
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected error stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 
 		try {
 			equinox.start();
@@ -1812,27 +1426,18 @@ public class SystemBundleTests extends AbstractBundleTests {
 		List packages1 = wiring1.getRequiredWires(BundleRevision.PACKAGE_NAMESPACE);
 		List packages2 = wiring2.getRequiredWires(BundleRevision.PACKAGE_NAMESPACE);
 
-		// could make this a more complete check, but with the bug the dynamic wires 
+		// could make this a more complete check, but with the bug the dynamic wires
 		// are missing altogether because we fail to save the resolver state cache.
 		assertEquals("Wrong number of wires for wiring1", 1, packages1.size());
 		assertEquals("Wrong number of wires for wiring2", 1, packages2.size());
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected error stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 	}
 
 	private void doTestBug351519Refresh(Boolean refreshDuplicates) {
 		// Create a framework with equinox.refresh.duplicate.bsn=false configuration
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		if (refreshDuplicates != null) {
 			configuration.put("equinox.refresh.duplicate.bsn", refreshDuplicates.toString());
@@ -1901,23 +1506,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 			assertEquals("Refreshed bundles does not include v1", refreshed[0], tb1v1);
 		}
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testBug375784() {
 		// Create a framework with osgi.context.bootdelegation=true configuration
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put("osgi.context.bootdelegation", "true");
 		Equinox equinox = new Equinox(configuration);
@@ -1938,23 +1534,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 			fail("failed to install and start test bundle", e1); //$NON-NLS-1$
 		}
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testBug258209_1() throws BundleException {
 		// create a framework to test thread context class loaders
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 
 		ClassLoader current = Thread.currentThread().getContextClassLoader();
@@ -1976,13 +1563,10 @@ public class SystemBundleTests extends AbstractBundleTests {
 		equinox.start();
 		assertEquals("Unexpected state", Bundle.ACTIVE, testTCCL.getState()); //$NON-NLS-1$
 
-		// test that the correct tccl is used for framework update
-		try {
-			equinox.update();
-			checkActive(testTCCL);
-		} catch (Exception e) {
-			fail("Unexpected exception", e); //$NON-NLS-1$
-		}
+		update(equinox);
+
+		checkActive(testTCCL);
+
 		systemContext = equinox.getBundleContext();
 		assertEquals("Unexpected state", Bundle.ACTIVE, testTCCL.getState()); //$NON-NLS-1$
 
@@ -2008,16 +1592,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		} finally {
 			Thread.currentThread().setContextClassLoader(current);
 		}
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected error stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 	}
 
 	private void checkActive(Bundle b) {
@@ -2033,7 +1608,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 	public void testBug413879() {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -2104,16 +1679,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			resolverHookReg.unregister();
 		}
 		// put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected error stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 
 		if (!errors.isEmpty()) {
 			fail("Failed to resolve dynamic", errors.iterator().next());
@@ -2122,7 +1688,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 	public void testBug414070() throws BundleException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		equinox.init();
@@ -2159,7 +1725,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertEquals("C is not active.", Bundle.ACTIVE, chainTestC.getState());
 		assertEquals("D is not active.", Bundle.ACTIVE, chainTestD.getState());
 		// record STOPPING order
-		final List<Bundle> stoppingOrder = new ArrayList<Bundle>();
+		final List<Bundle> stoppingOrder = new ArrayList<>();
 		systemContext.addBundleListener(new SynchronousBundleListener() {
 			@Override
 			public void bundleChanged(BundleEvent event) {
@@ -2168,13 +1734,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 				}
 			}
 		});
-		equinox.stop();
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			fail("Unexpected interruption.", e);
-		}
+		stop(equinox);
 
 		List<Bundle> expectedOrder = Arrays.asList(systemBundle, chainTest, chainTestA, chainTestB, chainTestC, chainTestD);
 		assertEquals("Wrong stopping order", expectedOrder.toArray(), stoppingOrder.toArray());
@@ -2182,7 +1742,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 	public void testBug412228() throws BundleException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		equinox.init();
@@ -2194,13 +1754,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		equinox.start();
 
 		long startTime = System.currentTimeMillis();
-		equinox.stop();
-		try {
-			equinox.waitForStop(500);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			fail("Unexpected interruption.", e);
-		}
+		stop(equinox, true, 500);
 		long stopTime = System.currentTimeMillis() - startTime;
 		if (stopTime > 2000) {
 			fail("waitForStop time took too long: " + stopTime);
@@ -2218,7 +1772,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		configIni.store(new FileOutputStream(new File(config, "config.ini")), "Test config.ini");
 		// Only provide substitution for the first prop
 		System.setProperty("test.prop1", "PASSED");
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		equinox.init();
@@ -2228,14 +1782,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertEquals("Wrong value for test.substitute1", "Some.PASSED.test", systemContext.getProperty("test.substitute1"));
 		// check that non-substitution keeps $ delimiters.
 		assertEquals("Wrong value for test.substitute2", "Some.$test.prop2$.test", systemContext.getProperty("test.substitute2"));
-		equinox.stop();
-		try {
-			equinox.waitForStop(5000);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			fail("Unexpected interruption.", e);
-		}
-
+		stop(equinox);
 	}
 
 	public void testDynamicSecurityManager() throws BundleException {
@@ -2243,7 +1790,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertNull("SecurityManager must be null to test.", sm);
 		try {
 			File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-			Map<String, Object> configuration = new HashMap<String, Object>();
+			Map<String, Object> configuration = new HashMap<>();
 			configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 			Equinox equinox = new Equinox(configuration);
 			try {
@@ -2272,14 +1819,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 					// do nothing
 				}
 			});
-			equinox.stop();
-			try {
-				FrameworkEvent event = equinox.waitForStop(10000);
-				assertEquals("Wrong event.", FrameworkEvent.STOPPED, event.getType());
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				fail("Unexpected interruption.", e);
-			}
+			stop(equinox);
 			assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 		} finally {
 			System.setSecurityManager(null);
@@ -2291,7 +1831,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testNullConfigurationValue() throws BundleException {
 		System.setProperty(nullTest, "system");
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(nullTest, null);
 		Equinox equinox = new Equinox(configuration);
@@ -2309,7 +1849,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		try {
 			System.setProperty(Constants.FRAMEWORK_PROCESSOR, "hyperflux");
 			File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-			Map<String, Object> configuration = new HashMap<String, Object>();
+			Map<String, Object> configuration = new HashMap<>();
 			configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 			configuration.put(Constants.FRAMEWORK_PROCESSOR, null);
 			Equinox equinox = new Equinox(configuration);
@@ -2355,7 +1895,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 				EclipseStarter.PROP_LOGFILE //
 		);
 		Properties systemProperties = (Properties) System.getProperties().clone();
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		for (Object key : systemProperties.keySet()) {
 			configuration.put((String) key, null);
 		}
@@ -2381,7 +1921,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testNullConfigurationValueSystemProperties() throws BundleException {
 		System.setProperty(nullTest, "system");
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put("osgi.framework.useSystemProperties", "true");
 		configuration.put(nullTest, null);
@@ -2404,7 +1944,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 	public void testBackedBySystemReplaceSystemProperties() throws BundleException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put("osgi.framework.useSystemProperties", "true");
 		Equinox equinox = new Equinox(configuration);
@@ -2439,7 +1979,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 	public void testLocalConfigReplaceSystemProperties() throws BundleException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		equinox.start();
@@ -2476,7 +2016,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 	public void testSystemNLFragment() throws BundleException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put("osgi.nl", "zh");
 		Equinox equinox = new Equinox(configuration);
@@ -2511,7 +2051,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		String originalCheckConfiguration = System.clearProperty(EquinoxConfiguration.PROP_CHECK_CONFIGURATION);
 		try {
 			File config = OSGiTestsActivator.getContext().getDataFile(getName());
-			Map<String, Object> configuration = new HashMap<String, Object>();
+			Map<String, Object> configuration = new HashMap<>();
 			configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 			configuration.put("osgi.dev", "true");
 			Equinox equinox = new Equinox(configuration);
@@ -2528,7 +2068,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 	public void testProvideOSGiEEandNative() throws BundleException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put("osgi.equinox.allow.restricted.provides", "true");
 
@@ -2577,7 +2117,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		// note that the embedded case the default for this setting is false
 		configIni.setProperty(compatBootDelegate, "true");
 		configIni.store(new FileWriter(new File(config, "config.ini")), null);
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		equinox.start();
@@ -2604,8 +2144,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			fail("Expected to be able to load the class from boot.", e);
 		}
 		long bId = b.getBundleId();
-		equinox.stop();
-		equinox.waitForStop(5000);
+		stop(equinox);
 
 		// remove the setting to ensure false is used for the embedded case
 		configIni.remove(compatBootDelegate);
@@ -2627,7 +2166,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testSystemBundleListener() throws BundleException, InterruptedException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
 		config.mkdirs();
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		equinox.start();
@@ -2655,8 +2194,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		};
 		systemContext.addBundleListener(systemBundleListener);
 
-		equinox.stop();
-		equinox.waitForStop(5000);
+		stop(equinox);
 		assertEquals("Wrong number of STOPPING events", 1, stoppingEvent.get());
 		assertEquals("Wrong number of STOPPED events", 1, stoppedEvent.get());
 	}
@@ -2664,7 +2202,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testContextBootDelegation() throws BundleException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
 		config.mkdirs();
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 
@@ -2683,7 +2221,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testExtraSystemBundleHeaders() throws BundleException, InterruptedException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
 		config.mkdirs();
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(Constants.FRAMEWORK_SYSTEMCAPABILITIES, "osgi.ee; osgi.ee=JavaSE; version:Version=1.7, something.system");
 		configuration.put(Constants.FRAMEWORK_SYSTEMPACKAGES, "something.system");
@@ -2699,9 +2237,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertTrue("Unexpected Export-Package header: " + exportPackage, exportPackage.contains("something.system"));
 		assertTrue("Unexpected Provide-Capability header: " + provideCapability, provideCapability.contains("something.extra"));
 		assertTrue("Unexpected Export-Package header: " + exportPackage, exportPackage.contains("something.extra"));
-		equinox.stop();
-
-		equinox.waitForStop(5000);
+		stop(equinox);
 
 		configuration.put(EquinoxConfiguration.PROP_SYSTEM_PROVIDE_HEADER, EquinoxConfiguration.SYSTEM_PROVIDE_HEADER_ORIGINAL);
 		equinox = new Equinox(configuration);
@@ -2713,9 +2249,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertFalse("Unexpected Export-Package header: " + exportPackage, exportPackage.contains("something.system"));
 		assertFalse("Unexpected Provide-Capability header: " + provideCapability, provideCapability.contains("something.extra"));
 		assertFalse("Unexpected Export-Package header: " + exportPackage, exportPackage.contains("something.extra"));
-		equinox.stop();
-
-		equinox.waitForStop(5000);
+		stop(equinox);
 
 		configuration.put(EquinoxConfiguration.PROP_SYSTEM_PROVIDE_HEADER, EquinoxConfiguration.SYSTEM_PROVIDE_HEADER_SYSTEM);
 		equinox = new Equinox(configuration);
@@ -2727,9 +2261,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertTrue("Unexpected Export-Package header: " + exportPackage, exportPackage.contains("something.system"));
 		assertFalse("Unexpected Provide-Capability header: " + provideCapability, provideCapability.contains("something.extra"));
 		assertFalse("Unexpected Export-Package header: " + exportPackage, exportPackage.contains("something.extra"));
-		equinox.stop();
-
-		equinox.waitForStop(5000);
+		stop(equinox);
 
 		configuration.put(EquinoxConfiguration.PROP_SYSTEM_PROVIDE_HEADER, EquinoxConfiguration.SYSTEM_PROVIDE_HEADER_SYSTEM_EXTRA);
 		equinox = new Equinox(configuration);
@@ -2741,9 +2273,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		assertTrue("Unexpected Export-Package header: " + exportPackage, exportPackage.contains("something.system"));
 		assertTrue("Unexpected Provide-Capability header: " + provideCapability, provideCapability.contains("something.extra"));
 		assertTrue("Unexpected Export-Package header: " + exportPackage, exportPackage.contains("something.extra"));
-		equinox.stop();
-
-		equinox.waitForStop(5000);
+		stop(equinox);
 	}
 
 	public void testSystemBundleLoader() {
@@ -2818,7 +2348,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		System.setProperty("java.specification.version", javaSpecVersion);
 		// create/stop/ test
 		File config = OSGiTestsActivator.getContext().getDataFile(getName() + javaSpecVersion);
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		try {
@@ -2829,16 +2359,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		@SuppressWarnings("deprecation")
 		String osgiEE = equinox.getBundleContext().getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT);
 		// don't do anything; just put the framework back to the RESOLVED state
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected error stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 
 		assertTrue("Wrong osgi EE: expected: " + expectedEEName + " but was: " + osgiEE, osgiEE.endsWith(expectedEEName));
@@ -2924,7 +2445,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testBug405919() throws Exception {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
 		config.mkdirs();
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put("osgi.framework", "boo");
 		// Initialize and start a framework specifying an invalid osgi.framework configuration value.
@@ -2975,15 +2496,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 				assertEquals("Requirement directives differ: " + outerReq.getNamespace(), outerReq.getDirectives(), innerReq.getDirectives());
 			}
 		} finally {
-			equinox.stop();
-			equinox.waitForStop(5000);
+			stop(equinox);
 		}
 	}
 
 	public void testInitialBundleUpdate() throws IOException {
 		// test installing bundle with empty manifest
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 
 		Equinox equinox = new Equinox(configuration);
@@ -3026,23 +2546,14 @@ public class SystemBundleTests extends AbstractBundleTests {
 			fail("Unexpected update error", e); //$NON-NLS-1$
 		}
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
 	public void testDaemonActiveThread() throws BundleException, InterruptedException {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
 		config.mkdirs();
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 
 		// test setting to anything other than 'normal'
@@ -3051,8 +2562,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		Equinox equinox = new Equinox(configuration);
 		equinox.start();
 		checkActiveThreadType(equinox, true);
-		equinox.stop();
-		equinox.waitForStop(10000);
+		stop(equinox);
 
 		// test setting to 'normal'
 		// should result in a non-daemon thread
@@ -3060,8 +2570,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		equinox = new Equinox(configuration);
 		equinox.start();
 		checkActiveThreadType(equinox, false);
-		equinox.stop();
-		equinox.waitForStop(10000);
+		stop(equinox);
 
 		// test setting to null (default)
 		// should result in a non-daemon thread
@@ -3075,7 +2584,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 	public void testLazyTriggerOnLoadError() throws InterruptedException, BundleException {
 		// create/start/stop/start/stop test
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(EquinoxConfiguration.PROP_COMPATIBILITY_START_LAZY_ON_FAIL_CLASSLOAD, "true");
 		Equinox equinox = new Equinox(configuration);
@@ -3098,8 +2607,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		// should be active now
 		assertEquals("Wrong state of bundle.", Bundle.ACTIVE, b.getState());
 		// put the framework back to the RESOLVED state
-		equinox.stop();
-		equinox.waitForStop(10000);
+		stop(equinox);
 
 		// revert back to default behavior
 		configuration.remove(EquinoxConfiguration.PROP_COMPATIBILITY_START_LAZY_ON_FAIL_CLASSLOAD);
@@ -3141,7 +2649,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		configIni.setProperty("test.config", getName());
 		configIni.store(new FileOutputStream(new File(config, "config.ini")), "Test config.ini");
 
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		Equinox equinox = new Equinox(configuration);
 		equinox.init();
@@ -3150,14 +2658,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		// check for substitution
 		assertEquals("Wrong value for test.config", getName(), systemContext.getProperty("test.config"));
 
-		equinox.stop();
-		try {
-			equinox.waitForStop(5000);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			fail("Unexpected interruption.", e);
-		}
-
+		stop(equinox);
 	}
 
 	void checkActiveThreadType(Equinox equinox, boolean expectIsDeamon) {
@@ -3197,16 +2698,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			fail("Failed init", e);
 		} finally {
 			System.setProperty("os.name", origOS);
-			try {
-				if (equinox != null) {
-					equinox.stop();
-					equinox.waitForStop(1000);
-				}
-			} catch (BundleException e) {
-				fail("Failed to stop framework.", e);
-			} catch (InterruptedException e) {
-				fail("Failed to stop framework.", e);
-			}
+			stop(equinox);
 		}
 	}
 
@@ -3230,16 +2722,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		} catch (BundleException e) {
 			fail("Failed init", e);
 		} finally {
-			try {
-				if (equinox != null) {
-					equinox.stop();
-					equinox.waitForStop(1000);
-				}
-			} catch (BundleException e) {
-				fail("Failed to stop framework.", e);
-			} catch (InterruptedException e) {
-				fail("Failed to stop framework.", e);
-			}
+			stop(equinox);
 		}
 	}
 
@@ -3253,34 +2736,24 @@ public class SystemBundleTests extends AbstractBundleTests {
 			equinox = new Equinox(configuration);
 			equinox.start();
 			doLoggingOnMultipleListeners(equinox);
-			equinox.stop();
-			equinox.waitForStop(1000);
+			stop(equinox);
 			equinox.start();
 			doLoggingOnMultipleListeners(equinox);
 
 		} catch (BundleException e) {
 			fail("Failed init", e);
 		} finally {
-			try {
-				if (equinox != null) {
-					equinox.stop();
-					equinox.waitForStop(1000);
-				}
-			} catch (BundleException e) {
-				fail("Failed to stop framework.", e);
-			} catch (InterruptedException e) {
-				fail("Failed to stop framework.", e);
-			}
+			stop(equinox);
 		}
 	}
 
-	public static void doLoggingOnMultipleListeners(Equinox equinox) throws InterruptedException {
+	static void doLoggingOnMultipleListeners(Equinox equinox) throws InterruptedException {
 		int listenersSize = 100;
 		int logSize = 10000;
 		BundleContext bc = equinox.getBundleContext();
 		ExtendedLogReaderService logReader = bc.getService(bc.getServiceReference(ExtendedLogReaderService.class));
 		ExtendedLogService log = bc.getService(bc.getServiceReference(ExtendedLogService.class));
-		ArrayList<TestListener2> listeners = new ArrayList<TestListener2>();
+		ArrayList<TestListener2> listeners = new ArrayList<>();
 		CountDownLatch latch = new CountDownLatch(logSize * listenersSize);
 
 		for (int i = 0; i < listenersSize; i++) {
@@ -3307,12 +2780,52 @@ public class SystemBundleTests extends AbstractBundleTests {
 		}
 	}
 
+	public void testCaptureLogEntryLocation() throws BundleException, InterruptedException {
+		doTestCaptureLogEntryLocation(true);
+		doTestCaptureLogEntryLocation(false);
+	}
+
+	private void doTestCaptureLogEntryLocation(boolean captureLocation) throws BundleException, InterruptedException {
+		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
+		Map configuration = new HashMap();
+		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
+		if (!captureLocation) {
+			// the default is true; only set for false
+			configuration.put(EquinoxConfiguration.PROP_LOG_CAPTURE_ENTRY_LOCATION, Boolean.toString(captureLocation));
+		}
+		Equinox equinox = new Equinox(configuration);
+		try {
+			equinox.start();
+
+			BundleContext bc = equinox.getBundleContext();
+			LogReaderService logReader = bc.getService(bc.getServiceReference(LogReaderService.class));
+			LogService logService = bc.getService(bc.getServiceReference(LogService.class));
+
+			TestListener listener = new TestListener(Constants.SYSTEM_BUNDLE_LOCATION);
+			logReader.addLogListener(listener);
+
+			final String testMsg = "TEST MESSAGE";
+			logService.getLogger(this.getClass()).error(testMsg);
+
+			LogEntry logEntry = listener.getEntryX();
+			assertEquals("Wrong message.", testMsg, logEntry.getMessage());
+			if (captureLocation) {
+				assertNotNull("No location found.", logEntry.getLocation());
+			} else {
+				assertNull("Found location.", logEntry.getLocation());
+			}
+		} finally {
+			stop(equinox);
+		}
+	}
+
 	public void testSystemCapabilitiesBug522125() throws URISyntaxException, FileNotFoundException, IOException, BundleException, InterruptedException {
 		String frameworkLocation = OSGiTestsActivator.getContext().getProperty(EquinoxConfiguration.PROP_FRAMEWORK);
 		URI uri = new URI(frameworkLocation);
 		File f = new File(uri);
 		if (!f.isFile()) {
-			Assert.fail("Cannot test when framework location is a directory: " + f.getAbsolutePath());
+			System.out.println("Cannot test when framework location is a directory: " + f.getAbsolutePath());
+			return;
 		}
 		File testDestination = OSGiTestsActivator.getContext().getDataFile(getName() + ".framework.jar");
 		BaseSecurityTest.copy(new FileInputStream(f), testDestination);
@@ -3339,22 +2852,20 @@ public class SystemBundleTests extends AbstractBundleTests {
 		FrameworkFactory factory = sLoader.iterator().next();
 
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, String> configuration = new HashMap<String, String>();
+		Map<String, String> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		configuration.put(EquinoxConfiguration.PROP_FRAMEWORK, relativeURL.toExternalForm());
 
 		Framework framework = factory.newFramework(configuration);
 		framework.init();
-		framework.stop();
-		framework.waitForStop(5000);
+		stop(framework);
 
 		BundleRevision systemRevision1 = framework.adapt(BundleRevision.class);
 		int capCount1 = systemRevision1.getCapabilities(null).size();
 
 		framework = factory.newFramework(configuration);
 		framework.init();
-		framework.stop();
-		framework.waitForStop(5000);
+		stop(framework);
 
 		BundleRevision systemRevision2 = framework.adapt(BundleRevision.class);
 		int capCount2 = systemRevision2.getCapabilities(null).size();
@@ -3430,7 +2941,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			assertEquals("Did not finish start level setting.", 0, waitForStartLevel.getCount());
 			assertEquals("Did not install all the expected bundles.", numBundles, testBundles.size());
 
-			List<Bundle> expectedStartOrder = new ArrayList<Bundle>();
+			List<Bundle> expectedStartOrder = new ArrayList<>();
 			for (int i = 0; i < numBundles / 4; i++) {
 				expectedStartOrder.add(testBundles.get(i));
 			}
@@ -3486,14 +2997,13 @@ public class SystemBundleTests extends AbstractBundleTests {
 			};
 			equinox.getBundleContext().addBundleListener(shutdownListener);
 
-			List<Bundle> expectedStopOrder = new ArrayList<Bundle>(expectedStartOrder);
+			List<Bundle> expectedStopOrder = new ArrayList<>(expectedStartOrder);
 			Collections.reverse(expectedStopOrder);
 			Collections.reverse(expectedStopOrder.subList(numBundles / 4, 3 * (numBundles / 4)));
 			expectedStopOrder = new ArrayList(expectedStopOrder.subList(0, 3 * (numBundles / 4)));
 
 			long stopTime = System.currentTimeMillis();
-			equinox.stop();
-			equinox.waitForStop(20000);
+			stop(equinox, false, 20000);
 			System.out.println("Stop time: " + (System.currentTimeMillis() - stopTime));
 
 			assertEquals("Size on expected order is wrong.", expectedStopOrder.size(), stoppedBundles.size());
@@ -3503,22 +3013,222 @@ public class SystemBundleTests extends AbstractBundleTests {
 		} catch (BundleException e) {
 			fail("Failed init", e);
 		} finally {
-			try {
-				if (equinox != null) {
-					equinox.stop();
-					equinox.waitForStop(1000);
-				}
-			} catch (BundleException e) {
-				fail("Failed to stop framework.", e);
-			} catch (InterruptedException e) {
-				fail("Failed to stop framework.", e);
+			stop(equinox);
+		}
+	}
+
+	public void testStartLevelSingleThread() throws IOException, InterruptedException {
+		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
+		Map configuration = new HashMap();
+		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
+		Equinox equinox = null;
+		final int numBundles = 20;
+		final File[] testBundleFiles = createBundles(new File(config, "testBundles"), numBundles);
+		try {
+			equinox = new Equinox(configuration);
+			equinox.start();
+			for (int i = 0; i < numBundles; i++) {
+				Bundle b = equinox.getBundleContext().installBundle("reference:file:///" + testBundleFiles[i].getAbsolutePath());
+				b.adapt(BundleStartLevel.class).setStartLevel(5);
+				b.start();
 			}
+
+			final Set<Thread> startingThreads = Collections.synchronizedSet(new HashSet<Thread>());
+			equinox.getBundleContext().addBundleListener(new SynchronousBundleListener() {
+				@Override
+				public void bundleChanged(BundleEvent event) {
+					if (event.getType() == BundleEvent.STARTING) {
+						try {
+							Thread.sleep(50);
+						} catch (InterruptedException e) {
+							// nothing
+						}
+						startingThreads.add(Thread.currentThread());
+					}
+				}
+			});
+
+			final CountDownLatch waitForStartLevel = new CountDownLatch(1);
+			equinox.adapt(FrameworkStartLevel.class).setStartLevel(5, new FrameworkListener() {
+				@Override
+				public void frameworkEvent(FrameworkEvent event) {
+					waitForStartLevel.countDown();
+				}
+			});
+			waitForStartLevel.await(10, TimeUnit.SECONDS);
+
+			assertEquals("Did not finish start level setting.", 0, waitForStartLevel.getCount());
+			assertEquals("Wrong number of start threads.", 1, startingThreads.size());
+
+		} catch (BundleException e) {
+			fail("Failed init", e);
+		} finally {
+			stop(equinox);
+		}
+	}
+
+	public void testStartLevelMultiThreadExplicit4() throws IOException, InterruptedException {
+		doTestStartLevelMultiThread(4, false);
+	}
+
+	public void testStartLevelMultiThreadExplicit1() throws IOException, InterruptedException {
+		doTestStartLevelMultiThread(1, false);
+	}
+
+	public void testStartLevelMultiThreadAvailableProcessors() throws IOException, InterruptedException {
+		doTestStartLevelMultiThread(0, false);
+	}
+
+	public void testStartLevelRestrictMultiThreadExplicit4() throws IOException, InterruptedException {
+		doTestStartLevelMultiThread(4, true);
+	}
+
+	private void doTestStartLevelMultiThread(int expectedCount, final boolean restrictParallel) throws IOException, InterruptedException {
+		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
+		Map<String, String> configuration = new HashMap();
+		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
+		configuration.put(EquinoxConfiguration.PROP_EQUINOX_START_LEVEL_THREAD_COUNT, String.valueOf(expectedCount));
+		if (restrictParallel) {
+			configuration.put(EquinoxConfiguration.PROP_EQUINOX_START_LEVEL_RESTRICT_PARALLEL, "true");
+		}
+		if (expectedCount <= 0) {
+			expectedCount = Runtime.getRuntime().availableProcessors();
+		}
+		Equinox equinox = null;
+		final int numBundles = 60;
+		final File[] testBundleFiles = createBundles(new File(config, "testBundles"), numBundles);
+		try {
+			equinox = new Equinox(configuration);
+			equinox.start();
+			FrameworkWiring fwkWiring = equinox.adapt(FrameworkWiring.class);
+			for (int i = 0; i < numBundles; i++) {
+				Bundle b = equinox.getBundleContext().installBundle("reference:file:///" + testBundleFiles[i].getAbsolutePath());
+				if (i < 30) {
+					b.adapt(BundleStartLevel.class).setStartLevel(5);
+				} else {
+					b.adapt(BundleStartLevel.class).setStartLevel(10);
+				}
+				Module m = b.adapt(Module.class);
+				assertFalse("Wrong initial value for parallelActivation", m.isParallelActivated());
+				if (b.getBundleId() % 2 == 0) {
+					b.adapt(Module.class).setParallelActivation(true);
+					assertTrue("Wrong value for parallelActivation", m.isParallelActivated());
+				}
+				fwkWiring.resolveBundles(Collections.singleton(b));
+				b.start();
+			}
+
+			final Set<Thread> startingThreads = Collections.synchronizedSet(new HashSet<Thread>());
+			final List<Bundle> startingBundles = Collections.synchronizedList(new ArrayList<Bundle>());
+			equinox.getBundleContext().addBundleListener(new SynchronousBundleListener() {
+				@Override
+				public void bundleChanged(BundleEvent event) {
+					if (event.getType() == BundleEvent.STARTING) {
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							// nothing
+						}
+						startingBundles.add(event.getBundle());
+						startingThreads.add(Thread.currentThread());
+					}
+				}
+			});
+
+			final CountDownLatch waitForStartLevel = new CountDownLatch(1);
+			equinox.adapt(FrameworkStartLevel.class).setStartLevel(10, new FrameworkListener() {
+				@Override
+				public void frameworkEvent(FrameworkEvent event) {
+					waitForStartLevel.countDown();
+				}
+			});
+			waitForStartLevel.await(20, TimeUnit.SECONDS);
+
+			assertEquals("Did not finish start level setting.", 0, waitForStartLevel.getCount());
+			if (restrictParallel && expectedCount > 1) {
+				// when restricting parallel start the restricted bundles will start on
+				// the dispatching thread adding one more thread
+				assertEquals("Wrong number of start threads.", expectedCount + 1, startingThreads.size());
+			} else {
+				assertEquals("Wrong number of start threads.", expectedCount, startingThreads.size());
+			}
+			assertEquals("Wrong number of started bundles.", numBundles, startingBundles.size());
+
+			ListIterator<Bundle> itr = startingBundles.listIterator();
+			while (itr.hasNext()) {
+				if (itr.hasPrevious()) {
+					Bundle b1 = itr.previous();
+					itr.next();
+					Bundle b2 = itr.next();
+
+					int b1sl = b1.adapt(BundleStartLevel.class).getStartLevel();
+					int b2sl = b2.adapt(BundleStartLevel.class).getStartLevel();
+					assertTrue("Wrong order to start bundles: " + b1 + " - " + b2, b1sl <= b2sl);
+					if (restrictParallel && b1sl == b2sl) {
+						boolean b1pa = b1.adapt(Module.class).isParallelActivated();
+						boolean b2pa = b2.adapt(Module.class).isParallelActivated();
+						assertTrue("Wrong order to start bundles: " + b1 + " - " + b2, b1pa || (!b1pa && !b2pa));
+						if (!b1pa) {
+							assertTrue("Wrong order to start bundles: " + b1 + " - " + b2, b1.getBundleId() < b2.getBundleId());
+						}
+					}
+				} else {
+					itr.next();
+				}
+			}
+		} catch (BundleException e) {
+			fail("Failed init", e);
+		} finally {
+			stop(equinox);
+		}
+	}
+
+	public void testParallelActivationPersistence() throws IOException, BundleException {
+		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
+		Map<String, String> configuration = new HashMap();
+		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
+		final int numBundles = 4;
+		final File[] testBundleFiles = createBundles(new File(config, "testParallelPersistence"), numBundles);
+		Equinox equinox = null;
+		try {
+			equinox = new Equinox(configuration);
+			equinox.start();
+			FrameworkWiring fwkWiring = equinox.adapt(FrameworkWiring.class);
+			for (int i = 0; i < numBundles; i++) {
+				Bundle b = equinox.getBundleContext().installBundle("reference:file:///" + testBundleFiles[i].getAbsolutePath());
+				Module m = b.adapt(Module.class);
+				assertFalse("Wrong initial value for parallelActivation", m.isParallelActivated());
+				if (b.getBundleId() % 2 == 0) {
+					b.adapt(Module.class).setParallelActivation(true);
+					assertTrue("Wrong value for parallelActivation", m.isParallelActivated());
+				}
+				fwkWiring.resolveBundles(Collections.singleton(b));
+				b.start();
+			}
+			stop(equinox);
+			equinox = null;
+			equinox = new Equinox(configuration);
+			equinox.start();
+			Bundle[] bundles = equinox.getBundleContext().getBundles();
+			assertEquals("Wrong number of bundles on restart.", numBundles + 1, bundles.length);
+			for (Bundle b : bundles) {
+				if (b.getBundleId() == 0) {
+					continue;
+				}
+				if (b.getBundleId() % 2 == 0) {
+					assertTrue("Wrong value for parallelActivation", b.adapt(Module.class).isParallelActivated());
+				} else {
+					assertFalse("Wrong value for parallelActivation", b.adapt(Module.class).isParallelActivated());
+				}
+			}
+		} finally {
+			stop(equinox);
 		}
 	}
 
 	public void testBundleIDLock() {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(EquinoxConfiguration.PROP_FILE_LIMIT, "10");
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 
@@ -3549,10 +3259,9 @@ public class SystemBundleTests extends AbstractBundleTests {
 		}
 
 		ExecutorService executor = Executors.newFixedThreadPool(50);
-		final List<Throwable> errors = new CopyOnWriteArrayList<Throwable>();
+		final List<Throwable> errors = new CopyOnWriteArrayList<>();
 		try {
-			for (int i = 0; i < testBundles.length; i++) {
-				final File testBundleFile = testBundles[i];
+			for (final File testBundleFile : testBundles) {
 				executor.execute(new Runnable() {
 
 					@Override
@@ -3565,7 +3274,6 @@ public class SystemBundleTests extends AbstractBundleTests {
 						}
 					}
 				});
-
 			}
 		} finally {
 			executor.shutdown();
@@ -3578,16 +3286,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 
 		Assert.assertEquals("Errors found.", Collections.emptyList(), errors);
 		Assert.assertEquals("Wrong number of bundles.", numBundles + 1, systemContext.getBundles().length);
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 	}
 
@@ -3609,7 +3308,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		debugProps.store(debugOut, "Equinox Debug Options");
 		debugOut.close();
 
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(EquinoxConfiguration.PROP_FILE_LIMIT, "10");
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 		//configuration.put(EquinoxConfiguration.PROP_DEBUG, debugOptions.getAbsolutePath());
@@ -3656,16 +3355,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			}
 		}
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 
 		long timeTaken = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime);
@@ -3677,7 +3367,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
 		config.mkdirs();
 
-		Map<String, String> bundleHeaders = new HashMap<String, String>();
+		Map<String, String> bundleHeaders = new HashMap<>();
 		bundleHeaders.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		bundleHeaders.put(Constants.BUNDLE_SYMBOLICNAME, getName());
 		Map<String, String> bundleEntries = new LinkedHashMap<>();
@@ -3689,7 +3379,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		bundleEntries.put("dirA/dirC/fileC", "fileC");
 		File testBundleFile = SystemBundleTests.createBundle(config, getName(), bundleHeaders, bundleEntries);
 
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 
 		final Equinox equinox = new Equinox(configuration);
@@ -3707,7 +3397,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		final Bundle testBundle = systemContext.installBundle("file:///" + testBundleFile.getAbsolutePath());
 		testBundle.start();
 
-		final List<FrameworkEvent> errorsAndWarnings = new CopyOnWriteArrayList<FrameworkEvent>();
+		final List<FrameworkEvent> errorsAndWarnings = new CopyOnWriteArrayList<>();
 		FrameworkListener fwkListener = new FrameworkListener() {
 			@Override
 			public void frameworkEvent(FrameworkEvent event) {
@@ -3757,16 +3447,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			executor1.shutdown();
 			executor2.shutdown();
 		}
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 		assertEquals("Wrong state for SystemBundle", Bundle.RESOLVED, equinox.getState()); //$NON-NLS-1$
 
 		if (!errorsAndWarnings.isEmpty()) {
@@ -3809,16 +3490,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 		} catch (BundleException e) {
 			fail("Failed init", e);
 		} finally {
-			try {
-				if (equinox != null) {
-					equinox.stop();
-					equinox.waitForStop(1000);
-				}
-			} catch (BundleException e) {
-				fail("Failed to stop framework.", e);
-			} catch (InterruptedException e) {
-				fail("Failed to stop framework.", e);
-			}
+			stop(equinox);
 		}
 	}
 
@@ -3833,7 +3505,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			equinox.init();
 			BundleContext bc = equinox.getBundleContext();
 
-			Map<String, String> h2 = new HashMap<String, String>();
+			Map<String, String> h2 = new HashMap<>();
 			h2.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 			h2.put(Constants.BUNDLE_SYMBOLICNAME, getName() + ".dynamicimporter");
 			h2.put(Constants.DYNAMICIMPORT_PACKAGE, "some.system.*; version=1.0");
@@ -3841,7 +3513,7 @@ public class SystemBundleTests extends AbstractBundleTests {
 			Bundle b2 = bc.installBundle("reference:file:///" + f2.getAbsolutePath()); //$NON-NLS-1$
 			b2.getResource("does/not/exist.txt");
 
-			Map<String, String> h1 = new HashMap<String, String>();
+			Map<String, String> h1 = new HashMap<>();
 			h1.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 			h1.put(Constants.BUNDLE_SYMBOLICNAME, getName() + ".exporter");
 			h1.put(Constants.EXPORT_PACKAGE, "some.system.pkg; version=1.0");
@@ -3858,24 +3530,104 @@ public class SystemBundleTests extends AbstractBundleTests {
 		} catch (BundleException e) {
 			fail("Unexpected BundleException", e);
 		} finally {
-			try {
-				if (equinox != null) {
-					equinox.stop();
-					equinox.waitForStop(1000);
-				}
-			} catch (BundleException e) {
-				fail("Failed to stop framework.", e);
-			} catch (InterruptedException e) {
-				fail("Failed to stop framework.", e);
-			}
+			stop(equinox);
 		}
+	}
+
+	public void testDynamicImportPrivatePackage() throws IOException {
+		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
+		Map configuration = new HashMap();
+		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
+		Equinox equinox = null;
+		try {
+			equinox = new Equinox(configuration);
+			equinox.start();
+			BundleContext bc = equinox.getBundleContext();
+
+			Bundle importer = bc.installBundle(installer.getBundleLocation("test.dynamic.privateimport"));
+			importer.start();
+
+			Map<String, String> exporter = new HashMap<>();
+			exporter.put(Constants.BUNDLE_MANIFESTVERSION, "2");
+			exporter.put(Constants.BUNDLE_SYMBOLICNAME, getName() + ".exporter");
+			exporter.put(Constants.EXPORT_PACKAGE, "test.dynamic.privateimport");
+			File f1 = SystemBundleTests.createBundle(config, getName() + ".exporter", exporter);
+			Bundle exporterBundle = bc.installBundle("reference:file:///" + f1.getAbsolutePath()); //$NON-NLS-1$
+			exporterBundle.start();
+
+			try {
+				importer.loadClass("test.dynamic.privateimport.DoesNotExist");
+			} catch (ClassNotFoundException e) {
+				// expected
+			}
+
+			importer.stop();
+			importer.start();
+		} catch (BundleException e) {
+			fail("Unexpected BundleException", e);
+		} finally {
+			stop(equinox);
+		}
+	}
+
+	public void testCorruptStageInstallUpdate() throws IOException, BundleException {
+		File config = OSGiTestsActivator.getContext().getDataFile(getName()); // $NON-NLS-1$
+		final Equinox equinox = new Equinox(
+				Collections.singletonMap(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath()));
+		try {
+			equinox.init();
+		} catch (BundleException e) {
+			fail("Unexpected exception in init()", e); //$NON-NLS-1$
+		}
+
+		File dirBundleFile = createBundle(config, "dir.bundle", false, true);
+		File jarBundleFile = createBundle(config, "jar.bundle", false, false);
+
+		// install dir bundle to get the path to storage
+		BundleContext bc = equinox.getBundleContext();
+		Bundle dirBundle = bc.installBundle(dirBundleFile.toURI().toASCIIString());
+		assertEquals("Wrong BSN", "bundledir.bundle", dirBundle.getSymbolicName());
+
+		URLConverter converter = bc.getService(bc.getServiceReference(URLConverter.class));
+		URL dirFileURL = converter.resolve(dirBundle.getEntry("/"));
+		File dirFile = new File(dirFileURL.getPath());
+		File rootStore = dirFile.getParentFile().getParentFile().getParentFile();
+		dirBundle.uninstall();
+
+		long next = dirBundle.getBundleId() + 1;
+		next = doTestExistingBundleFile(bc, next, rootStore, jarBundleFile, "bundlejar.bundle", true);
+		next = doTestExistingBundleFile(bc, next, rootStore, jarBundleFile, "bundlejar.bundle", false);
+		next = doTestExistingBundleFile(bc, next, rootStore, dirBundleFile, "bundledir.bundle", true);
+		next = doTestExistingBundleFile(bc, next, rootStore, dirBundleFile, "bundledir.bundle", false);
+
+	}
+
+	private long doTestExistingBundleFile(BundleContext bc, long next, File rootStore, File content, String bsn,
+			boolean d) throws IOException, BundleException {
+		createGenerationContent(next, rootStore, d);
+		Bundle b = bc.installBundle(content.toURI().toASCIIString());
+		assertEquals("Wrong BSN", bsn, b.getSymbolicName());
+		assertEquals("Wrong Bundle ID", next, b.getBundleId());
+		b.uninstall();
+		return b.getBundleId() + 1;
+	}
+
+	private Path createGenerationContent(long nextBundleID, File rootStore, boolean directory) throws IOException {
+		Path nextBundleFile = new File(rootStore, nextBundleID + "/0/bundleFile").toPath();
+		if (directory) {
+			createDirectories(nextBundleFile);
+			return write(createFile(new File(nextBundleFile.toFile(), "testContent.txt").toPath()),
+					"Some Content".getBytes());
+		}
+		createDirectories(nextBundleFile.getParent());
+		return write(createFile(nextBundleFile), "Some Content".getBytes());
 	}
 
 	// Note this is more of a performance test.  It has a timeout that will cause it to
 	// fail if it takes too long.
 	public void testMassiveParallelInstallStart() {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName()); //$NON-NLS-1$
-		Map<String, Object> configuration = new HashMap<String, Object>();
+		Map<String, Object> configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, config.getAbsolutePath());
 
 		final Equinox equinox = new Equinox(configuration);
@@ -3943,15 +3695,6 @@ public class SystemBundleTests extends AbstractBundleTests {
 		List<BundleWire> providedWires = equinox.adapt(BundleWiring.class).getProvidedWires(PackageNamespace.PACKAGE_NAMESPACE);
 		Assert.assertEquals("Wrong number of provided wires.", numBundles, providedWires.size());
 
-		try {
-			equinox.stop();
-		} catch (BundleException e) {
-			fail("Unexpected erorr stopping framework", e); //$NON-NLS-1$
-		}
-		try {
-			equinox.waitForStop(10000);
-		} catch (InterruptedException e) {
-			fail("Unexpected interrupted exception", e); //$NON-NLS-1$
-		}
+		stop(equinox);
 	}
 }

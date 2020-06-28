@@ -32,104 +32,80 @@ import org.eclipse.jface.util.PropertyChangeEvent;
  */
 public abstract class AbstractBreakpointOrganizerDelegate implements IBreakpointOrganizerDelegate {
 
-    // property change listeners
+	// property change listeners
 	private ListenerList<IPropertyChangeListener> fListeners = new ListenerList<>();
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#addBreakpoint(org.eclipse.debug.core.model.IBreakpoint, org.eclipse.core.runtime.IAdaptable)
-     */
-    @Override
+	@Override
 	public void addBreakpoint(IBreakpoint breakpoint, IAdaptable category) {
-        // do noting, not supported by default
-    }
+		// do noting, not supported by default
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#addPropertyChangeListener(org.eclipse.jface.util.IPropertyChangeListener)
-     */
-    @Override
+	@Override
 	public void addPropertyChangeListener(IPropertyChangeListener listener) {
-        fListeners.add(listener);
-    }
+		fListeners.add(listener);
+	}
 
-    /* (non-Javadoc)
-     *
-     * Subclasses that override should return super.canAdd(...) when they are not able to add
-     * the breakpoint.
-     *
-     * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#canAdd(org.eclipse.debug.core.model.IBreakpoint, org.eclipse.core.runtime.IAdaptable)
-     */
-    @Override
+	/*
+	 * Subclasses that override should return super.canAdd(...) when they are not
+	 * able to add the breakpoint.
+	 */
+	@Override
 	public boolean canAdd(IBreakpoint breakpoint, IAdaptable category) {
-        return category instanceof OtherBreakpointCategory;
-    }
+		return category instanceof OtherBreakpointCategory;
+	}
 
-    /* (non-Javadoc)
-     *
-     * Subclasses that override should return super.canRemove(...) when they are not able to remove
-     * the breakpoint.
-     *
-     * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#canRemove(org.eclipse.debug.core.model.IBreakpoint, org.eclipse.core.runtime.IAdaptable)
-     */
-    @Override
+	/*
+	 * Subclasses that override should return super.canRemove(...) when they are not
+	 * able to remove the breakpoint.
+	 */
+	@Override
 	public boolean canRemove(IBreakpoint breakpoint, IAdaptable category) {
-        return category instanceof OtherBreakpointCategory;
-    }
+		return category instanceof OtherBreakpointCategory;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#dispose()
-     */
-    @Override
+	@Override
 	public void dispose() {
 		fListeners = new ListenerList<>();
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#removeBreakpoint(org.eclipse.debug.core.model.IBreakpoint, org.eclipse.core.runtime.IAdaptable)
-     */
-    @Override
+	@Override
 	public void removeBreakpoint(IBreakpoint breakpoint, IAdaptable category) {
-        // do nothing, not supported by default
-    }
+		// do nothing, not supported by default
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#removePropertyChangeListener(org.eclipse.jface.util.IPropertyChangeListener)
-     */
-    @Override
+	@Override
 	public void removePropertyChangeListener(IPropertyChangeListener listener) {
-        fListeners.remove(listener);
-    }
+		fListeners.remove(listener);
+	}
 
-    /**
-     * Fires a property change notification for the given category.
-     *
-     * @param category category that has changed
-     */
-    protected void fireCategoryChanged(IAdaptable category) {
-        if (fListeners.isEmpty()) {
-            return;
-        }
-        final PropertyChangeEvent event = new PropertyChangeEvent(this, P_CATEGORY_CHANGED, category, null);
+	/**
+	 * Fires a property change notification for the given category.
+	 *
+	 * @param category category that has changed
+	 */
+	protected void fireCategoryChanged(IAdaptable category) {
+		if (fListeners.isEmpty()) {
+			return;
+		}
+		final PropertyChangeEvent event = new PropertyChangeEvent(this, P_CATEGORY_CHANGED, category, null);
 		for (IPropertyChangeListener iPropertyChangeListener : fListeners) {
 			final IPropertyChangeListener listener = iPropertyChangeListener;
-            ISafeRunnable runnable = new ISafeRunnable() {
-                @Override
+			ISafeRunnable runnable = new ISafeRunnable() {
+				@Override
 				public void handleException(Throwable exception) {
-                    DebugUIPlugin.log(exception);
-                }
-                @Override
+					DebugUIPlugin.log(exception);
+				}
+				@Override
 				public void run() throws Exception {
-                    listener.propertyChange(event);
-                }
-            };
-            SafeRunner.run(runnable);
-        }
-    }
+					listener.propertyChange(event);
+				}
+			};
+			SafeRunner.run(runnable);
+		}
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#getCategories()
-     */
-    @Override
+	@Override
 	public IAdaptable[] getCategories() {
-        return null;
-    }
+		return null;
+	}
 }

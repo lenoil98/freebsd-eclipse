@@ -205,10 +205,10 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 
 	private ListenerList<IPageChangedListener> pageChangedListeners = new ListenerList<>();
 
-    /**
-     *  Composite with a FormLayout to contain the title area
-     */
-    Composite formTitleComposite;
+	/**
+	 *  Composite with a FormLayout to contain the title area
+	 */
+	Composite formTitleComposite;
 
 	private ScrolledComposite scrolled;
 
@@ -287,9 +287,7 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 		SafeRunnable runnable = new SafeRunnable(){
 			@Override
 			public void run() throws Exception {
-				List<IPreferenceNode> nodes = preferenceManager.getElements(PreferenceManager.PRE_ORDER);
-				for (int i = 0; i < nodes.size(); i++) {
-					IPreferenceNode node = nodes.get(i);
+				for (IPreferenceNode node : preferenceManager.getElements(PreferenceManager.PRE_ORDER)) {
 					node.disposeResources();
 				}
 
@@ -399,10 +397,10 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 		titleComposite.setLayout(layout);
 
 		FormData titleFormData = new FormData();
-	   	titleFormData.top = new FormAttachment(0,0);
-    	titleFormData.left = new FormAttachment(0,0);
-    	titleFormData.right = new FormAttachment(100,0);
-    	titleFormData.bottom = new FormAttachment(100,0);
+		titleFormData.top = new FormAttachment(0,0);
+		titleFormData.left = new FormAttachment(0,0);
+		titleFormData.right = new FormAttachment(100,0);
+		titleFormData.bottom = new FormAttachment(100,0);
 
 		titleComposite.setLayoutData(titleFormData);
 		createTitleArea(titleComposite);
@@ -424,11 +422,11 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 	}
 
 	/**
-	 * Create the sash with right control on the right. Note
-	 * that this method assumes GridData for the layout data
-	 * of the rightControl.
-	 * @param composite
-	 * @param rightControl
+	 * Create the sash with right control on the right. Note that this method
+	 * assumes GridData for the layout data of the rightControl.
+	 *
+	 * @param composite    the parent composite
+	 * @param rightControl control for the right part of the created sash
 	 * @return Sash
 	 *
 	 * @since 3.1
@@ -477,7 +475,7 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 	/**
 	 * Creates the inner page container.
 	 *
-	 * @param parent
+	 * @param parent the parent composite
 	 * @return Composite
 	 */
 	protected Composite createPageContainer(Composite parent) {
@@ -621,7 +619,8 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 	 * @since 3.0
 	 */
 	protected TreeViewer createTreeViewer(Composite parent) {
-		final TreeViewer viewer = new TreeViewer(parent, SWT.NONE);
+		TreeViewer viewer = new TreeViewer(parent, SWT.NONE);
+		viewer.setUseHashlookup(true);
 		addListeners(viewer);
 		viewer.setLabelProvider(new PreferenceLabelProvider());
 		viewer.setContentProvider(new PreferenceContentProvider());
@@ -630,7 +629,8 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 
 	/**
 	 * Add the listeners to the tree viewer.
-	 * @param viewer
+	 *
+	 * @param viewer viewer to add listeners to
 	 *
 	 * @since 3.1
 	 */
@@ -706,12 +706,12 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 			private void openDialogHelp() {
 				if (pageContainer == null)
 					return;
-		    	for(Control currentControl = pageContainer; currentControl != null; currentControl = currentControl.getParent()) {
-		    		if (currentControl.isListening(SWT.Help)) {
-		    			currentControl.notifyListeners(SWT.Help, new Event());
-		    			break;
-		    		}
-		    	}
+				for(Control currentControl = pageContainer; currentControl != null; currentControl = currentControl.getParent()) {
+					if (currentControl.isListening(SWT.Help)) {
+						currentControl.notifyListeners(SWT.Help, new Event());
+						break;
+					}
+				}
 			}
 		});
 	}
@@ -816,9 +816,9 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 					} catch (IOException e) {
 						String message = JFaceResources.format("PreferenceDialog.saveErrorMessage", page.getTitle(), //$NON-NLS-1$
 								e.getMessage());
-			            Policy.getStatusHandler().show(
-			                    new Status(IStatus.ERROR, Policy.JFACE, message, e),
-			                    JFaceResources.getString("PreferenceDialog.saveErrorTitle")); //$NON-NLS-1$
+						Policy.getStatusHandler().show(
+								new Status(IStatus.ERROR, Policy.JFACE, message, e),
+								JFaceResources.getString("PreferenceDialog.saveErrorTitle")); //$NON-NLS-1$
 
 					}
 				}
@@ -920,7 +920,7 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 
 					if (!errorOccurred) {
 						//Give subclasses the choice to save the state of the
-					    //preference pages.
+						//preference pages.
 						handleSave();
 					}
 					setReturnCode(OK);
@@ -937,9 +937,9 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 				clearSelectedNode();
 				String message = JFaceResources.getString("SafeRunnable.errorMessage"); //$NON-NLS-1$
 
-                Policy.getStatusHandler().show(
-                        new Status(IStatus.ERROR, Policy.JFACE, message, e),
-                        JFaceResources.getString("Error")); //$NON-NLS-1$
+				Policy.getStatusHandler().show(
+						new Status(IStatus.ERROR, Policy.JFACE, message, e),
+						JFaceResources.getString("Error")); //$NON-NLS-1$
 
 			}
 		});
@@ -973,8 +973,8 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 			for (IPreferenceNode preferenceNode : nodes) {
 				IPreferenceNode selectedNode = preferenceNode;
 				// See if it passes all filters
-				for (int j = 0; j < filters.length; j++) {
-					if (!filters[j].select(this.treeViewer, preferenceManager.getRoot(), selectedNode)) {
+				for (ViewerFilter filter : filters) {
+					if (!filter.select(this.treeViewer, preferenceManager.getRoot(), selectedNode)) {
 						selectedNode = null;
 						break;
 					}
@@ -1271,7 +1271,8 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 
 	/**
 	 * Create the page for the node.
-	 * @param node
+	 *
+	 * @param node the node to create page for
 	 *
 	 * @since 3.1
 	 */
@@ -1281,7 +1282,8 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 
 	/**
 	 * Get the page for the node.
-	 * @param node
+	 *
+	 * @param node the node to get page for
 	 * @return IPreferencePage
 	 *
 	 * @since 3.1
@@ -1379,7 +1381,8 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 
 	/**
 	 * Sets the current page.
-	 * @param currentPage
+	 *
+	 * @param currentPage page to set
 	 *
 	 * @since 3.1
 	 */
@@ -1389,7 +1392,8 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 
 	/**
 	 * Set the treeViewer.
-	 * @param treeViewer
+	 *
+	 * @param treeViewer viewer to set
 	 *
 	 * @since 3.1
 	 */
@@ -1459,29 +1463,29 @@ public class PreferenceDialog extends TrayDialog implements IPreferencePageConta
 	}
 
 	/**
-     * Notifies any selection changed listeners that the selected page
-     * has changed.
-     * Only listeners registered at the time this method is called are notified.
-     *
-     * @param event a selection changed event
-     *
-     * @see IPageChangedListener#pageChanged
-     *
-     * @since 3.1
-     */
-    protected void firePageChanged(final PageChangedEvent event) {
+	 * Notifies any selection changed listeners that the selected page
+	 * has changed.
+	 * Only listeners registered at the time this method is called are notified.
+	 *
+	 * @param event a selection changed event
+	 *
+	 * @see IPageChangedListener#pageChanged
+	 *
+	 * @since 3.1
+	 */
+	protected void firePageChanged(final PageChangedEvent event) {
 		for (IPageChangedListener l : pageChangedListeners) {
-            SafeRunnable.run(new SafeRunnable() {
-                @Override
+			SafeRunnable.run(new SafeRunnable() {
+				@Override
 				public void run() {
-                    l.pageChanged(event);
-                }
-            });
-        }
-    }
+					l.pageChanged(event);
+				}
+			});
+		}
+	}
 
-    @Override
+	@Override
 	protected boolean isResizable() {
-    	return true;
-    }
+		return true;
+	}
 }

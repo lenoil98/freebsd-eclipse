@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2014 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -121,11 +121,9 @@ public class JSchCorePlugin extends Plugin{
     String[] selected = Utils.getSelectedSSHAgent().split(","); //$NON-NLS-1$
     IdentityRepository irepo = null;
 
-    for(int i=0; i<selected.length; i++){
-      for(int j=0; j<repositories.length; j++){
-        IdentityRepository _irepo = repositories[j];
-        if(selected[i].equals(_irepo.getName()) &&
-           _irepo.getStatus()==IdentityRepository.RUNNING){
+    for(String s : selected) {
+      for(IdentityRepository _irepo : repositories) {
+        if(s.equals(_irepo.getName()) && _irepo.getStatus()==IdentityRepository.RUNNING) {
           irepo = _irepo;
           break;
         }
@@ -153,8 +151,7 @@ public class JSchCorePlugin extends Plugin{
       return new IdentityRepository[0];
 
     ArrayList<IdentityRepository> tmp = new ArrayList<>();
-    for(int i=0; i<extensions.length; i++){
-      IExtension extension=extensions[i];
+    for(IExtension extension : extensions) {
       IConfigurationElement[] configs=extension.getConfigurationElements();
       if(configs.length==0){
         JSchCorePlugin
@@ -240,6 +237,7 @@ public class JSchCorePlugin extends Plugin{
     return (IProxyService)tracker.getService();
   }
 
+  @Override
   public void start(BundleContext context) throws Exception{
     super.start(context);
     tracker=new ServiceTracker<Object, Object>(getBundle().getBundleContext(),
@@ -250,6 +248,7 @@ public class JSchCorePlugin extends Plugin{
         new Hashtable<String, Object>());
   }
 
+  @Override
   public void stop(BundleContext context) throws Exception{
     super.stop(context);
     tracker.close();

@@ -175,16 +175,16 @@ public class ZipFileStructureCreator implements IStructureCreator {
 		}
 
 		void appendBytes(byte[] buffer, int length) {
-	    	if (length > 0) {
+			if (length > 0) {
 				int oldLen= 0;
 				if (fContents != null)
 					oldLen= fContents.length;
 				byte[] newBuf= new byte[oldLen + length];
 				if (oldLen > 0)
-		    		System.arraycopy(fContents, 0, newBuf, 0, oldLen);
-	    		System.arraycopy(buffer, 0, newBuf, oldLen, length);
-	    		fContents= newBuf;
-	    	}
+					System.arraycopy(fContents, 0, newBuf, 0, oldLen);
+				System.arraycopy(buffer, 0, newBuf, oldLen, length);
+				fContents= newBuf;
+			}
 		}
 	}
 
@@ -333,8 +333,8 @@ public class ZipFileStructureCreator implements IStructureCreator {
 	 * additions and deletions.
 	 * <p>
 	 * Note: this method is for internal use only. Clients should not call this method.
-	 * @param differencer
-	 * @param root
+	 * @param differencer the differencer used to rewrite
+	 * @param root the root to rewrite
 	 */
 	public void rewriteTree(Differencer differencer, IDiffContainer root) {
 		// empty default implementation

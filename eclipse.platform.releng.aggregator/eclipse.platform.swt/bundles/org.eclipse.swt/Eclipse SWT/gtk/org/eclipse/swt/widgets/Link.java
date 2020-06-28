@@ -327,8 +327,8 @@ public String getText () {
 }
 
 @Override
-long /*int*/ gtk_button_press_event (long /*int*/ widget, long /*int*/ event) {
-	long /*int*/ result = super.gtk_button_press_event (widget, event);
+long gtk_button_press_event (long widget, long event) {
+	long result = super.gtk_button_press_event (widget, event);
 	if (result != 0) return result;
 	int eventType = GDK.gdk_event_get_event_type(event);
 	eventType = fixGdkEventTypeValues(eventType);
@@ -372,8 +372,8 @@ long /*int*/ gtk_button_press_event (long /*int*/ widget, long /*int*/ event) {
 }
 
 @Override
-long /*int*/ gtk_button_release_event (long /*int*/ widget, long /*int*/ event) {
-	long /*int*/ result = super.gtk_button_release_event (widget, event);
+long gtk_button_release_event (long widget, long event) {
+	long result = super.gtk_button_release_event (widget, event);
 	if (result != 0) return result;
 	if (focusIndex == -1) return result;
 	int [] eventButton = new int [1];
@@ -400,23 +400,21 @@ long /*int*/ gtk_button_release_event (long /*int*/ widget, long /*int*/ event) 
 }
 
 @Override
-long /*int*/ gtk_draw (long /*int*/ widget, long /*int*/ cairo) {
-	if (GTK.GTK_VERSION >= OS.VERSION(3, 14, 0)) {
-		long /*int*/ context = GTK.gtk_widget_get_style_context(widget);
-		GtkAllocation allocation = new GtkAllocation();
-		GTK.gtk_widget_get_allocation (widget, allocation);
-		int width = (state & ZERO_WIDTH) != 0 ? 0 : allocation.width;
-		int height = (state & ZERO_HEIGHT) != 0 ? 0 : allocation.height;
-		// We specify a 0 value for x & y as we want the whole widget to be
-		// colored, not some portion of it.
-		GTK.gtk_render_background(context, cairo, 0, 0, width, height);
-	}
+long gtk_draw (long widget, long cairo) {
+	long context = GTK.gtk_widget_get_style_context(widget);
+	GtkAllocation allocation = new GtkAllocation();
+	GTK.gtk_widget_get_allocation (widget, allocation);
+	int width = (state & ZERO_WIDTH) != 0 ? 0 : allocation.width;
+	int height = (state & ZERO_HEIGHT) != 0 ? 0 : allocation.height;
+	// We specify a 0 value for x & y as we want the whole widget to be
+	// colored, not some portion of it.
+	GTK.gtk_render_background(context, cairo, 0, 0, width, height);
 	return super.gtk_draw(widget, cairo);
 }
 
 @Override
-long /*int*/ gtk_event_after (long /*int*/ widget, long /*int*/ gdkEvent) {
-	long /*int*/ result = super.gtk_event_after (widget, gdkEvent);
+long gtk_event_after (long widget, long gdkEvent) {
+	long result = super.gtk_event_after (widget, gdkEvent);
 	int eventType = GDK.gdk_event_get_event_type(gdkEvent);
 	switch (eventType) {
 		case GDK.GDK_FOCUS_CHANGE:
@@ -427,8 +425,8 @@ long /*int*/ gtk_event_after (long /*int*/ widget, long /*int*/ gdkEvent) {
 }
 
 @Override
-long /*int*/ gtk_key_press_event (long /*int*/ widget, long /*int*/ eventPtr) {
-	long /*int*/ result = super.gtk_key_press_event (widget, eventPtr);
+long gtk_key_press_event (long widget, long eventPtr) {
+	long result = super.gtk_key_press_event (widget, eventPtr);
 	if (result != 0) return result;
 	if (focusIndex == -1) return result;
 	int [] key = new int[1];
@@ -458,8 +456,8 @@ long /*int*/ gtk_key_press_event (long /*int*/ widget, long /*int*/ eventPtr) {
 }
 
 @Override
-long /*int*/ gtk_motion_notify_event (long /*int*/ widget, long /*int*/ event) {
-	long /*int*/ result = super.gtk_motion_notify_event (widget, event);
+long gtk_motion_notify_event (long widget, long event) {
+	long result = super.gtk_motion_notify_event (widget, event);
 	if (result != 0) return result;
 	double [] eventX = new double [1];
 	double [] eventY = new double [1];
@@ -745,7 +743,7 @@ int setBounds(int x, int y, int width, int height, boolean move, boolean resize)
 }
 
 @Override
-void setFontDescription (long /*int*/ font) {
+void setFontDescription (long font) {
 	super.setFontDescription (font);
 	layout.setFont (Font.gtk_new (display, font));
 }
@@ -783,9 +781,9 @@ public void setLinkForeground (Color color) {
 
 @Override
 void setOrientation (boolean create) {
-    super.setOrientation (create);
-    layout.setOrientation (style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT));
-    if (!create) redraw (true);
+	super.setOrientation (create);
+	layout.setOrientation (style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT));
+	if (!create) redraw (true);
 }
 
 /**
@@ -870,7 +868,7 @@ void styleLinkParts() {
 }
 
 @Override
-int traversalCode(int key, long /*int*/ event) {
+int traversalCode(int key, long event) {
 	if (offsets.length == 0) return 0;
 	int bits = super.traversalCode (key, event);
 	if (key == GDK.GDK_Tab && focusIndex < offsets.length - 1) {

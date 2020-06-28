@@ -16,6 +16,7 @@ package org.eclipse.debug.internal.ui.importexport.breakpoints;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -45,8 +46,6 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.PlatformUI;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * The import breakpoints wizard page.
@@ -78,9 +77,6 @@ public class WizardImportBreakpointsPage extends WizardPage implements Listener 
 		super(pageName, ImportExportMessages.WizardImportBreakpointsPage_0, null);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.swt.widgets.Listener#handleEvent(org.eclipse.swt.widgets.Event)
-	 */
 	@Override
 	public void handleEvent(Event event) {
 		Widget source = event.widget;
@@ -102,9 +98,6 @@ public class WizardImportBreakpointsPage extends WizardPage implements Listener 
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.IDialogPage#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 		initializeDialogUnits(parent);
@@ -117,9 +110,6 @@ public class WizardImportBreakpointsPage extends WizardPage implements Listener 
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(getControl(), IDebugHelpContextIds.IMPORT_BREAKPOINTS_WIZARD_PAGE);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.IDialogPage#getImage()
-	 */
 	@Override
 	public Image getImage() {
 		return DebugUITools.getImage(IInternalDebugUIConstants.IMG_WIZBAN_IMPORT_BREAKPOINTS);
@@ -233,24 +223,24 @@ public class WizardImportBreakpointsPage extends WizardPage implements Listener 
 
 						private void removeUncheckedBreakpoints(IBreakpoint[] importedBreakpoints) {
 							IBreakpointManager manager = DebugPlugin.getDefault().getBreakpointManager();
-							for(int i = 0; i < importedBreakpoints.length; i++) {
+							for (IBreakpoint importedBreakpoint : importedBreakpoints) {
 								boolean selected = false;
-								for(int j = 0; j < selectedMarkers.size(); j++) {
+								for (IMarker selectedMarker : selectedMarkers) {
 									try {
-								Map<String, Object> importedMarkerAttributes = importedBreakpoints[i].getMarker().getAttributes();
-								Map<String, Object> selectedMarkerAttributes = selectedMarkers.get(j).getAttributes();
+										Map<String, Object> importedMarkerAttributes = importedBreakpoint.getMarker().getAttributes();
+										Map<String, Object> selectedMarkerAttributes = selectedMarker.getAttributes();
 										if(importedMarkerAttributes.equals(selectedMarkerAttributes)) {
 											selected = true;
 											break;
 										}
-									} catch (CoreException e) {
+									}catch (CoreException e) {
 										DebugPlugin.log(e);
 									}
 								}
-								if(!selected) {
+								if (!selected) {
 									try {
-										manager.removeBreakpoint(importedBreakpoints[i], true);
-									} catch (CoreException e) {
+										manager.removeBreakpoint(importedBreakpoint, true);
+									}catch (CoreException e) {
 										DebugPlugin.log(e);
 									}
 								}

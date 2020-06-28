@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 IBM Corporation and others.
+ * Copyright (c) 2018, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -59,7 +59,7 @@ public class ImportJavaSEPackagesTests extends AbstractBundleTests {
 
 	public void testExportPackageCannotContainJavaPackages() throws Exception {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, String> headers = new HashMap<String, String>();
+		Map<String, String> headers = new HashMap<>();
 		headers.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		headers.put(Constants.BUNDLE_SYMBOLICNAME, getName());
 		headers.put(Constants.EXPORT_PACKAGE, JAVA_LANG);
@@ -76,20 +76,14 @@ public class ImportJavaSEPackagesTests extends AbstractBundleTests {
 			assertEquals("It should throw a bundle exception of type manifest error", BundleException.MANIFEST_ERROR, e.getType());
 			assertTrue("It should throw a Bundle Exception stating Invalid manifest header Export-Package", e.getMessage().contains("Cannot specify java.* packages in Export headers"));
 		} finally {
-
-			try {
-				equinox.stop();
-				equinox.waitForStop(10000);
-			} catch (Exception e) {
-				//do nothing
-			}
+			stopQuietly(equinox);
 		}
 
 	}
 
 	public void testImportPackageCanContainJavaPackages() throws Exception {
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, String> headers = new HashMap<String, String>();
+		Map<String, String> headers = new HashMap<>();
 		headers.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		headers.put(Constants.BUNDLE_SYMBOLICNAME, getName());
 		headers.put(Constants.IMPORT_PACKAGE, JAVA_LANG);
@@ -109,18 +103,12 @@ public class ImportJavaSEPackagesTests extends AbstractBundleTests {
 		} catch (BundleException e) {
 			fail("Failed to test Import-Package header");
 		} finally {
-
-			try {
-				equinox.stop();
-				equinox.waitForStop(10000);
-			} catch (Exception e) {
-				//do nothing
-			}
+			stopQuietly(equinox);
 		}
 	}
 
 	public void testSystemPackages() throws Exception {
-		Map<Integer, Integer> packagesPerVersion = new HashMap<Integer, Integer>();
+		Map<Integer, Integer> packagesPerVersion = new HashMap<>();
 		packagesPerVersion.put(7, 56);
 		packagesPerVersion.put(8, 63);
 		if (!originalSpecVersion.startsWith("1.")) {
@@ -186,7 +174,7 @@ public class ImportJavaSEPackagesTests extends AbstractBundleTests {
 		}
 
 		File config = OSGiTestsActivator.getContext().getDataFile(getName());
-		Map<String, String> headers = new HashMap<String, String>();
+		Map<String, String> headers = new HashMap<>();
 		headers.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		headers.put(Constants.BUNDLE_SYMBOLICNAME, getName());
 		config.mkdirs();
@@ -217,13 +205,7 @@ public class ImportJavaSEPackagesTests extends AbstractBundleTests {
 		} catch (BundleException e) {
 			fail("Failed to test System packages");
 		} finally {
-
-			try {
-				equinox.stop();
-				equinox.waitForStop(10000);
-			} catch (Exception e) {
-				//do nothing
-			}
+			stopQuietly(equinox);
 		}
 	}
 

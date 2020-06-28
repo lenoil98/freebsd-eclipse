@@ -66,7 +66,7 @@ public class URLStreamHandlerFactoryImpl extends MultiplexingFactory implements 
 		Class<?> clazz;
 		StringTokenizer tok = new StringTokenizer(builtInHandlers, "|"); //$NON-NLS-1$
 		while (tok.hasMoreElements()) {
-			StringBuffer name = new StringBuffer();
+			StringBuilder name = new StringBuilder();
 			name.append(tok.nextToken());
 			name.append("."); //$NON-NLS-1$
 			name.append(protocol);
@@ -74,7 +74,7 @@ public class URLStreamHandlerFactoryImpl extends MultiplexingFactory implements 
 			try {
 				clazz = secureAction.loadSystemClass(name.toString());
 				if (clazz != null)
-					return clazz; //this class exists, it is a built in handler	
+					return clazz; //this class exists, it is a built in handler
 			} catch (ClassNotFoundException ex) {
 				// keep looking
 			}
@@ -89,6 +89,7 @@ public class URLStreamHandlerFactoryImpl extends MultiplexingFactory implements 
 	 * @param protocol The desired protocol
 	 * @return a URLStreamHandler for the specific protocol.
 	 */
+	@Override
 	public URLStreamHandler createURLStreamHandler(String protocol) {
 		// Check if we are recursing
 		if (isRecursive(protocol))
@@ -163,19 +164,19 @@ public class URLStreamHandlerFactoryImpl extends MultiplexingFactory implements 
 		ServiceReference<URLStreamHandlerService>[] serviceReferences = handlerTracker.getServiceReferences();
 		if (serviceReferences == null)
 			return null;
-		for (int i = 0; i < serviceReferences.length; i++) {
-			Object prop = serviceReferences[i].getProperty(URLConstants.URL_HANDLER_PROTOCOL);
+		for (ServiceReference<URLStreamHandlerService> serviceReference : serviceReferences) {
+			Object prop = serviceReference.getProperty(URLConstants.URL_HANDLER_PROTOCOL);
 			if (prop instanceof String)
 				prop = new String[] {(String) prop}; // TODO should this be a warning?
 			if (!(prop instanceof String[])) {
-				String message = NLS.bind(Msg.URL_HANDLER_INCORRECT_TYPE, new Object[] {URLConstants.URL_HANDLER_PROTOCOL, URLSTREAMHANDLERCLASS, serviceReferences[i].getBundle()});
+				String message = NLS.bind(Msg.URL_HANDLER_INCORRECT_TYPE, new Object[]{URLConstants.URL_HANDLER_PROTOCOL, URLSTREAMHANDLERCLASS, serviceReference.getBundle()});
 				container.getLogServices().log(EquinoxContainer.NAME, FrameworkLogEntry.WARNING, message, null);
 				continue;
 			}
 			String[] protocols = (String[]) prop;
-			for (int j = 0; j < protocols.length; j++) {
-				if (protocols[j].equals(protocol)) {
-					handler = new URLStreamHandlerProxy(protocol, serviceReferences[i], context);
+			for (String candidateProtocol : protocols) {
+				if (candidateProtocol.equals(protocol)) {
+					handler = new URLStreamHandlerProxy(protocol, serviceReference, context);
 					proxies.put(protocol, handler);
 					return (handler);
 				}
@@ -201,10 +202,12 @@ public class URLStreamHandlerFactoryImpl extends MultiplexingFactory implements 
 		}
 	}
 
+	@Override
 	public Object getParentFactory() {
 		return parentFactory;
 	}
 
+	@Override
 	public void setParentFactory(Object parentFactory) {
 		if (this.parentFactory == null) // only allow it to be set once
 			this.parentFactory = (URLStreamHandlerFactory) parentFactory;

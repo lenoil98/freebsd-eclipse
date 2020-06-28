@@ -84,7 +84,6 @@ public static Program findProgram (String extension) {
 	if (extension == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	if (extension.length () == 0) return null;
 	if (extension.charAt (0) != '.') extension = "." + extension; //$NON-NLS-1$
-	/* Use the character encoding for the default locale */
 	TCHAR key = new TCHAR (0, extension, true);
 	Program program = null;
 	String command = assocQueryString (OS.ASSOCSTR_COMMAND, key, true);
@@ -113,14 +112,13 @@ public static Program findProgram (String extension) {
  */
 public static String [] getExtensions () {
 	String [] extensions = new String [1024];
-	/* Use the character encoding for the default locale */
-	TCHAR lpName = new TCHAR (0, 1024);
-	int [] lpcName = new int [] {lpName.length ()};
+	char [] lpName = new char [1024];
+	int [] lpcName = {lpName.length};
 	FILETIME ft = new FILETIME ();
 	int dwIndex = 0, count = 0;
 	while (OS.RegEnumKeyEx (OS.HKEY_CLASSES_ROOT, dwIndex, lpName, lpcName, null, null, null, ft) != OS.ERROR_NO_MORE_ITEMS) {
-		String extension = lpName.toString (0, lpcName [0]);
-		lpcName [0] = lpName.length ();
+		String extension = new String (lpName, 0, lpcName [0]);
+		lpcName [0] = lpName.length;
 		if (extension.length () > 0 && extension.charAt (0) == '.') {
 			if (count == extensions.length) {
 				String [] newExtensions = new String [extensions.length + 1024];
@@ -140,9 +138,8 @@ public static String [] getExtensions () {
 }
 
 static String getKeyValue (String string, boolean expand) {
-	/* Use the character encoding for the default locale */
 	TCHAR key = new TCHAR (0, string, true);
-	long /*int*/ [] phkResult = new long /*int*/ [1];
+	long [] phkResult = new long [1];
 	if (OS.RegOpenKeyEx (OS.HKEY_CLASSES_ROOT, key, 0, OS.KEY_READ, phkResult) != 0) {
 		return null;
 	}
@@ -165,19 +162,17 @@ static String getKeyValue (String string, boolean expand) {
 			length++;
 		}
 		if (length != 0) {
-			/* Use the character encoding for the default locale */
-			TCHAR lpData = new TCHAR (0, length);
+			char [] lpData = new char [length];
 			if (OS.RegQueryValueEx (phkResult [0], null, 0, null, lpData, lpcbData) == 0) {
 				if (expand) {
 					length = OS.ExpandEnvironmentStrings (lpData, null, 0);
 					if (length != 0) {
-						TCHAR lpDst = new TCHAR (0, length);
+						char [] lpDst = new char [length];
 						OS.ExpandEnvironmentStrings (lpData, lpDst, length);
-						result = lpDst.toString (0, Math.max (0, length - 1));
+						result = new String (lpDst, 0, length - 1);
 					}
 				} else {
-					length = Math.max (0, lpData.length () - 1);
-					result = lpData.toString (0, length);
+					result = new String (lpData, 0, length - 1);
 				}
 			}
 		}
@@ -225,14 +220,13 @@ static Program getProgram (String key, String extension) {
  */
 public static Program [] getPrograms () {
 	LinkedHashSet<Program> programs = new LinkedHashSet<>(1024);
-	/* Use the character encoding for the default locale */
-	TCHAR lpName = new TCHAR (0, 1024);
-	int [] lpcName = new int [] {lpName.length ()};
+	char [] lpName = new char [1024];
+	int [] lpcName = new int [] {lpName.length};
 	FILETIME ft = new FILETIME ();
 	int dwIndex = 0;
 	while (OS.RegEnumKeyEx (OS.HKEY_CLASSES_ROOT, dwIndex, lpName, lpcName, null, null, null, ft) != OS.ERROR_NO_MORE_ITEMS) {
-		String path = lpName.toString (0, lpcName [0]);
-		lpcName [0] = lpName.length ();
+		String path = new String (lpName, 0, lpcName [0]);
+		lpcName [0] = lpName.length;
 		Program program = getProgram (path, null);
 		if (program != null) {
 			programs.add(program);
@@ -256,7 +250,7 @@ public static Program [] getPrograms () {
  * </ul>
  */
 public static boolean launch (String fileName) {
-    return launch(fileName, null);
+	return launch(fileName, null);
 }
 
 /**
@@ -281,19 +275,18 @@ public static boolean launch (String fileName) {
 public static boolean launch (String fileName, String workingDir) {
 	if (fileName == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 
-	/* Use the character encoding for the default locale */
-	long /*int*/ hHeap = OS.GetProcessHeap ();
+	long hHeap = OS.GetProcessHeap ();
 	TCHAR buffer = new TCHAR (0, fileName, true);
 	int byteCount = buffer.length () * TCHAR.sizeof;
-	long /*int*/ lpFile = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
+	long lpFile = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
 	OS.MoveMemory (lpFile, buffer, byteCount);
 
-	long /*int*/ lpDirectory = 0;
+	long lpDirectory = 0;
 	if (workingDir != null && OS.PathIsExe(lpFile)) {
-	    TCHAR buffer1 = new TCHAR (0, workingDir, true);
-	    byteCount = buffer1.length () * TCHAR.sizeof;
-	    lpDirectory = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
-	    OS.MoveMemory (lpDirectory, buffer1, byteCount);
+		TCHAR buffer1 = new TCHAR (0, workingDir, true);
+		byteCount = buffer1.length () * TCHAR.sizeof;
+		lpDirectory = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
+		OS.MoveMemory (lpDirectory, buffer1, byteCount);
 	}
 
 	SHELLEXECUTEINFO info = new SHELLEXECUTEINFO ();
@@ -337,11 +330,10 @@ public boolean execute (String fileName) {
 	}
 	if (append) fileName = " \"" + fileName + "\"";
 	String commandLine = prefix + fileName + suffix;
-	long /*int*/ hHeap = OS.GetProcessHeap ();
-	/* Use the character encoding for the default locale */
+	long hHeap = OS.GetProcessHeap ();
 	TCHAR buffer = new TCHAR (0, commandLine, true);
 	int byteCount = buffer.length () * TCHAR.sizeof;
-	long /*int*/ lpCommandLine = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
+	long lpCommandLine = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
 	OS.MoveMemory (lpCommandLine, buffer, byteCount);
 	STARTUPINFO lpStartupInfo = new STARTUPINFO ();
 	lpStartupInfo.cb = STARTUPINFO.sizeof;
@@ -390,9 +382,8 @@ public ImageData getImageData () {
 			fileName = fileName.substring (1, length - 1);
 		}
 	}
-	/* Use the character encoding for the default locale */
 	TCHAR lpszFile = new TCHAR (0, fileName, true);
-	long /*int*/ [] phiconSmall = new long /*int*/[1], phiconLarge = null;
+	long [] phiconSmall = new long[1], phiconLarge = null;
 	OS.ExtractIconEx (lpszFile, nIconIndex, phiconLarge, phiconSmall, 1);
 	if (phiconSmall [0] == 0) return null;
 	Image image = Image.win32_new (null, SWT.ICON, phiconSmall [0]);

@@ -93,7 +93,7 @@ public class JdtFlags {
 			return true;
 		return Modifier.isStatic(bodyDeclaration.getModifiers());
 	}
-	
+
 	public static boolean isStatic(IMember member) throws JavaModelException {
 		if (isNestedInterfaceOrAnnotation(member))
 			return true;
@@ -268,7 +268,7 @@ public class JdtFlags {
 	private static boolean isNestedInterfaceOrAnnotation(BodyDeclaration bodyDeclaration) {
 		return bodyDeclaration.getParent() instanceof AbstractTypeDeclaration && isInterfaceOrAnnotation(bodyDeclaration);
 	}
-	
+
 	private static boolean isNestedInterfaceOrAnnotation(IMember member) throws JavaModelException{
 		return member.getElementType() == IJavaElement.TYPE &&
 				member.getDeclaringType() != null &&
@@ -336,14 +336,19 @@ public class JdtFlags {
 
 	public static int getVisibilityCode(String visibilityString) {
 		Assert.isNotNull(visibilityString);
-		if (VISIBILITY_STRING_PACKAGE.equals(visibilityString))
+		if (null != visibilityString)
+			switch (visibilityString) {
+		case VISIBILITY_STRING_PACKAGE:
 			return 0;
-		else if (VISIBILITY_STRING_PRIVATE.equals(visibilityString))
+		case VISIBILITY_STRING_PRIVATE:
 			return Modifier.PRIVATE;
-		else if (VISIBILITY_STRING_PROTECTED.equals(visibilityString))
+		case VISIBILITY_STRING_PROTECTED:
 			return Modifier.PROTECTED;
-		else if (VISIBILITY_STRING_PUBLIC.equals(visibilityString))
+		case VISIBILITY_STRING_PUBLIC:
 			return Modifier.PUBLIC;
+		default:
+			break;
+		}
 		return VISIBILITY_CODE_INVALID;
 	}
 
@@ -398,7 +403,7 @@ public class JdtFlags {
 
 	/**
 	 * Gets the higher visibility of the given parameters.
-	 * 
+	 *
 	 * @param visibility1 First visibility value to compare. Valid inputs are the {@link Modifier} visibility constants.
 	 * @param visibility2 Second visibility value to compare. Valid inputs are the {@link Modifier} visibility constants.
 	 * @return The parameter value with the higher visibility.

@@ -8,7 +8,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *
- *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -46,6 +45,11 @@ public class CompletionScanner extends Scanner {
 	public static final char[] EmptyCompletionIdentifier = {};
 
 public CompletionScanner(long sourceLevel) {
+	this(
+		sourceLevel,
+		false /* previewEnabled */);
+}
+public CompletionScanner(long sourceLevel, boolean previewEnabled) {
 	super(
 		false /*comment*/,
 		false /*whitespace*/,
@@ -53,7 +57,8 @@ public CompletionScanner(long sourceLevel) {
 		sourceLevel,
 		null /*taskTags*/,
 		null/*taskPriorities*/,
-		true/*taskCaseSensitive*/);
+		true/*taskCaseSensitive*/,
+		previewEnabled);
 }
 @Override
 protected boolean isAtAssistIdentifier() {
@@ -753,7 +758,7 @@ protected int getNextToken0() throws InvalidInputException {
 												pushLineSeparator();
 											}
 										}
-									}									
+									}
 									switch (this.currentCharacter) {
 										case '*':
 											star = true;

@@ -54,25 +54,13 @@ public class CDSHookImpls extends ClassLoaderHook implements BundleFileWrapperFa
 	// WrapperChain -> Wrapper<N> -> WrapperChain -> CDSBundleFile -> WrapperChain -> BundleFile
 	//
 	private static CDSBundleFile getCDSBundleFile(BundleFile bundleFile) {
-		CDSBundleFile cdsBundleFile = null;
-
 		if (bundleFile instanceof BundleFileWrapperChain) {
-			// Equinox > 3.4
-			BundleFile wrapped = null;
-			do {
-				wrapped = ((BundleFileWrapperChain) bundleFile).getWrapped();
-				if (wrapped instanceof CDSBundleFile) {
-					cdsBundleFile = (CDSBundleFile) wrapped;
-					break;
-				}
-
-				//Go to next wrapper chain.
-				bundleFile = ((BundleFileWrapperChain) bundleFile).getNext();
-			} while (wrapped != null);
+			return ((BundleFileWrapperChain) bundleFile).getWrappedType(CDSBundleFile.class);
 		}
-		return cdsBundleFile;
+		return null;
 	}
 
+	@Override
 	public void recordClassDefine(String name, Class<?> clazz, byte[] classbytes, ClasspathEntry classpathEntry, BundleEntry entry, ClasspathManager manager) { // only attempt to record the class define if:
 		// 1) the class was found (clazz != null)
 		// 2) the class has the magic class number CAFEBABE indicating a real class
@@ -94,7 +82,7 @@ public class CDSHookImpls extends ClassLoaderHook implements BundleFileWrapperFa
 					modified = true;
 				}
 				if (modified) {
-					// Class bytes have been modified by weaving hooks. 
+					// Class bytes have been modified by weaving hooks.
 					// Such classes need to be stored as Orphans, so skip the call to storeSharedClass()
 					return;
 				}
@@ -139,6 +127,7 @@ public class CDSHookImpls extends ClassLoaderHook implements BundleFileWrapperFa
 		return (classbytes[0] & 0xCA) == 0xCA && (classbytes[1] & 0xFE) == 0xFE && (classbytes[2] & 0xBA) == 0xBA && (classbytes[3] & 0xBE) == 0xBE;
 	}
 
+	@Override
 	public void classLoaderCreated(ModuleClassLoader classLoader) {
 		// try to get the url helper for this class loader
 		if (factory == null) {
@@ -180,11 +169,12 @@ public class CDSHookImpls extends ClassLoaderHook implements BundleFileWrapperFa
 				}
 			}
 		} catch (HelperAlreadyDefinedException e) {
-			// We should never get here. 
+			// We should never get here.
 			// If we do, we simply won't share for this ClassLoader
 		}
 	}
 
+	@Override
 	public boolean addClassPathEntry(ArrayList<ClasspathEntry> cpEntries, String cp, ClasspathManager hostmanager, Generation sourceGeneration) {
 		CDSBundleFile hostFile = getCDSBundleFile(hostmanager.getGeneration().getBundleFile());
 		CDSBundleFile sourceFile = getCDSBundleFile(sourceGeneration.getBundleFile());
@@ -200,6 +190,7 @@ public class CDSHookImpls extends ClassLoaderHook implements BundleFileWrapperFa
 	}
 
 	//////////////// BundleFileWrapperFactoryHook //////////////
+	@Override
 	public BundleFileWrapper wrapBundleFile(BundleFile bundleFile, Generation generation, boolean base) {
 		// wrap the real bundle file for purposes of loading shared classes.
 		CDSBundleFile newBundleFile;

@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.team.internal.ccvs.ui.console;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.eclipse.core.runtime.*;
@@ -32,9 +34,6 @@ import org.eclipse.team.internal.ccvs.core.client.listeners.IConsoleListener;
 import org.eclipse.team.internal.ccvs.ui.*;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.*;
-
-import com.ibm.icu.text.DateFormat;
-import com.ibm.icu.text.SimpleDateFormat;
 
 /**
  * Console that shows the output of CVS commands. It is shown as a page in the generic 
@@ -66,17 +65,17 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 	
 	// format for timings printed to console
 	private static final DateFormat TIME_FORMAT;
-    
-    static {
-        DateFormat format;
-        try {
-            format = new SimpleDateFormat(CVSUIMessages.Console_resultTimeFormat); 
-        } catch (RuntimeException e) {
-            // This can happen if the bundle contains an invalid  format
-            format = new SimpleDateFormat("'(took 'm:ss.SSS')')"); //$NON-NLS-1$
-        }
-        TIME_FORMAT = format;
-    }
+	
+	static {
+		DateFormat format;
+		try {
+			format = new SimpleDateFormat(CVSUIMessages.Console_resultTimeFormat); 
+		} catch (RuntimeException e) {
+			// This can happen if the bundle contains an invalid  format
+			format = new SimpleDateFormat("'(took 'm:ss.SSS')')"); //$NON-NLS-1$
+		}
+		TIME_FORMAT = format;
+	}
 
 	// Indicates whether the console is visible in the Console view
 	private boolean visible = false;
@@ -86,7 +85,7 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 	/*
 	 * Constant used for indenting error status printing
 	 */
-    private static final String NESTING = "   "; //$NON-NLS-1$
+	private static final String NESTING = "   "; //$NON-NLS-1$
 	
 	/**
 	 * Used to notify this console of lifecycle methods <code>init()</code>
@@ -95,8 +94,7 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 	public class MyLifecycle implements org.eclipse.ui.console.IConsoleListener {
 		@Override
 		public void consolesAdded(IConsole[] consoles) {
-			for (int i = 0; i < consoles.length; i++) {
-				IConsole console = consoles[i];
+			for (IConsole console : consoles) {
 				if (console == CVSOutputConsole.this) {
 					init();
 				}
@@ -105,8 +103,7 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 		}
 		@Override
 		public void consolesRemoved(IConsole[] consoles) {
-			for (int i = 0; i < consoles.length; i++) {
-				IConsole console = consoles[i];
+			for (IConsole console : consoles) {
 				if (console == CVSOutputConsole.this) {
 					ConsolePlugin.getDefault().getConsoleManager().removeConsoleListener(this);
 					dispose();
@@ -128,9 +125,6 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 		CVSUIPlugin.getPlugin().getPreferenceStore().addPropertyChangeListener(CVSOutputConsole.this);
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.console.AbstractConsole#init()
-	 */
 	@Override
 	protected void init() {
 		// Called when console is added to the console view
@@ -194,8 +188,7 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 		synchronized(document) {
 			visible = true;
 			ConsoleDocument.ConsoleLine[] lines = document.getLines();
-			for (int i = 0; i < lines.length; i++) {
-				ConsoleDocument.ConsoleLine line = lines[i];
+			for (ConsoleDocument.ConsoleLine line : lines) {
 				appendLine(line.type, line.line);
 			}
 			document.clear();
@@ -223,13 +216,10 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 		}
 	}
 
-    private void showConsole() {
+	private void showConsole() {
 		show(false);
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.console.MessageConsole#dispose()
-	 */
 	@Override
 	protected void dispose() {
 		// Here we can't call super.dispose() because we actually want the partitioner to remain
@@ -259,43 +249,31 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 		CVSUIPlugin.getPlugin().getPreferenceStore().removePropertyChangeListener(this);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.client.listeners.IConsoleListener#commandInvoked(java.lang.String)
-	 */
 	@Override
 	public void commandInvoked(Session session, String line) {
-	    if (!session.isOutputToConsole()) return;
+		if (!session.isOutputToConsole()) return;
 		commandStarted = System.currentTimeMillis();
 		appendLine(ConsoleDocument.COMMAND, CVSUIMessages.Console_preExecutionDelimiter); 
 		appendLine(ConsoleDocument.COMMAND, line);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.client.listeners.IConsoleListener#messageLineReceived(java.lang.String)
-	 */
 	@Override
 	public void messageLineReceived(Session session, String line, IStatus status) {
-	    if (session.isOutputToConsole()) {
-	        appendLine(ConsoleDocument.MESSAGE, "  " + line); //$NON-NLS-1$
-	    }
+		if (session.isOutputToConsole()) {
+			appendLine(ConsoleDocument.MESSAGE, "  " + line); //$NON-NLS-1$
+		}
 	}
 
-    /* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.client.listeners.IConsoleListener#errorLineReceived(java.lang.String)
-	 */
 	@Override
 	public void errorLineReceived(Session session, String line, IStatus status) {
-	    if (session.isOutputToConsole()) {
-	        appendLine(ConsoleDocument.ERROR, "  " + line); //$NON-NLS-1$
-	    }
+		if (session.isOutputToConsole()) {
+			appendLine(ConsoleDocument.ERROR, "  " + line); //$NON-NLS-1$
+		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.client.listeners.IConsoleListener#commandCompleted(org.eclipse.core.runtime.IStatus, java.lang.Exception)
-	 */
 	@Override
 	public void commandCompleted(Session session, IStatus status, Exception exception) {
-	    if (!session.isOutputToConsole()) return;
+		if (!session.isOutputToConsole()) return;
 		long commandRuntime = System.currentTimeMillis() - commandStarted;
 		String time;
 		try {
@@ -306,7 +284,7 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 		}
 		String statusText;
 		if (status != null) {
-		    boolean includeRoot = true;
+			boolean includeRoot = true;
 			if (status.getCode() == CVSStatus.SERVER_ERROR) {
 				statusText = NLS.bind(CVSUIMessages.Console_resultServerError, new String[] { status.getMessage(), time }); 
 				includeRoot = false;
@@ -323,7 +301,7 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 			}
 			appendLine(ConsoleDocument.COMMAND, statusText);
 			if (exception instanceof CoreException) {
-			    outputStatus(((CoreException)exception).getStatus(), true, 1);
+				outputStatus(((CoreException)exception).getStatus(), true, 1);
 			}
 		} else {
 			statusText = NLS.bind(CVSUIMessages.Console_resultOk, new String[] { time }); 
@@ -334,71 +312,87 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 	
 	private void outputStatus(IStatus status, boolean includeParent, int nestingLevel) {
 		if (includeParent && !status.isOK()) {
-            outputStatusMessage(status, nestingLevel);
-            nestingLevel++;
+			outputStatusMessage(status, nestingLevel);
+			nestingLevel++;
 		}
 		
 		// Include a CoreException in the status
 		Throwable t = status.getException();
 		if (t instanceof CoreException) {
-		    outputStatus(((CoreException)t).getStatus(), true, nestingLevel);
+			outputStatus(((CoreException)t).getStatus(), true, nestingLevel);
 		}
 		
 		// Include child status
 		IStatus[] children = status.getChildren();
-		for (int i = 0; i < children.length; i++) {
-			outputStatus(children[i], true, nestingLevel);
+		for (IStatus c : children) {
+			outputStatus(c, true, nestingLevel);
 		}
 	}
 	
-    private void outputStatusMessage(IStatus status, int nesting) {
-        StringBuffer buffer = new StringBuffer();
-        for (int i = 0; i < nesting; i++) {
-            buffer.append(NESTING);
-        }
-        buffer.append(messageLineForStatus(status));
-        appendLine(ConsoleDocument.COMMAND, buffer.toString());
-    }
+	private void outputStatusMessage(IStatus status, int nesting) {
+		StringBuilder buffer = new StringBuilder();
+		for (int i = 0; i < nesting; i++) {
+			buffer.append(NESTING);
+		}
+		buffer.append(messageLineForStatus(status));
+		appendLine(ConsoleDocument.COMMAND, buffer.toString());
+	}
 
-    /* (non-Javadoc)
-	 * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
-	 */
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		String property = event.getProperty();
 		// colors
 		if (visible) {
-			if (property.equals(ICVSUIConstants.PREF_CONSOLE_COMMAND_COLOR)) {
-				Color newColor = createColor(CVSUIPlugin.getStandardDisplay(), ICVSUIConstants.PREF_CONSOLE_COMMAND_COLOR);
+			switch (property) {
+			case ICVSUIConstants.PREF_CONSOLE_COMMAND_COLOR: {
+				Color newColor = createColor(CVSUIPlugin.getStandardDisplay(),
+						ICVSUIConstants.PREF_CONSOLE_COMMAND_COLOR);
 				commandStream.setColor(newColor);
 				commandColor.dispose();
 				commandColor = newColor;
-			} else if (property.equals(ICVSUIConstants.PREF_CONSOLE_MESSAGE_COLOR)) {
-				Color newColor = createColor(CVSUIPlugin.getStandardDisplay(), ICVSUIConstants.PREF_CONSOLE_MESSAGE_COLOR);
+				return;
+			}
+			case ICVSUIConstants.PREF_CONSOLE_MESSAGE_COLOR: {
+				Color newColor = createColor(CVSUIPlugin.getStandardDisplay(),
+						ICVSUIConstants.PREF_CONSOLE_MESSAGE_COLOR);
 				messageStream.setColor(newColor);
 				messageColor.dispose();
 				messageColor = newColor;
-			} else if (property.equals(ICVSUIConstants.PREF_CONSOLE_ERROR_COLOR)) {
-				Color newColor = createColor(CVSUIPlugin.getStandardDisplay(), ICVSUIConstants.PREF_CONSOLE_ERROR_COLOR);
+				return;
+			}
+			case ICVSUIConstants.PREF_CONSOLE_ERROR_COLOR: {
+				Color newColor = createColor(CVSUIPlugin.getStandardDisplay(),
+						ICVSUIConstants.PREF_CONSOLE_ERROR_COLOR);
 				errorStream.setColor(newColor);
 				errorColor.dispose();
 				errorColor = newColor;
 				// font
-			} else if (property.equals(ICVSUIConstants.PREF_CONSOLE_FONT)) {
+				return;
+			}
+			case ICVSUIConstants.PREF_CONSOLE_FONT:
 				setFont(((FontRegistry) event.getSource()).get(ICVSUIConstants.PREF_CONSOLE_FONT));
+				return;
+			default:
+				break;
 			}
 		}
-		if (property.equals(ICVSUIConstants.PREF_CONSOLE_SHOW_ON_MESSAGE)) {
+		switch (property) {
+		case ICVSUIConstants.PREF_CONSOLE_SHOW_ON_MESSAGE:
 			Object value = event.getNewValue();
 			if (value instanceof String) {
 				showOnMessage = Boolean.valueOf((String) value).booleanValue();
 			} else {
 				showOnMessage = ((Boolean) value).booleanValue();
 			}
-		} else if(property.equals(ICVSUIConstants.PREF_CONSOLE_LIMIT_OUTPUT)) {
+			break;
+		case ICVSUIConstants.PREF_CONSOLE_LIMIT_OUTPUT:
 			initLimitOutput();
-		} else if(property.equals(ICVSUIConstants.PREF_CONSOLE_WRAP)) {
+			break;
+		case ICVSUIConstants.PREF_CONSOLE_WRAP:
 			initWrapSetting();
+			break;
+		default:
+			break;
 		}
 	}
 	
@@ -428,21 +422,21 @@ public class CVSOutputConsole extends MessageConsole implements IConsoleListener
 		return new Color(display, rgb);
 	}
 
-    /**
-     * Show the console.
-     * @param showNoMatterWhat ignore preferences if <code>true</code>
-     */
-    public void show(boolean showNoMatterWhat) {
+	/**
+	 * Show the console.
+	 * @param showNoMatterWhat ignore preferences if <code>true</code>
+	 */
+	public void show(boolean showNoMatterWhat) {
 		if(showNoMatterWhat || showOnMessage) {
 			if(!visible)
 				CVSConsoleFactory.showConsole();
 			else
 				consoleManager.showConsoleView(this);
 		}
-    }
-    
-    @Override
+	}
+	
+	@Override
 	public String getHelpContextId() {
-    	return IHelpContextIds.CONSOLE_VIEW;
-    }
+		return IHelpContextIds.CONSOLE_VIEW;
+	}
 }

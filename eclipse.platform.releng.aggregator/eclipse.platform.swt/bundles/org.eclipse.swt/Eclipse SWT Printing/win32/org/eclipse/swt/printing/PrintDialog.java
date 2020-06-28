@@ -290,8 +290,8 @@ public PrinterData open() {
 	/* Get the owner HWND for the dialog */
 	Control parent = getParent();
 	int style = getStyle();
-	long /*int*/ hwndOwner = parent.handle;
-	long /*int*/ hwndParent = parent.handle;
+	long hwndOwner = parent.handle;
+	long hwndParent = parent.handle;
 
 	/*
 	* Feature in Windows.  There is no API to set the BIDI orientation
@@ -327,13 +327,10 @@ public PrinterData open() {
 	boolean success = false;
 	if (printerData.name != null) {
 		/* Ensure that the printer name is in the current list of printers. */
-		PrinterData printerList[] = Printer.getPrinterList();
-		if (printerList.length > 0) {
-			for (int p = 0; p < printerList.length; p++) {
-				if (printerList[p].name.equals(printerData.name)) {
-					success = true;
-					break;
-				}
+		for (PrinterData element : Printer.getPrinterList()) {
+			if (element.name.equals(printerData.name)) {
+				success = true;
+				break;
 			}
 		}
 		if (success) {
@@ -343,8 +340,8 @@ public PrinterData open() {
 			short[] offsets = new short[4]; // DEVNAMES (4 offsets)
 			int offsetsSize = offsets.length * 2; // 2 bytes each
 			offsets[1] = (short) offsets.length; // offset 1 points to wDeviceOffset
-			long /*int*/ hMem = OS.GlobalAlloc(OS.GMEM_MOVEABLE | OS.GMEM_ZEROINIT, offsetsSize + size);
-			long /*int*/ ptr = OS.GlobalLock(hMem);
+			long hMem = OS.GlobalAlloc(OS.GMEM_MOVEABLE | OS.GMEM_ZEROINIT, offsetsSize + size);
+			long ptr = OS.GlobalLock(hMem);
 			OS.MoveMemory(ptr, offsets, offsetsSize);
 			OS.MoveMemory(ptr + offsetsSize, buffer, size);
 			OS.GlobalUnlock(hMem);
@@ -352,11 +349,14 @@ public PrinterData open() {
 		}
 	}
 	Display display = parent.getDisplay();
+	String externalLoopKey = "org.eclipse.swt.internal.win32.externalEventLoop";
 	if (!success) {
 		/* Initialize PRINTDLG fields, including DEVMODE, for the default printer. */
 		pd.Flags = OS.PD_RETURNDEFAULT;
+		display.setData(externalLoopKey, Boolean.TRUE);
 		display.sendPreExternalEventDispatchEvent ();
 		success = OS.PrintDlg(pd);
+		display.setData(externalLoopKey, Boolean.FALSE);
 		display.sendPostExternalEventDispatchEvent ();
 		if (success) {
 			if (pd.hDevNames != 0) {
@@ -373,8 +373,8 @@ public PrinterData open() {
 		 */
 		byte devmodeData [] = printerData.otherData;
 		if (devmodeData != null && devmodeData.length != 0) {
-			long /*int*/ hMem = OS.GlobalAlloc(OS.GMEM_MOVEABLE | OS.GMEM_ZEROINIT, devmodeData.length);
-			long /*int*/ ptr = OS.GlobalLock(hMem);
+			long hMem = OS.GlobalAlloc(OS.GMEM_MOVEABLE | OS.GMEM_ZEROINIT, devmodeData.length);
+			long ptr = OS.GlobalLock(hMem);
 			OS.MoveMemory(ptr, devmodeData, devmodeData.length);
 			OS.GlobalUnlock(hMem);
 			if (pd.hDevMode != 0) OS.GlobalFree(pd.hDevMode);
@@ -382,12 +382,12 @@ public PrinterData open() {
 		}
 
 		/* Initialize the DEVMODE struct's fields from the printerData. */
-		long /*int*/ hMem = pd.hDevMode;
+		long hMem = pd.hDevMode;
 		if (hMem == 0) {
 			hMem = OS.GlobalAlloc(OS.GMEM_MOVEABLE | OS.GMEM_ZEROINIT, DEVMODE.sizeof);
 			pd.hDevMode = hMem;
 		}
-		long /*int*/ ptr = OS.GlobalLock(hMem);
+		long ptr = OS.GlobalLock(hMem);
 		DEVMODE devmode = new DEVMODE ();
 		OS.MoveMemory(devmode, ptr, DEVMODE.sizeof);
 		if (printerData.name != null) {
@@ -443,14 +443,16 @@ public PrinterData open() {
 		String key = "org.eclipse.swt.internal.win32.runMessagesInIdle"; //$NON-NLS-1$
 		Object oldValue = display.getData(key);
 		display.setData(key, Boolean.TRUE);
+		display.setData(externalLoopKey, Boolean.TRUE);
 		display.sendPreExternalEventDispatchEvent ();
 		success = OS.PrintDlg(pd);
+		display.setData(externalLoopKey, Boolean.FALSE);
 		display.sendPostExternalEventDispatchEvent ();
 		display.setData(key, oldValue);
 		if ((getStyle() & (SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL)) != 0) {
-			for (int i=0; i<shells.length; i++) {
-				if (shells[i] != null && !shells[i].isDisposed ()) {
-					shells[i].setEnabled(true);
+			for (Shell shell : shells) {
+				if (shell != null && !shell.isDisposed ()) {
+					shell.setEnabled(true);
 				}
 			}
 		}
@@ -463,25 +465,25 @@ public PrinterData open() {
 			ptr = OS.GlobalLock(hMem);
 			short[] offsets = new short[4];
 			OS.MoveMemory(offsets, ptr, 2 * offsets.length);
-			TCHAR buffer = new TCHAR(0, size);
+			char [] buffer = new char [size];
 			OS.MoveMemory(buffer, ptr, size);
 			OS.GlobalUnlock(hMem);
 
 			int driverOffset = offsets[0];
 			int i = 0;
 			while (driverOffset + i < size) {
-				if (buffer.tcharAt(driverOffset + i) == 0) break;
+				if (buffer [driverOffset + i] == 0) break;
 				i++;
 			}
-			String driver = buffer.toString(driverOffset, i);
+			String driver = new String(buffer, driverOffset, i);
 
 			int deviceOffset = offsets[1];
 			i = 0;
 			while (deviceOffset + i < size) {
-				if (buffer.tcharAt(deviceOffset + i) == 0) break;
+				if (buffer [deviceOffset + i] == 0) break;
 				i++;
 			}
-			String device = buffer.toString(deviceOffset, i);
+			String device = new String(buffer, deviceOffset, i);
 
 			/* Create PrinterData object and set fields from PRINTDLG */
 			data = new PrinterData(driver, device);

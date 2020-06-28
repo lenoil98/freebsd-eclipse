@@ -16,6 +16,7 @@
 package org.eclipse.ltk.core.refactoring.participants;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -236,9 +237,7 @@ public class ProcessorBasedRefactoring extends Refactoring {
 			fParticipants= EMPTY_PARTICIPANTS;
 		} else {
 			fParticipants= new ArrayList<>();
-			for (int i= 0; i < loadedParticipants.length; i++) {
-				fParticipants.add(loadedParticipants[i]);
-			}
+			fParticipants.addAll(Arrays.asList(loadedParticipants));
 		}
 		if (result.hasFatalError()) {
 			pm.done();
@@ -298,9 +297,7 @@ public class ProcessorBasedRefactoring extends Refactoring {
 		List<Change> changes= new ArrayList<>();
 		List<Change> preChanges= new ArrayList<>();
 		Map<Change, RefactoringParticipant> participantMap= new HashMap<>();
-		for (Iterator<RefactoringParticipant> iter= fParticipants.iterator(); iter.hasNext();) {
-			final RefactoringParticipant participant= iter.next();
-
+		for (RefactoringParticipant participant : fParticipants) {
 			try {
 				final PerformanceStats stats= PerformanceStats.getStats(PERF_CREATE_CHANGES, getName() + ", " + participant.getName()); //$NON-NLS-1$
 				stats.startRun();
@@ -325,12 +322,9 @@ public class ProcessorBasedRefactoring extends Refactoring {
 					addToTextChangeMap(change);
 				}
 
-			} catch (CoreException e) {
-				disableParticipant(participant, e);
-				throw e;
 			} catch (OperationCanceledException e) {
 				throw e;
-			} catch (RuntimeException e) {
+			} catch (CoreException | RuntimeException e) {
 				disableParticipant(participant, e);
 				throw e;
 			}
@@ -442,8 +436,8 @@ public class ProcessorBasedRefactoring extends Refactoring {
 			}
 		} else if (change instanceof CompositeChange) {
 			Change[] children= ((CompositeChange) change).getChildren();
-			for (int i= 0; i < children.length; i++) {
-				addToTextChangeMap(children[i]);
+			for (Change child : children) {
+				addToTextChangeMap(child);
 			}
 		}
 	}

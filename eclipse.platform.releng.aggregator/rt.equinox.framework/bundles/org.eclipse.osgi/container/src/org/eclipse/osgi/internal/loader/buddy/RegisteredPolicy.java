@@ -22,7 +22,7 @@ import org.eclipse.osgi.container.namespaces.EquinoxModuleDataNamespace;
 import org.eclipse.osgi.internal.loader.BundleLoader;
 
 /**
- *Registered policy is an implementation of a buddy policy. 
+ *Registered policy is an implementation of a buddy policy.
  * It is responsible for looking up a class in the bundles (registrant) that declare interest in the bundle that require the buddy loading.
  * Note that the registrants must have a direct dependency on the bundle needing buddy.
  */
@@ -62,6 +62,7 @@ public class RegisteredPolicy extends DependentPolicy {
 			allDependents = null;
 	}
 
+	@Override
 	public Class<?> loadClass(String name) {
 		if (allDependents == null)
 			return null;
@@ -83,6 +84,7 @@ public class RegisteredPolicy extends DependentPolicy {
 		return result;
 	}
 
+	@Override
 	public URL loadResource(String name) {
 		if (allDependents == null)
 			return null;
@@ -99,6 +101,7 @@ public class RegisteredPolicy extends DependentPolicy {
 		return result;
 	}
 
+	@Override
 	public Enumeration<URL> loadResources(String name) {
 		if (allDependents == null)
 			return null;

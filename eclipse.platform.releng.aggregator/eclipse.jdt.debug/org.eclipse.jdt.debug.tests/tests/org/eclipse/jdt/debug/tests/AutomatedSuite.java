@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -39,6 +39,7 @@ import org.eclipse.jdt.debug.tests.breakpoints.MiscBreakpointsTests;
 import org.eclipse.jdt.debug.tests.breakpoints.PatternBreakpointTests;
 import org.eclipse.jdt.debug.tests.breakpoints.PreLaunchBreakpointTest;
 import org.eclipse.jdt.debug.tests.breakpoints.RunToLineTests;
+import org.eclipse.jdt.debug.tests.breakpoints.SpecialExceptionBreakpointTests;
 import org.eclipse.jdt.debug.tests.breakpoints.SuspendVMBreakpointsTests;
 import org.eclipse.jdt.debug.tests.breakpoints.TargetPatternBreakpointTests;
 import org.eclipse.jdt.debug.tests.breakpoints.TestToggleBreakpointsTarget;
@@ -77,6 +78,7 @@ import org.eclipse.jdt.debug.tests.core.JavaLibraryPathTests;
 import org.eclipse.jdt.debug.tests.core.LineTrackerTests;
 import org.eclipse.jdt.debug.tests.core.LiteralTests17;
 import org.eclipse.jdt.debug.tests.core.LocalVariableTests;
+import org.eclipse.jdt.debug.tests.core.ModuleOptionsTests;
 import org.eclipse.jdt.debug.tests.core.ProcessTests;
 import org.eclipse.jdt.debug.tests.core.RuntimeClasspathEntryTests;
 import org.eclipse.jdt.debug.tests.core.StaticVariableTests;
@@ -89,6 +91,7 @@ import org.eclipse.jdt.debug.tests.core.WorkingDirectoryTests;
 import org.eclipse.jdt.debug.tests.core.WorkspaceSourceContainerTests;
 import org.eclipse.jdt.debug.tests.eval.GeneralEvalTests;
 import org.eclipse.jdt.debug.tests.eval.GenericsEvalTests;
+import org.eclipse.jdt.debug.tests.eval.SyntheticVariableTests;
 import org.eclipse.jdt.debug.tests.launching.ClasspathShortenerTests;
 import org.eclipse.jdt.debug.tests.launching.ConfigurationEncodingTests;
 import org.eclipse.jdt.debug.tests.launching.ConfigurationResourceMappingTests;
@@ -139,6 +142,7 @@ import org.eclipse.jdt.debug.tests.variables.TestAnonymousInspect;
 import org.eclipse.jdt.debug.tests.variables.TestInstanceRetrieval;
 import org.eclipse.jdt.debug.tests.variables.TestIntegerAccessUnboxing15;
 import org.eclipse.jdt.debug.tests.variables.TestLogicalStructures;
+import org.eclipse.jdt.debug.tests.variables.TestLogicalStructuresJava9;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -205,6 +209,9 @@ public class AutomatedSuite extends DebugSuite {
 		addTest(new TestSuite(StaticVariableTests.class));
 		addTest(new TestSuite(ArrayTests.class));
 		addTest(new TestSuite(TestLogicalStructures.class));
+		if (JavaProjectHelper.isJava9Compatible()) {
+			addTest(new TestSuite(TestLogicalStructuresJava9.class));
+		}
 		addTest(new TestSuite(TestInstanceRetrieval.class));
 		addTest(new TestSuite(TestAnonymousInspect.class));
 		if(JavaProjectHelper.isJava7Compatible()) {
@@ -225,10 +232,11 @@ public class AutomatedSuite extends DebugSuite {
 		addTest(new TestSuite(ClasspathContainerTests.class));
 		addTest(new TestSuite(RuntimeClasspathEntryTests.class));
 		addTest(new TestSuite(ClasspathProviderTests.class));
-		if (!JavaProjectHelper.isJava9Compatible()) {
-			addTest(new TestSuite(BootpathTests.class));
-		}
+		addTest(new TestSuite(BootpathTests.class));
 		addTest(new TestSuite(EEDefinitionTests.class));
+		if (JavaProjectHelper.isJava9Compatible()) {
+			addTest(new TestSuite(ModuleOptionsTests.class));
+		}
 
 	//VM Install/Environment tests
 		addTest(new TestSuite(VMInstallTests.class));
@@ -255,6 +263,7 @@ public class AutomatedSuite extends DebugSuite {
 		addTest(new TestSuite(JavaDebugTargetTests.class));
 		addTest(new TestSuite(WorkingDirectoryTests.class));
 		addTest(new TestSuite(EventDispatcherTest.class));
+		addTest(new TestSuite(SyntheticVariableTests.class));
 
 	// Refactoring tests
 		//TODO: project rename
@@ -335,6 +344,7 @@ public class AutomatedSuite extends DebugSuite {
 		addTest(new TestSuite(BreakpointWorkingSetTests.class));
 		addTest(new TestSuite(MethodBreakpointTests.class));
 		addTest(new TestSuite(ExceptionBreakpointTests.class));
+		addTest(new TestSuite(SpecialExceptionBreakpointTests.class));
 		addTest(new TestSuite(WatchpointTests.class));
 		addTest(new TestSuite(PatternBreakpointTests.class));
 		addTest(new TestSuite(TargetPatternBreakpointTests.class));

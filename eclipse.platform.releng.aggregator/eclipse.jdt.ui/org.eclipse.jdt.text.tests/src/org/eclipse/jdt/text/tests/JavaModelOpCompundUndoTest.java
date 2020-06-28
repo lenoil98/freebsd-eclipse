@@ -13,9 +13,17 @@
  *******************************************************************************/
 package org.eclipse.jdt.text.tests;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.text.tests.performance.EditorTestHelper;
@@ -48,16 +56,17 @@ import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 
-
 /**
  * Tests that Java model operations can be undone in one group.
  * <p>
  * For details see https://bugs.eclipse.org/bugs/show_bug.cgi?id=262389
  * </p>
- * 
+ *
  * @since 3.5
  */
-public class JavaModelOpCompundUndoTest extends TestCase {
+public class JavaModelOpCompundUndoTest {
+	@Rule
+	public TestName tn= new TestName();
 
 	private static final String SRC= "src";
 	private static final String SEP= "/";
@@ -77,11 +86,6 @@ public class JavaModelOpCompundUndoTest extends TestCase {
 				"    \n" +
 				"}\n";
 
-	public static Test suite() {
-		TestSuite suite= new TestSuite(JavaModelOpCompundUndoTest.class);
-		return suite;
-	}
-
 	private JavaEditor fEditor;
 	private IDocument fDocument;
 	private IJavaProject fProject;
@@ -89,21 +93,21 @@ public class JavaModelOpCompundUndoTest extends TestCase {
 	private IUndoManager fUndoManager;
 
 	private void setUpProject(String sourceLevel) throws CoreException, JavaModelException {
-		fProject= JavaProjectHelper.createJavaProject(getName(), "bin");
+		fProject= JavaProjectHelper.createJavaProject(tn.getMethodName(), "bin");
 		fProject.setOption(JavaCore.COMPILER_SOURCE, sourceLevel);
 		JavaProjectHelper.addSourceContainer(fProject, SRC);
-		IPackageFragment fragment= fProject.findPackageFragment(new Path(SEP + getName() + SEP + SRC));
+		IPackageFragment fragment= fProject.findPackageFragment(new Path(SEP + tn.getMethodName() + SEP + SRC));
 		fCompilationUnit= fragment.createCompilationUnit(CU_NAME, CU_CONTENTS, true, new NullProgressMonitor());
 	}
 
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		setUpProject(JavaCore.VERSION_1_5);
 		setUpEditor();
 	}
 
 	private void setUpEditor() {
-		fEditor= openJavaEditor(new Path(SEP + getName() + SEP + SRC + SEP + CU_NAME));
+		fEditor= openJavaEditor(new Path(SEP + tn.getMethodName() + SEP + SRC + SEP + CU_NAME));
 		assertNotNull(fEditor);
 		fUndoManager= ((ITextViewerExtension6)fEditor.getViewer()).getUndoManager();
 		assertNotNull(fUndoManager);
@@ -114,7 +118,8 @@ public class JavaModelOpCompundUndoTest extends TestCase {
 
 	private JavaEditor openJavaEditor(IPath path) {
 		IFile file= ResourcesPlugin.getWorkspace().getRoot().getFile(path);
-		assertTrue(file != null && file.exists());
+		assertNotNull(file);
+		assertTrue(file.exists());
 		try {
 			return (JavaEditor)EditorTestHelper.openInEditor(file, true);
 		} catch (PartInitException e) {
@@ -123,8 +128,8 @@ public class JavaModelOpCompundUndoTest extends TestCase {
 		}
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		EditorTestHelper.closeEditor(fEditor);
 		fEditor= null;
 		if (fProject != null) {
@@ -133,6 +138,7 @@ public class JavaModelOpCompundUndoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void test1() throws Exception {
 
 		assertEquals(CU_CONTENTS, fDocument.get());
@@ -144,20 +150,21 @@ public class JavaModelOpCompundUndoTest extends TestCase {
 		model.delete(new IJavaElement[] { foo, bar }, true, null);
 
 		fUndoManager.endCompoundChange();
-		assertFalse(CU_CONTENTS.equals(fDocument.get()));
+		assertNotEquals(CU_CONTENTS, fDocument.get());
 
 		fUndoManager.undo();
 		assertEquals(CU_CONTENTS, fDocument.get());
 
 	}
 
+	@Test
 	public void test2() throws Exception {
 		setUpProject(JavaCore.VERSION_1_5);
 		setUpEditor();
 
 		assertEquals(CU_CONTENTS, fDocument.get());
 		fUndoManager.beginCompoundChange();
-		
+
 		IMethod foo= JavaModelUtil.findMethod("foo", new String[0], false, fCompilationUnit.findPrimaryType());
 		IMethod bar= JavaModelUtil.findMethod("bar", new String[0], false, fCompilationUnit.findPrimaryType());
 		IJavaModel model= JavaCore.create(JavaPlugin.getWorkspace().getRoot());
@@ -165,10 +172,9 @@ public class JavaModelOpCompundUndoTest extends TestCase {
 		model.delete(new IJavaElement[] { bar }, true, null);
 
 		fUndoManager.endCompoundChange();
-		assertFalse(CU_CONTENTS.equals(fDocument.get()));
+		assertNotEquals(CU_CONTENTS, fDocument.get());
 
 		fUndoManager.undo();
 		assertEquals(CU_CONTENTS, fDocument.get());
-		
 	}
 }

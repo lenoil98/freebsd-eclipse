@@ -19,15 +19,21 @@ import java.util.*;
 
 /**
  * How to use DeepSize:
+ *
+ * <pre>
+ * {@code
  * DeepSize result= DeepSize.deepSize(anObject);
  * int size= result.getSize(); // accumulated size of transitive closure of anObject
  * Hashtable sizes= result.getSizes(); // hashtable of internal results: class name-> sum of shallowsize of instances of class
  * Hashtable counts= result.getCounts(); // hashtable of internal results: class name -> instances of class
+ * }</pre>
  * Additional function
+ * <pre>
  * DeepSize d= new DeepSize();
  * d.setIgnoreTypeNames(aSet); // don't consider instances of classes named in aSet as part of the size
  * d.ignore(anObject); // don't consider anObject as part of the size
  * d.deepCompute(anObject); // advanced compute method - computes the size given the additional ignore configuration
+ * </pre>
  */
 public class DeepSize {
 	/**
@@ -42,6 +48,9 @@ public class DeepSize {
 
 		@Override
 		public boolean equals(Object o) {
+			if (o == null) {
+				return false;
+			}
 			if (o.getClass() != ObjectWrapper.class)
 				return false;
 			return object == ((ObjectWrapper) o).object;
@@ -49,7 +58,7 @@ public class DeepSize {
 
 		@Override
 		public int hashCode() {
-			return object == null ? 1 : object.hashCode();
+			return Objects.hashCode(object);
 		}
 
 		@Override
@@ -103,9 +112,7 @@ public class DeepSize {
 	Set<String> getDefaultIgnoreTypeNames() {
 		Set<String> ignored = new HashSet<>();
 		String[] ignore = {"org.eclipse.core.runtime.Plugin", "java.lang.ClassLoader", "org.eclipse.team.internal.ccvs.core.CVSTeamProvider", "org.eclipse.core.internal.events.BuilderPersistentInfo", "org.eclipse.core.internal.resources.Workspace", "org.eclipse.core.internal.events.EventStats", "java.net.URL"}; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-6$
-		for (String element : ignore) {
-			ignored.add(element);
-		}
+		Collections.addAll(ignored, ignore);
 		return ignored;
 	}
 
@@ -135,8 +142,9 @@ public class DeepSize {
 	 */
 	public void printSizeReport() {
 		System.out.println("*** Begin DeepSize report ***"); //$NON-NLS-1$
-		for (Object clazz : sizes.keySet()) {
-			int size = sizes.get(clazz).intValue();
+		for (java.util.Map.Entry<Object, Integer> entry : sizes.entrySet()) {
+			Object clazz = entry.getKey();
+			int size = entry.getValue().intValue();
 			System.out.println('\t' + clazz.getClass().getName() + " size: " + size); //$NON-NLS-1$
 			System.out.println("Total size of all objects: " + getSize()); //$NON-NLS-1$
 		}

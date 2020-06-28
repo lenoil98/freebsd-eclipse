@@ -23,21 +23,15 @@ public class RepositoryProviderNaish extends RepositoryProvider {
 	final public static String NATURE_ID = "org.eclipse.team.tests.core.naish-provider";
 	private IMoveDeleteHook mdh;
 	private IFileModificationValidator mv;
-	/*
-	 * @see RepositoryProvider#configureProject()
-	 */
+	@Override
 	public void configureProject() throws CoreException {
 	}
 
-	/*
-	 * @see RepositoryProvider#getID()
-	 */
+	@Override
 	public String getID() {
 		return NATURE_ID;
 	}
-	/*
-	 * @see IProjectNature#deconfigure()
-	 */
+	@Override
 	public void deconfigure() throws CoreException {
 	}
 
@@ -48,16 +42,12 @@ public class RepositoryProviderNaish extends RepositoryProvider {
 	public void setMoveDeleteHook(IMoveDeleteHook mdh) {
 		this.mdh = mdh;
 	}
-	/*
-	 * @see RepositoryProvider#getFileModificationValidator()
-	 */
+	@Override
 	public IFileModificationValidator getFileModificationValidator() {
 		return mv;
 	}
 
-	/*
-	 * @see RepositoryProvider#getMoveDeleteHook()
-	 */
+	@Override
 	public IMoveDeleteHook getMoveDeleteHook() {
 		return mdh;
 	}

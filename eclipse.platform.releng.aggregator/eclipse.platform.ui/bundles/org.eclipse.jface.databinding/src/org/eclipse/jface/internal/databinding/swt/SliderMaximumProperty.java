@@ -19,15 +19,15 @@ import org.eclipse.swt.widgets.Slider;
 /**
  *
  */
-public class SliderMaximumProperty extends WidgetIntValueProperty {
+public class SliderMaximumProperty extends WidgetIntValueProperty<Slider> {
 	@Override
-	int doGetIntValue(Object source) {
-		return ((Slider) source).getMaximum();
+	protected int doGetIntValue(Slider source) {
+		return source.getMaximum();
 	}
 
 	@Override
-	void doSetIntValue(Object source, int value) {
-		((Slider) source).setMaximum(value);
+	protected void doSetIntValue(Slider source, int value) {
+		source.setMaximum(value);
 	}
 
 	@Override

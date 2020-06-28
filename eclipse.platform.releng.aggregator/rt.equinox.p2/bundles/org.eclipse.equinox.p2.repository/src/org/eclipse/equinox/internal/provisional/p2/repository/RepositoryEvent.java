@@ -152,12 +152,9 @@ public class RepositoryEvent extends EventObject {
 		return isEnabled;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see java.util.EventObject#toString()
-	 */
+	@Override
 	public String toString() {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append("RepositoryEvent["); //$NON-NLS-1$
 		switch (kind) {
 			case ADDED :

@@ -43,6 +43,7 @@ public class DebugEvaluationTest extends EvaluationTest {
 //		TESTS_NAMES = new String[] { "test069" };
 	}
 	class DebugRequestor extends Requestor {
+		@Override
 		public boolean acceptClassFiles(org.eclipse.jdt.internal.compiler.ClassFile[] classFiles, char[] codeSnippetClassName) {
 			if (DebugEvaluationTest.this.jdiStackFrame == null) {
 				return super.acceptClassFiles(classFiles, codeSnippetClassName);
@@ -165,6 +166,7 @@ public class DebugEvaluationTest extends EvaluationTest {
 	/**
 	 * Generate local variable attribute for these tests.
 	 */
+	@Override
 	public Map getCompilerOptions() {
 		Map options = super.getCompilerOptions();
 		options.put(CompilerOptions.OPTION_LocalVariableAttribute, CompilerOptions.GENERATE);
@@ -173,12 +175,18 @@ public class DebugEvaluationTest extends EvaluationTest {
 		options.put(CompilerOptions.OPTION_ReportRawTypeReference, CompilerOptions.IGNORE);
 		return options;
 	}
+	@Override
 	public void initialize(CompilerTestSetup setUp) {
 		super.initialize(setUp);
-		if (setUp instanceof DebugEvaluationSetup) {
-			this.jdiVM = ((DebugEvaluationSetup)setUp).vm;
-		}
+		this.jdiVM = ((DebugEvaluationSetup)setUp).vm;
 	}
+
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
+		assertNotNull("VM is null, probably VM connection error", this.jdiVM);
+	}
+
 	public void removeTempClass(String className) {
 		resetEnv(); // needed to reinitialize the caches
 		Util.delete(SOURCE_DIRECTORY + File.separator + className + ".java");
@@ -2804,7 +2812,7 @@ public void test065() {
 				+ "\t}\n"
 				+ "\tprivate <U>A65(int i) {;\n"
 				+ "\t\tthis.i = i;\n"
-				+ "\t}\n"               
+				+ "\t}\n"
 				+ "\tpublic void bar() {\n"
 				+ "\t}\n"
 				+ "}";
@@ -2853,8 +2861,8 @@ public void test066() {
 				+ "\tpublic A66() {;\n"
 				+ "\t}\n"
 				+ "\tprivate <U> int foo(int i) {;\n"
-				+ "\t\treturn i;\n"    
-				+ "\t}\n"               
+				+ "\t\treturn i;\n"
+				+ "\t}\n"
 				+ "\tpublic void bar() {\n"
 				+ "\t}\n"
 				+ "}";
@@ -2960,7 +2968,7 @@ public void test068() {
 				+ "\tpublic SuperA68() {\n"
 				+ "\t}\n"
 				+ "\tpublic <U> int foo(int i) {;\n"
-				+ "\t\treturn i;\n"    
+				+ "\t\treturn i;\n"
 				+ "\t}\n"
 				+ "}";
 		compileAndDeploy15(sourceSuperA68, "SuperA68");
@@ -2970,8 +2978,8 @@ public void test068() {
 				+ "\tpublic A68() {\n"
 				+ "\t}\n"
 				+ "\tpublic <U> int foo(int i) {\n"
-				+ "\t\treturn i;\n"    
-				+ "\t}\n"               
+				+ "\t\treturn i;\n"
+				+ "\t}\n"
 				+ "\tpublic void bar() {\n"
 				+ "\t}\n"
 				+ "}";

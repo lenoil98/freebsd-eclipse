@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2016 IBM Corporation and others.
+ * Copyright (c) 2010, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -38,8 +38,8 @@ public class UIEventObjectSupplier extends EventObjectSupplier {
 
 	class UIEventHandler implements EventHandler {
 
-		final protected IRequestor requestor;
-		final private String topic;
+		protected final IRequestor requestor;
+		private final String topic;
 
 		public UIEventHandler(String topic, IRequestor requestor) {
 			this.topic = topic;
@@ -61,12 +61,7 @@ public class UIEventObjectSupplier extends EventObjectSupplier {
 					logger.log(Level.WARNING, "No realm found to process UI event " + event);
 				return;
 			} else {
-				uiSync.syncExec(new Runnable() {
-					@Override
-					public void run() {
-						requestor.execute();
-					}
-				});
+				uiSync.syncExec(requestor::execute);
 			}
 		}
 	}
@@ -78,6 +73,7 @@ public class UIEventObjectSupplier extends EventObjectSupplier {
 	}
 
 	@Inject
+	@Optional
 	protected UISynchronize uiSync;
 
 	@Inject @Optional

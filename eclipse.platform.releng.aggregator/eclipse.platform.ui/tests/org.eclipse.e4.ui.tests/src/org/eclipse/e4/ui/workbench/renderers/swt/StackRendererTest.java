@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2017 IBM Corporation and others.
+ * Copyright (c) 2013, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,11 +10,13 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Rolf Theunissen <rolf.theunissen@gmail.com> - Bug 546632
  ******************************************************************************/
 
 package org.eclipse.e4.ui.workbench.renderers.swt;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -23,84 +25,84 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import javax.inject.Inject;
 import org.eclipse.e4.core.contexts.IEclipseContext;
-import org.eclipse.e4.ui.internal.workbench.E4Workbench;
 import org.eclipse.e4.ui.internal.workbench.swt.CSSConstants;
-import org.eclipse.e4.ui.internal.workbench.swt.E4Application;
-import org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine;
 import org.eclipse.e4.ui.model.application.MApplication;
+import org.eclipse.e4.ui.model.application.descriptor.basic.MPartDescriptor;
 import org.eclipse.e4.ui.model.application.ui.advanced.MPlaceholder;
 import org.eclipse.e4.ui.model.application.ui.basic.MPart;
 import org.eclipse.e4.ui.model.application.ui.basic.MPartStack;
 import org.eclipse.e4.ui.model.application.ui.basic.MWindow;
 import org.eclipse.e4.ui.services.IStylingEngine;
 import org.eclipse.e4.ui.services.internal.events.EventBroker;
-import org.eclipse.e4.ui.workbench.IWorkbench;
+import org.eclipse.e4.ui.tests.rules.WorkbenchContextRule;
 import org.eclipse.e4.ui.workbench.UIEvents;
 import org.eclipse.e4.ui.workbench.modeling.EModelService;
+import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
-import org.eclipse.swt.widgets.Display;
-import org.junit.After;
+import org.eclipse.swt.graphics.Image;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class StackRendererTest {
+
+	private static final String PART_DESC_ICON = "platform:/plugin/org.eclipse.e4.ui.tests/icons/pinned_ovr.png";
+	private static final String PART_ICON = "platform:/plugin/org.eclipse.e4.ui.tests/icons/filenav_nav.png";
+
+	@Rule
+	public WorkbenchContextRule contextRule = new WorkbenchContextRule();
+
+	@Inject
 	private IEclipseContext context;
-	private E4Workbench wb;
-	private MPart part;
+
+	@Inject
+	private EModelService ems;
+
+	@Inject
+	private MApplication application;
+
+	private MPart part1;
+	private MPart part2;
 	private CTabItemStylingMethodsListener executedMethodsListener;
 	private MPartStack partStack;
-	private EModelService ems;
 
 	@Before
 	public void setUp() throws Exception {
-		context = E4Application.createDefaultContext();
-		context.set(IWorkbench.PRESENTATION_URI_ARG, PartRenderingEngine.engineURI);
-		ems = context.get(EModelService.class);
-		MApplication application = ems.createModelElement(MApplication.class);
 		MWindow window = ems.createModelElement(MWindow.class);
 		partStack = ems.createModelElement(MPartStack.class);
-		part = ems.createModelElement(MPart.class);
-		part.setLabel("some title");
 
 		application.getChildren().add(window);
 		application.setSelectedElement(window);
 
+		MPartDescriptor partDescriptor = ems.createModelElement(MPartDescriptor.class);
+		partDescriptor.setElementId("myelementid");
+		partDescriptor.setLabel("some title");
+		partDescriptor.setIconURI(PART_DESC_ICON);
+		application.getDescriptors().add(partDescriptor);
+
+		part1 = ems.createPart(partDescriptor);
+		part2 = ems.createPart(partDescriptor);
+
 		window.getChildren().add(partStack);
-		partStack.getChildren().add(part);
+		partStack.getChildren().add(part1);
+		partStack.getChildren().add(part2);
 
-		application.setContext(context);
-		context.set(MApplication.class, application);
+		executedMethodsListener = new CTabItemStylingMethodsListener(part1);
 
-		executedMethodsListener = new CTabItemStylingMethodsListener(part);
+		context.set(IStylingEngine.class, (IStylingEngine) Proxy.newProxyInstance(getClass().getClassLoader(),
+				new Class<?>[] { IStylingEngine.class }, executedMethodsListener));
 
-		wb = new E4Workbench(application, context);
-		wb.getContext().set(
-				IStylingEngine.class,
-				(IStylingEngine) Proxy.newProxyInstance(getClass()
-						.getClassLoader(),
-						new Class<?>[] { IStylingEngine.class },
-						executedMethodsListener));
-
-		wb.createAndRunUI(window);
-		while (Display.getDefault().readAndDispatch()) {
-		}
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		if (wb != null) {
-			wb.close();
-		}
-		context.dispose();
+		contextRule.createAndRunWorkbench(window);
 	}
 
 	@Test
 	public void testTabStateHandlerWhenOneOfSupportedTagChangeEvents()
 			throws Exception {
 		// given
-		HashMap<String, Object> params = new HashMap<String, Object>();
-		params.put(UIEvents.EventTags.ELEMENT, part);
+		HashMap<String, Object> params = new HashMap<>();
+		params.put(UIEvents.EventTags.ELEMENT, part1);
 		params.put(UIEvents.EventTags.NEW_VALUE, CSSConstants.CSS_BUSY_CLASS);
 		params.put(UIEvents.EventTags.OLD_VALUE, null);
 
@@ -120,9 +122,9 @@ public class StackRendererTest {
 	public void testTabStateHandlerWhenSelectionChangedEvent() throws Exception {
 		// given
 		MPlaceholder placeHolder = ems.createModelElement(MPlaceholder.class);
-		placeHolder.setRef(part);
+		placeHolder.setRef(part1);
 
-		HashMap<String, Object> params = new HashMap<String, Object>();
+		HashMap<String, Object> params = new HashMap<>();
 		params.put(UIEvents.EventTags.ELEMENT, partStack);
 		params.put(UIEvents.EventTags.NEW_VALUE, placeHolder);
 		params.put(UIEvents.EventTags.OLD_VALUE, null);
@@ -139,6 +141,33 @@ public class StackRendererTest {
 						.getMethodExecutionCount("setClassnameAndId(.+)"));
 	}
 
+	@Test
+	public void testBug475357_IconChanges() throws Exception {
+		part1.setIconURI(PART_DESC_ICON);
+		CTabItem item = ((CTabFolder) partStack.getWidget()).getItem(0);
+		Image image = item.getImage();
+
+		part1.setIconURI(PART_ICON);
+		assertNotEquals(item.getImage(), image);
+	}
+
+	@Test
+	public void testBug475357_PartIconOverridesDescriptor() throws Exception {
+
+		// check that Renderer uses Part's icon over PartDescriptor's icon
+		CTabItem item = ((CTabFolder) partStack.getWidget()).getItem(1);
+		Image descImage = item.getImage();
+
+		part2.setIconURI(PART_ICON);
+		Image partIcon = item.getImage();
+		assertNotEquals(partIcon, descImage);
+
+		part2.setIconURI(null);
+		Image ovrwriteIcon = item.getImage();
+		assertNotEquals(ovrwriteIcon, partIcon);
+		assertEquals(ovrwriteIcon, descImage);
+	}
+
 	// helper functions
 	private static class CTabItemStylingMethodsListener implements
 			InvocationHandler {
@@ -147,7 +176,7 @@ public class StackRendererTest {
 
 		public CTabItemStylingMethodsListener(MPart part) {
 			this.part = part;
-			methods = new ArrayList<String>();
+			methods = new ArrayList<>();
 		}
 
 		@Override

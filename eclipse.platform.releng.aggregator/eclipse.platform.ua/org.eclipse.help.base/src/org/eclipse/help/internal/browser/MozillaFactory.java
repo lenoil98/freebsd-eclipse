@@ -37,6 +37,7 @@ public class MozillaFactory implements IBrowserFactory, IExecutableExtension {
 		super();
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public boolean isAvailable() {
 		if (!isSupportedOS(System.getProperty("os.name"))) { //$NON-NLS-1$
@@ -63,26 +64,23 @@ public class MozillaFactory implements IBrowserFactory, IExecutableExtension {
 	}
 	/**
 	 * On some OSes 0 is always returned by "which" command it is necessary to
-	 * examine ouput to find out failure.
+	 * examine output to find out failure.
 	 *
 	 * @param outputs
 	 * @param errors
-	 * @return @throws
-	 *         InterruptedException
+	 * @return
 	 */
 	private boolean errorsInOutput(StreamConsumer outputs, StreamConsumer errors) {
 		try {
 			outputs.join(1000);
 			if (outputs.getLastLine() != null
-					&& outputs.getLastLine()
-							.indexOf("no " + executable + " in") //$NON-NLS-1$ //$NON-NLS-2$
-					>= 0) {
+					&& outputs.getLastLine().contains("no " + executable + " in")) {//$NON-NLS-1$ //$NON-NLS-2$
+
 				return true;
 			}
 			errors.join(1000);
 			if (errors.getLastLine() != null
-					&& errors.getLastLine().indexOf("no " + executable + " in") //$NON-NLS-1$ //$NON-NLS-2$
-					>= 0) {
+					&& errors.getLastLine().contains("no " + executable + " in")) { //$NON-NLS-1$ //$NON-NLS-2$
 				return true;
 			}
 		} catch (InterruptedException ie) {
@@ -102,8 +100,8 @@ public class MozillaFactory implements IBrowserFactory, IExecutableExtension {
 	}
 
 	@Override
-	public void setInitializationData(IConfigurationElement config,
-			String propertyName, Object data) throws CoreException {
+	public void setInitializationData(IConfigurationElement config, String propertyName, Object data)
+			throws CoreException {
 		try {
 			Hashtable<?, ?> params = (Hashtable<?, ?>) data;
 			executable = (String) params.get("executable"); //$NON-NLS-1$

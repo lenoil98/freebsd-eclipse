@@ -45,7 +45,7 @@ import org.eclipse.ui.part.ViewPart;
 
 /**
  * Our example view.
- * 
+ *
  * @since 3.3
  */
 public class InfoView extends ViewPart {
@@ -159,7 +159,7 @@ public class InfoView extends ViewPart {
 
 	/**
 	 * Swap the 2 given elements from the model.
-	 * 
+	 *
 	 * @param p1
 	 * @param p2
 	 */
@@ -183,11 +183,7 @@ public class InfoView extends ViewPart {
 				.getService(IHandlerService.class);
 		try {
 			handlerService.executeCommand(EditInfoHandler.ID, null);
-		} catch (ExecutionException e) {
-			// perhaps some logging here
-		} catch (NotDefinedException e) {
-		} catch (NotEnabledException e) {
-		} catch (NotHandledException e) {
+		} catch (ExecutionException | NotDefinedException | NotEnabledException | NotHandledException e) {
 		}
 	}
 }

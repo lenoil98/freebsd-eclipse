@@ -68,9 +68,11 @@ public class ResourceDeltaTest extends EclipseTest {
 			assertTrue("Folder " + cvsFolder.getName() + " should not be managed", ! cvsFolder.isManaged());
 		assertTrue("Folder " + cvsFolder.getName() + " should not be a cvs folder", ! cvsFolder.isCVSFolder());
 		cvsFolder.acceptChildren(new ICVSResourceVisitor() {
+			@Override
 			public void visitFile(ICVSFile file) throws CVSException {
 				assertNotManaged(file);
 			}
+			@Override
 			public void visitFolder(ICVSFolder folder) throws CVSException {
 				assertNotManaged(folder, false);
 			}
@@ -154,15 +156,12 @@ public class ResourceDeltaTest extends EclipseTest {
 		// wait to ensure the timestamp differs from the one Core has
 		waitMsec(1500);
 		InputStream in = new BufferedInputStream(getRandomContents());
-		OutputStream out = new BufferedOutputStream(new FileOutputStream(ioFile));
-		try {
+		try (OutputStream out = new BufferedOutputStream(new FileOutputStream(ioFile))) {
 			int next = in.read();
 			while (next != -1) {
 				out.write(next);
 				next = in.read();
 			}
-		} finally {
-			out.close();
 		}
 	}
 	
@@ -194,8 +193,7 @@ public class ResourceDeltaTest extends EclipseTest {
 			return true;
 		if (status.isMultiStatus()) {
 			IStatus[] children = status.getChildren();
-			for (int i = 0; i < children.length; i++) {
-				IStatus child = children[i];
+			for (IStatus child : children) {
 				if (containsCode(child,code))
 					return true;
 			}
@@ -233,8 +231,7 @@ public class ResourceDeltaTest extends EclipseTest {
 	public void deleteIOFiles(IProject project, String[] cvsFolders)
 		throws CoreException {
 		IPath rootPath = project.getLocation();
-		for (int i = 0; i < cvsFolders.length; i++) {
-			String childPath = cvsFolders[i];
+		for (String childPath : cvsFolders) {
 			IPath fullPath = rootPath.append(childPath);
 			deepDelete(fullPath.toFile());
 		}
@@ -244,8 +241,8 @@ public class ResourceDeltaTest extends EclipseTest {
 	private static void deepDelete(File resource) {
 		if (resource.isDirectory()) {
 			File[] fileList = resource.listFiles();
-			for (int i = 0; i < fileList.length; i++) {
-				deepDelete(fileList[i]);
+			for (File f : fileList) {
+				deepDelete(f);
 			}
 		}
 		resource.delete();
@@ -258,6 +255,7 @@ public class ResourceDeltaTest extends EclipseTest {
 		project.create(null);
 		project.open(null);
 		project.accept(new IResourceProxyVisitor() {
+			@Override
 			public boolean visit(IResourceProxy proxy) throws CoreException {
 				if(proxy.getName().equals("CVS")) {
 					fail("all folders should be marked as team private. This one was not:" + proxy.requestResource().getFullPath());

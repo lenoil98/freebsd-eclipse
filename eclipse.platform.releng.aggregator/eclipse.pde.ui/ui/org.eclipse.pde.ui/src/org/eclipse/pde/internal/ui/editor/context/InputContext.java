@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2003, 2017 IBM Corporation and others.
+ *  Copyright (c) 2003, 2019 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -125,10 +125,7 @@ public abstract class InputContext {
 	}
 
 	protected IDocumentSetupParticipant getDocumentSetupParticipant() {
-		return new IDocumentSetupParticipant() {
-			@Override
-			public void setup(IDocument document) {
-			}
+		return document -> {
 		};
 	}
 
@@ -145,20 +142,17 @@ public abstract class InputContext {
 			fDocumentProvider.connect(fEditorInput);
 			fModel = createModel(fEditorInput);
 			if (fModel instanceof IModelChangeProvider) {
-				fModelListener = new IModelChangedListener() {
-					@Override
-					public void modelChanged(IModelChangedEvent e) {
-						if (e.getChangeType() != IModelChangedEvent.WORLD_CHANGED) {
-							if (!fEditor.getLastDirtyState())
-								fEditor.fireSaveNeeded(fEditorInput, true);
-							IModelChangeProvider provider = e.getChangeProvider();
-							if (provider instanceof IEditingModel) {
-								// this is to guard against false notifications
-								// when a revert operation is performed, focus is taken away from a FormEntry
-								// and a text edit operation is falsely requested
-								if (((IEditingModel) provider).isDirty())
-									addTextEditOperation(fEditOperations, e);
-							}
+				fModelListener = e -> {
+					if (e.getChangeType() != IModelChangedEvent.WORLD_CHANGED) {
+						if (!fEditor.getLastDirtyState())
+							fEditor.fireSaveNeeded(fEditorInput, true);
+						IModelChangeProvider provider = e.getChangeProvider();
+						if (provider instanceof IEditingModel) {
+							// this is to guard against false notifications
+							// when a revert operation is performed, focus is taken away from a FormEntry
+							// and a text edit operation is falsely requested
+							if (((IEditingModel) provider).isDirty())
+								addTextEditOperation(fEditOperations, e);
 						}
 					}
 				};
@@ -237,10 +231,7 @@ public abstract class InputContext {
 					((IEditingModel) fModel).setStale(true);
 				edit.apply(doc);
 				fEditOperations.clear();
-			} catch (MalformedTreeException e) {
-				PDEPlugin.logException(e);
-				flushed = false;
-			} catch (BadLocationException e) {
+			} catch (MalformedTreeException | BadLocationException e) {
 				PDEPlugin.logException(e);
 				flushed = false;
 			}
@@ -353,6 +344,12 @@ public abstract class InputContext {
 			// are caused by reconciliation and should not be
 			// fired to the world.
 			flushModel(fDocumentProvider.getDocument(fEditorInput));
+			if (fModel instanceof IEditable) {
+				if (!((IEditable) fModel).isDirty()) {
+					fMustSynchronize = false;
+					return true;
+				}
+			}
 			fMustSynchronize = true;
 			return true;
 		}
@@ -501,10 +498,7 @@ public abstract class InputContext {
 			monitor.setCanceled(false);
 			// Store the new editor input in this context
 			updateInput(newInput);
-		} catch (InterruptedException e) {
-			monitor.setCanceled(true);
-			throw e;
-		} catch (InvocationTargetException e) {
+		} catch (InterruptedException | InvocationTargetException e) {
 			monitor.setCanceled(true);
 			throw e;
 		} finally {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2016 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,8 @@
 package org.eclipse.ui.internal.views.markers;
 
 import java.net.URL;
+import java.text.CollationKey;
+import java.text.Collator;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
@@ -47,9 +49,6 @@ import org.eclipse.ui.views.markers.MarkerItem;
 import org.eclipse.ui.views.markers.internal.MarkerGroup;
 import org.eclipse.ui.views.markers.internal.MarkerGroupingEntry;
 import org.eclipse.ui.views.markers.internal.MarkerMessages;
-
-import com.ibm.icu.text.CollationKey;
-import com.ibm.icu.text.Collator;
 
 /**
  * MarkerSupportUtilities is the class that maintains constants and
@@ -88,7 +87,6 @@ public class MarkerSupportInternalUtilities {
 	static final CollationKey EMPTY_COLLATION_KEY = Collator.getInstance()
 			.getCollationKey(MarkerSupportInternalUtilities.EMPTY_STRING);
 
-	static final IMarker[] EMPTY_MARKER_ARRAY = new IMarker[0];
 	static final MarkerSupportItem[] EMPTY_MARKER_ITEM_ARRAY = new MarkerSupportItem[0];
 	static final IResource[] EMPTY_RESOURCE_ARRAY = new IResource[0];
 
@@ -243,7 +241,7 @@ public class MarkerSupportInternalUtilities {
 	 */
 	public static final int getFontWidth(Control control) {
 		GC gc = new GC(control.getDisplay());
-		int width = gc.getFontMetrics().getAverageCharWidth();
+		int width = (int) gc.getFontMetrics().getAverageCharacterWidth();
 		gc.dispose();
 		return width;
 	}

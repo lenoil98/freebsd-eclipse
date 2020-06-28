@@ -41,7 +41,7 @@ import org.eclipse.swt.internal.win32.*;
  */
 public class MenuItem extends Item {
 	Menu parent, menu;
-	long /*int*/ hBitmap;
+	long hBitmap;
 	int id, accelerator, userId, index;
 	ToolTip itemToolTip;
 	/* Image margin. */
@@ -267,7 +267,7 @@ boolean fillAccel (ACCEL accel) {
 				if (key == 0) return false;
 				vKey = OS.VkKeyScan ((short) key);
 				if (vKey == -1) {
-					if (key != (int)/*64*/OS.CharUpper ((short) key)) {
+					if (key != (int)OS.CharUpper ((short) key)) {
 						fVirt = 0;
 					}
 				} else {
@@ -330,7 +330,7 @@ public int getAccelerator () {
 		if (shell.menuBar != parent) {
 			return new Rectangle (0, 0, 0, 0);
 		}
-		long /*int*/ hwndShell = shell.handle;
+		long hwndShell = shell.handle;
 		MENUBARINFO info1 = new MENUBARINFO ();
 		info1.cbSize = MENUBARINFO.sizeof;
 		if (!OS.GetMenuBarInfo (hwndShell, OS.OBJID_MENU, 1, info1)) {
@@ -347,7 +347,7 @@ public int getAccelerator () {
 		int height = info2.bottom - info2.top;
 		return new Rectangle (x, y, width, height);
 	} else {
-		long /*int*/ hMenu = parent.handle;
+		long hMenu = parent.handle;
 		RECT rect1 = new RECT ();
 		if (!OS.GetMenuItemRect (0, hMenu, 0, rect1)) {
 			return new Rectangle (0, 0, 0, 0);
@@ -390,7 +390,7 @@ public boolean getEnabled () {
 	if ((style & SWT.SEPARATOR) != 0) {
 		return (state & DISABLED) == 0;
 	}
-	long /*int*/ hMenu = parent.handle;
+	long hMenu = parent.handle;
 	MENUITEMINFO info = new MENUITEMINFO ();
 	info.cbSize = MENUITEMINFO.sizeof;
 	info.fMask = OS.MIIM_STATE;
@@ -474,7 +474,7 @@ public Menu getParent () {
 public boolean getSelection () {
 	checkWidget ();
 	if ((style & (SWT.CHECK | SWT.RADIO)) == 0) return false;
-	long /*int*/ hMenu = parent.handle;
+	long hMenu = parent.handle;
 	MENUITEMINFO info = new MENUITEMINFO ();
 	info.cbSize = MENUITEMINFO.sizeof;
 	info.fMask = OS.MIIM_STATE;
@@ -700,7 +700,7 @@ public void setEnabled (boolean enabled) {
 			state |= DISABLED;
 		}
 	}
-	long /*int*/ hMenu = parent.handle;
+	long hMenu = parent.handle;
 	MENUITEMINFO info = new MENUITEMINFO ();
 	info.cbSize = MENUITEMINFO.sizeof;
 	info.fMask = OS.MIIM_STATE;
@@ -783,7 +783,7 @@ public void setImage (Image image) {
 	MENUITEMINFO info = new MENUITEMINFO ();
 	info.cbSize = MENUITEMINFO.sizeof;
 	info.fMask = OS.MIIM_BITMAP;
-	if (parent.foreground != -1) {
+	if (parent.needsMenuCallback()) {
 		info.hbmpItem = OS.HBMMENU_CALLBACK;
 	} else {
 		if (OS.IsAppThemed ()) {
@@ -793,7 +793,7 @@ public void setImage (Image image) {
 			info.hbmpItem = image != null ? OS.HBMMENU_CALLBACK : 0;
 		}
 	}
-	long /*int*/ hMenu = parent.handle;
+	long hMenu = parent.handle;
 	OS.SetMenuItemInfo (hMenu, id, false, info);
 	parent.redraw ();
 }
@@ -850,7 +850,7 @@ void setMenu (Menu menu, boolean dispose) {
 	if (oldMenu != null) oldMenu.cascade = null;
 	this.menu = menu;
 
-	long /*int*/ hMenu = parent.handle;
+	long hMenu = parent.handle;
 	MENUITEMINFO info = new MENUITEMINFO ();
 	info.cbSize = MENUITEMINFO.sizeof;
 	info.fMask = OS.MIIM_DATA;
@@ -861,9 +861,9 @@ void setMenu (Menu menu, boolean dispose) {
 	}
 	if (info.dwItemData != id) return;
 	int cch = 128;
-	long /*int*/ hHeap = OS.GetProcessHeap ();
+	long hHeap = OS.GetProcessHeap ();
 	int byteCount = cch * 2;
-	long /*int*/ pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
+	long pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
 	info.fMask = OS.MIIM_STATE | OS.MIIM_ID | OS.MIIM_DATA;
 	/*
 	* Bug in Windows.  When GetMenuItemInfo() is used to get the text,
@@ -913,13 +913,13 @@ boolean setRadioSelection (boolean value) {
 }
 
 void setOrientation (int orientation) {
-    long /*int*/ hMenu = parent.handle;
-    MENUITEMINFO info = new MENUITEMINFO ();
-    info.cbSize = MENUITEMINFO.sizeof;
-    info.fMask = OS.MIIM_FTYPE;
-    info.fType = widgetStyle ();
-    OS.SetMenuItemInfo (hMenu, id, false, info);
-    if (menu != null) menu._setOrientation (orientation);
+	long hMenu = parent.handle;
+	MENUITEMINFO info = new MENUITEMINFO ();
+	info.cbSize = MENUITEMINFO.sizeof;
+	info.fMask = OS.MIIM_FTYPE;
+	info.fType = widgetStyle ();
+	OS.SetMenuItemInfo (hMenu, id, false, info);
+	if (menu != null) menu._setOrientation (orientation);
 }
 
 /**
@@ -938,7 +938,7 @@ void setOrientation (int orientation) {
 public void setSelection (boolean selected) {
 	checkWidget ();
 	if ((style & (SWT.CHECK | SWT.RADIO)) == 0) return;
-	long /*int*/ hMenu = parent.handle;
+	long hMenu = parent.handle;
 	MENUITEMINFO info = new MENUITEMINFO ();
 	info.cbSize = MENUITEMINFO.sizeof;
 	info.fMask = OS.MIIM_STATE;
@@ -1008,13 +1008,12 @@ public void setText (String string) {
 	if ((style & SWT.SEPARATOR) != 0) return;
 	if (text.equals (string)) return;
 	super.setText (string);
-	long /*int*/ hHeap = OS.GetProcessHeap ();
-	long /*int*/ pszText = 0;
+	long hHeap = OS.GetProcessHeap ();
+	long pszText = 0;
 	MENUITEMINFO info = new MENUITEMINFO ();
 	info.cbSize = MENUITEMINFO.sizeof;
-	long /*int*/ hMenu = parent.handle;
+	long hMenu = parent.handle;
 
-	/* Use the character encoding for the default locale */
 	TCHAR buffer = new TCHAR (0, string, true);
 	int byteCount = buffer.length () * TCHAR.sizeof;
 	pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
@@ -1104,7 +1103,7 @@ int widgetStyle () {
 	return bits | OS.MFT_STRING;
 }
 
-LRESULT wmCommandChild (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmCommandChild (long wParam, long lParam) {
 	if ((style & SWT.CHECK) != 0) {
 		setSelection (!getSelection ());
 	} else {
@@ -1120,7 +1119,7 @@ LRESULT wmCommandChild (long /*int*/ wParam, long /*int*/ lParam) {
 	return null;
 }
 
-LRESULT wmDrawChild (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmDrawChild (long wParam, long lParam) {
 	DRAWITEMSTRUCT struct = new DRAWITEMSTRUCT ();
 	OS.MoveMemory (struct, lParam, DRAWITEMSTRUCT.sizeof);
 	if (image != null) {
@@ -1143,9 +1142,28 @@ LRESULT wmDrawChild (long /*int*/ wParam, long /*int*/ lParam) {
 	return null;
 }
 
-LRESULT wmMeasureChild (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmMeasureChild (long wParam, long lParam) {
 	MEASUREITEMSTRUCT struct = new MEASUREITEMSTRUCT ();
 	OS.MoveMemory (struct, lParam, MEASUREITEMSTRUCT.sizeof);
+
+	if ((parent.style & SWT.BAR) != 0) {
+		if (parent.needsMenuCallback()) {
+			/*
+			 * Weirdness in Windows. Setting `HBMMENU_CALLBACK` causes
+			 * item sizes to mean something else. It seems that it is
+			 * the size of left margin before the text. At the same time,
+			 * if menu item has a mnemonic, it's always drawn at a fixed
+			 * position. I have tested on Win7, Win8.1, Win10 and found
+			 * that value of 5 works well in matching text to mnemonic.
+			 * NOTE: autoScaleUpUsingNativeDPI() is used to avoid problems
+			 * with applications that disable automatic scaling.
+			 */
+			struct.itemWidth = DPIUtil.autoScaleUpUsingNativeDPI(5);
+			OS.MoveMemory (lParam, struct, MEASUREITEMSTRUCT.sizeof);
+			return null;
+		}
+	}
+
 	int width = 0, height = 0;
 	if (image != null) {
 		Rectangle rect = image.getBoundsInPixels ();
@@ -1165,12 +1183,10 @@ LRESULT wmMeasureChild (long /*int*/ wParam, long /*int*/ lParam) {
 		MENUINFO lpcmi = new MENUINFO ();
 		lpcmi.cbSize = MENUINFO.sizeof;
 		lpcmi.fMask = OS.MIM_STYLE;
-		long /*int*/ hMenu = parent.handle;
+		long hMenu = parent.handle;
 		OS.GetMenuInfo (hMenu, lpcmi);
 		if ((lpcmi.dwStyle & OS.MNS_CHECKORBMP) == 0) {
-			MenuItem [] items = parent.getItems ();
-			for (int i=0; i<items.length; i++) {
-				MenuItem item = items [i];
+			for (MenuItem item : parent.getItems ()) {
 				if (item.image != null) {
 					Rectangle rect = item.image.getBoundsInPixels ();
 					width = Math.max (width, rect.width);
@@ -1193,7 +1209,7 @@ private static final class MenuItemToolTip extends ToolTip {
 	}
 
 	@Override
-	long /*int*/ hwndToolTip() {
+	long hwndToolTip() {
 		return parent.menuItemToolTipHandle();
 	}
 

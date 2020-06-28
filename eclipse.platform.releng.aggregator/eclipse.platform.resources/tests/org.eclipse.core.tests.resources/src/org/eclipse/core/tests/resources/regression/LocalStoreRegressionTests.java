@@ -13,12 +13,8 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources.regression;
 
-/**
- */
 import java.io.*;
 import java.util.Date;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.internal.localstore.SafeChunkyInputStream;
 import org.eclipse.core.internal.localstore.SafeChunkyOutputStream;
 import org.eclipse.core.internal.resources.Workspace;
@@ -26,19 +22,7 @@ import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.tests.internal.localstore.LocalStoreTest;
 
-//
-
 public class LocalStoreRegressionTests extends LocalStoreTest {
-	/**
-	 * LocalStoreRegressionTests constructor comment.
-	 */
-	public LocalStoreRegressionTests(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return new TestSuite(LocalStoreRegressionTests.class);
-	}
 
 	/**
 	 * 1FU4PJA: ITPCORE:ALL - refreshLocal for new file with depth zero doesn't work
@@ -84,30 +68,18 @@ public class LocalStoreRegressionTests extends LocalStoreTest {
 		assertTrue("1.0", !target.exists());
 
 		// write chunks
-		SafeChunkyOutputStream output = null;
-		try {
-			output = new SafeChunkyOutputStream(target);
-			DataOutputStream dos = new DataOutputStream(output);
-			try {
-				dos.writeLong(1234567890l);
-				output.succeed();
-			} finally {
-				dos.close();
-			}
+		try (SafeChunkyOutputStream output = new SafeChunkyOutputStream(target);
+				DataOutputStream dos = new DataOutputStream(output)) {
+			dos.writeLong(1234567890l);
+			output.succeed();
 		} catch (IOException e) {
 			fail("2.0", e);
 		}
 
 		// read chunks
-		SafeChunkyInputStream input = null;
-		try {
-			input = new SafeChunkyInputStream(target);
-			DataInputStream dis = new DataInputStream(input);
-			try {
+		try (SafeChunkyInputStream input = new SafeChunkyInputStream(target);
+				DataInputStream dis = new DataInputStream(input)) {
 				assertEquals("3.0", dis.readLong(), 1234567890l);
-			} finally {
-				dis.close();
-			}
 		} catch (IOException e) {
 			fail("3.10", e);
 		}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Paul Pazderski - Bug 349112: allow setting alignment on the text field
  *******************************************************************************/
 package org.eclipse.swt.custom;
 
@@ -32,8 +33,8 @@ import org.eclipse.swt.widgets.*;
  * attempts to set the height of a Combo are ignored. CCombo can be used
  * anywhere that having the increased flexibility is more important than
  * getting native L&amp;F, but the decision should not be taken lightly.
- * There is no is no strict requirement that CCombo look or behave
- * the same as the native combo box.
+ * There is no strict requirement that CCombo look or behave the same as
+ * the native combo box.
  * </p>
  * <p>
  * Note that although this class is a subclass of <code>Composite</code>,
@@ -41,7 +42,7 @@ import org.eclipse.swt.widgets.*;
  * </p>
  * <dl>
  * <dt><b>Styles:</b>
- * <dd>BORDER, READ_ONLY, FLAT</dd>
+ * <dd>BORDER, READ_ONLY, FLAT, LEAD, LEFT, CENTER, TRAIL, RIGHT</dd>
  * <dt><b>Events:</b>
  * <dd>DefaultSelection, Modify, Selection, Verify</dd>
  * </dl>
@@ -91,19 +92,16 @@ public class CCombo extends Composite {
  * @see SWT#BORDER
  * @see SWT#READ_ONLY
  * @see SWT#FLAT
+ * @see SWT#LEAD
+ * @see SWT#LEFT
+ * @see SWT#CENTER
+ * @see SWT#RIGHT
+ * @see SWT#TRAIL
  * @see Widget#getStyle()
  */
 public CCombo (Composite parent, int style) {
 	super (parent, style = checkStyle (style));
 	_shell = super.getShell ();
-
-	int textStyle = SWT.SINGLE;
-	if ((style & SWT.READ_ONLY) != 0) textStyle |= SWT.READ_ONLY;
-	if ((style & SWT.FLAT) != 0) textStyle |= SWT.FLAT;
-	text = new Text (this, textStyle);
-	int arrowStyle = SWT.ARROW | SWT.DOWN;
-	if ((style & SWT.FLAT) != 0) arrowStyle |= SWT.FLAT;
-	arrow = new Button (this, arrowStyle);
 
 	listener = event -> {
 		if (isDisposed ()) return;
@@ -134,6 +132,12 @@ public CCombo (Composite parent, int style) {
 			});
 		}
 	};
+
+	createText(style);
+
+	int arrowStyle = SWT.ARROW | SWT.DOWN;
+	if ((style & SWT.FLAT) != 0) arrowStyle |= SWT.FLAT;
+	arrow = new Button (this, arrowStyle);
 	filter = event -> {
 		if (isDisposed ()) return;
 		if (event.type == SWT.Selection) {
@@ -142,23 +146,22 @@ public CCombo (Composite parent, int style) {
 			}
 			return;
 		}
-		Shell shell = ((Control)event.widget).getShell ();
-		if (shell == CCombo.this.getShell ()) {
-			handleFocus (SWT.FocusOut);
+		if (event.widget instanceof Control) {
+			Shell shell = ((Control)event.widget).getShell ();
+			if (shell == CCombo.this.getShell ()) {
+				handleFocus (SWT.FocusOut);
+			}
 		}
 	};
 
 	int [] comboEvents = {SWT.Dispose, SWT.FocusIn, SWT.Move, SWT.Resize, SWT.FocusOut};
-	for (int i=0; i<comboEvents.length; i++) this.addListener (comboEvents [i], listener);
-
-	int [] textEvents = {SWT.DefaultSelection, SWT.DragDetect, SWT.KeyDown, SWT.KeyUp, SWT.MenuDetect, SWT.Modify,
-		SWT.MouseDown, SWT.MouseUp, SWT.MouseDoubleClick, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover,
-		SWT.MouseMove, SWT.MouseWheel, SWT.Traverse, SWT.FocusIn, SWT.Verify};
-	for (int i=0; i<textEvents.length; i++) text.addListener (textEvents [i], listener);
+	for (int comboEvent : comboEvents)
+		this.addListener (comboEvent, listener);
 
 	int [] arrowEvents = {SWT.DragDetect, SWT.MouseDown, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover,
 		SWT.MouseMove, SWT.MouseUp, SWT.MouseWheel, SWT.Selection, SWT.FocusIn};
-	for (int i=0; i<arrowEvents.length; i++) arrow.addListener (arrowEvents [i], listener);
+	for (int arrowEvent : arrowEvents)
+		arrow.addListener (arrowEvent, listener);
 
 	createPopup(null, -1);
 	if ((style & SWT.SIMPLE) == 0) {
@@ -172,8 +175,57 @@ public CCombo (Composite parent, int style) {
 	initAccessible();
 }
 static int checkStyle (int style) {
-	int mask = SWT.BORDER | SWT.READ_ONLY | SWT.FLAT | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
+	int mask = SWT.BORDER | SWT.READ_ONLY | SWT.FLAT | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT | SWT.LEAD | SWT.CENTER | SWT.TRAIL;
 	return SWT.NO_FOCUS | (style & mask);
+}
+void createText(int comboStyle) {
+	String textValue = null, tooltip = null;
+	Point selection = null;
+	int limit = 0;
+	boolean enabled = false, focus = false, editable = false;
+	Font font = null;
+	Color fg = null, bg = null;
+	Menu menu = null;
+	if (text != null) {
+		textValue = text.getText();
+		tooltip = text.getToolTipText();
+		selection = text.getSelection();
+		limit = text.getTextLimit();
+		enabled = text.isEnabled();
+		editable = text.getEditable();
+		focus = text.isFocusControl();
+		font = text.getFont();
+		fg = text.getForeground();
+		bg = text.getBackground();
+		menu = text.getMenu();
+		text.dispose();
+	}
+
+	int textStyle = SWT.SINGLE;
+	if ((comboStyle & SWT.READ_ONLY) != 0) textStyle |= SWT.READ_ONLY;
+	if ((comboStyle & SWT.FLAT) != 0) textStyle |= SWT.FLAT;
+	textStyle |= comboStyle & (SWT.LEAD | SWT.CENTER | SWT.TRAIL);
+	text = new Text (this, textStyle);
+	if (textValue != null) {
+		text.setText(textValue);
+		text.setToolTipText(tooltip);
+		if (selection != null) text.setSelection(selection);
+		text.setTextLimit(limit);
+		text.setEnabled(enabled);
+		text.setEditable(editable);
+		if (focus) text.setFocus();
+		if (font != null && !font.isDisposed()) text.setFont(font);
+		if (fg != null && !fg.isDisposed()) text.setForeground(fg);
+		if (bg != null && !bg.isDisposed()) text.setBackground(bg);
+		if (menu != null && !menu.isDisposed()) text.setMenu(menu);
+		internalLayout(true);
+	}
+
+	int [] textEvents = {SWT.DefaultSelection, SWT.DragDetect, SWT.KeyDown, SWT.KeyUp, SWT.MenuDetect, SWT.Modify,
+			SWT.MouseDown, SWT.MouseUp, SWT.MouseDoubleClick, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover,
+			SWT.MouseMove, SWT.MouseWheel, SWT.Traverse, SWT.FocusIn, SWT.Verify};
+	for (int textEvent : textEvents)
+		text.addListener (textEvent, listener);
 }
 /**
  * Adds the argument to the end of the receiver's list.
@@ -439,12 +491,11 @@ void comboEvent (Event event) {
 public Point computeSize (int wHint, int hHint, boolean changed) {
 	checkWidget ();
 	int width = 0, height = 0;
-	String[] items = list.getItems ();
 	GC gc = new GC (text);
 	int spacer = gc.stringExtent (" ").x; //$NON-NLS-1$
 	int textWidth = gc.stringExtent (text.getText ()).x;
-	for (int i = 0; i < items.length; i++) {
-		textWidth = Math.max (gc.stringExtent (items[i]).x, textWidth);
+	for (String item : list.getItems ()) {
+		textWidth = Math.max (gc.stringExtent (item).x, textWidth);
 	}
 	gc.dispose ();
 	Point textSize = text.computeSize (SWT.DEFAULT, SWT.DEFAULT, changed);
@@ -489,9 +540,11 @@ void createPopup(String[] items, int selectionIndex) {
 	if (background != null) list.setBackground (background);
 
 	int [] popupEvents = {SWT.Close, SWT.Paint};
-	for (int i=0; i<popupEvents.length; i++) popup.addListener (popupEvents [i], listener);
+	for (int popupEvent : popupEvents)
+		popup.addListener (popupEvent, listener);
 	int [] listEvents = {SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.FocusOut, SWT.Dispose};
-	for (int i=0; i<listEvents.length; i++) list.addListener (listEvents [i], listener);
+	for (int listEvent : listEvents)
+		list.addListener (listEvent, listener);
 
 	if (items != null) list.setItems (items);
 	if (selectionIndex != -1) list.setSelection (selectionIndex);
@@ -640,7 +693,7 @@ char _findMnemonic (String string) {
 		if (string.charAt (index) != '&') return Character.toLowerCase (string.charAt (index));
 		index++;
 	} while (index < length);
- 	return '\0';
+	return '\0';
 }
 /*
  * Return the Label immediately preceding the receiver in the z-order,
@@ -659,6 +712,16 @@ String getAssociatedLabel () {
 		}
 	}
 	return null;
+}
+/**
+ * Returns the horizontal alignment.
+ * The alignment style (LEFT, CENTER or RIGHT) is returned.
+ *
+ * @return SWT.LEFT, SWT.RIGHT or SWT.CENTER
+ * @since 3.113
+ */
+public int getAlignment() {
+	return text.getStyle() & (SWT.LEFT | SWT.CENTER | SWT.RIGHT);
 }
 @Override
 public Control [] getChildren () {
@@ -827,6 +890,8 @@ public int getStyle () {
 	int style = super.getStyle ();
 	style &= ~SWT.READ_ONLY;
 	if (!text.getEditable()) style |= SWT.READ_ONLY;
+	style &= ~(SWT.LEFT | SWT.CENTER | SWT.RIGHT);
+	style |= getAlignment();
 	return style;
 }
 /**
@@ -1098,7 +1163,7 @@ public boolean isFocusControl () {
 	checkWidget();
 	Predicate<Control> checkFocusControl = (control) -> (control != null && !control.isDisposed() && control.isFocusControl ());
 	if (checkFocusControl.test(text) || checkFocusControl.test(arrow) ||
-            checkFocusControl.test(list) || checkFocusControl.test(popup)) {
+			checkFocusControl.test(list) || checkFocusControl.test(popup)) {
 		return true;
 	}
 	return super.isFocusControl ();
@@ -1463,6 +1528,25 @@ public void select (int index) {
 		}
 	}
 }
+
+/**
+ * Set the horizontal alignment of the CCombo.
+ * Use the values LEFT, CENTER and RIGHT to align image and text within the available space.
+ *
+ * @param align the alignment style of LEFT, RIGHT or CENTER
+ *
+ * @exception SWTException <ul>
+ *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+ *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+ *    <li>ERROR_INVALID_ARGUMENT - if the value of align is not one of SWT.LEFT, SWT.RIGHT or SWT.CENTER</li>
+ * </ul>
+ * @since 3.113
+ */
+public void setAlignment(int align) {
+	checkWidget();
+	int styleWithoutAlign = getStyle() & ~(SWT.LEFT | SWT.CENTER | SWT.RIGHT);
+	createText(styleWithoutAlign | align);
+}
 @Override
 public void setBackground (Color color) {
 	super.setBackground(color);
@@ -1732,7 +1816,7 @@ String stripMnemonic (String string) {
 		}
 		index++;
 	} while (index < length);
- 	return string;
+	return string;
 }
 void textEvent (Event event) {
 	switch (event.type) {
@@ -1939,15 +2023,15 @@ void textEvent (Event event) {
 }
 @Override
 public boolean traverse(int event){
-    /*
-     * When the traverse event is sent to the CCombo, it will create a list of
-     * controls to tab to next. Since the CCombo is a composite, the next control is
-     * the Text field which is a child of the CCombo. It will set focus to the text
-     * field which really is itself. So, call the traverse next events directly on the text.
-     */
-    if (event == SWT.TRAVERSE_ARROW_NEXT || event == SWT.TRAVERSE_TAB_NEXT) {
-    	return text.traverse(event);
-    }
-    return super.traverse(event);
+	/*
+	 * When the traverse event is sent to the CCombo, it will create a list of
+	 * controls to tab to next. Since the CCombo is a composite, the next control is
+	 * the Text field which is a child of the CCombo. It will set focus to the text
+	 * field which really is itself. So, call the traverse next events directly on the text.
+	 */
+	if (event == SWT.TRAVERSE_ARROW_NEXT || event == SWT.TRAVERSE_TAB_NEXT) {
+		return text.traverse(event);
+	}
+	return super.traverse(event);
 }
 }

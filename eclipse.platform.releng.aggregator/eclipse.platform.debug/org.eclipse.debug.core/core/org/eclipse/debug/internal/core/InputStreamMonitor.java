@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,7 @@ package org.eclipse.debug.internal.core;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Vector;
 
 import org.eclipse.debug.core.DebugPlugin;
@@ -52,9 +53,9 @@ public class InputStreamMonitor {
 	private boolean fClosed = false;
 
 	/**
-	 * The encoding of the input stream.
+	 * The charset of the input stream.
 	 */
-	private String fEncoding;
+	private Charset fCharset;
 
 	/**
 	 * Creates an input stream monitor which writes to system in via the given output stream.
@@ -62,26 +63,40 @@ public class InputStreamMonitor {
 	 * @param stream output stream
 	 */
 	public InputStreamMonitor(OutputStream stream) {
-		this(stream, null);
+		this(stream, (Charset) null);
 	}
 
 	/**
-	 * Creates an input stream monitor which writes to system in via the given output stream.
+	 * Creates an input stream monitor which writes to system in via the given
+	 * output stream.
+	 *
+	 * @param stream output stream
+	 * @param charset stream charset or <code>null</code> for system default
+	 */
+	public InputStreamMonitor(OutputStream stream, Charset charset) {
+		fStream = stream;
+		fQueue = new Vector<>();
+		fLock = new Object();
+		fCharset = charset;
+	}
+
+	/**
+	 * Creates an input stream monitor which writes to system in via the given
+	 * output stream.
 	 *
 	 * @param stream output stream
 	 * @param encoding stream encoding or <code>null</code> for system default
+	 * @deprecated use {@link #InputStreamMonitor(OutputStream, Charset)}
+	 *             instead
 	 */
+	@Deprecated
 	public InputStreamMonitor(OutputStream stream, String encoding) {
-		fStream= stream;
-		fQueue = new Vector<>();
-		fLock= new Object();
-		fEncoding= encoding;
+		this(stream, Charset.forName(encoding));
 	}
 
 	/**
-	 * Appends the given text to the stream, or
-	 * queues the text to be written at a later time
-	 * if the stream is blocked.
+	 * Appends the given text to the stream, or queues the text to be written at
+	 * a later time if the stream is blocked.
 	 *
 	 * @param text text to append
 	 */
@@ -97,7 +112,7 @@ public class InputStreamMonitor {
 	 */
 	public void startMonitoring() {
 		if (fThread == null) {
-			fThread = new Thread((Runnable) () -> write(), DebugCoreMessages.InputStreamMonitor_label);
+			fThread = new Thread((Runnable) this::write, DebugCoreMessages.InputStreamMonitor_label);
 			fThread.setDaemon(true);
 			fThread.start();
 		}
@@ -124,7 +139,7 @@ public class InputStreamMonitor {
 		}
 		if (!fClosed) {
 			try {
-			    fStream.close();
+				fStream.close();
 			} catch (IOException e) {
 				DebugPlugin.log(e);
 			}
@@ -139,8 +154,8 @@ public class InputStreamMonitor {
 			String text = fQueue.firstElement();
 			fQueue.removeElementAt(0);
 			try {
-				if (fEncoding != null) {
-					fStream.write(text.getBytes(fEncoding));
+				if (fCharset != null) {
+					fStream.write(text.getBytes(fCharset));
 				} else {
 					fStream.write(text.getBytes());
 				}
@@ -151,26 +166,30 @@ public class InputStreamMonitor {
 		}
 		try {
 			synchronized(fLock) {
-				fLock.wait();
+				// Queue could receive more input between last empty check and
+				// lock acquire. See https://bugs.eclipse.org/550834
+				if (fQueue.isEmpty()) {
+					fLock.wait();
+				}
 			}
 		} catch (InterruptedException e) {
 		}
 	}
 
-    /**
-     * Closes the output stream attached to the standard input stream of this
-     * monitor's process.
-     *
-     * @exception IOException if an exception occurs closing the input stream
-     */
-    public void closeInputStream() throws IOException {
-        if (!fClosed) {
-            fClosed = true;
-            fStream.close();
-        } else {
-            throw new IOException();
-        }
+	/**
+	 * Closes the output stream attached to the standard input stream of this
+	 * monitor's process.
+	 *
+	 * @exception IOException if an exception occurs closing the input stream
+	 */
+	public void closeInputStream() throws IOException {
+		if (!fClosed) {
+			fClosed = true;
+			fStream.close();
+		} else {
+			throw new IOException();
+		}
 
-    }
+	}
 }
 

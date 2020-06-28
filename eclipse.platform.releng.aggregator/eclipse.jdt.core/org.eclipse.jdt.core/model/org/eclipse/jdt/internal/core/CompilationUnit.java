@@ -78,9 +78,7 @@ public UndoEdit applyTextEdit(TextEdit edit, IProgressMonitor monitor) throws Ja
 		try {
 			UndoEdit undoEdit= edit.apply(document);
 			return undoEdit;
-		} catch (MalformedTreeException e) {
-			throw new JavaModelException(e, IJavaModelStatusConstants.BAD_TEXT_EDIT_LOCATION);
-		} catch (BadLocationException e) {
+		} catch (MalformedTreeException | BadLocationException e) {
 			throw new JavaModelException(e, IJavaModelStatusConstants.BAD_TEXT_EDIT_LOCATION);
 		}
 	}
@@ -634,20 +632,15 @@ public ICompilationUnit findWorkingCopy(WorkingCopyOwner workingCopyOwner) {
 @Override
 public IType[] getAllTypes() throws JavaModelException {
 	IJavaElement[] types = getTypes();
-	int i;
 	ArrayList allTypes = new ArrayList(types.length);
 	ArrayList typesToTraverse = new ArrayList(types.length);
-	for (i = 0; i < types.length; i++) {
-		typesToTraverse.add(types[i]);
-	}
+	Collections.addAll(typesToTraverse, types);
 	while (!typesToTraverse.isEmpty()) {
 		IType type = (IType) typesToTraverse.get(0);
 		typesToTraverse.remove(type);
 		allTypes.add(type);
 		types = type.getTypes();
-		for (i = 0; i < types.length; i++) {
-			typesToTraverse.add(types[i]);
-		}
+		Collections.addAll(typesToTraverse, types);
 	}
 	IType[] arrayOfAllTypes = new IType[allTypes.size()];
 	allTypes.toArray(arrayOfAllTypes);
@@ -1186,7 +1179,7 @@ protected IBuffer openBuffer(IProgressMonitor pm, Object info) throws JavaModelE
 			? this.owner.createBuffer(this)
 			: BufferManager.createBuffer(this);
 	if (buffer == null) return null;
-	
+
 	ICompilationUnit original = null;
 	boolean mustSetToOriginalContent = false;
 	if (isWorkingCopy) {
@@ -1221,12 +1214,12 @@ protected IBuffer openBuffer(IProgressMonitor pm, Object info) throws JavaModelE
 					buffer.setContents(Util.getResourceContentsAsCharArray(file));
 				}
 			}
-	
+
 			// add buffer to buffer cache
 			// note this may cause existing buffers to be removed from the buffer cache, but only primary compilation unit's buffer
 			// can be closed, thus no call to a client's IBuffer#close() can be done in this synchronized block.
 			bufManager.addBuffer(buffer);
-	
+
 			// listen to buffer changes
 			buffer.addBufferChangedListener(this);
 		}

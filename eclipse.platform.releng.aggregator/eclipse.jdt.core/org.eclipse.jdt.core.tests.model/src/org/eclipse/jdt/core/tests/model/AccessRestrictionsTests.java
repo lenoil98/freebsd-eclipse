@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2014 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,8 +17,12 @@ package org.eclipse.jdt.core.tests.model;
 import junit.framework.Test;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.*;
 import org.eclipse.jdt.core.compiler.IProblem;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 
 public class AccessRestrictionsTests extends ModifyingResourceTests {
 	static class ProblemRequestor extends AbstractJavaModelTests.ProblemRequestor {
@@ -28,6 +32,7 @@ public class AccessRestrictionsTests extends ModifyingResourceTests {
 		}
 		ProblemRequestor() {
 		}
+		@Override
 		public void acceptProblem(IProblem problem) {
 			super.acceptProblem(problem);
 		}
@@ -54,11 +59,13 @@ public class AccessRestrictionsTests extends ModifyingResourceTests {
 		return buildModelTestSuite(AccessRestrictionsTests.class);
 	}
 
+@Override
 public void setUpSuite() throws Exception {
 	super.setUpSuite();
 	setUpJavaProject("AccessRestrictions");
 }
 
+@Override
 public void tearDownSuite() throws Exception {
 	deleteProject("AccessRestrictions");
 	super.tearDownSuite();
@@ -68,10 +75,12 @@ public void tearDownSuite() throws Exception {
 		assertProblems(message, expected, this.problemRequestor);
 	}
 
+	@Override
 	public ICompilationUnit getWorkingCopy(String path, String source) throws JavaModelException {
 		return getWorkingCopy(path, source, this.wcOwner);
 	}
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		this.wcOwner = new WorkingCopyOwner() {
@@ -141,11 +150,11 @@ public void test001() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/p/Z.java (at line 2)\n" + 
-			"	public class Z extends X1 {\n" + 
-			"	                       ^^\n" + 
-			"Access restriction: The type \'X1\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/p/Z.java (at line 2)\n" +
+			"	public class Z extends X1 {\n" +
+			"	                       ^^\n" +
+			"Access restriction: The type \'X1\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n"
 		);
 		// check the specifics of this test case
@@ -164,11 +173,11 @@ public void test001() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	foo(); // accesses X1.foo, should trigger an error\n" + 
-			"	^^^\n" + 
-			"Access restriction: The method \'X1.foo()\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	foo(); // accesses X1.foo, should trigger an error\n" +
+			"	^^^\n" +
+			"Access restriction: The method \'X1.foo()\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n"
 		);
 	} finally {
@@ -246,11 +255,11 @@ public void test002() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	int l1 = m1; // accesses X1.m1, should trigger an error\n" + 
-			"	         ^^\n" + 
-			"Access restriction: The field \'X1.m1\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	int l1 = m1; // accesses X1.m1, should trigger an error\n" +
+			"	         ^^\n" +
+			"Access restriction: The field \'X1.m1\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n"
 		);
 	} finally {
@@ -339,36 +348,36 @@ public void test003() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/p/Y.java (at line 3)\n" + 
-			"	class C3a extends C1 {      // error\n" + 
-			"	                  ^^\n" + 
-			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"2. ERROR in /P2/src/p/Y.java (at line 5)\n" + 
-			"	super(0);\n" + 
-			"	^^^^^^^^^\n" + 
-			"Access restriction: The constructor \'X1.C1(int)\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"3. ERROR in /P2/src/p/Y.java (at line 6)\n" + 
-			"	foo();                // error\n" + 
-			"	^^^\n" + 
-			"Access restriction: The method \'X1.C1.foo()\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"4. ERROR in /P2/src/p/Y.java (at line 11)\n" + 
-			"	C1 m1 =                 // error\n" + 
-			"	^^\n" + 
-			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"5. ERROR in /P2/src/p/Y.java (at line 12)\n" + 
-			"	new C1(0);      // error\n" + 
-			"	    ^^\n" + 
-			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"6. ERROR in /P2/src/p/Y.java (at line 12)\n" + 
-			"	new C1(0);      // error\n" + 
-			"	    ^^\n" + 
-			"Access restriction: The constructor \'X1.C1(int)\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/p/Y.java (at line 3)\n" +
+			"	class C3a extends C1 {      // error\n" +
+			"	                  ^^\n" +
+			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"2. ERROR in /P2/src/p/Y.java (at line 5)\n" +
+			"	super(0);\n" +
+			"	^^^^^^^^^\n" +
+			"Access restriction: The constructor \'X1.C1(int)\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"3. ERROR in /P2/src/p/Y.java (at line 6)\n" +
+			"	foo();                // error\n" +
+			"	^^^\n" +
+			"Access restriction: The method \'X1.C1.foo()\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"4. ERROR in /P2/src/p/Y.java (at line 11)\n" +
+			"	C1 m1 =                 // error\n" +
+			"	^^\n" +
+			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"5. ERROR in /P2/src/p/Y.java (at line 12)\n" +
+			"	new C1(0);      // error\n" +
+			"	    ^^\n" +
+			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"6. ERROR in /P2/src/p/Y.java (at line 12)\n" +
+			"	new C1(0);      // error\n" +
+			"	    ^^\n" +
+			"Access restriction: The constructor \'X1.C1(int)\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n"
 		);
 	} finally {
@@ -425,11 +434,11 @@ public void test004() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. WARNING in /P2/src/p/Z.java (at line 2)\n" + 
-			"	public class Z extends X1 {\n" + 
-			"	                       ^^\n" + 
-			"Discouraged access: The type \'X1\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. WARNING in /P2/src/p/Z.java (at line 2)\n" +
+			"	public class Z extends X1 {\n" +
+			"	                       ^^\n" +
+			"Discouraged access: The type \'X1\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n"
 		);
 	} finally {
@@ -528,11 +537,11 @@ public void test005() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/r/Y.java (at line 4)\n" + 
-			"	(new q.X2()).foo(); // accesses p.X1#foo, should trigger an error\n" + 
-			"	             ^^^\n" + 
-			"Access restriction: The method \'X1.foo()\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/r/Y.java (at line 4)\n" +
+			"	(new q.X2()).foo(); // accesses p.X1#foo, should trigger an error\n" +
+			"	             ^^^\n" +
+			"Access restriction: The method \'X1.foo()\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n"
 		);
 	} finally {
@@ -604,26 +613,26 @@ public void test006() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/p/Y.java (at line 3)\n" + 
-			"	X x1;\n" + 
-			"	^\n" + 
-			"Access restriction: The type \'X<T>\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"2. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	X<String> x2 = new X<String>();\n" + 
-			"	^\n" + 
-			"Access restriction: The type \'X<String>\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"3. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	X<String> x2 = new X<String>();\n" + 
-			"	                   ^\n" + 
-			"Access restriction: The type \'X<String>\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"4. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	X<String> x2 = new X<String>();\n" + 
-			"	                   ^\n" + 
-			"Access restriction: The constructor \'X<String>()\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/p/Y.java (at line 3)\n" +
+			"	X x1;\n" +
+			"	^\n" +
+			"Access restriction: The type \'X<T>\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"2. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	X<String> x2 = new X<String>();\n" +
+			"	^\n" +
+			"Access restriction: The type \'X<String>\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"3. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	X<String> x2 = new X<String>();\n" +
+			"	                   ^\n" +
+			"Access restriction: The type \'X<String>\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"4. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	X<String> x2 = new X<String>();\n" +
+			"	                   ^\n" +
+			"Access restriction: The constructor \'X<String>()\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n");
 	} finally {
 		if (x != null) {
@@ -696,26 +705,26 @@ public void test007() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/p/Y.java (at line 3)\n" + 
-			"	X x1;\n" + 
-			"	^\n" + 
-			"Access restriction: The type \'X<T>\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"2. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	X<String> x2 = new X<String>(\"\");\n" + 
-			"	^\n" + 
-			"Access restriction: The type \'X<String>\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"3. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	X<String> x2 = new X<String>(\"\");\n" + 
-			"	                   ^\n" + 
-			"Access restriction: The type \'X<String>\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"4. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	X<String> x2 = new X<String>(\"\");\n" + 
-			"	                   ^\n" + 
-			"Access restriction: The constructor \'X<String>(String)\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/p/Y.java (at line 3)\n" +
+			"	X x1;\n" +
+			"	^\n" +
+			"Access restriction: The type \'X<T>\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"2. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	X<String> x2 = new X<String>(\"\");\n" +
+			"	^\n" +
+			"Access restriction: The type \'X<String>\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"3. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	X<String> x2 = new X<String>(\"\");\n" +
+			"	                   ^\n" +
+			"Access restriction: The type \'X<String>\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"4. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	X<String> x2 = new X<String>(\"\");\n" +
+			"	                   ^\n" +
+			"Access restriction: The constructor \'X<String>(String)\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n");
 	} finally {
 		if (x != null) {
@@ -797,11 +806,11 @@ public void test008() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	foo(); // accesses X1.foo, should trigger an error\n" + 
-			"	^^^\n" + 
-			"Access restriction: The method \'X1.foo()\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	foo(); // accesses X1.foo, should trigger an error\n" +
+			"	^^^\n" +
+			"Access restriction: The method \'X1.foo()\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n"
 		);
 	} finally {
@@ -883,11 +892,11 @@ public void test009() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/p/Y.java (at line 4)\n" + 
-			"	int l1 = m1; // accesses X1.m1, should trigger an error\n" + 
-			"	         ^^\n" + 
-			"Access restriction: The field \'X1.m1\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/p/Y.java (at line 4)\n" +
+			"	int l1 = m1; // accesses X1.m1, should trigger an error\n" +
+			"	         ^^\n" +
+			"Access restriction: The field \'X1.m1\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n"
 		);
 	} finally {
@@ -983,36 +992,36 @@ public void test010() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems value",
-			"----------\n" + 
-			"1. ERROR in /P2/src/p/Y.java (at line 3)\n" + 
-			"	class C3a extends C1 {      // error\n" + 
-			"	                  ^^\n" + 
-			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"2. ERROR in /P2/src/p/Y.java (at line 5)\n" + 
-			"	super(0);\n" + 
-			"	^^^^^^^^^\n" + 
-			"Access restriction: The constructor \'X1.C1(int)\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"3. ERROR in /P2/src/p/Y.java (at line 6)\n" + 
-			"	foo();                // error\n" + 
-			"	^^^\n" + 
-			"Access restriction: The method \'X1.C1.foo()\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"4. ERROR in /P2/src/p/Y.java (at line 11)\n" + 
-			"	C1 m1 =                 // error\n" + 
-			"	^^\n" + 
-			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"5. ERROR in /P2/src/p/Y.java (at line 12)\n" + 
-			"	new C1(0);      // error\n" + 
-			"	    ^^\n" + 
-			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" + 
-			"----------\n" + 
-			"6. ERROR in /P2/src/p/Y.java (at line 12)\n" + 
-			"	new C1(0);      // error\n" + 
-			"	    ^^\n" + 
-			"Access restriction: The constructor \'X1.C1(int)\' is not API (restriction on required project \'P1\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P2/src/p/Y.java (at line 3)\n" +
+			"	class C3a extends C1 {      // error\n" +
+			"	                  ^^\n" +
+			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"2. ERROR in /P2/src/p/Y.java (at line 5)\n" +
+			"	super(0);\n" +
+			"	^^^^^^^^^\n" +
+			"Access restriction: The constructor \'X1.C1(int)\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"3. ERROR in /P2/src/p/Y.java (at line 6)\n" +
+			"	foo();                // error\n" +
+			"	^^^\n" +
+			"Access restriction: The method \'X1.C1.foo()\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"4. ERROR in /P2/src/p/Y.java (at line 11)\n" +
+			"	C1 m1 =                 // error\n" +
+			"	^^\n" +
+			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"5. ERROR in /P2/src/p/Y.java (at line 12)\n" +
+			"	new C1(0);      // error\n" +
+			"	    ^^\n" +
+			"Access restriction: The type \'X1.C1\' is not API (restriction on required project \'P1\')\n" +
+			"----------\n" +
+			"6. ERROR in /P2/src/p/Y.java (at line 12)\n" +
+			"	new C1(0);      // error\n" +
+			"	    ^^\n" +
+			"Access restriction: The constructor \'X1.C1(int)\' is not API (restriction on required project \'P1\')\n" +
 			"----------\n"
 		);
 	} finally {
@@ -1062,37 +1071,127 @@ public void test011() throws CoreException {
 		);
 		assertProblems(
 			"Unexpected problems",
-			"----------\n" + 
-			"1. ERROR in /P1/src/q/Y.java (at line 4)\n" + 
-			"	p.X x = new p.X();\n" + 
-			"	^^^\n" + 
-			"Access restriction: The type \'X\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" + 
-			"----------\n" + 
-			"2. ERROR in /P1/src/q/Y.java (at line 4)\n" + 
-			"	p.X x = new p.X();\n" + 
-			"	            ^^^\n" + 
-			"Access restriction: The type \'X\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" + 
-			"----------\n" + 
-			"3. ERROR in /P1/src/q/Y.java (at line 4)\n" + 
-			"	p.X x = new p.X();\n" + 
-			"	            ^^^\n" + 
-			"Access restriction: The constructor \'X()\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" + 
-			"----------\n" + 
-			"4. ERROR in /P1/src/q/Y.java (at line 5)\n" + 
-			"	x.foo();\n" + 
-			"	  ^^^\n" + 
-			"Access restriction: The method \'X.foo()\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" + 
-			"----------\n" + 
-			"5. ERROR in /P1/src/q/Y.java (at line 6)\n" + 
-			"	if (x.m > 0) {}\n" + 
-			"	      ^\n" + 
-			"Access restriction: The field \'X.m\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" + 
+			"----------\n" +
+			"1. ERROR in /P1/src/q/Y.java (at line 4)\n" +
+			"	p.X x = new p.X();\n" +
+			"	^^^\n" +
+			"Access restriction: The type \'X\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" +
+			"----------\n" +
+			"2. ERROR in /P1/src/q/Y.java (at line 4)\n" +
+			"	p.X x = new p.X();\n" +
+			"	            ^^^\n" +
+			"Access restriction: The type \'X\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" +
+			"----------\n" +
+			"3. ERROR in /P1/src/q/Y.java (at line 4)\n" +
+			"	p.X x = new p.X();\n" +
+			"	            ^^^\n" +
+			"Access restriction: The constructor \'X()\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" +
+			"----------\n" +
+			"4. ERROR in /P1/src/q/Y.java (at line 5)\n" +
+			"	x.foo();\n" +
+			"	  ^^^\n" +
+			"Access restriction: The method \'X.foo()\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" +
+			"----------\n" +
+			"5. ERROR in /P1/src/q/Y.java (at line 6)\n" +
+			"	if (x.m > 0) {}\n" +
+			"	      ^\n" +
+			"Access restriction: The field \'X.m\' is not API (restriction on required library \'AccessRestrictions/lib.jar\')\n" +
 			"----------\n"
 		);
 	} finally {
 		if (y != null)
 			y.discardWorkingCopy();
 		deleteProject("P1");
+	}
+}
+public void testBug545766() throws CoreException {
+	ICompilationUnit x1 = null, z = null;
+	try {
+		createJavaProject(
+			"P1",
+			new String[] {"src"},
+			new String[] {"JCL15_LIB"},
+			"bin",
+			"1.5");
+		createFolder("/P1/src/p");
+		createFile("/P1/src/p/X1.java",
+			"package p;\n" +
+			"public class X1 {\n" +
+			"	public enum E {" +
+			"		E1(), E2();" +
+			"	}\n" +
+			"}"
+		);
+		IJavaProject p2 = createJavaProject("P2", new String[] {"src"},
+				new String[] {"JCL15_LIB"}, "bin", "1.5");
+		IClasspathEntry[] classpath = p2.getRawClasspath();
+		int length = classpath.length;
+		System.arraycopy(classpath, 0, classpath = new IClasspathEntry[length+1], 0, length);
+		classpath[length] = createSourceEntry("P2", "/P1", "-p/X1");
+		p2.setRawClasspath(classpath, null);
+
+		String src =
+			"package p2;\n" +
+			"import p.X1;\n" +
+			"public class Z {\n" +
+			"	X1.E e = X1.E.E1;" +
+			"}";
+		String expectedProblems =
+				"1. ERROR in /P2/src/p2/Z.java (at line 2)\n" +
+				"	import p.X1;\n" +
+				"	       ^^^^\n" +
+				"Access restriction: The type \'X1\' is not API (restriction on required project \'P1\')\n" +
+				"----------\n" +
+				"2. ERROR in /P2/src/p2/Z.java (at line 4)\n" +
+				"	X1.E e = X1.E.E1;}\n" +
+				"	^^^^\n" +
+				"Access restriction: The type \'X1\' is not API (restriction on required project \'P1\')\n" +
+				"----------\n" +
+				"3. ERROR in /P2/src/p2/Z.java (at line 4)\n" +
+				"	X1.E e = X1.E.E1;}\n" +
+				"	^^^^\n" +
+				"Access restriction: The type \'X1.E\' is not API (restriction on required project \'P1\')\n" +
+				"----------\n" +
+				"4. ERROR in /P2/src/p2/Z.java (at line 4)\n" +
+				"	X1.E e = X1.E.E1;}\n" +
+				"	         ^^^^^^^\n" +
+				"Access restriction: The type \'X1\' is not API (restriction on required project \'P1\')\n" +
+				"----------\n" +
+				"5. ERROR in /P2/src/p2/Z.java (at line 4)\n" +
+				"	X1.E e = X1.E.E1;}\n" +
+				"	         ^^^^^^^\n" +
+				"Access restriction: The type \'X1.E\' is not API (restriction on required project \'P1\')\n" +
+				"----------\n" +
+				"6. ERROR in /P2/src/p2/Z.java (at line 4)\n" +
+				"	X1.E e = X1.E.E1;}\n" +
+				"	              ^^\n" +
+				"Access restriction: The field \'X1.E.E1\' is not API (restriction on required project \'P1\')\n" +
+				"----------\n";
+		this.problemRequestor = new ProblemRequestor(src);
+		z = getWorkingCopy("/P2/src/p2/Z.java", src);
+		assertProblems("Unexpected problems value", "----------\n" + expectedProblems);
+
+		int start = src.indexOf("E1");
+		IJavaElement[] elements = z.codeSelect(start, 2);
+		assertElementsEqual("Unexpected elements", "E1 [in E [in X1 [in X1.java [in p [in src [in P1]]]]]]", elements);
+
+		createFolder("/P2/src/p2");
+		createFile("/P2/src/p2/Z.java", src);
+		ASTParser parser = ASTParser.newParser(AST_INTERNAL_LATEST);
+		parser.setProject(p2);
+		parser.setSource((ITypeRoot)p2.findElement(new Path("p2/Z.java")));
+		parser.setResolveBindings(true);
+		ASTNode ast = parser.createAST(null); // <== NPE was thrown here
+		assertProblems("unexpected problems",
+				expectedProblems,
+				((CompilationUnit) ast).getProblems(),
+				src.toCharArray());
+	} finally {
+		if (x1 != null)
+			x1.discardWorkingCopy();
+		if (z != null)
+			z.discardWorkingCopy();
+		deleteProjects(new String[] {"P1", "P2"});
 	}
 }
 }

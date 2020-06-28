@@ -14,6 +14,8 @@
  *******************************************************************************/
 package org.eclipse.debug.tests.viewer.model;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Arrays;
 import java.util.function.Function;
 
@@ -38,6 +40,9 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.XMLMemento;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Tests to verify that the viewer properly handles initial columns width.
@@ -49,38 +54,36 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 	private TestModelUpdatesListener fListener;
 	private boolean fResized = false;
 
-	public ColumnPresentationTests(String name) {
-		super(name);
-	}
-
 	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		super.setUp();
 		createViewer();
 	}
 
 	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		destroyViewer();
 		super.tearDown();
 	}
 
 	void createViewer() {
 		fDisplay = PlatformUI.getWorkbench().getDisplay();
-        fShell = new Shell(fDisplay);
-        fShell.setSize(800, 600);
+		fShell = new Shell(fDisplay);
+		fShell.setSize(800, 600);
 		fShell.setLayout(new FillLayout());
 		fViewer = new TreeModelViewer(fShell, SWT.VIRTUAL, new PresentationContext("TestViewer")); //$NON-NLS-1$
-        fViewer.getTree().addControlListener(new ControlListener() {
-            @Override
+		fViewer.getTree().addControlListener(new ControlListener() {
+			@Override
 			public void controlResized(ControlEvent e) {
-                fResized = true;
-            }
+				fResized = true;
+			}
 
-            @Override
+			@Override
 			public void controlMoved(ControlEvent e) {
-            }
-        });
+			}
+		});
 		fListener = new TestModelUpdatesListener(fViewer, false, false);
 		fShell.open();
 		TestUtil.processUIEvents();
@@ -104,15 +107,15 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 		protected String[] columnIds;
 
 		MyColumnPresentation() {
-		    this (makeDefaultColumnIds());
-        }
+			this (makeDefaultColumnIds());
+		}
 
 		static String[] makeDefaultColumnIds() {
-            String[] columnIds = new String[5];
-            for (int i = 0; i < columnIds.length; i++) {
+			String[] columnIds = new String[5];
+			for (int i = 0; i < columnIds.length; i++) {
 				columnIds[i] = "ColumnId_" + i; //$NON-NLS-1$
-            }
-            return columnIds;
+			}
+			return columnIds;
 		}
 
 		MyColumnPresentation(String[] columnIds) {
@@ -150,10 +153,10 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 
 		@Override
 		public String getHeader(String id) {
-		    if (Arrays.asList(columnIds).indexOf(id) != -1) {
-		        return id;
-		    }
-		    return null;
+			if (Arrays.asList(columnIds).indexOf(id) != -1) {
+				return id;
+			}
+			return null;
 		}
 
 		@Override
@@ -258,11 +261,12 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 	 * implementation without requiring the presentation being
 	 * IColumnPresentation2 (i.e. ensure we do not break backward compatibility
 	 * of interface). Also, we verify that the initial columns width is the
-	 * average of tree width / number of visible columns, which is the logic
-	 * in InternalTreeModelViewer.
+	 * average of tree width / number of visible columns, which is the logic in
+	 * InternalTreeModelViewer.
 	 */
+	@Test
 	public void testInitialColumnAverageWidth() throws Exception {
-        fResized = false;
+		fResized = false;
 
 		MyColumnPresentation colPre = new MyColumnPresentation();
 		makeModel(colPre, "m1"); //$NON-NLS-1$
@@ -271,9 +275,9 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 		int treeWidth = tree.getSize().x;
 		int avgWidth = treeWidth / columns.length;
 
-        // Resizing the tree invalidates the test.
+		// Resizing the tree invalidates the test.
 		if (fResized) {
-		    return;
+			return;
 		}
 
 		for (int i = 0; i < columns.length - 1; i++) {
@@ -281,8 +285,8 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 		}
 		// Checking of the width of the last column is not reliable.
 		// I.e. it's handled differenty on different platforms.
-        //int remainder = treeWidth % columns.length;
-        //assertEquals(avgWidth + remainder, columns[columns.length - 1].getWidth());
+		//int remainder = treeWidth % columns.length;
+		//assertEquals(avgWidth + remainder, columns[columns.length - 1].getWidth());
 	}
 
 	/**
@@ -290,23 +294,24 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 	 * Also, we verify that the initial columns width is the width computed by
 	 * the IColumnPresentation2 implementation.
 	 */
+	@Test
 	public void testInitialColumnWidth() throws Exception {
-        fResized = false;
+		fResized = false;
 
-        MyColumnPresentation2 colPre = new MyColumnPresentation2();
+		MyColumnPresentation2 colPre = new MyColumnPresentation2();
 		makeModel(colPre, "m2"); //$NON-NLS-1$
 		Tree tree = fViewer.getTree();
 		TreeColumn[] columns = tree.getColumns();
 
-        // Resizing the tree invalidates the test.
+		// Resizing the tree invalidates the test.
 		if (fResized) {
-		    return;
+			return;
 		}
 
 		for (int i = 0; i < columns.length; i++) {
 			int width = colPre.repliedWidths[i];
 			if (width != -1) {
-	            assertEquals(width, columns[i].getWidth());
+				assertEquals(width, columns[i].getWidth());
 			}
 		}
 	}
@@ -317,6 +322,7 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 	 * is not used when there are user settings inside the viewer which are
 	 * created from user resizing columns.
 	 */
+	@Test
 	public void testRespectUserSettings() throws Exception {
 		MyColumnPresentation2 colPre = new MyColumnPresentation2();
 		makeModel(colPre, "m2"); //$NON-NLS-1$
@@ -361,6 +367,7 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 	 * is not used when there are user settings inside the viewer which are
 	 * restored from memento, e.g., restoring workspace, etc.
 	 */
+	@Test
 	public void testRespectMemento() throws Exception {
 		MyColumnPresentation2 colPre = new MyColumnPresentation2();
 		makeModel(colPre, "m2"); //$NON-NLS-1$
@@ -392,36 +399,37 @@ public class ColumnPresentationTests extends AbstractDebugTest implements ITestM
 	}
 
 	/**
-     * In this test: verify that tree viewer can handle the column presentation changing
-     * its available column IDs between runs (bug 360015).
-     */
+	 * In this test: verify that tree viewer can handle the column presentation
+	 * changing its available column IDs between runs (bug 360015).
+	 */
+	@Test
 	public void testChangedColumnIds() throws Exception {
-        MyColumnPresentation colPre = new MyColumnPresentation();
+		MyColumnPresentation colPre = new MyColumnPresentation();
 
 		makeModel(colPre, "m1"); //$NON-NLS-1$
-        TreeColumn[] columns = fViewer.getTree().getColumns();
-        // Select visible columns
-        fViewer.setVisibleColumns(new String[] { colPre.columnIds[0] });
+		TreeColumn[] columns = fViewer.getTree().getColumns();
+		// Select visible columns
+		fViewer.setVisibleColumns(new String[] { colPre.columnIds[0] });
 		TestUtil.processUIEvents();
 		waitWhile(t -> fViewer.getTree().getColumns().length != 1, createColumnsErrorMessage());
 
-        // get InternalTreeModelViewer to rebuild columns due to change of
-        // model and presentation - first set to another model and column
-        // presentation, then switch to a model with original presentation.
+		// get InternalTreeModelViewer to rebuild columns due to change of
+		// model and presentation - first set to another model and column
+		// presentation, then switch to a model with original presentation.
 		makeModel(new MyColumnPresentation2(), "m2"); //$NON-NLS-1$
 
-        String[] newColumnIds = MyColumnPresentation.makeDefaultColumnIds();
+		String[] newColumnIds = MyColumnPresentation.makeDefaultColumnIds();
 		newColumnIds[0] = "new_column_id"; //$NON-NLS-1$
-        colPre = new MyColumnPresentation(newColumnIds);
+		colPre = new MyColumnPresentation(newColumnIds);
 
 		makeModel(colPre, "m3"); //$NON-NLS-1$
 
-        // verify user resized widths are used instead of the initial widths from IColumnPresentation2
-        columns = fViewer.getTree().getColumns();
-        for (int i = 0; i < columns.length; i++) {
-            assertEquals(newColumnIds[i], columns[i].getText());
-        }
-    }
+		// verify user resized widths are used instead of the initial widths from IColumnPresentation2
+		columns = fViewer.getTree().getColumns();
+		for (int i = 0; i < columns.length; i++) {
+			assertEquals(newColumnIds[i], columns[i].getText());
+		}
+	}
 
 	private Function<AbstractDebugTest, String> createColumnsErrorMessage() {
 		return t -> "Unexpected columns number: " + fViewer.getTree().getColumns().length;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2016 IBM Corporation and others.
+ * Copyright (c) 2015, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,7 +13,12 @@
  *******************************************************************************/
 package org.eclipse.osgi.tests.hooks.framework;
 
-import java.io.*;
+import static org.eclipse.osgi.tests.bundles.AbstractBundleTests.stopQuietly;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +37,7 @@ public class BundleFileWrapperFactoryHookTests extends AbstractFrameworkHookTest
 	private Framework framework;
 	private String location;
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		String loc = bundleInstaller.getBundleLocation(HOOK_CONFIGURATOR_BUNDLE);
@@ -39,12 +45,13 @@ public class BundleFileWrapperFactoryHookTests extends AbstractFrameworkHookTest
 		classLoader.addURL(new URL(loc));
 		location = bundleInstaller.getBundleLocation(TEST_BUNDLE);
 		File file = OSGiTestsActivator.getContext().getDataFile(getName());
-		configuration = new HashMap<String, String>();
+		configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, file.getAbsolutePath());
 		configuration.put(HookRegistry.PROP_HOOK_CONFIGURATORS_INCLUDE, HOOK_CONFIGURATOR_CLASS);
 		framework = createFramework(configuration);
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		stopQuietly(framework);
 		super.tearDown();
@@ -68,7 +75,7 @@ public class BundleFileWrapperFactoryHookTests extends AbstractFrameworkHookTest
 	}
 
 	private String readURL(URL url) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		try {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
 			try {

@@ -13,11 +13,10 @@
  *******************************************************************************/
 package org.eclipse.ltk.ui.refactoring.history;
 
+import java.text.DateFormat;
 import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import com.ibm.icu.text.DateFormat;
-import com.ibm.icu.text.SimpleDateFormat;
 
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -198,7 +197,7 @@ public class RefactoringHistoryLabelProvider extends LabelProvider {
 			return RefactoringUIMessages.RefactoringHistoryControlConfiguration_collection_label;
 		} else if (element instanceof RefactoringHistoryNode) {
 			final RefactoringHistoryNode node= (RefactoringHistoryNode) element;
-			final StringBuffer buffer= new StringBuffer(32);
+			final StringBuilder buffer= new StringBuilder(32);
 			final int kind= node.getKind();
 			switch (kind) {
 				case RefactoringHistoryNode.COLLECTION:

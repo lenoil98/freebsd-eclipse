@@ -27,12 +27,12 @@ import org.eclipse.jface.text.AbstractLineTracker.DelimiterInfo;
  * delimiters to subclasses. Assuming that '\n' is the only line delimiter, this abstract
  * implementation defines the following line scheme:
  * <ul>
- * <li> "" -> [0,0]
- * <li> "a" -> [0,1]
- * <li> "\n" -> [0,1], [1,0]
- * <li> "a\n" -> [0,2], [2,0]
- * <li> "a\nb" -> [0,2], [2,1]
- * <li> "a\nbc\n" -> [0,2], [2,3], [5,0]
+ * <li> "" -&gt; [0,0]
+ * <li> "a" -&gt; [0,1]
+ * <li> "\n" -&gt; [0,1], [1,0]
+ * <li> "a\n" -&gt; [0,2], [2,0]
+ * <li> "a\nb" -&gt; [0,2], [2,1]
+ * <li> "a\nbc\n" -&gt; [0,2], [2,3], [5,0]
  * </ul>
  * <p>
  * This class must be subclassed.
@@ -172,34 +172,34 @@ abstract class TreeLineTracker implements ILineTracker {
 	 *
 	 * @param tracker the list line tracker
 	 */
-    TreeLineTracker(ListLineTracker tracker) {
-    	final List<Line> lines= tracker.getLines();
-    	final int n= lines.size();
-    	if (n == 0)
-    		return;
+	TreeLineTracker(ListLineTracker tracker) {
+		final List<Line> lines= tracker.getLines();
+		final int n= lines.size();
+		if (n == 0)
+			return;
 
-    	Line line= lines.get(0);
-    	String delim= line.delimiter;
-    	if (delim == null)
-    		delim= NO_DELIM;
-    	int length= line.length;
-    	fRoot= new Node(length, delim);
-    	Node node= fRoot;
+		Line line= lines.get(0);
+		String delim= line.delimiter;
+		if (delim == null)
+			delim= NO_DELIM;
+		int length= line.length;
+		fRoot= new Node(length, delim);
+		Node node= fRoot;
 
 		for (int i= 1; i < n; i++) {
-	        line= lines.get(i);
-	        delim= line.delimiter;
-	        if (delim == null)
-	        	delim= NO_DELIM;
-	        length= line.length;
+			line= lines.get(i);
+			delim= line.delimiter;
+			if (delim == null)
+				delim= NO_DELIM;
+			length= line.length;
 			node= insertAfter(node, length, delim);
-        }
+		}
 
 		if (node.delimiter != NO_DELIM)
 			insertAfter(node, 0, NO_DELIM);
 
 		if (ASSERT) checkTree();
-    }
+	}
 
 	/**
 	 * Returns the node (line) including a certain offset. If the offset is between two
@@ -208,7 +208,7 @@ abstract class TreeLineTracker implements ILineTracker {
 	 * This means that for offsets smaller than the length, the following holds:
 	 * </p>
 	 * <p>
-	 * <code>line.offset <= offset < line.offset + offset.length</code>.
+	 * <code>line.offset &lt;= offset &lt; line.offset + offset.length</code>.
 	 * </p>
 	 * <p>
 	 * If <code>offset</code> is the document length, then this is true:

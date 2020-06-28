@@ -13,11 +13,11 @@
  *******************************************************************************/
 package org.eclipse.swt.ole.win32;
 
+import java.io.*;
+
 import org.eclipse.swt.*;
-import java.io.File;
-import org.eclipse.swt.internal.ole.win32.COM;
-import org.eclipse.swt.internal.win32.OS;
-import org.eclipse.swt.internal.win32.TCHAR;
+import org.eclipse.swt.internal.ole.win32.*;
+import org.eclipse.swt.internal.win32.*;
 
 
 /**
@@ -246,7 +246,7 @@ public class OLE extends SWT {
 	public static final short FUNCFLAG_FREQUESTEDIT = 0x8;
 	public static final short FUNCFLAG_FDISPLAYBIND = 0x10;
 	public static final short FUNCFLAG_FDEFAULTBIND = 0x20;
-  	public static final short FUNCFLAG_FHIDDEN = 0x40;
+	public static final short FUNCFLAG_FHIDDEN = 0x40;
 	public static final short FUNCFLAG_FUSESGETLASTERROR = 0x80;
 	public static final short FUNCFLAG_FDEFAULTCOLLELEM = 0x100;
 	public static final short FUNCFLAG_FUIDEFAULT = 0x200;
@@ -375,7 +375,6 @@ public static String findProgramID (String extension) {
 
 	if (extension.charAt (0) != '.') extension = "." + extension; //$NON-NLS-1$
 
-	/* Use the character encoding for the default locale */
 	TCHAR extensionKey = new TCHAR(0, extension, true);
 	String result = getKeyValue(extensionKey);
 	if (result != null) {
@@ -393,7 +392,7 @@ public static String findProgramID (String extension) {
 	return ""; //$NON-NLS-1$
 }
 static String getKeyValue (TCHAR key) {
-	long /*int*/ [] phkResult = new long /*int*/ [1];
+	long [] phkResult = new long [1];
 	if (OS.RegOpenKeyEx (OS.HKEY_CLASSES_ROOT, key, 0, OS.KEY_READ, phkResult) != 0) {
 		return null;
 	}
@@ -404,7 +403,6 @@ static String getKeyValue (TCHAR key) {
 		if (length == 0) {
 			result = "";
 		} else {
-			/* Use the character encoding for the default locale */
 			TCHAR lpData = new TCHAR (0, length);
 			if (OS.RegQueryValueEx (phkResult [0], null, 0, null, lpData, lpcbData) == 0) {
 				length = Math.max(0, lpData.length () - 1);
@@ -416,7 +414,7 @@ static String getKeyValue (TCHAR key) {
 	return result;
 }
 private static boolean getKeyExists (TCHAR key) {
-	long /*int*/ [] phkResult = new long /*int*/ [1];
+	long [] phkResult = new long [1];
 	if (OS.RegOpenKeyEx (OS.HKEY_CLASSES_ROOT, key, 0, OS.KEY_READ, phkResult) != 0) {
 		return false;
 	}

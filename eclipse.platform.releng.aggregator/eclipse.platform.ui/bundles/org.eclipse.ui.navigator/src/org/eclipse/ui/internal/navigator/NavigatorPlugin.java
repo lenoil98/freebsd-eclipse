@@ -28,7 +28,8 @@ import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.navigator.filters.UserFilter;
@@ -36,7 +37,6 @@ import org.eclipse.ui.navigator.CommonViewer;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.services.IEvaluationService;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
 
 /**
@@ -112,12 +112,7 @@ public class NavigatorPlugin extends AbstractUIPlugin {
 	/** The id of the orge.eclipse.ui.navigator plugin. */
 	public static String PLUGIN_ID = "org.eclipse.ui.navigator"; //$NON-NLS-1$
 
-	private BundleListener bundleListener = new BundleListener() {
-		@Override
-		public void bundleChanged(BundleEvent event) {
-			NavigatorSaveablesService.bundleChanged(event);
-		}
-	};
+	private BundleListener bundleListener = event -> NavigatorSaveablesService.bundleChanged(event);
 
 	/**
 	 * This constant can be used via {@link CommonViewer#setData(String, Object)} to set/get the lisst
@@ -151,28 +146,15 @@ public class NavigatorPlugin extends AbstractUIPlugin {
 	 *
 	 * @param path
 	 *            the path
-	 * @return the image descriptor
-	 */
-	public static ImageDescriptor getImageDescriptor(String path) {
-		return AbstractUIPlugin.imageDescriptorFromPlugin(PLUGIN_ID, path);
-	}
-
-
-	/**
-	 * Returns an image descriptor for the image file at the given plug-in
-	 * relative path.
-	 *
-	 * @param path
-	 *            the path
 	 * @return the image
 	 */
 	public Image getImage(String path) {
-		Image image = getImageRegistry().get(path);
+		ImageRegistry registry = getImageRegistry();
+		Image image = registry.get(path);
 		if(image == null) {
-			ImageDescriptor descriptor = getImageDescriptor(path);
-			if(descriptor != null) {
-				getImageRegistry().put(path, image = descriptor.createImage());
-			}
+			ResourceLocator.imageDescriptorFromBundle(PLUGIN_ID, path)
+					.ifPresent(d -> registry.put(path, d.createImage()));
+			image = registry.get(path);
 		}
 		return image;
 	}

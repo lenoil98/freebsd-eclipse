@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM - Initial API and implementation
  *******************************************************************************/
@@ -35,7 +35,7 @@ import org.eclipse.osgi.internal.util.SupplementDebug;
  * <p>
  * The <code>#bind</code> methods perform string substitution and should be considered a
  * convenience and <em>not</em> a full substitute replacement for <code>MessageFormat#format</code>
- * method calls. 
+ * method calls.
  * </p>
  * <p>
  * Text appearing within curly braces in the given message, will be interpreted
@@ -54,7 +54,7 @@ import org.eclipse.osgi.internal.util.SupplementDebug;
  * <p>
  * Clients may subclass this type.
  * </p>
- * 
+ *
  * @since 3.1
  */
 public abstract class NLS {
@@ -65,6 +65,7 @@ public abstract class NLS {
 	private static final String PROP_WARNINGS = "osgi.nls.warnings"; //$NON-NLS-1$
 	private static final String IGNORE = "ignore"; //$NON-NLS-1$
 	private static final boolean ignoreWarnings = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+		@Override
 		public Boolean run() {
 			return IGNORE.equals(System.getProperty(PROP_WARNINGS));
 		}
@@ -92,11 +93,11 @@ public abstract class NLS {
 
 	/**
 	 * Bind the given message's substitution locations with the given string value.
-	 * 
+	 *
 	 * @param message the message to be manipulated
 	 * @param binding the object to be inserted into the message
 	 * @return the manipulated String
-	 * @throws IllegalArgumentException if the text appearing within curly braces in the given message does not map to an integer 
+	 * @throws IllegalArgumentException if the text appearing within curly braces in the given message does not map to an integer
 	 */
 	public static String bind(String message, Object binding) {
 		return internalBind(message, null, String.valueOf(binding), null);
@@ -104,7 +105,7 @@ public abstract class NLS {
 
 	/**
 	 * Bind the given message's substitution locations with the given string values.
-	 * 
+	 *
 	 * @param message the message to be manipulated
 	 * @param binding1 An object to be inserted into the message
 	 * @param binding2 A second object to be inserted into the message
@@ -117,7 +118,7 @@ public abstract class NLS {
 
 	/**
 	 * Bind the given message's substitution locations with the given string values.
-	 * 
+	 *
 	 * @param message the message to be manipulated
 	 * @param bindings An array of objects to be inserted into the message
 	 * @return the manipulated String
@@ -130,7 +131,7 @@ public abstract class NLS {
 	/**
 	 * Initialize the given class with the values from the message properties specified by the
 	 * base name.  The base name specifies a fully qualified base name to a message properties file,
-	 * including the package where the message properties file is located.  The class loader of the 
+	 * including the package where the message properties file is located.  The class loader of the
 	 * specified class will be used to load the message properties resources.
 	 * <p>
 	 * For example, if the locale is set to en_US and <code>org.eclipse.example.nls.messages</code>
@@ -142,7 +143,7 @@ public abstract class NLS {
 	 *   org/eclipse/example/nls/messages_en.properties
 	 *   org/eclipse/example/nls/messages.properties
 	 * </pre>
-	 * 
+	 *
 	 * @param baseName the base name of a fully qualified message properties file.
 	 * @param clazz the class where the constants will exist
 	 */
@@ -152,6 +153,7 @@ public abstract class NLS {
 			return;
 		}
 		AccessController.doPrivileged(new PrivilegedAction<Void>() {
+			@Override
 			public Void run() {
 				load(baseName, clazz);
 				return null;
@@ -176,7 +178,7 @@ public abstract class NLS {
 			bufLen += argZero.length() - 3;
 		if (argOne != null)
 			bufLen += argOne.length() - 3;
-		StringBuffer buffer = new StringBuffer(bufLen < 0 ? 0 : bufLen);
+		StringBuilder buffer = new StringBuilder(bufLen < 0 ? 0 : bufLen);
 		for (int i = 0; i < length; i++) {
 			char c = message.charAt(i);
 			switch (c) {
@@ -235,7 +237,7 @@ public abstract class NLS {
 						break;
 					}
 					// otherwise write out the chars inside the quotes
-					buffer.append(message.substring(nextIndex, index));
+					buffer.append(message, nextIndex, index);
 					i = index;
 					break;
 				default :
@@ -325,16 +327,16 @@ public abstract class NLS {
 		// the MessagesProperties.put method will mark assigned fields
 		// to prevent them from being assigned twice
 		final String[] variants = buildVariants(bundleName);
-		for (int i = 0; i < variants.length; i++) {
+		for (String variant : variants) {
 			// loader==null if we're launched off the Java boot classpath
-			final InputStream input = loader == null ? ClassLoader.getSystemResourceAsStream(variants[i]) : loader.getResourceAsStream(variants[i]);
+			final InputStream input = loader == null ? ClassLoader.getSystemResourceAsStream(variant) : loader.getResourceAsStream(variant);
 			if (input == null)
 				continue;
 			try {
 				final MessagesProperties properties = new MessagesProperties(fields, bundleName, isAccessible);
 				properties.load(input);
 			} catch (IOException e) {
-				log(SEVERITY_ERROR, "Error loading " + variants[i], e); //$NON-NLS-1$
+				log(SEVERITY_ERROR, "Error loading " + variant, e); //$NON-NLS-1$
 			} finally {
 				if (input != null)
 					try {
@@ -350,13 +352,13 @@ public abstract class NLS {
 	}
 
 	/*
-	 * The method adds a log entry based on the error message and exception. 
+	 * The method adds a log entry based on the error message and exception.
 	 * The output is written to the System.err.
-	 * 
+	 *
 	 * This method is only expected to be called if there is a problem in
-	 * the NLS mechanism. As a result, translation facility is not available 
+	 * the NLS mechanism. As a result, translation facility is not available
 	 * here and messages coming out of this log are generally not translated.
-	 * 
+	 *
 	 * @param severity - severity of the message (SEVERITY_ERROR or SEVERITY_WARNING)
 	 * @param message - message to log
 	 * @param e - exception to log
@@ -411,6 +413,7 @@ public abstract class NLS {
 		/* (non-Javadoc)
 		 * @see java.util.Hashtable#put(java.lang.Object, java.lang.Object)
 		 */
+		@Override
 		public synchronized Object put(Object key, Object value) {
 			Object fieldObject = fields.put(key, ASSIGNED);
 			// if already assigned, there is nothing to do
@@ -431,7 +434,7 @@ public abstract class NLS {
 			if ((field.getModifiers() & MOD_MASK) != MOD_EXPECTED)
 				return null;
 			try {
-				// Check to see if we are allowed to modify the field. If we aren't (for instance 
+				// Check to see if we are allowed to modify the field. If we aren't (for instance
 				// if the class is not public) then change the accessible attribute of the field
 				// before trying to set the value.
 				if (!isAccessible)

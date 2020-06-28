@@ -29,21 +29,18 @@ public class AdvancedGroupBreakpointsByAction extends Action {
 	private BreakpointsView fView;
 
 	public AdvancedGroupBreakpointsByAction(BreakpointsView view) {
-        super(IInternalDebugCoreConstants.EMPTY_STRING, IAction.AS_RADIO_BUTTON);
+		super(IInternalDebugCoreConstants.EMPTY_STRING, IAction.AS_RADIO_BUTTON);
 		fView= view;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run() {
-        if (isChecked()) {
-    	    GroupBreakpointsByDialog dialog = new GroupBreakpointsByDialog(fView);
-    		if (dialog.open() == Window.OK) {
-    			fView.setBreakpointOrganizers(dialog.getOrganizers());
-    		}
-        }
+		if (isChecked()) {
+			GroupBreakpointsByDialog dialog = new GroupBreakpointsByDialog(fView);
+			if (dialog.open() == Window.OK) {
+				fView.setBreakpointOrganizers(dialog.getOrganizers());
+			}
+		}
 	}
 
 }

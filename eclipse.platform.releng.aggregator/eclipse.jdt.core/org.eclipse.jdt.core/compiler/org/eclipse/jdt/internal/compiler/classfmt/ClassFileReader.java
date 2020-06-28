@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -40,8 +40,10 @@ import org.eclipse.jdt.internal.compiler.env.IModule;
 import org.eclipse.jdt.internal.compiler.env.ITypeAnnotationWalker;
 import org.eclipse.jdt.internal.compiler.impl.Constant;
 import org.eclipse.jdt.internal.compiler.lookup.BinaryTypeBinding.ExternalAnnotationStatus;
+import org.eclipse.jdt.internal.compiler.lookup.ExtraCompilerModifiers;
 import org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment;
 import org.eclipse.jdt.internal.compiler.lookup.TagBits;
+import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
 import org.eclipse.jdt.internal.compiler.lookup.TypeIds;
 import org.eclipse.jdt.internal.compiler.util.JRTUtil;
 import org.eclipse.jdt.internal.compiler.util.Util;
@@ -62,7 +64,6 @@ public class ClassFileReader extends ClassFileStruct implements IBinaryType {
 
 	// initialized in case the .class file is a nested type
 	private InnerClassInfo innerInfo;
-	private int innerInfoIndex;
 	private InnerClassInfo[] innerInfos;
 	private char[][] interfaceNames;
 	private int interfacesCount;
@@ -81,6 +82,9 @@ public class ClassFileReader extends ClassFileStruct implements IBinaryType {
 	private char[] nestHost;
 	private int nestMembersCount;
 	private char[][] nestMembers;
+	private boolean isRecord;
+	private int recordComponentsCount;
+	private ComponentInfo[] recordComponents;
 
 private static String printTypeModifiers(int modifiers) {
 	java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
@@ -298,6 +302,9 @@ public ClassFileReader(byte[] classFileBytes, char[] fileName, boolean fullyInit
 		// field this.superclassName. null is fine.
 		if (superclassNameIndex != 0) {
 			this.superclassName = getConstantClassNameAt(superclassNameIndex);
+			if (CharOperation.equals(this.superclassName, TypeConstants.CharArray_JAVA_LANG_RECORD_SLASH)) {
+				this.accessFlags |= ExtraCompilerModifiers.AccRecord;
+			}
 		}
 
 		// Read the interfaces, use exception handlers to catch bad format
@@ -373,7 +380,6 @@ public ClassFileReader(byte[] classFileBytes, char[] fileName, boolean fullyInit
 									new InnerClassInfo(this.reference, this.constantPoolOffsets, innerOffset);
 								if (this.classNameIndex == this.innerInfos[j].innerClassNameIndex) {
 									this.innerInfo = this.innerInfos[j];
-									this.innerInfoIndex = j;
 								}
 								innerOffset += 8;
 							}
@@ -419,7 +425,10 @@ public ClassFileReader(byte[] classFileBytes, char[] fileName, boolean fullyInit
 						decodeTypeAnnotations(readOffset, true);
 					} else if (CharOperation.equals(attributeName, AttributeNamesConstants.RuntimeInvisibleTypeAnnotationsName)) {
 						decodeTypeAnnotations(readOffset, false);
+					} 	else if (CharOperation.equals(attributeName, AttributeNamesConstants.RecordClass)) {
+						decodeRecords(readOffset, attributeName);
 					}
+
 					break;
 				case 'M' :
 					if (CharOperation.equals(attributeName, AttributeNamesConstants.MissingTypesName)) {
@@ -478,6 +487,23 @@ public ClassFileReader(byte[] classFileBytes, char[] fileName, boolean fullyInit
 			this.classFileName,
 			ClassFormatException.ErrTruncatedInput,
 			readOffset);
+	}
+}
+
+private void decodeRecords(int readOffset, char[] attributeName) {
+	if (CharOperation.equals(attributeName, AttributeNamesConstants.RecordClass)) {
+		this.isRecord = true;
+		int offset = readOffset + 6;
+		this.recordComponentsCount = u2At(offset);
+		if (this.recordComponentsCount != 0) {
+			offset += 2;
+			this.recordComponents = new ComponentInfo[this.recordComponentsCount];
+			for (int j = 0; j < this.recordComponentsCount; j++) {
+				ComponentInfo component = ComponentInfo.createComponent(this.reference, this.constantPoolOffsets, offset, this.version);
+				this.recordComponents[j] = component;
+				offset += component.sizeInBytes();
+			}
+		}
 	}
 }
 
@@ -614,7 +640,7 @@ public char[] getEnclosingMethod() {
 	if (this.enclosingMethod == null) {
 		// read the name
 		StringBuffer buffer = new StringBuffer();
-		
+
 		int nameAndTypeOffset = this.constantPoolOffsets[this.enclosingNameAndTypeIndex];
 		int utf8Offset = this.constantPoolOffsets[u2At(nameAndTypeOffset + 1)];
 		buffer.append(utf8At(utf8Offset + 3, u2At(utf8Offset + 1)));
@@ -652,9 +678,9 @@ public char[] getModule() {
 	return this.moduleName;
 }
 /**
- * Returns the module declaration that this class file represents. This will be 
+ * Returns the module declaration that this class file represents. This will be
  * null for non module-info class files.
- * 
+ *
  * @return the module declaration this represents
  */
 public IBinaryModule getModuleDeclaration() {
@@ -711,14 +737,12 @@ public IBinaryNestedType[] getMemberTypes() {
 	// we might have some member types of the current type
 	if (this.innerInfos == null) return null;
 
-	int length = this.innerInfos.length;
-	int startingIndex = this.innerInfo != null ? this.innerInfoIndex + 1 : 0;
-	if (length != startingIndex) {
+	int length = this.innerInfos.length - (this.innerInfo != null ? 1 : 0);
+	if (length != 0) {
 		IBinaryNestedType[] memberTypes =
-			new IBinaryNestedType[length - this.innerInfoIndex];
+				new IBinaryNestedType[length];
 		int memberTypeIndex = 0;
-		for (int i = startingIndex; i < length; i++) {
-			InnerClassInfo currentInnerInfo = this.innerInfos[i];
+		for (InnerClassInfo currentInnerInfo : this.innerInfos) {
 			int outerClassNameIdx = currentInnerInfo.outerClassNameIndex;
 			int innerNameIndex = currentInnerInfo.innerNameIndex;
 			/*
@@ -1386,5 +1410,9 @@ public String toString() {
 	print.println(" access_flags: " + printTypeModifiers(accessFlags()) + "(" + accessFlags() + ")"); //$NON-NLS-1$ //$NON-NLS-3$ //$NON-NLS-2$
 	print.flush();
 	return out.toString();
+}
+
+public boolean isRecord() {
+	return this.isRecord;
 }
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,7 +18,6 @@ package org.eclipse.jdt.internal.corext.refactoring.code;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -403,8 +402,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 		Collection<ICompilationUnit>	result= new ArrayList<>();
 		boolean hitInFactoryClass= false;
 
-		for(int i=0; i < searchHits.length; i++) {
-			SearchResultGroup	rg=  searchHits[i];
+		for (SearchResultGroup rg : searchHits) {
 			ICompilationUnit	icu= rg.getCompilationUnit();
 
 			result.add(icu);
@@ -463,8 +461,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 	private SearchResultGroup[] excludeBinaryUnits(SearchResultGroup[] groups) {
 		Collection<SearchResultGroup>	result= new ArrayList<>();
 
-		for (int i = 0; i < groups.length; i++) {
-			SearchResultGroup	rg=   groups[i];
+		for (SearchResultGroup rg : groups) {
 			ICompilationUnit	unit= rg.getCompilationUnit();
 
 			if (unit != null) // ignore hits within a binary unit
@@ -524,12 +521,10 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 
 		SearchResultGroup[] groups= (SearchResultGroup[]) engine.getResults();
 
-		if (groups.length != 0) {
-			for(int i= 0; i < groups.length; i++) {
-				SearchMatch[] matches= groups[i].getSearchResults();
-				for(int j= 0; j < matches.length; j++) {
-					if (matches[j].getAccuracy() == SearchMatch.A_ACCURATE)
-						return (IType) matches[j].getElement();
+		for (SearchResultGroup rg : groups) {
+			for (SearchMatch match : rg.getSearchResults()) {
+				if (match.getAccuracy() == SearchMatch.A_ACCURATE) {
+					return (IType) match.getElement();
 				}
 			}
 		}
@@ -555,7 +550,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			fFormalArgNames= findCtorArgNames();
 
 			ICompilationUnit[]	affectedFiles= collectAffectedUnits(fAllCallsTo);
-			result.merge(Checks.validateModifiesFiles(ResourceUtil.getFiles(affectedFiles), getValidationContext()));
+			result.merge(Checks.validateModifiesFiles(ResourceUtil.getFiles(affectedFiles), getValidationContext(), pm));
 
 			if (fCallSitesInBinaryUnits)
 				result.merge(RefactoringStatus.createWarningStatus(RefactoringCoreMessages.IntroduceFactory_callSitesInBinaryClass));
@@ -604,7 +599,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 	/**
 	 * Creates and returns a new MethodDeclaration that represents the factory method to be used in
 	 * place of direct calls to the constructor in question.
-	 * 
+	 *
 	 * @param ast An AST used as a factory for various AST nodes
 	 * @param ctorBinding binding for the constructor being wrapped
 	 * @param unitRewriter the ASTRewrite to be used
@@ -638,13 +633,11 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 
 		if (Modifier.isAbstract(declaringClass.getModifiers())) {
 			AnonymousClassDeclaration decl= ast.newAnonymousClassDeclaration();
-			IMethodBinding[] unimplementedMethods= getUnimplementedMethods(declaringClass);
 			CodeGenerationSettings settings= JavaPreferencesSettings.getCodeGenerationSettings(fCUHandle.getJavaProject());
 			ImportRewriteContext context= new ContextSensitiveImportRewriteContext(fFactoryCU, decl.getStartPosition(), fImportRewriter);
-			for (int i= 0; i < unimplementedMethods.length; i++) {
-				IMethodBinding unImplementedMethod= unimplementedMethods[i];
+			for (IMethodBinding unImplementedMethod : getUnimplementedMethods(declaringClass)) {
 				MethodDeclaration newMethodDecl= StubUtility2.createImplementationStub(fCUHandle, unitRewriter, fImportRewriter, context,
-						unImplementedMethod, unImplementedMethod.getDeclaringClass(), settings, false, new NodeFinder(fFactoryCU, decl.getStartPosition(), 0).getCoveringNode());
+					unImplementedMethod, unImplementedMethod.getDeclaringClass(), settings, false, new NodeFinder(fFactoryCU, decl.getStartPosition(), 0).getCoveringNode());
 				decl.bodyDeclarations().add(newMethodDecl);
 			}
 			newCtorCall.setAnonymousClassDeclaration(decl);
@@ -655,7 +648,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 
 		return newMethod;
 	}
-	
+
 	private IMethodBinding[] getUnimplementedMethods(ITypeBinding binding) {
 		IMethodBinding[] unimplementedMethods= StubUtility2Core.getUnimplementedMethods(binding, true);
 		Arrays.sort(unimplementedMethods, new MethodsSourcePositionComparator(binding));
@@ -679,11 +672,10 @@ public class IntroduceFactoryRefactoring extends Refactoring {
             ParameterizedType newInstantiatedType= ast.newParameterizedType(baseType);
             List<Type> newInstTypeArgs= newInstantiatedType.typeArguments();
 
-            for(int i= 0; i < ctorOwnerTypeParameters.length; i++) {
-                Type typeArg= ASTNodeFactory.newType(ast, ctorOwnerTypeParameters[i].getName());
-
-                newInstTypeArgs.add(typeArg);
-            }
+			for (ITypeBinding ctorOwnerTypeParameter : ctorOwnerTypeParameters) {
+				Type typeArg= ASTNodeFactory.newType(ast, ctorOwnerTypeParameter.getName());
+				newInstTypeArgs.add(typeArg);
+			}
             newCtorCall.setType(newInstantiatedType);
         }
 	}
@@ -707,11 +699,10 @@ public class IntroduceFactoryRefactoring extends Refactoring {
             ParameterizedType newRetType= ast.newParameterizedType(baseType);
             List<Type> newRetTypeArgs= newRetType.typeArguments();
 
-            for(int i= 0; i < ctorOwnerTypeParameters.length; i++) {
-                Type retTypeArg= ASTNodeFactory.newType(ast, ctorOwnerTypeParameters[i].getName());
-
-                newRetTypeArgs.add(retTypeArg);
-            }
+			for (ITypeBinding ctorOwnerTypeParameter : ctorOwnerTypeParameters) {
+				Type retTypeArg= ASTNodeFactory.newType(ast, ctorOwnerTypeParameter.getName());
+				newRetTypeArgs.add(retTypeArg);
+			}
             newMethod.setReturnType2(newRetType);
         }
 	}
@@ -748,11 +739,10 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			argDecls.add(argDecl);
 		}
 
-		ITypeBinding[] ctorExcepts= fCtorBinding.getExceptionTypes();
 		List<Type> exceptions= newMethod.thrownExceptionTypes();
 
-		for(int i=0; i < ctorExcepts.length; i++) {
-			exceptions.add(fImportRewriter.addImport(ctorExcepts[i], ast));
+		for (ITypeBinding ctorExcept : fCtorBinding.getExceptionTypes()) {
+			exceptions.add(fImportRewriter.addImport(ctorExcept, ast));
 		}
 
         copyTypeParameters(ast, newMethod);
@@ -776,22 +766,18 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 	 * @param newMethod the method onto which to copy the type parameters
 	 */
 	private void copyTypeParameters(AST ast, MethodDeclaration newMethod) {
-		ITypeBinding[] ctorOwnerTypeParms= fCtorBinding.getDeclaringClass().getTypeParameters();
 		List<TypeParameter> factoryMethodTypeParms= newMethod.typeParameters();
-		for(int i= 0; i < ctorOwnerTypeParms.length; i++) {
-            TypeParameter newParm= ast.newTypeParameter();
-            ITypeBinding[] parmTypeBounds= ctorOwnerTypeParms[i].getTypeBounds();
-            List<Type> newParmBounds= newParm.typeBounds();
-
-            newParm.setName(ast.newSimpleName(ctorOwnerTypeParms[i].getName()));
-            for(int b=0; b < parmTypeBounds.length; b++) {
-            	if (parmTypeBounds[b].isClass() && parmTypeBounds[b].getSuperclass() == null)
-            		continue;
-
-            	Type newBound= fImportRewriter.addImport(parmTypeBounds[b], ast);
-
-                newParmBounds.add(newBound);
-            }
+		for (ITypeBinding ctorOwnerTypeParm : fCtorBinding.getDeclaringClass().getTypeParameters()) {
+			TypeParameter newParm= ast.newTypeParameter();
+			List<Type> newParmBounds= newParm.typeBounds();
+			newParm.setName(ast.newSimpleName(ctorOwnerTypeParm.getName()));
+			for (ITypeBinding parmTypeBound : ctorOwnerTypeParm.getTypeBounds()) {
+				if (parmTypeBound.isClass() && parmTypeBound.getSuperclass() == null) {
+					continue;
+				}
+				Type newBound= fImportRewriter.addImport(parmTypeBound, ast);
+				newParmBounds.add(newBound);
+			}
 			factoryMethodTypeParms.add(newParm);
 		}
 	}
@@ -856,7 +842,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 		} else {
 			ctorCall= (ClassInstanceCreation)unitRewriter.get(ctorCallParent, ctorCallLocation);
 		}
-		
+
 		ListRewrite actualFactoryArgs= unitRewriter.getListRewrite(factoryMethodCall, MethodInvocation.ARGUMENTS_PROPERTY);
 		ListRewrite actualCtorArgs= unitRewriter.getListRewrite(ctorCall, ClassInstanceCreation.ARGUMENTS_PROPERTY);
 
@@ -873,9 +859,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 		factoryMethodCall.setName(ast.newSimpleName(fNewMethodName));
 
 		List<Expression> actualCtorArgsList= actualCtorArgs.getRewrittenList();
-		for (int i=0; i < actualCtorArgsList.size(); i++) {
-			Expression actualCtorArg= actualCtorArgsList.get(i);
-			
+		for (Expression actualCtorArg : actualCtorArgsList) {
 			ASTNode movedArg;
 			if (ASTNodes.isExistingNode(actualCtorArg)) {
 				movedArg= unitRewriter.createMoveTarget(actualCtorArg);
@@ -883,7 +867,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 				unitRewriter.remove(actualCtorArg, null);
 				movedArg= actualCtorArg;
 			}
-				
+
 			actualFactoryArgs.insertLast(movedArg, gd);
 		}
 
@@ -1003,8 +987,9 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 	}
 
 	/**
-	 * Use the given <code>ASTRewrite</code> to replace direct calls to the constructor
-	 * with calls to the newly-created factory method.
+	 * Use the given <code>ASTRewrite</code> to replace direct calls to the constructor with calls
+	 * to the newly-created factory method.
+	 *
 	 * @param rg the <code>SearchResultGroup</code> indicating all of the constructor references
 	 * @param unit the <code>CompilationUnit</code> to be rewritten
 	 * @param unitRewriter the rewriter
@@ -1015,23 +1000,17 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 	private boolean replaceConstructorCalls(SearchResultGroup rg, CompilationUnit unit, ASTRewrite unitRewriter, CompilationUnitChange unitChange) throws CoreException {
 		Assert.isTrue(ASTCreator.getCu(unit).equals(rg.getCompilationUnit()));
 		SearchMatch[] hits= rg.getSearchResults();
-		Arrays.sort(hits, new Comparator<SearchMatch>() {
-			/**
-			 * Sort by descending offset, such that nested constructor calls are processed first.
-			 * This is necessary, since they can only be moved into the factory method invocation
-			 * after they have been rewritten.
-			 */
-			@Override
-			public int compare(SearchMatch m1, SearchMatch m2) {
-				return m2.getOffset() - m1.getOffset();
-			}
-		});
-		
+		/*
+		 * Sort by descending offset, such that nested constructor calls are processed first. This
+		 * is necessary, since they can only be moved into the factory method invocation after they
+		 * have been rewritten.
+		 */
+		Arrays.sort(hits, (m1, m2) -> m2.getOffset() - m1.getOffset());
+
 		boolean someCallPatched= false;
 
-		for (int i=0; i < hits.length; i++) {
-			ASTNode ctrCall= getCtorCallAt(hits[i].getOffset(), hits[i].getLength(), unit);
-
+		for (SearchMatch hit : hits) {
+			ASTNode ctrCall= getCtorCallAt(hit.getOffset(), hit.getLength(), unit);
 			if (ctrCall instanceof ClassInstanceCreation) {
 				TextEditGroup gd= new TextEditGroup(RefactoringCoreMessages.IntroduceFactory_replaceCalls);
 
@@ -1136,7 +1115,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 	 * Perform the AST rewriting necessary on the given <code>CompilationUnit</code> to create the
 	 * factory method. The method will reside on the type identified by
 	 * <code>fFactoryOwningClass</code>.
-	 * 
+	 *
 	 * @param unitRewriter the ASTRewrite to be used
 	 * @param unit the <code>CompilationUnit</code> where factory method will be created
 	 * @param gd the <code>GroupDescription</code> to associate with the changes made
@@ -1183,13 +1162,12 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_INPUT, JavaRefactoringDescriptorUtil.elementToHandle(project, fCUHandle));
 			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_NAME, fNewMethodName);
 			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_ELEMENT + 1, JavaRefactoringDescriptorUtil.elementToHandle(project, binding.getJavaElement()));
-			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, Integer.valueOf(fSelectionStart).toString() + " " + Integer.valueOf(fSelectionLength).toString()); //$NON-NLS-1$
-			arguments.put(ATTRIBUTE_PROTECT, Boolean.valueOf(fProtectConstructor).toString());
+			arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, Integer.toString(fSelectionStart) + " " + Integer.toString(fSelectionLength)); //$NON-NLS-1$
+			arguments.put(ATTRIBUTE_PROTECT, Boolean.toString(fProtectConstructor));
 			final DynamicValidationStateChange result= new DynamicValidationRefactoringChange(descriptor, RefactoringCoreMessages.IntroduceFactory_name);
 			boolean hitInFactoryClass= false;
 			boolean hitInCtorClass= false;
-			for (int i= 0; i < fAllCallsTo.length; i++) {
-				SearchResultGroup rg= fAllCallsTo[i];
+			for (SearchResultGroup rg : fAllCallsTo) {
 				ICompilationUnit unitHandle= rg.getCompilationUnit();
 				CompilationUnitChange cuChange= new CompilationUnitChange(getName(), unitHandle);
 
@@ -1375,9 +1353,9 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			int length= -1;
 			final StringTokenizer tokenizer= new StringTokenizer(selection);
 			if (tokenizer.hasMoreTokens())
-				offset= Integer.valueOf(tokenizer.nextToken()).intValue();
+				offset= Integer.parseInt(tokenizer.nextToken());
 			if (tokenizer.hasMoreTokens())
-				length= Integer.valueOf(tokenizer.nextToken()).intValue();
+				length= Integer.parseInt(tokenizer.nextToken());
 			if (offset >= 0 && length >= 0) {
 				fSelectionStart= offset;
 				fSelectionLength= length;
@@ -1414,7 +1392,7 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, JavaRefactoringDescriptorUtil.ATTRIBUTE_NAME));
 		final String protect= arguments.getAttribute(ATTRIBUTE_PROTECT);
 		if (protect != null) {
-			fProtectConstructor= Boolean.valueOf(protect).booleanValue();
+			fProtectConstructor= Boolean.parseBoolean(protect);
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_PROTECT));
 		return new RefactoringStatus();

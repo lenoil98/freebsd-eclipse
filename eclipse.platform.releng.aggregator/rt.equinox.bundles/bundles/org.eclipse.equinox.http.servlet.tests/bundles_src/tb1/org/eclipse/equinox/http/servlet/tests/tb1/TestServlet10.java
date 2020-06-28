@@ -20,7 +20,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -34,7 +33,7 @@ public class TestServlet10 extends AbstractTestServlet {
 
 	@Override
 	protected void service(HttpServletRequest request, HttpServletResponse response)
-		throws ServletException, IOException {
+		throws IOException {
 
 		ServletContext servletContext = getServletContext();
 
@@ -43,12 +42,12 @@ public class TestServlet10 extends AbstractTestServlet {
 		OutputStream out = response.getOutputStream();
 
 		try {
-			  byte[] buffer = new byte[2048];
-			  int bytesRead;
+			byte[] buffer = new byte[2048];
+			int bytesRead;
 
-			  while ((bytesRead = in.read(buffer)) != -1) {
-				 out.write(buffer, 0, bytesRead);
-			  }
+			while ((bytesRead = in.read(buffer)) != -1) {
+				out.write(buffer, 0, bytesRead);
+			}
 		}
 		finally {
 			out.close();
@@ -57,7 +56,7 @@ public class TestServlet10 extends AbstractTestServlet {
 	}
 
 	@Override
-	protected void handleDoGet(HttpServletRequest request, PrintWriter writer) throws ServletException, IOException {
+	protected void handleDoGet(HttpServletRequest request, PrintWriter writer) {
 		//
 	}
 

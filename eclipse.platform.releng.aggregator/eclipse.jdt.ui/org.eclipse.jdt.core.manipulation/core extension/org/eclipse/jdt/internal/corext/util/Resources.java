@@ -17,7 +17,6 @@ import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -70,8 +69,7 @@ public class Resources {
 	 */
 	public static IStatus checkInSync(IResource[] resources) {
 		IStatus result= null;
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
+		for (IResource resource : resources) {
 			if (!resource.isSynchronized(IResource.DEPTH_INFINITE)) {
 				result= addOutOfSync(result, resource);
 			}
@@ -112,12 +110,11 @@ public class Resources {
 	 */
 	public static IStatus makeCommittable(IResource[] resources, Object context) {
 		List<IResource> readOnlyFiles= new ArrayList<>();
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
+		for (IResource resource : resources) {
 			if (resource.getType() == IResource.FILE && isReadOnly(resource))
 				readOnlyFiles.add(resource);
 		}
-		if (readOnlyFiles.size() == 0)
+		if (readOnlyFiles.isEmpty())
 			return Status.OK_STATUS;
 
 		Map<IFile, Long> oldTimeStamps= createModificationStampMap(readOnlyFiles);
@@ -128,8 +125,7 @@ public class Resources {
 
 		IStatus modified= null;
 		Map<IFile, Long> newTimeStamps= createModificationStampMap(readOnlyFiles);
-		for (Iterator<IFile> iter= oldTimeStamps.keySet().iterator(); iter.hasNext();) {
-			IFile file= iter.next();
+		for (IFile file : oldTimeStamps.keySet()) {
 			if (!oldTimeStamps.get(file).equals(newTimeStamps.get(file)))
 				modified= addModified(modified, file);
 		}
@@ -140,8 +136,8 @@ public class Resources {
 
 	private static Map<IFile, Long> createModificationStampMap(List<IResource> files){
 		Map<IFile, Long> map= new HashMap<>();
-		for (Iterator<IResource> iter= files.iterator(); iter.hasNext(); ) {
-			IFile file= (IFile)iter.next();
+		for (IResource iResource : files) {
+			IFile file= (IFile)iResource;
 			map.put(file, Long.valueOf(file.getModificationStamp()));
 		}
 		return map;
@@ -200,8 +196,8 @@ public class Resources {
 	 */
 	public static String[] getLocationOSStrings(IResource[] resources) {
 		List<String> result= new ArrayList<>(resources.length);
-		for (int i= 0; i < resources.length; i++) {
-			IPath location= resources[i].getLocation();
+		for (IResource resource : resources) {
+			IPath location= resource.getLocation();
 			if (location != null)
 				result.add(location.toOSString());
 		}

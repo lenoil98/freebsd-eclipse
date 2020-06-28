@@ -7,13 +7,21 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.osgi.internal.debug;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.text.MessageFormat;
@@ -102,8 +110,8 @@ class EclipseDebugTrace implements DebugTrace {
 
 	/**
 	 * Construct a new EclipseDebugTrace for the specified bundle symbolic name and write messages to the specified
-	 * trace file.  
-	 * 
+	 * trace file.
+	 *
 	 * @param bundleSymbolicName The symbolic name of the bundle being traced
 	 * @param debugOptions Used to determine if the specified bundle symbolic name + option-path has tracing enabled
 	 * @param traceClass The class that the client is using to perform trace API calls
@@ -118,7 +126,7 @@ class EclipseDebugTrace implements DebugTrace {
 
 	/**
 	 * Is debugging enabled for the specified option-path
-	 * 
+	 *
 	 * @param optionPath The <i>option-path</i>
 	 * @return Returns true if debugging is enabled for the specified option-path on this bundle; Otherwise false.
 	 */
@@ -137,6 +145,7 @@ class EclipseDebugTrace implements DebugTrace {
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.framework.debug.FrameworkDebugTrace#trace(java.lang.String, java.lang.String)
 	 */
+	@Override
 	public void trace(final String optionPath, final String message) {
 
 		if (isDebuggingEnabled(optionPath)) {
@@ -149,6 +158,7 @@ class EclipseDebugTrace implements DebugTrace {
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.framework.debug.FrameworkDebugTrace#trace(java.lang.String, java.lang.String, java.lang.Throwable)
 	 */
+	@Override
 	public void trace(final String optionPath, final String message, final Throwable error) {
 
 		if (isDebuggingEnabled(optionPath)) {
@@ -161,6 +171,7 @@ class EclipseDebugTrace implements DebugTrace {
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.framework.debug.FrameworkDebugTrace#traceEntry(java.lang.String)
 	 */
+	@Override
 	public void traceEntry(final String optionPath) {
 
 		if (isDebuggingEnabled(optionPath)) {
@@ -174,6 +185,7 @@ class EclipseDebugTrace implements DebugTrace {
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.framework.debug.FrameworkDebugTrace#traceEntry(java.lang.String, java.lang.Object)
 	 */
+	@Override
 	public void traceEntry(final String optionPath, final Object methodArgument) {
 
 		if (isDebuggingEnabled(optionPath)) {
@@ -185,10 +197,11 @@ class EclipseDebugTrace implements DebugTrace {
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.framework.debug.FrameworkDebugTrace#traceEntry(java.lang.String, java.lang.Object[])
 	 */
+	@Override
 	public void traceEntry(final String optionPath, final Object[] methodArguments) {
 
 		if (isDebuggingEnabled(optionPath)) {
-			final StringBuffer messageBuffer = new StringBuffer(EclipseDebugTrace.MESSAGE_ENTER_METHOD_WITH_PARAMS);
+			final StringBuilder messageBuffer = new StringBuilder(EclipseDebugTrace.MESSAGE_ENTER_METHOD_WITH_PARAMS);
 			if (methodArguments != null) {
 				int i = 0;
 				while (i < methodArguments.length) {
@@ -214,6 +227,7 @@ class EclipseDebugTrace implements DebugTrace {
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.framework.debug.FrameworkDebugTrace#traceExit(java.lang.String)
 	 */
+	@Override
 	public void traceExit(final String optionPath) {
 
 		if (isDebuggingEnabled(optionPath)) {
@@ -227,10 +241,11 @@ class EclipseDebugTrace implements DebugTrace {
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.framework.debug.FrameworkDebugTrace#traceExit(java.lang.String, java.lang.Object)
 	 */
+	@Override
 	public void traceExit(final String optionPath, final Object result) {
 
 		if (isDebuggingEnabled(optionPath)) {
-			final StringBuffer messageBuffer = new StringBuffer(EclipseDebugTrace.MESSAGE_EXIT_METHOD_WITH_RESULTS);
+			final StringBuilder messageBuffer = new StringBuilder(EclipseDebugTrace.MESSAGE_EXIT_METHOD_WITH_RESULTS);
 			if (result == null) {
 				messageBuffer.append(EclipseDebugTrace.NULL_VALUE);
 			} else {
@@ -246,10 +261,11 @@ class EclipseDebugTrace implements DebugTrace {
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.framework.debug.FrameworkDebugTrace#traceDumpStack(java.lang.String)
 	 */
+	@Override
 	public void traceDumpStack(final String optionPath) {
 
 		if (isDebuggingEnabled(optionPath)) {
-			final StringBuffer messageBuffer = new StringBuffer(EclipseDebugTrace.MESSAGE_THREAD_DUMP);
+			final StringBuilder messageBuffer = new StringBuilder(EclipseDebugTrace.MESSAGE_THREAD_DUMP);
 			StackTraceElement[] elements = new Exception().getStackTrace();
 			// the first element in this stack trace is going to be this class, so ignore it
 			// the second element in this stack trace is going to either be the caller or the trace class.  Ignore it only if a traceClass is defined
@@ -272,7 +288,7 @@ class EclipseDebugTrace implements DebugTrace {
 	/**
 	 * Set the trace message for the specified record to include class and method information
 	 * if verbose debugging is disabled.
-	 *  
+	 *
 	 * @param record The {@link FrameworkDebugTraceEntry} containing the information to persist to the trace file.
 	 * @param originalMessage The original tracing message
 	 */
@@ -280,7 +296,7 @@ class EclipseDebugTrace implements DebugTrace {
 
 		String argument = null;
 		if (!debugOptions.isVerbose()) {
-			final StringBuffer classMethodName = new StringBuffer(record.getClassName());
+			final StringBuilder classMethodName = new StringBuilder(record.getClassName());
 			classMethodName.append("#"); //$NON-NLS-1$
 			classMethodName.append(record.getMethodName());
 			classMethodName.append(" "); //$NON-NLS-1$
@@ -294,14 +310,14 @@ class EclipseDebugTrace implements DebugTrace {
 
 	/**
 	 * Utility method to convert an array of StackTraceElement objects to form a String representation of a stack dump
-	 * 
+	 *
 	 * @param elements
 	 *            The array of StackTraceElement objects
 	 * @return A String of the stack dump produced by the list of elements
 	 */
 	private final String convertStackTraceElementsToString(final StackTraceElement[] elements) {
 
-		final StringBuffer buffer = new StringBuffer();
+		final StringBuilder buffer = new StringBuilder();
 		if (elements != null) {
 			buffer.append("java.lang.Throwable: "); //$NON-NLS-1$
 			buffer.append(EclipseDebugTrace.LINE_SEPARATOR);
@@ -320,7 +336,7 @@ class EclipseDebugTrace implements DebugTrace {
 
 	/**
 	 * Write the specified FrameworkTraceEntry to trace file
-	 * 
+	 *
 	 * @param entry The FrameworkTraceEntry to write to the log file.
 	 */
 	private void writeRecord(final FrameworkDebugTraceEntry entry) {
@@ -341,7 +357,7 @@ class EclipseDebugTrace implements DebugTrace {
 					// flush the writer
 					traceWriter.flush();
 				} catch (Exception ex) {
-					// any exceptions during tracing should be caught 
+					// any exceptions during tracing should be caught
 					System.err.println("An exception occurred while writing to the platform trace file: ");//$NON-NLS-1$
 					ex.printStackTrace(System.err);
 				} finally {
@@ -378,8 +394,8 @@ class EclipseDebugTrace implements DebugTrace {
 	}
 
 	/**
-	 * Checks the trace file size.  If the file size reaches the limit then the trace file is rotated. 
-	 * 
+	 * Checks the trace file size.  If the file size reaches the limit then the trace file is rotated.
+	 *
 	 * @param traceFile The tracing file
 	 * @param timestamp the timestamp for the session; this is the same timestamp as the first entry
 	 * @return false if an error occurred trying to rotate the trace file
@@ -403,7 +419,7 @@ class EclipseDebugTrace implements DebugTrace {
 					final File backupFile = new File(backupFilename);
 					if (backupFile.exists()) {
 						if (!backupFile.delete()) {
-							System.err.println("Error when trying to delete old trace file: " + backupFile.getName());//$NON-NLS-1$ 
+							System.err.println("Error when trying to delete old trace file: " + backupFile.getName());//$NON-NLS-1$
 							if (backupFile.renameTo(new File(backupFile.getAbsolutePath() + System.currentTimeMillis()))) {
 								System.err.println("So we rename it to filename: " + backupFile.getName()); //$NON-NLS-1$
 							} else {
@@ -420,8 +436,8 @@ class EclipseDebugTrace implements DebugTrace {
 						isBackupOK = false;
 					}
 					/*
-					 * Write a header to new log file stating that this new file is a continuation file. 
-					 * This method should already be called with the file lock set so we should be safe 
+					 * Write a header to new log file stating that this new file is a continuation file.
+					 * This method should already be called with the file lock set so we should be safe
 					 * to update it here.
 					*/
 					Writer traceWriter = null;
@@ -453,7 +469,7 @@ class EclipseDebugTrace implements DebugTrace {
 	 */
 	private void writeComment(final Writer traceWriter, final String comment) throws IOException {
 
-		StringBuffer commentText = new StringBuffer(EclipseDebugTrace.TRACE_COMMENT);
+		StringBuilder commentText = new StringBuilder(EclipseDebugTrace.TRACE_COMMENT);
 		commentText.append(" "); //$NON-NLS-1$
 		commentText.append(comment);
 		commentText.append(EclipseDebugTrace.LINE_SEPARATOR);
@@ -462,7 +478,7 @@ class EclipseDebugTrace implements DebugTrace {
 
 	/**
 	 * Accessor to retrieve the time stamp in a formatted manner.
-	 * 
+	 *
 	 * @return A formatted time stamp based on the {@link EclipseDebugTrace#TRACE_FILE_DATE_FORMATTER} formatter
 	 */
 	private final String getFormattedDate(long timestamp) {
@@ -472,8 +488,8 @@ class EclipseDebugTrace implements DebugTrace {
 
 	/**
 	 * Accessor to retrieve the text of a {@link Throwable} in a formatted manner so that it can be written to the
-	 * trace file. 
-	 * 
+	 * trace file.
+	 *
 	 * @param error The {@lnk Throwable} to format
 	 * @return The complete text of a {@link Throwable} as a {@link String} or null if the input error is null.
 	 */
@@ -498,35 +514,35 @@ class EclipseDebugTrace implements DebugTrace {
 
 	/**
 	 * Writes header information to a new trace file
-	 * 
+	 *
 	 * @param traceWriter the trace writer
 	 * @param timestamp the timestamp for the session; this is the same timestamp as the first entry
-	 * @throws IOException If an error occurs while writing this session information 
+	 * @throws IOException If an error occurs while writing this session information
 	 */
 	private void writeSession(final Writer traceWriter, long timestamp) throws IOException {
 
 		writeComment(traceWriter, EclipseDebugTrace.TRACE_NEW_SESSION + this.getFormattedDate(timestamp));
 		writeComment(traceWriter, EclipseDebugTrace.TRACE_FILE_VERSION_COMMENT + EclipseDebugTrace.TRACE_FILE_VERSION);
 		writeComment(traceWriter, EclipseDebugTrace.TRACE_FILE_VERBOSE_COMMENT + debugOptions.isVerbose());
-		writeComment(traceWriter, "The following option strings are specified for this debug session:"); //$NON-NLS-1$ 
+		writeComment(traceWriter, "The following option strings are specified for this debug session:"); //$NON-NLS-1$
 		final String[] allOptions = debugOptions.getAllOptions();
-		for (int i = 0; i < allOptions.length; i++) {
-			writeComment(traceWriter, "\t" + allOptions[i]); //$NON-NLS-1$
+		for (String allOption : allOptions) {
+			writeComment(traceWriter, "\t" + allOption); //$NON-NLS-1$
 		}
 	}
 
 	/**
-	 * Writes the specified trace entry object to the trace file using the 
+	 * Writes the specified trace entry object to the trace file using the
 	 * {@link EclipseDebugTrace#TRACE_ELEMENT_DELIMITER} as the delimiter between
 	 * each element of the entry.
-	 * 
+	 *
 	 * @param traceWriter the trace writer
 	 * @param entry The trace entry object to write to the trace file
 	 * @throws IOException If an error occurs while writing this message
 	 */
 	private void writeMessage(final Writer traceWriter, final FrameworkDebugTraceEntry entry) throws IOException {
 
-		final StringBuffer message = new StringBuffer(EclipseDebugTrace.TRACE_ELEMENT_DELIMITER);
+		final StringBuilder message = new StringBuilder(EclipseDebugTrace.TRACE_ELEMENT_DELIMITER);
 		message.append(" "); //$NON-NLS-1$
 		message.append(encodeText(entry.getThreadName()));
 		message.append(" "); //$NON-NLS-1$
@@ -582,18 +598,18 @@ class EclipseDebugTrace implements DebugTrace {
 	 * Encodes the specified string to replace any occurrence of the {@link EclipseDebugTrace#TRACE_ELEMENT_DELIMITER}
 	 * string with the {@link EclipseDebugTrace#TRACE_ELEMENT_DELIMITER_ENCODED}
 	 * string.  This can be used to ensure that the delimiter character does not break parsing when
-	 * the entry text contains the delimiter character. 
-	 * 
-	 * @param inputString The original string to be written to the trace file. 
+	 * the entry text contains the delimiter character.
+	 *
+	 * @param inputString The original string to be written to the trace file.
 	 * @return The original input string with all occurrences of
-	 * {@link EclipseDebugTrace#TRACE_ELEMENT_DELIMITER} replaced with 
+	 * {@link EclipseDebugTrace#TRACE_ELEMENT_DELIMITER} replaced with
 	 * {@link EclipseDebugTrace#TRACE_ELEMENT_DELIMITER_ENCODED}. A <code>null</code> value will be
 	 * returned if the input string is <code>null</code>.
 	 */
 	private static String encodeText(final String inputString) {
 		if (inputString == null || inputString.indexOf(TRACE_ELEMENT_DELIMITER) < 0)
 			return inputString;
-		final StringBuffer tempBuffer = new StringBuffer(inputString);
+		final StringBuilder tempBuffer = new StringBuilder(inputString);
 		int currentIndex = tempBuffer.indexOf(TRACE_ELEMENT_DELIMITER);
 		while (currentIndex >= 0) {
 			tempBuffer.replace(currentIndex, currentIndex + TRACE_ELEMENT_DELIMITER.length(), TRACE_ELEMENT_DELIMITER_ENCODED);
@@ -614,9 +630,9 @@ class EclipseDebugTrace implements DebugTrace {
 	/**
 	 * Creates the trace writer.
 	 * If the tracing file is null then the writer will use System.out to print any messages.
-	 * 
+	 *
 	 * @param traceFile The tracing file
-	 * @return Returns a new Writer object  
+	 * @return Returns a new Writer object
 	 */
 	private Writer openWriter(final File traceFile) {
 		OutputStream out = null;
@@ -631,7 +647,7 @@ class EclipseDebugTrace implements DebugTrace {
 		if (out == null) {
 			out = new FilterOutputStream(System.out) {
 				/**
-				 * @throws IOException  
+				 * @throws IOException
 				 */
 				@Override
 				public void close() throws IOException {
@@ -669,7 +685,7 @@ class EclipseDebugTrace implements DebugTrace {
 
 	/**
 	 * Close the trace writer
-	 * 
+	 *
 	 * @param traceWriter The trace writer
 	 */
 	private void closeWriter(Writer traceWriter) {

@@ -171,7 +171,8 @@ public class PluginsView extends ViewPart implements IPluginModelListener {
 
 	@Override
 	public void createPartControl(Composite parent) {
-		fTreeViewer = new TreeViewer(parent, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.VIRTUAL);
+		fTreeViewer = new TreeViewer(parent, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+		fTreeViewer.setUseHashlookup(true);
 		fDrillDownAdapter = new DrillDownAdapter(fTreeViewer);
 		fTreeViewer.setContentProvider(new PluginsContentProvider(this));
 		fTreeViewer.setLabelProvider(new PluginsLabelProvider());
@@ -429,8 +430,6 @@ public class PluginsView extends ViewPart implements IPluginModelListener {
 			IPluginModelBase entry = getEnclosingModel();
 			if (entry != null) {
 				Action action = new OpenPluginDependenciesAction(entry);
-				action.setText(PDEUIMessages.PluginsView_openDependencies);
-				action.setImageDescriptor(PDEPluginImages.DESC_CALLEES);
 				manager.add(action);
 				manager.add(new Separator());
 
@@ -581,7 +580,7 @@ public class PluginsView extends ViewPart implements IPluginModelListener {
 	private void hookContextMenu() {
 		MenuManager menuMgr = new MenuManager("#PopupMenu"); //$NON-NLS-1$
 		menuMgr.setRemoveAllWhenShown(true);
-		menuMgr.addMenuListener(manager -> PluginsView.this.fillContextMenu(manager));
+		menuMgr.addMenuListener(PluginsView.this::fillContextMenu);
 		Menu menu = menuMgr.createContextMenu(fTreeViewer.getControl());
 		fTreeViewer.getControl().setMenu(menu);
 		getSite().registerContextMenu(menuMgr, fTreeViewer);
@@ -683,8 +682,6 @@ public class PluginsView extends ViewPart implements IPluginModelListener {
 			IEditorInput in = new FileStoreEditorInput(store);
 			page.openEditor(in, editorId);
 			adapter.setEditorId(editorId);
-		} catch (PartInitException e) {
-			PDEPlugin.logException(e);
 		} catch (CoreException e) {
 			PDEPlugin.logException(e);
 		}

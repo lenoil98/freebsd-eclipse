@@ -87,7 +87,7 @@ public abstract class GlobalRefreshElementSelectionPage extends WizardPage {
 		top.setLayoutData(data);
 		setControl(top);
 
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(getControl(), IHelpContextIds.SYNC_RESOURCE_SELECTION_PAGE);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(getControl(), IHelpContextIds.SYNC_RESOURCE_SELECTION_PAGE);
 
 		Label l = new Label(top, SWT.NULL);
 		l.setText(TeamUIMessages.GlobalRefreshResourceSelectionPage_5);
@@ -229,8 +229,7 @@ public abstract class GlobalRefreshElementSelectionPage extends WizardPage {
 	 */
 	private boolean areAnyElementsChecked() {
 		TreeItem[] item = fViewer.getTree().getItems();
-		for (int i = 0; i < item.length; i++) {
-			TreeItem child = item[i];
+		for (TreeItem child : item) {
 			if(child.getChecked() || child.getGrayed()) {
 				return true;
 			}
@@ -247,8 +246,7 @@ public abstract class GlobalRefreshElementSelectionPage extends WizardPage {
 	public Object[] getRootElement() {
 		TreeItem[] item = fViewer.getTree().getItems();
 		List checked = new ArrayList();
-		for (int i = 0; i < item.length; i++) {
-			TreeItem child = item[i];
+		for (TreeItem child : item) {
 			collectCheckedItems(child, checked);
 		}
 		return checked.toArray(new Object[checked.size()]);
@@ -256,7 +254,7 @@ public abstract class GlobalRefreshElementSelectionPage extends WizardPage {
 
 	protected void initializeScopingHint() {
 		String working_sets = settings.get(STORE_WORKING_SETS);
-		if (working_sets == null || working_sets.equals("")) { //$NON-NLS-1$
+		if (working_sets == null || working_sets.isEmpty()) {
 			participantScope.setSelection(true);
 			updateParticipantScope();
 		} else {
@@ -264,7 +262,7 @@ public abstract class GlobalRefreshElementSelectionPage extends WizardPage {
 			ArrayList<IWorkingSet> ws = new ArrayList<>();
 			while (st.hasMoreTokens()) {
 				String workingSetName = st.nextToken();
-				if (workingSetName != null && workingSetName.equals("") == false) { //$NON-NLS-1$
+				if (workingSetName != null && !workingSetName.isEmpty()) {
 					IWorkingSetManager workingSetManager = PlatformUI.getWorkbench().getWorkingSetManager();
 					IWorkingSet workingSet = workingSetManager.getWorkingSet(workingSetName);
 					if (workingSet != null) {
@@ -348,8 +346,7 @@ public abstract class GlobalRefreshElementSelectionPage extends WizardPage {
 			checked.add(item.getData());
 		} else if(item.getGrayed()) {
 			TreeItem[] children = item.getItems();
-			for (int i = 0; i < children.length; i++) {
-				TreeItem child = children[i];
+			for (TreeItem child : children) {
 				collectCheckedItems(child, checked);
 			}
 		}
@@ -379,9 +376,9 @@ public abstract class GlobalRefreshElementSelectionPage extends WizardPage {
 	}
 
 	protected void setWorkspaceSelected(boolean selected) {
-		 workingSetScope.setSelection(!selected);
-		 selectedResourcesScope.setSelection(!selected);
-		 participantScope.setSelection(selected);
+		workingSetScope.setSelection(!selected);
+		selectedResourcesScope.setSelection(!selected);
+		participantScope.setSelection(selected);
 	}
 
 	protected boolean isWorkingSetSelected() {

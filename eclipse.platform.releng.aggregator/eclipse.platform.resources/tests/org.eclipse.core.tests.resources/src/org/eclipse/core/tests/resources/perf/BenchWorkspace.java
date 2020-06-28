@@ -13,8 +13,6 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources.perf;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
@@ -25,27 +23,6 @@ public class BenchWorkspace extends ResourceTest {
 	private static final int FILES_PER_FOLDER = 20;
 	private static final int NUM_FOLDERS = 400;//must be multiple of 10
 	IProject project;
-
-	public static Test suite() {
-		return new TestSuite(BenchWorkspace.class);
-		//		TestSuite suite = new TestSuite(BenchWorkspace.class.getName());
-		//		suite.addTest(new BenchWorkspace("testFindMaxProblemSeverity"));
-		//		return suite;
-	}
-
-	/**
-	 * No-arg constructor to satisfy test harness.
-	 */
-	public BenchWorkspace() {
-		super();
-	}
-
-	/**
-	 * Standard test case constructor
-	 */
-	public BenchWorkspace(String testName) {
-		super(testName);
-	}
 
 	/**
 	 * Creates the given number of problem markers on each resource in the workspace.
@@ -77,9 +54,9 @@ public class BenchWorkspace extends ResourceTest {
 		for (int depth = 0; depth < MAX_DEPTH; depth++) {
 			for (int span = 0; span < MAX_SPAN; span++) {
 				if (depth == 0) {
-					names[i] = "TestProject/" + Integer.toString(span) + "/";
+					names[i] = "TestProject/" + span + "/";
 				} else {
-					names[i] = names[i - MAX_SPAN] + Integer.toString(span) + "/";
+					names[i] = names[i - MAX_SPAN] + span + "/";
 				}
 				i++;
 			}
@@ -87,7 +64,7 @@ public class BenchWorkspace extends ResourceTest {
 		//create files for each folder
 		for (int folder = 0; folder < NUM_FOLDERS; folder++) {
 			for (int file = 0; file < FILES_PER_FOLDER; file++) {
-				names[i++] = names[folder] + "file" + Integer.toString(file);
+				names[i++] = names[folder] + "file" + file;
 			}
 		}
 		return names;

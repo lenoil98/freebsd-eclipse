@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -42,6 +42,7 @@ import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.SwitchCase;
+import org.eclipse.jdt.core.dom.SwitchExpression;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.manipulation.SharedASTProviderCore;
 
@@ -103,7 +104,7 @@ public class JavaElementHyperlinkDetector extends AbstractHyperlinkDetector {
 
 			if (JavaElementHyperlinkDetector.class == getClass() && findBreakOrContinueTarget(input, region) != null)
 				return new IHyperlink[] { new JavaElementHyperlink(wordRegion, (SelectionDispatchAction)openAction, null, false) };
-			
+
 			if (JavaElementHyperlinkDetector.class == getClass() && findSwitchCaseTarget(input, region) != null)
 				return new IHyperlink[] { new JavaElementHyperlink(wordRegion, (SelectionDispatchAction) openAction, null, false) };
 
@@ -121,21 +122,21 @@ public class JavaElementHyperlinkDetector extends AbstractHyperlinkDetector {
 			}
 			if (elements.length == 0)
 				return null;
-			
+
 			ArrayList<IHyperlink> links= new ArrayList<>(elements.length);
-			for (int i= 0; i < elements.length; i++) {
-				addHyperlinks(links, wordRegion, (SelectionDispatchAction)openAction, elements[i], elements.length > 1, (JavaEditor)textEditor);
+			for (IJavaElement element : elements) {
+				addHyperlinks(links, wordRegion, (SelectionDispatchAction)openAction, element, elements.length > 1, (JavaEditor)textEditor);
 			}
-			if (links.size() == 0)
+			if (links.isEmpty())
 				return null;
-			
+
 			return CollectionsUtil.toArray(links, IHyperlink.class);
 
 		} catch (JavaModelException e) {
 			return null;
 		}
 	}
-	
+
 	@Override
 	public void dispose() {
 		super.dispose();
@@ -146,7 +147,7 @@ public class JavaElementHyperlinkDetector extends AbstractHyperlinkDetector {
 
 	/**
 	 * Returns whether the word is "inheritDoc".
-	 * 
+	 *
 	 * @param document the document
 	 * @param wordRegion the word region
 	 * @return <code>true</code> iff the word is "inheritDoc"
@@ -163,7 +164,7 @@ public class JavaElementHyperlinkDetector extends AbstractHyperlinkDetector {
 
 	/**
 	 * Creates and adds Java element hyperlinks.
-	 * 
+	 *
 	 * @param hyperlinksCollector the list to which hyperlinks should be added
 	 * @param wordRegion the region of the link
 	 * @param openAction the action to use to open the Java elements
@@ -171,7 +172,7 @@ public class JavaElementHyperlinkDetector extends AbstractHyperlinkDetector {
 	 * @param qualify <code>true</code> if the hyperlink text should show a qualified name for
 	 *            element
 	 * @param editor the active Java editor
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	protected void addHyperlinks(List<IHyperlink> hyperlinksCollector, IRegion wordRegion, SelectionDispatchAction openAction, IJavaElement element, boolean qualify, JavaEditor editor) {
@@ -188,8 +189,7 @@ public class JavaElementHyperlinkDetector extends AbstractHyperlinkDetector {
 	 */
 	private IJavaElement[] selectOpenableElements(IJavaElement[] elements) {
 		List<IJavaElement> result= new ArrayList<>(elements.length);
-		for (int i= 0; i < elements.length; i++) {
-			IJavaElement element= elements[i];
+		for (IJavaElement element : elements) {
 			switch (element.getElementType()) {
 				case IJavaElement.PACKAGE_DECLARATION:
 				case IJavaElement.PACKAGE_FRAGMENT:
@@ -207,7 +207,7 @@ public class JavaElementHyperlinkDetector extends AbstractHyperlinkDetector {
 
 	/**
 	 * Finds the target for break or continue node.
-	 * 
+	 *
 	 * @param input the editor input
 	 * @param region the region
 	 * @return the break or continue target location or <code>null</code> if none
@@ -248,7 +248,7 @@ public class JavaElementHyperlinkDetector extends AbstractHyperlinkDetector {
 
 	/**
 	 * Finds the target for switch-case node.
-	 * 
+	 *
 	 * @param input the editor input
 	 * @param region the region
 	 * @return the switch-case target location or <code>null</code> if none
@@ -267,10 +267,14 @@ public class JavaElementHyperlinkDetector extends AbstractHyperlinkDetector {
 		SwitchCase caseNode= (SwitchCase) node;
 
 		ASTNode parent= caseNode.getParent();
-		if (!(parent instanceof SwitchStatement)) {
+		ASTNode switchNode;
+		if (parent instanceof SwitchStatement) {
+			switchNode= parent;
+		} else if (parent instanceof SwitchExpression) {
+			switchNode= parent;
+		} else {
 			return null;
 		}
-		SwitchStatement switchNode= (SwitchStatement) parent;
 
 		String description= Messages.format(SearchMessages.BreakContinueTargetFinder_occurrence_description, BasicElementLabels.getJavaElementName(ASTNodes.asString(caseNode)));
 		return new OccurrenceLocation(switchNode.getStartPosition(), 6, 0, description); // '6' is the length of 'switch'

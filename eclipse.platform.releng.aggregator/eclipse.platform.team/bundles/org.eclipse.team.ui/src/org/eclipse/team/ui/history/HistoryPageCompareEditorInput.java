@@ -47,7 +47,7 @@ public class HistoryPageCompareEditorInput extends PageCompareEditorInput {
 	private DialogHistoryPageSite site;
 	private final Object object;
 	private final IHistoryPageSource pageSource;
-	private final IPropertyChangeListener changeListener = event -> handlePropertyChange(event);
+	private final IPropertyChangeListener changeListener = this::handlePropertyChange;
 	private boolean isReplace;
 
 	/**
@@ -62,18 +62,12 @@ public class HistoryPageCompareEditorInput extends PageCompareEditorInput {
 		this.object = object;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.compare.CompareEditorInput#prepareInput(org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected Object prepareInput(IProgressMonitor monitor)
 			throws InvocationTargetException, InterruptedException {
 		return object;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.compare.CompareEditorInput#handleDispose()
-	 */
 	@Override
 	protected void handleDispose() {
 		super.handleDispose();
@@ -83,9 +77,6 @@ public class HistoryPageCompareEditorInput extends PageCompareEditorInput {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.PageCompareEditorInput#createPage(org.eclipse.compare.CompareViewerPane, org.eclipse.jface.action.IToolBarManager)
-	 */
 	@Override
 	protected IPage createPage(CompareViewerPane parent, IToolBarManager toolBarManager) {
 		site = new DialogHistoryPageSite(parent.getShell());

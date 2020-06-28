@@ -19,6 +19,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -45,8 +46,6 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * A working copy launch configuration
@@ -221,7 +220,7 @@ public class LaunchConfigurationWorkingCopy extends LaunchConfiguration implemen
 				}
 			}
 			if (useRunnable) {
-					IWorkspaceRunnable wr = pm -> doSave0(pm);
+					IWorkspaceRunnable wr = this::doSave0;
 				ResourcesPlugin.getWorkspace().run(wr, null, 0, lmonitor.newChild(1));
 			} else {
 				//file is persisted in the metadata not the workspace
@@ -310,14 +309,8 @@ public class LaunchConfigurationWorkingCopy extends LaunchConfiguration implemen
 						added = true;
 						updateMonitor(lmonitor, 1);
 					}
-					BufferedOutputStream stream = null;
-					try {
-						stream = new BufferedOutputStream(file.openOutputStream(EFS.NONE, null));
+					try (BufferedOutputStream stream = new BufferedOutputStream(file.openOutputStream(EFS.NONE, null))) {
 						stream.write(xml.getBytes(StandardCharsets.UTF_8));
-					} finally {
-						if(stream != null) {
-							stream.close();
-						}
 					}
 					//notify file saved
 					updateMonitor(lmonitor, 1);
@@ -665,8 +658,7 @@ public class LaunchConfigurationWorkingCopy extends LaunchConfiguration implemen
 		if(resources != null && resources.length > 0) {
 			paths = new ArrayList<>(resources.length);
 			types = new ArrayList<>(resources.length);
-			for (int i = 0; i < resources.length; i++) {
-				IResource resource = resources[i];
+			for (IResource resource : resources) {
 				if(resource != null) {
 					paths.add(resource.getFullPath().toPortableString());
 					types.add(Integer.valueOf(resource.getType()).toString());

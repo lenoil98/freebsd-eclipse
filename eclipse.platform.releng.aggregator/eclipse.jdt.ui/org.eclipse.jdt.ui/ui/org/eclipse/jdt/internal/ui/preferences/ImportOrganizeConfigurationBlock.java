@@ -428,11 +428,11 @@ public class ImportOrganizeConfigurationBlock extends OptionsConfigurationBlock 
 		ImportOrderEntry[] importOrder= getImportOrderPreference();
 		int threshold= getImportNumberThreshold(PREF_ONDEMANDTHRESHOLD);
 		int staticThreshold= getImportNumberThreshold(PREF_STATICONDEMANDTHRESHOLD);
-		boolean ignoreLowerCase= Boolean.valueOf(getValue(PREF_IGNORELOWERCASE)).booleanValue();
+		boolean ignoreLowerCase= Boolean.parseBoolean(getValue(PREF_IGNORELOWERCASE));
 
 		fOrderListField.removeAllElements();
-		for (int i= 0; i < importOrder.length; i++) {
-			fOrderListField.addElement(importOrder[i]);
+		for (ImportOrderEntry i : importOrder) {
+			fOrderListField.addElement(i);
 		}
 		fThresholdField.setText(String.valueOf(threshold));
 		fStaticThresholdField.setText(String.valueOf(staticThreshold));
@@ -487,8 +487,7 @@ public class ImportOrganizeConfigurationBlock extends OptionsConfigurationBlock 
 
 	private static String packOrderList(List<ImportOrderEntry> orderList) {
 		StringBuilder buf= new StringBuilder();
-		for (int i= 0; i < orderList.size(); i++) {
-			ImportOrderEntry entry= orderList.get(i);
+		for (ImportOrderEntry entry : orderList) {
 			buf.append(entry.serialize());
 			buf.append(';');
 		}

@@ -126,8 +126,8 @@ public CBanner(Composite parent, int style) {
 		}
 	};
 	int[] events = new int[] {SWT.Dispose, SWT.MouseDown, SWT.MouseExit, SWT.MouseMove, SWT.MouseUp, SWT.Paint, SWT.Resize};
-	for (int i = 0; i < events.length; i++) {
-		addListener(events[i], listener);
+	for (int event : events) {
+		addListener(event, listener);
 	}
 }
 static int[] bezier(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3, int count) {
@@ -550,11 +550,11 @@ void updateCurve(int height) {
 	int h = height - BORDER_STRIPE;
 	if (simple) {
 		curve = new int[] {0,h, 1,h, 2,h-1, 3,h-2,
-			                       3,2, 4,1, 5,0,};
+								   3,2, 4,1, 5,0,};
 	} else {
 		curve = bezier(0, h+1, BEZIER_LEFT, h+1,
-				             curve_width-BEZIER_RIGHT, 0, curve_width, 0,
-		                     curve_width);
+							 curve_width-BEZIER_RIGHT, 0, curve_width, 0,
+							 curve_width);
 	}
 }
 }

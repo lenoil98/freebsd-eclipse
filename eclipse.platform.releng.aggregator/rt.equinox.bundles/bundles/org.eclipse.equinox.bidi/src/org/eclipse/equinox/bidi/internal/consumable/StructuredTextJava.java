@@ -36,7 +36,7 @@ import org.eclipse.equinox.bidi.internal.StructuredTextActivator;
 public class StructuredTextJava extends StructuredTextTypeHandler {
 	private static final byte WS = Character.DIRECTIONALITY_WHITESPACE;
 	static final String lineSep = StructuredTextActivator.getProperty("line.separator"); //$NON-NLS-1$
-	private static final Integer STATE_SLASH_ASTER_COMMENT = new Integer(3);
+	private static final Integer STATE_SLASH_ASTER_COMMENT = Integer.valueOf(3);
 
 	public StructuredTextJava() {
 		super("[](){}.+-<>=~!&*/%^|?:,;\t"); //$NON-NLS-1$
@@ -45,19 +45,21 @@ public class StructuredTextJava extends StructuredTextTypeHandler {
 	/**
 	 *  @return 4 as the number of special cases handled by this handler.
 	 */
+	@Override
 	public int getSpecialsCount(IStructuredTextExpert expert) {
 		return 4;
 	}
 
 	/**
-	     *  Locates occurrences of 4 special strings:
-	     *  <ol>
-	     *    <li>spaces</li>
-	     *    <li>literals starting with quotation mark</li>
-	     *    <li>comments starting with slash-asterisk</li>
-	     *    <li>comments starting with slash-slash</li>
-	     *  </ol>
-	     */
+	 *  Locates occurrences of 4 special strings:
+	 *  <ol>
+	 *    <li>spaces</li>
+	 *    <li>literals starting with quotation mark</li>
+	 *    <li>comments starting with slash-asterisk</li>
+	 *    <li>comments starting with slash-slash</li>
+	 *  </ol>
+	 */
+	@Override
 	public int indexOfSpecial(IStructuredTextExpert expert, String text, StructuredTextCharTypes charTypes, StructuredTextOffsets offsets, int caseNumber, int fromIndex) {
 		switch (caseNumber) {
 			case 1 : /* space */
@@ -75,13 +77,14 @@ public class StructuredTextJava extends StructuredTextTypeHandler {
 
 	/**
 	 *  Processes the 4 special cases as follows.
-	     *  <ol>
-	     *    <li>skip the run of spaces</li>
-	     *    <li>look for a matching quotation mark and skip until after it</li>
-	     *    <li>skip until after the closing asterisk-slash</li>
-	     *    <li>skip until after a line separator</li>
-	     *  </ol>
+	 *  <ol>
+	 *    <li>skip the run of spaces</li>
+	 *    <li>look for a matching quotation mark and skip until after it</li>
+	 *    <li>skip until after the closing asterisk-slash</li>
+	 *    <li>skip until after a line separator</li>
+	 *  </ol>
 	 */
+	@Override
 	public int processSpecial(IStructuredTextExpert expert, String text, StructuredTextCharTypes charTypes, StructuredTextOffsets offsets, int caseNumber, int separLocation) {
 		int location, counter, i;
 

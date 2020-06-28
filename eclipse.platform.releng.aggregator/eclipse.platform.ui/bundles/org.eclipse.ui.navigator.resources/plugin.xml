@@ -264,6 +264,15 @@
 				</or>
 			</enablement>
 		</actionProvider>
+      <actionProvider
+      			id="org.eclipse.ui.navigator.resources.ShowInActionProvider"
+				class="org.eclipse.ui.internal.navigator.resources.actions.ShowInActionProvider">
+			<enablement>
+				<or>
+					<adapt type="org.eclipse.core.resources.IResource" />
+				</or>
+			</enablement>
+		</actionProvider>
 
       <!-- Expression Filters -->
       <commonFilter
@@ -449,6 +458,11 @@
                </or>
             </parentExpression>
          </commonSorter>
+         <initialActivation>
+            <not>
+	            <test args="defaultToFlatLayout" property="org.eclipse.ui.navigator.resources.navigatorResourcePreference"/>
+	          </not>
+	       </initialActivation>
       </navigatorContent>
       <commonFilter
             activeByDefault="false"
@@ -543,5 +557,15 @@
                optional="false">
          </commandParameter>
       </command>
+   </extension>
+   <extension
+         point="org.eclipse.core.expressions.propertyTesters">
+      <propertyTester
+            class="org.eclipse.ui.internal.navigator.resources.NavigatorResourcesPreferenceTester"
+            id="org.eclipse.ui.navigator.resources.navigatorResourcePreference"
+            namespace="org.eclipse.ui.navigator.resources"
+            properties="navigatorResourcePreference"
+            type="java.lang.Object">
+      </propertyTester>
    </extension>
 </plugin>

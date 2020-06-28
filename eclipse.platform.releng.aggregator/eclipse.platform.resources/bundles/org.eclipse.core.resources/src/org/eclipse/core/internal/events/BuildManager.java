@@ -402,7 +402,6 @@ public class BuildManager implements ICoreConstants, IManager, ILifecycleListene
 	/**
 	 * Runs all builders on all the given project configs, in the order that
 	 * they are given.
-	 * @param buildJobGroup
 	 * @return A status indicating if the build succeeded or failed
 	 */
 	public IStatus buildParallel(Digraph<IBuildConfiguration> configs, IBuildConfiguration[] requestedConfigs, int trigger, JobGroup buildJobGroup, IProgressMonitor monitor) {
@@ -448,7 +447,7 @@ public class BuildManager implements ICoreConstants, IManager, ILifecycleListene
 			} catch (CoreException ex) {
 				status.add(new Status(IStatus.ERROR, ResourcesPlugin.PI_RESOURCES, ex.getMessage(), ex));
 			}
-		}, buildJobGroup);
+		}, config -> getRule(config, trigger, null, Collections.emptyMap()), buildJobGroup);
 		graphProcessor.processGraphWithParallelJobs();
 		try {
 			Job.getJobManager().join(graphProcessor, monitor);
@@ -1092,7 +1091,8 @@ public class BuildManager implements ICoreConstants, IManager, ILifecycleListene
 		long start = System.currentTimeMillis();
 		currentDelta = deltaTreeCache.computeIfAbsent(null, oldTree, newTree, () -> {
 			if (Policy.DEBUG_BUILD_NEEDED) {
-				String message = "Checking if need to build. Starting delta computation between: " + oldTree.toString() + " and " + newTree.toString(); //$NON-NLS-1$ //$NON-NLS-2$
+				String message = "Checking if need to build. Starting delta computation between: " + oldTree + " and " //$NON-NLS-1$ //$NON-NLS-2$
+						+ newTree;
 				Policy.debug(message);
 			}
 			DeltaDataTree computed = newTree.getDataTree().forwardDeltaWith(oldTree.getDataTree(), ResourceComparator.getBuildComparator());

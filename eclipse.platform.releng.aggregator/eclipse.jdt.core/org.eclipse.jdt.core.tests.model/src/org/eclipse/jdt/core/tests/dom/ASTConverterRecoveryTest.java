@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2015 IBM Corporation and others.
+ * Copyright (c) 2006, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -56,9 +56,10 @@ public class ASTConverterRecoveryTest extends ConverterTestSetup {
 		return buildModelTestSuite(ASTConverterRecoveryTest.class);
 	}
 
+	@Override
 	public void setUpSuite() throws Exception {
 		super.setUpSuite();
-		this.ast = AST.newAST(getJLS3());
+		this.ast = AST.newAST(getJLS3(), false);
 	}
 
 	public void test0001() throws JavaModelException {
@@ -960,7 +961,7 @@ public class ASTConverterRecoveryTest extends ConverterTestSetup {
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=239117
 	public void test0018() throws JavaModelException {
 		this.workingCopies = new ICompilationUnit[0];
-	
+
 		ASTResult result = this.buildMarkedAST(
 				"/Converter/src/p/X.java",
 				"package p;\n" +
@@ -970,30 +971,30 @@ public class ASTConverterRecoveryTest extends ConverterTestSetup {
 				"		}\n" +
 				"	}\n" +
 				"}");
-	
+
 		assertASTResult(
-				"===== AST =====\n" + 
-				"package p;\n" + 
-				"public class X {\n" + 
-				"  void m(  Object var){\n" + 
-				"    if (1 == 1 && var.equals(1))     [*1*];[*1*]\n" + 
-				"  }\n" + 
-				"}\n" + 
-				"\n" + 
-				"===== Details =====\n" + 
-				"1:EMPTY_STATEMENT,[77,0],,RECOVERED,[N/A]\n" + 
-				"===== Problems =====\n" + 
-				"1. WARNING in /Converter/src/p/X.java (at line 4)\n" + 
-				"	if (1==1 && var.equals(1) {\n" + 
-				"	    ^^^^\n" + 
-				"Comparing identical expressions\n" + 
-				"2. ERROR in /Converter/src/p/X.java (at line 4)\n" + 
-				"	if (1==1 && var.equals(1) {\n" + 
-				"	                ^^^^^^\n" + 
-				"The method equals(Object) in the type Object is not applicable for the arguments (int)\n" + 
-				"3. ERROR in /Converter/src/p/X.java (at line 4)\n" + 
-				"	if (1==1 && var.equals(1) {\n" + 
-				"	                        ^\n" + 
+				"===== AST =====\n" +
+				"package p;\n" +
+				"public class X {\n" +
+				"  void m(  Object var){\n" +
+				"    if (1 == 1 && var.equals(1))     [*1*];[*1*]\n" +
+				"  }\n" +
+				"}\n" +
+				"\n" +
+				"===== Details =====\n" +
+				"1:EMPTY_STATEMENT,[77,0],,RECOVERED,[N/A]\n" +
+				"===== Problems =====\n" +
+				"1. WARNING in /Converter/src/p/X.java (at line 4)\n" +
+				"	if (1==1 && var.equals(1) {\n" +
+				"	    ^^^^\n" +
+				"Comparing identical expressions\n" +
+				"2. ERROR in /Converter/src/p/X.java (at line 4)\n" +
+				"	if (1==1 && var.equals(1) {\n" +
+				"	                ^^^^^^\n" +
+				"The method equals(Object) in the type Object is not applicable for the arguments (int)\n" +
+				"3. ERROR in /Converter/src/p/X.java (at line 4)\n" +
+				"	if (1==1 && var.equals(1) {\n" +
+				"	                        ^\n" +
 				"Syntax error, insert \") Statement\" to complete BlockStatements\n",
 				result);
 	}
@@ -1004,22 +1005,22 @@ public class ASTConverterRecoveryTest extends ConverterTestSetup {
 			"/Converter/src/test/X.java",
 			"package test;\n"+
 			"public class X {\n"+
-			"	void foo() {\n" + 
-			"		return new Object() {hash};\n" + 
-			"	}\n" + 
+			"	void foo() {\n" +
+			"		return new Object() {hash};\n" +
+			"	}\n" +
 			"}\n");
 
 		char[] source = this.workingCopies[0].getSource().toCharArray();
 		ASTNode result = runConversion(getJLS3(), this.workingCopies[0], true, true);
 
 		assertASTNodeEquals(
-			"package test;\n" + 
-			"public class X {\n" + 
-			"  void foo(){\n" + 
-			"    return new Object(){\n" + 
-			"    }\n" + 
-			";\n" + 
-			"  }\n" + 
+			"package test;\n" +
+			"public class X {\n" +
+			"  void foo(){\n" +
+			"    return new Object(){\n" +
+			"    }\n" +
+			";\n" +
+			"  }\n" +
 			"}\n",
 			result);
 
@@ -1044,22 +1045,22 @@ public class ASTConverterRecoveryTest extends ConverterTestSetup {
 			"/Converter/src/test/X.java",
 			"package test;\n"+
 			"public class X {\n"+
-			"	void foo() {\n" + 
-			"		field= new Object() {hash};\n" + 
-			"	}\n" + 
+			"	void foo() {\n" +
+			"		field= new Object() {hash};\n" +
+			"	}\n" +
 			"}\n");
 
 		char[] source = this.workingCopies[0].getSource().toCharArray();
 		ASTNode result = runConversion(getJLS3(), this.workingCopies[0], true, true);
 
 		assertASTNodeEquals(
-			"package test;\n" + 
-			"public class X {\n" + 
-			"  void foo(){\n" + 
-			"    field=new Object(){\n" + 
-			"    }\n" + 
-			";\n" + 
-			"  }\n" + 
+			"package test;\n" +
+			"public class X {\n" +
+			"  void foo(){\n" +
+			"    field=new Object(){\n" +
+			"    }\n" +
+			";\n" +
+			"  }\n" +
 			"}\n",
 			result);
 
@@ -1081,7 +1082,7 @@ public class ASTConverterRecoveryTest extends ConverterTestSetup {
 		checkSourceRange(anonymousClassDeclaration, "new Object() {hash}", source); //$NON-NLS-1$
 		checkSourceRange(assignment, "field= new Object() {hash}", source); //$NON-NLS-1$
 	}
-	
+
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=340691
 		public void test0021() throws JavaModelException {
 			this.workingCopies = new ICompilationUnit[1];
@@ -1089,17 +1090,17 @@ public class ASTConverterRecoveryTest extends ConverterTestSetup {
 				"/Converter/src/test/X.java",
 				"package test;\n"+
 				"public class X {\n"+
-				"	void foo() {\n" + 
-				"		synchronized new Object();\n" + 
-				"	}\n" + 
+				"	void foo() {\n" +
+				"		synchronized new Object();\n" +
+				"	}\n" +
 				"}\n");
 			ASTNode result = runConversion(getJLS3(), this.workingCopies[0], true, true);
 
 			assertASTNodeEquals(
-				"package test;\n" + 
-				"public class X {\n" + 
-				"  void foo(){\n" + 
-				"  }\n" + 
+				"package test;\n" +
+				"public class X {\n" +
+				"  void foo(){\n" +
+				"  }\n" +
 				"}\n",
 				result);
 

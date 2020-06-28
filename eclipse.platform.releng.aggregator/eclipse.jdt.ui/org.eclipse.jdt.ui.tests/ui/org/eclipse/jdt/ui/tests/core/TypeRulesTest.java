@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,8 +13,16 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Hashtable;
 import java.util.List;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.TestOptions;
@@ -33,34 +41,21 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.TypeRules;
 
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 public class TypeRulesTest extends CoreTests {
 
-	private static final Class<TypeRulesTest> THIS= TypeRulesTest.class;
+	@Rule
+	public ProjectTestSetup pts= new ProjectTestSetup();
 
 	private IJavaProject fJProject1;
 	private IPackageFragmentRoot fSourceFolder;
 
-	public TypeRulesTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
 		options.put(JavaCore.COMPILER_PB_NO_EFFECT_ASSIGNMENT, JavaCore.IGNORE);
 		options.put(JavaCore.COMPILER_PB_UNNECESSARY_TYPE_CHECK, JavaCore.IGNORE);
@@ -72,16 +67,14 @@ public class TypeRulesTest extends CoreTests {
 		fSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 	}
 
-
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
 	}
 
-
 	private VariableDeclarationFragment[] createVariables() throws JavaModelException {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import java.util.Vector;\n");
 		buf.append("import java.util.Collection;\n");
@@ -168,17 +161,15 @@ public class TypeRulesTest extends CoreTests {
 	}
 
 	//TODO: only tests behavior for ITypeBindings from the same AST. See bug 80715.
+	@Test
 	public void testIsAssignmentCompatible() throws Exception {
 		VariableDeclarationFragment[] targets= createVariables();
 
-		StringBuffer errors= new StringBuffer();
-		for (int k= 0; k < targets.length; k++) {
-			for (int n= 0; n < targets.length; n++) {
-				VariableDeclarationFragment f1= targets[k];
-				VariableDeclarationFragment f2= targets[n];
+		StringBuilder errors= new StringBuilder();
+		for (VariableDeclarationFragment f1 : targets) {
+			for (VariableDeclarationFragment f2 : targets) {
 				String line= f2.getName().getIdentifier() + "= " + f1.getName().getIdentifier();
-
-				StringBuffer buf= new StringBuffer();
+				StringBuilder buf= new StringBuilder();
 				buf.append("package test1;\n");
 				buf.append("public class F<T, U extends Number> extends E<T, U> {\n");
 				buf.append("    void foo() {\n");
@@ -209,17 +200,16 @@ public class TypeRulesTest extends CoreTests {
 		assertTrue(errors.toString(), errors.length() == 0);
 	}
 
+	@Test
 	public void testCanAssign() throws Exception {
 		VariableDeclarationFragment[] targets= createVariables();
 
-		StringBuffer errors= new StringBuffer();
-		for (int k= 0; k < targets.length; k++) {
-			for (int n= 0; n < targets.length; n++) {
-				VariableDeclarationFragment f1= targets[k];
-				VariableDeclarationFragment f2= targets[n];
+		StringBuilder errors= new StringBuilder();
+		for (VariableDeclarationFragment f1 : targets) {
+			for (VariableDeclarationFragment f2 : targets) {
 				String line= f2.getName().getIdentifier() + "= " + f1.getName().getIdentifier();
 
-				StringBuffer buf= new StringBuffer();
+				StringBuilder buf= new StringBuilder();
 				buf.append("package test1;\n");
 				buf.append("public class F<T, U extends Number> extends E<T, U> {\n");
 				buf.append("    void foo() {\n");
@@ -251,18 +241,16 @@ public class TypeRulesTest extends CoreTests {
 		assertTrue(errors.toString(), errors.length() == 0);
 	}
 
+	@Test
 	public void testIsCastCompatible() throws Exception {
-		StringBuffer errors= new StringBuffer();
+		StringBuilder errors= new StringBuilder();
 		VariableDeclarationFragment[] targets= createVariables();
-		for (int k= 0; k < targets.length; k++) {
-			for (int n= 0; n < targets.length; n++) {
-				VariableDeclarationFragment f1= targets[k];
-				VariableDeclarationFragment f2= targets[n];
-
+		for (VariableDeclarationFragment f1 : targets) {
+			for (VariableDeclarationFragment f2 : targets) {
 				String castType= f2.resolveBinding().getType().getQualifiedName();
 				String line= castType + " x= (" + castType + ") " + f1.getName().getIdentifier();
 
-				StringBuffer buf= new StringBuffer();
+				StringBuilder buf= new StringBuilder();
 				buf.append("package test1;\n");
 				buf.append("public class F<T, U extends Number> extends E<T, U> {\n");
 				buf.append("    void foo() {\n");
@@ -294,18 +282,16 @@ public class TypeRulesTest extends CoreTests {
 		assertTrue(errors.toString(), errors.length() == 0);
 	}
 
+	@Test
 	public void testCanCast() throws Exception {
-		StringBuffer errors= new StringBuffer();
+		StringBuilder errors= new StringBuilder();
 		VariableDeclarationFragment[] targets= createVariables();
-		for (int k= 0; k < targets.length; k++) {
-			for (int n= 0; n < targets.length; n++) {
-				VariableDeclarationFragment f1= targets[k];
-				VariableDeclarationFragment f2= targets[n];
-
+		for (VariableDeclarationFragment f1 : targets) {
+			for (VariableDeclarationFragment f2 : targets) {
 				String castType= f2.resolveBinding().getType().getQualifiedName();
 				String line= castType + " x= (" + castType + ") " + f1.getName().getIdentifier();
 
-				StringBuffer buf= new StringBuffer();
+				StringBuilder buf= new StringBuilder();
 				buf.append("package test1;\n");
 				buf.append("public class F<T, U extends Number> extends E<T, U> {\n");
 				buf.append("    void foo() {\n");
@@ -348,6 +334,5 @@ public class TypeRulesTest extends CoreTests {
 		}
 		assertTrue(errors.toString(), errors.length() == 0);
 	}
-
 
 }

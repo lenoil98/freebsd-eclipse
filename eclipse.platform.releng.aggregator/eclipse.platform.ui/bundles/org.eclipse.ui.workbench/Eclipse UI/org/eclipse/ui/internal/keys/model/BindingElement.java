@@ -56,8 +56,7 @@ public class BindingElement extends ModelElement {
 	public void init(Binding b, ContextModel model) {
 		setCommandInfo(b.getParameterizedCommand());
 		setTrigger(b.getTriggerSequence());
-		setContext((ContextElement) model.getContextIdToElement().get(
-				b.getContextId()));
+		setContext(model.getContextIdToElement().get(b.getContextId()));
 		setUserDelta(Integer.valueOf(b.getType()));
 		setModelObject(b);
 	}
@@ -87,8 +86,6 @@ public class BindingElement extends ModelElement {
 
 	/**
 	 * @param cmd
-	 * @param type
-	 *            The binding type. Check {@link Binding} constants.
 	 */
 	public void init(ParameterizedCommand cmd) {
 		setCommandInfo(cmd);
@@ -107,8 +104,7 @@ public class BindingElement extends ModelElement {
 	}
 
 	/**
-	 * @param trigger
-	 *            The trigger to set.
+	 * @param trigger The trigger to set.
 	 */
 	public void setTrigger(TriggerSequence trigger) {
 		Object old = this.trigger;
@@ -124,8 +120,7 @@ public class BindingElement extends ModelElement {
 	}
 
 	/**
-	 * @param context
-	 *            The context to set.
+	 * @param context The context to set.
 	 */
 	public void setContext(ContextElement context) {
 		Object old = this.context;
@@ -141,8 +136,7 @@ public class BindingElement extends ModelElement {
 	}
 
 	/**
-	 * @param category
-	 *            The category to set.
+	 * @param category The category to set.
 	 */
 	public void setCategory(String category) {
 		Object old = this.category;
@@ -158,8 +152,7 @@ public class BindingElement extends ModelElement {
 	}
 
 	/**
-	 * @param userDelta
-	 *            The userDelta to set.
+	 * @param userDelta The userDelta to set.
 	 */
 	public void setUserDelta(Integer userDelta) {
 		Object old = this.userDelta;
@@ -175,8 +168,7 @@ public class BindingElement extends ModelElement {
 	}
 
 	/**
-	 * @param image
-	 *            The image to set.
+	 * @param image The image to set.
 	 */
 	public void setImage(Image image) {
 		Object old = this.image;
@@ -192,8 +184,7 @@ public class BindingElement extends ModelElement {
 	}
 
 	/**
-	 * @param conflict
-	 *            The conflict to set.
+	 * @param conflict The conflict to set.
 	 */
 	public void setConflict(Boolean conflict) {
 		Object old = this.conflict;
@@ -208,8 +199,7 @@ public class BindingElement extends ModelElement {
 	public void fill(KeyBinding binding, ContextModel contextModel) {
 		setCommandInfo(binding.getParameterizedCommand());
 		setTrigger(binding.getTriggerSequence());
-		setContext((ContextElement) contextModel.getContextIdToElement().get(
-				binding.getContextId()));
+		setContext(contextModel.getContextIdToElement().get(binding.getContextId()));
 		setUserDelta(Integer.valueOf(binding.getType()));
 		setModelObject(binding);
 	}

@@ -13,8 +13,6 @@
  *******************************************************************************/
 package org.eclipse.core.tests.internal.builders;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.internal.events.BuildContext;
 import org.eclipse.core.internal.resources.BuildConfiguration;
 import org.eclipse.core.resources.*;
@@ -25,9 +23,6 @@ import org.eclipse.core.runtime.CoreException;
  * it was called.
  */
 public class BuildContextTest extends AbstractBuilderTest {
-	public static Test suite() {
-		return new TestSuite(BuildContextTest.class);
-	}
 
 	private IProject project0;
 	private IProject project1;
@@ -104,7 +99,7 @@ public class BuildContextTest extends AbstractBuilderTest {
 	}
 
 	/**
-	 * p0 --> p1 --> p2
+	 * p0 --&gt; p1 --&gt; p2
 	 * @throws CoreException
 	 */
 	private void setupSimpleReferences() throws CoreException {

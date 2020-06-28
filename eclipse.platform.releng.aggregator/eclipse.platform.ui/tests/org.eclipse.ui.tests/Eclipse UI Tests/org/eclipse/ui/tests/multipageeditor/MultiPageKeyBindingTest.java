@@ -31,6 +31,10 @@ import org.eclipse.ui.keys.KeySequence;
 import org.eclipse.ui.keys.ParseException;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * Tests that key bindings are treated correctly in a multi-page editor. This
@@ -39,64 +43,64 @@ import org.eclipse.ui.tests.harness.util.UITestCase;
  *
  * @since 3.0
  */
+@RunWith(JUnit4.class)
+@Ignore("Focus issues, see Commit c28efd634f53c9de7bb31b756ffc755b8faf0ffe")
 public class MultiPageKeyBindingTest extends UITestCase {
 
-    /**
-     * Constructs a new instance of <code>MultiPageKeyBindingTest</code>.
-     *
-     * @param name
-     *            The name of the test to be run.
-     */
-    public MultiPageKeyBindingTest(String name) {
-        super(name);
-    }
+	/**
+	 * Constructs a new instance of <code>MultiPageKeyBindingTest</code>.
+	 */
+	public MultiPageKeyBindingTest() {
+		super(MultiPageKeyBindingTest.class.getSimpleName());
+	}
 
-    /**
-     * Tests that the key bindings are updated when the page is switched in a
-     * multi-page editor part.
-     *
-     * @throws CoreException
-     *             If the project or file cannot be created.
-     * @throws ParseException
-     *             The expected key sequence cannot be parsed.
-     */
-    public void testSwitch() throws CoreException, ParseException {
-        final String extension = "multi"; //$NON-NLS-1$
-        final String fileName = "A." + extension; //$NON-NLS-1$
+	/**
+	 * Tests that the key bindings are updated when the page is switched in a
+	 * multi-page editor part.
+	 *
+	 * @throws CoreException
+	 *             If the project or file cannot be created.
+	 * @throws ParseException
+	 *             The expected key sequence cannot be parsed.
+	 */
+	@Test
+	public void testSwitch() throws CoreException, ParseException {
+		final String extension = "multi"; //$NON-NLS-1$
+		final String fileName = "A." + extension; //$NON-NLS-1$
 
-        // Open a new test window.
-        IWorkbenchWindow window = openTestWindow();
+		// Open a new test window.
+		IWorkbenchWindow window = openTestWindow();
 
-        // Create a blurb file.
-        IWorkbenchPage page = window.getActivePage();
-        IWorkspace workspace = ResourcesPlugin.getWorkspace();
-        IProject testProject = workspace.getRoot().getProject(
-                "MultiPageKeyBindingTest Project"); //$NON-NLS-1$
-        testProject.create(null);
-        testProject.open(null);
-        IFile multiFile = testProject.getFile(fileName);
-        multiFile.create(new ByteArrayInputStream(new byte[0]), true, null);
+		// Create a blurb file.
+		IWorkbenchPage page = window.getActivePage();
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IProject testProject = workspace.getRoot().getProject(
+				"MultiPageKeyBindingTest Project"); //$NON-NLS-1$
+		testProject.create(null);
+		testProject.open(null);
+		IFile multiFile = testProject.getFile(fileName);
+		multiFile.create(new ByteArrayInputStream(new byte[0]), true, null);
 
-        // Open a blurb file.
-        IEditorInput editorInput = new FileEditorInput(multiFile);
-        IEditorPart editorPart = page.openEditor(editorInput,
-                "org.eclipse.ui.tests.multipageeditor.TestMultiPageEditor"); //$NON-NLS-1$
-        TestMultiPageEditor multiPageEditorPart = (TestMultiPageEditor) editorPart;
+		// Open a blurb file.
+		IEditorInput editorInput = new FileEditorInput(multiFile);
+		IEditorPart editorPart = page.openEditor(editorInput,
+				"org.eclipse.ui.tests.multipageeditor.TestMultiPageEditor"); //$NON-NLS-1$
+		TestMultiPageEditor multiPageEditorPart = (TestMultiPageEditor) editorPart;
 
-        // Switch to the second tab
-        window.getShell().forceActive();
-        Display display = Display.getCurrent();
-        while (display.readAndDispatch()) {
+		// Switch to the second tab
+		window.getShell().forceActive();
+		Display display = Display.getCurrent();
+		while (display.readAndDispatch()) {
 		}
-        multiPageEditorPart.setPage(1);
+		multiPageEditorPart.setPage(1);
 
-        // Check that "Ctrl+Shift+5" is the bound key.
-        IWorkbenchCommandSupport commandSupport = window.getWorkbench()
-                .getCommandSupport();
-        ICommandManager commandManager = commandSupport.getCommandManager();
-        KeySequence expectedKeyBinding = KeySequence
-                .getInstance("Ctrl+Shift+5"); //$NON-NLS-1$
-        String commandId = commandManager.getPerfectMatch(expectedKeyBinding);
-        assertEquals("org.eclipse.ui.tests.TestCommandId", commandId); //$NON-NLS-1$
-    }
+		// Check that "Ctrl+Shift+5" is the bound key.
+		IWorkbenchCommandSupport commandSupport = window.getWorkbench()
+				.getCommandSupport();
+		ICommandManager commandManager = commandSupport.getCommandManager();
+		KeySequence expectedKeyBinding = KeySequence
+				.getInstance("Ctrl+Shift+5"); //$NON-NLS-1$
+		String commandId = commandManager.getPerfectMatch(expectedKeyBinding);
+		assertEquals("org.eclipse.ui.tests.TestCommandId", commandId); //$NON-NLS-1$
+	}
 }

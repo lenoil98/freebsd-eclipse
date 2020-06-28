@@ -20,6 +20,7 @@ package org.eclipse.core.databinding.beans;
 
 import java.beans.PropertyDescriptor;
 
+import org.eclipse.core.databinding.beans.typed.BeanProperties;
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.core.databinding.observable.list.IObservableList;
 import org.eclipse.core.databinding.observable.map.IObservableMap;
@@ -48,6 +49,7 @@ import org.eclipse.core.runtime.Status;
  * @deprecated use <code>BeanProperties</code> instead
  */
 @Deprecated
+@SuppressWarnings({ "rawtypes", "unchecked" })
 final public class BeansObservables {
 
 	/**
@@ -91,8 +93,7 @@ final public class BeansObservables {
 	@Deprecated
 	public static IObservableValue observeValue(Realm realm, Object bean,
 			String propertyName) {
-		return BeanProperties.value(bean.getClass(), propertyName).observe(
-				realm, bean);
+		return BeanProperties.value((Class<Object>) bean.getClass(), propertyName).observe(realm, bean);
 	}
 
 	/**
@@ -473,7 +474,7 @@ final public class BeansObservables {
 	 *            the realm to use
 	 * @param propertyName
 	 *            the name of the property
-	 * @param elementType
+	 * @param elementType the element type of the returned list property
 	 * @return an observable list factory
 	 *
 	 * @deprecated use <code>BeanProperties</code> instead
@@ -491,7 +492,7 @@ final public class BeansObservables {
 	 *
 	 * @param propertyName
 	 *            the name of the property
-	 * @param elementType
+	 * @param elementType the element type of the returned list property
 	 * @return an observable list factory
 	 * @since 1.2
 	 *
@@ -542,8 +543,8 @@ final public class BeansObservables {
 	 * <code>MasterDetailObservables.detailValue(master, valueFactory(realm,
 	 propertyName), propertyType)</code>
 	 *
-	 * @param realm
-	 * @param master
+	 * @param realm the realm
+	 * @param master the observable value to track
 	 * @param propertyName
 	 *            the name of the property. May be nested e.g. "parent.name"
 	 * @param propertyType
@@ -589,7 +590,7 @@ final public class BeansObservables {
 	 * Helper method for
 	 * <code>MasterDetailObservables.detailValue(master, valueFactory(master.getRealm(), propertyName), propertyType)</code>
 	 *
-	 * @param master
+	 * @param master the master observable value
 	 * @param propertyName
 	 *            the name of the property. May be nested e.g. "parent.name"
 	 * @param propertyType
@@ -688,9 +689,9 @@ final public class BeansObservables {
 	 * <code>MasterDetailObservables.detailList(master, listFactory(realm,
 	 propertyName, propertyType), propertyType)</code>
 	 *
-	 * @param realm
-	 * @param master
-	 * @param propertyName
+	 * @param realm the realm
+	 * @param master the observable value to track
+	 * @param propertyName the property name
 	 * @param propertyType
 	 *            can be <code>null</code>
 	 * @return an observable list that tracks the named property for the current
@@ -717,8 +718,8 @@ final public class BeansObservables {
 	 * Helper method for
 	 * <code>MasterDetailObservables.detailList(master, listFactory(master.getRealm(), propertyName, propertyType), propertyType)</code>
 	 *
-	 * @param master
-	 * @param propertyName
+	 * @param master the master observable value
+	 * @param propertyName the property name
 	 * @param propertyType
 	 *            can be <code>null</code>
 	 * @return an observable list that tracks the named property for the current
@@ -744,9 +745,9 @@ final public class BeansObservables {
 	 * <code>MasterDetailObservables.detailSet(master, setFactory(realm,
 	 propertyName), propertyType)</code>
 	 *
-	 * @param realm
-	 * @param master
-	 * @param propertyName
+	 * @param realm the realm
+	 * @param master the observable value
+	 * @param propertyName the property name
 	 * @param propertyType
 	 *            can be <code>null</code>
 	 * @return an observable set that tracks the named property for the current
@@ -774,8 +775,8 @@ final public class BeansObservables {
 	 * Helper method for
 	 * <code>MasterDetailObservables.detailSet(master, setFactory(master.getRealm(), propertyName), propertyType)</code>
 	 *
-	 * @param master
-	 * @param propertyName
+	 * @param master the observable value
+	 * @param propertyName the property name
 	 * @param propertyType
 	 *            can be <code>null</code>
 	 * @return an observable set that tracks the named property for the current
@@ -802,8 +803,8 @@ final public class BeansObservables {
 	 *
 	 * @param realm
 	 *            the realm
-	 * @param master
-	 * @param propertyName
+	 * @param master the observable value
+	 * @param propertyName name of the property
 	 * @return an observable map that tracks the map-type named property for the
 	 *         current value of the master observable value.
 	 * @since 1.1
@@ -825,8 +826,8 @@ final public class BeansObservables {
 	 * Helper method for
 	 * <code>MasterDetailObservables.detailMap(master, mapFactory(master.getRealm(), propertyName))</code>
 	 *
-	 * @param master
-	 * @param propertyName
+	 * @param master the observable value
+	 * @param propertyName the property name
 	 * @return an observable map that tracks the map-type named property for the
 	 *         current value of the master observable value.
 	 * @since 1.2

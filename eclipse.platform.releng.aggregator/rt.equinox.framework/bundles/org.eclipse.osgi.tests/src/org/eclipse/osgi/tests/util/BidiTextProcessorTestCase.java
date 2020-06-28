@@ -18,7 +18,7 @@ import org.eclipse.osgi.util.TextProcessor;
 
 /**
  * Tests for strings that use the TextProcessor and are run in a bidi locale.
- * 
+ *
  * NOTE: Run these tests as a session test in order to have the correct
  *		 locale set.  Run class AllTests.
  */
@@ -28,7 +28,7 @@ public class BidiTextProcessorTestCase extends TextProcessorTestCase {
 	protected static final char LRM = '\u200e';
 	// left to right embedding
 	protected static final char LRE = '\u202a';
-	// pop directional format	
+	// pop directional format
 	protected static final char PDF = '\u202c';
 
 	private static String PATH_1_RESULT = LRE + PATH_1 + PDF;
@@ -71,7 +71,7 @@ public class BidiTextProcessorTestCase extends TextProcessorTestCase {
 	private static String OTHER_STRING_1_RESULT = LRE + "*" + "." + "java" + PDF;
 	private static String OTHER_STRING_2_RESULT = LRE + "*" + "." + "\u05d0\u05d1\u05d2" + PDF;
 	private static String OTHER_STRING_3_RESULT = LRE + "\u05d0\u05d1\u05d2 " + LRM + "=" + " \u05ea\u05e9\u05e8\u05e7\u05e6" + PDF;
-	// result strings if null delimiter is passed 
+	// result strings if null delimiter is passed
 	private static String OTHER_STRING_1_ND_RESULT = LRE + "*" + "." + "java" + PDF;
 	private static String OTHER_STRING_2_ND_RESULT = LRE + "*" + "." + "\u05d0\u05d1\u05d2" + PDF;
 	private static String OTHER_STRING_3_ND_RESULT = LRE + "\u05d0\u05d1\u05d2 " + "=" + " \u05ea\u05e9\u05e8\u05e7\u05e6" + PDF;
@@ -103,7 +103,7 @@ public class BidiTextProcessorTestCase extends TextProcessorTestCase {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param name test name
 	 */
 	public BidiTextProcessorTestCase(String name) {
@@ -148,7 +148,7 @@ public class BidiTextProcessorTestCase extends TextProcessorTestCase {
 	}
 
 	/*
-	 * Test other possible uses for TextProcessor, including file associations and 
+	 * Test other possible uses for TextProcessor, including file associations and
 	 * variable assignment statements.
 	 */
 	public void testOtherStrings() {
@@ -174,17 +174,16 @@ public class BidiTextProcessorTestCase extends TextProcessorTestCase {
 
 	public void testOtherStringsDeprocess() {
 		int testNum = 1;
-		for (int i = 0; i < TEST_STAR_PATHS.length; i++) {
-			String result = TextProcessor.process(TEST_STAR_PATHS[i], "*.");
+		for (String testStarPath : TEST_STAR_PATHS) {
+			String result = TextProcessor.process(testStarPath, "*.");
 			String resultDP = TextProcessor.deprocess(result);
-			verifyBidiResult("Deprocess other (star) string" + testNum, resultDP, TEST_STAR_PATHS[i]);
+			verifyBidiResult("Deprocess other (star) string" + testNum, resultDP, testStarPath);
 			testNum++;
 		}
-
-		for (int i = 0; i < TEST_EQUALS_PATHS.length; i++) {
-			String result = TextProcessor.process(TEST_EQUALS_PATHS[i], "=");
+		for (String testEqualsPath : TEST_EQUALS_PATHS) {
+			String result = TextProcessor.process(testEqualsPath, "=");
 			String resultDP = TextProcessor.deprocess(result);
-			verifyBidiResult("Deprocess other (equals) string" + testNum, resultDP, TEST_EQUALS_PATHS[i]);
+			verifyBidiResult("Deprocess other (equals) string" + testNum, resultDP, testEqualsPath);
 			testNum++;
 		}
 	}
@@ -212,7 +211,7 @@ public class BidiTextProcessorTestCase extends TextProcessorTestCase {
 	}
 
 	/*
-	 * Test the result to ensure markers aren't added more than once if the 
+	 * Test the result to ensure markers aren't added more than once if the
 	 * string is processed multiple times.
 	 */
 	public void testDoubleProcessPaths() {
@@ -227,7 +226,7 @@ public class BidiTextProcessorTestCase extends TextProcessorTestCase {
 	}
 
 	/*
-	 * Test the result to ensure markers aren't added more than once if the 
+	 * Test the result to ensure markers aren't added more than once if the
 	 * string is processed multiple times.
 	 */
 	public void testDoubleProcessOtherStrings() {

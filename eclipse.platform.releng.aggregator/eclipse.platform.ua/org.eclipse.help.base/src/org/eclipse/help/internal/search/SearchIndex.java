@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,7 @@
  *     Holger Voormann - fix for bug 426785 (http://eclip.se/426785)
  *     Alexander Kurtakov - Bug 460787
  *     Sopot Cela - Bug 466829
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.search;
 
@@ -200,8 +201,7 @@ public class SearchIndex implements IHelpSearchIndex {
 			}
 		}
 
-		try {
-			DirectoryReader.open(luceneDirectory);
+		try (DirectoryReader reader = DirectoryReader.open(luceneDirectory)) {
 		} catch (IndexFormatTooOldException | IndexNotFoundException | IllegalArgumentException e) {
 			deleteDir(indexDir);
 			indexDir.delete();
@@ -324,7 +324,7 @@ public class SearchIndex implements IHelpSearchIndex {
 			iw = new IndexWriter(luceneDirectory, writerConfig);
 			return true;
 		} catch (IOException e) {
-			HelpBasePlugin.logError("Exception occurred in search indexing at beginAddBatch.", e); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Exception occurred in search indexing at beginAddBatch.", e); //$NON-NLS-1$
 			return false;
 		}
 	}
@@ -332,6 +332,7 @@ public class SearchIndex implements IHelpSearchIndex {
 	/**
 	 * Starts deletions. To be called before deleting documents.
 	 */
+	@SuppressWarnings("resource")
 	public synchronized boolean beginDeleteBatch() {
 		try {
 			if (iw != null) {
@@ -343,7 +344,7 @@ public class SearchIndex implements IHelpSearchIndex {
 			iw = new IndexWriter(luceneDirectory, new IndexWriterConfig(analyzerDescriptor.getAnalyzer()));
 			return true;
 		} catch (IOException e) {
-			HelpBasePlugin.logError("Exception occurred in search indexing at beginDeleteBatch.", e); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Exception occurred in search indexing at beginDeleteBatch.", e); //$NON-NLS-1$
 			return false;
 		}
 	}
@@ -362,7 +363,7 @@ public class SearchIndex implements IHelpSearchIndex {
 			}
 			return true;
 		} catch (IOException e) {
-			HelpBasePlugin.logError("Exception occurred in search indexing at beginDeleteBatch.", e); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Exception occurred in search indexing at beginDeleteBatch.", e); //$NON-NLS-1$
 			return false;
 		}
 	}
@@ -420,7 +421,7 @@ public class SearchIndex implements IHelpSearchIndex {
 			}
 			return true;
 		} catch (IOException e) {
-			HelpBasePlugin.logError("Exception occurred in search indexing at endAddBatch.", e); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Exception occurred in search indexing at endAddBatch.", e); //$NON-NLS-1$
 			return false;
 		}
 	}
@@ -452,7 +453,7 @@ public class SearchIndex implements IHelpSearchIndex {
 			}
 			return true;
 		} catch (IOException e) {
-			HelpBasePlugin.logError("Exception occurred in search indexing at endDeleteBatch.", e); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Exception occurred in search indexing at endDeleteBatch.", e); //$NON-NLS-1$
 			return false;
 		}
 	}
@@ -478,7 +479,7 @@ public class SearchIndex implements IHelpSearchIndex {
 			setInconsistent(false);
 			return true;
 		} catch (IOException e) {
-			HelpBasePlugin.logError("Exception occurred in search indexing at endDeleteBatch.", e); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Exception occurred in search indexing at endDeleteBatch.", e); //$NON-NLS-1$
 			return false;
 		}
 	}
@@ -496,9 +497,9 @@ public class SearchIndex implements IHelpSearchIndex {
 		Map<String, String[]> mergedDocs = new HashMap<>();
 		// Create directories to merge and calculate all documents added
 		// and which are duplicates (to delete later)
-		for (int p = 0; p < pluginIndexes.length; p++) {
-			List<String> indexIds = pluginIndexes[p].getIDs();
-			List<String> indexPaths = pluginIndexes[p].getPaths();
+		for (PluginIndex pluginIndex : pluginIndexes) {
+			List<String> indexIds = pluginIndex.getIDs();
+			List<String> indexPaths = pluginIndex.getPaths();
 			if (monitor.isCanceled()) {
 				throw new OperationCanceledException();
 			}
@@ -512,9 +513,8 @@ public class SearchIndex implements IHelpSearchIndex {
 					NIOFSDirectory dir = new NIOFSDirectory(new File(indexPath).toPath());
 					dirList.add(dir);
 				} catch (IOException ioe) {
-					HelpBasePlugin
-							.logError(
-									"Help search indexing directory could not be created for directory " + indexPath, ioe); //$NON-NLS-1$
+					Platform.getLog(getClass()).error(
+							"Help search indexing directory could not be created for directory " + indexPath, ioe); //$NON-NLS-1$
 					continue;
 				}
 
@@ -551,28 +551,29 @@ public class SearchIndex implements IHelpSearchIndex {
 			}
 		}
 		// perform actual merging
-		for (Iterator<String> it = mergedDocs.keySet().iterator(); it.hasNext();) {
-			indexedDocs.put(it.next(), "0"); //$NON-NLS-1$
+		for (String doc : mergedDocs.keySet()) {
+			indexedDocs.put(doc, "0"); //$NON-NLS-1$
 		}
 		Directory[] luceneDirs = dirList.toArray(new Directory[dirList.size()]);
 		try {
 			iw.addIndexes(luceneDirs);
 			iw.forceMerge(1, true);
 		} catch (IOException ioe) {
-			HelpBasePlugin.logError("Merging search indexes failed.", ioe); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Merging search indexes failed.", ioe); //$NON-NLS-1$
 			return new HashMap<>();
 		}
 		return mergedDocs;
 	}
 
+	@SuppressWarnings("resource")
 	public IStatus removeDuplicates(String name, String[] index_paths) {
 
 		try (DirectoryReader ar = DirectoryReader.open(luceneDirectory)) {
 			PostingsEnum hrefDocs = null;
 			PostingsEnum indexDocs = null;
 			Term hrefTerm = new Term(FIELD_NAME, name);
-			for (int i = 0; i < index_paths.length; i++) {
-				Term indexTerm = new Term(FIELD_INDEX_ID, index_paths[i]);
+			for (String index_path : index_paths) {
+				Term indexTerm = new Term(FIELD_INDEX_ID, index_path);
 				List<LeafReaderContext> leaves = ar.leaves();
 				for (LeafReaderContext c : leaves) {
 					indexDocs = c.reader().postings(indexTerm);
@@ -669,7 +670,8 @@ public class SearchIndex implements IHelpSearchIndex {
 		} catch (QueryTooComplexException qe) {
 			collector.addQTCException(qe);
 		} catch (Exception e) {
-			HelpBasePlugin.logError("Exception occurred performing search for: " //$NON-NLS-1$
+			Platform.getLog(getClass()).error(
+					"Exception occurred performing search for: " //$NON-NLS-1$
 					+ searchQuery.getSearchWord() + ".", e); //$NON-NLS-1$
 		} finally {
 			unregisterSearch(Thread.currentThread());
@@ -690,9 +692,9 @@ public class SearchIndex implements IHelpSearchIndex {
 			IExtensionRegistry registry = Platform.getExtensionRegistry();
 			IExtensionPoint extensionPoint = registry.getExtensionPoint(TocFileProvider.EXTENSION_POINT_ID_TOC);
 			IExtension[] extensions = extensionPoint.getExtensions();
-			for (int i=0;i<extensions.length;++i) {
+			for (IExtension extension : extensions) {
 				try {
-					totalIds.add(extensions[i].getContributor().getName());
+					totalIds.add(extension.getContributor().getName());
 				}
 				catch (InvalidRegistryObjectException e) {
 					// ignore this extension and move on
@@ -758,9 +760,9 @@ public class SearchIndex implements IHelpSearchIndex {
 		}
 		Version luceneVersion = new Version(luceneVersionString);
 		Version indexVersion = new Version(indexVersionString);
-		Version v700 = new Version(7, 0, 0);
-		if (indexVersion.compareTo(v700) < 0) {
-			// index is older than Lucene 7.0.0
+		Version v840 = new Version(8, 4, 0);
+		if (indexVersion.compareTo(v840) < 0) {
+			// index is older than Lucene 8.4.0
 			return false;
 		}
 		if ( luceneVersion.compareTo(indexVersion) >= 0 ) {
@@ -825,6 +827,7 @@ public class SearchIndex implements IHelpSearchIndex {
 			inconsistencyFile.delete();
 	}
 
+	@SuppressWarnings("resource")
 	public void openSearcher() throws IOException {
 		synchronized (searcherCreateLock) {
 			if (searcher == null) {
@@ -974,6 +977,7 @@ public class SearchIndex implements IHelpSearchIndex {
 	 * @throws OverlappingFileLockException
 	 *             if lock already obtained
 	 */
+	@SuppressWarnings("resource")
 	public synchronized boolean tryLock() throws OverlappingFileLockException {
 		if ("none".equals(System.getProperty("osgi.locking"))) {  //$NON-NLS-1$//$NON-NLS-2$
 			return true; // Act as if lock succeeded
@@ -1011,7 +1015,7 @@ public class SearchIndex implements IHelpSearchIndex {
 
 	private void logLockFailure(IOException ioe) {
 		if (!errorReported) {
-			HelpBasePlugin.logError("Unable to Lock Help Search Index", ioe); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Unable to Lock Help Search Index", ioe); //$NON-NLS-1$
 			errorReported = true;
 		}
 	}
@@ -1045,7 +1049,7 @@ public class SearchIndex implements IHelpSearchIndex {
 		}
 		if (raf != null ) {
 			try {
-			    raf.close();
+				raf.close();
 			} catch (IOException ioe) {
 			}
 			raf = null;
@@ -1060,10 +1064,10 @@ public class SearchIndex implements IHelpSearchIndex {
 				|| fileName.endsWith(".xml") //$NON-NLS-1$
 				|| fileName.endsWith(".txt")) { //$NON-NLS-1$
 			// indexable
-		} else if (fileName.indexOf(".htm#") >= 0 //$NON-NLS-1$
-				|| fileName.indexOf(".html#") >= 0 //$NON-NLS-1$
-				|| fileName.indexOf(".xhtml#") >= 0 //$NON-NLS-1$
-				|| fileName.indexOf(".xml#") >= 0) { //$NON-NLS-1$
+		} else if (fileName.contains(".htm#") //$NON-NLS-1$
+				|| fileName.contains(".html#") //$NON-NLS-1$
+				|| fileName.contains(".xhtml#") //$NON-NLS-1$
+				|| fileName.contains(".xml#")) { //$NON-NLS-1$
 			url = url.substring(0, url.lastIndexOf('#'));
 			// its a fragment, index whole document
 		} else {

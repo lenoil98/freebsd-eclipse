@@ -23,7 +23,7 @@ import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
 /**
  * Helper class to convert between Java chars and the escaped form that must be used in .properties
  * files.
- * 
+ *
  * @since 3.7
  */
 public class PropertiesFileEscapes {
@@ -36,7 +36,7 @@ public class PropertiesFileEscapes {
 
 	/**
 	 * Returns the decimal value of the Hex digit, or -1 if the digit is not a valid Hex digit.
-	 * 
+	 *
 	 * @param digit the Hex digit
 	 * @return the decimal value of digit, or -1 if digit is not a valid Hex digit.
 	 */
@@ -74,7 +74,7 @@ public class PropertiesFileEscapes {
 
 	/**
 	 * Convert a Java char to the escaped form that must be used in .properties files.
-	 * 
+	 *
 	 * @param c the Java char
 	 * @return escaped string
 	 */
@@ -85,7 +85,7 @@ public class PropertiesFileEscapes {
 	/**
 	 * Convert characters in a Java string to the escaped form that must be used in .properties
 	 * files.
-	 * 
+	 *
 	 * @param s the Java string
 	 * @param escapeWhitespaceChars if <code>true</code>, escape whitespace characters
 	 * @param escapeBackslash if <code>true</code>, escape backslash characters
@@ -104,7 +104,7 @@ public class PropertiesFileEscapes {
 
 	/**
 	 * Convert a Java char to the escaped form that must be used in .properties files.
-	 * 
+	 *
 	 * @param c the Java char
 	 * @param escapeWhitespaceChars if <code>true</code>, escape whitespace characters
 	 * @param escapeBackslash if <code>true</code>, escape backslash characters
@@ -141,7 +141,7 @@ public class PropertiesFileEscapes {
 
 	/**
 	 * Convert an escaped string to a string composed of Java characters.
-	 * 
+	 *
 	 * @param s the escaped string
 	 * @return string composed of Java characters
 	 * @throws CoreException if the escaped string has a malformed \\uxxx sequence
@@ -162,7 +162,8 @@ public class PropertiesFileEscapes {
 					return outBuffer.toString(); // silently ignore the \
 				}
 				aChar= s.charAt(x++);
-				if (aChar == 'u') {
+				switch (aChar) {
+				case 'u':
 					// Read the xxxx
 					int value= 0;
 					if (x > len - 4) {
@@ -183,16 +184,22 @@ public class PropertiesFileEscapes {
 						buf.append(aChar);
 					}
 					outBuffer.append(digit == -1 ? buf.toString() : String.valueOf((char)value));
-				} else if (aChar == 't') {
+					break;
+				case 't':
 					outBuffer.append('\t');
-				} else if (aChar == 'n') {
+					break;
+				case 'n':
 					outBuffer.append('\n');
-				} else if (aChar == 'f') {
+					break;
+				case 'f':
 					outBuffer.append('\f');
-				} else if (aChar == 'r') {
+					break;
+				case 'r':
 					outBuffer.append('\r');
-				} else {
+					break;
+				default:
 					outBuffer.append(aChar); // silently ignore the \
+					break;
 				}
 			} else
 				outBuffer.append(aChar);
@@ -207,18 +214,18 @@ public class PropertiesFileEscapes {
 
 	/**
 	 * Unescape backslash characters in a string.
-	 * 
+	 *
 	 * @param s the escaped string
 	 * @return string with backslash characters unescaped
 	 */
 	public static String unescapeBackslashes(String s) {
 		if (s == null)
 			return null;
-	
+
 		char c;
 		int length= s.length();
 		StringBuilder outBuffer= new StringBuilder(length);
-	
+
 		for (int i= 0; i < length;) {
 			c= s.charAt(i++);
 			if (c == '\\') {
@@ -226,13 +233,13 @@ public class PropertiesFileEscapes {
 			}
 			outBuffer.append(c);
 		}
-	
+
 		return outBuffer.toString();
 	}
 
 	/**
 	 * Tests if the given text contains any invalid escape sequence.
-	 * 
+	 *
 	 * @param text the text
 	 * @return <code>true</code> if text contains an invalid escape sequence, <code>false</code>
 	 *         otherwise
@@ -244,7 +251,7 @@ public class PropertiesFileEscapes {
 		} catch (CoreException e) {
 			return true;
 		}
-	
+
 		int length= text.length();
 		for (int i= 0; i < length; i++) {
 			char c= text.charAt(i);
@@ -278,7 +285,7 @@ public class PropertiesFileEscapes {
 
 	/**
 	 * Tests if the given text contains an unescaped backslash character.
-	 * 
+	 *
 	 * @param text the text
 	 * @return <code>true</code> if text contains an unescaped backslash character,
 	 *         <code>false</code> otherwise
@@ -308,7 +315,7 @@ public class PropertiesFileEscapes {
 	/**
 	 * Tests if the given text contains only escaped backslash characters and no unescaped backslash
 	 * character.
-	 * 
+	 *
 	 * @param text the text
 	 * @return <code>true</code> if text contains only escaped backslash characters,
 	 *         <code>false</code> otherwise
@@ -335,5 +342,8 @@ public class PropertiesFileEscapes {
 			}
 		}
 		return result;
+	}
+
+	private PropertiesFileEscapes() {
 	}
 }

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -65,8 +66,7 @@ public class MarkersViewColumnsDialog extends ViewerColumnsDialog<FieldEntry> {
 
 	@Override
 	protected Control createDialogArea(Composite parent) {
-		Control control = super.createDialogArea(parent);
-		return control;
+		return super.createDialogArea(parent);
 	}
 
 	@Override
@@ -116,9 +116,9 @@ public class MarkersViewColumnsDialog extends ViewerColumnsDialog<FieldEntry> {
 		visible.clear();
 		nonVisible.clear();
 		FieldEntry entry = null;
-		for (int i = 0; i < allFields.length; i++) {
-			if (!contains(visibleFields, allFields[i])) {
-				entry = new FieldEntry(allFields[i], -1);
+		for (MarkerField allField : allFields) {
+			if (!contains(visibleFields, allField)) {
+				entry = new FieldEntry(allField, -1);
 				entry.width = extendedView.getFieldWidth(entry.field, defaultWidths ? 0 : -1, !defaultWidths);
 				entry.visible = false;
 				nonVisible.add(entry);
@@ -230,10 +230,7 @@ public class MarkersViewColumnsDialog extends ViewerColumnsDialog<FieldEntry> {
 
 		@Override
 		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + ((field == null) ? 0 : field.hashCode());
-			return result;
+			return Objects.hashCode(field);
 		}
 
 		@Override
@@ -248,14 +245,7 @@ public class MarkersViewColumnsDialog extends ViewerColumnsDialog<FieldEntry> {
 				return false;
 			}
 			FieldEntry other = (FieldEntry) obj;
-			if (field == null) {
-				if (other.field != null) {
-					return false;
-				}
-			} else if (!field.equals(other.field)) {
-				return false;
-			}
-			return true;
+			return Objects.equals(field, other.field);
 		}
 
 	}

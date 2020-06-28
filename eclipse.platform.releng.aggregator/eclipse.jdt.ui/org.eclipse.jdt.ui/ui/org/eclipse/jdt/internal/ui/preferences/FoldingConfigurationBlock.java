@@ -15,7 +15,6 @@ package org.eclipse.jdt.internal.ui.preferences;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
@@ -39,14 +38,13 @@ import org.eclipse.core.runtime.Status;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.PixelConverter;
+import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ComboViewer;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.Viewer;
 
 import org.eclipse.jdt.internal.corext.util.Messages;
 
@@ -136,8 +134,8 @@ class FoldingConfigurationBlock implements IPreferenceConfigurationBlock {
 		reg.reloadExtensions();
 		JavaFoldingStructureProviderDescriptor[] descs= reg.getFoldingProviderDescriptors();
 		Map<String, JavaFoldingStructureProviderDescriptor> map= new HashMap<>();
-		for (int i= 0; i < descs.length; i++) {
-			map.put(descs[i].getId(), descs[i]);
+		for (JavaFoldingStructureProviderDescriptor desc : descs) {
+			map.put(desc.getId(), desc);
 		}
 		return map;
 	}
@@ -244,30 +242,7 @@ class FoldingConfigurationBlock implements IPreferenceConfigurationBlock {
 	private ComboViewer createProviderViewer() {
 		/* list viewer */
 		ComboViewer viewer= new ComboViewer(fProviderCombo);
-		viewer.setContentProvider(new IStructuredContentProvider() {
-
-			/*
-			 * @see org.eclipse.jface.viewers.IContentProvider#dispose()
-			 */
-			@Override
-			public void dispose() {
-			}
-
-			/*
-			 * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-			 */
-			@Override
-			public void inputChanged(Viewer v, Object oldInput, Object newInput) {
-			}
-
-			/*
-			 * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-			 */
-			@Override
-			public Object[] getElements(Object inputElement) {
-				return fProviderDescriptors.values().toArray();
-			}
-		});
+		viewer.setContentProvider(ArrayContentProvider.getInstance());
 		viewer.setLabelProvider(new LabelProvider() {
 			/*
 			 * @see org.eclipse.jface.viewers.LabelProvider#getImage(java.lang.Object)
@@ -296,7 +271,7 @@ class FoldingConfigurationBlock implements IPreferenceConfigurationBlock {
 				}
 			}
 		});
-		viewer.setInput(fProviderDescriptors);
+		viewer.setInput(fProviderDescriptors.values());
 		viewer.refresh();
 
 		return viewer;
@@ -354,8 +329,7 @@ class FoldingConfigurationBlock implements IPreferenceConfigurationBlock {
 
 	@Override
 	public void performOk() {
-		for (Iterator<IJavaFoldingPreferenceBlock> it= fProviderPreferences.values().iterator(); it.hasNext();) {
-			IJavaFoldingPreferenceBlock prefs= it.next();
+		for (IJavaFoldingPreferenceBlock prefs : fProviderPreferences.values()) {
 			prefs.performOk();
 		}
 	}
@@ -363,16 +337,14 @@ class FoldingConfigurationBlock implements IPreferenceConfigurationBlock {
 	@Override
 	public void performDefaults() {
 		restoreFromPreferences();
-		for (Iterator<IJavaFoldingPreferenceBlock> it= fProviderPreferences.values().iterator(); it.hasNext();) {
-			IJavaFoldingPreferenceBlock prefs= it.next();
+		for (IJavaFoldingPreferenceBlock prefs : fProviderPreferences.values()) {
 			prefs.performDefaults();
 		}
 	}
 
 	@Override
 	public void dispose() {
-		for (Iterator<IJavaFoldingPreferenceBlock> it= fProviderPreferences.values().iterator(); it.hasNext();) {
-			IJavaFoldingPreferenceBlock prefs= it.next();
+		for (IJavaFoldingPreferenceBlock prefs : fProviderPreferences.values()) {
 			prefs.dispose();
 		}
 	}

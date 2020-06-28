@@ -10,26 +10,31 @@ then
 fi
 . ./config.sh
 
+# Overrides
+if [ $# -gt 0 ]
+then
+	PATCHED_DIRS="$*"
+fi
 
 AGGR_MODULE=$(basename $ECLIPSE_TOP)
 BASELINE=".baseline.${AGGR_MODULE}"
-PATCHED=".patched.${AGGR_MODULE}"
 if [ ! -d ${BASELINE} ]
 then
 	echo "ERROR: bin/unpack-distfiles needs to be run first"
-	exit 1
-fi
-if [ -d ${PATCHED} ]
-then
-	echo "ERROR: work-tree already patched"
 	exit 1
 fi
 
 #
 # Apply patches one-by-one so that errors can be identified
 #
-for P in ${PATCH_DIR}/patch-*
+for D in ${PATCHED_DIRS}
 do
+	P="${PATCH_DIR}/patch-${D}"
+	if [ ! -r ${P} ]
+	then
+		echo "ERROR: No patch file ${P}"
+		exit 1
+	fi
 	patch --directory ${AGGR_MODULE} --fuzz 0 -V none --quiet < ${P}
 	if [ $? -ne 0 ]
 	then

@@ -57,6 +57,7 @@ static void createMenuItem(Menu parent, final TableColumn column) {
 public static void main (String[] args) {
 	final Display display = new Display();
 	Shell shell = new Shell(display);
+	shell.setText("Snippet 311");
 	shell.setLayout(new FillLayout());
 
 	final Table table = new Table(shell, SWT.V_SCROLL|SWT.H_SCROLL| SWT.BORDER);
@@ -84,9 +85,9 @@ public static void main (String[] args) {
 	columnOwner.setResizable(false);
 	createMenuItem(headerMenu, columnOwner);
 
-	for (int i = 0; i < files.length; i++) {
+	for (String[] file : files) {
 		TableItem item = new TableItem(table, SWT.NONE);
-		item.setText(files[i]);
+		item.setText(file);
 	}
 
 	final Menu tableMenu = new Menu(shell, SWT.POP_UP);

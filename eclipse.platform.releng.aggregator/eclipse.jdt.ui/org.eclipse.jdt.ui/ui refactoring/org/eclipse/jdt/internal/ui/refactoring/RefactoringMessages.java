@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -332,7 +332,7 @@ public final class RefactoringMessages extends NLS {
 	public static String ExtractTempAction_label;
 
 	public static String ExtractTempInputPage_declare_final;
-	
+
 	public static String ExtractTempInputPage_declare_type_var;
 
 	public static String ExtractTempInputPage_enter_name;
@@ -939,7 +939,15 @@ public final class RefactoringMessages extends NLS {
 
 	public static String SelfEncapsulateFieldInputPage_getter_name;
 
+	public static String SelfEncapsulateFieldInputPage_no_getter_name;
+
+	public static String SelfEncapsulateFieldInputPage_no_getter_created;
+
 	public static String SelfEncapsulateFieldInputPage_insert_after;
+
+	public static String SelfEncapsulateFieldInputPage_please_choose_to_generate_a_getter_setter;
+
+	public static String SelfEncapsulateFieldInputPage_final_field;
 
 	public static String SelfEncapsulateFieldInputPage_private;
 
@@ -948,6 +956,10 @@ public final class RefactoringMessages extends NLS {
 	public static String SelfEncapsulateFieldInputPage_public;
 
 	public static String SelfEncapsulateFieldInputPage_setter_name;
+
+	public static String SelfEncapsulateFieldInputPage_no_setter_name;
+
+	public static String SelfEncapsulateFieldInputPage_no_setter_created;
 
 	public static String SelfEncapsulateFieldInputPage_use_setter_getter;
 
@@ -966,6 +978,14 @@ public final class RefactoringMessages extends NLS {
 	public static String SurroundWithTryMultiCatchAction_label;
 
 	public static String SurroundWithTryMultiCatchAction_not17;
+
+	public static String SurroundWithTryResourcesAction_label;
+
+	public static String SurroundWithTryResourcesAction_exception;
+
+	public static String SurroundWithTryResourcesAction_not18;
+
+	public static String SurroundWithTryResourcesAction_dialog_title;
 
 	public static String UseSupertypeAction_to_activate;
 

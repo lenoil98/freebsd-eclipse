@@ -524,8 +524,7 @@ public class ExpandableComposite extends Canvas {
 				resultHeight = hHint;
 			}
 
-			Point result = new Point(resultWidth, resultHeight);
-			return result;
+			return new Point(resultWidth, resultHeight);
 		}
 
 		@Override
@@ -618,14 +617,14 @@ public class ExpandableComposite extends Canvas {
 					@Override
 					public void focusGained(FocusEvent e) {
 						if (textLabel != null) {
-						    textLabel.redraw();
+							textLabel.redraw();
 						}
 					}
 
 					@Override
 					public void focusLost(FocusEvent e) {
 						if (textLabel != null) {
-						    textLabel.redraw();
+							textLabel.redraw();
 						}
 					}
 				});

@@ -257,29 +257,26 @@ public class TextFileChange extends TextChange {
 		if (! fBuffer.isSynchronizationContextRequested()) {
 			return super.performEdits(document);
 		}
-		
+
 		ITextFileBufferManager fileBufferManager= FileBuffers.getTextFileBufferManager();
-		
+
 		/** The lock for waiting for computation in the UI thread to complete. */
 		final Lock completionLock= new Lock();
 		final UndoEdit[] result= new UndoEdit[1];
 		final BadLocationException[] exception= new BadLocationException[1];
-		Runnable runnable= new Runnable() {
-			@Override
-			public void run() {
-				synchronized (completionLock) {
-					try {
-						result[0]= TextFileChange.super.performEdits(document);
-					} catch (BadLocationException e) {
-						exception[0]= e;
-					} finally {
-						completionLock.fDone= true;
-						completionLock.notifyAll();
-					}
+		Runnable runnable= () -> {
+			synchronized (completionLock) {
+				try {
+					result[0]= TextFileChange.super.performEdits(document);
+				} catch (BadLocationException e) {
+					exception[0]= e;
+				} finally {
+					completionLock.fDone= true;
+					completionLock.notifyAll();
 				}
 			}
 		};
-		
+
 		synchronized (completionLock) {
 			fileBufferManager.execute(runnable);
 			while (! completionLock.fDone) {
@@ -289,11 +286,11 @@ public class TextFileChange extends TextChange {
 				}
 			}
 		}
-		
+
 		if (exception[0] != null) {
 			throw exception[0];
 		}
-		
+
 		return result[0];
 	}
 

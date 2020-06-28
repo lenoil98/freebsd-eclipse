@@ -1242,6 +1242,7 @@ public class DSTest {
     final Bundle tb4 = installBundle("tb4");
 
     new Thread() {
+      @Override
       public void run() {
         try {
           tb2.start(); // start the blocking service
@@ -1252,6 +1253,7 @@ public class DSTest {
     sleep0(scr_restart_timeout + timeout * 2);
 
     new Thread() {
+      @Override
       public void run() {
         try {
           tb4.start(); // start the other
@@ -1276,6 +1278,7 @@ public class DSTest {
 
     // start the other blocking bundle
     new Thread() {
+      @Override
       public void run() {
         try {
           tb3.start();
@@ -1288,6 +1291,7 @@ public class DSTest {
 
     // start the non-blocking bundle
     new Thread() {
+      @Override
       public void run() {
         try {
           tb4.start(); // start the other
@@ -1472,13 +1476,13 @@ public class DSTest {
     if (services == null) {
       return false;
     }
-    for (int i = 0; i < services.length; i++) {
-      if (services[i] instanceof NamespaceProvider) {
-        NamespaceProvider s = (NamespaceProvider) services[i];
-        if (s.getComponentNSID() == nsid) {
-          return true;
+    for (Object service : services) {
+        if (service instanceof NamespaceProvider) {
+           NamespaceProvider s = (NamespaceProvider) service;
+            if (s.getComponentNSID() == nsid) {
+                return true;
+            }
         }
-      }
     }
 
     return false;
@@ -2158,6 +2162,7 @@ public class DSTest {
       this.lastComp = last;
     }
 
+    @Override
     public void run() {
       ConfigurationAdmin cm = (ConfigurationAdmin) trackerCM.getService();
       assertNotNull("The ConfigurationAdmin should be available", cm);
@@ -2502,8 +2507,8 @@ public class DSTest {
     ServiceReference ref = trackerBaseService.getServiceReference();
     assertNotNull("Provided service of " + COMP + " should be available", ref);
     String[] keys = ref.getPropertyKeys();
-    for (int i = 0; i < keys.length; i++) {
-      assertTrue("Private properties should not be propagated", !keys[i].startsWith("."));
+    for (String key : keys) {
+        assertTrue("Private properties should not be propagated", !key.startsWith("."));
     }
 
     uninstallBundle(tb22);
@@ -2978,15 +2983,15 @@ public class DSTest {
     if (services == null) {
       return null;
     }
-    for (int i = 0; i < services.length; i++) {
-      if (services[i] instanceof PropertiesProvider) {
-        PropertiesProvider s = (PropertiesProvider) services[i];
-        Dictionary props = s.getProperties();
-        if (props != null && ((String) props.get(ComponentConstants.COMPONENT_NAME)).equals(componentName)) {
-          return s;
+    for (Object service : services) {
+        if (service instanceof PropertiesProvider) {
+            PropertiesProvider s = (PropertiesProvider) service;
+            Dictionary props = s.getProperties();
+            if (props != null && ((String) props.get(ComponentConstants.COMPONENT_NAME)).equals(componentName)) {
+                return s;
+                }
+            }
         }
-      }
-    }
     return null;
   }
 

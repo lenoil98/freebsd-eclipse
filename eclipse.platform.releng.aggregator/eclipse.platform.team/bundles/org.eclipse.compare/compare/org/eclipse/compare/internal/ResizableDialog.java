@@ -58,13 +58,10 @@ public abstract class ResizableDialog extends Dialog {
 		fContextId= contextId;
 	}
 
-	/*
-	 * @see org.eclipse.jface.window.Window#configureShell(Shell)
-	 */
 	@Override
 	protected void configureShell(Shell newShell) {
 		super.configureShell(newShell);
-		if (fContextId != null)
+		if (fContextId != null && PlatformUI.isWorkbenchRunning())
 			PlatformUI.getWorkbench().getHelpSystem().setHelp(newShell, fContextId);
 	}
 

@@ -68,7 +68,7 @@ import org.eclipse.swt.widgets.Composite;
  */
 public class E4PickList extends AbstractPickList {
 
-	AbstractComponentEditor componentEditor;
+	AbstractComponentEditor<?> componentEditor;
 	EStructuralFeature feature;
 	TableViewerFocusCellManager focusCellMgr;
 
@@ -86,12 +86,12 @@ public class E4PickList extends AbstractPickList {
 
 	@Deprecated
 	public E4PickList(Composite parent, int style, List<PickListFeatures> listFeatures, Messages messages,
-			AbstractComponentEditor componentEditor, final EStructuralFeature feature) {
+			AbstractComponentEditor<?> componentEditor, final EStructuralFeature feature) {
 		this(parent, style, listFeatures, componentEditor, feature);
 	}
 
 	public E4PickList(Composite parent, int style, List<PickListFeatures> listFeatures,
-			final AbstractComponentEditor componentEditor, final EStructuralFeature feature) {
+			final AbstractComponentEditor<?> componentEditor, final EStructuralFeature feature) {
 		super(parent, style, listFeatures, componentEditor);
 
 		this.componentEditor = componentEditor;
@@ -110,8 +110,19 @@ public class E4PickList extends AbstractPickList {
 				.setStyle(SWT.ITALIC);
 		viewer.setLabelProvider(new DelegatingStyledCellLabelProvider(
 				new ComponentLabelProvider(componentEditor.getEditor(), new Messages(), italicFontDescriptor)));
-		final ObservableListContentProvider cp = new ObservableListContentProvider();
+		final ObservableListContentProvider<?> cp = new ObservableListContentProvider<>();
 		viewer.setContentProvider(cp);
+
+		viewer.addOpenListener(event -> {
+			if (event.getSelection() instanceof IStructuredSelection) {
+				IStructuredSelection selection = (IStructuredSelection) event.getSelection();
+				ModelEditor editor = componentEditor.getEditor();
+				if (selection.getFirstElement() instanceof EObject && editor != null) {
+					EObject selected = (EObject) selection.getFirstElement();
+					editor.gotoEObject(ModelEditor.TAB_FORM, selected);
+				}
+			}
+		});
 
 		// enable tabbing and keyboard activation
 		this.focusCellMgr = new TableViewerFocusCellManager(viewer, new FocusCellOwnerDrawHighlighter(viewer),
@@ -273,7 +284,7 @@ public class E4PickList extends AbstractPickList {
 		if (viewer.getContentProvider() == null || viewer.getInput() == null) {
 			return 0;
 		}
-		return ((ObservableListContentProvider) viewer.getContentProvider()).getElements(viewer.getInput()).length;
+		return ((ObservableListContentProvider<?>) viewer.getContentProvider()).getElements(viewer.getInput()).length;
 	}
 
 	private class TableViewerEditorActivationStrategy extends ColumnViewerEditorActivationStrategy {

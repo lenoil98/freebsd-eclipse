@@ -56,6 +56,7 @@ $Terminals
 	DoubleLiteral
 	CharacterLiteral
 	StringLiteral
+	TextBlock
 
 	PLUS_PLUS
 	MINUS_MINUS
@@ -113,6 +114,9 @@ $Terminals
 	ElidedSemicolonAndRightBrace
 	AT308
 	AT308DOTDOTDOT
+	BeginCaseExpr
+	RestrictedIdentifierYield
+	RestrictedIdentifierrecord
 
 --    BodyMarker
 
@@ -215,6 +219,8 @@ Goal ::= '(' ParenthesizedCastNameAndBounds
 Goal ::= '<' ReferenceExpressionTypeArgumentsAndTrunk
 -- JSR 308 Reconnaissance mission.
 Goal ::= '@' TypeAnnotations
+-- JSR 354 Reconnaissance mission.
+Goal ::= '->' YieldStatement
 /:$readableName Goal:/
 
 Literal -> IntegerLiteral
@@ -223,6 +229,7 @@ Literal -> FloatingPointLiteral
 Literal -> DoubleLiteral
 Literal -> CharacterLiteral
 Literal -> StringLiteral
+Literal -> TextBlock
 Literal -> null
 Literal -> BooleanLiteral
 /:$readableName Literal:/
@@ -545,6 +552,7 @@ Header -> PackageDeclaration
 Header -> ClassHeader
 Header -> InterfaceHeader
 Header -> EnumHeader
+Header -> RecordHeaderPart
 Header -> AnnotationTypeDeclarationHeader
 Header -> StaticInitializer
 Header -> RecoveryMethodHeader
@@ -635,6 +643,8 @@ TypeDeclaration ::= ';'
 -----------------------------------------------
 TypeDeclaration -> EnumDeclaration
 TypeDeclaration -> AnnotationTypeDeclaration
+-- 14 preview feature
+TypeDeclaration -> RecordDeclaration
 /:$readableName TypeDeclaration:/
 
 --18.7 Only in the LALR(1) Grammar
@@ -742,6 +752,8 @@ ClassMemberDeclaration -> InterfaceDeclaration
 -- 1.5 feature
 ClassMemberDeclaration -> EnumDeclaration
 ClassMemberDeclaration -> AnnotationTypeDeclaration
+-- 14 preview feature
+ClassMemberDeclaration -> RecordDeclaration
 /:$readableName ClassMemberDeclaration:/
 
 -- Empty declarations are not valid Java ClassMemberDeclarations.
@@ -1083,7 +1095,146 @@ InterfaceMemberDeclaration -> ClassDeclaration
 InterfaceMemberDeclaration -> InterfaceDeclaration
 InterfaceMemberDeclaration -> EnumDeclaration
 InterfaceMemberDeclaration -> AnnotationTypeDeclaration
+InterfaceMemberDeclaration -> RecordDeclaration
 /:$readableName InterfaceMemberDeclaration:/
+
+-----------------------------------------------
+-- 14 preview feature : record type
+-----------------------------------------------
+
+RecordDeclaration ::= RecordHeaderPart RecordBody
+/.$putCase consumeRecordDeclaration(); $break ./
+/:$readableName RecordDeclaration:/
+/:$compliance 14:/
+
+RecordHeaderPart ::= RecordHeaderName RecordHeader ClassHeaderImplementsopt 
+/.$putCase consumeRecordHeaderPart(); $break ./
+/:$readableName RecordHeaderPart:/
+/:$compliance 14:/
+
+RecordHeaderName ::= RecordHeaderName1 TypeParameters
+/.$putCase consumeRecordHeaderNameWithTypeParameters(); $break ./
+/:$compliance 14:/
+
+RecordHeaderName -> RecordHeaderName1 
+/:$readableName RecordHeaderName:/
+/:$compliance 14:/
+
+RecordHeaderName1 ::= Modifiersopt RestrictedIdentifierrecord 'Identifier'
+/.$putCase consumeRecordHeaderName1(); $break ./
+/:$readableName RecordHeaderName:/
+/:$compliance 14:/
+
+RecordComponentHeaderRightParen ::= ')'
+/.$putCase consumeRecordComponentHeaderRightParen(); $break ./
+/:$readableName ):/
+/:$recovery_template ):/
+/:$compliance 14:/
+
+RecordHeader ::= '(' RecordComponentsopt RecordComponentHeaderRightParen
+/.$putCase consumeRecordHeader(); $break ./
+/:$readableName RecordHeader:/
+/:$compliance 14:/
+
+RecordComponentsopt ::= $empty
+/.$putCase consumeRecordComponentsopt(); $break ./
+RecordComponentsopt -> RecordComponents
+/:$readableName RecordComponentsopt:/
+/:$compliance 14:/
+
+RecordComponents -> RecordComponent
+RecordComponents ::= RecordComponents ',' RecordComponent
+/.$putCase consumeRecordComponents(); $break ./
+/:$readableName RecordComponents:/
+/:$compliance 14:/
+
+RecordComponent -> VariableArityRecordComponent
+RecordComponent ::= Modifiersopt Type VariableDeclaratorId
+/.$putCase consumeRecordComponent(false); $break ./
+/:$readableName RecordComponent:/
+/:$compliance 14:/
+
+VariableArityRecordComponent ::= Modifiersopt Type PushZeroTypeAnnotations '...' VariableDeclaratorId
+/.$putCase consumeRecordComponent(true); $break ./
+/:$readableName VariableArityRecordComponent:/
+/:$compliance 14:/
+
+VariableArityRecordComponent ::= Modifiersopt Type @308... TypeAnnotations '...' VariableDeclaratorId
+/.$putCase consumeRecordComponent(true); $break ./
+/:$readableName VariableArityRecordComponent:/
+/:$compliance 14:/
+/:$recovery_template Identifier Identifier:/
+
+RecordBody ::= '{' RecordBodyDeclarationopt '}'
+/.$putCase consumeRecordBody(); $break ./
+/:$readableName RecordBody:/
+/:$compliance 14:/
+
+RecordBodyDeclarationopt ::= $empty
+/.$putCase consumeEmptyRecordBodyDeclaration(); $break ./
+RecordBodyDeclarationopt -> RecordBodyDeclarations
+/:$readableName RecordBodyDeclarationopt:/
+/:$compliance 14:/
+
+RecordBodyDeclarations ::= RecordBodyDeclaration
+RecordBodyDeclarations ::= RecordBodyDeclarations RecordBodyDeclaration
+/.$putCase consumeRecordBodyDeclarations(); $break ./
+/:$readableName RecordBodyDeclarations:/
+/:$compliance 14:/
+
+RecordBodyDeclaration ::=  ClassBodyDeclaration
+/.$putCase consumeRecordBodyDeclaration(); $break ./
+RecordBodyDeclaration ::=  CompactConstructorDeclaration
+/.$putCase consumeRecordBodyDeclaration(); $break ./
+/:$readableName RecordBodyDeclaration:/
+/:$compliance 14:/
+
+CompactConstructorDeclaration ::= CompactConstructorHeader MethodBody
+/.$putCase consumeCompactConstructorDeclaration(); $break ./
+/:$readableName CompactConstructorDeclaration:/
+/:$compliance 14:/
+
+CompactConstructorHeader ::= CompactConstructorHeaderName MethodHeaderThrowsClauseopt
+/.$putCase consumeCompactConstructorHeader(); $break ./
+/:$readableName CompactConstructorDeclaration:/
+/:$compliance 14:/
+
+CompactConstructorHeaderName ::= Modifiersopt 'Identifier'
+/.$putCase consumeCompactConstructorHeaderName(); $break ./
+CompactConstructorHeaderName ::= Modifiersopt TypeParameters 'Identifier'
+/.$putCase consumeCompactConstructorHeaderNameWithTypeParameters(); $break ./
+/:$readableName CompactConstructorHeaderName:/
+/:$compliance 14:/
+
+-----------------------------------------------
+-- 14 preview feature : end of record type
+-----------------------------------------------
+
+-----------------------------------------------
+-- 14 preview feature : instanceof pattern matching
+-----------------------------------------------
+
+
+InstanceofExpression -> RelationalExpression
+InstanceofExpression ::= InstanceofExpression 'instanceof' TypeOrPattern
+/.$putCase consumeInstanceOfExpression(); $break ./
+/:$readableName Expression:/
+
+TypeOrPattern -> Type
+TypeOrPattern -> Pattern
+Pattern -> TypeTestPattern
+TypeTestPattern ::= Type Identifier
+/.$putCase consumeTypeTestPattern(); $break ./
+/:$readableName TypeTestPattern:/
+
+--InstanceofExpression ::= InstanceofExpression 'instanceof' Type Identifier
+--/.$putCase consumeInstanceOfExpressionPattern(); $break ./
+--/:$readableName Expression:/
+--/:$compliance 14:/
+
+-----------------------------------------------
+-- 14 preview feature : end of instanceof pattern matching
+-----------------------------------------------
 
 ConstantDeclaration -> FieldDeclaration
 /:$readableName ConstantDeclaration:/
@@ -1132,6 +1283,7 @@ BlockStatement -> LocalVariableDeclarationStatement
 BlockStatement -> Statement
 --1.1 feature
 BlockStatement -> ClassDeclaration
+BlockStatement -> RecordDeclaration
 BlockStatement ::= InterfaceDeclaration
 /.$putCase consumeInvalidInterfaceDeclaration(); $break ./
 /:$readableName BlockStatement:/
@@ -1205,6 +1357,7 @@ StatementWithoutTrailingSubstatement -> SynchronizedStatement
 StatementWithoutTrailingSubstatement -> ThrowStatement
 StatementWithoutTrailingSubstatement -> TryStatement
 StatementWithoutTrailingSubstatement -> TryStatementWithResources
+StatementWithoutTrailingSubstatement -> YieldStatement
 /:$readableName Statement:/
 
 EmptyStatement ::= ';'
@@ -1267,6 +1420,7 @@ SwitchBlockStatements ::= SwitchBlockStatements SwitchBlockStatement
 /.$putCase consumeSwitchBlockStatements() ; $break ./
 /:$readableName SwitchBlockStatements:/
 
+SwitchBlockStatement -> SwitchLabeledRule
 SwitchBlockStatement ::= SwitchLabels BlockStatements
 /.$putCase consumeSwitchBlockStatement() ; $break ./
 /:$readableName SwitchBlockStatement:/
@@ -1276,12 +1430,57 @@ SwitchLabels ::= SwitchLabels SwitchLabel
 /.$putCase consumeSwitchLabels() ; $break ./
 /:$readableName SwitchLabels:/
 
-SwitchLabel ::= 'case' ConstantExpression ':'
+SwitchLabel ::= SwitchLabelCaseLhs ':'
 /. $putCase consumeCaseLabel(); $break ./
 
 SwitchLabel ::= 'default' ':'
 /. $putCase consumeDefaultLabel(); $break ./
 /:$readableName SwitchLabel:/
+
+-- BEGIN SwitchExpression (JEP 325) --
+
+UnaryExpressionNotPlusMinus -> SwitchExpression
+UnaryExpressionNotPlusMinus_NotName -> SwitchExpression
+
+SwitchExpression ::= 'switch' '(' Expression ')' OpenBlock SwitchBlock
+/.$putCase consumeSwitchExpression() ; $break ./
+/:$readableName SwitchExpression:/
+
+SwitchLabeledRule ::= SwitchLabeledExpression
+SwitchLabeledRule ::= SwitchLabeledBlock
+SwitchLabeledRule ::= SwitchLabeledThrowStatement
+/. $putCase consumeSwitchLabeledRule(); $break ./
+/:$readableName SwitchLabeledRule:/
+
+SwitchLabeledExpression ::= SwitchLabelExpr Expression ';'
+/. $putCase consumeSwitchLabeledExpression(); $break ./
+/:$readableName SwitchLabeledExpression:/
+
+SwitchLabeledBlock ::= SwitchLabelExpr Block
+/. $putCase consumeSwitchLabeledBlock(); $break ./
+/:$readableName SwitchLabeledBlock:/
+
+SwitchLabeledThrowStatement ::= SwitchLabelExpr ThrowExpression ';'
+/. $putCase consumeSwitchLabeledThrowStatement(); $break ./
+/:$readableName SwitchLabeledThrowStatement:/
+
+SwitchLabelExpr ::= 'default'  '->'
+/. $putCase consumeDefaultLabelExpr(); $break ./
+/:$readableName SwitchLabelDefaultExpr:/
+
+SwitchLabelExpr ::= SwitchLabelCaseLhs BeginCaseExpr '->'
+/. $putCase consumeCaseLabelExpr(); $break ./
+/:$readableName SwitchLabelExpr:/
+
+SwitchLabelCaseLhs ::= 'case' ConstantExpressions
+/. $putCase consumeSwitchLabelCaseLhs(); $break ./
+/:$readableName SwitchLabelCaseLhs:/
+
+-- END SwitchExpression (JEP 325) --
+
+YieldStatement ::= RestrictedIdentifierYield Expression ;
+/.$putCase consumeStatementYield() ; $break ./
+/:$readableName YieldStatement:/
 
 WhileStatement ::= 'while' '(' Expression ')' Statement
 /.$putCase consumeStatementWhile() ; $break ./
@@ -1348,6 +1547,10 @@ ReturnStatement ::= 'return' Expressionopt ';'
 ThrowStatement ::= 'throw' Expression ';'
 /.$putCase consumeStatementThrow(); $break ./
 /:$readableName ThrowStatement:/
+
+ThrowExpression ::= 'throw' Expression
+/.$putCase consumeThrowExpression() ; $break ./
+/:$readableName ThrowExpression:/
 
 SynchronizedStatement ::= OnlySynchronized '(' Expression ')' Block
 /.$putCase consumeStatementSynchronized(); $break ./
@@ -1886,11 +2089,6 @@ RelationalExpression ::= RelationalExpression '>=' ShiftExpression
 /.$putCase consumeBinaryExpression(OperatorIds.GREATER_EQUAL); $break ./
 /:$readableName Expression:/
 
-InstanceofExpression -> RelationalExpression
-InstanceofExpression ::= InstanceofExpression 'instanceof' ReferenceType
-/.$putCase consumeInstanceOfExpression(); $break ./
-/:$readableName Expression:/
-
 EqualityExpression -> InstanceofExpression
 EqualityExpression ::= EqualityExpression '==' InstanceofExpression
 /.$putCase consumeEqualityExpression(OperatorIds.EQUAL_EQUAL); $break ./
@@ -1989,6 +2187,11 @@ Expressionopt ::= $empty
 /.$putCase consumeEmptyExpression(); $break ./
 Expressionopt -> Expression
 /:$readableName Expression:/
+
+ConstantExpressions -> Expression
+ConstantExpressions ::= ConstantExpressions ',' Expression
+/.$putCase consumeConstantExpressions(); $break ./
+/:$readableName ConstantExpressions:/
 
 ConstantExpression -> Expression
 /:$readableName ConstantExpression:/
@@ -2492,9 +2695,9 @@ RelationalExpression_NotName ::= Name '>=' ShiftExpression
 /:$readableName Expression:/
 
 InstanceofExpression_NotName -> RelationalExpression_NotName
-InstanceofExpression_NotName ::= Name 'instanceof' ReferenceType
+InstanceofExpression_NotName ::= Name 'instanceof' TypeOrPattern
 /.$putCase consumeInstanceOfExpressionWithName(); $break ./
-InstanceofExpression_NotName ::= InstanceofExpression_NotName 'instanceof' ReferenceType
+InstanceofExpression_NotName ::= InstanceofExpression_NotName 'instanceof' TypeOrPattern
 /.$putCase consumeInstanceOfExpression(); $break ./
 /:$readableName Expression:/
 

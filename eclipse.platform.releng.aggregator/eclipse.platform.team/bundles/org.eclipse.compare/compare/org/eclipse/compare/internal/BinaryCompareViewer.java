@@ -15,6 +15,7 @@ package org.eclipse.compare.internal;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 import org.eclipse.compare.CompareConfiguration;
@@ -30,8 +31,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * A simple compare viewer for binary files.
@@ -51,7 +50,9 @@ public class BinaryCompareViewer extends AbstractViewer {
 
 	public BinaryCompareViewer(Composite parent, final CompareConfiguration cc) {
 
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent, ICompareContextIds.BINARY_COMPARE_VIEW);
+		if(PlatformUI.isWorkbenchRunning()) {
+			PlatformUI.getWorkbench().getHelpSystem().setHelp(parent, ICompareContextIds.BINARY_COMPARE_VIEW);
+		}
 
 		fBundle= ResourceBundle.getBundle(BUNDLE_NAME);
 

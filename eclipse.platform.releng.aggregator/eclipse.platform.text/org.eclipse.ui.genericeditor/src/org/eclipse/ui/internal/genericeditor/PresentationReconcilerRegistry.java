@@ -21,8 +21,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.IConfigurationElement;
-import org.eclipse.core.runtime.IRegistryChangeEvent;
-import org.eclipse.core.runtime.IRegistryChangeListener;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
@@ -34,7 +32,7 @@ import org.eclipse.ui.texteditor.ITextEditor;
 /**
  * A registry of presentation reconciliers provided by extension <code>org.eclipse.ui.genericeditor.presentationReconcilers</code>.
  * Those extensions are specific to a given {@link IContentType}.
- * 
+ *
  * @since 1.0
  */
 public class PresentationReconcilerRegistry {
@@ -48,17 +46,12 @@ public class PresentationReconcilerRegistry {
 	 * Creates the registry and binds it to the extension point.
 	 */
 	public PresentationReconcilerRegistry() {
-		Platform.getExtensionRegistry().addRegistryChangeListener(new IRegistryChangeListener() {
-			@Override
-			public void registryChanged(IRegistryChangeEvent event) {
-				outOfSync = true;
-			}
-		}, EXTENSION_POINT_ID);
+		Platform.getExtensionRegistry().addRegistryChangeListener(event -> outOfSync = true, EXTENSION_POINT_ID);
 	}
 
 	/**
 	 * Get the contributed {@link IPresentationReconciliers}s that are relevant to hook on source viewer according
-	 * to document content types. 
+	 * to document content types.
 	 * @param sourceViewer the source viewer we're hooking completion to.
 	 * @param editor the text editor
 	 * @param contentTypes the content types of the document we're editing.

@@ -29,7 +29,7 @@ public class WorkspaceRoot extends Container implements IWorkspaceRoot {
 	 * that have been requested from this root.  This maps project
 	 * name strings to project handles.
 	 */
-	private final Map<String, Project> projectTable = Collections.synchronizedMap(new HashMap<String, Project>(16));
+	private final Map<String, Project> projectTable = Collections.synchronizedMap(new HashMap<>(16));
 
 	/**
 	 * Cache of the canonicalized platform location.
@@ -250,9 +250,11 @@ public class WorkspaceRoot extends Container implements IWorkspaceRoot {
 		// get the children via the workspace since we know that this
 		// resource exists (it is local).
 		IResource[] children = getChildren(IResource.NONE);
-		for (int i = 0; i < children.length; i++)
-			if (!children[i].isLocal(depth))
+		for (IResource c : children) {
+			if (!c.isLocal(depth)) {
 				return false;
+			}
+		}
 		return true;
 	}
 

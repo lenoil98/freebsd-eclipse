@@ -53,24 +53,24 @@ public class BreakpointManagerProxy extends AbstractModelProxy {
 	/**
 	 * Job to fire posted deltas.
 	 */
-    private Job fFireModelChangedJob;
+	private Job fFireModelChangedJob;
 
-    /**
-     * Object used for describing a posted delta.
-     */
-    private static class DeltaInfo {
-        final boolean fSelect;
-        final IModelDelta fDelta;
+	/**
+	 * Object used for describing a posted delta.
+	 */
+	private static class DeltaInfo {
+		final boolean fSelect;
+		final IModelDelta fDelta;
 
-        DeltaInfo(boolean selectDelta, IModelDelta delta) {
-            fSelect = selectDelta;
-            fDelta = delta;
-        }
-    }
+		DeltaInfo(boolean selectDelta, IModelDelta delta) {
+			fSelect = selectDelta;
+			fDelta = delta;
+		}
+	}
 
-    /**
-     * List of posted deltas ready to be fired.
-     */
+	/**
+	 * List of posted deltas ready to be fired.
+	 */
 	private List<DeltaInfo> fPendingDeltas = new LinkedList<>();
 
 
@@ -98,10 +98,6 @@ public class BreakpointManagerProxy extends AbstractModelProxy {
 		fProvider = bpmProvider;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.provisional.AbstractModelProxy#installed(org.eclipse.jface.viewers.Viewer)
-	 */
 	@Override
 	public void installed(Viewer viewer) {
 		super.installed(viewer);
@@ -110,20 +106,16 @@ public class BreakpointManagerProxy extends AbstractModelProxy {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.provisional.AbstractModelProxy#dispose()
-	 */
 	@Override
 	public void dispose() {
-	    fProvider.unregisterModelProxy(fInput, this);
-	    synchronized(this) {
-	        if (fFireModelChangedJob != null) {
-                fFireModelChangedJob.cancel();
-                fFireModelChangedJob = null;
-	        }
-            fPendingDeltas.clear();
-	    }
+		fProvider.unregisterModelProxy(fInput, this);
+		synchronized(this) {
+			if (fFireModelChangedJob != null) {
+				fFireModelChangedJob.cancel();
+				fFireModelChangedJob = null;
+			}
+			fPendingDeltas.clear();
+		}
 
 		super.dispose();
 	}
@@ -142,48 +134,48 @@ public class BreakpointManagerProxy extends AbstractModelProxy {
 	 * viewer selection.
 	 */
 	public synchronized void postModelChanged(IModelDelta delta, boolean select) {
-        // Check for proxy being disposed.
-        if (isDisposed()) {
-            return;
-        }
-        // Check for viewer being disposed.
-        Widget viewerControl = getViewer().getControl();
-        if (viewerControl == null) {
-            return;
-        }
+		// Check for proxy being disposed.
+		if (isDisposed()) {
+			return;
+		}
+		// Check for viewer being disposed.
+		Widget viewerControl = getViewer().getControl();
+		if (viewerControl == null) {
+			return;
+		}
 
-        // If we are processing a select delta, remove the previous select delta.
-        if (select) {
+		// If we are processing a select delta, remove the previous select delta.
+		if (select) {
 			for (Iterator<DeltaInfo> itr = fPendingDeltas.iterator(); itr.hasNext();) {
-                if ( itr.next().fSelect ) {
-                    itr.remove();
-                }
-            }
-        }
-        fPendingDeltas.add(new DeltaInfo(select, delta));
+				if ( itr.next().fSelect ) {
+					itr.remove();
+				}
+			}
+		}
+		fPendingDeltas.add(new DeltaInfo(select, delta));
 
-        if (fFireModelChangedJob == null) {
-	        fFireModelChangedJob = new WorkbenchJob(viewerControl.getDisplay(), "Select Breakpoint Job") { //$NON-NLS-1$
-	            {
-	                setSystem(true);
-	            }
+		if (fFireModelChangedJob == null) {
+			fFireModelChangedJob = new WorkbenchJob(viewerControl.getDisplay(), "Select Breakpoint Job") { //$NON-NLS-1$
+				{
+					setSystem(true);
+				}
 
-	            @Override
+				@Override
 				public IStatus runInUIThread(IProgressMonitor monitor) {
-                    Object[] deltas;
-                    synchronized(BreakpointManagerProxy.this) {
-                        deltas = fPendingDeltas.toArray();
-                        fPendingDeltas.clear();
-                        fFireModelChangedJob = null;
-                    }
-                    for (int i = 0; i < deltas.length; i++) {
-                        fireModelChanged( ((DeltaInfo)deltas[i]).fDelta );
-                    }
-                    return Status.OK_STATUS;
-                }
-            };
-            fFireModelChangedJob.schedule();
-	    }
+					Object[] deltas;
+					synchronized(BreakpointManagerProxy.this) {
+						deltas = fPendingDeltas.toArray();
+						fPendingDeltas.clear();
+						fFireModelChangedJob = null;
+					}
+					for (Object pendingDelta : deltas) {
+						fireModelChanged( ((DeltaInfo)pendingDelta).fDelta );
+					}
+					return Status.OK_STATUS;
+				}
+			};
+			fFireModelChangedJob.schedule();
+		}
 	}
 
 }

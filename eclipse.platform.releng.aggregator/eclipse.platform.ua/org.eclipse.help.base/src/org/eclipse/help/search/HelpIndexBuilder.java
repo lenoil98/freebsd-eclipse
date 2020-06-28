@@ -22,6 +22,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
@@ -140,8 +141,7 @@ public class HelpIndexBuilder {
 		}
 
 		public File findFile(String file) {
-			for (int i=0; i<dirs.size(); i++) {
-				File dir = dirs.get(i);
+			for (File dir : dirs) {
 				File absoluteFile = new File(dir, file);
 				if (absoluteFile.exists())
 					return absoluteFile;
@@ -182,7 +182,7 @@ public class HelpIndexBuilder {
 			// We will ignore docBundleIds which is null anyway,
 			// and use id and fid to create plugin info
 			// for the destination
-			StringBuffer buffer = new StringBuffer();
+			StringBuilder buffer = new StringBuilder();
 			appendBundleInformation(buffer, id.id, id.version.toString());
 			if (fid != null)
 				appendBundleInformation(buffer, fid.id, fid.version.toString());
@@ -312,9 +312,7 @@ public class HelpIndexBuilder {
 		SubMonitor subMonitor = SubMonitor.convert(monitor, HelpBaseResources.HelpIndexBuilder_buildingIndex, localeDirs.size());
 		MultiStatus multiStatus = null;
 
-		for (int i=0; i<localeDirs.size(); i++) {
-			// process locale dir
-			LocaleDir localeDir = localeDirs.get(i);
+		for (LocaleDir localeDir : localeDirs) {
 			MultiStatus localeStatus = processLocaleDir(pid, fid, localeDir, subMonitor.split(1));
 			if (localeStatus != null) {
 				if (multiStatus == null)
@@ -373,15 +371,13 @@ public class HelpIndexBuilder {
 			return;
 		File [] languages = listFiles(nl);
 		HashSet<String> locales = new HashSet<>();
-		for (int i=0; i<languages.length; i++) {
-			File language = languages[i];
+		for (File language : languages) {
 			if (!language.isDirectory())
 				continue;
 			if (!isValidLanguage(language.getName()))
 				continue;
 			File [] countries = listFiles(language);
-			for (int j=0; j<countries.length; j++) {
-				File country = countries[j];
+			for (File country : countries) {
 				String locale;
 				boolean hasCountry = false;
 				if (country.isDirectory() && isValidCountry(country.getName()))
@@ -412,13 +408,12 @@ public class HelpIndexBuilder {
 		if (systemRoot.exists() && systemRoot.isDirectory()) {
 			// check
 			File [] files = listFiles(systemRoot);
-			for (int i=0; i<files.length; i++) {
-				File sdir = files[i];
+			for (File sdir : files) {
 				if (!sdir.isDirectory())
 					continue;
 				String sname = sdir.getName();
-				for (int j=0; j<values.length; j++) {
-					if (values[j].equals(sname)) {
+				for (String value : values) {
+					if (value.equals(sname)) {
 						// valid
 						String relativePath="/"+systemRoot.getName()+"/"+sname; //$NON-NLS-1$ //$NON-NLS-2$
 						LocaleDir dir = new LocaleDir(sname, relativePath);
@@ -436,8 +431,7 @@ public class HelpIndexBuilder {
 	 * Reject bogus directories.
 	 */
 	private boolean isValidLocale(String locale) {
-		for (int i=0; i<legalLocales.length; i++) {
-			Locale legalLocale = legalLocales[i];
+		for (Locale legalLocale : legalLocales) {
 			if (legalLocale.toString().equals(locale))
 				return true;
 		}
@@ -448,9 +442,7 @@ public class HelpIndexBuilder {
 		if (legalLanguages==null) {
 			legalLanguages = new HashSet<>();
 			String [] choices = Locale.getISOLanguages();
-			for (int i=0; i<choices.length; i++) {
-				legalLanguages.add(choices[i]);
-			}
+			Collections.addAll(legalLanguages, choices);
 		}
 		return legalLanguages.contains(language);
 	}
@@ -459,9 +451,7 @@ public class HelpIndexBuilder {
 		if (legalCountries==null) {
 			legalCountries = new HashSet<>();
 			String [] choices = Locale.getISOCountries();
-			for (int i=0; i<choices.length; i++) {
-				legalCountries.add(choices[i]);
-			}
+			Collections.addAll(legalCountries, choices);
 		}
 		return legalCountries.contains(country);
 	}
@@ -499,8 +489,7 @@ public class HelpIndexBuilder {
 	private Collection<String> collectDocs(LocaleDir localeDir)
 			throws CoreException {
 		HashSet<String> docs = new HashSet<>();
-		for (int i = 0; i < tocFiles.size(); i++) {
-			TocFile tocFile = tocFiles.get(i);
+		for (TocFile tocFile : tocFiles) {
 			collectDocs(docs, getTocFile(localeDir, tocFile.href));
 			if (tocFile.extraDir!=null) {
 				//TODO also include all the indexable documents
@@ -547,7 +536,7 @@ public class HelpIndexBuilder {
 			href = getAttribute(topic, "topic"); //$NON-NLS-1$
 		}
 		if (href != null
-				&& !href.equals("") && !href.startsWith("http://") && !href.startsWith("https://")) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				&& !href.isEmpty() && !href.startsWith("http://") && !href.startsWith("https://")) { //$NON-NLS-1$ //$NON-NLS-2$
 			href = SearchIndex.getIndexableHref(href);
 			if (href != null)
 				hrefs.add(href);
@@ -556,7 +545,7 @@ public class HelpIndexBuilder {
 		for (int i = 0; i < subtopics.getLength(); i++) {
 			Element subtopic = (Element) subtopics.item(i);
 			href = getAttribute(subtopic, "href"); //$NON-NLS-1$
-			if (href != null && !href.equals("") && !href.startsWith("http://") && !href.startsWith("https://")) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			if (href != null && !href.isEmpty() && !href.startsWith("http://") && !href.startsWith("https://")) { //$NON-NLS-1$ //$NON-NLS-2$
 				href = SearchIndex.getIndexableHref(href);
 				if (href != null)
 					hrefs.add(href);
@@ -582,8 +571,7 @@ public class HelpIndexBuilder {
 		checkCancelled(monitor);
 		MultiStatus multiStatus = null;
 
-		for (Iterator<String> it = addedDocs.iterator(); it.hasNext();) {
-			String href = it.next();
+		for (String href : addedDocs) {
 			URL url = localeDir.findURL(href);
 			if (url != null) {
 				IStatus status = index
@@ -649,8 +637,7 @@ public class HelpIndexBuilder {
 	private void prepareDirectory(File indexDirectory) throws CoreException {
 		if (indexDirectory.exists()) {
 			File[] files = listFiles(indexDirectory);
-			for (int i = 0; i < files.length; i++) {
-				File file = files[i];
+			for (File file : files) {
 				boolean result = file.delete();
 				if (!result)
 					throwCoreException(
@@ -685,9 +672,8 @@ public class HelpIndexBuilder {
 				"META-INF/MANIFEST.MF"); //$NON-NLS-1$
 
 		if (OSGiFile.exists()) {
-			try {
-				Manifest OSGiManifest = new Manifest(new FileInputStream(
-						OSGiFile));
+			try (FileInputStream fis = new FileInputStream(OSGiFile)) {
+				Manifest OSGiManifest = new Manifest(fis);
 				Properties headers = manifestToProperties(OSGiManifest
 						.getMainAttributes());
 				String value = headers.get(Constants.BUNDLE_SYMBOLICNAME)

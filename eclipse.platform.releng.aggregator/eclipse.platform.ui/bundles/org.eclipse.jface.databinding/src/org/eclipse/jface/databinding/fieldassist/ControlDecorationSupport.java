@@ -22,19 +22,16 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.databinding.ValidationStatusProvider;
-import org.eclipse.core.databinding.observable.DisposeEvent;
 import org.eclipse.core.databinding.observable.IDecoratingObservable;
 import org.eclipse.core.databinding.observable.IDisposeListener;
 import org.eclipse.core.databinding.observable.IObservable;
 import org.eclipse.core.databinding.observable.IObserving;
 import org.eclipse.core.databinding.observable.list.IListChangeListener;
 import org.eclipse.core.databinding.observable.list.IObservableList;
-import org.eclipse.core.databinding.observable.list.ListChangeEvent;
 import org.eclipse.core.databinding.observable.list.ListDiffVisitor;
 import org.eclipse.core.databinding.observable.list.WritableList;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.observable.value.IValueChangeListener;
-import org.eclipse.core.databinding.observable.value.ValueChangeEvent;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.databinding.swt.ISWTObservable;
@@ -321,28 +318,13 @@ public class ControlDecorationSupport {
 	private IObservableValue<IStatus> validationStatus;
 	private IObservableList<IObservable> targets;
 
-	private IDisposeListener disposeListener = new IDisposeListener() {
-		@Override
-		public void handleDispose(DisposeEvent staleEvent) {
-			dispose();
-		}
-	};
+	private IDisposeListener disposeListener = staleEvent -> dispose();
 
-	private IValueChangeListener<IStatus> statusChangeListener = new IValueChangeListener<IStatus>() {
-		@Override
-		public void handleValueChange(ValueChangeEvent<? extends IStatus> event) {
-			statusChanged(validationStatus.getValue());
-		}
-	};
+	private IValueChangeListener<IStatus> statusChangeListener = event -> statusChanged(validationStatus.getValue());
 
-	private IListChangeListener<IObservable> targetsChangeListener = new IListChangeListener<IObservable>() {
-
-		@Override
-		public void handleListChange(ListChangeEvent<? extends IObservable> event) {
-			event.diff.accept(new TargetsListDiffAdvisor<>());
-			statusChanged(validationStatus.getValue());
-		}
-
+	private IListChangeListener<IObservable> targetsChangeListener = event -> {
+		event.diff.accept(new TargetsListDiffAdvisor<>());
+		statusChanged(validationStatus.getValue());
 	};
 
 	private static class TargetDecoration {
@@ -384,7 +366,7 @@ public class ControlDecorationSupport {
 		this.targets = targetsToBeDecorated;
 		Assert.isTrue(!this.targets.isDisposed());
 
-		this.targetDecorations = new ArrayList<TargetDecoration>();
+		this.targetDecorations = new ArrayList<>();
 
 		validationStatus.addDisposeListener(disposeListener);
 		validationStatus.addValueChangeListener(statusChangeListener);
@@ -453,9 +435,7 @@ public class ControlDecorationSupport {
 
 	private static IObservableList<IObservable> getObservableList(IObservable[] observables) {
 		IObservableList<IObservable> observableList = new WritableList<>();
-		for (IObservable observable : observables) {
-			observableList.add(observable);
-		}
+		java.util.Collections.addAll(observableList, observables);
 
 		return observableList;
 	}

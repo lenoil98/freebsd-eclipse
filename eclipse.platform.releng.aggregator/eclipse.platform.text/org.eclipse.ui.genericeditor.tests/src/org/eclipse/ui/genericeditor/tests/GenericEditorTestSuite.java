@@ -28,7 +28,9 @@ import org.junit.runners.Suite.SuiteClasses;
 		FoldingTest.class,
 		AutoEditTest.class,
 		ReconcilerTest.class,
-		HighlightTest.class
+		HighlightTest.class,
+		IconsTest.class,
+		TestQuickAssist.class
 })
 public class GenericEditorTestSuite {
 	// see @SuiteClasses

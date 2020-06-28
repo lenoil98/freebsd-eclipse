@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -27,6 +27,7 @@ public class ResolverImport extends ResolverConstraint {
 		super(bundle, ips);
 	}
 
+	@Override
 	boolean isOptional() {
 		return ImportPackageSpecification.RESOLUTION_OPTIONAL.equals(((ImportPackageSpecification) constraint).getDirective(Constants.RESOLUTION_DIRECTIVE));
 	}
@@ -35,6 +36,7 @@ public class ResolverImport extends ResolverConstraint {
 		return ImportPackageSpecification.RESOLUTION_DYNAMIC.equals(((ImportPackageSpecification) constraint).getDirective(Constants.RESOLUTION_DIRECTIVE));
 	}
 
+	@Override
 	public String getName() {
 		if (name != null)
 			return name; // return the required package set for a dynamic import

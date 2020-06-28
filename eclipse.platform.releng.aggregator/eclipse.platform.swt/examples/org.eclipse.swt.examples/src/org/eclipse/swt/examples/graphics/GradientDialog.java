@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2016 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -23,7 +23,6 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Resource;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
@@ -74,19 +73,18 @@ public class GradientDialog extends Dialog {
 		dialog.setText(GraphicsExample.getResourceString("Gradient")); //$NON-NLS-1$
 
 		GridLayout gridLayout = new GridLayout();
-	    gridLayout.numColumns = 2;
-	    gridLayout.marginHeight = 10;
-	    gridLayout.marginWidth = 10;
-	    dialog.setLayout(gridLayout);
+		gridLayout.numColumns = 2;
+		gridLayout.marginHeight = 10;
+		gridLayout.marginWidth = 10;
+		dialog.setLayout(gridLayout);
 
-	    // create the controls in the dialog
-	    createDialogControls(dialog);
+		// create the controls in the dialog
+		createDialogControls(dialog);
 
 		dialog.addListener(SWT.Close, event -> {
-			for (int i = 0; i < resources.size(); i++) {
-				Object obj = resources.get(i);
-				if (obj != null && obj instanceof Resource) {
-					((Resource) obj).dispose();
+			for (Image obj : resources) {
+				if (obj != null) {
+					obj.dispose();
 				}
 			}
 			dialog.dispose();
@@ -169,7 +167,7 @@ public class GradientDialog extends Dialog {
 
 		// position composite
 		gridData = new GridData(GridData.VERTICAL_ALIGN_BEGINNING);
-	    colorButtonComp.setLayoutData(gridData);
+		colorButtonComp.setLayoutData(gridData);
 
 		ColorMenu colorMenu = new ColorMenu();
 
@@ -228,10 +226,10 @@ public class GradientDialog extends Dialog {
 
 		// position composite
 		gridData = new GridData(GridData.HORIZONTAL_ALIGN_END);
-	    gridData.horizontalSpan = 2;
-	    okCancelComp.setLayoutData(gridData);
+		gridData.horizontalSpan = 2;
+		okCancelComp.setLayoutData(gridData);
 
-	    // OK button
+		// OK button
 		okButton = new Button (okCancelComp, SWT.PUSH);
 		okButton.setText("&OK");
 		okButton.addListener(SWT.Selection, event -> {

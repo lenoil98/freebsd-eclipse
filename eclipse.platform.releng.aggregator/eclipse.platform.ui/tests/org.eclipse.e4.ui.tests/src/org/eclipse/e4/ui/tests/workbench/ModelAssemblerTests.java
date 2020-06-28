@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016 EclipseSource Muenchen GmbH and others.
+ * Copyright (c) 2016, 2020 EclipseSource Muenchen GmbH and others.
  *
  *
  * This program and the accompanying materials
@@ -11,6 +11,7 @@
  *
  * Contributors:
  * Alexandra Buzila - initial API and implementation
+ * Gerhard Kreuzer  - Bug 561324
  ******************************************************************************/
 
 package org.eclipse.e4.ui.tests.workbench;
@@ -44,10 +45,8 @@ import org.eclipse.e4.ui.model.application.MApplication;
 import org.eclipse.e4.ui.model.application.MApplicationElement;
 import org.eclipse.e4.ui.model.application.impl.ApplicationFactoryImpl;
 import org.eclipse.e4.ui.model.application.ui.MUIElement;
-import org.eclipse.e4.ui.model.application.ui.advanced.MAdvancedFactory;
 import org.eclipse.e4.ui.model.application.ui.advanced.MArea;
 import org.eclipse.e4.ui.model.application.ui.advanced.MPlaceholder;
-import org.eclipse.e4.ui.model.application.ui.basic.MBasicFactory;
 import org.eclipse.e4.ui.model.application.ui.basic.MPart;
 import org.eclipse.e4.ui.model.application.ui.basic.MTrimmedWindow;
 import org.eclipse.e4.ui.model.application.ui.basic.MWindow;
@@ -55,7 +54,6 @@ import org.eclipse.e4.ui.model.fragment.MFragmentFactory;
 import org.eclipse.e4.ui.model.fragment.MModelFragment;
 import org.eclipse.e4.ui.model.fragment.MModelFragments;
 import org.eclipse.e4.ui.model.fragment.MStringModelFragment;
-import org.eclipse.e4.ui.workbench.Selector;
 import org.eclipse.e4.ui.workbench.modeling.EModelService;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -68,9 +66,9 @@ import org.junit.Test;
 
 @SuppressWarnings("nls")
 public class ModelAssemblerTests {
-	final private static String EXTENSION_POINT_ID = "org.eclipse.e4.workbench.model";
-	final private static String BUNDLE_SYMBOLIC_NAME = "org.eclipse.e4.ui.tests";
-	final private static String APPLICATION_ID = "org.eclipse.e4.ui.tests.modelassembler.app";
+	private static final String EXTENSION_POINT_ID = "org.eclipse.e4.workbench.model";
+	private static final String BUNDLE_SYMBOLIC_NAME = "org.eclipse.e4.ui.tests";
+	private static final String APPLICATION_ID = "org.eclipse.e4.ui.tests.modelassembler.app";
 	private IEclipseContext appContext;
 	private MApplication application;
 	private E4XMIResourceFactory factory;
@@ -78,6 +76,7 @@ public class ModelAssemblerTests {
 	private E4XMIResource appResource;
 	private ModelAssembler assembler;
 	private Logger logger;
+	private EModelService modelService;
 
 	@Before
 	public void setup() {
@@ -98,6 +97,7 @@ public class ModelAssemblerTests {
 		appResource.getContents().add((EObject) application);
 		assembler = new ModelAssembler();
 		ContextInjectionFactory.inject(assembler, appContext);
+		modelService = application.getContext().get(EModelService.class);
 	}
 
 	/**
@@ -113,15 +113,9 @@ public class ModelAssemblerTests {
 		List<MApplicationElement> elements = assembler.processModelFragment(fragment, contributorURI, true);
 		assertTrue(elements.isEmpty());
 
-		EModelService modelService = application.getContext().get(EModelService.class);
 		List<MApplicationElement> modelElements = modelService.findElements(application, MApplicationElement.class,
-				EModelService.ANYWHERE, new Selector() {
-					@Override
-					public boolean select(MApplicationElement element) {
-						return element.getContributorURI() != null
-								&& element.getContributorURI().equals(contributorURI);
-					}
-				});
+				EModelService.ANYWHERE, element -> element.getContributorURI() != null
+						&& element.getContributorURI().equals(contributorURI));
 		assertTrue(modelElements.isEmpty());
 
 		verifyZeroInteractions(logger);
@@ -135,7 +129,7 @@ public class ModelAssemblerTests {
 	@Test
 	public void testFragments_workingFragment() throws Exception {
 		// the contributed element
-		MWindow window = MBasicFactory.INSTANCE.createWindow();
+		MWindow window = modelService.createModelElement(MWindow.class);
 		final String contributedElementId = "testFragments_workingFragment-contributedWindow";
 		window.setElementId(contributedElementId);
 
@@ -150,7 +144,6 @@ public class ModelAssemblerTests {
 		resourceSet.getResources().add(fragmentResource);
 		fragmentResource.getContents().add((EObject) fragment);
 
-		EModelService modelService = application.getContext().get(EModelService.class);
 		assertEquals(null, modelService.find(contributedElementId, application));
 
 		final String contributorURI = "testFragments_emptyFragment_contribURI";
@@ -182,9 +175,9 @@ public class ModelAssemblerTests {
 		fragmentResource.getContents().add((EObject) fragment);
 
 		final String contributedElementId = "testFragments_existingElementID-contributedWindow";
-		MWindow window1 = MBasicFactory.INSTANCE.createWindow();
+		MWindow window1 = modelService.createModelElement(MWindow.class);
 		window1.setElementId(contributedElementId);
-		MWindow window2 = MBasicFactory.INSTANCE.createWindow();
+		MWindow window2 = modelService.createModelElement(MWindow.class);
 		window2.setElementId(contributedElementId);
 
 		// add window1 to app and window2 to fragment
@@ -204,7 +197,7 @@ public class ModelAssemblerTests {
 		// fragment wasn't merged as the contributed element was already part of
 		// the application model
 		assertEquals(0, elements.size());
-		EModelService modelService = application.getContext().get(EModelService.class);
+
 		MUIElement found = modelService.find(contributedElementId, application);
 		assertEquals(window1, found);
 
@@ -230,9 +223,9 @@ public class ModelAssemblerTests {
 		fragmentResource.getContents().add((EObject) fragment);
 
 		final String contributedElementId = "testFragments_existingElementID-contributedWindow";
-		MWindow window1 = MBasicFactory.INSTANCE.createWindow();
+		MWindow window1 = modelService.createModelElement(MWindow.class);
 		window1.setElementId(contributedElementId);
-		MWindow window2 = MBasicFactory.INSTANCE.createWindow();
+		MWindow window2 = modelService.createModelElement(MWindow.class);
 		window2.setElementId(contributedElementId);
 
 		// add window1 to app and window2 to fragment
@@ -248,7 +241,6 @@ public class ModelAssemblerTests {
 		List<MApplicationElement> elements = assembler.processModelFragment(fragment, contributorID, false);
 
 		assertEquals(elements.size(), 1);
-		EModelService modelService = application.getContext().get(EModelService.class);
 		MUIElement found = modelService.find(contributedElementId, application);
 		assertEquals(found, window2);
 		assertEquals(contributorID, found.getContributorURI());
@@ -259,21 +251,21 @@ public class ModelAssemblerTests {
 	/** Tests that correctly configured imports are correctly handled. */
 	@Test
 	public void testImports() {
-		List<MApplicationElement> imports = new ArrayList<MApplicationElement>();
-		List<MApplicationElement> addedElements = new ArrayList<MApplicationElement>();
+		List<MApplicationElement> imports = new ArrayList<>();
+		List<MApplicationElement> addedElements = new ArrayList<>();
 
 		final String windowElementId = "testImports_emptyList_window1";
-		MTrimmedWindow importWindow1 = MBasicFactory.INSTANCE.createTrimmedWindow();
+		MTrimmedWindow importWindow1 = modelService.createModelElement(MTrimmedWindow.class);
 		importWindow1.setElementId(windowElementId);
 		MModelFragments fragment = MFragmentFactory.INSTANCE.createModelFragments();
 		fragment.getImports().add(importWindow1);
 		imports.add(importWindow1);
 
-		MTrimmedWindow realWindow1 = MBasicFactory.INSTANCE.createTrimmedWindow();
+		MTrimmedWindow realWindow1 = modelService.createModelElement(MTrimmedWindow.class);
 		realWindow1.setElementId(windowElementId);
 		application.getChildren().add(realWindow1);
 
-		MPlaceholder placeholder = MAdvancedFactory.INSTANCE.createPlaceholder();
+		MPlaceholder placeholder = modelService.createModelElement(MPlaceholder.class);
 		placeholder.setRef(importWindow1);
 		addedElements.add(placeholder);
 
@@ -285,25 +277,24 @@ public class ModelAssemblerTests {
 	/** Tests the processing of an import with a null/incorrect element id. */
 	@Test
 	public void testImports_noImportElementId() {
-		List<MApplicationElement> imports = new ArrayList<MApplicationElement>();
-		List<MApplicationElement> addedElements = new ArrayList<MApplicationElement>();
+		List<MApplicationElement> imports = new ArrayList<>();
+		List<MApplicationElement> addedElements = new ArrayList<>();
 
-		MTrimmedWindow importWindow1 = MBasicFactory.INSTANCE.createTrimmedWindow();
+		MTrimmedWindow importWindow1 = modelService.createModelElement(MTrimmedWindow.class);
 		importWindow1.setElementId(null);
 		MModelFragments fragment = MFragmentFactory.INSTANCE.createModelFragments();
 		fragment.getImports().add(importWindow1);
 		imports.add(importWindow1);
-		MTrimmedWindow realWindow1 = MBasicFactory.INSTANCE.createTrimmedWindow();
+		MTrimmedWindow realWindow1 = modelService.createModelElement(MTrimmedWindow.class);
 		realWindow1.setElementId("testImports_emptyList_window1");
 		application.getChildren().add(realWindow1);
 
-		MPlaceholder placeholder = MAdvancedFactory.INSTANCE.createPlaceholder();
+		MPlaceholder placeholder = modelService.createModelElement(MPlaceholder.class);
 		placeholder.setRef(importWindow1);
 		addedElements.add(placeholder);
 
 		assembler.resolveImports(imports, addedElements);
 		assertEquals(null, placeholder.getRef());
-		verify(logger).warn("Could not resolve an import element for 'null'");
 		verify(logger).warn("Could not resolve import for null");
 		verifyZeroInteractions(logger);
 	}
@@ -321,13 +312,13 @@ public class ModelAssemblerTests {
 	public void testModelProcessingOrder() throws Exception {
 		/* setup application model */
 		/* this creates a window, containing a part and an area */
-		MTrimmedWindow trimmedWindow = MBasicFactory.INSTANCE.createTrimmedWindow();
+		MTrimmedWindow trimmedWindow = modelService.createModelElement(MTrimmedWindow.class);
 		trimmedWindow.setElementId("testModelProcessingOrder-trimmedWindow");
 		application.getChildren().add(trimmedWindow);
-		MPart part = MBasicFactory.INSTANCE.createPart();
+		MPart part = modelService.createModelElement(MPart.class);
 		part.setElementId("testModelProcessingOrder-part");
 		trimmedWindow.getChildren().add(part);
-		MArea area = MAdvancedFactory.INSTANCE.createArea();
+		MArea area = modelService.createModelElement(MArea.class);
 		area.setElementId("testModelProcessingOrder-area");
 		trimmedWindow.getChildren().add(area);
 

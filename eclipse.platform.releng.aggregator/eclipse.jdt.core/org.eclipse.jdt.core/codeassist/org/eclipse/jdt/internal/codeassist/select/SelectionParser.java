@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,10 +7,10 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
- *     Jesper Steen Møller <jesper@selskabet.org> - contributions for:	
+ *     Jesper Steen Møller <jesper@selskabet.org> - contributions for:
  *         Bug 531046: [10] ICodeAssist#codeSelect support for 'var'
  *******************************************************************************/
 package org.eclipse.jdt.internal.codeassist.select;
@@ -41,6 +41,7 @@ import org.eclipse.jdt.internal.compiler.ast.ExplicitConstructorCall;
 import org.eclipse.jdt.internal.compiler.ast.Expression;
 import org.eclipse.jdt.internal.compiler.ast.FieldReference;
 import org.eclipse.jdt.internal.compiler.ast.ImportReference;
+import org.eclipse.jdt.internal.compiler.ast.InstanceOfExpression;
 import org.eclipse.jdt.internal.compiler.ast.LambdaExpression;
 import org.eclipse.jdt.internal.compiler.ast.LocalDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.MarkerAnnotation;
@@ -77,7 +78,7 @@ public class SelectionParser extends AssistParser {
 	protected static final int SELECTION_OR_ASSIST_PARSER = ASSIST_PARSER + SELECTION_PARSER;
 
 	// KIND : all values known by SelectionParser are between 1025 and 1549
-	protected static final int K_BETWEEN_CASE_AND_COLON = SELECTION_PARSER + 1; // whether we are inside a block
+	protected static final int K_BETWEEN_CASE_AND_COLONORARROW = SELECTION_PARSER + 1; // whether we are inside a block
 	protected static final int K_INSIDE_RETURN_STATEMENT = SELECTION_PARSER + 2; // whether we are between the keyword 'return' and the end of a return statement
 	protected static final int K_CAST_STATEMENT = SELECTION_PARSER + 3; // whether we are between ')' and the end of a cast statement
 
@@ -125,7 +126,7 @@ protected void attachOrphanCompletionNode(){
 			}
 		}
 
-		if (orphan instanceof Expression) {
+		if (orphan instanceof Expression && ((Expression) orphan).isTrulyExpression()) {
 			buildMoreCompletionContext((Expression)orphan);
 		} else {
 			if (lastIndexOfElement(K_LAMBDA_EXPRESSION_DELIMITER) < 0) { // lambdas are recovered up to the containing expression statement and will carry along the assist node anyways.
@@ -150,7 +151,7 @@ private void buildMoreCompletionContext(Expression expression) {
 	if(kind != 0) {
 		int info = topKnownElementInfo(SELECTION_OR_ASSIST_PARSER);
 		nextElement : switch (kind) {
-			case K_BETWEEN_CASE_AND_COLON :
+			case K_BETWEEN_CASE_AND_COLONORARROW :
 				if(this.expressionPtr > 0) {
 					SwitchStatement switchStatement = new SwitchStatement();
 					switchStatement.expression = this.expressionStack[this.expressionPtr - 1];
@@ -567,7 +568,7 @@ protected void consumeEnterAnonymousClassBody(boolean qualified) {
 			0,
 			argumentLength);
 	}
-	
+
 	if (qualified) {
 		this.expressionLengthPtr--;
 		alloc.enclosingInstance = this.expressionStack[this.expressionPtr--];
@@ -588,7 +589,7 @@ protected void consumeEnterAnonymousClassBody(boolean qualified) {
 		this.lastIgnoredToken = -1;
 		if (isIndirectlyInsideLambdaExpression())
 			this.ignoreNextOpeningBrace = true;
-		else 
+		else
 			this.currentToken = 0; // opening brace already taken into account.
 		this.hasReportedError = true;
 	}
@@ -601,7 +602,7 @@ protected void consumeEnterAnonymousClassBody(boolean qualified) {
 		this.currentElement = this.currentElement.add(anonymousType, 0);
 		if (isIndirectlyInsideLambdaExpression())
 			this.ignoreNextOpeningBrace = true;
-		else 
+		else
 			this.currentToken = 0; // opening brace already taken into account.
 		this.lastIgnoredToken = -1;
 	}
@@ -677,14 +678,6 @@ protected void consumeFieldAccess(boolean isSuperAccess) {
 protected void consumeFormalParameter(boolean isVarArgs) {
 	if (this.indexOfAssistIdentifier() < 0) {
 		super.consumeFormalParameter(isVarArgs);
-		if((!this.diet || this.dietInt != 0) && this.astPtr > -1) {
-			Argument argument = (Argument) this.astStack[this.astPtr];
-			if(argument.type == this.assistNode) {
-				this.isOrphanCompletionNode = true;
-				this.restartRecovery	= true;	// force to restart in recovery mode
-				this.lastIgnoredToken = -1;
-			}
-		}
 	} else {
 		boolean isReceiver = this.intStack[this.intPtr--] == 0;
 	    if (isReceiver) {
@@ -708,15 +701,15 @@ protected void consumeFormalParameter(boolean isVarArgs) {
 					varArgsAnnotations = new Annotation[length],
 					0,
 					length);
-			} 
+			}
 		}
 		int firstDimensions = this.intStack[this.intPtr--];
 		TypeReference type = getTypeReference(firstDimensions);
 
 		if (isVarArgs || extendedDimensions != 0) {
 			if (isVarArgs) {
-				type = augmentTypeWithAdditionalDimensions(type, 1, varArgsAnnotations != null ? new Annotation[][] { varArgsAnnotations } : null, true);	
-			} 
+				type = augmentTypeWithAdditionalDimensions(type, 1, varArgsAnnotations != null ? new Annotation[][] { varArgsAnnotations } : null, true);
+			}
 			if (extendedDimensions != 0) { // combination illegal.
 				type = augmentTypeWithAdditionalDimensions(type, extendedDimensions, annotationsOnExtendedDimensions, false);
 			}
@@ -791,6 +784,14 @@ protected void consumeInsideCastExpressionWithQualifiedGenerics() {
 protected void consumeInstanceOfExpression() {
 	if (indexOfAssistIdentifier() < 0) {
 		super.consumeInstanceOfExpression();
+		int length = this.expressionLengthPtr >= 0 ?
+				this.expressionLengthStack[this.expressionLengthPtr] : 0;
+		if (length > 0) {
+			InstanceOfExpression exp = (InstanceOfExpression) this.expressionStack[this.expressionPtr];
+			if (exp.elementVariable != null) {
+				pushOnAstStack(exp.elementVariable);
+			}
+		}
 	} else {
 		getTypeReference(this.intStack[this.intPtr--]);
 		this.isOrphanCompletionNode = true;
@@ -1250,11 +1251,26 @@ protected void consumeToken(int token) {
 	if (isInsideMethod() || isInsideFieldInitialization()) {
 		switch (token) {
 			case TokenNamecase :
-				pushOnElementStack(K_BETWEEN_CASE_AND_COLON);
+				pushOnElementStack(K_BETWEEN_CASE_AND_COLONORARROW);
 				break;
+			case TokenNameCOMMA :
+				switch (topKnownElementKind(SELECTION_OR_ASSIST_PARSER)) {
+					// for multi constant case stmt
+					// case MONDAY, FRIDAY
+					// if there's a comma, ignore the previous expression (constant)
+					// Which doesn't matter for the next constant
+					case K_BETWEEN_CASE_AND_COLONORARROW:
+						this.expressionPtr--;
+						this.expressionLengthStack[this.expressionLengthPtr]--;
+				}
+				break;
+			case TokenNameARROW:
+				// TODO: Uncomment the line below
+				//if (this.options.sourceLevel < ClassFileConstants.JDK13) break;
+				// else FALL-THROUGH
 			case TokenNameCOLON:
-				if(topKnownElementKind(SELECTION_OR_ASSIST_PARSER) == K_BETWEEN_CASE_AND_COLON) {
-					popElement(K_BETWEEN_CASE_AND_COLON);
+				if(topKnownElementKind(SELECTION_OR_ASSIST_PARSER) == K_BETWEEN_CASE_AND_COLONORARROW) {
+					popElement(K_BETWEEN_CASE_AND_COLONORARROW);
 				}
 				break;
 			case TokenNamereturn:
@@ -1505,7 +1521,7 @@ protected NameReference getUnspecifiedReferenceOptimized() {
 }
 @Override
 public void initializeScanner(){
-	this.scanner = new SelectionScanner(this.options.sourceLevel);
+	this.scanner = new SelectionScanner(this.options.sourceLevel, this.options.enablePreviewFeatures);
 }
 @Override
 public ReferenceExpression newReferenceExpression() {
@@ -1664,7 +1680,7 @@ protected Argument typeElidedArgument() {
 	char[] selector = this.identifierStack[this.identifierPtr];
 	if (selector != assistIdentifier()){
 		return super.typeElidedArgument();
-	}	
+	}
 	this.identifierLengthPtr--;
 	char[] identifierName = this.identifierStack[this.identifierPtr];
 	long namePositions = this.identifierPositionStack[this.identifierPtr--];

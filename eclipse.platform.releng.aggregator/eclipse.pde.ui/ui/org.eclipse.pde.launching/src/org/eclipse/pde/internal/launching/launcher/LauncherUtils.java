@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2015 IBM Corporation and others.
+ * Copyright (c) 2003, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,7 +15,6 @@
 package org.eclipse.pde.internal.launching.launcher;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import org.eclipse.core.resources.*;
@@ -60,22 +59,19 @@ public class LauncherUtils {
 	 * @param configuration launch configuration used to lookup workspace clear settings
 	 * @param workspace the absolute workspace location to be checked with all variables replaced or the empty string for no workspace
 	 * @param monitor progress monitor
-	 * @return whether to continue launching
 	 * @throws CoreException
+	 * 			if unable to retrieve launch attribute values or the clear operation was cancelled
 	 */
-	public static boolean clearWorkspace(ILaunchConfiguration configuration, String workspace, IProgressMonitor monitor) throws CoreException {
-
-		// If the workspace is not defined, there is no workspace to clear
-		// Unless the user has added the -data program arugment themselves,
-		// the workspace chooser dialog will be brought up.
-		if (workspace == null || workspace.length() == 0) {
-			if (monitor != null) {
-				monitor.done();
-			}
-			return true;
-		}
+	public static void clearWorkspace(ILaunchConfiguration configuration, String workspace, IProgressMonitor monitor) throws CoreException {
 
 		SubMonitor subMon = SubMonitor.convert(monitor, 100);
+
+		// If the workspace is not defined, there is no workspace to clear
+		// Unless the user has added the -data program argument themselves,
+		// the workspace chooser dialog will be brought up.
+		if (workspace == null || workspace.length() == 0) {
+			return;
+		}
 
 		// Check if the workspace is already in use, if so, open a message and stop the launch before clearing
 		boolean isLocked = false;
@@ -93,32 +89,19 @@ public class LauncherUtils {
 					isLocked = targetLocation.isLocked();
 				}
 			}
-		} catch (InvalidSyntaxException e) {
-			PDECore.log(e);
-			isLocked = false;
-		} catch (MalformedURLException e) {
-			PDECore.log(e);
-			isLocked = false;
-		} catch (IOException e) {
+		} catch (InvalidSyntaxException | IOException e) {
 			PDECore.log(e);
 			isLocked = false;
 		}
 
-		subMon.setWorkRemaining(90);
-		if (subMon.isCanceled()) {
-			return false;
-		}
+		subMon.split(10);
 
 		if (isLocked) {
 			Status status = new Status(IStatus.ERROR, IPDEConstants.PLUGIN_ID, WORKSPACE_LOCKED, null, null);
 			IStatusHandler statusHandler = DebugPlugin.getDefault().getStatusHandler(status);
 			if (statusHandler != null)
 				statusHandler.handleStatus(status, new Object[] {workspace, configuration, fLastLaunchMode});
-			subMon.done();
-			if (monitor != null) {
-				monitor.done();
-			}
-			return false;
+			throw new CoreException(Status.CANCEL_STATUS);
 		}
 
 		File workspaceFile = new Path(workspace).toFile().getAbsoluteFile();
@@ -138,11 +121,7 @@ public class LauncherUtils {
 				}
 
 				if (result == 2 /*Cancel Button*/|| result == -1 /*Dialog close button*/) {
-					subMon.done();
-					if (monitor != null) {
-						monitor.done();
-					}
-					return false;
+					throw new CoreException(Status.CANCEL_STATUS);
 				} else if (result == 0) {
 					if (configuration.getAttribute(IPDEConstants.DOCLEARLOG, false)) {
 						LauncherUtils.clearWorkspaceLog(workspace);
@@ -157,16 +136,7 @@ public class LauncherUtils {
 			}
 		}
 
-		if (subMon.isCanceled()) {
-			return false;
-		}
-
-		subMon.done();
-		if (monitor != null) {
-			monitor.done();
-		}
-
-		return true;
+		subMon.split(90);
 	}
 
 	public static boolean generateConfigIni() throws CoreException {
@@ -231,7 +201,7 @@ public class LauncherUtils {
 					if (path == null)
 						continue;
 					file = path.toFile();
-					Stack<File> files = new Stack<>();
+					ArrayDeque<File> files = new ArrayDeque<>();
 					files.push(file);
 					while (!files.isEmpty()) {
 						file = files.pop();
@@ -272,7 +242,7 @@ public class LauncherUtils {
 	}
 
 	private static void handleSelectedPlugins(ILaunchConfiguration config, String timeStamp, ArrayList<IProject> projects) throws CoreException {
-		Map<IPluginModelBase, String> selectedPlugins = BundleLauncherHelper.getWorkspaceBundleMap(config, null, IPDELauncherConstants.SELECTED_WORKSPACE_PLUGINS);
+		Map<IPluginModelBase, String> selectedPlugins = BundleLauncherHelper.getWorkspaceBundleMap(config, null);
 		Iterator<IPluginModelBase> it = selectedPlugins.keySet().iterator();
 		while (it.hasNext()) {
 			IPluginModelBase model = it.next();
@@ -287,7 +257,7 @@ public class LauncherUtils {
 	}
 
 	private static void handleDeselectedPlugins(ILaunchConfiguration config, String launcherTimeStamp, ArrayList<IProject> projects) throws CoreException {
-		Map<IPluginModelBase, String> deSelectedPlugins = BundleLauncherHelper.getWorkspaceBundleMap(config, null, IPDELauncherConstants.DESELECTED_WORKSPACE_PLUGINS);
+		Map<IPluginModelBase, String> deSelectedPlugins = BundleLauncherHelper.getWorkspaceBundleMap(config, null);
 		IProject[] projs = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 		for (int i = 0; i < projs.length; i++) {
 			if (!WorkspaceModelManager.isPluginProject(projs[i]))
@@ -348,7 +318,7 @@ public class LauncherUtils {
 		try {
 			String projectID = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, ""); //$NON-NLS-1$
 			if (projectID.length() > 0) {
-				IResource project = PDELaunchingPlugin.getWorkspace().getRoot().findMember(projectID);
+				IResource project = ResourcesPlugin.getWorkspace().getRoot().findMember(projectID);
 				if (project instanceof IProject) {
 					IPluginModelBase model = PluginRegistry.findModel((IProject) project);
 					if (model != null) {

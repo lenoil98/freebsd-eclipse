@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -87,11 +87,11 @@ public class TestCondition implements Condition {
 	public boolean isSatisfied(Condition[] conditions, Dictionary context) {
 		if (!isPostponed())
 			throw new IllegalStateException("Should not call isSatisfied(Condition[] conditions, Dictionary context)"); //$NON-NLS-1$
-		for (int i = 0; i < conditions.length; i++) {
-			Boolean isSatisfied = (Boolean) context.get(conditions[i]);
+		for (Condition condition : conditions) {
+			Boolean isSatisfied = (Boolean) context.get(condition);
 			if (isSatisfied == null) {
-				isSatisfied = Boolean.valueOf(conditions[i].isSatisfied());
-				context.put(conditions[i], isSatisfied);
+				isSatisfied = Boolean.valueOf(condition.isSatisfied());
+				context.put(condition, isSatisfied);
 			}
 			if (!isSatisfied.booleanValue())
 				return false;
@@ -99,10 +99,12 @@ public class TestCondition implements Condition {
 		return true;
 	}
 
+	@Override
 	public int hashCode() {
 		return id.hashCode();
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof TestCondition))
 			return false;
@@ -126,6 +128,7 @@ public class TestCondition implements Condition {
 		return bundle;
 	}
 
+	@Override
 	public String toString() {
 		return id + '-' + postponed + '-' + mutable + '-' + satisfied;
 	}

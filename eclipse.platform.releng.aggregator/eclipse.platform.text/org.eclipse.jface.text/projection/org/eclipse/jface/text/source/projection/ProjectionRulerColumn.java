@@ -16,7 +16,6 @@ package org.eclipse.jface.text.source.projection;
 import java.util.Iterator;
 
 import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.MouseTrackAdapter;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Composite;
@@ -159,20 +158,27 @@ class ProjectionRulerColumn extends AnnotationRulerColumn {
 		if (position.getOffset() > -1 && position.getLength() > -1) {
 			try {
 				int startLine= document.getLineOfOffset(position.getOffset());
-				int endLine= document.getLineOfOffset(position.getOffset() + position.getLength());
-				if (startLine <= line && line < endLine) {
-					if (annotation.isCollapsed()) {
-						int captionOffset;
-						if (position instanceof IProjectionPosition)
-							captionOffset= ((IProjectionPosition) position).computeCaptionOffset(document);
-						else
-							captionOffset= 0;
+				if (startLine <= line) {
+					int end= position.getOffset() + position.getLength();
+					// Bug 347628: this method expects that the offset after the position range is the
+					// offset of the first line after this projected line range. In other words position
+					// comprise the whole projected range including the last lines delimiter. If position
+					// ends at document end the next offset is not the next line because there is no more content.
+					int endLine= end != document.getLength() ? document.getLineOfOffset(end) : document.getNumberOfLines();
+					if (line < endLine) {
+						if (annotation.isCollapsed()) {
+							int captionOffset;
+							if (position instanceof IProjectionPosition)
+								captionOffset= ((IProjectionPosition) position).computeCaptionOffset(document);
+							else
+								captionOffset= 0;
 
-						int captionLine= document.getLineOfOffset(position.getOffset() + captionOffset);
-						if (startLine <= captionLine && captionLine < endLine)
-							return Math.abs(line - captionLine);
+							int captionLine= document.getLineOfOffset(position.getOffset() + captionOffset);
+							if (startLine <= captionLine && captionLine < endLine)
+								return Math.abs(line - captionLine);
+						}
+						return line - startLine;
 					}
-					return line - startLine;
 				}
 			} catch (BadLocationException x) {
 			}
@@ -207,25 +213,22 @@ class ProjectionRulerColumn extends AnnotationRulerColumn {
 		});
 
 		// install mouse move listener
-		control.addMouseMoveListener(new MouseMoveListener() {
-			@Override
-			public void mouseMove(MouseEvent e) {
-				boolean redraw= false;
-				ProjectionAnnotation annotation= findAnnotation(toDocumentLineNumber(e.y), false);
-				if (annotation != fCurrentAnnotation) {
-					if (fCurrentAnnotation != null) {
-						fCurrentAnnotation.setRangeIndication(false);
-						redraw= true;
-					}
-					fCurrentAnnotation= annotation;
-					if (fCurrentAnnotation != null && !fCurrentAnnotation.isCollapsed()) {
-						fCurrentAnnotation.setRangeIndication(true);
-						redraw= true;
-					}
+		control.addMouseMoveListener(e -> {
+			boolean redraw= false;
+			ProjectionAnnotation annotation= findAnnotation(toDocumentLineNumber(e.y), false);
+			if (annotation != fCurrentAnnotation) {
+				if (fCurrentAnnotation != null) {
+					fCurrentAnnotation.setRangeIndication(false);
+					redraw= true;
 				}
-				if (redraw)
-					redraw();
+				fCurrentAnnotation= annotation;
+				if (fCurrentAnnotation != null && !fCurrentAnnotation.isCollapsed()) {
+					fCurrentAnnotation.setRangeIndication(true);
+					redraw= true;
+				}
 			}
+			if (redraw)
+				redraw();
 		});
 		return control;
 	}

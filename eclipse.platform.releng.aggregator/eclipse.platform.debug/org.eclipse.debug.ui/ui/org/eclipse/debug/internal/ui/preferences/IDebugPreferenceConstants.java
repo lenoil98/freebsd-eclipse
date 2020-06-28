@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -68,12 +68,12 @@ public interface IDebugPreferenceConstants {
 	/**
 	 * (boolean) Whether or not the console view is shown
 	 * when there is program output.
-  	 */
+	 */
 	String CONSOLE_OPEN_ON_OUT= "DEBUG.consoleOpenOnOut"; //$NON-NLS-1$
 	/**
 	 * (boolean) Whether or not the console view is shown
 	 * when there is program error.
-  	 */
+	 */
 	String CONSOLE_OPEN_ON_ERR= "DEBUG.consoleOpenOnErr"; //$NON-NLS-1$
 
 	/**
@@ -91,7 +91,31 @@ public interface IDebugPreferenceConstants {
 	 */
 	String CONSOLE_TAB_WIDTH= "Console.console_tab_width"; //$NON-NLS-1$
 
+	/**
+	 * (boolean) If <code>true</code> console will interpret ASCII control
+	 * characters like <code>\b</code> received from stdout or stderr (or any other
+	 * connected output stream).
+	 * <p>
+	 * If <code>false</code> control characters are appended to console like any
+	 * other character. Since they are usually not printable they may be invisible
+	 * or result in some Unicode default representation.
+	 * </p>
+	 */
+	String CONSOLE_INTERPRET_CONTROL_CHARACTERS = "Console.interpret_control_characters"; //$NON-NLS-1$
 
+	/**
+	 * (boolean) Only used if {@link #CONSOLE_INTERPRET_CONTROL_CHARACTERS} is
+	 * <code>true</code>.
+	 * <p>
+	 * If <code>true</code> carriage returns are handled with there usual control
+	 * character interpretation. (move output cursor to begin of line)
+	 * </p>
+	 * <p>
+	 * If <code>false</code> carriage returns are not handled special and may result
+	 * in line breaks since they are usually legal line delimiter.
+	 * </p>
+	 */
+	String CONSOLE_INTERPRET_CR_AS_CONTROL_CHARACTER = "Console.interpret_cr_as_control_characters"; //$NON-NLS-1$
 
 	/**
 	 * The orientation of the detail view in the VariablesView
@@ -99,8 +123,8 @@ public interface IDebugPreferenceConstants {
 	String VARIABLES_DETAIL_PANE_ORIENTATION = "Variables.detail.orientation"; //$NON-NLS-1$
 	String EXPRESSIONS_DETAIL_PANE_ORIENTATION = "Expressions.detail.orientation"; //$NON-NLS-1$
 	String REGISTERS_DETAIL_PANE_ORIENTATION = "Registers.detail.orientation"; //$NON-NLS-1$
-    String MODULES_DETAIL_PANE_ORIENTATION = "Modules.detail.orientation"; //$NON-NLS-1$
-    String BREAKPOINTS_DETAIL_PANE_ORIENTATION = "Breakpoints.detail.orientation"; //$NON-NLS-1$
+	String MODULES_DETAIL_PANE_ORIENTATION = "Modules.detail.orientation"; //$NON-NLS-1$
+	String BREAKPOINTS_DETAIL_PANE_ORIENTATION = "Breakpoints.detail.orientation"; //$NON-NLS-1$
 	String VARIABLES_DETAIL_PANE_RIGHT = "Variables.detail.orientation.right"; //$NON-NLS-1$
 	String VARIABLES_DETAIL_PANE_UNDERNEATH = "Variables.detail.orientation.underneath"; //$NON-NLS-1$
 	String VARIABLES_DETAIL_PANE_HIDDEN = "Variables.detail.orientation.hidden"; //$NON-NLS-1$
@@ -295,29 +319,29 @@ public interface IDebugPreferenceConstants {
 	 */
 	String PREF_TABLE_RENDERING_POST_BUFFER_SIZE = "org.eclispe.debug.ui.memory.postBufferSize"; //$NON-NLS-1$
 
-    /**
-     * The layout mode in Debug view.
-     *
-     * @since 3.5
-     */
-    String DEBUG_VIEW_MODE = "org.eclispe.debug.ui.Debug_view.mode"; //$NON-NLS-1$
-    String DEBUG_VIEW_MODE_AUTO = "Debug_view.mode.auto"; //$NON-NLS-1$
-    String DEBUG_VIEW_MODE_COMPACT = "Debug_view.mode.compact"; //$NON-NLS-1$
-    String DEBUG_VIEW_MODE_FULL = "Debug_view.mode.full"; //$NON-NLS-1$
+	/**
+	 * The layout mode in Debug view.
+	 *
+	 * @since 3.5
+	 */
+	String DEBUG_VIEW_MODE = "org.eclispe.debug.ui.Debug_view.mode"; //$NON-NLS-1$
+	String DEBUG_VIEW_MODE_AUTO = "Debug_view.mode.auto"; //$NON-NLS-1$
+	String DEBUG_VIEW_MODE_COMPACT = "Debug_view.mode.compact"; //$NON-NLS-1$
+	String DEBUG_VIEW_MODE_FULL = "Debug_view.mode.full"; //$NON-NLS-1$
 
-    /**
-     * Preference whether to auto-expand in the breadcrumb drop-down viewers.
-     *
-     * @since 3.5
-     */
-    String DEBUG_VIEW_BREADCRUMB_AUTO_EXPAND_DROP_DOWN = "org.eclispe.debug.ui.Debug_view.Breadcrumb.dropDownAutoexpand"; //$NON-NLS-1$
+	/**
+	 * Preference whether to auto-expand in the breadcrumb drop-down viewers.
+	 *
+	 * @since 3.5
+	 */
+	String DEBUG_VIEW_BREADCRUMB_AUTO_EXPAND_DROP_DOWN = "org.eclispe.debug.ui.Debug_view.Breadcrumb.dropDownAutoexpand"; //$NON-NLS-1$
 
-    /**
-     * Perspectives in which the debug toolbar is hidden.
-     *
-     * @since 3.8
-     */
-    String DEBUG_VIEW_TOOLBAR_HIDDEN_PERSPECTIVES = "org.eclispe.debug.ui.Debug_view.debug_toolbar_hidden_perspectives"; //$NON-NLS-1$
+	/**
+	 * Perspectives in which the debug toolbar is hidden.
+	 *
+	 * @since 3.8
+	 */
+	String DEBUG_VIEW_TOOLBAR_HIDDEN_PERSPECTIVES = "org.eclispe.debug.ui.Debug_view.debug_toolbar_hidden_perspectives"; //$NON-NLS-1$
 }
 
 

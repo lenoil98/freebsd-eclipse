@@ -29,126 +29,99 @@ import org.eclipse.ui.model.IWorkbenchAdapter2;
  */
 public class WorkingSetCategory extends PlatformObject implements IWorkbenchAdapter, IWorkbenchAdapter2 {
 
-    private IWorkingSet fWorkingSet;
+	private IWorkingSet fWorkingSet;
 
-    /**
-     * Constructs a new workings set category for the given working set.
-     *
-     * @param workingSet
-     */
-    public WorkingSetCategory(IWorkingSet workingSet) {
-        fWorkingSet = workingSet;
-    }
+	/**
+	 * Constructs a new workings set category for the given working set.
+	 *
+	 * @param workingSet
+	 */
+	public WorkingSetCategory(IWorkingSet workingSet) {
+		fWorkingSet = workingSet;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getChildren(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Object[] getChildren(Object o) {
-        return null;
-    }
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getImageDescriptor(java.lang.Object)
-     */
-    @Override
+	@Override
 	public ImageDescriptor getImageDescriptor(Object object) {
-        return fWorkingSet.getImageDescriptor();
-    }
+		return fWorkingSet.getImageDescriptor();
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getLabel(java.lang.Object)
-     */
-    @Override
+	@Override
 	public String getLabel(Object o) {
-        StringBuffer name = new StringBuffer(fWorkingSet.getName());
-        if (isDefault()) {
-            name.append(DebugUIViewsMessages.WorkingSetCategory_0);
-        }
-        return name.toString();
-    }
+		StringBuilder name = new StringBuilder(fWorkingSet.getName());
+		if (isDefault()) {
+			name.append(DebugUIViewsMessages.WorkingSetCategory_0);
+		}
+		return name.toString();
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getParent(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Object getParent(Object o) {
-        return null;
-    }
+		return null;
+	}
 
-    /**
-     * Returns the working set for this category.
-     *
-     * @return
-     */
-    public IWorkingSet getWorkingSet() {
-        return fWorkingSet;
-    }
+	/**
+	 * Returns the working set for this category.
+	 *
+	 * @return
+	 */
+	public IWorkingSet getWorkingSet() {
+		return fWorkingSet;
+	}
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
+	@Override
 	public boolean equals(Object obj) {
-        if (obj instanceof WorkingSetCategory) {
-            WorkingSetCategory category = (WorkingSetCategory) obj;
-            return category.getWorkingSet().equals(fWorkingSet);
-        }
-        return false;
-    }
+		if (obj instanceof WorkingSetCategory) {
+			WorkingSetCategory category = (WorkingSetCategory) obj;
+			return category.getWorkingSet().equals(fWorkingSet);
+		}
+		return false;
+	}
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
+	@Override
 	public int hashCode() {
-        return fWorkingSet.hashCode();
-    }
+		return fWorkingSet.hashCode();
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter2#getForeground(java.lang.Object)
-     */
-    @Override
+	@Override
 	public RGB getForeground(Object element) {
-        return null;
-    }
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter2#getBackground(java.lang.Object)
-     */
-    @Override
+	@Override
 	public RGB getBackground(Object element) {
-        return null;
-    }
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter2#getFont(java.lang.Object)
-     */
-    @Override
+	@Override
 	public FontData getFont(Object element) {
-        if (isDefault()) {
-            FontData[] fontData = JFaceResources.getDefaultFont().getFontData();
-            if (fontData != null && fontData.length > 0) {
-                FontData data = fontData[0];
-                data.setStyle(SWT.BOLD);
-                return data;
-            }
-        }
-        return null;
-    }
+		if (isDefault()) {
+			FontData[] fontData = JFaceResources.getDefaultFont().getFontData();
+			if (fontData != null && fontData.length > 0) {
+				FontData data = fontData[0];
+				data.setStyle(SWT.BOLD);
+				return data;
+			}
+		}
+		return null;
+	}
 
-    /**
-     * Whether this is the default breakpoint working set.
-     *
-     * @return whether this is the default breakpoint working set
-     */
-    private boolean isDefault() {
-        return fWorkingSet.equals(BreakpointSetOrganizer.getDefaultWorkingSet());
-    }
+	/**
+	 * Whether this is the default breakpoint working set.
+	 *
+	 * @return whether this is the default breakpoint working set
+	 */
+	private boolean isDefault() {
+		return fWorkingSet.equals(BreakpointSetOrganizer.getDefaultWorkingSet());
+	}
 
-    @Override
+	@Override
 	public String toString() {
-        return fWorkingSet.getName();
-    }
+		return fWorkingSet.getName();
+	}
 }
 

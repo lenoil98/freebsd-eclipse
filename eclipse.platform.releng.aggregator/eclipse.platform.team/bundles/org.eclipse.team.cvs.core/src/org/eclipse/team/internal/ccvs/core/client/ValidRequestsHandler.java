@@ -16,13 +16,13 @@ package org.eclipse.team.internal.ccvs.core.client;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.internal.ccvs.core.CVSException;
-import org.eclipse.team.internal.ccvs.core.client.Session;
 
 /**
  * Handles a "Valid-requests" response from the CVS server.
  * <p>
  * Suppose as a result of performing a command the CVS server responds
- * as follows:<br>
+ * as follows:
+ * </p>
  * <pre>
  *   [...]
  *   Valid-requests ci co update Root Directory Valid-responses Argument ...\n
@@ -30,7 +30,6 @@ import org.eclipse.team.internal.ccvs.core.client.Session;
  * </pre>
  * Then we remember the set of valid requests for this session in
  * preparation for isValidRequests queries.
- * </p>
  */
 class ValidRequestsHandler extends ResponseHandler {
 	public String getResponseID() {

@@ -43,14 +43,12 @@ import org.eclipse.core.resources.IProject;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.viewers.AbstractTreeViewer;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeViewerListener;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeExpansionEvent;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -92,13 +90,9 @@ public class RefactoringHistoryControl extends Composite implements IRefactoring
 		 */
 		public RefactoringHistoryTreeViewer(final Composite parent, final int style) {
 			super(parent, style);
-			addCheckStateListener(new ICheckStateListener() {
-
-				@Override
-				public final void checkStateChanged(final CheckStateChangedEvent event) {
-					reconcileCheckState(event.getElement(), event.getChecked());
-					handleCheckStateChanged();
-				}
+			addCheckStateListener(event -> {
+				reconcileCheckState(event.getElement(), event.getChecked());
+				handleCheckStateChanged();
 			});
 			addTreeListener(new ITreeViewerListener() {
 
@@ -109,19 +103,15 @@ public class RefactoringHistoryControl extends Composite implements IRefactoring
 
 				@Override
 				public final void treeExpanded(final TreeExpansionEvent event) {
-					BusyIndicator.showWhile(getDisplay(), new Runnable() {
-
-						@Override
-						public final void run() {
-							final Object element= event.getElement();
-							if (getGrayed(element)) {
-								final RefactoringHistory history= RefactoringHistoryControl.this.getInput();
-								if (history != null)
-									reconcileCheckState(history);
-							} else if (getChecked(element)) {
-								setSubTreeGrayed(element, false);
-								setSubtreeChecked(element, true);
-							}
+					BusyIndicator.showWhile(getDisplay(), () -> {
+						final Object element= event.getElement();
+						if (getGrayed(element)) {
+							final RefactoringHistory history= RefactoringHistoryControl.this.getInput();
+							if (history != null)
+								reconcileCheckState(history);
+						} else if (getChecked(element)) {
+							setSubTreeGrayed(element, false);
+							setSubtreeChecked(element, true);
 						}
 					});
 				}
@@ -146,14 +136,12 @@ public class RefactoringHistoryControl extends Composite implements IRefactoring
 		 *            the changed element
 		 */
 		private void reconcileCheckState(final Object element) {
-			final Object[] children= getChildren(element);
-			for (int index= 0; index < children.length; index++) {
-				reconcileCheckState(children[index]);
+			for (Object child : getChildren(element)) {
+				reconcileCheckState(child);
 			}
 			int checkCount= 0;
 			final Collection<RefactoringDescriptorProxy> collection= getCoveredDescriptors(element);
-			for (final Iterator<RefactoringDescriptorProxy> iterator= collection.iterator(); iterator.hasNext();) {
-				final RefactoringDescriptorProxy proxy= iterator.next();
+			for (RefactoringDescriptorProxy proxy : collection) {
 				if (fCheckedDescriptors.contains(proxy))
 					checkCount++;
 			}
@@ -234,9 +222,8 @@ public class RefactoringHistoryControl extends Composite implements IRefactoring
 		 */
 		private void setSubTreeGrayed(final Object element, final boolean grayed) {
 			setElementGrayed(element, grayed);
-			final Object[] children= getChildren(element);
-			for (int index= 0; index < children.length; index++) {
-				setSubTreeGrayed(children[index], grayed);
+			for (Object child : getChildren(element)) {
+				setSubTreeGrayed(child, grayed);
 			}
 		}
 	}
@@ -343,14 +330,10 @@ public class RefactoringHistoryControl extends Composite implements IRefactoring
 		fHistoryViewer.setUseHashlookup(true);
 		fHistoryViewer.setContentProvider(getContentProvider());
 		fHistoryViewer.setLabelProvider(getLabelProvider());
-		fHistoryViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-
-			@Override
-			public final void selectionChanged(final SelectionChangedEvent event) {
-				final ISelection selection= event.getSelection();
-				if (selection instanceof IStructuredSelection)
-					handleSelectionChanged((IStructuredSelection) selection);
-			}
+		fHistoryViewer.addSelectionChangedListener(event -> {
+			final ISelection selection= event.getSelection();
+			if (selection instanceof IStructuredSelection)
+				handleSelectionChanged((IStructuredSelection) selection);
 		});
 		fHistoryPane.setContent(fHistoryViewer.getControl());
 		createToolBar(fHistoryPane);
@@ -532,9 +515,7 @@ public class RefactoringHistoryControl extends Composite implements IRefactoring
 				final RefactoringDescriptorProxy proxy= entry.getDescriptor();
 				set.add(proxy);
 			} else {
-				final Object[] children= provider.getChildren(element);
-				for (int index= 0; index < children.length; index++) {
-					final Object child= children[index];
+				for (Object child : provider.getChildren(element)) {
 					if (child instanceof RefactoringHistoryNode)
 						getCoveredDescriptors(child, set);
 				}
@@ -619,8 +600,7 @@ public class RefactoringHistoryControl extends Composite implements IRefactoring
 		Assert.isNotNull(selection);
 		fSelectedDescriptors.clear();
 		final Object[] elements= selection.toArray();
-		for (int index= 0; index < elements.length; index++) {
-			final Object element= elements[index];
+		for (Object element : elements) {
 			if (element instanceof RefactoringHistoryEntry) {
 				final RefactoringHistoryEntry entry= (RefactoringHistoryEntry) element;
 				final RefactoringDescriptorProxy proxy= entry.getDescriptor();
@@ -717,9 +697,9 @@ public class RefactoringHistoryControl extends Composite implements IRefactoring
 			handleCheckStateChanged();
 			final Object[] roots= provider.getRootElements();
 			if (roots != null) {
-				for (int index= 0; index < roots.length; index++) {
-					if (!(roots[index] instanceof RefactoringHistoryEntry)) {
-						fHistoryViewer.setExpandedState(roots[index], true);
+				for (Object root : roots) {
+					if (!(root instanceof RefactoringHistoryEntry)) {
+						fHistoryViewer.setExpandedState(root, true);
 						return;
 					}
 				}

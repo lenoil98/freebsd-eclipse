@@ -18,6 +18,7 @@ package org.eclipse.debug.internal.ui.actions.breakpoints;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -77,8 +78,8 @@ public class ShowSupportedBreakpointsAction extends ToggleFilterAction implement
 			if (element instanceof IBreakpointContainer) {
 				// Breakpoint containers are visible if any of their children are visible.
 				IBreakpoint[] breakpoints = ((IBreakpointContainer) element).getBreakpoints();
-				for (int i = 0; i < breakpoints.length; i++) {
-					if (select(viewer, element, breakpoints[i])) {
+				for (IBreakpoint breakpoint : breakpoints) {
+					if (select(viewer, element, breakpoint)) {
 						return true;
 					}
 				}
@@ -197,9 +198,7 @@ public class ShowSupportedBreakpointsAction extends ToggleFilterAction implement
 				debugTargets.add(((IDebugElement)next).getDebugTarget());
 			} else if (next instanceof ILaunch) {
 				IDebugTarget[] targets= ((ILaunch)next).getDebugTargets();
-				for (int j = 0; j < targets.length; j++) {
-					debugTargets.add(targets[j]);
-				}
+				Collections.addAll(debugTargets, targets);
 			} else if (next instanceof IProcess) {
 				IDebugTarget target= ((IProcess)next).getAdapter(IDebugTarget.class);
 				if (target != null) {

@@ -24,22 +24,17 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.databinding.DataBindingContext;
 import org.eclipse.core.databinding.observable.AbstractObservable;
-import org.eclipse.core.databinding.observable.ChangeEvent;
 import org.eclipse.core.databinding.observable.Diffs;
-import org.eclipse.core.databinding.observable.IChangeListener;
 import org.eclipse.core.databinding.observable.IObservable;
 import org.eclipse.core.databinding.observable.ObservableTracker;
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.core.databinding.observable.list.IObservableList;
 import org.eclipse.core.databinding.observable.list.WritableList;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
-import org.eclipse.core.databinding.observable.value.IValueChangeListener;
-import org.eclipse.core.databinding.observable.value.ValueChangeEvent;
 import org.eclipse.core.databinding.observable.value.WritableValue;
 import org.eclipse.core.databinding.validation.MultiValidator;
 import org.eclipse.core.databinding.validation.ValidationStatus;
@@ -195,12 +190,7 @@ public class MultiValidatorTest extends AbstractDefaultRealmTestCase {
 
 		// bug behavior: the validation status listener causes the validation
 		// status observable to become a dependency of the validator.
-		validationStatus.addChangeListener(new IChangeListener() {
-			@Override
-			public void handleChange(ChangeEvent event) {
-				ObservableTracker.getterCalled(validationStatus);
-			}
-		});
+		validationStatus.addChangeListener(event -> ObservableTracker.getterCalled(validationStatus));
 		dependency.setValue(new Object());
 
 		// at this point, because the validation status observable is a
@@ -216,12 +206,7 @@ public class MultiValidatorTest extends AbstractDefaultRealmTestCase {
 
 	@Test
 	public void testBug237884_ValidationStatusListenerCausesLoopingDependency() {
-		validationStatus.addChangeListener(new IChangeListener() {
-			@Override
-			public void handleChange(ChangeEvent event) {
-				ObservableTracker.getterCalled(validationStatus);
-			}
-		});
+		validationStatus.addChangeListener(event -> ObservableTracker.getterCalled(validationStatus));
 		assertFalse(validator.getTargets().contains(validationStatus));
 		// trigger revalidation
 		dependency.setValue(ValidationStatus.info("info"));
@@ -279,13 +264,7 @@ public class MultiValidatorTest extends AbstractDefaultRealmTestCase {
 	@Test
 	public void testBug240590_ValidationStatusSetWhileTrackingDependencies() {
 		final IObservableValue<Object> noDependency = new WritableValue<>();
-		validationStatus.addValueChangeListener(new IValueChangeListener<Object>() {
-			@Override
-			public void handleValueChange(ValueChangeEvent<?> event) {
-				// Explicitly track the faked dependency.
-				ObservableTracker.getterCalled(noDependency);
-			}
-		});
+		validationStatus.addValueChangeListener(event -> ObservableTracker.getterCalled(noDependency));
 
 		// Trigger a validation change.
 		dependency.setValue(ValidationStatus.error("new error"));
@@ -391,13 +370,13 @@ public class MultiValidatorTest extends AbstractDefaultRealmTestCase {
 		assertEquals(dependency1, dependency2);
 		assertNotSame(dependency1, dependency2);
 
-		final List<DependencyObservable> dependencies = new ArrayList<DependencyObservable>();
+		final List<DependencyObservable> dependencies = new ArrayList<>();
 		dependencies.add(dependency1);
 		validator = new MultiValidator() {
 			@Override
 			protected IStatus validate() {
-				for (Iterator<DependencyObservable> it = dependencies.iterator(); it.hasNext();)
-					ObservableTracker.getterCalled(it.next());
+				for (DependencyObservable dependencyObservable : dependencies)
+					ObservableTracker.getterCalled(dependencyObservable);
 				return null;
 			}
 		};

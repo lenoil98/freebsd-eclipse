@@ -71,11 +71,13 @@ import org.eclipse.debug.core.ILaunchesListener2;
 import org.eclipse.debug.core.Launch;
 import org.eclipse.debug.core.model.IProcess;
 
+import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.debug.ui.IDebugUIConstants;
 
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
@@ -89,7 +91,6 @@ import org.eclipse.jdt.internal.ui.actions.OpenBrowserUtil;
 import org.eclipse.jdt.internal.ui.dialogs.OptionalMessageDialog;
 import org.eclipse.jdt.internal.ui.javaeditor.EditorUtility;
 import org.eclipse.jdt.internal.ui.util.ExceptionHandler;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 
 public class JavadocWizard extends Wizard implements IExportWizard {
@@ -183,8 +184,7 @@ public class JavadocWizard extends Wizard implements IExportWizard {
 				String newExternalForm= newURL.toExternalForm();
 				List<IJavaProject> projs= new ArrayList<>();
 				//get javadoc locations for all projects
-				for (int i= 0; i < checkedProjects.length; i++) {
-					IJavaProject curr= checkedProjects[i];
+				for (IJavaProject curr : checkedProjects) {
 					URL currURL= JavaUI.getProjectJavadocLocation(curr);
 					if (currURL == null || !newExternalForm.equals(currURL.toExternalForm())) {
 						//if not all projects have the same javadoc location ask if you want to change
@@ -208,15 +208,15 @@ public class JavadocWizard extends Wizard implements IExportWizard {
 				if (javadocXMLElement != null) {
 
 					if (!fTreeWizardPage.getCustom()) {
-						for (int i= 0; i < fContributedJavadocWizardPages.length; i++) {
-							fContributedJavadocWizardPages[i].updateAntScript(javadocXMLElement);
+						for (ContributedJavadocWizardPage contributedJavadocWizardPage : fContributedJavadocWizardPages) {
+							contributedJavadocWizardPage.updateAntScript(javadocXMLElement);
 						}
 					}
 					File file= fStore.writeXML(javadocXMLElement);
 					IFile[] files= fRoot.findFilesForLocationURI(file.toURI());
 					if (files != null) {
-						for (int i= 0; i < files.length; i++) {
-							files[i].refreshLocal(IResource.DEPTH_ONE, null);
+						for (IFile f : files) {
+							f.refreshLocal(IResource.DEPTH_ONE, null);
 						}
 					}
 				}
@@ -293,37 +293,47 @@ public class JavadocWizard extends Wizard implements IExportWizard {
 			}
 
 			if (!fTreeWizardPage.getCustom()) {
-				for (int i= 0; i < fContributedJavadocWizardPages.length; i++) {
-					fContributedJavadocWizardPages[i].updateArguments(vmArgs, progArgs);
+				for (ContributedJavadocWizardPage fContributedJavadocWizardPage : fContributedJavadocWizardPages) {
+					fContributedJavadocWizardPage.updateArguments(vmArgs, progArgs);
 				}
 			}
 
 			File file= File.createTempFile("javadoc-arguments", ".tmp");  //$NON-NLS-1$//$NON-NLS-2$
 			vmArgs.add('@' + file.getAbsolutePath());
 
-			BufferedWriter writer= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), getEncoding(vmArgs)));
-			try {
-				for (int i= 0; i < progArgs.size(); i++) {
-					String curr= progArgs.get(i);
+			try (BufferedWriter writer= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), getEncoding(vmArgs)))) {
+				for (String progArg : progArgs) {
+					String curr= progArg;
 					curr= checkForSpaces(curr);
 
 					writer.write(curr);
 					writer.write(' ');
 				}
-			} finally {
-				writer.close();
 			}
 			String[] args= vmArgs.toArray(new String[vmArgs.size()]);
 			process= Runtime.getRuntime().exec(args);
 			if (process != null) {
 				// construct a formatted command line for the process properties
 				StringBuilder buf= new StringBuilder();
-				for (int i= 0; i < args.length; i++) {
-					buf.append(args[i]);
+				for (String arg : args) {
+					buf.append(arg);
 					buf.append(' ');
 				}
 
 				try {
+					// Usually the output from Javadoc command is shown in Console View. The console is automatically created from the
+					// debug framework but only if org.eclipse.debug.ui plug-in is loaded. It is unlikely but possible that this plug-in
+					// is not loaded at this point which does not interfere the command execution but its output will be lost.
+					// Hence the Console View is not part of org.eclipse.debug.ui plug-in but in a separate plug-in it is even possible
+					// that Console View is open but the output of Javadoc command does not appear. For a user it is incomprehensible
+					// why the Javadoc command output does not appear in this uncommon situation.
+					// The easy fix for this is to simply 'touch' a class from org.eclipse.debug.ui plug-in to be sure it is loaded before
+					// starting the Javadoc command. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=239217
+					// Note: you might notice the use of IDebugUIConstants below and feel the urge to remove this workaround because it
+					// seem unnecessary. It is not! IDebugUIConstants.ATTR_PRIVATE is resolved at compile time and will not access the
+					// constants class and will not trigger plug-in activation.
+					DebugUITools.class.getClass();
+
 					ILaunchManager launchManager= DebugPlugin.getDefault().getLaunchManager();
 					ILaunchConfigurationType lcType= launchManager.getLaunchConfigurationType(IJavaLaunchConfigurationConstants.ID_JAVA_APPLICATION);
 
@@ -385,8 +395,7 @@ public class JavadocWizard extends Wizard implements IExportWizard {
 		}
 		StringBuilder buf= new StringBuilder();
 		buf.append('\'');
-		for (int i= 0; i < curr.length(); i++) {
-			char ch= curr.charAt(i);
+		for (char ch : curr.toCharArray()) {
 			if (ch == '\\' || ch == '\'') {
 				buf.append('\\');
 			}
@@ -410,8 +419,8 @@ public class JavadocWizard extends Wizard implements IExportWizard {
 		super.addPage(fTreeWizardPage);
 		super.addPage(fStandardDocletWizardPage);
 
-		for (int i= 0; i < fContributedJavadocWizardPages.length; i++) {
-			super.addPage(fContributedJavadocWizardPages[i]);
+		for (ContributedJavadocWizardPage fContributedJavadocWizardPage : fContributedJavadocWizardPages) {
+			super.addPage(fContributedJavadocWizardPage);
 		}
 		super.addPage(fLastWizardPage);
 
@@ -441,8 +450,8 @@ public class JavadocWizard extends Wizard implements IExportWizard {
 	private void refresh(IPath path) {
 		IContainer[] containers= fRoot.findContainersForLocationURI(path.toFile().toURI());
 		try {
-			for (int i= 0; i < containers.length; i++) {
-				containers[i].refreshLocal(IResource.DEPTH_INFINITE, null);
+			for (IContainer container : containers) {
+				container.refreshLocal(IResource.DEPTH_INFINITE, null);
 			}
 		} catch (CoreException e) {
 			JavaPlugin.log(e);
@@ -480,8 +489,8 @@ public class JavadocWizard extends Wizard implements IExportWizard {
 		}
 
 		private boolean containsJavadocLaunch(ILaunch[] launches) {
-			for (int i= 0; i < launches.length; i++) {
-				if (launches[i] == fLaunch) {
+			for (ILaunch launch : launches) {
+				if (launch == fLaunch) {
 					return true;
 				}
 			}

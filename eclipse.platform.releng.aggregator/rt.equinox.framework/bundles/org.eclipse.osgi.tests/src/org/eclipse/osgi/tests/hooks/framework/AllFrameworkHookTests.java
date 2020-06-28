@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -24,6 +24,7 @@ public class AllFrameworkHookTests {
 		suite.addTest(new TestSuite(BundleFileWrapperFactoryHookTests.class));
 		suite.addTest(new TestSuite(ContextFinderTests.class));
 		suite.addTest(new TestSuite(DevClassPathWithExtensionTests.class));
+		suite.addTest(new TestSuite(EmbeddedEquinoxWithURLInClassLoadTests.class));
 		return suite;
 	}
 }

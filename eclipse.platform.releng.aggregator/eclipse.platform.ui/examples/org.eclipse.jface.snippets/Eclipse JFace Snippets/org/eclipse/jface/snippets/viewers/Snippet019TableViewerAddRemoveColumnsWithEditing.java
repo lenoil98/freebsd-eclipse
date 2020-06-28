@@ -16,8 +16,6 @@
 package org.eclipse.jface.snippets.viewers;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.IMenuListener;
-import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.util.ConfigureColumns;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -39,7 +37,7 @@ import org.eclipse.swt.widgets.Shell;
  * Explore the new API added in 3.3 and see how easily you can create reusable
  * components
  *
- * @author Tom Schindl <tom.schindl@bestsolution.at>
+ * @author Tom Schindl &lt;tom.schindl@bestsolution.at&gt;
  * @since 3.2
  */
 public class Snippet019TableViewerAddRemoveColumnsWithEditing {
@@ -269,19 +267,14 @@ public class Snippet019TableViewerAddRemoveColumnsWithEditing {
 		};
 
 		mgr.setRemoveAllWhenShown(true);
-		mgr.addMenuListener(new IMenuListener() {
-
-			@Override
-			public void menuAboutToShow(IMenuManager manager) {
-				if (v.getTable().getColumnCount() == 2) {
-					manager.add(insertEmailBefore);
-					manager.add(insertEmailAfter);
-				} else {
-					manager.add(removeEmail);
-				}
-				manager.add(configureColumns);
+		mgr.addMenuListener(manager -> {
+			if (v.getTable().getColumnCount() == 2) {
+				manager.add(insertEmailBefore);
+				manager.add(insertEmailAfter);
+			} else {
+				manager.add(removeEmail);
 			}
-
+			manager.add(configureColumns);
 		});
 
 		v.getControl().setMenu(mgr.createContextMenu(v.getControl()));

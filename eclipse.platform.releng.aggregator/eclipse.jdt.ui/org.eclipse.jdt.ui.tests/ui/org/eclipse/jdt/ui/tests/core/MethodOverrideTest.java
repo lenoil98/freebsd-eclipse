@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,8 +13,17 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Hashtable;
 import java.util.List;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.TestOptions;
@@ -46,60 +55,46 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import org.eclipse.jdt.internal.corext.dom.ASTFlattener;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 import org.eclipse.jdt.internal.corext.util.MethodOverrideTester;
 
 import org.eclipse.jdt.ui.JavaElementLabels;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.ui.viewsupport.BindingLabelProvider;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 public class MethodOverrideTest extends CoreTests {
-
-
 	/**
 	 * See bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=111093
 	 */
 
-	private static final Class<MethodOverrideTest> THIS= MethodOverrideTest.class;
+	@Rule
+	public ProjectTestSetup pts= new ProjectTestSetup();
+
 	private static final boolean DEBUG_SHOWRESULTS= true;
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
 
 	private IJavaProject fJProject1;
 
-	public MethodOverrideTest(String name) {
-		super(name);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		fJProject1= ProjectTestSetup.getProject();
-
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
 		JavaCore.setOptions(options);
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
 	}
 
+	@Test
 	public void testOverride0() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("public class A<S> {\n");
 		buf.append("    public A() {}\n");
@@ -120,11 +115,12 @@ public class MethodOverrideTest extends CoreTests {
 		doOverrideTests(cu, 2, 1, 0); // B and A
 	}
 
+	@Test
 	public void testOverride1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("public class A<T> {\n");
 		buf.append("    public A() {}\n");
@@ -157,11 +153,12 @@ public class MethodOverrideTest extends CoreTests {
 		doOverrideTests(cu, 1, 1, 0); // B and A
 	}
 
+	@Test
 	public void testOverride2() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import java.util.List;\n");
 		buf.append("import java.util.Map;\n");
@@ -180,11 +177,12 @@ public class MethodOverrideTest extends CoreTests {
 		doOverrideTests(cu, 1, 1, 0); // B and A
 	}
 
+	@Test
 	public void testOverride3() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import java.util.List;\n");
 		buf.append("public class A {\n");
@@ -202,11 +200,12 @@ public class MethodOverrideTest extends CoreTests {
 		doOverrideTests(cu, 1, 1, 0); // B and A
 	}
 
+	@Test
 	public void testOverride4() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import java.util.List;\n");
 		buf.append("public class A<T> {\n");
@@ -229,12 +228,13 @@ public class MethodOverrideTest extends CoreTests {
 		doOverrideTests(cu, 1, 1, 0); // B and A
 	}
 
+	@Test
 	public void testOverrideMethodTypeParams1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
 		// ATTENTION: Method names in this test must be in alphabetic order!
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("public class A<S> {\n");
 		buf.append("    public A() {}\n");
@@ -269,11 +269,12 @@ public class MethodOverrideTest extends CoreTests {
 		doOverrideTests(cu, 1, 1, 0); // B and A
 	}
 
+	@Test
 	public void testOverrideRaw1() throws Exception {
 		IPackageFragmentRoot sourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
 		IPackageFragment pack1= sourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("public class A<S> {\n");
 		buf.append("    public A() {}\n");
@@ -304,7 +305,7 @@ public class MethodOverrideTest extends CoreTests {
 		}
 
 		IType focusType= types[focusIndex];
-		
+
 		IType overridingType= types[overridingIndex];
 		ITypeBinding overridingTypeBinding= typeBindings[overridingIndex];
 		assertSameType(overridingType, overridingTypeBinding);
@@ -353,7 +354,7 @@ public class MethodOverrideTest extends CoreTests {
 
 					System.out.println();
 					System.out.println("====================================");
-					System.out.println(getName());
+					System.out.println("getName()");
 					System.out.println("====================================");
 
 					System.out.println("IMethodBinding.overrides(): " +  String.valueOf(bindingOverrides));
@@ -381,7 +382,7 @@ public class MethodOverrideTest extends CoreTests {
 	}
 
 	private static String getDebugString(IMethodBinding overriding,  IMethodBinding overriddenMethod) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append(BindingLabelProvider.getBindingLabel(overriding, JavaElementLabels.M_PARAMETER_TYPES | JavaElementLabels.M_FULLY_QUALIFIED | JavaElementLabels.T_TYPE_PARAMETERS));
 		buf.append(" - ");
 		buf.append(BindingLabelProvider.getBindingLabel(overriddenMethod, JavaElementLabels.M_PARAMETER_TYPES | JavaElementLabels.M_FULLY_QUALIFIED  | JavaElementLabels.T_TYPE_PARAMETERS));
@@ -392,7 +393,7 @@ public class MethodOverrideTest extends CoreTests {
 	}
 
 	private static String getCodeString(IMethodBinding overriding,  IMethodBinding overriddenMethod, CompilationUnit root) {
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 
 		buf.append("// Overridden: ----------------------------------\n");
 		buf.append(getCode(overriddenMethod, root)).append('\n');
@@ -448,8 +449,7 @@ public class MethodOverrideTest extends CoreTests {
 		CompilationUnit root= (CompilationUnit) parser.createAST(null);
 		IProblem[] problems= root.getProblems();
 		boolean hasProblems= false;
-		for (int i= 0; i < problems.length; i++) {
-			IProblem prob= problems[i];
+		for (IProblem prob : problems) {
 			if (prob.isWarning() || prob.isInfo()) {
 				continue;
 			}
@@ -466,10 +466,10 @@ public class MethodOverrideTest extends CoreTests {
 			}
 		}
 		if (hasProblems) {
-			StringBuffer buf= new StringBuffer();
+			StringBuilder buf= new StringBuilder();
 			buf.append(cu.getElementName() + " has compilation problems: \n");
-			for (int i= 0; i < problems.length; i++) {
-				buf.append(problems[i].getMessage()).append('\n');
+			for (IProblem prob : problems) {
+				buf.append(prob.getMessage()).append('\n');
 			}
 			assertTrue(buf.toString(), false);
 		}
@@ -484,9 +484,7 @@ public class MethodOverrideTest extends CoreTests {
 			int start= node.getStartPosition();
 			int end= start + node.getLength();
 
-			IProblem[] problems= root.getProblems();
-			for (int i= 0; i < problems.length; i++) {
-				IProblem prob= problems[i];
+			for (IProblem prob : root.getProblems()) {
 				if (prob.getID() == IProblem.MethodMustOverride) {
 					int pos= prob.getSourceStart();
 					if (start <= pos && pos < end) {
@@ -501,9 +499,9 @@ public class MethodOverrideTest extends CoreTests {
 
 	private boolean hasOverrideAnnotation(MethodDeclaration declaration) {
 		List<IExtendedModifier> list= declaration.modifiers();
-		for (int i= 0; i < list.size(); i++) {
-			if (list.get(i) instanceof Annotation) {
-				return "Override".equals(((Annotation) list.get(i)).getTypeName().getFullyQualifiedName());
+		for (IExtendedModifier element : list) {
+			if (element instanceof Annotation) {
+				return "Override".equals(((Annotation) element).getTypeName().getFullyQualifiedName());
 			}
 		}
 		return false;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 IBM Corporation and others.
+ * Copyright (c) 2018, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,8 +14,6 @@
  *     Red Hat Inc. - split from CleanUpConstants
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.fix;
-
-import java.util.Iterator;
 
 import org.eclipse.core.runtime.Assert;
 
@@ -52,22 +50,28 @@ public class CleanUpConstantsOptions extends CleanUpConstants {
 		options.setOption(CONTROL_STATMENTS_USE_BLOCKS_NEVER, CleanUpOptions.FALSE);
 
 		options.setOption(CONTROL_STATMENTS_CONVERT_FOR_LOOP_TO_ENHANCED, CleanUpOptions.FALSE);
+		options.setOption(CONTROL_STATMENTS_CONVERT_FOR_LOOP_ONLY_IF_LOOP_VAR_USED, CleanUpOptions.FALSE);
 
 		//Expressions
 		options.setOption(EXPRESSIONS_USE_PARENTHESES, CleanUpOptions.FALSE);
 		options.setOption(EXPRESSIONS_USE_PARENTHESES_NEVER, CleanUpOptions.TRUE);
 		options.setOption(EXPRESSIONS_USE_PARENTHESES_ALWAYS, CleanUpOptions.FALSE);
+		options.setOption(USE_LAZY_LOGICAL_OPERATOR, CleanUpOptions.FALSE);
+
+		options.setOption(NUMBER_SUFFIX, CleanUpOptions.FALSE);
 
 		//Variable Declarations
 		options.setOption(VARIABLE_DECLARATIONS_USE_FINAL, CleanUpOptions.FALSE);
 		options.setOption(VARIABLE_DECLARATIONS_USE_FINAL_LOCAL_VARIABLES, CleanUpOptions.TRUE);
 		options.setOption(VARIABLE_DECLARATIONS_USE_FINAL_PARAMETERS, CleanUpOptions.FALSE);
 		options.setOption(VARIABLE_DECLARATIONS_USE_FINAL_PRIVATE_FIELDS, CleanUpOptions.TRUE);
+		options.setOption(USE_VAR, CleanUpOptions.FALSE);
 
 		//Functional Interfaces
 		options.setOption(CONVERT_FUNCTIONAL_INTERFACES, CleanUpOptions.FALSE);
 		options.setOption(USE_LAMBDA, CleanUpOptions.TRUE);
 		options.setOption(USE_ANONYMOUS_CLASS_CREATION, CleanUpOptions.FALSE);
+		options.setOption(SIMPLIFY_LAMBDA_EXPRESSION_AND_METHOD_REF, CleanUpOptions.FALSE);
 
 		//Unused Code
 		options.setOption(REMOVE_UNUSED_CODE_IMPORTS, CleanUpOptions.TRUE);
@@ -83,8 +87,14 @@ public class CleanUpConstantsOptions extends CleanUpConstants {
 		options.setOption(REMOVE_UNNECESSARY_NLS_TAGS, CleanUpOptions.TRUE);
 		options.setOption(INSERT_INFERRED_TYPE_ARGUMENTS, CleanUpOptions.FALSE);
 		options.setOption(REMOVE_REDUNDANT_TYPE_ARGUMENTS, CleanUpOptions.FALSE);
+		options.setOption(USE_AUTOBOXING, CleanUpOptions.FALSE);
+		options.setOption(USE_UNBOXING, CleanUpOptions.FALSE);
+		options.setOption(PUSH_DOWN_NEGATION, CleanUpOptions.FALSE);
+		options.setOption(MERGE_CONDITIONAL_BLOCKS, CleanUpOptions.FALSE);
+		options.setOption(USE_DIRECTLY_MAP_METHOD, CleanUpOptions.FALSE);
 		options.setOption(REMOVE_REDUNDANT_MODIFIERS, CleanUpOptions.FALSE);
 		options.setOption(REMOVE_REDUNDANT_SEMICOLONS, CleanUpOptions.FALSE);
+		options.setOption(REMOVE_UNNECESSARY_ARRAY_CREATION, CleanUpOptions.FALSE);
 
 		//Missing Code
 		options.setOption(ADD_MISSING_ANNOTATIONS, CleanUpOptions.TRUE);
@@ -141,22 +151,28 @@ public class CleanUpConstantsOptions extends CleanUpConstants {
 		options.setOption(CONTROL_STATMENTS_USE_BLOCKS_NEVER, CleanUpOptions.FALSE);
 
 		options.setOption(CONTROL_STATMENTS_CONVERT_FOR_LOOP_TO_ENHANCED, CleanUpOptions.FALSE);
+		options.setOption(CONTROL_STATMENTS_CONVERT_FOR_LOOP_ONLY_IF_LOOP_VAR_USED, CleanUpOptions.FALSE);
 
 		//Expressions
 		options.setOption(EXPRESSIONS_USE_PARENTHESES, CleanUpOptions.FALSE);
 		options.setOption(EXPRESSIONS_USE_PARENTHESES_NEVER, CleanUpOptions.TRUE);
 		options.setOption(EXPRESSIONS_USE_PARENTHESES_ALWAYS, CleanUpOptions.FALSE);
+		options.setOption(USE_LAZY_LOGICAL_OPERATOR, CleanUpOptions.FALSE);
+
+		options.setOption(NUMBER_SUFFIX, CleanUpOptions.FALSE);
 
 		//Variable Declarations
 		options.setOption(VARIABLE_DECLARATIONS_USE_FINAL, CleanUpOptions.FALSE);
 		options.setOption(VARIABLE_DECLARATIONS_USE_FINAL_LOCAL_VARIABLES, CleanUpOptions.TRUE);
 		options.setOption(VARIABLE_DECLARATIONS_USE_FINAL_PARAMETERS, CleanUpOptions.FALSE);
 		options.setOption(VARIABLE_DECLARATIONS_USE_FINAL_PRIVATE_FIELDS, CleanUpOptions.TRUE);
+		options.setOption(USE_VAR, CleanUpOptions.FALSE);
 
 		//Functional Interfaces
 		options.setOption(CONVERT_FUNCTIONAL_INTERFACES, CleanUpOptions.FALSE);
 		options.setOption(USE_LAMBDA, CleanUpOptions.TRUE);
 		options.setOption(USE_ANONYMOUS_CLASS_CREATION, CleanUpOptions.FALSE);
+		options.setOption(SIMPLIFY_LAMBDA_EXPRESSION_AND_METHOD_REF, CleanUpOptions.FALSE);
 
 		//Unused Code
 		options.setOption(REMOVE_UNUSED_CODE_IMPORTS, CleanUpOptions.FALSE);
@@ -172,8 +188,14 @@ public class CleanUpConstantsOptions extends CleanUpConstants {
 		options.setOption(REMOVE_UNNECESSARY_NLS_TAGS, CleanUpOptions.FALSE);
 		options.setOption(INSERT_INFERRED_TYPE_ARGUMENTS, CleanUpOptions.FALSE);
 		options.setOption(REMOVE_REDUNDANT_TYPE_ARGUMENTS, CleanUpOptions.FALSE);
+		options.setOption(USE_AUTOBOXING, CleanUpOptions.FALSE);
+		options.setOption(USE_UNBOXING, CleanUpOptions.FALSE);
+		options.setOption(PUSH_DOWN_NEGATION, CleanUpOptions.FALSE);
+		options.setOption(MERGE_CONDITIONAL_BLOCKS, CleanUpOptions.FALSE);
+		options.setOption(USE_DIRECTLY_MAP_METHOD, CleanUpOptions.FALSE);
 		options.setOption(REMOVE_REDUNDANT_MODIFIERS, CleanUpOptions.FALSE);
 		options.setOption(REMOVE_REDUNDANT_SEMICOLONS, CleanUpOptions.FALSE);
+		options.setOption(REMOVE_UNNECESSARY_ARRAY_CREATION, CleanUpOptions.FALSE);
 
 		//Missing Code
 		options.setOption(ADD_MISSING_ANNOTATIONS, CleanUpOptions.TRUE);
@@ -210,8 +232,7 @@ public class CleanUpConstantsOptions extends CleanUpConstants {
 
 	public static void initDefaults(IPreferenceStore store) {
 		CleanUpOptions settings= JavaPlugin.getDefault().getCleanUpRegistry().getDefaultOptions(CleanUpConstants.DEFAULT_CLEAN_UP_OPTIONS);
-		for (Iterator<String> iterator= settings.getKeys().iterator(); iterator.hasNext();) {
-			String key= iterator.next();
+		for (String key : settings.getKeys()) {
 			store.setDefault(key, settings.getValue(key));
 		}
 

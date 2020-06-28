@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -54,6 +54,8 @@ private static Class[] getAllTestClasses() {
 
 		// Compilation unit tests
 		CompilationUnitTests.class,
+		// Compilation unitTests (Java 14)
+		CompilationUnitTests14.class,
 
 		// Source attachment tests
 		AttachSourceTests.class,
@@ -102,6 +104,9 @@ private static Class[] getAllTestClasses() {
 		ResolveTests2.class,
 		ResolveTests_1_5.class,
 		ResolveTests18.class,
+		ResolveTests9.class,
+		ResolveTests10.class,
+		ResolveTests12.class,
 		SelectionJavadocModelTests.class,
 
 		// Support for completion tests
@@ -198,13 +203,13 @@ private static Class[] getAllTestClasses() {
 
 		// Creation of imports
 		CreateImportsTests.class,
-		
+
 		// Util tests
 		UtilTests.class,
-		
+
 		JavaCoreOptionsTests.class,
 		JavaCorePreferenceModifyListenerTest.class,
-		
+
 		// Tests regarding null-annotations:
 		NullAnnotationModelTests.class,
 		ExternalAnnotations17Test.class,
@@ -215,9 +220,10 @@ private static Class[] getAllTestClasses() {
 		JavaElement8Tests.class,
 
 		Java9ElementTests.class,
-		ResolveTests9.class,
 
 		NullAnnotationModelTests9.class,
+
+		JavaModelManagerTests.class,
 	};
 
 	Class[] deprecatedClasses = getDeprecatedJDOMTestClasses();
@@ -265,17 +271,17 @@ public static Test suite() {
 			suiteMethod = clazz.getDeclaredMethod("suite", new Class[0]);
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
-			continue;
+			throw new AssertionError("Failed to find suite() method for: " + clazz, e);
 		}
 		Object test;
 		try {
 			test = suiteMethod.invoke(null, new Object[0]);
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
-			continue;
+			throw new AssertionError("Failed to invoke suite() method for: " + clazz, e);
 		} catch (InvocationTargetException e) {
 			e.printStackTrace();
-			continue;
+			throw new AssertionError("Failed to invoke suite() method for: " + clazz, e);
 		}
 		suite.addTest((Test) test);
 	}

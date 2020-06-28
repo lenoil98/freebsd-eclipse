@@ -40,9 +40,7 @@ public class CVSHistoryFilter extends ViewerFilter {
 		this.matchCounter = 0;
 	}
 
-	/**
-	 * @see ViewerFilter#select(Viewer, Object, Object)
-	 */
+	@Override
 	public boolean select(Viewer aviewer, Object parentElement, Object element) {
 		if (element instanceof AbstractHistoryCategory)
 			return true;
@@ -71,8 +69,8 @@ public class CVSHistoryFilter extends ViewerFilter {
 
 	protected boolean branchMatch(CVSFileRevision revision) {
 		ITag[] branches = revision.getBranches();
-		for (int i = 0; i < branches.length; i++) {
-			if ((branches[i].getName().toLowerCase().indexOf(branchName.toLowerCase()) != -1)) {
+		for (ITag branche : branches) {
+			if (branche.getName().toLowerCase().contains(branchName.toLowerCase())) {
 				return true;
 			}
 		}		
@@ -84,7 +82,7 @@ public class CVSHistoryFilter extends ViewerFilter {
 	}
 
 	protected boolean commentMatch(CVSFileRevision revision) {
-		return !(revision.getComment().toLowerCase().indexOf(comment.toLowerCase()) == -1);
+		return !(!revision.getComment().toLowerCase().contains(comment.toLowerCase()));
 	}
 
 	protected boolean dateMatch(CVSFileRevision revision) {
@@ -104,15 +102,15 @@ public class CVSHistoryFilter extends ViewerFilter {
 	}
 
 	protected boolean hasBranchName() {
-		return !branchName.equals(""); //$NON-NLS-1$
+		return !branchName.isEmpty();
 	}
 
 	protected boolean hasAuthor() {
-		return !author.equals(""); //$NON-NLS-1$
+		return !author.isEmpty();
 	}
 
 	protected boolean hasComment() {
-		return !comment.equals(""); //$NON-NLS-1$
+		return !comment.isEmpty();
 	}
 
 	protected boolean hasDate() {

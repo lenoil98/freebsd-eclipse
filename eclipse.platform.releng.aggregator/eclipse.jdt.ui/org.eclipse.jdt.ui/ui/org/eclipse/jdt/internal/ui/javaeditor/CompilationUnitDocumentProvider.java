@@ -249,14 +249,23 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 						fImage= fgQuickFixInfoImage;
 				} else {
 					String type= getType();
-					if (JavaMarkerAnnotation.TASK_ANNOTATION_TYPE.equals(type))
+					if (null != type)
+						switch (type) {
+					case JavaMarkerAnnotation.TASK_ANNOTATION_TYPE:
 						fImage= fgTaskImage;
-					else if (JavaMarkerAnnotation.INFO_ANNOTATION_TYPE.equals(type))
+						break;
+					case JavaMarkerAnnotation.INFO_ANNOTATION_TYPE:
 						fImage= fgInfoImage;
-					else if (JavaMarkerAnnotation.WARNING_ANNOTATION_TYPE.equals(type))
+						break;
+					case JavaMarkerAnnotation.WARNING_ANNOTATION_TYPE:
 						fImage= fgWarningImage;
-					else if (JavaMarkerAnnotation.ERROR_ANNOTATION_TYPE.equals(type))
+						break;
+					case JavaMarkerAnnotation.ERROR_ANNOTATION_TYPE:
 						fImage= fgErrorImage;
+						break;
+					default:
+						break;
+					}
 				}
 				fImageInitialized= true;
 			}
@@ -362,7 +371,7 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 		public void removeOverlaid(IJavaAnnotation annotation) {
 			if (fOverlaids != null) {
 				fOverlaids.remove(annotation);
-				if (fOverlaids.size() == 0)
+				if (fOverlaids.isEmpty())
 					fOverlaids= null;
 			}
 		}
@@ -731,7 +740,7 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 
 		/**
 		 * Overlays value with problem annotation.
-		 * 
+		 *
 		 * @param value the value
 		 * @param problemAnnotation the problem annotation
 		 */
@@ -751,8 +760,8 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 			Object value= getAnnotations(position);
 			if (value instanceof List) {
 				List<?> list= (List<?>) value;
-				for (Iterator<?> e = list.iterator(); e.hasNext();)
-					setOverlay(e.next(), problemAnnotation);
+				for (Object name : list)
+					setOverlay(name, problemAnnotation);
 			} else {
 				setOverlay(value, problemAnnotation);
 			}
@@ -1158,7 +1167,7 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 	 * XXX: Workaround for https://bugs.eclipse.org/307756, see comment 2 on how a better solution
 	 * could look like.
 	 * </p>
-	 * 
+	 *
 	 * @param editorInput the editor input to test
 	 * @return <code>true</code> if it is an instance of
 	 *         <code>org.eclipse.team.internal.ui.history.FileRevisionEditorInput</code>
@@ -1238,12 +1247,14 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 		} catch (JavaModelException e) {
 			return null; // ignore - use default JRE
 		}
-		for (int i= 0; i < projects.length; i++) {
-			IPath projectPath= projects[i].getProject().getFullPath();
+		for (IJavaProject project : projects) {
+			IPath projectPath= project.getProject().getFullPath();
 			String projectSegment= projectPath.segments()[0];
-			for (int j= 0; j < pathSegments.length; j++)
-				if (projectSegment.equals(pathSegments[j]))
-					return projects[i];
+			for (String pathSegment : pathSegments) {
+				if (projectSegment.equals(pathSegment)) {
+					return project;
+				}
+			}
 		}
 		return null;
 	}
@@ -1450,8 +1461,9 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 					IMarker[] markers= r.findMarkers(IMarker.MARKER, true, IResource.DEPTH_ZERO);
 					if (markers != null && markers.length > 0) {
 						AbstractMarkerAnnotationModel model= (AbstractMarkerAnnotationModel) info.fModel;
-						for (int i= 0; i < markers.length; i++)
-							model.updateMarker(document, markers[i], null);
+						for (IMarker marker : markers) {
+							model.updateMarker(document, marker, null);
+						}
 					}
 				}
 			}
@@ -1609,7 +1621,7 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 	 * assumed to be called in the UI thread i.e. if they open a dialog they must ensure it ends up
 	 * in the UI thread.
 	 * </p>
-	 * 
+	 *
 	 * @param info compilation unit info
 	 * @param changedRegions the array with the changed regions
 	 * @param listeners the listeners to notify
@@ -1627,8 +1639,7 @@ public class CompilationUnitDocumentProvider extends TextFileDocumentProvider im
 
 		monitor.beginTask(JavaEditorMessages.CompilationUnitDocumentProvider_progressNotifyingSaveParticipants, listeners.length * 5);
 		try {
-			for (int i= 0; i < listeners.length; i++) {
-				final IPostSaveListener listener= listeners[i];
+			for (IPostSaveListener listener : listeners) {
 				final String participantName= listener.getName();
 				SafeRunner.run(new ISafeRunnable() {
 					@Override

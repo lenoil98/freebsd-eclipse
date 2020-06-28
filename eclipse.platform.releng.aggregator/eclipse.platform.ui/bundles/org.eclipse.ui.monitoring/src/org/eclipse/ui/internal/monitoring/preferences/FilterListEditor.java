@@ -44,13 +44,13 @@ public class FilterListEditor extends ListEditor {
 		GridDataFactory.fillDefaults().applyTo(button);
 	}
 
-    @Override
+	@Override
 	protected void doFillIntoGrid(Composite parent, int numColumns) {
-    	super.doFillIntoGrid(parent, numColumns);
-        List list = getListControl(parent);
-        GridDataFactory.defaultsFor(list).applyTo(list);
-        GridDataFactory.fillDefaults().applyTo(getButtonBoxControl(parent));
-    }
+		super.doFillIntoGrid(parent, numColumns);
+		List list = getListControl(parent);
+		GridDataFactory.defaultsFor(list).applyTo(list);
+		GridDataFactory.fillDefaults().applyTo(getButtonBoxControl(parent));
+	}
 
 	/**
 	 * Handles parsing of defined traces to be filtered.
@@ -95,7 +95,7 @@ public class FilterListEditor extends ListEditor {
 			return new String[0];
 		}
 		String[] items = stringList.split(","); //$NON-NLS-1$
-		Arrays.sort(items);;
+		Arrays.sort(items);
 		return items;
 	}
 

@@ -14,6 +14,7 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.ide;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,9 +29,6 @@ import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.util.SafeRunnable;
 import org.eclipse.ui.ide.IEditorAssociationOverride;
-
-import com.ibm.icu.text.MessageFormat;
-
 
 /**
  * Describes a contribution to the 'org.eclipse.ui.ide.editorAssociationOverride' extension point.
@@ -59,8 +57,7 @@ public final class EditorAssociationOverrideDescriptor {
 	public static EditorAssociationOverrideDescriptor[] getContributedEditorAssociationOverrides() {
 		IExtensionRegistry registry= Platform.getExtensionRegistry();
 		IConfigurationElement[] elements= registry.getConfigurationElementsFor(EDITOR_ASSOCIATION_OVERRIDE_EXTENSION_POINT);
-		EditorAssociationOverrideDescriptor[] editorAssociationOverrideDescs= createDescriptors(elements);
-		return editorAssociationOverrideDescs;
+		return createDescriptors(elements);
 	}
 
 	/**
@@ -89,7 +86,7 @@ public final class EditorAssociationOverrideDescriptor {
 			 */
 			@Override
 			public void run() throws Exception {
-//		 		String pluginId = fElement.getContributor().getName();
+//				String pluginId = fElement.getContributor().getName();
 				result[0]= (IEditorAssociationOverride)fElement.createExecutableExtension(CLASS_ATTRIBUTE);
 			}
 			/*

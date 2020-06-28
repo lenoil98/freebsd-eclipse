@@ -73,7 +73,7 @@ public abstract class StructureSelectionAction extends Action {
 	@Override
 	public final  void run() {
 		IJavaElement inputElement= EditorUtility.getEditorInputJavaElement(fEditor, false);
-		if (!(inputElement instanceof ITypeRoot && inputElement.exists()))
+		if (!(inputElement instanceof ITypeRoot) || !inputElement.exists())
 			return;
 
 		ITypeRoot typeRoot= (ITypeRoot) inputElement;
@@ -119,7 +119,7 @@ public abstract class StructureSelectionAction extends Action {
 
 	/**
 	 * Subclasses determine the actual new selection.
-	 * 
+	 *
 	 * @param oldSourceRange the selected range
 	 * @param sr the current type root
 	 * @param selAnalyzer the selection analyzer

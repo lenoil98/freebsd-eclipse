@@ -262,6 +262,7 @@ public class Messages {
 	public String PartDescriptorEditor_Menus;
 	public String PartDescriptorEditor_Handlers;
 	public String PartDescriptorEditor_ContainerData;
+	public String PartDescriptorEditor_TrimBars;
 
 	public String PartEditor_Label;
 	public String PartEditor_Description;
@@ -277,6 +278,8 @@ public class Messages {
 	public String PartEditor_ContainerData;
 	public String PartEditor_ToolBar;
 	public String PartEditor_BindingContexts;
+	public String PartEditor_Controls;
+	public String PartEditor_TrimBars;
 
 	public String PartSashContainerEditor_Label;
 	public String PartSashContainerEditor_Description;
@@ -308,6 +311,7 @@ public class Messages {
 	public String PerspectiveEditor_Tooltip;
 	public String PerspectiveEditor_IconURI;
 	public String PerspectiveEditor_Controls;
+	public String PerspectiveEditor_TrimBars;
 	public String PerspectiveEditor_AddPartSashContainer;
 	public String PerspectiveEditor_AddPartStack;
 	public String PerspectiveEditor_AddPart;
@@ -509,6 +513,9 @@ public class Messages {
 	public String VHandlerEditor_Handlers;
 	public String VHandlerEditor_AddHandler;
 
+	public String VControlsEditor_TreeLabel;
+	public String VControlsEditor_TreeLabelDescription;
+
 	public String VMenuContributionsEditor_TreeLabel;
 	public String VMenuContributionsEditor_TreeLabelDescription;
 	public String VMenuContributionsEditor_MenuContributions;
@@ -553,6 +560,7 @@ public class Messages {
 	public String VWindowControlEditor_AddPartSashContainer;
 	public String VWindowControlEditor_AddPartStack;
 	public String VWindowControlEditor_AddPart;
+	public String VWindowControlEditor_AddCompositePart;
 	public String VWindowControlEditor_AddArea;
 
 	public String VWindowEditor_TreeLabel;
@@ -569,8 +577,19 @@ public class Messages {
 
 	public String VWindowTrimEditor_TreeLabel;
 	public String VWindowTrimEditor_TreeLabelDescription;
-	public String VWindowTrimEditor_Controls;
-	public String VWindowTrimEditor_AddWindowTrim;
+	public String VWindowTrimEditor_AddTrim;
+
+	public String VPartTrimEditor_TreeLabel;
+	public String VPartTrimEditor_TreeLabelDescription;
+	public String VPartTrimEditor_AddTrim;
+
+	public String VPartDescriptorTrimEditor_TreeLabel;
+	public String VPartDescriptorTrimEditor_TreeLabelDescription;
+	public String VPartDescriptorTrimEditor_AddTrim;
+
+	public String VPerspectiveTrimEditor_TreeLabel;
+	public String VPerspectiveTrimEditor_TreeLabelDescription;
+	public String VPerspectiveTrimEditor_AddTrim;
 
 	public String AbstractIconDialog_IconName;
 	public String AbstractIconDialog_all_workspace_bundles;
@@ -799,11 +818,6 @@ public class Messages {
 	public String CompositePartEditor_Horizontal;
 	public String CompositePartEditor_Vertical;
 	public String CompositePartEditor_SelectedElement;
-	public String CompositePartEditor_ContainerData;
 	public String CompositePartEditor_Controls;
-	public String CompositePartEditor_LabelLabel;
-	public String CompositePartEditor_Tooltip;
-	public String CompositePartEditor_IconURI;
-	public String CompositePartEditor_IconURI_Tooltip;
 
 }

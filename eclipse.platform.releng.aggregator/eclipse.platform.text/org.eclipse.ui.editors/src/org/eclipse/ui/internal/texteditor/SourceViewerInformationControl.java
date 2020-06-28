@@ -81,7 +81,7 @@ class SourceViewerInformationControl implements IInformationControl, IInformatio
 	private Font fStatusTextFont;
 	/**
 	 * The color of the optional status text label or <code>null</code> if none.
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	private Color fStatusTextForegroundColor;
@@ -174,8 +174,9 @@ class SourceViewerInformationControl implements IInformationControl, IInformatio
 			fStatusField.setText(statusFieldText);
 			Font font= fStatusField.getFont();
 			FontData[] fontDatas= font.getFontData();
-			for (int i= 0; i < fontDatas.length; i++)
-				fontDatas[i].setHeight(fontDatas[i].getHeight() * 9 / 10);
+			for (FontData fontData : fontDatas) {
+				fontData.setHeight(fontData.getHeight() * 9 / 10);
+			}
 			fStatusTextFont= new Font(fStatusField.getDisplay(), fontDatas);
 			fStatusField.setFont(fStatusTextFont);
 			GridData gd2= new GridData(GridData.FILL_VERTICAL | GridData.FILL_HORIZONTAL | GridData.HORIZONTAL_ALIGN_BEGINNING | GridData.VERTICAL_ALIGN_BEGINNING);
@@ -207,7 +208,7 @@ class SourceViewerInformationControl implements IInformationControl, IInformatio
 		Assert.isLegal(bg != null);
 		Assert.isLegal(fg != null);
 		Assert.isLegal(factor >= 0f && factor <= 1f);
-		
+
 		float complement= 1f - factor;
 		return new RGB(
 				(int) (complement * bg.red + factor * fg.red),
@@ -215,7 +216,7 @@ class SourceViewerInformationControl implements IInformationControl, IInformatio
 				(int) (complement * bg.blue + factor * fg.blue)
 		);
 	}
-	
+
 	/*
 	 * @see org.eclipse.jface.text.IInformationControlExtension2#setInput(java.lang.Object)
 	 */
@@ -255,7 +256,7 @@ class SourceViewerInformationControl implements IInformationControl, IInformatio
 		if (fStatusTextForegroundColor != null && !fStatusTextForegroundColor.isDisposed())
 			fStatusTextForegroundColor.dispose();
 		fStatusTextForegroundColor= null;
-		
+
 		fTextFont= null;
 		fShell= null;
 		fText= null;
@@ -448,12 +449,7 @@ class SourceViewerInformationControl implements IInformationControl, IInformatio
 
 	@Override
 	public IInformationControlCreator getInformationPresenterControlCreator() {
-		return new IInformationControlCreator() {
-			@Override
-			public IInformationControl createInformationControl(Shell parent) {
-				return new SourceViewerInformationControl(parent, true, fSymbolicFontName, null);
-			}
-		};
+		return parent -> new SourceViewerInformationControl(parent, true, fSymbolicFontName, null);
 	}
 
 	@Override

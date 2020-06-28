@@ -37,6 +37,7 @@ public static void main(String[] args) {
 	Display display = new Display();
 	final Clipboard cb = new Clipboard(display);
 	Shell shell = new Shell(display);
+	shell.setText("Snippet 122");
 	shell.setLayout(new FillLayout());
 	final Text text = new Text(shell, SWT.BORDER | SWT.MULTI | SWT.WRAP);
 	Menu menu = new Menu(shell, SWT.POP_UP);
@@ -65,10 +66,9 @@ public static void main(String[] args) {
 		String selection = text.getSelectionText();
 		copyItem.setEnabled(selection.length() > 0);
 		// is paste valid?
-		TransferData[] available = cb.getAvailableTypes();
 		boolean enabled = false;
-		for (int i = 0; i < available.length; i++) {
-			if (TextTransfer.getInstance().isSupportedType(available[i])) {
+		for (TransferData transfer : cb.getAvailableTypes()) {
+			if (TextTransfer.getInstance().isSupportedType(transfer)) {
 				enabled = true;
 				break;
 			}

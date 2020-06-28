@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors: IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.equinox.internal.simpleconfigurator.manipulator;
@@ -74,9 +74,9 @@ public class SimpleConfiguratorManipulatorUtils {
 		BufferedWriter writer = null;
 		boolean oldStyle = false;
 		boolean utf8 = true;
-		for (int i = 0; i < simpleInfos.length; i++) {
-			if (SimpleConfiguratorManipulator.SERVICE_PROP_VALUE_CONFIGURATOR_SYMBOLICNAME.equals(simpleInfos[i].getSymbolicName())) {
-				Version version = new Version(simpleInfos[i].getVersion());
+		for (BundleInfo simpleInfo : simpleInfos) {
+			if (SimpleConfiguratorManipulator.SERVICE_PROP_VALUE_CONFIGURATOR_SYMBOLICNAME.equals(simpleInfo.getSymbolicName())) {
+				Version version = new Version(simpleInfo.getVersion());
 				if (version.compareTo(OLD_STYLE_SIMPLE_CONFIGURATOR_VERSION) < 0)
 					oldStyle = true;
 				if (version.compareTo(DEFAULT_ENCODING_CONFIGURATOR_VERSION) < 0)
@@ -97,8 +97,8 @@ public class SimpleConfiguratorManipulatorUtils {
 		writer.newLine();
 
 		// bundle info lines
-		for (int i = 0; i < simpleInfos.length; i++) {
-			writer.write(createBundleInfoLine(simpleInfos[i], oldStyle));
+		for (BundleInfo simpleInfo : simpleInfos) {
+			writer.write(createBundleInfoLine(simpleInfo, oldStyle));
 			writer.newLine();
 		}
 		writer.flush();

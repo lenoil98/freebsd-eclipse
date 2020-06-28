@@ -14,7 +14,6 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.debug.eval.ast.engine;
 
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.core.runtime.CoreException;
@@ -163,7 +162,7 @@ public class EvaluationSourceGenerator {
 		if ( codeSnippet.length() == 0) {
 			return false;
 		}
-		IScanner scanner = ToolFactory.createScanner(false, false, false, fJavaProject.getOption(JavaCore.COMPILER_SOURCE, true), fJavaProject.getOption(JavaCore.COMPILER_COMPLIANCE, true));
+		IScanner scanner = ToolFactory.createScanner(false, false, false, fJavaProject.getOption(JavaCore.COMPILER_SOURCE, true), fJavaProject.getOption(JavaCore.COMPILER_COMPLIANCE, true), true);
 		scanner.setSource(codeSnippet.toCharArray());
 		int token;
 		try {
@@ -196,7 +195,8 @@ public class EvaluationSourceGenerator {
 				else if (count ==1 && (token == ITerminalSymbols.TokenNameLESS || token == ITerminalSymbols.TokenNameLBRACKET)){
 					int currentToken = token;
 					token = scanner.getNextToken();
-					if ( currentToken == ITerminalSymbols.TokenNameLESS && ( token == ITerminalSymbols.TokenNameIdentifier || (token >= ITerminalSymbols.TokenNameIntegerLiteral && token <= ITerminalSymbols.TokenNameStringLiteral))){
+					if ( currentToken == ITerminalSymbols.TokenNameLESS && ( token == ITerminalSymbols.TokenNameIdentifier
+							|| (token >= ITerminalSymbols.TokenNameIntegerLiteral && token <= ITerminalSymbols.TokenNameTextBlock))) {
 						token = scanner.getNextToken();
 						if (token == ITerminalSymbols.TokenNameEOF) {
 							return true;
@@ -210,10 +210,12 @@ public class EvaluationSourceGenerator {
 					if ( token == ITerminalSymbols.TokenNameEOF && currentToken == ITerminalSymbols.TokenNameRBRACKET ){
 						return true;
 					}
-					if ( currentToken == ITerminalSymbols.TokenNameGREATER && ( token == ITerminalSymbols.TokenNameIdentifier || (token >= ITerminalSymbols.TokenNameIntegerLiteral && token <= ITerminalSymbols.TokenNameStringLiteral))){
+					if ( currentToken == ITerminalSymbols.TokenNameGREATER && ( token == ITerminalSymbols.TokenNameIdentifier || (token >= ITerminalSymbols.TokenNameIntegerLiteral && token <= ITerminalSymbols.TokenNameTextBlock))){
 						token = scanner.getNextToken();
 						if (token == ITerminalSymbols.TokenNameEOF) {
 							return true;
+						} else if (token == ITerminalSymbols.TokenNameEQUAL) {
+							return false;
 						}
 					}
 					count = 3;
@@ -312,8 +314,7 @@ public class EvaluationSourceGenerator {
 	 */
 	public static Map<String, String> getCompilerOptions(IJavaProject project) {
 		Map<String, String> options = project.getOptions(true);
-		for (Iterator<String> iter = options.keySet().iterator(); iter.hasNext();) {
-			String key = iter.next();
+		for (String key : options.keySet()) {
 			String value = options.get(key);
 			if (JavaCore.ERROR.equals(value) || JavaCore.WARNING.equals(value) || JavaCore.INFO.equals(value)) {
 				options.put(key, JavaCore.IGNORE);

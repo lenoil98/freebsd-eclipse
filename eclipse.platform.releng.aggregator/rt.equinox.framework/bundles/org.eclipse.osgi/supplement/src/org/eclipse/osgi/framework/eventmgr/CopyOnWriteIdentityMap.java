@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2016 IBM Corporation and others.
+ * Copyright (c) 2003, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,16 +14,25 @@
 
 package org.eclipse.osgi.framework.eventmgr;
 
-import java.util.*;
+import static java.util.Objects.requireNonNull;
+
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * A copy-on-write identity map. Write operations result in copying the underlying data so that
  * simultaneous read operations are not affected.
  * This allows for safe, unsynchronized traversal.
- * 
+ *
  * <p>
  * Note: This class uses identity for key and value comparison, not equals.
- * 
+ *
  * @since 3.5
  */
 public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
@@ -34,7 +43,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	private static final Entry[] emptyArray = new Entry[0];
 
 	/**
-	 * The array of entries. This field is volatile so it can be 
+	 * The array of entries. This field is volatile so it can be
 	 * accessed from unsynchronized reader methods.
 	 */
 	private volatile Entry<K, V>[] entries;
@@ -61,21 +70,20 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	/* These methods modify the map and are synchronized. */
 
 	/**
-	 * Add a key, value pair to the map.
-	 * If the key object is already in the map, then its value is replaced with the new value.
-	 * Keys are compared using identity.
+	 * Add a key, value pair to the map. If the key object is already in the map,
+	 * then its value is replaced with the new value. Keys are compared using
+	 * identity.
 	 *
-	 * @param key The key object to be added to the list.
-	 * @param value The value object to be associated with the key.
-	 * This may be null.
+	 * @param key   The key object to be added to the list.
+	 * @param value The value object to be associated with the key. This may be
+	 *              null.
 	 * @return <code>null</code> if the specified key was newly added to the map.
-	 * Otherwise the previous value of the key.
-	 * @throws IllegalArgumentException If key is null.
+	 *         Otherwise the previous value of the key.
+	 * @throws NullPointerException If key is null.
 	 */
+	@Override
 	public synchronized V put(K key, V value) {
-		if (key == null) {
-			throw new IllegalArgumentException();
-		}
+		requireNonNull(key);
 
 		int size = entries.length;
 		for (int i = 0; i < size; i++) {
@@ -105,9 +113,10 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 	/**
 	 * Add all the entries from the specified map to this map.
-	 * 
+	 *
 	 * @param source The map whose entries are to be added to this map.
 	 */
+	@Override
 	public void putAll(Map<? extends K, ? extends V> source) {
 		int sourceSize = source.size();
 		if (sourceSize == 0) {
@@ -131,7 +140,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	/**
 	 * Add all the keys from the specified array to this map with the value
 	 * <code>null</code>.
-	 * 
+	 *
 	 * @param keys The array of keys to be added to this map.
 	 */
 	public <L extends K> void putAll(L[] keys) {
@@ -149,7 +158,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 	/**
 	 * Add all the entries to this map.
-	 * 
+	 *
 	 * @param toCopy Array of entries to add to this map.
 	 */
 	private synchronized void putAll(Entry<? extends K, ? extends V>[] toCopy) {
@@ -181,18 +190,17 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	}
 
 	/**
-	 * Remove a key from the map and returns the value associated with the key.
-	 * Key objects are compared using identity.
+	 * Remove a key from the map and returns the value associated with the key. Key
+	 * objects are compared using identity.
 	 *
 	 * @param key The key object to be removed from the map.
-	 * @return <code>null</code> if the key was not in the list. 
-	 * Otherwise, the value associated with the key.
-	 * @throws IllegalArgumentException If key is null.
+	 * @return <code>null</code> if the key was not in the list. Otherwise, the
+	 *         value associated with the key.
+	 * @throws NullPointerException If key is null.
 	 */
+	@Override
 	public synchronized V remove(Object key) {
-		if (key == null) {
-			throw new IllegalArgumentException();
-		}
+		requireNonNull(key);
 
 		int size = entries.length;
 		for (int i = 0; i < size; i++) {
@@ -227,8 +235,9 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 	/**
 	 * Remove all entries from the map.
-	 * 
+	 *
 	 */
+	@Override
 	public synchronized void clear() {
 		entries = empty();
 	}
@@ -255,60 +264,58 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 	/**
 	 * Is the map empty?
-	 * 
+	 *
 	 * @return <code>true</code> if the list is empty.
 	 */
+	@Override
 	public boolean isEmpty() {
 		return size() == 0;
 	}
 
 	/**
 	 * Return the number of entries in the map.
-	 * 
+	 *
 	 * @return The number of entries in the map.
 	 */
+	@Override
 	public int size() {
 		return entries().length;
 	}
 
 	/**
-	 * Return the value object for the specified key.
-	 * Keys are compared using identity.
-	 * 
+	 * Return the value object for the specified key. Keys are compared using
+	 * identity.
+	 *
 	 * @param key The key object.
 	 * @return The value object for the specified key.
-	 * @throws IllegalArgumentException If key is null.
+	 * @throws NullPointerException If key is null.
 	 */
+	@Override
 	public V get(Object key) {
-		if (key == null) {
-			throw new IllegalArgumentException();
-		}
+		requireNonNull(key);
 
-		Entry<K, V>[] e = entries();
-		for (int i = 0; i < e.length; i++) {
-			if (e[i].key == key) {
-				return e[i].value;
+		for (Entry<K, V> entry : entries()) {
+			if (entry.key == key) {
+				return entry.value;
 			}
 		}
 		return null;
 	}
 
 	/**
-	 * Check if the map contains the specified key.
-	 * Keys are compared using identity.
-	 * 
+	 * Check if the map contains the specified key. Keys are compared using
+	 * identity.
+	 *
 	 * @param key The key object.
 	 * @return <code>true</code> if the specified key is in the map.
-	 * @throws IllegalArgumentException If key is null.
+	 * @throws NullPointerException If key is null.
 	 */
+	@Override
 	public boolean containsKey(Object key) {
-		if (key == null) {
-			throw new IllegalArgumentException();
-		}
+		requireNonNull(key);
 
-		Entry<K, V>[] e = entries();
-		for (int i = 0; i < e.length; i++) {
-			if (e[i].key == key) {
+		for (Entry<K, V> entry : entries()) {
+			if (entry.key == key) {
 				return true;
 			}
 		}
@@ -318,14 +325,14 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	/**
 	 * Check if the map contains the specified value.
 	 * Values are compared using identity.
-	 * 
+	 *
 	 * @param value The value object.
 	 * @return <code>true</code> if the specified value is in the map.
 	 */
+	@Override
 	public boolean containsValue(Object value) {
-		Entry<K, V>[] e = entries();
-		for (int i = 0; i < e.length; i++) {
-			if (e[i].value == value) {
+		for (Entry<K, V> entry : entries()) {
+			if (entry.value == value) {
 				return true;
 			}
 		}
@@ -335,10 +342,11 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	/**
 	 * Returns a snapshot of the entries in this map.
 	 * Changes to the returned set or this map will not affect each other.
-	 * 
+	 *
 	 * @return A Set of Map.Entry for each entry in this map.
 	 * The entries returned by the set cannot be modified.
 	 */
+	@Override
 	public Set<Map.Entry<K, V>> entrySet() {
 		return new Snapshot<>(entries()).entrySet();
 	}
@@ -346,9 +354,10 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	/**
 	 * Returns a snapshot of the keys in this map.
 	 * Changes to the returned set or this map will not affect each other.
-	 * 
+	 *
 	 * @return A Set of the key objects in this map
 	 */
+	@Override
 	public Set<K> keySet() {
 		return new Snapshot<>(entries()).keySet();
 	}
@@ -356,9 +365,10 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 	/**
 	 * Returns a snapshot of the values in this map.
 	 * Changes to the returned set or this map will not affect each other.
-	 * 
+	 *
 	 * @return A Collection of the value objects in this map.
 	 */
+	@Override
 	public Collection<V> values() {
 		return new Snapshot<>(entries()).values();
 	}
@@ -380,34 +390,42 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 		/**
 		 * Constructor for map entry.
-		 * @param key Key object in entry. Used for uniqueness.
+		 * 
+		 * @param key   Key object in entry. Used for uniqueness.
 		 * @param value Value object stored with key object.
+		 * @throws NullPointerException If key is null.
 		 */
 		Entry(final K key, final V value) {
-			this.key = key;
+			this.key = requireNonNull(key);
 			this.value = value;
 		}
 
+		@Override
 		public K getKey() {
 			return key;
 		}
 
+		@Override
 		public V getValue() {
 			return value;
 		}
 
+		@Override
 		public V setValue(V value) {
 			throw new UnsupportedOperationException(); // entries cannot be modified.
 		}
 
+		@Override
 		public String toString() {
 			return key + "=" + value; //$NON-NLS-1$
 		}
 
+		@Override
 		public int hashCode() {
 			return System.identityHashCode(key) ^ System.identityHashCode(value);
 		}
 
+		@Override
 		public boolean equals(Object obj) {
 			if (obj == this) {
 				return true;
@@ -424,7 +442,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 
 	/**
 	 * A snapshot of the entries in the map. This snapshot used by
-	 * the map collection views. Changes made by the collection 
+	 * the map collection views. Changes made by the collection
 	 * views only mutate the snapshot and not the map. The collection
 	 * views only allow removal not addition.
 	 */
@@ -467,18 +485,19 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				super();
 			}
 
+			@Override
 			public Iterator<Map.Entry<K, V>> iterator() {
 				return new EntryIterator();
 			}
 
+			@Override
 			public int size() {
 				return entries().length;
 			}
 
+			@Override
 			public boolean remove(Object o) {
-				if (o == null) {
-					throw new IllegalArgumentException();
-				}
+				requireNonNull(o);
 
 				synchronized (Snapshot.this) {
 					int size = entries.length;
@@ -492,12 +511,13 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				return false;
 			}
 
+			@Override
 			public void clear() {
 				clearEntries();
 			}
 		}
 
-		/** 
+		/**
 		 * Entry set iterator over the snapshot.
 		 */
 		private final class EntryIterator extends SnapshotIterator<Map.Entry<K, V>> {
@@ -505,6 +525,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				super();
 			}
 
+			@Override
 			public Map.Entry<K, V> next() {
 				return nextEntry();
 			}
@@ -518,18 +539,19 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				super();
 			}
 
+			@Override
 			public Iterator<K> iterator() {
 				return new KeyIterator();
 			}
 
+			@Override
 			public int size() {
 				return entries().length;
 			}
 
+			@Override
 			public boolean remove(Object o) {
-				if (o == null) {
-					throw new IllegalArgumentException();
-				}
+				requireNonNull(o);
 
 				synchronized (Snapshot.this) {
 					int size = entries.length;
@@ -543,12 +565,13 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				return false;
 			}
 
+			@Override
 			public void clear() {
 				clearEntries();
 			}
 		}
 
-		/** 
+		/**
 		 * Key set iterator over the snapshot.
 		 */
 		private final class KeyIterator extends SnapshotIterator<K> {
@@ -556,6 +579,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				super();
 			}
 
+			@Override
 			public K next() {
 				return nextEntry().key;
 			}
@@ -569,18 +593,19 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				super();
 			}
 
+			@Override
 			public Iterator<V> iterator() {
 				return new ValueIterator();
 			}
 
+			@Override
 			public int size() {
 				return entries().length;
 			}
 
+			@Override
 			public boolean remove(Object o) {
-				if (o == null) {
-					throw new IllegalArgumentException();
-				}
+				requireNonNull(o);
 
 				synchronized (Snapshot.this) {
 					int size = entries.length;
@@ -594,12 +619,13 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				return false;
 			}
 
+			@Override
 			public void clear() {
 				clearEntries();
 			}
 		}
 
-		/** 
+		/**
 		 * Value collection iterator over the snapshot.
 		 */
 		private final class ValueIterator extends SnapshotIterator<V> {
@@ -607,12 +633,13 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				super();
 			}
 
+			@Override
 			public V next() {
 				return nextEntry().value;
 			}
 		}
 
-		/** 
+		/**
 		 * Base iterator class handling removal and concurrent modifications.
 		 */
 		private abstract class SnapshotIterator<E> implements Iterator<E> {
@@ -624,6 +651,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				cursor = 0;
 			}
 
+			@Override
 			public final boolean hasNext() {
 				return cursor < length;
 			}
@@ -639,6 +667,7 @@ public class CopyOnWriteIdentityMap<K, V> implements Map<K, V> {
 				return e[cursor++];
 			}
 
+			@Override
 			public final void remove() {
 				if (length != entries().length) {
 					throw new ConcurrentModificationException();

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,9 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Stephan Herrmann - contribution for bug 337868 - [compiler][model] incomplete support for package-info.java when using SearchableEnvironment
+ *     Pierre-Yves B. <pyvesdev@gmail.com> - Contributions for
+ *                              Bug 559618 - No compiler warning for import from same package
+ *                              Bug 560630 - No warning on unused import on class from same package
  *******************************************************************************/
 package org.eclipse.jdt.core.tests.model;
 
@@ -53,11 +56,12 @@ public CompilationUnitTests(String name) {
  */
 /*package*/ static final int JLS3_INTERNAL = AST.JLS3;
 
+@Override
 public void setUpSuite() throws Exception {
 	super.setUpSuite();
 
 	final String compliance = "1.5"; //$NON-NLS-1$
-	this.testProject = createJavaProject("P", new String[] {"src"}, new String[] {getExternalJCLPathString(compliance)}, "bin", compliance); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+	this.testProject = createJavaProject("P", new String[] {"src"}, new String[] {"JCL15_LIB"}, "bin", compliance); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	createFolder("/P/src/p");
 	createFile(
 		"/P/src/p/X.java",
@@ -130,11 +134,13 @@ static {
 public static Test suite() {
 	return buildModelTestSuite(CompilationUnitTests.class);
 }
+@Override
 protected void tearDown() throws Exception {
 	if (this.workingCopy != null)
 		this.workingCopy.discardWorkingCopy();
 	super.tearDown();
 }
+@Override
 public void tearDownSuite() throws Exception {
 	this.deleteProject("P");
 	super.tearDownSuite();
@@ -493,37 +499,37 @@ public void testDeprecatedFlag09() throws JavaModelException {
 }
 
 /*
- * Bug 337868 - [compiler][model] incomplete support for package-info.java when using SearchableEnvironment 
+ * Bug 337868 - [compiler][model] incomplete support for package-info.java when using SearchableEnvironment
  * Ensure that package level annotation is evaluated during AST creation.
  */
 public void testDeprecatedFlag10() throws CoreException {
 	try {
 		createFolder("/P/src/p2");
-	
+
 		createFile(
 				"/P/src/p2/package-info.java",
 				"@java.lang.Deprecated package p2;\n"
 			);
-		
+
 		// workaround for missing type in jclMin:
 		createFolder("/P/src/java/lang");
 		createFile(
 				"/P/src/java/lang/Deprecated.java",
 				"package java.lang;\n" +
-				"@Retention(RetentionPolicy.RUNTIME)\n" + 
-				"public @interface Deprecated {\n" + 
+				"@Retention(RetentionPolicy.RUNTIME)\n" +
+				"public @interface Deprecated {\n" +
 				"}\n"
 			);
-	
-		createFile("/P/src/p2/C.java", 
+
+		createFile("/P/src/p2/C.java",
 				"package p2;\n" +
 				"public class C {}\n");
-	
-		createFile("/P/src/p/D.java", 
+
+		createFile("/P/src/p/D.java",
 				"package p;\n" +
 				"public class D extends p2.C {}\n");
 		ICompilationUnit cuD = getCompilationUnit("/P/src/p/D.java");
-		
+
 		ASTParser parser = ASTParser.newParser(JLS3_INTERNAL);
 		parser.setProject(this.testProject);
 		parser.setSource(cuD);
@@ -540,8 +546,8 @@ public void testDeprecatedFlag10() throws CoreException {
 }
 
 /*
- * Bug 337868 - [compiler][model] incomplete support for package-info.java when using SearchableEnvironment 
- * Ensure that package level annotation is evaluated during AST creation. 
+ * Bug 337868 - [compiler][model] incomplete support for package-info.java when using SearchableEnvironment
+ * Ensure that package level annotation is evaluated during AST creation.
  * a working copy for package-info exists and must be used.
  */
 public void testDeprecatedFlag11() throws CoreException {
@@ -565,11 +571,11 @@ public void testDeprecatedFlag11() throws CoreException {
 				"public @interface Deprecated {\n" +
 				"}\n"
 			);
-	
+
 		createFile("/P/src/p2/C.java",
 				"package p2;\n" +
 				"public class C {}\n");
-	
+
 		createFile("/P/src/p/D.java",
 				"package p;\n" +
 				"public class D extends p2.C {}\n");
@@ -2428,6 +2434,63 @@ public void test120902() throws CoreException {
 	}
 }
 
+public void test543266() throws CoreException {
+	try {
+		String source =
+				"/**\r\n" +
+				"	 * enum A\r\n" +
+				"	 */\r\n" +
+				"	public /** V1 */ enum  /** V2 */ A  /** V3 */ {\r\n" +
+				"		/** A */\r\n" +
+				"		a /**/, /**/ //\r\n" +
+				"		/** B */\r\n" +
+				"		b,\r\n" +
+				"		/** C */\r\n" +
+				"		/*\r\n" +
+				"		 * \r\n" +
+				"		 */\r\n" +
+				"		/** Real C */\r\n" +
+				"		c\r\n" +
+				"	}";
+		createFile("/P/src/X.java", source);
+		final ICompilationUnit compilationUnit = getCompilationUnit("/P/src/X.java");
+
+		IType type = compilationUnit.getType("A");
+		final ISourceRange javadocRangeClass = type.getJavadocRange();
+		final int startClass = javadocRangeClass.getOffset();
+		final int endClass = javadocRangeClass.getLength() + startClass - 1;
+		String javadocSourceClass = source.substring(startClass, endClass);
+		assertTrue("Wrong javadoc", javadocSourceClass.indexOf("enum A") != -1);
+
+		IJavaElement[] children = type.getChildren();
+		for(IJavaElement child : children) {
+			final ISourceRange javadocRange = ((IMember) child).getJavadocRange();
+			final String elementName = child.getElementName();
+
+			if("a".equals(elementName)) {
+				final int start = javadocRange.getOffset();
+				final int end = javadocRange.getLength() + start - 1;
+				String javadocSource = source.substring(start, end);
+				assertTrue("Wrong javadoc", javadocSource.indexOf("A") != -1);
+			}
+			else if("b".equals(elementName)) {
+				final int start = javadocRange.getOffset();
+				final int end = javadocRange.getLength() + start - 1;
+				String javadocSource = source.substring(start, end);
+				assertTrue("Wrong javadoc", javadocSource.indexOf("B") != -1);
+			}
+			else if("c".equals(elementName)) {
+				final int start = javadocRange.getOffset();
+				final int end = javadocRange.getLength() + start - 1;
+				String javadocSource = source.substring(start, end);
+				assertTrue("Wrong javadoc", javadocSource.indexOf("Real C") != -1);
+			}
+		}
+	} finally {
+		deleteFile("/P/src/X.java");
+	}
+}
+
 public void testApplyEdit() throws CoreException {
 	try {
 		String source =
@@ -2508,9 +2571,9 @@ public void testApplyEdit3() throws CoreException {
 	});
 	this.workingCopy.createType("class Y {}", null, false, null);
 	assertSourceEquals(
-		"Unexpeted source", 
-		"public class X {}\n" + 
-		"\n" + 
+		"Unexpeted source",
+		"public class X {}\n" +
+		"\n" +
 		"class Y {}",
 		this.workingCopy.getSource());
 }
@@ -2562,9 +2625,9 @@ public void testBug246594() throws CoreException {
 	IType type = this.workingCopy.getType("Z");
 	ITypeParameter[] typeParameters = type.getTypeParameters();
 	assertStringsEqual("Type parameter signature", "T:QObject;:QI<-QT;>;\n", type.getTypeParameterSignatures());
-	assertStringsEqual("Type parameter bounds signatures", 
+	assertStringsEqual("Type parameter bounds signatures",
 					"QObject;\n" +
-					"QI<-QT;>;\n", 
+					"QI<-QT;>;\n",
 					typeParameters[0].getBoundsSignatures());
 }
 public void testBug246594a() throws CoreException {
@@ -2577,29 +2640,29 @@ public void testBug246594a() throws CoreException {
 		"public interface I<T> {}");
 	IMethod[] methods = this.workingCopy.getType("Collection").getMethods();//<T:TE;>
 	ITypeParameter[] typeParameters = methods[1].getTypeParameters();
-	assertStringsEqual("Type parameter bounds signatures", 
+	assertStringsEqual("Type parameter bounds signatures",
 			"QE;\n" +
-			"QI<-QString;>;\n", 
+			"QI<-QString;>;\n",
 			typeParameters[0].getBoundsSignatures());
-	
+
 }
 public void testBug495598_001() throws CoreException {
 	try {
 		createFolder("/P/src/a/b/C");
 		createFile("/P/src/a/b/C/readme.txt", "This is not a Java file");
-	
+
 		createFile(
 				"/P/src/a/b/C.java",
 				"package a.b;\n" +
 				"public class C{};\n"
 			);
-		
-		createFile("/P/src/X.java", 
+
+		createFile("/P/src/X.java",
 				"import a.b.C;\n" +
 				"public class X {}\n");
 		ICompilationUnit cuD = getCompilationUnit("/P/src/X.java");
-		
-		ASTParser parser = ASTParser.newParser(AST_INTERNAL_JLS11);
+
+		ASTParser parser = ASTParser.newParser(AST_INTERNAL_LATEST);
 		parser.setProject(this.testProject);
 		parser.setSource(cuD);
 		parser.setResolveBindings(true);
@@ -2619,7 +2682,7 @@ public void testBug526615() throws CoreException {
 		createFile("/P/src/test1/B.java",
 				"package test1;\n" +
 				"public abstract class B {}");
-	
+
 		StringBuffer buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("/**\n");
@@ -2633,7 +2696,7 @@ public void testBug526615() throws CoreException {
 		buf.append("}\n");
 		String contents= buf.toString();
 		createFile("/P/src/test1/A.java", contents);
-	
+
 		ICompilationUnit cuA= getCompilationUnit("/P/src/test1/A.java");
 		IType typeA = cuA.getTypes()[0];
 		ISourceRange rangeA = typeA.getSourceRange();
@@ -2641,5 +2704,118 @@ public void testBug526615() throws CoreException {
 	} finally {
 		deleteFolder("/P/src/test1");
 	}
+}
+public void testBug559618_1() throws CoreException {
+	try {
+			createFile("/P/src/p/C.java",
+					"package p;\n" +
+					"public class C{};\n");
+
+			createFile("/P/src/p/D.java",
+					"package p;\n" +
+					"import p.C;\n" +
+					"public class D {\n" +
+					"  C getC() {\n" +
+					"    return null;\n" +
+					"  }\n" +
+					"}\n");
+			ICompilationUnit cuD = getCompilationUnit("/P/src/p/D.java");
+
+			ASTParser parser = ASTParser.newParser(AST_INTERNAL_LATEST);
+			parser.setProject(this.testProject);
+			parser.setSource(cuD);
+			parser.setResolveBindings(true);
+			org.eclipse.jdt.core.dom.CompilationUnit cuAST = (org.eclipse.jdt.core.dom.CompilationUnit) parser.createAST(null);
+			IProblem[] problems = cuAST.getProblems();
+			assertEquals("Should have 1 problem", 1, problems.length);
+			assertEquals("Should have only an unused warning", "The import p.C is never used", problems[0].getMessage());
+	} finally {
+			deleteFile("/P/src/p/C.java");
+			deleteFile("/P/src/p/D.java");
+	}
+}
+public void testBug559618_2() throws CoreException { // Same as testBug559618_1, but with wildcard import.
+	try {
+			createFile("/P/src/p/C.java",
+					"package p;\n" +
+					"public class C{};\n");
+
+			createFile("/P/src/p/D.java",
+					"package p;\n" +
+					"import p.*;\n" +
+					"public class D {\n" +
+					"  C getC() {\n" +
+					"    return null;\n" +
+					"  }\n" +
+					"}\n");
+			ICompilationUnit cuD = getCompilationUnit("/P/src/p/D.java");
+
+			ASTParser parser = ASTParser.newParser(AST_INTERNAL_LATEST);
+			parser.setProject(this.testProject);
+			parser.setSource(cuD);
+			parser.setResolveBindings(true);
+			org.eclipse.jdt.core.dom.CompilationUnit cuAST = (org.eclipse.jdt.core.dom.CompilationUnit) parser.createAST(null);
+			IProblem[] problems = cuAST.getProblems();
+			assertEquals("Should have 1 problem", 1, problems.length);
+			assertEquals("Should have only an unused warning", "The import p is never used", problems[0].getMessage());
+	} finally {
+			deleteFile("/P/src/p/C.java");
+			deleteFile("/P/src/p/D.java");
+	}
+}
+public void testBug559618_3() throws CoreException { // Nested class imports must not be flagged as unused.
+	try {
+		createFile("/P/src/p/C.java",
+				"package p;\n" +
+				"public class C{\n" +
+				"  public class C1{};\n" +
+				"};\n");
+
+		createFile("/P/src/p/D.java",
+				"package p;\n" +
+				"import p.C.C1;\n" +
+				"public class D {\n" +
+				"  C1 getC1() {\n" +
+				"    return null;\n" +
+				"  }\n" +
+				"}\n");
+		ICompilationUnit cuD = getCompilationUnit("/P/src/p/D.java");
+
+		ASTParser parser = ASTParser.newParser(AST_INTERNAL_LATEST);
+		parser.setProject(this.testProject);
+		parser.setSource(cuD);
+		parser.setResolveBindings(true);
+		org.eclipse.jdt.core.dom.CompilationUnit cuAST = (org.eclipse.jdt.core.dom.CompilationUnit) parser.createAST(null);
+		IProblem[] problems = cuAST.getProblems();
+		assertEquals("Should have no problems", 0, problems.length);
+	} finally {
+		deleteFile("/P/src/p/C.java");
+		deleteFile("/P/src/p/D.java");
+	}
+}
+public void testBug560630() throws CoreException {
+  try {
+          createFile("/P/src/p/C.java",
+                  "package p;\n" +
+                  "public class C{};\n");
+
+          createFile("/P/src/p/D.java",
+                  "package p;\n" +
+                  "import p.C;\n" +
+                  "public class D extends C {}\n");
+          ICompilationUnit cuD = getCompilationUnit("/P/src/p/D.java");
+
+          ASTParser parser = ASTParser.newParser(AST_INTERNAL_LATEST);
+          parser.setProject(this.testProject);
+          parser.setSource(cuD);
+          parser.setResolveBindings(true);
+          org.eclipse.jdt.core.dom.CompilationUnit cuAST = (org.eclipse.jdt.core.dom.CompilationUnit) parser.createAST(null);
+          IProblem[] problems = cuAST.getProblems();
+          assertEquals("Should have 1 problem", 1, problems.length);
+          assertEquals("Should have only an unused warning", "The import p.C is never used", problems[0].getMessage());
+  } finally {
+          deleteFile("/P/src/p/C.java");
+          deleteFile("/P/src/p/D.java");
+  }
 }
 }

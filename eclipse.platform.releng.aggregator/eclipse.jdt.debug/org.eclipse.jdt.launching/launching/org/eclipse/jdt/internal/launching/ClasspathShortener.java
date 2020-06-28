@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 Cedric Chabanois and others.
+ * Copyright (c) 2018, 2019 Cedric Chabanois and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -354,6 +354,7 @@ public class ClasspathShortener {
 			manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0"); //$NON-NLS-1$
 			manifest.getMainAttributes().put(Attributes.Name.CLASS_PATH, manifestClasspath.toString());
 			try (JarOutputStream target = new JarOutputStream(new FileOutputStream(jarFile), manifest)) {
+				target.hashCode(); // avoid warning that target is unused
 			}
 			return jarFile;
 		} catch (IOException e) {
@@ -383,7 +384,7 @@ public class ClasspathShortener {
 			File classPathFile = new File(processTempFilesDir, String.format(LAUNCH_TEMP_FILE_PREFIX
 					+ "%s-classpath-arg-%s.txt", getLaunchConfigurationName(), timeStamp)); //$NON-NLS-1$
 
-			byte[] bytes = ("-classpath " + classpath).getBytes(StandardCharsets.UTF_8); //$NON-NLS-1$
+			byte[] bytes = ("-classpath " + quoteWindowsPath(classpath)).getBytes(StandardCharsets.UTF_8); //$NON-NLS-1$
 
 			Files.write(classPathFile.toPath(), bytes);
 			return classPathFile;
@@ -398,7 +399,7 @@ public class ClasspathShortener {
 			File modulePathFile = new File(processTempFilesDir, String.format(LAUNCH_TEMP_FILE_PREFIX
 					+ "%s-module-path-arg-%s.txt", getLaunchConfigurationName(), timeStamp)); //$NON-NLS-1$
 
-			byte[] bytes = ("--module-path " + modulePath).getBytes(StandardCharsets.UTF_8); //$NON-NLS-1$
+			byte[] bytes = ("--module-path " + quoteWindowsPath(modulePath)).getBytes(StandardCharsets.UTF_8); //$NON-NLS-1$
 
 			Files.write(modulePathFile.toPath(), bytes);
 			return modulePathFile;
@@ -479,6 +480,27 @@ public class ClasspathShortener {
 			}
 		}
 		return -1;
+	}
+
+	public String quoteWindowsPath(String path) {
+		if (os.equals(Platform.OS_WIN32)) {
+			int length = path.length();
+			StringBuilder newPath = new StringBuilder(length);
+			boolean insideQuote = false;
+			for (int i = 0; i < length; i++) {
+				char c = path.charAt(i);
+				if (c == ' ' && !insideQuote) {
+					newPath.append('"');
+					insideQuote = true;
+				} else if (insideQuote) {
+					newPath.append('"');
+					insideQuote = false;
+				}
+				newPath.append(c);
+			}
+			return newPath.toString();
+		}
+		return path;
 	}
 
 }

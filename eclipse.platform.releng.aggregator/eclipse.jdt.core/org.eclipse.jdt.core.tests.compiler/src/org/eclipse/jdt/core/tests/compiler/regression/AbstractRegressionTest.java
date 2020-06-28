@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -35,6 +35,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -93,6 +95,7 @@ import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
+import org.eclipse.jdt.internal.compiler.util.SuffixConstants;
 import org.eclipse.jdt.internal.core.search.JavaSearchParticipant;
 import org.eclipse.jdt.internal.core.search.indexing.BinaryIndexer;
 import org.eclipse.jdt.internal.core.util.Messages;
@@ -102,7 +105,7 @@ import org.osgi.framework.Bundle;
 public abstract class AbstractRegressionTest extends AbstractCompilerTest implements StopableTestCase {
 
 	static final String[] env = System.getenv().entrySet().stream()
-		.filter(e -> !"JAVA_TOOL_OPTIONS".equals(e.getKey()))
+		.filter(e -> !"JAVA_TOOL_OPTIONS".equals(e.getKey()) && !"_JAVA_OPTIONS".equals(e.getKey()))
 		.map(e -> e.getKey() + "=" + e.getValue())
 		.toArray(String[]::new);
 
@@ -298,6 +301,12 @@ static class JavacCompiler {
 			return JavaCore.VERSION_10;
 		} else if(rawVersion.startsWith("11")) {
 			return JavaCore.VERSION_11;
+		} else if(rawVersion.startsWith("12")) {
+			return JavaCore.VERSION_12;
+		} else if(rawVersion.startsWith("13")) {
+			return JavaCore.VERSION_13;
+		} else if(rawVersion.startsWith("14")) {
+			return JavaCore.VERSION_14;
 		} else {
 			throw new RuntimeException("unknown javac version: " + rawVersion);
 		}
@@ -374,6 +383,12 @@ static class JavacCompiler {
 			if ("1.8.0_182".equals(rawVersion)) {
 				return 2500;
 			}
+			if ("1.8.0_202".equals(rawVersion)) {
+				return 2600;
+			}
+			if ("1.8.0_212".equals(rawVersion)) {
+				return 2700;
+			}
 		}
 		if (version == JavaCore.VERSION_9) {
 			if ("9".equals(rawVersion)) {
@@ -405,6 +420,45 @@ static class JavacCompiler {
 				return 0100;
 			}
 			if ("11.0.2".equals(rawVersion)) {
+				return 0200;
+			}
+		}
+		if (version == JavaCore.VERSION_12) {
+			if ("12".equals(rawVersion)) {
+				return 0000;
+			}
+			if ("12.0.1".equals(rawVersion)) {
+				return 0100;
+			}
+			if ("12.0.2".equals(rawVersion)) {
+				return 0200;
+			}
+		}
+		if (version == JavaCore.VERSION_13) {
+			if ("13-ea".equals(rawVersion)) {
+				return 0000;
+			}
+			if ("13".equals(rawVersion)) {
+				return 0000;
+			}
+			if ("13.0.1".equals(rawVersion)) {
+				return 0100;
+			}
+			if ("13.0.2".equals(rawVersion)) {
+				return 0200;
+			}
+		}
+		if (version == JavaCore.VERSION_14) {
+			if ("14-ea".equals(rawVersion)) {
+				return 0000;
+			}
+			if ("14".equals(rawVersion)) {
+				return 0000;
+			}
+			if ("14.0.1".equals(rawVersion)) {
+				return 0100;
+			}
+			if ("14.0.2".equals(rawVersion)) {
 				return 0200;
 			}
 		}
@@ -528,6 +582,7 @@ static class JavaRuntime {
 protected static class JavacTestOptions {
 	static final JavacTestOptions DEFAULT = new JavacTestOptions();
 	static final JavacTestOptions SKIP = new JavacTestOptions() {
+		@Override
 		boolean skip(JavacCompiler compiler) {
 			return true;
 		}
@@ -541,6 +596,38 @@ protected static class JavacTestOptions {
 			options.setCompilerOptions("-source 1."+release+" -target 1."+release);
 		return options;
 	}
+	@java.lang.SuppressWarnings("synthetic-access")
+	static JavacTestOptions forRelease(String release, String additionalOptions) {
+		JavacTestOptions options = new JavacTestOptions(Long.parseLong(release));
+		String result = isJRE9Plus ? "-release "+release : "-source 1."+release+" -target 1."+release;
+		if (additionalOptions != null)
+			result = result + " " + additionalOptions;
+		options.setCompilerOptions(result);
+		return options;
+	}
+	@java.lang.SuppressWarnings("synthetic-access")
+	static JavacTestOptions forReleaseWithPreview(String release) {
+		JavacTestOptions options = new JavacTestOptions(Long.parseLong(release));
+		if (isJRE9Plus)
+			options.setCompilerOptions("--release "+release+" --enable-preview -Xlint:-preview");
+		else
+			throw new IllegalArgumentException("preview not supported at release "+release);
+		return options;
+	}
+	@java.lang.SuppressWarnings("synthetic-access")
+	static JavacTestOptions forReleaseWithPreview(String release, String additionalOptions) {
+		JavacTestOptions options = new JavacTestOptions(Long.parseLong(release));
+		if (isJRE9Plus) {
+			String result = "--release "+release+" --enable-preview -Xlint:-preview";
+			if (additionalOptions != null)
+				result = result + " " + additionalOptions;
+			options.setCompilerOptions(result);
+
+		}
+		else
+			throw new IllegalArgumentException("preview not supported at release "+release);
+		return options;
+	}
 	public static class SuppressWarnings extends JavacTestOptions {
 		public SuppressWarnings(String token) {
 			setCompilerOptions("-Xlint:-"+token);
@@ -552,6 +639,7 @@ protected static class JavacTestOptions {
 	// however, these manipulations are not reflected in the javac output
 	// directory (yet); skipping until we fix this
 	static final JavacTestOptions SKIP_UNTIL_FRAMEWORK_FIX = new JavacTestOptions() {
+		@Override
 		boolean skip(JavacCompiler compiler) {
 			return true;
 		}
@@ -598,6 +686,7 @@ protected static class JavacTestOptions {
 		Excuse(int mismatchType) {
 			this.mismatchType = mismatchType;
 		}
+		@Override
 		Excuse excuseFor(JavacCompiler compiler) {
 			return this;
 		}
@@ -638,12 +727,14 @@ protected static class JavacTestOptions {
 		public static EclipseHasABug
 			EclipseBug159851 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=159851
 				new EclipseHasABug(MismatchType.JavacErrorsEclipseNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance < ClassFileConstants.JDK1_7 ? this : null;
 					}
 				} : null,
 			EclipseBug177715 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=177715
 				new EclipseHasABug(MismatchType.JavacErrorsEclipseNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance < ClassFileConstants.JDK1_8 ? this : null; // in 1.8 rejected by both compilers
 					}
@@ -658,30 +749,35 @@ protected static class JavacTestOptions {
 				new EclipseHasABug(MismatchType.StandardOutputMismatch) : null,
 			EclipseBug236217 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=236217
 				new EclipseHasABug(MismatchType.JavacErrorsEclipseNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance < ClassFileConstants.JDK1_8 ? this : null; // in 1.8 accepted by both compilers
 					}
 				} : null,
 			EclipseBug236236 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=236236
 				new EclipseHasABug(MismatchType.EclipseErrorsJavacNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance > ClassFileConstants.JDK1_5 ? this : null;
 					}
 				}: null,
 			EclipseBug236242 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=236242
 				new EclipseHasABug(MismatchType.EclipseErrorsJavacWarnings) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance == ClassFileConstants.JDK1_7 ? this : null;
 					}
 				}: null,
 			EclipseBug236243 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=236243
 				new EclipseHasABug(MismatchType.EclipseErrorsJavacNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance > ClassFileConstants.JDK1_6 ? this : null;
 					}
 				}: null,
 			EclipseBug236379 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=236379
 				new EclipseHasABug(MismatchType.EclipseWarningsJavacNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance > ClassFileConstants.JDK1_5 ? null : this;
 					}
@@ -718,6 +814,7 @@ protected static class JavacTestOptions {
 				new EclipseJustification(MismatchType.EclipseErrorsJavacNone) : null,
 			EclipseBug83902 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=83902
 				new EclipseJustification(MismatchType.EclipseWarningsJavacNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance > ClassFileConstants.JDK1_5 ? this : null;
 					}
@@ -726,6 +823,7 @@ protected static class JavacTestOptions {
 				new EclipseJustification(MismatchType.JavacErrorsEclipseWarnings) : null,
 			EclipseBug95021 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=95021
 				new EclipseJustification(MismatchType.JavacErrorsEclipseNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance == ClassFileConstants.JDK1_7 ? this : null;
 					}
@@ -733,6 +831,7 @@ protected static class JavacTestOptions {
 				} : null,
 			EclipseBug126712 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=126712 & http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6342411
 				new EclipseJustification(MismatchType.StandardOutputMismatch) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance > ClassFileConstants.JDK1_5 ? this : null;
 					}
@@ -742,12 +841,14 @@ protected static class JavacTestOptions {
 				new EclipseJustification(MismatchType.JavacErrorsEclipseNone) : null,
 			EclipseBug151275 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=151275
 				new EclipseJustification(MismatchType.JavacErrorsEclipseNone) {
-					Excuse excuseFor(JavacCompiler compiler) { 
+					@Override
+					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance < ClassFileConstants.JDK1_7 ? this : null;
 					}
 				} : null,
 			EclipseBug159214 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=159214
 				new EclipseJustification(MismatchType.EclipseErrorsJavacNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance == ClassFileConstants.JDK1_6 ? this : null;
 					}
@@ -755,6 +856,7 @@ protected static class JavacTestOptions {
 				} : null,
 			EclipseBug169017 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=169017
 				new EclipseJustification(MismatchType.JavacErrorsEclipseNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance > ClassFileConstants.JDK1_5 ? this : null;
 					}
@@ -764,6 +866,7 @@ protected static class JavacTestOptions {
 				new EclipseJustification(MismatchType.EclipseErrorsJavacWarnings) : null,
 			EclipseBug218677 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=218677
 				new EclipseJustification(MismatchType.EclipseErrorsJavacNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance > ClassFileConstants.JDK1_6 ? this : null;
 					}
@@ -771,6 +874,7 @@ protected static class JavacTestOptions {
 				} : null,
 			EclipseBug234815 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=234815
 				new EclipseJustification(MismatchType.JavacErrorsEclipseNone) {
+					@Override
 					Excuse excuseFor(JavacCompiler compiler) {
 						return compiler.compliance < ClassFileConstants.JDK1_7 ? this : null;
 					}
@@ -780,11 +884,19 @@ protected static class JavacTestOptions {
 			EclipseBug235546 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=235546
 				new EclipseJustification(MismatchType.JavacErrorsEclipseNone) : null,
 			EclipseBug449063 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=449063
-					 new EclipseJustification(MismatchType.StandardOutputMismatch) : null;
+					 new EclipseJustification(MismatchType.StandardOutputMismatch) : null,
+			EclipseBug561549 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=561549
+					 new EclipseJustification(MismatchType.EclipseErrorsJavacNone) {
+						@Override
+						Excuse excuseFor(JavacCompiler compiler) {
+							return compiler.compliance > ClassFileConstants.JDK9 ? this : null;
+						}
+					 } : null;
 		public static final EclipseJustification
 			EclipseJustification0001 = RUN_JAVAC ?
 					new EclipseJustification(MismatchType.EclipseErrorsJavacNone) {
-						Excuse excuseFor(JavacCompiler compiler) { 
+						@Override
+						Excuse excuseFor(JavacCompiler compiler) {
 							return compiler.compliance < ClassFileConstants.JDK1_7 ? this : null;
 						}
 					} : null;
@@ -816,6 +928,7 @@ protected static class JavacTestOptions {
 			this(mismatchType, pivotCompliance, pivotMinor);
 			this.isIntermittent = intermittent;
 		}
+		@Override
 		Excuse excuseFor(JavacCompiler compiler) {
 			if (this.minorsFixed != null) {
 				if (compiler.compliance == ClassFileConstants.JDK1_8) {
@@ -878,6 +991,7 @@ protected static class JavacTestOptions {
 			JavacBug6400189 = RUN_JAVAC ? // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6400189 & https://bugs.eclipse.org/bugs/show_bug.cgi?id=106744 & https://bugs.eclipse.org/bugs/show_bug.cgi?id=167952
 				new JavacHasABug(
 					MismatchType.EclipseErrorsJavacNone) {
+						@Override
 						Excuse excuseFor(JavacCompiler compiler) {
 							return compiler.compliance == ClassFileConstants.JDK1_6 ? this : null;
 						}
@@ -893,6 +1007,7 @@ protected static class JavacTestOptions {
 			JavacBug6569404 = RUN_JAVAC ? // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6569404
 				new JavacHasABug(
 					MismatchType.JavacErrorsEclipseNone) {
+						@Override
 						Excuse excuseFor(JavacCompiler compiler) {
 							// present only in javac6 between 1.6.0_10_b08 and EOL
 							return (compiler.compliance == ClassFileConstants.JDK1_6 && compiler.minor >= 10) ? this : null;
@@ -921,7 +1036,17 @@ protected static class JavacTestOptions {
 			JavacBug6337964 = RUN_JAVAC ? // https://bugs.eclipse.org/bugs/show_bug.cgi?id=112433
 					new JavacHasABug(MismatchType.JavacErrorsEclipseNone, ClassFileConstants.JDK1_6, 1045/*guessed*/, true) : null,
 			JavacBug8144832 = RUN_JAVAC ? // https://bugs.openjdk.java.net/browse/JDK-8144832
-					new JavacHasABug(MismatchType.JavacErrorsEclipseNone, ClassFileConstants.JDK9, 0000) : null;
+					new JavacHasABug(MismatchType.JavacErrorsEclipseNone, ClassFileConstants.JDK9, 0000) : null,
+			JavacBug8179483_switchExpression = RUN_JAVAC ? // https://bugs.openjdk.java.net/browse/JDK-8179483
+					new JavacBug8179483(" --release 13 --enable-preview -Xlint:-preview") : null,
+			JavacBug8221413_switchExpression = RUN_JAVAC ? // https://bugs.openjdk.java.net/browse/JDK-8221413
+					new JavacBug8221413(" --release 12 --enable-preview -Xlint:-preview") : null,
+			JavacBug8226510_switchExpression = RUN_JAVAC ? // https://bugs.openjdk.java.net/browse/JDK-8226510
+					new JavacBug8226510(" --release 12 --enable-preview -Xlint:-preview") : null,
+			JavacBug8231436 = RUN_JAVAC ? // https://bugs.openjdk.java.net/browse/JDK-8231436 to implement https://bugs.openjdk.java.net/browse/JDK-8231435
+				    new JavacHasABug(MismatchType.JavacErrorsEclipseNone) : null,
+			JavacBug8231436_EclipseWarns = RUN_JAVAC ? // https://bugs.openjdk.java.net/browse/JDK-8231436 to implement https://bugs.openjdk.java.net/browse/JDK-8231435
+				    new JavacHasABug(MismatchType.JavacErrorsEclipseWarnings) : null;
 
 		// bugs that have been fixed but that we've not identified
 		public static JavacHasABug
@@ -949,11 +1074,60 @@ protected static class JavacTestOptions {
 			JavacThrowsAnExceptionForJava_1_5_0_16 = RUN_JAVAC ?
 					new JavacHasABug(
 						MismatchType.JavacErrorsEclipseNone) {
+							@Override
 							Excuse excuseFor(JavacCompiler compiler) {
 								return compiler.compliance != ClassFileConstants.JDK1_5 ||
 										compiler.minor != 1600 ? null : this;
 							}
+					}: null,
+			JavacThrowsAnExceptionForJava_since9_EclipseWarns = RUN_JAVAC ?
+					new JavacHasABug(
+						MismatchType.JavacErrorsEclipseWarnings) {
+							@Override
+							Excuse excuseFor(JavacCompiler compiler) {
+								return compiler.compliance < ClassFileConstants.JDK9 ? null : this;
+							}
 					}: null;
+		public static JavacHasABug
+				NoWarningForMissingJavadocTag = RUN_JAVAC ?
+						new JavacHasABug(MismatchType.EclipseErrorsJavacNone)
+						: null,
+				NoWarningForDuplicateJavadocTag = RUN_JAVAC ?
+						new JavacHasABug(MismatchType.EclipseErrorsJavacNone)
+						: null;
+	}
+	public static class JavacBug8179483 extends JavacHasABug {
+		String extraJavacOptions;
+		public JavacBug8179483(String extraJavacOptions) {
+			super(MismatchType.EclipseErrorsJavacWarnings);
+			this.extraJavacOptions = extraJavacOptions;
+		}
+		@Override
+		String getCompilerOptions() {
+			return super.getCompilerOptions() + this.extraJavacOptions;
+		}
+	}
+	public static class JavacBug8221413 extends JavacHasABug {
+		String extraJavacOptions;
+		public JavacBug8221413(String extraJavacOptions) {
+			super(MismatchType.JavacErrorsEclipseNone);
+			this.extraJavacOptions = extraJavacOptions;
+		}
+		@Override
+		String getCompilerOptions() {
+			return super.getCompilerOptions() + this.extraJavacOptions;
+		}
+	}
+	public static class JavacBug8226510 extends JavacHasABug {
+		String extraJavacOptions;
+		public JavacBug8226510(String extraJavacOptions) {
+			super(MismatchType.EclipseErrorsJavacWarnings);
+			this.extraJavacOptions = extraJavacOptions;
+		}
+		@Override
+		String getCompilerOptions() {
+			return super.getCompilerOptions() + this.extraJavacOptions;
+		}
 	}
 }
 
@@ -977,6 +1151,7 @@ protected static class JavacTestOptions {
 			this.buffer = buffer;
 		}
 
+		@Override
 		public void run() {
 			try {
 				BufferedReader reader = new BufferedReader(new InputStreamReader(this.inputStream));
@@ -1027,6 +1202,7 @@ protected static class JavacTestOptions {
 	public final static String MODULE_INFO_NAME = new String(TypeConstants.MODULE_INFO_NAME);
 
 	public static boolean SHIFT = false;
+	public static String PREVIEW_ALLOWED_LEVEL = JavaCore.VERSION_14;
 
 	protected static final String SOURCE_DIRECTORY = Util.getOutputDirectory()  + File.separator + "source";
 
@@ -1037,6 +1213,9 @@ protected static class JavacTestOptions {
 	protected boolean shouldSwallowCaptureId;
 	public AbstractRegressionTest(String name) {
 		super(name);
+	}
+	protected boolean checkPreviewAllowed() {
+		return this.complianceLevel == ClassFileConstants.JDK14;
 	}
 	protected void checkClassFile(String className, String source, String expectedOutput) throws ClassFormatException, IOException {
 		this.checkClassFile("", className, source, expectedOutput, ClassFileBytesDisassembler.SYSTEM);
@@ -1150,7 +1329,7 @@ protected static class JavacTestOptions {
 			int end = index + Messages.classformat_classformatexception.length();
 			fail("ClassFormatException swallowed in Disassembler:\n..." + result.substring(start, end));
 		}
-		
+
 		FileInputStream stream = null;
 		try {
 			stream = new FileInputStream(classFile);
@@ -1432,6 +1611,7 @@ protected static class JavacTestOptions {
 		);
 		return classLibs;
 	}
+	@Override
 	protected Map<String, String> getCompilerOptions() {
 		Map<String, String> defaultOptions = super.getCompilerOptions();
 		defaultOptions.put(CompilerOptions.OPTION_LocalVariableAttribute, CompilerOptions.GENERATE);
@@ -1521,6 +1701,7 @@ protected static class JavacTestOptions {
 		return Util.compilationUnits(testFiles);
 	}
 
+	@Override
 	public void initialize(CompilerTestSetup setUp) {
 		super.initialize(setUp);
 		if (setUp instanceof RegressionTestSetup) {
@@ -1696,7 +1877,7 @@ protected static class JavacTestOptions {
 			skipJavac ? JavacTestOptions.SKIP :
 				javacTestOptions != null ? javacTestOptions : JavacTestOptions.DEFAULT /* default javac test options */);
 	}
-	protected void runConformTest(String[] testFiles, Map customOptions) {
+	protected void runConformTest(String[] testFiles, Map<String, String> customOptions) {
 		runTest(
 			// test directory preparation
 			true /* flush output directory */,
@@ -1718,7 +1899,33 @@ protected static class JavacTestOptions {
 			// javac options
 			JavacTestOptions.DEFAULT /* default javac test options */);
 	}
-	protected void runConformTest(String[] testFiles, String expectedOutput, Map customOptions) {
+	protected void runConformTest(String[] testFiles, String expectedOutput, Map<String, String> customOptions) {
+		runConformTest(testFiles, expectedOutput, customOptions, null);
+	}
+	protected void runConformTest(String[] testFiles, String expectedOutput, Map<String, String> customOptions, String[] vmArguments, Charset charset) {
+		runTest(
+				// test directory preparation
+				true /* flush output directory */,
+				testFiles /* test files */,
+				// compiler options
+				null /* no class libraries */,
+				customOptions /* no custom options */,
+				false /* do not perform statements recovery */,
+				null /* no custom requestor */,
+				// compiler results
+				false /* expecting no compiler errors */,
+				null /* do not check compiler log */,
+				// runtime options
+				false /* do not force execution */,
+				vmArguments /* no vm arguments */,
+				// runtime results
+				expectedOutput /* expected output string */,
+				null /* do not check error string */,
+				// javac options
+				JavacTestOptions.DEFAULT /* default javac test options */,
+				charset);
+	}
+	protected void runConformTest(String[] testFiles, String expectedOutput, Map<String, String> customOptions, String[] vmArguments, JavacTestOptions javacOptions) {
 		runTest(
 			// test directory preparation
 			true /* flush output directory */,
@@ -1733,7 +1940,29 @@ protected static class JavacTestOptions {
 			null /* do not check compiler log */,
 			// runtime options
 			false /* do not force execution */,
-			null /* no vm arguments */,
+			vmArguments /* no vm arguments */,
+			// runtime results
+			expectedOutput /* expected output string */,
+			null /* do not check error string */,
+			// javac options
+			javacOptions);
+	}
+	protected void runConformTest(String[] testFiles, String expectedOutput, Map<String, String> customOptions, String[] vmArguments) {
+		runTest(
+			// test directory preparation
+			true /* flush output directory */,
+			testFiles /* test files */,
+			// compiler options
+			null /* no class libraries */,
+			customOptions /* no custom options */,
+			false /* do not perform statements recovery */,
+			null /* no custom requestor */,
+			// compiler results
+			false /* expecting no compiler errors */,
+			null /* do not check compiler log */,
+			// runtime options
+			false /* do not force execution */,
+			vmArguments /* no vm arguments */,
 			// runtime results
 			expectedOutput /* expected output string */,
 			null /* do not check error string */,
@@ -1762,7 +1991,8 @@ protected static class JavacTestOptions {
 				null,
 				null,
 				expectedSuccessOutputString,
-				JavacTestOptions.DEFAULT);
+				JavacTestOptions.DEFAULT,
+				Charset.defaultCharset());
 	}
 
 	protected void runConformTest(
@@ -1799,7 +2029,7 @@ protected static class JavacTestOptions {
 		String[] classLibraries,
 		boolean shouldFlushOutputDirectory,
 		String[] vmArguments,
-		Map customOptions,
+		Map<String, String> customOptions,
 		ICompilerRequestor customRequestor) {
 		runTest(
 	 		// test directory preparation
@@ -1834,14 +2064,14 @@ protected static class JavacTestOptions {
 		ICompilerRequestor clientRequestor,
 		boolean skipJavac) {
 		runConformTest(
-				testFiles, 
-				expectedSuccessOutputString, 
-				classLib, 
-				shouldFlushOutputDirectory, 
-				vmArguments, 
-				customOptions, 
-				clientRequestor, 
-				skipJavac, 
+				testFiles,
+				expectedSuccessOutputString,
+				classLib,
+				shouldFlushOutputDirectory,
+				vmArguments,
+				customOptions,
+				clientRequestor,
+				skipJavac,
 				(skipJavac ?
 						JavacTestOptions.SKIP :
 						JavacTestOptions.DEFAULT));
@@ -2212,6 +2442,8 @@ protected void runJavac(
 						File.separator + compiler.rawVersion); // need to change output directory per javac version
 				if (shouldFlushOutputDirectory) {
 					Util.delete(javacOutputDirectory);
+				} else {
+					deleteSourceFiles(javacOutputDirectory);
 				}
 				javacOutputDirectory.mkdirs();
 				// write test files
@@ -2332,9 +2564,22 @@ protected void runJavac(
 		}
 	}
 }
+private void deleteSourceFiles(File directory) {
+	try {
+		if (!directory.exists())
+			return;
+		Files.walk(directory.toPath())
+			.filter(f -> f.toString().endsWith(SuffixConstants.SUFFIX_STRING_java))
+			.map(java.nio.file.Path::toFile)
+			.filter(File::isFile)
+			.forEach(File::delete);
+	} catch (IOException e) {
+		e.printStackTrace();
+	}
+}
 private boolean errorStringMatch(String expectedErrorStringStart, String actualError) {
 	/*
-	 * From TestVerifier.checkBuffers(): 
+	 * From TestVerifier.checkBuffers():
 	 * This is an opportunistic heuristic for error strings comparison:
 	 * - null means skip test;
 	 * - empty means exactly empty;
@@ -2553,10 +2798,19 @@ protected void runNegativeTest(boolean skipJavac, JavacTestOptions javacTestOpti
 						JavacTestOptions.DEFAULT /* javac test options */);
 		}
 	protected void runNegativeTest(
+			String[] testFiles,
+			String expectedCompilerLog,
+			String[] classLibraries,
+			boolean shouldFlushOutputDirectory,
+			Map customOptions) {
+		runNegativeTest(testFiles, expectedCompilerLog, classLibraries, shouldFlushOutputDirectory, null, customOptions);
+	}
+	protected void runNegativeTest(
 		String[] testFiles,
 		String expectedCompilerLog,
 		String[] classLibraries,
 		boolean shouldFlushOutputDirectory,
+		String[] vmArguments,
 		Map customOptions) {
 		runTest(
 	 		// test directory preparation
@@ -2577,7 +2831,7 @@ protected void runNegativeTest(boolean skipJavac, JavacTestOptions javacTestOpti
 			expectedCompilerLog /* expected compiler log */,
 			// runtime options
 			false /* do not force execution */,
-			null /* no vm arguments */,
+			vmArguments /* no vm arguments */,
 			// runtime results
 			null /* do not check output string */,
 			null /* do not check error string */,
@@ -2627,8 +2881,8 @@ protected void runNegativeTest(boolean skipJavac, JavacTestOptions javacTestOpti
 			boolean shouldFlushOutputDirectory,
 			Map customOptions,
 			String expectedErrorString) {
-			runNegativeTest(testFiles, expectedCompilerLog, classLibraries, 
-					shouldFlushOutputDirectory, customOptions, expectedErrorString, 
+			runNegativeTest(testFiles, expectedCompilerLog, classLibraries,
+					shouldFlushOutputDirectory, customOptions, expectedErrorString,
 					JavacTestOptions.DEFAULT);
 		}
 	protected void runNegativeTest(
@@ -2863,7 +3117,7 @@ protected void runNegativeTest(boolean skipJavac, JavacTestOptions javacTestOpti
 			String[] testFiles,
 			// compiler options
 			String[] classLibraries,
-			Map customOptions,
+			Map<String, String> customOptions,
 			boolean performStatementsRecovery,
 			ICompilerRequestor customRequestor,
 			// compiler results
@@ -2895,7 +3149,50 @@ protected void runNegativeTest(boolean skipJavac, JavacTestOptions javacTestOpti
 			expectedErrorString,
 			null,
 			expectedOutputString,
-			javacTestOptions);
+			javacTestOptions,
+			Charset.defaultCharset());
+	}
+	private void runTest(
+			// test directory preparation
+			boolean shouldFlushOutputDirectory,
+			String[] testFiles,
+			// compiler options
+			String[] classLibraries,
+			Map<String, String> customOptions,
+			boolean performStatementsRecovery,
+			ICompilerRequestor customRequestor,
+			// compiler results
+			boolean expectingCompilerErrors,
+			String expectedCompilerLog,
+			// runtime options
+			boolean forceExecution,
+			String[] vmArguments,
+			// runtime results
+			String expectedOutputString,
+			String expectedErrorString,
+			// javac options
+			JavacTestOptions javacTestOptions,
+			Charset charset) {
+		runTest(
+			shouldFlushOutputDirectory,
+			testFiles,
+			new String[] {},
+			classLibraries,
+			false,
+			customOptions,
+			performStatementsRecovery,
+			customRequestor,
+			expectingCompilerErrors,
+			expectedCompilerLog,
+			null, // alternate compile errors
+			forceExecution,
+			vmArguments,
+			expectedOutputString,
+			expectedErrorString,
+			null,
+			expectedOutputString,
+			javacTestOptions,
+			charset);
 	}
 	/** Call this if the compiler randomly produces different error logs. */
 	protected void runNegativeTestMultiResult(String[] testFiles, Map options, String[] alternateCompilerErrorLogs) {
@@ -2921,7 +3218,53 @@ protected void runNegativeTest(boolean skipJavac, JavacTestOptions javacTestOpti
 			null,
 			null,
 			null,
-			JavacTestOptions.DEFAULT);
+			JavacTestOptions.DEFAULT,
+			Charset.defaultCharset());
+	}
+	private void runTest(
+			// test directory preparation
+			boolean shouldFlushOutputDirectory,
+			String[] testFiles,
+			String[] dependantFiles,
+			// compiler options
+			String[] classLibraries,
+			boolean libsOnModulePath,
+			Map<String, String> customOptions,
+			boolean performStatementsRecovery,
+			ICompilerRequestor customRequestor,
+			// compiler results
+			boolean expectingCompilerErrors,
+			String expectedCompilerLog,
+			String[] alternateCompilerLogs,
+			// runtime options
+			boolean forceExecution,
+			String[] vmArguments,
+			// runtime results
+			String expectedOutputString,
+			String expectedErrorString,
+			final ASTVisitor visitor,
+			// javac options
+			String expectedJavacOutputString,
+			JavacTestOptions javacTestOptions) {
+		runTest( shouldFlushOutputDirectory,
+				testFiles,
+				dependantFiles,
+				classLibraries,
+				libsOnModulePath,
+				customOptions,
+				performStatementsRecovery,
+				customRequestor,
+				expectingCompilerErrors,
+				expectedCompilerLog,
+				alternateCompilerLogs,
+				forceExecution,
+				vmArguments,
+				expectedOutputString,
+				expectedErrorString,
+				visitor,
+				expectedJavacOutputString,
+				javacTestOptions,
+				Charset.defaultCharset());
 	}
 // This is a worker method to support regression tests. To ease policy changes,
 // it should not be called directly, but through the runConformTest and
@@ -3003,7 +3346,7 @@ protected void runNegativeTest(boolean skipJavac, JavacTestOptions javacTestOpti
 			// compiler options
 			String[] classLibraries,
 			boolean libsOnModulePath,
-			Map customOptions,
+			Map<String, String> customOptions,
 			boolean performStatementsRecovery,
 			ICompilerRequestor customRequestor,
 			// compiler results
@@ -3019,7 +3362,8 @@ protected void runNegativeTest(boolean skipJavac, JavacTestOptions javacTestOpti
 			final ASTVisitor visitor,
 			// javac options
 			String expectedJavacOutputString,
-			JavacTestOptions javacTestOptions) {
+			JavacTestOptions javacTestOptions,
+			Charset charset) {
 		// non-javac part
 		if (shouldFlushOutputDirectory)
 			Util.flushDirectoryContent(new File(OUTPUT_DIR));
@@ -3038,7 +3382,7 @@ protected void runNegativeTest(boolean skipJavac, JavacTestOptions javacTestOpti
 		requestor.outputPath = OUTPUT_DIR.endsWith(File.separator) ? OUTPUT_DIR : OUTPUT_DIR + File.separator;
 				// WORK should not have to test a constant?
 
-		Map options = getCompilerOptions();
+		Map<String, String> options = getCompilerOptions();
 		if (customOptions != null) {
 			options.putAll(customOptions);
 		}
@@ -3557,6 +3901,7 @@ protected void runNegativeTest(
 		// javac options
 		javacTestOptions /* javac test options */);
 }
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		if (this.verifier == null) {
@@ -3631,10 +3976,12 @@ protected void runNegativeTest(
 		}
 	}
 
+	@Override
 	public void stop() {
 		this.verifier.shutDown();
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		if (this.createdVerifier) {
 			stop();
@@ -3667,5 +4014,14 @@ protected void runNegativeTest(
 			e.printStackTrace();
 		}
 		return null;
+	}
+	protected Map<String, String> setPresetPreviewOptions() {
+		Map<String, String> options = getCompilerOptions();
+		options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_14);
+		options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_14);
+		options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_14);
+		options.put(CompilerOptions.OPTION_EnablePreviews, CompilerOptions.ENABLED);
+		options.put(CompilerOptions.OPTION_ReportPreviewFeatures, CompilerOptions.IGNORE);
+		return options;
 	}
 }

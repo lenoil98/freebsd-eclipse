@@ -30,16 +30,12 @@ import org.eclipse.ui.IMemento;
 public abstract class ElementMementoProvider implements IElementMementoProvider {
 
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.provisional.IElementMementoProvider#compareElements(org.eclipse.debug.internal.ui.viewers.model.provisional.IElementCompareRequest[])
-	 */
 	@Override
 	public void compareElements(final IElementCompareRequest[] requests) {
 		Job job = new Job("compare element") { //$NON-NLS-1$
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
-				for (int i = 0; i < requests.length; i++) {
-					IElementCompareRequest request = requests[i];
+				for (IElementCompareRequest request : requests) {
 					try {
 						request.setEqual(isEqual(request.getElement(), request.getMemento(), request.getPresentationContext()));
 					} catch (CoreException e) {
@@ -65,16 +61,12 @@ public abstract class ElementMementoProvider implements IElementMementoProvider 
 	 */
 	protected abstract boolean isEqual(Object element, IMemento memento, IPresentationContext context) throws CoreException;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.provisional.IElementMementoProvider#encodeElements(org.eclipse.debug.internal.ui.viewers.model.provisional.IElementMementoRequest[])
-	 */
 	@Override
 	public void encodeElements(final IElementMementoRequest[] requests) {
 		Job job = new Job("encode element") { //$NON-NLS-1$
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
-				for (int i = 0; i < requests.length; i++) {
-					IElementMementoRequest request = requests[i];
+				for (IElementMementoRequest request : requests) {
 					try {
 						if (!encodeElement(request.getElement(), request.getMemento(), request.getPresentationContext())) {
 							request.cancel();

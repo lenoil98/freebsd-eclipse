@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -71,11 +71,11 @@ import org.eclipse.ui.part.IWorkbenchPartOrientation;
 
 import org.eclipse.ui.texteditor.link.EditorLinkedModeUI;
 
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.search.SearchPattern;
 
-import org.eclipse.jdt.internal.corext.template.java.CompilationUnitContext;
+import org.eclipse.jdt.internal.core.manipulation.JavaManipulationPlugin;
+import org.eclipse.jdt.internal.corext.template.java.JavaContext;
 import org.eclipse.jdt.internal.corext.template.java.JavaDocContext;
 import org.eclipse.jdt.internal.corext.util.Messages;
 import org.eclipse.jdt.internal.corext.util.Strings;
@@ -196,7 +196,7 @@ public class TemplateProposal
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @deprecated This method is no longer called by the framework and clients should overwrite
 	 *             {@link #apply(ITextViewer, char, int, int)} instead
 	 */
@@ -246,7 +246,7 @@ public class TemplateProposal
 			LinkedModeModel model= new LinkedModeModel();
 			TemplateVariable[] variables= templateBuffer.getVariables();
 
-			MultiVariableGuess guess= fContext instanceof CompilationUnitContext ? ((CompilationUnitContext) fContext).getMultiVariableGuess() : null;
+			MultiVariableGuess guess= fContext instanceof JavaContext ? ((JavaContext) fContext).getMultiVariableGuess() : null;
 
 			boolean hasPositions= false;
 			for (int i= 0; i != variables.length; i++) {
@@ -520,7 +520,7 @@ public class TemplateProposal
 					}
 				}
 				int matchRule= SearchPattern.R_PREFIX_MATCH;
-				if (JavaCore.ENABLED.equals(JavaCore.getOption(JavaCore.CODEASSIST_SUBSTRING_MATCH)) && CharOperation.substringMatch(pattern, displayString)) {
+				if (JavaManipulationPlugin.CODEASSIST_SUBSTRING_MATCH_ENABLED && CharOperation.substringMatch(pattern, displayString)) {
 					matchRule= SearchPattern.R_SUBSTRING_MATCH;
 				}
 				int[] matchingRegions= SearchPattern.getMatchingRegions(pattern, displayString, matchRule);
@@ -611,7 +611,7 @@ public class TemplateProposal
 			if (offset >= replaceOffset) {
 				String content= document.get(replaceOffset, offset - replaceOffset).toLowerCase();
 				String templateName= fTemplate.getName().toLowerCase();
-				boolean isSubstringEnabled= JavaCore.ENABLED.equals(JavaCore.getOption(JavaCore.CODEASSIST_SUBSTRING_MATCH));
+				boolean isSubstringEnabled= JavaManipulationPlugin.CODEASSIST_SUBSTRING_MATCH_ENABLED;
 				boolean valid= false;
 				fIsSubstringMatch= false;
 				if (templateName.startsWith(content)) {

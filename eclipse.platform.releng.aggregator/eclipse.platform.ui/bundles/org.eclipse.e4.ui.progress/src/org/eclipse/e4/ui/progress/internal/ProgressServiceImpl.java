@@ -76,7 +76,7 @@ public class ProgressServiceImpl implements IProgressService {
 
 	@Override
 	public void registerIconForFamily(ImageDescriptor icon, Object family) {
-		String key = IMAGE_KEY + String.valueOf(imageKeyTable.size());
+		String key = IMAGE_KEY + imageKeyTable.size();
 		imageKeyTable.put(family, key);
 		ImageRegistry registry = JFaceResources.getImageRegistry();
 
@@ -88,8 +88,8 @@ public class ProgressServiceImpl implements IProgressService {
 
 	@Override
 	public void runInUI(IRunnableContext context,
-	        IRunnableWithProgress runnable, ISchedulingRule rule)
-	        throws InvocationTargetException, InterruptedException {
+			IRunnableWithProgress runnable, ISchedulingRule rule)
+			throws InvocationTargetException, InterruptedException {
 		final RunnableWithStatus runnableWithStatus = new RunnableWithStatus(
 				context,
 				runnable, rule);
@@ -123,8 +123,8 @@ public class ProgressServiceImpl implements IProgressService {
 	public void busyCursorWhile(final IRunnableWithProgress runnable)
 			throws InvocationTargetException, InterruptedException {
 		final ProgressMonitorJobsDialog dialog = new ProgressMonitorJobsDialog(
-		        ProgressManagerUtil.getDefaultParent(), this, progressManager,
-		        contentProviderFactory, finishedJobs);
+				ProgressManagerUtil.getDefaultParent(), this, progressManager,
+				contentProviderFactory, finishedJobs);
 		dialog.setOpenOnRun(false);
 		final InvocationTargetException[] invokes = new InvocationTargetException[1];
 		final InterruptedException[] interrupt = new InterruptedException[1];
@@ -158,8 +158,8 @@ public class ProgressServiceImpl implements IProgressService {
 		if (fork == false || cancelable == false) {
 			// backward compatible code
 			final ProgressMonitorJobsDialog dialog = new ProgressMonitorJobsDialog(
-			        null, this, progressManager, contentProviderFactory,
-			        finishedJobs);
+					null, this, progressManager, contentProviderFactory,
+					finishedJobs);
 			dialog.run(fork, cancelable, runnable);
 			return;
 		}
@@ -175,8 +175,8 @@ public class ProgressServiceImpl implements IProgressService {
 		}
 
 		final ProgressMonitorFocusJobDialog dialog = new ProgressMonitorFocusJobDialog(
-		        shell, this, progressManager, contentProviderFactory,
-		        finishedJobs);
+				shell, this, progressManager, contentProviderFactory,
+				finishedJobs);
 		dialog.show(job, shell);
 	}
 
@@ -209,13 +209,7 @@ public class ProgressServiceImpl implements IProgressService {
 			try {
 				manager.beginRule(rule, getEventLoopMonitor());
 				context.run(false, false, runnable);
-			} catch (InvocationTargetException e) {
-				status = new Status(IStatus.ERROR, IProgressConstants.PLUGIN_ID, e
-						.getMessage(), e);
-			} catch (InterruptedException e) {
-				status = new Status(IStatus.ERROR, IProgressConstants.PLUGIN_ID, e
-						.getMessage(), e);
-			} catch (OperationCanceledException e) {
+			} catch (InvocationTargetException | InterruptedException | OperationCanceledException e) {
 				status = new Status(IStatus.ERROR, IProgressConstants.PLUGIN_ID, e
 						.getMessage(), e);
 			} finally {
@@ -309,9 +303,9 @@ public class ProgressServiceImpl implements IProgressService {
 	private void setUserInterfaceActive(boolean active) {
 		Shell[] shells = getDisplay().getShells();
 		if (active) {
-			for (int i = 0; i < shells.length; i++) {
-				if (!shells[i].isDisposed()) {
-					shells[i].setEnabled(active);
+			for (Shell shell : shells) {
+				if (!shell.isDisposed()) {
+					shell.setEnabled(active);
 				}
 			}
 		} else {

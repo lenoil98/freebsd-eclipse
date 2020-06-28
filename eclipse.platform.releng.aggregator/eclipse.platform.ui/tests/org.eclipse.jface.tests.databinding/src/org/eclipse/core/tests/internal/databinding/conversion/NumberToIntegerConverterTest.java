@@ -18,7 +18,7 @@ import org.eclipse.core.databinding.conversion.IConverter;
 import org.eclipse.core.internal.databinding.conversion.NumberToIntegerConverter;
 import org.junit.Before;
 
-import com.ibm.icu.text.NumberFormat;
+import java.text.NumberFormat;
 
 /**
  * @since 1.1
@@ -33,7 +33,7 @@ public class NumberToIntegerConverterTest extends NumberToNumberTestHarness {
 
 	@Override
 	protected Number doGetOutOfRangeNumber() {
-		return new Long((long) Integer.MAX_VALUE + 1);
+		return Long.valueOf((long) Integer.MAX_VALUE + 1);
 	}
 
 	@Override

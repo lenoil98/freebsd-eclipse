@@ -271,14 +271,14 @@ public class CVSDecoration {
 			bindings.put(CVSDecoratorConfiguration.REMOTELOCATION_ROOT, location.getRootDirectory());
 			bindings.put(CVSDecoratorConfiguration.REMOTELOCATION_REPOSITORY, repository);
 
-            RepositoryManager repositoryManager = CVSUIPlugin.getPlugin().getRepositoryManager();
-            RepositoryRoot root = repositoryManager.getRepositoryRootFor(location);
-            CVSUIPlugin.getPlugin().getRepositoryManager();
-            String label = root.getName();
-            if (label == null) {
-              label = location.getLocation(true);
-            }
-            bindings.put(CVSDecoratorConfiguration.REMOTELOCATION_LABEL, label);
+			RepositoryManager repositoryManager = CVSUIPlugin.getPlugin().getRepositoryManager();
+			RepositoryRoot root = repositoryManager.getRepositoryRootFor(location);
+			CVSUIPlugin.getPlugin().getRepositoryManager();
+			String label = root.getName();
+			if (label == null) {
+				label = location.getLocation(true);
+			}
+			bindings.put(CVSDecoratorConfiguration.REMOTELOCATION_LABEL, label);
 		}
 		CVSDecoratorConfiguration.decorate(this, getTextFormatter(), bindings);
 	}
@@ -446,9 +446,9 @@ public class CVSDecoration {
 
 	public void setStateFlags(int stateFlags) {
 		this.stateFlags = stateFlags;
-    	if ((stateFlags & IThreeWayDiff.OUTGOING) != 0) {
-    		setDirty(true);
-    	}
+		if ((stateFlags & IThreeWayDiff.OUTGOING) != 0) {
+			setDirty(true);
+		}
 	}
 	
 	public TeamStateDescription asTeamStateDescription(String[] properties) {
@@ -466,8 +466,7 @@ public class CVSDecoration {
 	private boolean isRequestedProperty(String[] properties, String property) {
 		if (properties == null)
 			return true;
-		for (int i = 0; i < properties.length; i++) {
-			String string = properties[i];
+		for (String string : properties) {
 			if (string.equals(property))
 				return true;
 		}

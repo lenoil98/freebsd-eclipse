@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,7 +19,7 @@ public NSScrollView() {
 	super();
 }
 
-public NSScrollView(long /*int*/ id) {
+public NSScrollView(long id) {
 	super(id);
 }
 
@@ -33,19 +33,19 @@ public NSSize contentSize() {
 	return result;
 }
 
-public static NSSize contentSizeForFrameSize(NSSize fSize, boolean hFlag, boolean vFlag, long /*int*/ aType) {
+public static NSSize contentSizeForFrameSize(NSSize fSize, boolean hFlag, boolean vFlag, long aType) {
 	NSSize result = new NSSize();
 	OS.objc_msgSend_stret(result, OS.class_NSScrollView, OS.sel_contentSizeForFrameSize_hasHorizontalScroller_hasVerticalScroller_borderType_, fSize, hFlag, vFlag, aType);
 	return result;
 }
 
 public NSClipView contentView() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_contentView);
+	long result = OS.objc_msgSend(this.id, OS.sel_contentView);
 	return result != 0 ? new NSClipView(result) : null;
 }
 
 public NSView documentView() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_documentView);
+	long result = OS.objc_msgSend(this.id, OS.sel_documentView);
 	return result != 0 ? new NSView(result) : null;
 }
 
@@ -55,9 +55,19 @@ public NSRect documentVisibleRect() {
 	return result;
 }
 
-public static NSSize frameSizeForContentSize(NSSize cSize, boolean hFlag, boolean vFlag, long /*int*/ aType) {
+public void flashScrollers() {
+	OS.objc_msgSend(this.id, OS.sel_flashScrollers);
+}
+
+public static NSSize frameSizeForContentSize(NSSize cSize, boolean hFlag, boolean vFlag, long aType) {
 	NSSize result = new NSSize();
 	OS.objc_msgSend_stret(result, OS.class_NSScrollView, OS.sel_frameSizeForContentSize_hasHorizontalScroller_hasVerticalScroller_borderType_, cSize, hFlag, vFlag, aType);
+	return result;
+}
+
+public static NSSize frameSizeForContentSize(NSSize cSize, long horizontalScrollerClass, long verticalScrollerClass, long aType, long controlSize, long scrollerStyle) {
+	NSSize result = new NSSize();
+	OS.objc_msgSend_stret(result, OS.class_NSScrollView, OS.sel_frameSizeForContentSize_horizontalScrollerClass_verticalScrollerClass_borderType_controlSize_scrollerStyle_, cSize, horizontalScrollerClass, verticalScrollerClass, aType, controlSize, scrollerStyle);
 	return result;
 }
 
@@ -65,11 +75,15 @@ public void reflectScrolledClipView(NSClipView cView) {
 	OS.objc_msgSend(this.id, OS.sel_reflectScrolledClipView_, cView != null ? cView.id : 0);
 }
 
+public long scrollerStyle() {
+	return OS.objc_msgSend(this.id, OS.sel_scrollerStyle);
+}
+
 public void setAutohidesScrollers(boolean autohidesScrollers) {
 	OS.objc_msgSend(this.id, OS.sel_setAutohidesScrollers_, autohidesScrollers);
 }
 
-public void setBorderType(long /*int*/ borderType) {
+public void setBorderType(long borderType) {
 	OS.objc_msgSend(this.id, OS.sel_setBorderType_, borderType);
 }
 
@@ -93,7 +107,7 @@ public void setHorizontalScroller(NSScroller horizontalScroller) {
 	OS.objc_msgSend(this.id, OS.sel_setHorizontalScroller_, horizontalScroller != null ? horizontalScroller.id : 0);
 }
 
-public void setVerticalScrollElasticity(long /*int*/ verticalScrollElasticity) {
+public void setVerticalScrollElasticity(long verticalScrollElasticity) {
 	OS.objc_msgSend(this.id, OS.sel_setVerticalScrollElasticity_, verticalScrollElasticity);
 }
 

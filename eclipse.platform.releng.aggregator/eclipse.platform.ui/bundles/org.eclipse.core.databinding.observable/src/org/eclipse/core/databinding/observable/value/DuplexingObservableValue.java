@@ -18,36 +18,46 @@ package org.eclipse.core.databinding.observable.value;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 
 import org.eclipse.core.databinding.observable.ChangeEvent;
 import org.eclipse.core.databinding.observable.IChangeListener;
 import org.eclipse.core.databinding.observable.IStaleListener;
 import org.eclipse.core.databinding.observable.StaleEvent;
 import org.eclipse.core.databinding.observable.list.IObservableList;
-import org.eclipse.core.internal.databinding.observable.Util;
 
 /**
- * @param <T>
- *            the type of value being observed
+ * A class to reduce an observable list to a single value in an implementation
+ * specific way.
+ * <p>
+ * A concrete implementation must implement
+ * {@link #coalesceElements(Collection)} to specify how the current state of the
+ * observed list is reduced to a single value.
+ * </p>
+ * <p>
+ * For example the default implementation in
+ * {@link #withDefaults(IObservableList, Object, Object)} will return a
+ * predefined <i>empty value</i> in case the observed list is empty, an
+ * predefined <i>multi value</i> if the list contains multiple different values
+ * and the list value if it is the only value or all list values are equal.
+ * </p>
+ *
+ * @param <T> the type of value being observed
  * @since 1.2
  */
 public abstract class DuplexingObservableValue<T> extends AbstractObservableValue<T> {
 	/**
-	 * Returns a DuplexingObservableValue implementation with predefined values
-	 * to use if the list is empty or contains multiple different values.
+	 * Returns a DuplexingObservableValue implementation with predefined values to
+	 * use if the list is empty or contains multiple different values.
 	 *
-	 * @param <T>
+	 * @param <T>        the type of value being observed
 	 *
-	 * @param target
-	 *            the observable list
-	 * @param emptyValue
-	 *            the value to use when the target list is empty
-	 * @param multiValue
-	 *            the value to use when the target list contains multiple values
-	 *            that are not equivalent to each other.
-	 * @return a DuplexingObservableValue implementation with predefined values
-	 *         to use if the list is empty or contains multiple different
-	 *         values.
+	 * @param target     the observable list
+	 * @param emptyValue the value to use when the target list is empty
+	 * @param multiValue the value to use when the target list contains multiple
+	 *                   values that are not equivalent to each other.
+	 * @return a DuplexingObservableValue implementation with predefined values to
+	 *         use if the list is empty or contains multiple different values.
 	 */
 	public static <T> DuplexingObservableValue<T> withDefaults(
 			IObservableList<T> target, final T emptyValue, final T multiValue) {
@@ -59,7 +69,7 @@ public abstract class DuplexingObservableValue<T> extends AbstractObservableValu
 				Iterator<T> it = elements.iterator();
 				T first = it.next();
 				while (it.hasNext())
-					if (!Util.equals(first, it.next()))
+					if (!Objects.equals(first, it.next()))
 						return multiValue;
 				return first;
 			}
@@ -76,15 +86,15 @@ public abstract class DuplexingObservableValue<T> extends AbstractObservableValu
 	private PrivateInterface privateInterface;
 
 	/**
-	 * @param target
+	 * @param target the observed target list
 	 */
 	public DuplexingObservableValue(IObservableList<T> target) {
 		this(target, target.getElementType());
 	}
 
 	/**
-	 * @param target
-	 * @param valueType
+	 * @param target    the observed target list
+	 * @param valueType the value type or <code>null</code>
 	 */
 	public DuplexingObservableValue(IObservableList<T> target, Object valueType) {
 		super(target.getRealm());
@@ -164,6 +174,13 @@ public abstract class DuplexingObservableValue<T> extends AbstractObservableValu
 		return cachedValue;
 	}
 
+	/**
+	 * Called when the current value of this class is requested. The implementation
+	 * must calculate a single value which should represent the given elements.
+	 *
+	 * @param elements the collection of elements to be coalesced
+	 * @return the value representing the elements
+	 */
 	protected abstract T coalesceElements(Collection<T> elements);
 
 	@Override

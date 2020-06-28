@@ -119,7 +119,7 @@ public class CodeMiningManager implements Runnable {
 	@Override
 	public void run() {
 		if (fViewer == null || fInlinedAnnotationSupport == null || fCodeMiningProviders == null
-				|| fCodeMiningProviders.size() == 0 || fViewer.getAnnotationModel() == null) {
+				|| fCodeMiningProviders.isEmpty() || fViewer.getAnnotationModel() == null) {
 			return;
 		}
 		// Cancel the last progress monitor to cancel last resolve and render of code
@@ -194,7 +194,7 @@ public class CodeMiningManager implements Runnable {
 				}))
 				.collect(Collectors.toList());
 		return CompletableFuture.allOf(com.toArray(new CompletableFuture[com.size()])).thenApply(
-				v -> com.stream().map(CompletableFuture::join).flatMap(l -> l.stream()).collect(Collectors.toList()));
+				v -> com.stream().map(CompletableFuture::join).flatMap(java.util.Collection::stream).collect(Collectors.toList()));
 	}
 
 	/**
@@ -250,7 +250,7 @@ public class CodeMiningManager implements Runnable {
 
 			Position pos= new Position(g.getKey().offset, g.getKey().length);
 			List<ICodeMining> minings= g.getValue();
-			boolean inLineHeader= minings.size() > 0 ? (minings.get(0) instanceof LineHeaderCodeMining) : true;
+			boolean inLineHeader= !minings.isEmpty() ? (minings.get(0) instanceof LineHeaderCodeMining) : true;
 			// Try to find existing annotation
 			AbstractInlinedAnnotation ann= fInlinedAnnotationSupport.findExistingAnnotation(pos);
 			if (ann == null) {
@@ -267,7 +267,7 @@ public class CodeMiningManager implements Runnable {
 		monitor.isCanceled();
 		fInlinedAnnotationSupport.updateAnnotations(currentAnnotations);
 		// redraw the existing codemining annotations since their content can change
-		annotationsToRedraw.stream().forEach(ann -> ann.redraw());
+		annotationsToRedraw.stream().forEach(ICodeMiningAnnotation::redraw);
 	}
 
 	/**

@@ -15,7 +15,6 @@ package org.eclipse.team.ui;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.eclipse.compare.CompareConfiguration;
 import org.eclipse.compare.CompareEditorInput;
@@ -269,8 +268,8 @@ public abstract class PageSaveablePart extends SaveablePartAdapter implements IC
 		try {
 			// TODO: we need a better progress story here (i.e. support for cancellation) bug 127075
 			manager.busyCursorWhile(monitor -> {
-			    prepareInput(input, getCompareConfiguration(), monitor);
-			    hookContentChangeListener(input);
+				prepareInput(input, getCompareConfiguration(), monitor);
+				hookContentChangeListener(input);
 			});
 		} catch (InvocationTargetException e) {
 			Utils.handle(e);
@@ -286,7 +285,7 @@ public abstract class PageSaveablePart extends SaveablePartAdapter implements IC
 	 * @param input the input
 	 * @param configuration the compare configuration
 	 * @param monitor a progress monitor
-	 * @throws InvocationTargetException
+	 * @throws InvocationTargetException if an error occurs
 	 */
 	protected abstract void prepareInput(ICompareInput input, CompareConfiguration configuration, IProgressMonitor monitor) throws InvocationTargetException;
 
@@ -372,12 +371,12 @@ public abstract class PageSaveablePart extends SaveablePartAdapter implements IC
 		return null;
 	}
 
-    /**
-     * Set whether the file contents panes should be shown. If they are not,
-     * only the page will be shown.
-     *
-     * @param showContentPanes whether to show contents pane
-     */
+	/**
+	 * Set whether the file contents panes should be shown. If they are not,
+	 * only the page will be shown.
+	 *
+	 * @param showContentPanes whether to show contents pane
+	 */
 	public void setShowContentPanes(boolean showContentPanes) {
 		this.showContentPanes = showContentPanes;
 	}
@@ -413,10 +412,7 @@ public abstract class PageSaveablePart extends SaveablePartAdapter implements IC
 	}
 
 	private void flushViewers(IProgressMonitor monitor) {
-		Iterator iter = fDirtyViewers.iterator();
-
-		for (int i=0; i<fDirtyViewers.size(); i++){
-			Object element = iter.next();
+		for (Object element : fDirtyViewers) {
 			IFlushable flushable = Adapters.adapt(element, IFlushable.class);
 			if (flushable != null)
 				flushable.flush(monitor);

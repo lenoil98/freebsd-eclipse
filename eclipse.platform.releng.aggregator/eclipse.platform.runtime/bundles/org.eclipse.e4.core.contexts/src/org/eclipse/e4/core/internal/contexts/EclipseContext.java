@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import org.eclipse.e4.core.contexts.IContextFunction;
@@ -83,16 +84,14 @@ public class EclipseContext implements IEclipseContext {
 			if (getClass() != obj.getClass())
 				return false;
 			Scheduled other = (Scheduled) obj;
-			if (!event.equals(other.event))
-				return false;
-			return runnable.equals(other.runnable);
+			return Objects.equals(this.event, other.event) && Objects.equals(this.runnable, other.runnable);
 		}
 	}
 
 	private WeakGroupedListenerList weakListeners = new WeakGroupedListenerList();
-	private Map<String, ValueComputation> localValueComputations = Collections.synchronizedMap(new HashMap<String, ValueComputation>());
+	private Map<String, ValueComputation> localValueComputations = Collections.synchronizedMap(new HashMap<>());
 
-	final protected Map<String, Object> localValues = Collections.synchronizedMap(new HashMap<String, Object>());
+	final protected Map<String, Object> localValues = Collections.synchronizedMap(new HashMap<>());
 
 	private Set<String> modifiable;
 
@@ -107,8 +106,8 @@ public class EclipseContext implements IEclipseContext {
 	// I don't think we need to sync referenceQueue access
 	private ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
 
-	private Map<Reference<?>, TrackableComputationExt> activeComputations = Collections.synchronizedMap(new HashMap<Reference<?>, TrackableComputationExt>());
-	private Set<TrackableComputationExt> activeRATs = Collections.synchronizedSet(new HashSet<TrackableComputationExt>());
+	private Map<Reference<?>, TrackableComputationExt> activeComputations = Collections.synchronizedMap(new HashMap<>());
+	private Set<TrackableComputationExt> activeRATs = Collections.synchronizedSet(new HashSet<>());
 
 	private final static Object[] nullArgs = new Object[] {null};
 
@@ -123,7 +122,7 @@ public class EclipseContext implements IEclipseContext {
 	public EclipseContext(IEclipseContext parent) {
 		setParent(parent);
 		if (parent == null)
-			waiting = Collections.synchronizedList(new ArrayList<Computation>());
+			waiting = Collections.synchronizedList(new ArrayList<>());
 		if (debugAddOn != null)
 			debugAddOn.notify(this, IEclipseContextDebugger.EventType.CONSTRUCTED, null);
 	}
@@ -133,7 +132,7 @@ public class EclipseContext implements IEclipseContext {
 	public Set<EclipseContext> getChildren() {
 		Set<EclipseContext> result;
 		synchronized (children) {
-			if (children.size() == 0)
+			if (children.isEmpty())
 				return noChildren;
 			result = new HashSet<>(children.size());
 			for (Iterator<WeakReference<EclipseContext>> i = children.iterator(); i.hasNext();) {
@@ -302,7 +301,7 @@ public class EclipseContext implements IEclipseContext {
 			computation.handleInvalid(event, scheduled);
 		}
 		Set<Computation> namedComputations = weakListeners.getListeners(name);
-		if (namedComputations != null && namedComputations.size() > 0) {
+		if (namedComputations != null && !namedComputations.isEmpty()) {
 			if (event == null) {
 				event = new ContextChangeEvent(this, eventType, null, name, oldValue);
 			}
@@ -405,7 +404,7 @@ public class EclipseContext implements IEclipseContext {
 		boolean containsKey = localValues.containsKey(name);
 		if (containsKey) {
 			if (!checkModifiable(name)) {
-				String tmp = "Variable " + name + " is not modifiable in the context " + toString(); //$NON-NLS-1$ //$NON-NLS-2$
+				String tmp = "Variable " + name + " is not modifiable in the context " + this; //$NON-NLS-1$ //$NON-NLS-2$
 				throw new IllegalArgumentException(tmp);
 			}
 			Object oldValue = localValues.put(name, value);
@@ -568,7 +567,7 @@ public class EclipseContext implements IEclipseContext {
 			return;
 		}
 		if (waiting == null) // could happen on re-parent
-			waiting = Collections.synchronizedList(new ArrayList<Computation>());
+			waiting = Collections.synchronizedList(new ArrayList<>());
 		waiting.add(cp);
 	}
 
@@ -766,6 +765,12 @@ public class EclipseContext implements IEclipseContext {
 	public void pushComputation(Computation comp) {
 		Stack<Computation> current = getCalculatedComputations();
 		current.push(comp);
+	}
+
+	public boolean hasComputation(Computation comp) {
+		Stack<Computation> current = getCalculatedComputations();
+		boolean hasComputation = current.contains(comp);
+		return hasComputation;
 	}
 
 	public void popComputation(Computation comp) {

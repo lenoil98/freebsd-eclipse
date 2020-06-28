@@ -46,7 +46,7 @@ public class EnumeratedTypeSet extends TypeSet {
 	/**
 	 * Constructs a new EnumeratedTypeSet with the members of Set s in it.
 	 * All elements of s must be TTypes.
-	 * 
+	 *
 	 * @param types the types
 	 * @param typeSetEnvironment the environment
 	 */
@@ -60,7 +60,7 @@ public class EnumeratedTypeSet extends TypeSet {
 
 	/**
 	 * Constructs an empty EnumeratedTypeSet.
-	 * 
+	 *
 	 * @param typeSetEnvironment the environment
 	 */
 	public EnumeratedTypeSet(TypeSetEnvironment typeSetEnvironment) {
@@ -70,7 +70,7 @@ public class EnumeratedTypeSet extends TypeSet {
 
 	/**
 	 * Constructs a new EnumeratedTypeSet with the given single TType in it.
-	 * 
+	 *
 	 * @param t the type
 	 * @param typeSetEnvironment the environment
 	 */
@@ -107,8 +107,8 @@ public class EnumeratedTypeSet extends TypeSet {
 				if (!fMembers.contains(otherIter.next()))
 					return false;
 			}
-			for(Iterator<TType> myIter= fMembers.iterator(); myIter.hasNext(); ) {
-				if (!other.contains(myIter.next()))
+			for (TType tType : fMembers) {
+				if (!other.contains(tType))
 					return false;
 			}
 			return true;
@@ -322,9 +322,7 @@ public class EnumeratedTypeSet extends TypeSet {
 
 		// Add to result each element of fMembers that has no proper supertype in fMembers
 		result.fMembers.addAll(fMembers);
-		for(Iterator<TType> iter= fMembers.iterator(); iter.hasNext(); ) {
-			TType t= iter.next();
-
+		for (TType t : fMembers) {
 			if (t.isArrayType()) {
 				ArrayType at= (ArrayType) t;
 				int numDims= at.getDimensions();
@@ -351,9 +349,7 @@ public class EnumeratedTypeSet extends TypeSet {
 		// Add to result each element of fMembers that has no proper subtype in fMembers
 		result.fMembers.addAll(fMembers);
 
-		for(Iterator<TType> iter= fMembers.iterator(); iter.hasNext(); ) {
-			TType t= iter.next();
-
+		for (TType t : fMembers) {
 			// java.lang.Object is only in the lower bound if fMembers consists
 			// of only java.lang.Object, but that case is handled above.
 			if (t.equals(getJavaLangObject())) {

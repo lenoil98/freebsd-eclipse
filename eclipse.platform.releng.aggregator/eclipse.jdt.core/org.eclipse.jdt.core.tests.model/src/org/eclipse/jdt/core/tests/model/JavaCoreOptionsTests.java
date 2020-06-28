@@ -45,7 +45,7 @@ public void test1() {
 		currentOptions.put(JavaCore.COMPILER_TASK_PRIORITIES, "HIGH,HIGH");
 		currentOptions.put(JavaCore.COMPILER_TASK_TAGS, "TODO");
 		JavaCore.setOptions(currentOptions);
-		
+
 		Hashtable options2 = JavaCore.getOptions();
 		String taskTagsValue = (String) options2.get(JavaCore.COMPILER_TASK_TAGS);
 		String taskPrioritiesValue = (String) options2.get(JavaCore.COMPILER_TASK_PRIORITIES);
@@ -64,7 +64,7 @@ public void test2() {
 		currentOptions.remove(JavaCore.COMPILER_TASK_PRIORITIES);
 		currentOptions.remove(JavaCore.COMPILER_TASK_TAGS);
 		JavaCore.setOptions(currentOptions);
-		
+
 		Hashtable options2 = JavaCore.getOptions();
 		String taskTagsValue = (String) options2.get(JavaCore.COMPILER_TASK_TAGS);
 		String taskPrioritiesValue = (String) options2.get(JavaCore.COMPILER_TASK_PRIORITIES);
@@ -81,7 +81,7 @@ public void test3() {
 		currentOptions.put(JavaCore.COMPILER_TASK_PRIORITIES, "HIGH,HIGH");
 		currentOptions.remove(JavaCore.COMPILER_TASK_TAGS);
 		JavaCore.setOptions(currentOptions);
-		
+
 		Hashtable options2 = JavaCore.getOptions();
 		String taskTagsValue = (String) options2.get(JavaCore.COMPILER_TASK_TAGS);
 		String taskPrioritiesValue = (String) options2.get(JavaCore.COMPILER_TASK_PRIORITIES);
@@ -98,7 +98,7 @@ public void test4() {
 		currentOptions.remove(JavaCore.COMPILER_TASK_PRIORITIES);
 		currentOptions.put(JavaCore.COMPILER_TASK_TAGS, "TODO");
 		JavaCore.setOptions(currentOptions);
-		
+
 		Hashtable options2 = JavaCore.getOptions();
 		String taskTagsValue = (String) options2.get(JavaCore.COMPILER_TASK_TAGS);
 		String taskPrioritiesValue = (String) options2.get(JavaCore.COMPILER_TASK_PRIORITIES);
@@ -120,10 +120,11 @@ public void test5() {
 	assertTrue(JavaCore.compareJavaVersions("9", "1.8") > 0);
 	assertTrue(JavaCore.compareJavaVersions("9.0.1", "9.1.2") == 0);
 	assertTrue(JavaCore.compareJavaVersions("9", "9.1.2") == 0);
+	assertTrue(JavaCore.compareJavaVersions("12", "11") > 0);
+	assertTrue(JavaCore.compareJavaVersions("12", "1.5") > 0);
 	String latest = JavaCore.latestSupportedJavaVersion();
 	String latestPlus = "" + (Integer.parseInt(latest) + 1);
 	assertTrue(JavaCore.compareJavaVersions(latest, latestPlus) == 0);
-	
 }
 }
 

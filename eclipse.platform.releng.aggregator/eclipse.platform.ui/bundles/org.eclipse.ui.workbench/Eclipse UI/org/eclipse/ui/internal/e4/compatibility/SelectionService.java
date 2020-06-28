@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2017 IBM Corporation and others.
+ * Copyright (c) 2010, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -25,9 +25,11 @@ import javax.inject.Named;
 import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.core.di.annotations.Optional;
+import org.eclipse.e4.ui.di.UIEventTopic;
 import org.eclipse.e4.ui.model.application.MApplication;
 import org.eclipse.e4.ui.model.application.ui.basic.MPart;
 import org.eclipse.e4.ui.services.IServiceConstants;
+import org.eclipse.e4.ui.workbench.UIEvents;
 import org.eclipse.e4.ui.workbench.modeling.ESelectionService;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -41,6 +43,8 @@ import org.eclipse.ui.ISources;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.internal.E4PartWrapper;
 import org.eclipse.ui.internal.WorkbenchPage;
+import org.eclipse.ui.internal.handlers.AbstractSaveHandler;
+import org.osgi.service.event.Event;
 
 public class SelectionService implements ISelectionChangedListener, ISelectionService {
 
@@ -64,13 +68,17 @@ public class SelectionService implements ISelectionChangedListener, ISelectionSe
 	private Map<String, Set<ISelectionListener>> targetedListeners = new HashMap<>();
 	private Map<String, Set<ISelectionListener>> targetedPostSelectionListeners = new HashMap<>();
 
-	private org.eclipse.e4.ui.workbench.modeling.ISelectionListener listener = (part, selection) -> handleSelectionChanged(part, selection, false);
+	private org.eclipse.e4.ui.workbench.modeling.ISelectionListener listener = (part,
+			selection) -> handleSelectionChanged(part, selection, false);
 
-	private org.eclipse.e4.ui.workbench.modeling.ISelectionListener targetedListener = (part, selection) -> handleSelectionChanged(part, selection, true);
+	private org.eclipse.e4.ui.workbench.modeling.ISelectionListener targetedListener = (part,
+			selection) -> handleSelectionChanged(part, selection, true);
 
-	private org.eclipse.e4.ui.workbench.modeling.ISelectionListener postListener = (part, selection) -> handlePostSelectionChanged(part, selection, false);
+	private org.eclipse.e4.ui.workbench.modeling.ISelectionListener postListener = (part,
+			selection) -> handlePostSelectionChanged(part, selection, false);
 
-	private org.eclipse.e4.ui.workbench.modeling.ISelectionListener targetedPostListener = (part, selection) -> handlePostSelectionChanged(part, selection, true);
+	private org.eclipse.e4.ui.workbench.modeling.ISelectionListener targetedPostListener = (part,
+			selection) -> handlePostSelectionChanged(part, selection, true);
 
 	private void handleSelectionChanged(MPart part, Object selection, boolean targeted) {
 		selection = createCompatibilitySelection(selection);
@@ -85,8 +93,7 @@ public class SelectionService implements ISelectionChangedListener, ISelectionSe
 		if (client instanceof CompatibilityPart) {
 			IWorkbenchPart workbenchPart = ((CompatibilityPart) client).getPart();
 			if (targeted) {
-				notifyListeners(workbenchPart, (ISelection) selection, part.getElementId(),
-						targetedListeners);
+				notifyListeners(workbenchPart, (ISelection) selection, part.getElementId(), targetedListeners);
 			} else {
 				notifyListeners(workbenchPart, (ISelection) selection, listeners);
 			}
@@ -133,16 +140,13 @@ public class SelectionService implements ISelectionChangedListener, ISelectionSe
 		if (selection instanceof ISelection) {
 			return (ISelection) selection;
 		}
-		return selection == null ? StructuredSelection.EMPTY : new StructuredSelection(
-				selection);
+		return selection == null ? StructuredSelection.EMPTY : new StructuredSelection(selection);
 	}
 
 	/**
-	 * Updates the selection of the workbench window with that of the active
-	 * part's.
+	 * Updates the selection of the workbench window with that of the active part's.
 	 *
-	 * @param activePart
-	 *            the currently active part
+	 * @param activePart the currently active part
 	 */
 	public void updateSelection(IWorkbenchPart activePart) {
 		if (activePart != null) {
@@ -163,8 +167,7 @@ public class SelectionService implements ISelectionChangedListener, ISelectionSe
 	 * Notifies selection listeners about selection change caused by active part
 	 * change.
 	 *
-	 * @param activePart
-	 *            the currently active part
+	 * @param activePart the currently active part
 	 */
 	public void notifyListeners(IWorkbenchPart activePart) {
 		if (activePart != null) {
@@ -190,10 +193,31 @@ public class SelectionService implements ISelectionChangedListener, ISelectionSe
 				activePart = workbenchPart;
 			} else if (client != null) {
 				if (part.getTransientData().get(E4PartWrapper.E4_WRAPPER_KEY) instanceof E4PartWrapper) {
-					activePart = (IWorkbenchPart) part.getTransientData().get(
-							E4PartWrapper.E4_WRAPPER_KEY);
+					activePart = (IWorkbenchPart) part.getTransientData().get(E4PartWrapper.E4_WRAPPER_KEY);
 				}
 			}
+		}
+	}
+
+	@Inject
+	@Optional
+	void subscribeTopicDirtyChanged(@UIEventTopic(UIEvents.Dirtyable.TOPIC_DIRTY) Event event) {
+		Object objElement = event.getProperty(UIEvents.EventTags.ELEMENT);
+
+		// Ensure that this event is for a MMenuItem
+		if (!(objElement instanceof MPart)) {
+			return;
+		}
+		MPart part = (MPart) objElement;
+		Object wrapperPart = part.getTransientData().get(E4PartWrapper.E4_WRAPPER_KEY);
+		if (wrapperPart instanceof E4PartWrapper) {
+			E4PartWrapper wrapper = (E4PartWrapper) wrapperPart;
+			try {
+				wrapper.addPropertyListener(AbstractSaveHandler.getDirtyStateTracker());
+			} catch (IllegalArgumentException e) {
+				// do nothing.
+			}
+			wrapper.notifyPartDirtyStatus();
 		}
 	}
 
@@ -223,7 +247,7 @@ public class SelectionService implements ISelectionChangedListener, ISelectionSe
 			}
 			this.selectionService = selectionService;
 		}
-	 }
+	}
 
 	@PreDestroy
 	public void dispose() {

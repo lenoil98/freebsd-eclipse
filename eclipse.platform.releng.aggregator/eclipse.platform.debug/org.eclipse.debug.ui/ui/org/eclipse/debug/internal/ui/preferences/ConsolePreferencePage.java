@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,6 +14,8 @@
 package org.eclipse.debug.internal.ui.preferences;
 
 
+import java.text.MessageFormat;
+
 import org.eclipse.debug.internal.ui.DebugUIPlugin;
 import org.eclipse.debug.internal.ui.IDebugHelpContextIds;
 import org.eclipse.jface.preference.BooleanFieldEditor;
@@ -26,6 +28,7 @@ import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IWorkbench;
@@ -33,8 +36,6 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsoleConstants;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * A page to set the preferences for the console
@@ -80,6 +81,9 @@ public class ConsolePreferencePage extends FieldEditorPreferencePage implements 
 
 	private ConsoleIntegerFieldEditor fTabSizeEditor;
 	private BooleanFieldEditor autoScrollLockEditor;
+
+	private BooleanFieldEditor2 fInterpretControlCharactersEditor;
+	private BooleanFieldEditor2 fInterpretCrAsControlCharacterEditor;
 
 	/**
 	 * Create the console page.
@@ -157,6 +161,18 @@ public class ConsolePreferencePage extends FieldEditorPreferencePage implements 
 		addField(syserr);
 		addField(sysin);
 		addField(background);
+
+		fInterpretControlCharactersEditor = new BooleanFieldEditor2(IDebugPreferenceConstants.CONSOLE_INTERPRET_CONTROL_CHARACTERS, DebugPreferencesMessages.ConsolePreferencePage_Interpret_control_characters, SWT.NONE, getFieldEditorParent());
+		fInterpretCrAsControlCharacterEditor = new BooleanFieldEditor2(IDebugPreferenceConstants.CONSOLE_INTERPRET_CR_AS_CONTROL_CHARACTER, DebugPreferencesMessages.ConsolePreferencePage_Interpret_cr_as_control_character, SWT.NONE, getFieldEditorParent());
+		GridData gd = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+		gd.horizontalIndent = 20;
+		fInterpretCrAsControlCharacterEditor.getChangeControl(getFieldEditorParent()).setLayoutData(gd);
+
+		fInterpretControlCharactersEditor.getChangeControl(getFieldEditorParent()).addListener(SWT.Selection,
+				event -> updateInterpretCrAsControlCharacterEditor());
+
+		addField(fInterpretControlCharactersEditor);
+		addField(fInterpretCrAsControlCharacterEditor);
 	}
 
 	/**
@@ -186,6 +202,7 @@ public class ConsolePreferencePage extends FieldEditorPreferencePage implements 
 		updateWidthEditor();
 		updateAutoScrollLockEditor();
 		updateBufferSizeEditor();
+		updateInterpretCrAsControlCharacterEditor();
 	}
 
 	/**
@@ -216,6 +233,15 @@ public class ConsolePreferencePage extends FieldEditorPreferencePage implements 
 	}
 
 	/**
+	 * Update enablement of carriage return interpretation based on general control
+	 * character interpretation.
+	 */
+	protected void updateInterpretCrAsControlCharacterEditor() {
+		Button b = fInterpretControlCharactersEditor.getChangeControl(getFieldEditorParent());
+		fInterpretCrAsControlCharacterEditor.getChangeControl(getFieldEditorParent()).setEnabled(b.getSelection());
+	}
+
+	/**
 	 * @see org.eclipse.jface.preference.PreferencePage#performDefaults()
 	 */
 	@Override
@@ -223,13 +249,11 @@ public class ConsolePreferencePage extends FieldEditorPreferencePage implements 
 		super.performDefaults();
 		updateWidthEditor();
 		updateBufferSizeEditor();
+		updateInterpretCrAsControlCharacterEditor();
 	}
 
 	protected boolean canClearErrorMessage() {
-		if (fWidthEditor.isValid() && fBufferSizeEditor.isValid()) {
-			return true;
-		}
-		return false;
+		return fWidthEditor.isValid() && fBufferSizeEditor.isValid() && fTabSizeEditor.isValid();
 	}
 
 	/**
@@ -248,6 +272,9 @@ public class ConsolePreferencePage extends FieldEditorPreferencePage implements 
 				}
 				if (fBufferSizeEditor != null && event.getSource() != fBufferSizeEditor) {
 					fBufferSizeEditor.refreshValidState();
+				}
+				if (fTabSizeEditor != null && event.getSource() != fTabSizeEditor) {
+					fTabSizeEditor.refreshValidState();
 				}
 				checkState();
 			} else {

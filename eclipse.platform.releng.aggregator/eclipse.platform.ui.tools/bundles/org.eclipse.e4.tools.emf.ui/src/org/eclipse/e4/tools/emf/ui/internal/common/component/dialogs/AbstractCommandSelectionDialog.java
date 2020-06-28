@@ -94,7 +94,7 @@ public abstract class AbstractCommandSelectionDialog extends SaveDialogBoundsSet
 		viewer.addDoubleClickListener(event -> okPressed());
 
 		final List<EObject> commands = new ArrayList<>();
-		final TreeIterator<EObject> it = EcoreUtil.getAllContents((EObject) resource.getRoot().get(0), true);
+		final TreeIterator<EObject> it = EcoreUtil.getAllContents(resource.getRoot().get(0), true);
 		while (it.hasNext()) {
 			final EObject o = it.next();
 			if (o.eClass() == CommandsPackageImpl.Literals.COMMAND) {
@@ -126,11 +126,6 @@ public abstract class AbstractCommandSelectionDialog extends SaveDialogBoundsSet
 				super.okPressed();
 			}
 		}
-	}
-
-	@Override
-	protected boolean isResizable() {
-		return true;
 	}
 
 	protected abstract Command createStoreCommand(EditingDomain editingDomain, MCommand command);

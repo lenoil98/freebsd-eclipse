@@ -14,14 +14,16 @@
 
 package org.eclipse.core.internal.databinding.conversion;
 
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.DecimalFormat;
 import java.text.Format;
+import java.text.NumberFormat;
 import java.text.ParsePosition;
+import java.util.function.Supplier;
 
 import org.eclipse.core.internal.databinding.BindingMessages;
-
-import com.ibm.icu.text.NumberFormat;
 
 /**
  * Utility class for the parsing of strings to numbers.
@@ -29,15 +31,17 @@ import com.ibm.icu.text.NumberFormat;
  * @since 1.0
  */
 public class StringToNumberParser {
-	private static final BigDecimal FLOAT_MAX_BIG_DECIMAL = new BigDecimal(
-			Float.MAX_VALUE);
-	private static final BigDecimal FLOAT_MIN_BIG_DECIMAL = new BigDecimal(
-			-Float.MAX_VALUE);
+	private static final BigDecimal FLOAT_MAX_BIG_DECIMAL = BigDecimal.valueOf(Float.MAX_VALUE);
+	private static final BigDecimal FLOAT_MIN_BIG_DECIMAL = BigDecimal.valueOf(-Float.MAX_VALUE);
 
-	private static final BigDecimal DOUBLE_MAX_BIG_DECIMAL = new BigDecimal(
-			Double.MAX_VALUE);
-	private static final BigDecimal DOUBLE_MIN_BIG_DECIMAL = new BigDecimal(
-			-Double.MAX_VALUE);
+	private static final BigDecimal DOUBLE_MAX_BIG_DECIMAL = BigDecimal.valueOf(Double.MAX_VALUE);
+	private static final BigDecimal DOUBLE_MIN_BIG_DECIMAL = BigDecimal.valueOf(-Double.MAX_VALUE);
+
+	private static final Supplier<Format> GET_INSTANCE = findMethod(NumberFormat::getInstance, "getInstance"); //$NON-NLS-1$
+	private static final Supplier<Format> GET_NUMBER_INSTANCE = findMethod(NumberFormat::getNumberInstance,
+			"getNumberInstance"); //$NON-NLS-1$
+	private static final Supplier<Format> GET_INTEGER_INSTANCE = findMethod(NumberFormat::getIntegerInstance,
+			"getIntegerInstance"); //$NON-NLS-1$
 
 	/**
 	 * @param value
@@ -45,8 +49,7 @@ public class StringToNumberParser {
 	 * @param primitive
 	 * @return result
 	 */
-	public static ParseResult parse(Object value, NumberFormat numberFormat,
-			boolean primitive) {
+	public static ParseResult parse(Object value, Format numberFormat, boolean primitive) {
 		if (!(value instanceof String)) {
 			throw new IllegalArgumentException(
 					"Value to convert is not a String"); //$NON-NLS-1$
@@ -61,7 +64,7 @@ public class StringToNumberParser {
 		synchronized (numberFormat) {
 			ParsePosition position = new ParsePosition(0);
 			Number parseResult = null;
-			parseResult = numberFormat.parse(source, position);
+			parseResult = (Number) numberFormat.parseObject(source, position);
 
 			if (position.getIndex() != source.length()
 					|| position.getErrorIndex() > -1) {
@@ -181,7 +184,7 @@ public class StringToNumberParser {
 		} else if (number instanceof Float || number instanceof Double) {
 			double doubleValue = number.doubleValue();
 			if (!Double.isNaN(doubleValue) && !Double.isInfinite(doubleValue)) {
-				bigInteger = new BigDecimal(doubleValue).toBigInteger();
+				bigInteger = BigDecimal.valueOf(doubleValue).toBigInteger();
 			} else {
 				return false;
 			}
@@ -196,7 +199,7 @@ public class StringToNumberParser {
 			 * that this will work we fall back on the double value of the
 			 * number.
 			 */
-			bigInteger = new BigDecimal(number.doubleValue()).toBigInteger();
+			bigInteger = BigDecimal.valueOf(number.doubleValue()).toBigInteger();
 		}
 
 		if (bigInteger != null) {
@@ -238,12 +241,12 @@ public class StringToNumberParser {
 			BigDecimal max) {
 		BigDecimal bigDecimal = null;
 		if (number instanceof Integer || number instanceof Long) {
-			bigDecimal = new BigDecimal(number.doubleValue());
+			bigDecimal = BigDecimal.valueOf(number.doubleValue());
 		} else if (number instanceof Float || number instanceof Double) {
 			double doubleValue = number.doubleValue();
 
 			if (!Double.isNaN(doubleValue) && !Double.isInfinite(doubleValue)) {
-				bigDecimal = new BigDecimal(doubleValue);
+				bigDecimal = BigDecimal.valueOf(doubleValue);
 			} else {
 				return false;
 			}
@@ -265,16 +268,14 @@ public class StringToNumberParser {
 			double doubleValue = number.doubleValue();
 
 			if (!Double.isNaN(doubleValue) && !Double.isInfinite(doubleValue)) {
-				bigDecimal = new BigDecimal(doubleValue);
+				bigDecimal = BigDecimal.valueOf(doubleValue);
 			} else {
 				return false;
 			}
 		}
 
-		/* if (bigDecimal != null) */{
-			return max.compareTo(bigDecimal) >= 0
-					&& min.compareTo(bigDecimal) <= 0;
-		}
+		/* if (bigDecimal != null) */return max.compareTo(bigDecimal) >= 0
+				&& min.compareTo(bigDecimal) <= 0;
 
 		// throw new IllegalArgumentException(
 		//				"Number of type [" + number.getClass().getName() + "] is not supported."); //$NON-NLS-1$ //$NON-NLS-2$
@@ -314,5 +315,89 @@ public class StringToNumberParser {
 	 */
 	public static boolean inByteRange(Number number) {
 		return checkInteger(number, 7);
+	}
+
+	/**
+	 * Returns the default number format.
+	 * {@code com.ibm.icu.text.NumberFormat.getNumberInstance()} if it is available,
+	 * otherwise {@code java.text.NumberFormat.getNumberInstance()}.
+	 *
+	 * @return the number format
+	 */
+	public static Format getDefaultFormat() {
+		return GET_INSTANCE.get();
+	}
+
+	/**
+	 * Returns the default number format.
+	 * {@code com.ibm.icu.text.NumberFormat.getNumberInstance()} if it is available,
+	 * otherwise {@code java.text.NumberFormat.getNumberInstance()}.
+	 *
+	 * @return the number format
+	 */
+	public static Format getDefaultBigDecimalFormat() {
+		Format format = GET_NUMBER_INSTANCE.get();
+		if (format instanceof DecimalFormat) {
+			((DecimalFormat) format).setParseBigDecimal(true);
+		}
+		return format;
+	}
+
+	/**
+	 * Returns the default number format.
+	 * {@code com.ibm.icu.text.NumberFormat.getNumberInstance()} if ICU is
+	 * available, otherwise {@code java.text.NumberFormat.getNumberInstance()}.
+	 *
+	 * @return the number format
+	 */
+	public static Format getDefaultNumberFormat() {
+		return GET_NUMBER_INSTANCE.get();
+	}
+
+	/**
+	 * Returns the default integer format.
+	 * {@code com.ibm.icu.text.NumberFormat.getIntegerInstance()} if ICU is
+	 * available, otherwise {@code java.text.NumberFormat.getIntegerInstance()}.
+	 *
+	 * @return the number format
+	 */
+	public static Format getDefaultIntegerFormat() {
+		return GET_INTEGER_INSTANCE.get();
+	}
+
+	/**
+	 * Returns the default integer format.
+	 * {@code com.ibm.icu.text.NumberFormat.getIntegerInstance()} if ICU is
+	 * available, otherwise {@code java.text.NumberFormat.getIntegerInstance()}.
+	 *
+	 * @return the number format
+	 */
+	public static Format getDefaultIntegerBigDecimalFormat() {
+		Format format = GET_INTEGER_INSTANCE.get();
+		if (format instanceof DecimalFormat) {
+			((DecimalFormat) format).setParseBigDecimal(true);
+		}
+		return format;
+	}
+
+	/**
+	 * Creates a factory for {@link Format}s. The factory uses ICU if it is
+	 * available on the class path, otherwise it uses the given supplier.
+	 */
+	private static Supplier<Format> findMethod(Supplier<Format> javaTextMethod, String methodName) {
+		try {
+			Method method = Class.forName("com.ibm.icu.text.NumberFormat").getMethod(methodName); //$NON-NLS-1$
+			return () -> {
+				try {
+					return (Format) method.invoke(null);
+				} catch (ReflectiveOperationException e) {
+					throw new RuntimeException(e); // Should never happen
+				}
+			};
+		} catch (ClassNotFoundException | SecurityException e) {
+			return javaTextMethod;
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException(e); // Should never happen
+		}
 	}
 }

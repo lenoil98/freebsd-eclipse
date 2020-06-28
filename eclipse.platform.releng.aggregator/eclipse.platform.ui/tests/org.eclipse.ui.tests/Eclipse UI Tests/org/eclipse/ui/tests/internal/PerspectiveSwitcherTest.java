@@ -20,38 +20,15 @@ import org.eclipse.ui.IWorkbenchPreferenceConstants;
 import org.eclipse.ui.internal.WorkbenchWindow;
 import org.eclipse.ui.internal.util.PrefUtil;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class PerspectiveSwitcherTest extends UITestCase {
 
-	private IPreferenceStore apiPreferenceStore;
-
-	private boolean originalShowOpenValue;
-	private String originalPerspectiveBarPosition;
-
-	public PerspectiveSwitcherTest(String testName) {
-		super(testName);
-	}
-
-	@Override
-	protected void doSetUp() throws Exception {
-		super.doSetUp();
-		apiPreferenceStore = PrefUtil.getAPIPreferenceStore();
-
-		// retrieve the state of the workbench that it originally was
-		originalShowOpenValue = apiPreferenceStore
-				.getBoolean(IWorkbenchPreferenceConstants.SHOW_OPEN_ON_PERSPECTIVE_BAR);
-		originalPerspectiveBarPosition = apiPreferenceStore
-				.getString(IWorkbenchPreferenceConstants.DOCK_PERSPECTIVE_BAR);
-	}
-
-	@Override
-	protected void doTearDown() throws Exception {
-		// reset values so we don't screw any assumptions up for other tests
-		// down the line
-		apiPreferenceStore.setValue(IWorkbenchPreferenceConstants.SHOW_OPEN_ON_PERSPECTIVE_BAR, originalShowOpenValue);
-		apiPreferenceStore.setValue(IWorkbenchPreferenceConstants.DOCK_PERSPECTIVE_BAR, originalPerspectiveBarPosition);
-
-		super.doTearDown();
+	public PerspectiveSwitcherTest() {
+		super(PerspectiveSwitcherTest.class.getSimpleName());
 	}
 
 	/**
@@ -59,10 +36,14 @@ public class PerspectiveSwitcherTest extends UITestCase {
 	 * docked at the other side of the window even if the 'Open Perspective'
 	 * contribution item is not there.
 	 */
+	@Test
 	public void testCreateBarManagerBug274486() {
 		// we want to move the perspective bar to the other side so that it will
 		// be recreated, TOP_RIGHT and TOP_LEFT should switch to LEFT, LEFT
 		// should switch to TOP_RIGHT or TOP_LEFT
+		IPreferenceStore apiPreferenceStore = PrefUtil.getAPIPreferenceStore();
+		String originalPerspectiveBarPosition = apiPreferenceStore
+				.getString(IWorkbenchPreferenceConstants.DOCK_PERSPECTIVE_BAR);
 		String targetDockPosition = null;
 		if (IWorkbenchPreferenceConstants.TOP_RIGHT.equals(originalPerspectiveBarPosition)
 				|| IWorkbenchPreferenceConstants.TOP_LEFT.equals(originalPerspectiveBarPosition)) {
@@ -79,10 +60,10 @@ public class PerspectiveSwitcherTest extends UITestCase {
 				getPerspectiveSwitcher(window));
 
 		// turn off the 'Open Perspective' item
-		apiPreferenceStore.setValue(IWorkbenchPreferenceConstants.SHOW_OPEN_ON_PERSPECTIVE_BAR, false);
+		setPreference(apiPreferenceStore, IWorkbenchPreferenceConstants.SHOW_OPEN_ON_PERSPECTIVE_BAR, false);
 
 		// now we dock the perspective bar on the other end
-		apiPreferenceStore.setValue(IWorkbenchPreferenceConstants.DOCK_PERSPECTIVE_BAR, targetDockPosition);
+		setPreference(apiPreferenceStore, IWorkbenchPreferenceConstants.DOCK_PERSPECTIVE_BAR, targetDockPosition);
 
 		// check that we have a perspective bar, the setValue(String, String)
 		// method does not throw an exception because the perspective bar

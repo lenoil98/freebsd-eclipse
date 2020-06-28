@@ -13,8 +13,8 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.genericeditor;
 
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,8 +23,6 @@ import java.util.stream.Collectors;
 import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IRegistryChangeEvent;
-import org.eclipse.core.runtime.IRegistryChangeListener;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
@@ -42,7 +40,7 @@ import org.eclipse.ui.texteditor.ITextEditor;
 /**
  * A registry of content assist processors provided by extension <code>org.eclipse.ui.genericeditor.contentAssistProcessors</code>.
  * Those extensions are specific to a given {@link IContentType}.
- * 
+ *
  * @since 1.0
  */
 public class ContentAssistProcessorRegistry {
@@ -130,24 +128,19 @@ public class ContentAssistProcessorRegistry {
 		}
 	}
 
-	private Map<IConfigurationElement, GenericContentTypeRelatedExtension<IContentAssistProcessor>> extensions = new HashMap<>();
+	private Map<IConfigurationElement, GenericContentTypeRelatedExtension<IContentAssistProcessor>> extensions = new LinkedHashMap<>();
 	private boolean outOfSync = true;
 
 	/**
 	 * Creates the registry and binds it to the extension point.
 	 */
 	public ContentAssistProcessorRegistry() {
-		Platform.getExtensionRegistry().addRegistryChangeListener(new IRegistryChangeListener() {
-			@Override
-			public void registryChanged(IRegistryChangeEvent event) {
-				outOfSync = true;
-			}
-		}, EXTENSION_POINT_ID);
+		Platform.getExtensionRegistry().addRegistryChangeListener(event -> outOfSync = true, EXTENSION_POINT_ID);
 	}
 
 	/**
 	 * Get the contributed {@link IContentAssistProcessor}s that are relevant to hook on source viewer according
-	 * to document content types. 
+	 * to document content types.
 	 * @param sourceViewer the source viewer we're hooking completion to.
 	 * @param editor the text editor
 	 * @param contentTypes the content types of the document we're editing.

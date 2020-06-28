@@ -20,14 +20,12 @@ import org.eclipse.team.ui.synchronize.ISynchronizePageConfiguration;
  * The action provider that is used for synchronizations.
  */
 public class ModelSyncActionProvider extends SynchronizationActionProvider {
-	
+
 	public ModelSyncActionProvider() {
 		super();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.mapping.SynchronizationActionProvider#initialize()
-	 */
+	@Override
 	protected void initialize() {
 		super.initialize();
 		final ISynchronizePageConfiguration configuration= getSynchronizePageConfiguration();

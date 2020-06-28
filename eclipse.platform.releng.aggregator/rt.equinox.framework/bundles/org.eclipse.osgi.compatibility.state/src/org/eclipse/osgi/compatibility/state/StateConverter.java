@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  ******************************************************************************/
@@ -210,7 +210,7 @@ class StateConverter {
 		if (map.isEmpty())
 			return ""; //$NON-NLS-1$
 		Set<Entry<String, V>> set = map.entrySet();
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (Entry<String, V> entry : set) {
 			sb.append("; "); //$NON-NLS-1$
 			String key = entry.getKey();

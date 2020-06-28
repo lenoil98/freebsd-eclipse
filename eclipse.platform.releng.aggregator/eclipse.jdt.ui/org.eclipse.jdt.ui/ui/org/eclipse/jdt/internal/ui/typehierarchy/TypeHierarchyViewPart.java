@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.ui.typehierarchy;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.help.IContextProvider;
@@ -65,6 +64,7 @@ import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.util.DelegatingDropAdapter;
 import org.eclipse.jface.util.IPropertyChangeListener;
+import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.AbstractTreeViewer;
 import org.eclipse.jface.viewers.IBasicPropertyConstants;
@@ -101,7 +101,6 @@ import org.eclipse.ui.part.PluginTransfer;
 import org.eclipse.ui.part.ResourceTransfer;
 import org.eclipse.ui.part.ShowInContext;
 import org.eclipse.ui.part.ViewPart;
-import org.eclipse.ui.views.navigator.LocalSelectionTransfer;
 
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
@@ -247,7 +246,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	/**
 	 * Indicates whether the restore job was canceled explicitly.
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	private boolean fRestoreJobCanceledExplicitly= true;
@@ -255,7 +254,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 	/**
 	 * Indicates whether empty viewers should keep showing. If false, replace them with
 	 * fEmptyTypesViewer.
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	private boolean fKeepShowingEmptyViewers= true;
@@ -270,12 +269,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 		fRestoreStateJob= null;
 
 		fHierarchyLifeCycle= new TypeHierarchyLifeCycle(this);
-		fTypeHierarchyLifeCycleListener= new ITypeHierarchyLifeCycleListener() {
-			@Override
-			public void typeHierarchyChanged(TypeHierarchyLifeCycle typeHierarchy, IType[] changedTypes) {
-				doTypeHierarchyChanged(typeHierarchy, changedTypes);
-			}
-		};
+		fTypeHierarchyLifeCycleListener= this::doTypeHierarchyChanged;
 		fHierarchyLifeCycle.addChangedListener(fTypeHierarchyLifeCycleListener);
 
 		fPropertyChangeListener= new IPropertyChangeListener() {
@@ -388,8 +382,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 	 * @param entry The new entry
 	 */
 	private void addHistoryEntry(IJavaElement[] entry) {
-		for (Iterator<IJavaElement[]> iter= fInputHistory.iterator(); iter.hasNext();) {
-			IJavaElement[] elem= iter.next();
+		for (IJavaElement[] elem : fInputHistory) {
 			if (Arrays.equals(elem, entry)) {
 				fInputHistory.remove(elem);
 				break;
@@ -401,9 +394,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	private void updateHistoryEntries() {
 		for (int i= fInputHistory.size() - 1; i >= 0; i--) {
-			IJavaElement[] entries= fInputHistory.get(i);
-			for (int j= 0; j < entries.length; j++) {
-				IJavaElement elem= entries[j];
+			for (IJavaElement elem : fInputHistory.get(i)) {
 				if (elem != null && !elem.exists()) {
 					fInputHistory.remove(i);
 					break;
@@ -415,7 +406,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	/**
 	 * Goes to the selected entry, without updating the order of history entries.
-	 * 
+	 *
 	 * @param entry the entry to open
 	 */
 	public void gotoHistoryEntry(IJavaElement[] entry) {
@@ -437,7 +428,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	/**
 	 * Sets the history entries.
-	 * 
+	 *
 	 * @param elems the history elements to set
 	 */
 	public void setHistoryEntries(IJavaElement[] elems) {
@@ -448,14 +439,13 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	/**
 	 * Sets the history entries.
-	 * 
+	 *
 	 * @param elems the history elements to set
 	 * @since 3.7
 	 */
 	public void setHistoryEntries(List<IJavaElement[]> elems) {
 		fInputHistory.clear();
-		for (Iterator<IJavaElement[]> iterator= elems.iterator(); iterator.hasNext();) {
-			IJavaElement[] elements= iterator.next();
+		for (IJavaElement[] elements : elems) {
 			if (elements != null && elements.length != 0)
 				fInputHistory.add(elements);
 		}
@@ -516,7 +506,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 	/**
 	 * Returns the input element of the type hierarchy. Can be of type <code>IType</code> or
 	 * <code>IPackageFragment</code>
-	 * 
+	 *
 	 * @return the input element
 	 */
 	@Override
@@ -526,14 +516,14 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	/**
 	 * Returns the input elements of the type hierarchy.
-	 * 
+	 *
 	 * @return the input elements
 	 * @since 3.7
 	 */
 	public IJavaElement[] getInputElements() {
 		return fInputElements;
 	}
-	
+
 
 	/**
 	 * Sets the input to a new element.
@@ -547,7 +537,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	/**
 	 * Sets the input to a new element.
-	 * 
+	 *
 	 * @param javaElements the input java elements
 	 * @since 3.7
 	 */
@@ -619,8 +609,8 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 			clearInput();
 		} else {
 			if (!inputElements.equals(prevInput)) {
-				for (int i= 0; i < fAllViewers.length; i++) {
-					fAllViewers[i].setInput(null);
+				for (TypeHierarchyViewer viewer : fAllViewers) {
+					viewer.setInput(null);
 				}
 			}
 			fInputElements= inputElements;
@@ -647,7 +637,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	/**
 	 * Updates the viewers, toolbar buttons and tooltip.
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	public void updateViewers() {
@@ -669,8 +659,8 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 		updateToolbarButtons();
 		updateToolTipAndDescription();
 		showMembersInHierarchy(false);
-		fPagebook.showPage(fTypeMethodsSplitter);		
-		fSelectInEditor= true;		
+		fPagebook.showPage(fTypeMethodsSplitter);
+		fSelectInEditor= true;
 	}
 
 	private void processOutstandingEvents() {
@@ -686,7 +676,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 		updateHierarchyViewer(false);
 		updateToolbarButtons();
 		updateToolTipAndDescription();
-		getViewSite().getActionBars().getStatusLineManager().setMessage(""); //$NON-NLS-1$		
+		getViewSite().getActionBars().getStatusLineManager().setMessage(""); //$NON-NLS-1$
 	}
 
 	/*
@@ -739,7 +729,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 			return (T) new IShowInTargetList() {
 				@Override
 				public String[] getShowInTargetIds() {
-					return new String[] { JavaUI.ID_PACKAGES, JavaPlugin.ID_RES_NAV  };
+					return new String[] { JavaUI.ID_PACKAGES};
 				}
 
 			};
@@ -782,8 +772,8 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 		fEmptyTypesViewer= new Label(fViewerbook, SWT.TOP | SWT.LEFT | SWT.WRAP);
 
-		for (int i= 0; i < fAllViewers.length; i++) {
-			fAllViewers[i].setInput(fAllViewers[i]);
+		for (TypeHierarchyViewer viewer : fAllViewers) {
+			viewer.setInput(viewer);
 		}
 
 		// force the update
@@ -879,21 +869,21 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 	}
 
 	private void initDragAndDrop() {
-		for (int i= 0; i < fAllViewers.length; i++) {
-			addDragAdapters(fAllViewers[i]);
-			addDropAdapters(fAllViewers[i]);
+		for (TypeHierarchyViewer viewer : fAllViewers) {
+			addDragAdapters(viewer);
+			addDropAdapters(viewer);
 		}
 		addDragAdapters(fMethodsViewer);
 		fMethodsViewer.addDropSupport(DND.DROP_NONE, new Transfer[0], new DropTargetAdapter());
 
 		//DND on empty hierarchy
 		DropTarget dropTarget = new DropTarget(fPagebook, DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK | DND.DROP_DEFAULT);
-		dropTarget.setTransfer(new Transfer[] { LocalSelectionTransfer.getInstance() });
+		dropTarget.setTransfer(LocalSelectionTransfer.getTransfer());
 		dropTarget.addDropListener(new TypeHierarchyTransferDropAdapter(this, fAllViewers[0]));
 	}
 
 	private void addDropAdapters(AbstractTreeViewer viewer) {
-		Transfer[] transfers= new Transfer[] { LocalSelectionTransfer.getInstance(), PluginTransfer.getInstance() };
+		Transfer[] transfers= new Transfer[] { LocalSelectionTransfer.getTransfer(), PluginTransfer.getInstance() };
 		int ops= DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK | DND.DROP_DEFAULT;
 
 		DelegatingDropAdapter delegatingDropAdapter= new DelegatingDropAdapter();
@@ -905,7 +895,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	private void addDragAdapters(StructuredViewer viewer) {
 		int ops= DND.DROP_COPY | DND.DROP_LINK;
-		Transfer[] transfers= new Transfer[] { LocalSelectionTransfer.getInstance(), ResourceTransfer.getInstance(), FileTransfer.getInstance()};
+		Transfer[] transfers= new Transfer[] { LocalSelectionTransfer.getTransfer(), ResourceTransfer.getInstance(), FileTransfer.getInstance()};
 
 		JdtViewerDragAdapter dragAdapter= new JdtViewerDragAdapter(viewer);
 		dragAdapter.addDragSourceListener(new SelectionTransferDragAdapter(viewer));
@@ -983,8 +973,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 		// set the filter menu items
 		IActionBars actionBars= getViewSite().getActionBars();
 		IMenuManager viewMenu= actionBars.getMenuManager();
-		for (int i= 0; i < fViewActions.length; i++) {
-			ToggleViewAction action= fViewActions[i];
+		for (ToggleViewAction action : fViewActions) {
 			viewMenu.add(action);
 			action.setEnabled(false);
 		}
@@ -996,8 +985,8 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 		IMenuManager layoutSubMenu= new MenuManager(TypeHierarchyMessages.TypeHierarchyViewPart_layout_submenu);
 		viewMenu.add(layoutSubMenu);
-		for (int i= 0; i < fToggleOrientationActions.length; i++) {
-			layoutSubMenu.add(fToggleOrientationActions[i]);
+		for (ToggleOrientationAction action : fToggleOrientationActions) {
+			layoutSubMenu.add(action);
 		}
 		viewMenu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 		viewMenu.add(fShowQualifiedTypeNamesAction);
@@ -1014,9 +1003,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 		// selection provider
 		int nHierarchyViewers= fAllViewers.length;
 		StructuredViewer[] trackedViewers= new StructuredViewer[nHierarchyViewers + 1];
-		for (int i= 0; i < nHierarchyViewers; i++) {
-			trackedViewers[i]= fAllViewers[i];
-		}
+		System.arraycopy(fAllViewers, 0, trackedViewers, 0, nHierarchyViewers);
 		trackedViewers[nHierarchyViewers]= fMethodsViewer;
 		fSelectionProviderMediator= new SelectionProviderMediator(trackedViewers, getCurrentViewer());
 		IStatusLineManager slManager= getViewSite().getActionBars().getStatusLineManager();
@@ -1136,8 +1123,8 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 	}
 
 	private void updateCheckedState() {
-		for (int i= 0; i < fToggleOrientationActions.length; i++) {
-			fToggleOrientationActions[i].setChecked(getViewLayout() == fToggleOrientationActions[i].getOrientation());
+		for (ToggleOrientationAction action : fToggleOrientationActions) {
+			action.setChecked(getViewLayout() == action.getOrientation());
 		}
 	}
 
@@ -1158,8 +1145,8 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	private void fillMainToolBar(IToolBarManager tbmanager) {
 		tbmanager.removeAll();
-		for (int i= 0; i < fViewActions.length; i++) {
-			tbmanager.add(fViewActions[i]);
+		for (ToggleViewAction action : fViewActions) {
+			tbmanager.add(action);
 		}
 		tbmanager.add(fHistoryDropDownAction);
 		tbmanager.update(false);
@@ -1218,8 +1205,8 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 	 */
 	private void setMemberFilter(IMember[] memberFilter) {
 		Assert.isNotNull(fAllViewers);
-		for (int i= 0; i < fAllViewers.length; i++) {
-			fAllViewers[i].setMemberFilter(memberFilter);
+		for (TypeHierarchyViewer viewer : fAllViewers) {
+			viewer.setMemberFilter(memberFilter);
 		}
 	}
 
@@ -1343,7 +1330,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 				if (types.size() == 1) {
 					fSelectedType= (IType) types.get(0);
 					updateMethodViewer(fSelectedType);
-				} else if (types.size() == 0) {
+				} else if (types.isEmpty()) {
 					// method selected, no change
 				}
 				if (nSelected == 1 && fSelectInEditor) {
@@ -1385,10 +1372,10 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 	}
 
 	private boolean isChildVisible(Composite pb, Control child) {
-		Control[] children= pb.getChildren();
-		for (int i= 0; i < children.length; i++) {
-			if (children[i] == child && children[i].isVisible())
+		for (Control c : pb.getChildren()) {
+			if (c == child && c.isVisible()) {
 				return true;
+			}
 		}
 		return false;
 	}
@@ -1444,8 +1431,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 	private void updateToolbarButtons() {
 		boolean isNull= fInputElements == null;
 		boolean isType= !isNull && fInputElements.length == 1 && fInputElements[0] instanceof IType;
-		for (int i= 0; i < fViewActions.length; i++) {
-			ToggleViewAction action= fViewActions[i];
+		for (ToggleViewAction action : fViewActions) {
 			if (action.getViewerIndex() == HIERARCHY_MODE_CLASSIC) {
 				action.setEnabled(!isNull);
 			} else {
@@ -1505,8 +1491,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 			};
 
 		}
-		for (int i= 0; i < fViewActions.length; i++) {
-			ToggleViewAction action= fViewActions[i];
+		for (ToggleViewAction action : fViewActions) {
 			action.setChecked(fCurrentViewerIndex == action.getViewerIndex());
 		}
 	}
@@ -1556,8 +1541,8 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 		if (on != fShowQualifiedTypeNames) {
 			fShowQualifiedTypeNames= on;
 			if (fAllViewers != null) {
-				for (int i= 0; i < fAllViewers.length; i++) {
-					fAllViewers[i].setQualifiedTypeName(on);
+				for (TypeHierarchyViewer viewer : fAllViewers) {
+					viewer.setQualifiedTypeName(on);
 				}
 			}
 		}
@@ -1707,7 +1692,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 			inputList.add(input);
 			elementId= memento.getString(TAG_INPUT + ++i);
 		}
-		if (inputList == null || inputList.size() == 0) {
+		if (inputList == null || inputList.isEmpty()) {
 			doRestoreState(memento, input);
 		} else {
 			final IJavaElement[] hierarchyInput= inputList.toArray(new IJavaElement[inputList.size()]);
@@ -1761,7 +1746,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	/**
 	 * Restores the state of the type hierarchy view from the memento.
-	 * 
+	 *
 	 * @param memento the memento
 	 * @param input the input java elements
 	 * @since 3.7
@@ -1902,7 +1887,7 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 
 	/**
 	 * Sets the empty viewer when the user cancels the computation.
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	public void showEmptyViewer() {
@@ -1946,18 +1931,18 @@ public class TypeHierarchyViewPart extends ViewPart implements ITypeHierarchyVie
 	 * @since 3.6
 	 */
 	public void setViewersInput() {
-		for (int i= 0; i < fAllViewers.length; i++) {
-			fAllViewers[i].setInput(fAllViewers[i]);
+		for (TypeHierarchyViewer viewer : fAllViewers) {
+			viewer.setInput(viewer);
 		}
 		setKeepShowingEmptyViewers(false);
 	}
 
 	/**
 	 * Sets whether empty viewers should keep showing. If false, replace with fEmptyTypesViewer.
-	 * 
+	 *
 	 * @param keepShowingEmptyViewers <code>true</code> if the empty viewers can be shown,
 	 *            <code>false otherwise
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	public void setKeepShowingEmptyViewers(boolean keepShowingEmptyViewers) {

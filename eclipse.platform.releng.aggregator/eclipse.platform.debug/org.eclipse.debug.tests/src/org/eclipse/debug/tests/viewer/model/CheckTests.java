@@ -18,6 +18,7 @@ import org.eclipse.debug.internal.ui.viewers.model.IInternalTreeModelViewer;
 import org.eclipse.debug.internal.ui.viewers.model.provisional.ModelDelta;
 import org.eclipse.debug.tests.viewer.model.TestModel.TestElement;
 import org.eclipse.jface.viewers.TreePath;
+import org.junit.Test;
 
 /**
  * Tests which verify the check box support.  This test is very similar to the
@@ -29,53 +30,51 @@ import org.eclipse.jface.viewers.TreePath;
  */
 abstract public class CheckTests extends AbstractViewerModelTest {
 
-    public CheckTests(String name) {
-        super(name);
-    }
-
 	@Override
 	protected TestModelUpdatesListener createListener(IInternalTreeModelViewer viewer) {
 		return new TestModelUpdatesListener(viewer, false, false);
 	}
 
+	@Test
 	public void testSimpleSingleLevel() throws Exception {
-        // Create the model with test data
-        TestModel model = TestModel.simpleSingleLevel();
+		// Create the model with test data
+		TestModel model = TestModel.simpleSingleLevel();
 
-        // Make sure that all elements are expanded
-        fViewer.setAutoExpandLevel(-1);
+		// Make sure that all elements are expanded
+		fViewer.setAutoExpandLevel(-1);
 
-        // Create the agent which forces the tree to populate
-        //TreeModelViewerAutopopulateAgent autopopulateAgent = new TreeModelViewerAutopopulateAgent(fViewer);
+		// Create the agent which forces the tree to populate
+		//TreeModelViewerAutopopulateAgent autopopulateAgent = new TreeModelViewerAutopopulateAgent(fViewer);
 
-        // Create the listener which determines when the view is finished updating.
-        fListener.reset(TreePath.EMPTY, model.getRootElement(), -1, true, false);
+		// Create the listener which determines when the view is finished updating.
+		fListener.reset(TreePath.EMPTY, model.getRootElement(), -1, true, false);
 
-        // Set the viewer input (and trigger updates).
-        fViewer.setInput(model.getRootElement());
+		// Set the viewer input (and trigger updates).
+		fViewer.setInput(model.getRootElement());
 
-        // Wait for the updates to complete.
+		// Wait for the updates to complete.
 		waitWhile(t -> !fListener.isFinished(), createListenerErrorMessage());
 
-        model.validateData(fViewer, TreePath.EMPTY);
-    }
+		model.validateData(fViewer, TreePath.EMPTY);
+	}
 
+	@Test
 	public void testSimpleMultiLevel() throws Exception {
-        //TreeModelViewerAutopopulateAgent autopopulateAgent = new TreeModelViewerAutopopulateAgent(fViewer);
+		//TreeModelViewerAutopopulateAgent autopopulateAgent = new TreeModelViewerAutopopulateAgent(fViewer);
 
-        TestModel model = TestModel.simpleMultiLevel();
-        fViewer.setAutoExpandLevel(-1);
+		TestModel model = TestModel.simpleMultiLevel();
+		fViewer.setAutoExpandLevel(-1);
 
-        fListener.reset(TreePath.EMPTY, model.getRootElement(), -1, true, false);
+		fListener.reset(TreePath.EMPTY, model.getRootElement(), -1, true, false);
 
-        fViewer.setInput(model.getRootElement());
+		fViewer.setInput(model.getRootElement());
 
 		waitWhile(t -> !fListener.isFinished(), createListenerErrorMessage());
 
-        model.validateData(fViewer, TreePath.EMPTY);
-    }
+		model.validateData(fViewer, TreePath.EMPTY);
+	}
 
-    // TODO: no idea how to trigger a toggle event on an item
+	// TODO: no idea how to trigger a toggle event on an item
 //    public void testCheckReceiver() {
 //        // Initial setup
 //        TestModel model = TestModel.simpleSingleLevel();
@@ -104,30 +103,30 @@ abstract public class CheckTests extends AbstractViewerModelTest {
 //
 //        Assert.assertTrue(element.getChecked() != initialCheckState);
 //    }
-
+	@Test
 	public void testUpdateCheck() throws Exception {
-        //TreeModelViewerAutopopulateAgent autopopulateAgent = new TreeModelViewerAutopopulateAgent(fViewer);
+		//TreeModelViewerAutopopulateAgent autopopulateAgent = new TreeModelViewerAutopopulateAgent(fViewer);
 
-        TestModel model = TestModel.simpleSingleLevel();
-        fViewer.setAutoExpandLevel(-1);
+		TestModel model = TestModel.simpleSingleLevel();
+		fViewer.setAutoExpandLevel(-1);
 
-        // Create the listener
-        fListener.reset(TreePath.EMPTY, model.getRootElement(), -1, true, false);
+		// Create the listener
+		fListener.reset(TreePath.EMPTY, model.getRootElement(), -1, true, false);
 
-        // Set the input into the view and update the view.
-        fViewer.setInput(model.getRootElement());
+		// Set the input into the view and update the view.
+		fViewer.setInput(model.getRootElement());
 		waitWhile(t -> !fListener.isFinished(), createListenerErrorMessage());
-        model.validateData(fViewer, TreePath.EMPTY);
+		model.validateData(fViewer, TreePath.EMPTY);
 
-        // Update the model
-        TestElement element = model.getRootElement().getChildren()[0];
+		// Update the model
+		TestElement element = model.getRootElement().getChildren()[0];
 
-        TreePath elementPath = new TreePath(new Object[] { element });
-        ModelDelta delta = model.setElementChecked(elementPath, false, false);
+		TreePath elementPath = new TreePath(new Object[] { element });
+		ModelDelta delta = model.setElementChecked(elementPath, false, false);
 
-        fListener.reset(elementPath, element, -1, true, false);
-        model.postDelta(delta);
+		fListener.reset(elementPath, element, -1, true, false);
+		model.postDelta(delta);
 		waitWhile(t -> !fListener.isFinished(ITestModelUpdatesListenerConstants.LABEL_COMPLETE | ITestModelUpdatesListenerConstants.MODEL_CHANGED_COMPLETE), createListenerErrorMessage());
-        model.validateData(fViewer, TreePath.EMPTY);
-    }
+		model.validateData(fViewer, TreePath.EMPTY);
+	}
 }

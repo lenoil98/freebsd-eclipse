@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2015 IBM Corporation and others.
+ * Copyright (c) 2008, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,12 +13,17 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.preferences;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+
+import org.junit.Test;
 
 import org.eclipse.jdt.core.JavaCore;
 
@@ -30,36 +35,23 @@ import org.eclipse.jdt.internal.ui.preferences.OptionsConfigurationBlock.Key;
 import org.eclipse.jdt.internal.ui.preferences.ProblemSeveritiesConfigurationBlock;
 import org.eclipse.jdt.internal.ui.preferences.TodoTaskConfigurationBlock;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-public class OptionsConfigurationBlockTest extends TestCase {
-
-	/*
-	 * NOTE: This test is not contained in the build test suite, since missing
-	 * UI should not make the build go red.
-	 */
-	public static Test suite() {
-		return new TestSuite(OptionsConfigurationBlockTest.class);
-	}
+public class OptionsConfigurationBlockTest {
 
 	/**
 	 * Reflective test that ensures that all options from {@link JavaCore} are used in the UI.
 	 *
 	 * @throws Exception should not
 	 */
+	@Test
 	public void testKeysForOptions() throws Exception {
-		Field[] coreFields= JavaCore.class.getDeclaredFields();
 		HashMap<String, String> coreFieldLookup= new HashMap<>();
-		for (int i= 0; i < coreFields.length; i++) {
-			Field field= coreFields[i];
+		for (Field field : JavaCore.class.getDeclaredFields()) {
 			String name= field.getName();
 			if (name.startsWith("COMPILER_")
-					|| name.startsWith("CORE_")
-					|| name.startsWith("CODEASSIST_")
-					|| name.startsWith("TIMEOUT_")
-					) {
+				|| name.startsWith("CORE_")
+				|| name.startsWith("CODEASSIST_")
+				|| name.startsWith("TIMEOUT_")
+				) {
 				field.setAccessible(true);
 				String value= (String) field.get(null);
 				if (value.startsWith(JavaCore.PLUGIN_ID))
@@ -93,7 +85,7 @@ public class OptionsConfigurationBlockTest extends TestCase {
 	 */
 	@Deprecated
 	private void removeUnusedOptions(HashMap<String, String> coreFieldLookup) {
-		coreFieldLookup.keySet().removeAll(Arrays.asList(new String[] {
+		coreFieldLookup.keySet().removeAll(Arrays.asList(
 				JavaCore.COMPILER_PB_INCONSISTENT_NULL_CHECK,
 				JavaCore.COMPILER_PB_INVALID_IMPORT,
 				JavaCore.COMPILER_PB_UNREACHABLE_CODE,
@@ -109,12 +101,11 @@ public class OptionsConfigurationBlockTest extends TestCase {
 				JavaCore.COMPILER_PB_UNUSED_TYPE_ARGUMENTS_FOR_METHOD_INVOCATION, // maybe for 1.7
 
 				JavaCore.CODEASSIST_IMPLICIT_QUALIFICATION, // TODO: not used: bug?
-				
+
 				JavaCore.COMPILER_PB_DEAD_CODE_IN_TRIVIAL_IF_STATEMENT, // default is good (don't flag trivial 'if (DEBUG)')
-				
+
 				JavaCore.CODEASSIST_DISCOURAGED_REFERENCE_CHECK, // is on the Type Filters page now, see https://bugs.eclipse.org/218487
-				JavaCore.CODEASSIST_FORBIDDEN_REFERENCE_CHECK,   // is on the Type Filters page now, see https://bugs.eclipse.org/218487
-		}));
+				JavaCore.CODEASSIST_FORBIDDEN_REFERENCE_CHECK));   // is on the Type Filters page now, see https://bugs.eclipse.org/218487
 	}
 
 	private void checkConfigurationBlock(Class<?> configurationBlock, HashMap<String, String> coreFieldLookup) throws Exception {
@@ -131,10 +122,8 @@ public class OptionsConfigurationBlockTest extends TestCase {
 		keysMethod.setAccessible(true);
 		Key[] keys= (Key[]) (keysMethod.getParameterTypes().length > 0 ? keysMethod.invoke(null, Boolean.FALSE) : keysMethod.invoke(null));
 		HashSet<Key> keySet= new HashSet<>(Arrays.asList(keys));
-		
-		Field[] prefFields= configurationBlock.getDeclaredFields();
-		for (int i= 0; i < prefFields.length; i++) {
-			Field field= prefFields[i];
+
+		for (Field field : configurationBlock.getDeclaredFields()) {
 			field.setAccessible(true);
 			if (field.getType() == Key.class) {
 				Key key= (Key)field.get(null);
@@ -142,13 +131,13 @@ public class OptionsConfigurationBlockTest extends TestCase {
 				if (JavaCore.PLUGIN_ID.equals(key.getQualifier())) {
 					Object fieldName= coreFieldLookup.remove(key.getName());
 					assertTrue(
-							"No core constant for key " + key.getName() + " in class " + configurationBlock.getName(),
-							fieldName != null);
+						"No core constant for key " + key.getName() + " in class " + configurationBlock.getName(),
+						fieldName != null);
 					assertTrue(configurationBlock.getName() + "#getKeys() is missing key '" + key.getName() + "'", keyWasInKeySet);
 				}
 			}
 		}
-		
+
 		assertEquals(configurationBlock.getName() + "#getKeys() includes keys that are not declared in the class", Collections.emptySet(), keySet);
 	}
 }

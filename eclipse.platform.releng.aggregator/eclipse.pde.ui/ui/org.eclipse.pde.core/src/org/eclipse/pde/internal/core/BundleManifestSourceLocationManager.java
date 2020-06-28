@@ -15,6 +15,7 @@ package org.eclipse.pde.internal.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -68,7 +69,7 @@ public class BundleManifestSourceLocationManager {
 	 * @return set of source locations, possibly empty
 	 */
 	public Collection<SourceLocation> getSourceLocations() {
-		Collection<SourceLocation> result = new ArrayList<>(fPluginToSourceBundle.values().size());
+		Collection<SourceLocation> result = new ArrayList<>(fPluginToSourceBundle.size());
 		for (IPluginModelBase bundle : fPluginToSourceBundle.values()) {
 			SourceLocation location = new SourceLocation(new Path(bundle.getInstallLocation()));
 			location.setUserDefined(false);
@@ -183,9 +184,7 @@ public class BundleManifestSourceLocationManager {
 	private void addSourceRoots(String rootEntryDirective, Set<String> pluginSourceRoots) {
 		if (rootEntryDirective != null) {
 			String[] roots = rootEntryDirective.split(","); //$NON-NLS-1$
-			for (String root : roots) {
-				pluginSourceRoots.add(root);
-			}
+			Collections.addAll(pluginSourceRoots, roots);
 		} else {
 			pluginSourceRoots.add("."); //$NON-NLS-1$
 		}

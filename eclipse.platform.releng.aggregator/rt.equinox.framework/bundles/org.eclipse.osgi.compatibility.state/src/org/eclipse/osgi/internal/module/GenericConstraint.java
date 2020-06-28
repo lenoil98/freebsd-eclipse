@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Karsten Thoms (itemis) - Consider devmode for effective status computation
@@ -30,6 +30,7 @@ public class GenericConstraint extends ResolverConstraint {
 		multiple = (constraint.getResolution() & GenericSpecification.RESOLUTION_MULTIPLE) != 0;
 	}
 
+	@Override
 	boolean isOptional() {
 		return (((GenericSpecification) constraint).getResolution() & GenericSpecification.RESOLUTION_OPTIONAL) != 0;
 	}

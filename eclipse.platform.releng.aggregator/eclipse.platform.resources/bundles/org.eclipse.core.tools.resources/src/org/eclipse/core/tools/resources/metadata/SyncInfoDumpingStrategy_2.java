@@ -22,7 +22,7 @@ import org.eclipse.core.tools.metadata.*;
 
 /**
  * A strategy for reading .syncinfo files version 2. Layout:
- * <pre>
+ * <pre> {@code
  * SAVE_FILE -> VERSION_ID RESOURCE*
  * VERSION_ID -> int
  * RESOURCE -> RESOURCE_PATH SIZE SYNCINFO*
@@ -32,8 +32,8 @@ import org.eclipse.core.tools.metadata.*;
  * TYPE -> INDEX | QNAME
  * INDEX -> int int
  * QNAME -> int String
- * BYTES -> byte[] 
- * </pre>
+ * BYTES -> byte[]
+ * }</pre>
  */
 class SyncInfoDumpingStrategy_2 implements IStringDumpingStrategy {
 	@Override

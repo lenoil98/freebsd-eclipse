@@ -52,6 +52,7 @@ public class ZipBundleEntry extends BundleEntry {
 	 * @return InputStream for the entry
 	 * @exception java.io.IOException
 	 */
+	@Override
 	public InputStream getInputStream() throws IOException {
 		return bundleFile.getInputStream(zipEntry);
 	}
@@ -61,6 +62,7 @@ public class ZipBundleEntry extends BundleEntry {
 	 *
 	 * @return size of entry
 	 */
+	@Override
 	public long getSize() {
 		return zipEntry.getSize();
 	}
@@ -70,6 +72,7 @@ public class ZipBundleEntry extends BundleEntry {
 	 *
 	 * @return name of entry
 	 */
+	@Override
 	public String getName() {
 		return zipEntry.getName();
 	}
@@ -81,28 +84,31 @@ public class ZipBundleEntry extends BundleEntry {
 	 *
 	 * @return last modification time.
 	 */
+	@Override
 	public long getTime() {
 		return zipEntry.getTime();
 	}
 
 	@SuppressWarnings("deprecation")
+	@Override
 	public URL getLocalURL() {
 		try {
 			return new URL("jar:" + bundleFile.basefile.toURL() + "!/" + zipEntry.getName()); //$NON-NLS-1$//$NON-NLS-2$
 		} catch (MalformedURLException e) {
-			//This can not happen. 
+			//This can not happen.
 			return null;
 		}
 	}
 
 	@SuppressWarnings("deprecation")
+	@Override
 	public URL getFileURL() {
 		try {
 			File file = bundleFile.getFile(zipEntry.getName(), false);
 			if (file != null)
 				return file.toURL();
 		} catch (MalformedURLException e) {
-			//This can not happen. 
+			//This can not happen.
 		}
 		return null;
 	}

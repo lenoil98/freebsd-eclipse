@@ -16,11 +16,12 @@ package org.eclipse.ui.internal;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.Collator;
+import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.Platform;
@@ -28,9 +29,6 @@ import org.eclipse.osgi.util.NLS;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.about.ISystemSummarySection;
 import org.eclipse.ui.internal.registry.IWorkbenchRegistryConstants;
-
-import com.ibm.icu.text.Collator;
-import com.ibm.icu.text.DateFormat;
 
 /**
  * This class contains utility methods that clients may use to obtain
@@ -42,8 +40,8 @@ import com.ibm.icu.text.DateFormat;
 public final class ConfigurationInfo {
 
 	/**
-	 * Return the build id for this instance. This may be <code>null</code> in
-	 * the event that this property is undefined.
+	 * Return the build id for this instance. This may be <code>null</code> in the
+	 * event that this property is undefined.
 	 *
 	 * @return the build id or <code>null</code>
 	 */
@@ -52,29 +50,27 @@ public final class ConfigurationInfo {
 	}
 
 	/**
-	 * Return a multi-line String that describes the current configuration. This
-	 * may include but is not limited to system properties, installed bundles,
-	 * and installed features. The specific format of this message is undefined
-	 * and may change at any time.
+	 * Return a multi-line String that describes the current configuration. This may
+	 * include but is not limited to system properties, installed bundles, and
+	 * installed features. The specific format of this message is undefined and may
+	 * change at any time.
 	 *
 	 * <p>
 	 * The contents of this String are in part constructed via
-	 * {@link ISystemSummarySection} that are registered with this running
-	 * instance of the workbench.
+	 * {@link ISystemSummarySection} that are registered with this running instance
+	 * of the workbench.
 	 * </p>
 	 *
 	 * @return the configuration info
 	 */
 	public static String getSystemSummary() {
 		StringWriter out = new StringWriter();
-		PrintWriter writer = new PrintWriter(out);
-		writer.println(NLS.bind(WorkbenchMessages.SystemSummary_timeStamp,
-				DateFormat
-						.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL)
-						.format(new Date())));
+		try (PrintWriter writer = new PrintWriter(out)) {
+			writer.println(NLS.bind(WorkbenchMessages.SystemSummary_timeStamp,
+					DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date())));
 
-		ConfigurationInfo.appendExtensions(writer);
-		writer.close();
+			ConfigurationInfo.appendExtensions(writer);
+		}
 		return out.toString();
 	}
 
@@ -83,25 +79,21 @@ public final class ConfigurationInfo {
 	 * extension point.
 	 */
 	private static void appendExtensions(PrintWriter writer) {
-		IConfigurationElement[] configElements = getSortedExtensions(Platform
-				.getExtensionRegistry().getConfigurationElementsFor(
-						PlatformUI.PLUGIN_ID,
+		IConfigurationElement[] configElements = getSortedExtensions(
+				Platform.getExtensionRegistry().getConfigurationElementsFor(PlatformUI.PLUGIN_ID,
 						IWorkbenchRegistryConstants.PL_SYSTEM_SUMMARY_SECTIONS));
 		for (IConfigurationElement element : configElements) {
 			Object obj = null;
 			try {
-				obj = WorkbenchPlugin.createExtension(element,
-						IWorkbenchConstants.TAG_CLASS);
+				obj = WorkbenchPlugin.createExtension(element, IWorkbenchConstants.TAG_CLASS);
 			} catch (CoreException e) {
-				WorkbenchPlugin.log(
-						"could not create class attribute for extension", //$NON-NLS-1$
+				WorkbenchPlugin.log("could not create class attribute for extension", //$NON-NLS-1$
 						e.getStatus());
 			}
 
 			writer.println();
-			writer.println(NLS.bind(
-					WorkbenchMessages.SystemSummary_sectionTitle, element
-							.getAttribute("sectionTitle"))); //$NON-NLS-1$
+			writer.println(
+					NLS.bind(WorkbenchMessages.SystemSummary_sectionTitle, element.getAttribute("sectionTitle"))); //$NON-NLS-1$
 
 			if (obj instanceof ISystemSummarySection) {
 				ISystemSummarySection logSection = (ISystemSummarySection) obj;

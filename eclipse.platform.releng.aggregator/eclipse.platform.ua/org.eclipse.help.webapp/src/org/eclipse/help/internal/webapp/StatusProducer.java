@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 IBM Corporation and others.
+ * Copyright (c) 2009, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 
 package org.eclipse.help.internal.webapp;
@@ -82,7 +83,7 @@ public class StatusProducer implements IHelpContentProducer {
 			!href.equalsIgnoreCase(MissingContentManager.REMOTE_STATUS_HELP_VIEW_HREF))
 			return null;
 
-		StringBuffer pageBuffer = new StringBuffer();
+		StringBuilder pageBuffer = new StringBuilder();
 
 
 		// Get all remote sites, and subset of non-working sites
@@ -107,11 +108,11 @@ public class StatusProducer implements IHelpContentProducer {
 		// check to see if a predefined error page exists
 		// in the preferences
 		if (href.equalsIgnoreCase(MissingContentManager.MISSING_TOPIC_HREF)){
-            String errorPage = Platform.getPreferencesService().getString(
-            		HelpBasePlugin.PLUGIN_ID,
-            		"page_not_found",  //$NON-NLS-1$
-            		null,
-            		null);
+			String errorPage = Platform.getPreferencesService().getString(
+					HelpBasePlugin.PLUGIN_ID,
+					"page_not_found",  //$NON-NLS-1$
+					null,
+					null);
 			if (errorPage != null && errorPage.length() > 0) {
 
 				URL helpURL;
@@ -121,9 +122,9 @@ public class StatusProducer implements IHelpContentProducer {
 								HelpURLStreamHandler.getDefault());
 					return ProxyUtil.getStream(helpURL);
 				} catch (MalformedURLException e) {
-					HelpWebappPlugin.logError("Unable to locate error page: "+errorPage, e); //$NON-NLS-1$
+					Platform.getLog(getClass()).error("Unable to locate error page: "+ errorPage, e); //$NON-NLS-1$
 				} catch (IOException e) {
-					HelpWebappPlugin.logError("Unable to open error page: "+errorPage, e); //$NON-NLS-1$
+					Platform.getLog(getClass()).error("Unable to open error page: "+ errorPage, e); //$NON-NLS-1$
 				}
 
 			}
@@ -220,7 +221,7 @@ public class StatusProducer implements IHelpContentProducer {
 		return getBytes(pageBuffer);
 	}
 
-	public void addCloseLink(Locale locale, StringBuffer pageBuffer) {
+	public void addCloseLink(Locale locale, StringBuilder pageBuffer) {
 		WebappPreferences prefs = new WebappPreferences();
 		String homepage = "/help/topic"+prefs.getHelpHome(); //$NON-NLS-1$
 		pageBuffer.append(tab(3)+"<div style=\"position:absolute;right:4px;top:4px;\">\n"); //$NON-NLS-1$
@@ -230,7 +231,7 @@ public class StatusProducer implements IHelpContentProducer {
 	}
 
 	private InputStream getNetworkOKPage(Locale locale) {
-		StringBuffer pageBuffer = new StringBuffer();
+		StringBuilder pageBuffer = new StringBuilder();
 		// Write HTML header and body beginning.
 		String title = WebappResources.getString("networkHelpAvailable", locale); //$NON-NLS-1$
 		pageBuffer.append(getHtmlHead(locale, title));
@@ -245,7 +246,7 @@ public class StatusProducer implements IHelpContentProducer {
 	}
 
 	private InputStream getMissingTopicPage(String topicPath, Locale locale) {
-		StringBuffer pageBuffer = new StringBuffer();
+		StringBuilder pageBuffer = new StringBuilder();
 		// Write HTML header and body beginning.
 		String title = WebappResources.getString("someBooksUninstalled", locale); //$NON-NLS-1$
 		pageBuffer.append(getHtmlHead(locale, title));
@@ -274,7 +275,7 @@ public class StatusProducer implements IHelpContentProducer {
 		if (unresolved.length == 0) {
 			return getNoBooksMissingPage(locale, isHelpView);
 		}
-		StringBuffer pageBuffer = new StringBuffer();
+		StringBuilder pageBuffer = new StringBuilder();
 		// Write HTML header and body beginning.
 		String title = WebappResources.getString("someBooksUninstalled", locale); //$NON-NLS-1$
 		pageBuffer.append(getHtmlHead(locale, title));
@@ -302,16 +303,15 @@ public class StatusProducer implements IHelpContentProducer {
 		}
 		pageBuffer.append(tab(3)+ "</ul>\n"); //$NON-NLS-1$
 		if (isHelpView) {
-            pageBuffer.append(tab(3)+"<br/><p>\n"); //$NON-NLS-1$
+			pageBuffer.append(tab(3)+"<br/><p>\n"); //$NON-NLS-1$
 			pageBuffer.append(tab(4)+ "<a href=helpview:ignoreMissingBooks>"+ //$NON-NLS-1$
 					WebappResources.getString("ignoreMissingBooks", locale) + "</a>\n"); //$NON-NLS-1$ //$NON-NLS-2$
 			pageBuffer.append(tab(3)+ "</p>\n"); //$NON-NLS-1$
 		}	else {
 			pageBuffer.append(tab(3)+"<br/><p>\n"); //$NON-NLS-1$
-			//pageBuffer.append("<img src=\"PLUGINS_ROOT/org.eclipse.help/command_link.png\"/>");  //$NON-NLS-1$
 			pageBuffer.append("<a class=\"command-link\""  //$NON-NLS-1$
-			   + " href='javascript:executeCommand(\"org.eclipse.help.ui.ignoreMissingPlaceholders\")'>" //$NON-NLS-1$
-			   +  WebappResources.getString("ignoreMissingBooks", locale)+"</a>"); //$NON-NLS-1$ //$NON-NLS-2$
+				+ " href='javascript:executeCommand(\"org.eclipse.help.ui.ignoreMissingPlaceholders\")'>" //$NON-NLS-1$
+				+  WebappResources.getString("ignoreMissingBooks", locale)+"</a>"); //$NON-NLS-1$ //$NON-NLS-2$
 			pageBuffer.append(tab(3)+ "</p>\n"); //$NON-NLS-1$
 		}
 		pageBuffer.append(END_BODY_HTML);
@@ -321,7 +321,7 @@ public class StatusProducer implements IHelpContentProducer {
 
 
 	private InputStream getNoBooksMissingPage(Locale locale, boolean isHelpView) {
-		StringBuffer pageBuffer = new StringBuffer();
+		StringBuilder pageBuffer = new StringBuilder();
 		// Write HTML header and body beginning.
 		String title = WebappResources.getString("allBooksInstalledTitle", locale); //$NON-NLS-1$
 		pageBuffer.append(getHtmlHead(locale, title));
@@ -379,7 +379,7 @@ public class StatusProducer implements IHelpContentProducer {
 	 */
 	private String getActiveLink(Locale locale)
 	{
-		return "<img src=\"PLUGINS_ROOT/org.eclipse.help/command_link.png\"/>"  //$NON-NLS-1$
+		return "<img src=\"PLUGINS_ROOT/org.eclipse.help/command_link.svg\"/>"  //$NON-NLS-1$
 			+ "<a class=\"command-link\""  //$NON-NLS-1$
 			+ " href='javascript:executeCommand(\"org.eclipse.ui.window.preferences(preferencePageId=org.eclipse.help.ui.contentPreferencePage)\")'>" //$NON-NLS-1$
 			+ WebappResources.getString("remotePreferencesMenuSelect", locale)+"</a>"; //$NON-NLS-1$ //$NON-NLS-2$
@@ -410,7 +410,7 @@ public class StatusProducer implements IHelpContentProducer {
 		return tabs;
 	}
 
-	private static InputStream getBytes(StringBuffer pageBuffer) {
+	private static InputStream getBytes(StringBuilder pageBuffer) {
 		return new ByteArrayInputStream(pageBuffer.toString().getBytes(StandardCharsets.UTF_8));
 	}
 

@@ -60,7 +60,7 @@ public class ConvertLineDelimitersAction extends FileBufferOperationAction {
 
 	protected ConvertLineDelimitersAction(String lineDelimiter, String label) {
 		super(new ConvertLineDelimitersOperation(lineDelimiter));
-		setText(constructLabel(label, lineDelimiter, System.getProperty("line.separator"))); //$NON-NLS-1$
+		setText(constructLabel(label, lineDelimiter, System.lineSeparator()));
 		fLabel= Action.removeMnemonics(label);
 	}
 
@@ -90,18 +90,13 @@ public class ConvertLineDelimitersAction extends FileBufferOperationAction {
 			return filterUnacceptableFiles(files);
 		}
 
-    	final IFilter filter= new IFilter() {
-			@Override
-			public boolean accept(IResource resource) {
-				return resource != null && isAcceptableLocation(resource.getFullPath());
-			}
-		};
+		final IFilter filter= resource -> resource != null && isAcceptableLocation(resource.getFullPath());
 
 		SelectResourcesDialog dialog= new SelectResourcesDialog(getShell(), getDialogTitle(), TextEditorMessages.ConvertLineDelimitersAction_dialog_description, filter) {
 			@Override
 			protected Composite createSelectionButtonGroup(Composite parent) {
 				Composite buttonGroup= super.createSelectionButtonGroup(parent);
-				
+
 				final Button button = new Button(buttonGroup, SWT.CHECK);
 				((GridLayout) buttonGroup.getLayout()).numColumns++;
 				button.setText(TextEditorMessages.ConvertLineDelimitersAction_show_only_text_files);
@@ -114,7 +109,7 @@ public class ConvertLineDelimitersAction extends FileBufferOperationAction {
 						refresh();
 					}
 				});
-				
+
 				return buttonGroup;
 			}
 		};
@@ -126,7 +121,7 @@ public class ConvertLineDelimitersAction extends FileBufferOperationAction {
 		}
 		return null;
 	}
-	
+
 	private String getDialogTitle() {
 		return NLSUtility.format(TextEditorMessages.ConvertLineDelimitersAction_dialog_title, fLabel);
 	}
@@ -140,8 +135,7 @@ public class ConvertLineDelimitersAction extends FileBufferOperationAction {
 	 * @since 3.2
 	 */
 	private boolean containsOnlyFiles(IResource[] resources) {
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
+		for (IResource resource : resources) {
 			if ((IResource.FILE & resource.getType()) == 0)
 				return false;
 		}
@@ -158,8 +152,7 @@ public class ConvertLineDelimitersAction extends FileBufferOperationAction {
 	private IFile[] filterUnacceptableFiles(IFile[] files) {
 		boolean askForBinary= true;
 		Set<IFile> filtered= new HashSet<>();
-		for (int i= 0; i < files.length; i++) {
-			IFile file= files[i];
+		for (IFile file : files) {
 			if (isAcceptableLocation(file.getFullPath())) {
 				filtered.add(file);
 			} else if (askForBinary) {

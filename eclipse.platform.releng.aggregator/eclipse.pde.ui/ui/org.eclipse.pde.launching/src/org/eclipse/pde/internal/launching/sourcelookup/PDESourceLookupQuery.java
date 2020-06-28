@@ -14,11 +14,12 @@
  *******************************************************************************/
 package org.eclipse.pde.internal.launching.sourcelookup;
 
+import com.sun.jdi.VMDisconnectedException;
 import java.io.File;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.ISafeRunnable;
 import org.eclipse.debug.core.DebugException;
-import org.eclipse.debug.core.model.IValue;
+import org.eclipse.debug.core.model.*;
 import org.eclipse.debug.core.sourcelookup.ISourceContainer;
 import org.eclipse.jdt.debug.core.*;
 import org.eclipse.osgi.service.resolver.BundleDescription;
@@ -46,8 +47,12 @@ public class PDESourceLookupQuery implements ISafeRunnable {
 	}
 
 	private static final String LEGACY_ECLIPSE_CLASSLOADER = "org.eclipse.core.runtime.adaptor.EclipseClassLoader"; //$NON-NLS-1$
-	private static final String MAIN_CLASS = "org.eclipse.core.launcher.Main"; //$NON-NLS-1$
-	private static final String MAIN_PLUGIN = "org.eclipse.platform"; //$NON-NLS-1$
+	private static final String LEGACY_MAIN_CLASS = "org.eclipse.core.launcher.Main"; //$NON-NLS-1$
+	private static final String LEGACY_MAIN_PLUGIN = "org.eclipse.platform"; //$NON-NLS-1$
+	private static final String MAIN_CLASS = "org.eclipse.equinox.launcher.Main"; //$NON-NLS-1$
+	private static final String LAUNCHER_PLUGIN = "org.eclipse.equinox.launcher"; //$NON-NLS-1$
+	private static final String STARTUP_CLASSLOADER = "org.eclipse.equinox.launcher.Main$StartupClassLoader"; //$NON-NLS-1$
+	private static final String OSGI_FRAMEWORK_PLUGIN = "org.eclipse.osgi"; //$NON-NLS-1$
 
 	private Object fElement;
 	private Object fResult;
@@ -64,6 +69,21 @@ public class PDESourceLookupQuery implements ISafeRunnable {
 
 	@Override
 	public void run() throws Exception {
+		try {
+			findSourceElement();
+		} catch (DebugException e) {
+			boolean isDebugTargetRunning = isDebugTargetRunning();
+			if (isDebugTargetRunning) {
+				throw e;
+			}
+			boolean isVmDisconnectException = e.getCause() instanceof VMDisconnectedException;
+			if (!isVmDisconnectException) {
+				throw e;
+			}
+		}
+	}
+
+	private void findSourceElement() throws Exception {
 		IJavaReferenceType declaringType = null;
 		String sourcePath = null;
 		if (fElement instanceof IJavaStackFrame) {
@@ -105,11 +125,16 @@ public class PDESourceLookupQuery implements ISafeRunnable {
 					fResult = findSourceElement(classLoaderObject, sourcePath);
 				} else if (LEGACY_ECLIPSE_CLASSLOADER.equals(classLoaderName)) {
 					fResult = findSourceElement_legacy(classLoaderObject, sourcePath);
+				} else if (STARTUP_CLASSLOADER.equals(classLoaderName)) {
+					fResult = findSourceElementInModel(OSGI_FRAMEWORK_PLUGIN, sourcePath);
 				} else if (MAIN_CLASS.equals(declaringTypeName)) {
-					IPluginModelBase model = PDECore.getDefault().getModelManager().findModel(MAIN_PLUGIN);
-					if (model != null)
-						fResult = getSourceElement(model.getInstallLocation(), MAIN_PLUGIN, sourcePath, true);
+					fResult = findSourceElementInModel(LAUNCHER_PLUGIN, sourcePath);
+				} else if (LEGACY_MAIN_CLASS.equals(declaringTypeName)) {
+					fResult = findSourceElementInModel(LEGACY_MAIN_PLUGIN, sourcePath);
 				}
+			} else {
+				// declaringType was loaded by bootstrap classloader --> part of JRE
+				fResult = findJreSourceElement(sourcePath);
 			}
 		}
 	}
@@ -235,6 +260,15 @@ public class PDESourceLookupQuery implements ISafeRunnable {
 		return null;
 	}
 
+	private Object findSourceElementInModel(String modelId, String sourcePath) throws CoreException {
+		IPluginModelBase model = PDECore.getDefault().getModelManager().findModel(modelId);
+		if (model == null) {
+			return null;
+		}
+
+		return getSourceElement(model.getInstallLocation(), modelId, sourcePath, true);
+	}
+
 	/**
 	 * Looks up source in the source containers associated with the bundle at the given location.
 	 * Searches associated fragments if source is not found in that location only if
@@ -273,6 +307,11 @@ public class PDESourceLookupQuery implements ISafeRunnable {
 		return null;
 	}
 
+	private Object findJreSourceElement(String sourcePath) throws CoreException {
+		ISourceContainer[] jreSourceContainers = fDirector.getJreSourceContainers();
+		return findSourceElement(jreSourceContainers, sourcePath);
+	}
+
 	private Object findSourceElement(ISourceContainer[] containers, String typeName) throws CoreException {
 		for (ISourceContainer container : containers) {
 			Object[] result = container.findSourceElements(typeName);
@@ -300,6 +339,16 @@ public class PDESourceLookupQuery implements ISafeRunnable {
 		if (index >= 0)
 			qualifiedTypeName = qualifiedTypeName.substring(0, index);
 		return qualifiedTypeName.replace('.', File.separatorChar) + ".java"; //$NON-NLS-1$
+	}
+
+	private boolean isDebugTargetRunning() {
+		boolean isDebugTargetRunning = false;
+		if (fElement instanceof IDebugElement) {
+			IDebugElement debugElement = (IDebugElement) fElement;
+			IDebugTarget debugTarget = debugElement.getDebugTarget();
+			isDebugTargetRunning = debugTarget != null && !debugTarget.isDisconnected() && !debugTarget.isTerminated();
+		}
+		return isDebugTargetRunning;
 	}
 
 }

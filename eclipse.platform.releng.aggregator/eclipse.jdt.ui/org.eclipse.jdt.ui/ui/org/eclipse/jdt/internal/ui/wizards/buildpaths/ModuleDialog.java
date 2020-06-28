@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2018 GK Software SE, and others.
+ * Copyright (c) 2017, 2019 GK Software SE, and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,6 +17,7 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +29,7 @@ import java.util.Set;
 import org.eclipse.equinox.bidi.StructuredTextTypeHandlerFactory;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -85,6 +87,7 @@ import org.eclipse.jdt.internal.ui.refactoring.contentassist.JavaPrecomputedName
 import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.LimitModules;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddExport;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddExpose;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddReads;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModulePatch;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
@@ -128,7 +131,7 @@ public class ModuleDialog extends StatusDialog {
 		public String getColumnText(Object element, int columnIndex) {
 			return element.toString();
 		}
-		
+
 	}
 
 	public class AddDetailsLabelProvider extends LabelProvider implements ITableLabelProvider {
@@ -176,23 +179,25 @@ public class ModuleDialog extends StatusDialog {
 	private static final int IDX_AVAILABLE= 0;
 	private static final int IDX_INCLUDED= 1;
 	private static final int IDX_IMPLICITLY_INCLUDED= 2;
-	
+
+	private BuildPathBasePage fBasePage;
+
 	private Button fAddIncludedButton;
 	private Button fRemoveIncludedButton;
 	private Button fPromoteIncludedButton;
 
 	private final SelectionButtonDialogField fIsPatchCheckbox;
 	private final StringDialogField fPatchedModule;
-	
-	private final ListDialogField<ModuleAddExport> fAddExportsList;
+
+	private final ListDialogField<ModuleAddExpose> fAddExportsList;
 
 	private final ListDialogField<ModuleAddReads> fAddReadsList;
-	
+
 	private final CPListElement fCurrCPElement;
 	/** The element(s) targeted by the current CP entry, which will be the source module(s) of the added exports. */
 	private IJavaElement[] fJavaElements;
 	private Set<String> fModuleNames;
-	
+
 	private Map<String,List<String>> fModule2RequiredModules;
 
 	private static final int IDX_ADD= 0;
@@ -200,9 +205,10 @@ public class ModuleDialog extends StatusDialog {
 	private static final int IDX_REMOVE= 2;
 
 
-	public ModuleDialog(Shell parent, CPListElement entryToEdit, IJavaElement[] selectedElements) {
+	public ModuleDialog(Shell parent, CPListElement entryToEdit, IJavaElement[] selectedElements, BuildPathBasePage basePage) {
 		super(parent);
 
+		fBasePage= basePage;
 		fCurrCPElement= entryToEdit;
 		fJavaElements= selectedElements;
 
@@ -219,13 +225,13 @@ public class ModuleDialog extends StatusDialog {
 
 		fIsPatchCheckbox= new SelectionButtonDialogField(SWT.CHECK);
 		fIsPatchCheckbox.setLabelText(NewWizardMessages.ModuleDialog_patches_module_label);
-		fIsPatchCheckbox.setDialogFieldListener(field -> doPatchSelectionChanged(field));
+		fIsPatchCheckbox.setDialogFieldListener(this::doPatchSelectionChanged);
 
 		fPatchedModule= new StringDialogField();
 		fPatchedModule.setLabelText(NewWizardMessages.ModuleDialog_patched_module_label);
-		fPatchedModule.setDialogFieldListener(field -> validateDetails(field));
+		fPatchedModule.setDialogFieldListener(this::validateDetails);
 
-		fAddExportsList= createDetailListContents(entryToEdit, NewWizardMessages.ModuleDialog_exports_label, new AddExportsAdapter(), ModuleAddExport.class);
+		fAddExportsList= createDetailListContents(entryToEdit, NewWizardMessages.ModuleDialog_exports_label, new AddExportsAdapter(), ModuleAddExpose.class);
 		fAddReadsList= createDetailListContents(entryToEdit, NewWizardMessages.ModuleDialog_reads_label, new AddReadsAdapter(), ModuleAddReads.class);
 
 		initializeValues();
@@ -267,9 +273,9 @@ public class ModuleDialog extends StatusDialog {
 		composite.setLayout(layout);
 
 		Label description= new Label(composite, SWT.WRAP);
-		
+
 		description.setText(getDescriptionString());
-		
+
 		GridData data= new GridData(SWT.FILL, SWT.CENTER, false, false, 3, 1);
 		data.widthHint= convertWidthInCharsToPixels(100);
 		description.setLayoutData(data);
@@ -294,7 +300,20 @@ public class ModuleDialog extends StatusDialog {
 		tabFolder.addSelectionListener(widgetSelectedAdapter(e -> validateTab(e.widget, tabItemContents, tabItemDetails)));
 
 		applyDialogFont(composite);
+		updateStatus(new StatusInfo(IStatus.WARNING, NewWizardMessages.ModuleDialog_deprecated_warning));
 		return composite;
+	}
+
+	@Override
+	protected void createButtonsForButtonBar(Composite parent) {
+		if (fBasePage.fSWTControl != null) {
+			Button switchButton= createButton(parent, 2, NewWizardMessages.ModuleDialog_switchToTab_button, false);
+			switchButton.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
+				fBasePage.switchToTab(ModuleDependenciesPage.class);
+				cancelPressed();
+			}));
+		}
+		super.createButtonsForButtonBar(parent);
 	}
 
 	private String getDescriptionString() {
@@ -333,7 +352,7 @@ public class ModuleDialog extends StatusDialog {
 		contentsPage.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
 		// top
-		createContentListContents(contentsPage, 
+		createContentListContents(contentsPage,
 				NewWizardMessages.ModuleDialog_availableModules_list,
 				NewWizardMessages.ModuleDialog_availableModules_tooltip,
 				IDX_AVAILABLE, IDX_INCLUDED);
@@ -467,7 +486,7 @@ public class ModuleDialog extends StatusDialog {
 	}
 
 	private void createHorizontalButtons(Composite parent) {
-		org.eclipse.ui.ISharedImages sharedImages= JavaPlugin.getDefault().getWorkbench().getSharedImages();
+		org.eclipse.ui.ISharedImages sharedImages= PlatformUI.getWorkbench().getSharedImages();
 
 		Composite box= new Composite(parent, SWT.NONE);
 		box.setLayout(new GridLayout(1, true));
@@ -476,7 +495,7 @@ public class ModuleDialog extends StatusDialog {
 		fAddIncludedButton.setImage(sharedImages.getImage(org.eclipse.ui.ISharedImages.IMG_TOOL_FORWARD));
 		fAddIncludedButton.setToolTipText(NewWizardMessages.ModuleDialog_addToIncluded_tooltip);
 		fAddIncludedButton.addSelectionListener(widgetSelectedAdapter(e -> moveModuleEntry(IDX_AVAILABLE, IDX_INCLUDED)));
-		
+
 		fRemoveIncludedButton= new Button(box, SWT.PUSH);
 		fRemoveIncludedButton.setImage(sharedImages.getImage(org.eclipse.ui.ISharedImages.IMG_TOOL_BACK));
 		fRemoveIncludedButton.setToolTipText(NewWizardMessages.ModuleDialog_removeFromIncluded_tooltip);
@@ -522,7 +541,7 @@ public class ModuleDialog extends StatusDialog {
 		}
 	}
 
-	public static void configureModuleContentAssist(Text textControl, Set<String> moduleNames) {
+	public static void configureModuleContentAssist(Text textControl, Collection<String> moduleNames) {
 		if (moduleNames.size() == 1) {
 			textControl.setText(moduleNames.iterator().next());
 		} else if (!moduleNames.isEmpty()) {
@@ -533,7 +552,7 @@ public class ModuleDialog extends StatusDialog {
 	}
 
 	// ======== updating & validation: ========
-	
+
 	protected void doPatchSelectionChanged(DialogField field) {
 		fPatchedModule.setEnabled(fIsPatchCheckbox.isSelected() && moduleNames().size() != 1);
 		validateDetails(field);
@@ -635,7 +654,7 @@ public class ModuleDialog extends StatusDialog {
 			}
 		}
 		if (status.isOK()) {
-			for (ModuleAddExport export : fAddExportsList.getElements()) {
+			for (ModuleAddExpose export : fAddExportsList.getElements()) {
 				if (!packages.add(export.fPackage)) {
 					status.setError(Messages.format(NewWizardMessages.ModuleDialog_duplicatePackage_error, export.fPackage));
 					break;
@@ -732,9 +751,10 @@ public class ModuleDialog extends StatusDialog {
 		IClasspathAttribute[] oldAttributes= entry.getExtraAttributes();
 		IClasspathAttribute[] newAttributes= new IClasspathAttribute[oldAttributes.length];
 		int count= 0;
-		for (int i= 0; i < oldAttributes.length; i++) {
-			if (!oldAttributes[i].getName().equals(IClasspathAttribute.MODULE))
-				newAttributes[count++]= oldAttributes[i];
+		for (IClasspathAttribute oldAttribute : oldAttributes) {
+			if (!oldAttribute.getName().equals(IClasspathAttribute.MODULE)) {
+				newAttributes[count++]= oldAttribute;
+			}
 		}
 		if (count == oldAttributes.length)
 			return null;
@@ -747,25 +767,25 @@ public class ModuleDialog extends StatusDialog {
 			return fModuleNames;
 		Set<String> moduleNames= new HashSet<>();
 		if (fJavaElements != null) {
-			for (int i= 0; i < fJavaElements.length; i++) {
-				if (fJavaElements[i] instanceof IPackageFragmentRoot) {
-					IModuleDescription module= ((IPackageFragmentRoot) fJavaElements[i]).getModuleDescription();
+			for (IJavaElement element : fJavaElements) {
+				if (element instanceof IPackageFragmentRoot) {
+					IModuleDescription module= ((IPackageFragmentRoot) element).getModuleDescription();
 					if (module != null) {
 						recordModule(module, moduleNames);
 					} else {
 						try {
-							recordModule(JavaCore.getAutomaticModuleDescription(fJavaElements[i]), moduleNames);
-						} catch (JavaModelException e) {
+							recordModule(JavaCore.getAutomaticModuleDescription(element), moduleNames);
+						}catch (JavaModelException e) {
 							JavaPlugin.log(e);
 						}
 					}
-				} else if (fJavaElements[i] instanceof IJavaProject) {
+				} else if (element instanceof IJavaProject) {
 					try {
-						IModuleDescription module= ((IJavaProject) fJavaElements[i]).getModuleDescription();
+						IModuleDescription module= ((IJavaProject) element).getModuleDescription();
 						if (module != null) {
 							recordModule(module, moduleNames);
 						} else {
-							recordModule(JavaCore.getAutomaticModuleDescription(fJavaElements[i]), moduleNames);
+							recordModule(JavaCore.getAutomaticModuleDescription(element), moduleNames);
 						}
 					} catch (JavaModelException e) {
 						JavaPlugin.log(e);
@@ -779,9 +799,9 @@ public class ModuleDialog extends StatusDialog {
 	private List<String> defaultIncludedModuleNamesForUnnamedModule() {
 		if (fJavaElements != null) {
 			List<IPackageFragmentRoot> roots= new ArrayList<>();
-			for (int i= 0; i < fJavaElements.length; i++) {
-				if (fJavaElements[i] instanceof IPackageFragmentRoot) {
-					roots.add((IPackageFragmentRoot) fJavaElements[i]);
+			for (IJavaElement element : fJavaElements) {
+				if (element instanceof IPackageFragmentRoot) {
+					roots.add((IPackageFragmentRoot) element);
 				}
 			}
 			return JavaCore.defaultRootModules(roots);
@@ -799,7 +819,7 @@ public class ModuleDialog extends StatusDialog {
 						requiredModules= new ArrayList<>();
 						fModule2RequiredModules.put(moduleName, requiredModules);
 					}
-					requiredModules.add(required);					
+					requiredModules.add(required);
 				}
 			} catch (JavaModelException e) {
 				JavaPlugin.log(e);
@@ -867,7 +887,7 @@ public class ModuleDialog extends StatusDialog {
 		}
 		return module != null ? module.getElementName() : JavaModelUtil.ALL_UNNAMED;
 	}
-	
+
 	private boolean isUnnamedModule() {
 		IModuleDescription module= null;
 		try {
@@ -875,7 +895,7 @@ public class ModuleDialog extends StatusDialog {
 		} catch (JavaModelException e) {
 			JavaPlugin.log(e);
 		}
-		return module == null;		
+		return module == null;
 	}
 
 	// -------- TypeRestrictionAdapter --------
@@ -917,30 +937,30 @@ public class ModuleDialog extends StatusDialog {
 		abstract void editEntry(ListDialogField<T> field, T detail);
 	}
 
-	private class AddExportsAdapter extends ListAdapter<ModuleAddExport> {
+	private class AddExportsAdapter extends ListAdapter<ModuleAddExpose> {
 
 		@Override
-		void addEntry(ListDialogField<ModuleAddExport> field) {
+		void addEntry(ListDialogField<ModuleAddExpose> field) {
 			ModuleAddExport initialValue= new ModuleAddExport(getSourceModuleName(), NO_NAME, getCurrentModuleName(), null);
-			ModuleAddExportsDialog dialog= new ModuleAddExportsDialog(getShell(), fJavaElements, initialValue);
+			ModuleAddExportsDialog dialog= new ModuleAddExportsDialog(getShell(), fJavaElements, null, initialValue);
 			if (dialog.open() == Window.OK) {
-				ModuleAddExport export= dialog.getExport(fCurrCPElement.findAttributeElement(CPListElement.MODULE));
+				ModuleAddExpose export= dialog.getExport(fCurrCPElement.findAttributeElement(CPListElement.MODULE));
 				if (export != null)
 					field.addElement(export);
 			}
 		}
 
 		@Override
-		void editEntry(ListDialogField<ModuleAddExport> field, ModuleAddExport export) {
-			ModuleAddExportsDialog dialog= new ModuleAddExportsDialog(getShell(), fJavaElements, export);
+		void editEntry(ListDialogField<ModuleAddExpose> field, ModuleAddExpose export) {
+			ModuleAddExportsDialog dialog= new ModuleAddExportsDialog(getShell(), fJavaElements, null, export);
 			if (dialog.open() == Window.OK) {
-				ModuleAddExport newExport= dialog.getExport(fCurrCPElement.findAttributeElement(CPListElement.MODULE));
+				ModuleAddExpose newExport= dialog.getExport(fCurrCPElement.findAttributeElement(CPListElement.MODULE));
 				if (newExport != null) {
 					field.replaceElement(export, newExport);
 				} else {
 					field.removeElement(export);
 				}
-			}			
+			}
 		}
 	}
 

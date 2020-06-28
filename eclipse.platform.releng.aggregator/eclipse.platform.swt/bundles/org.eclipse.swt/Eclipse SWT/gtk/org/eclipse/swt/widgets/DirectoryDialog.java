@@ -120,11 +120,7 @@ public String getMessage () {
  * </ul>
  */
 public String open () {
-	if (GTK.GTK_VERSION >= OS.VERSION(3, 20, 0)) {
 		return openNativeChooserDialog();
-	} else {
-		return openChooserDialog ();
-	}
 }
 /**
  * Open the file chooser dialog using the GtkFileChooserNative API (GTK3.20+) for running applications
@@ -136,10 +132,10 @@ public String open () {
  */
 String openNativeChooserDialog () {
 	byte [] titleBytes = Converter.wcsToMbcs (title, true);
-	long /*int*/ shellHandle = parent.topHandle ();
+	long shellHandle = parent.topHandle ();
 	Display display = parent != null ? parent.getDisplay (): Display.getCurrent ();
-	long /*int*/ handle = 0;
-	handle = GTK.gtk_file_chooser_native_new(titleBytes, shellHandle, GTK.GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, GTK.GTK_NAMED_LABEL_OK, GTK.GTK_NAMED_LABEL_CANCEL);
+	long handle = 0;
+	handle = GTK.gtk_file_chooser_native_new(titleBytes, shellHandle, GTK.GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, null, null);
 	if (handle == 0) error (SWT.ERROR_NO_HANDLES);
 
 	if (filterPath != null && filterPath.length () > 0) {
@@ -155,7 +151,7 @@ String openNativeChooserDialog () {
 		 * to be true canonical path. So using realpath to convert the path to
 		 * true canonical path.
 		 */
-		long /*int*/ ptr = OS.realpath (buffer, null);
+		long ptr = OS.realpath (buffer, null);
 		if (ptr != 0) {
 			GTK.gtk_file_chooser_set_current_folder (handle, ptr);
 			OS.g_free (ptr);
@@ -163,10 +159,10 @@ String openNativeChooserDialog () {
 	}
 	if (message.length () > 0) {
 		byte [] buffer = Converter.wcsToMbcs (message, true);
-		long /*int*/ box = GTK.gtk_box_new (GTK.GTK_ORIENTATION_HORIZONTAL, 0);
+		long box = GTK.gtk_box_new (GTK.GTK_ORIENTATION_HORIZONTAL, 0);
 		GTK.gtk_box_set_homogeneous (box, false);
 		if (box == 0) error (SWT.ERROR_NO_HANDLES);
-		long /*int*/ label = GTK.gtk_label_new (buffer);
+		long label = GTK.gtk_label_new (buffer);
 		if (label == 0) error (SWT.ERROR_NO_HANDLES);
 		GTK.gtk_container_add (box, label);
 		GTK.gtk_widget_show (label);
@@ -177,11 +173,12 @@ String openNativeChooserDialog () {
 	String answer = null;
 	display.addIdleProc ();
 	int signalId = 0;
-	long /*int*/ hookId = 0;
+	long hookId = 0;
 	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
 		signalId = OS.g_signal_lookup (OS.map, GTK.GTK_TYPE_WIDGET());
 		hookId = OS.g_signal_add_emission_hook (signalId, 0, display.emissionProc, handle, 0);
 	}
+	display.externalEventLoop = true;
 	display.sendPreExternalEventDispatchEvent ();
 	int response = GTK.gtk_native_dialog_run (handle);
 	/*
@@ -191,22 +188,23 @@ String openNativeChooserDialog () {
 	* thread leaves the GTK lock acquired by the function above.
 	*/
 	if (!GTK.GTK4) GDK.gdk_threads_leave();
+	display.externalEventLoop = false;
 	display.sendPostExternalEventDispatchEvent ();
 	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
 		OS.g_signal_remove_emission_hook (signalId, hookId);
 	}
 	if (response == GTK.GTK_RESPONSE_ACCEPT) {
-		long /*int*/ path = GTK.gtk_file_chooser_get_filename (handle);
+		long path = GTK.gtk_file_chooser_get_filename (handle);
 		if (path != 0) {
-			long /*int*/ utf8Ptr = OS.g_filename_to_utf8 (path, -1, null, null, null);
+			long utf8Ptr = OS.g_filename_to_utf8 (path, -1, null, null, null);
 			if (utf8Ptr == 0) utf8Ptr = OS.g_filename_display_name (path);
 			if (path != utf8Ptr) OS.g_free (path);
 			if (utf8Ptr != 0) {
-				long /*int*/ [] items_written = new long /*int*/ [1];
-				long /*int*/ utf16Ptr = OS.g_utf8_to_utf16 (utf8Ptr, -1, null, items_written, null);
+				long [] items_written = new long [1];
+				long utf16Ptr = OS.g_utf8_to_utf16 (utf8Ptr, -1, null, items_written, null);
 				OS.g_free (utf8Ptr);
 				if (utf16Ptr != 0) {
-					int clength = (int)/*64*/items_written [0];
+					int clength = (int)items_written [0];
 					char [] chars = new char [clength];
 					C.memmove (chars, utf16Ptr, clength * 2);
 					OS.g_free (utf16Ptr);
@@ -217,111 +215,6 @@ String openNativeChooserDialog () {
 		}
 	}
 	display.removeIdleProc ();
-	return answer;
-}
-String openChooserDialog () {
-	byte [] titleBytes = Converter.wcsToMbcs (title, true);
-	long /*int*/ shellHandle = parent.topHandle ();
-	Display display = parent != null ? parent.getDisplay (): Display.getCurrent ();
-	long /*int*/ handle = 0;
-	if (display.getDismissalAlignment() == SWT.RIGHT) {
-		handle = GTK.gtk_file_chooser_dialog_new (titleBytes, shellHandle, GTK.GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, GTK.GTK_NAMED_LABEL_CANCEL, GTK.GTK_RESPONSE_CANCEL, GTK.GTK_NAMED_LABEL_OK, GTK.GTK_RESPONSE_OK, 0);
-	} else {
-		handle = GTK.gtk_file_chooser_dialog_new (titleBytes, shellHandle, GTK.GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, GTK.GTK_NAMED_LABEL_OK, GTK.GTK_RESPONSE_OK, GTK.GTK_NAMED_LABEL_CANCEL, GTK.GTK_RESPONSE_CANCEL, 0);
-	}
-	if (handle == 0) error (SWT.ERROR_NO_HANDLES);
-	long /*int*/ group = GTK.gtk_window_get_group(0);
-	GTK.gtk_window_group_add_window (group, handle);
-	GTK.gtk_window_set_modal (handle, true);
-	long /*int*/ pixbufs = GTK.gtk_window_get_icon_list (shellHandle);
-	if (pixbufs != 0) {
-		GTK.gtk_window_set_icon_list (handle, pixbufs);
-		OS.g_list_free (pixbufs);
-	}
-	if (filterPath != null && filterPath.length () > 0) {
-		StringBuilder stringBuilder = new StringBuilder ();
-		/* filename must be a full path */
-		if (!filterPath.startsWith (SEPARATOR)) {
-			stringBuilder.append (SEPARATOR);
-		}
-		stringBuilder.append (filterPath);
-		byte [] buffer = Converter.wcsToMbcs (stringBuilder.toString (), true);
-		/*
-		 * in GTK version 2.10, gtk_file_chooser_set_current_folder requires path
-		 * to be true canonical path. So using realpath to convert the path to
-		 * true canonical path.
-		 */
-		long /*int*/ ptr = OS.realpath (buffer, null);
-		if (ptr != 0) {
-			GTK.gtk_file_chooser_set_current_folder (handle, ptr);
-			OS.g_free (ptr);
-		}
-	}
-	if (message.length () > 0) {
-		byte [] buffer = Converter.wcsToMbcs (message, true);
-		long /*int*/ box = GTK.gtk_box_new (GTK.GTK_ORIENTATION_HORIZONTAL, 0);
-		GTK.gtk_box_set_homogeneous (box, false);
-		if (box == 0) error (SWT.ERROR_NO_HANDLES);
-		long /*int*/ label = GTK.gtk_label_new (buffer);
-		if (label == 0) error (SWT.ERROR_NO_HANDLES);
-		GTK.gtk_container_add (box, label);
-		GTK.gtk_widget_show (label);
-		GTK.gtk_label_set_line_wrap (label, true);
-		GTK.gtk_label_set_justify (label, GTK.GTK_JUSTIFY_CENTER);
-		GTK.gtk_file_chooser_set_extra_widget (handle, box);
-	}
-	String answer = null;
-	display.addIdleProc ();
-	Dialog oldModal = null;
-	if (GTK.gtk_window_get_modal (handle)) {
-		oldModal = display.getModalDialog ();
-		display.setModalDialog (this);
-	}
-	int signalId = 0;
-	long /*int*/ hookId = 0;
-	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
-		signalId = OS.g_signal_lookup (OS.map, GTK.GTK_TYPE_WIDGET());
-		hookId = OS.g_signal_add_emission_hook (signalId, 0, display.emissionProc, handle, 0);
-	}
-	display.sendPreExternalEventDispatchEvent ();
-	int response = GTK.gtk_dialog_run (handle);
-	/*
-	* This call to gdk_threads_leave() is a temporary work around
-	* to avoid deadlocks when gdk_threads_init() is called by native
-	* code outside of SWT (i.e AWT, etc). It ensures that the current
-	* thread leaves the GTK lock acquired by the function above.
-	*/
-	if (!GTK.GTK4) GDK.gdk_threads_leave();
-	display.sendPostExternalEventDispatchEvent ();
-	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
-		OS.g_signal_remove_emission_hook (signalId, hookId);
-	}
-	if (GTK.gtk_window_get_modal (handle)) {
-		display.setModalDialog (oldModal);
-	}
-	if (response == GTK.GTK_RESPONSE_OK) {
-		long /*int*/ path = GTK.gtk_file_chooser_get_filename (handle);
-		if (path != 0) {
-			long /*int*/ utf8Ptr = OS.g_filename_to_utf8 (path, -1, null, null, null);
-			if (utf8Ptr == 0) utf8Ptr = OS.g_filename_display_name (path);
-			if (path != utf8Ptr) OS.g_free (path);
-			if (utf8Ptr != 0) {
-				long /*int*/ [] items_written = new long /*int*/ [1];
-				long /*int*/ utf16Ptr = OS.g_utf8_to_utf16 (utf8Ptr, -1, null, items_written, null);
-				OS.g_free (utf8Ptr);
-				if (utf16Ptr != 0) {
-					int clength = (int)/*64*/items_written [0];
-					char [] chars = new char [clength];
-					C.memmove (chars, utf16Ptr, clength * 2);
-					OS.g_free (utf16Ptr);
-					answer = new String (chars);
-					filterPath = answer;
-				}
-			}
-		}
-	}
-	display.removeIdleProc ();
-	GTK.gtk_widget_destroy (handle);
 	return answer;
 }
 /**

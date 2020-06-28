@@ -40,7 +40,8 @@ public class WorkbenchEncoding {
 
 		/**
 		 * Create a new instance of the receiver.
-		 * @param definedEncodings
+		 *
+		 * @param definedEncodings the list of encodings
 		 */
 		public EncodingsRegistryReader(List<String> definedEncodings) {
 			super();
@@ -79,7 +80,7 @@ public class WorkbenchEncoding {
 		reader.readRegistry(Platform.getExtensionRegistry(), PlatformUI.PLUGIN_ID,
 				IWorkbenchRegistryConstants.PL_ENCODINGS);
 
-		//Make it an array in case of concurrency issues with Iterators
+		// Make it an array in case of concurrency issues with Iterators
 		String[] encodings = new String[definedEncodings.size()];
 		List<String> invalid = new ArrayList<>();
 		definedEncodings.toArray(encodings);

@@ -16,8 +16,6 @@ package org.eclipse.core.tests.resources;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
@@ -52,21 +50,6 @@ public class IResourceChangeListenerTest extends ResourceTest {
 	IProject project2;
 	IFile project2MetaData;
 	ResourceDeltaVerifier verifier;
-
-	public static Test suite() {
-		//	TestSuite suite = new TestSuite();
-		//	suite.addTest(new IResourceChangeListenerTest("testMoveProject1"));
-		//	return suite;
-		return new TestSuite(IResourceChangeListenerTest.class);
-	}
-
-	public IResourceChangeListenerTest() {
-		super();
-	}
-
-	public IResourceChangeListenerTest(String name) {
-		super(name);
-	}
 
 	public void _testBenchMark_1GBYQEZ() {
 		// start with a clean workspace
@@ -153,8 +136,8 @@ public class IResourceChangeListenerTest extends ResourceTest {
 	void assertNotDeltaIncludes(String message, IResourceDelta delta, IResource[] resources) {
 		try {
 			IResource deltaResource = delta.getResource();
-			for (int i = 0; i < resources.length; i++) {
-				assertTrue(message, !deltaResource.equals(resources[i]));
+			for (IResource resource : resources) {
+				assertTrue(message, !deltaResource.equals(resource));
 			}
 			IResourceDelta[] children = delta.getAffectedChildren();
 			for (IResourceDelta element : children) {
@@ -173,14 +156,12 @@ public class IResourceChangeListenerTest extends ResourceTest {
 		try {
 			delta.accept(delta2 -> {
 				IResource deltaResource = delta2.getResource();
-				for (int i = 0; i < resources.length; i++) {
-					assertTrue(message, !deltaResource.equals(resources[i]));
+				for (IResource resource : resources) {
+					assertTrue(message, !deltaResource.equals(resource));
 				}
 				return true;
 			});
-		} catch (CoreException e) {
-			fail(message, e);
-		} catch (RuntimeException e) {
+		} catch (CoreException | RuntimeException e) {
 			fail(message, e);
 		}
 	}
@@ -304,9 +285,7 @@ public class IResourceChangeListenerTest extends ResourceTest {
 			//wait for autobuild so POST_BUILD will fire
 			try {
 				Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
-			} catch (OperationCanceledException e) {
-				//ignore
-			} catch (InterruptedException e) {
+			} catch (OperationCanceledException | InterruptedException e) {
 				//ignore
 			}
 		} catch (CoreException e) {

@@ -83,11 +83,12 @@ public class UnifiedTree {
 	}
 
 	/**
-	 * Pass in a a root for the tree, a file tree containing all of the entries for this
-	 * tree and a flag indicating whether the UnifiedTree should consult the fileTree where
-	 * possible for entries
-	 * @param root
-	 * @param fileTree
+	 * Pass in a a root for the tree, a file tree containing all of the entries for
+	 * this tree and a flag indicating whether the UnifiedTree should consult the
+	 * fileTree where possible for entries
+	 *
+	 * @param root     root of the tree. Must be file or folder.
+	 * @param fileTree an {@link IFileTree} which is used to build the unified tree
 	 */
 	public UnifiedTree(IResource root, IFileTree fileTree) {
 		this(root);
@@ -444,9 +445,7 @@ public class UnifiedTree {
 					}
 					rootPathHistory.insertShorter(rootFile.getCanonicalPath() + '/');
 				}
-			} catch (CoreException e) {
-				/*ignore*/
-			} catch (IOException e) {
+			} catch (CoreException | IOException e) {
 				/*ignore*/
 			}
 		}
@@ -535,9 +534,7 @@ public class UnifiedTree {
 				//It probably spans up a new tree of potential prefixes.
 				rootPathHistory.insertShorter(childPath);
 			}
-		} catch (IOException e) {
-			//ignore
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			//ignore
 		}
 		return false;

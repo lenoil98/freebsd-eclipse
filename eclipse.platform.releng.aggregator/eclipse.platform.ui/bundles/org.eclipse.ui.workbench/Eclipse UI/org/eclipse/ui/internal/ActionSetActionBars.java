@@ -14,7 +14,6 @@
 package org.eclipse.ui.internal;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import org.eclipse.jface.action.ContributionItem;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.IContributionManager;
@@ -39,28 +38,33 @@ public class ActionSetActionBars extends SubActionBars2 {
 
 	private String actionSetId;
 
-	private ArrayList adjunctContributions = new ArrayList();
+	private ArrayList<IContributionItem> adjunctContributions = new ArrayList<>();
 
 	private IToolBarManager coolItemToolBarMgr = null;
 
 	private IToolBarContributionItem toolBarContributionItem = null;
 
 	/**
-     * Constructs a new action bars object
-     */
-    public ActionSetActionBars(IActionBars2 parent, IServiceLocator serviceLocator, IActionBarConfigurer2 actionBarConfigurer, String actionSetId) {
-    	super(parent, serviceLocator);
+	 * Constructs a new action bars object
+	 *
+	 * @param parent              the parent
+	 * @param serviceLocator      the serviceLocator
+	 * @param actionBarConfigurer the actionBarConfigurer
+	 * @param actionSetId         actionSetId
+	 */
+	public ActionSetActionBars(IActionBars2 parent, IServiceLocator serviceLocator,
+			IActionBarConfigurer2 actionBarConfigurer, String actionSetId) {
+		super(parent, serviceLocator);
 		this.actionSetId = actionSetId;
-        this.actionBarConfigurer = actionBarConfigurer;
-    }
+		this.actionBarConfigurer = actionBarConfigurer;
+	}
 
 	/**
-	 * Adds to the list all the actions that are part of this action set but
-	 * belong to different cool bar items.
+	 * Adds to the list all the actions that are part of this action set but belong
+	 * to different cool bar items.
 	 *
-	 * @param item
-	 *            the item defined in this actionset but in a different tool Bar
-	 *            contribution item
+	 * @param item the item defined in this actionset but in a different tool Bar
+	 *             contribution item
 	 */
 	/* package */void addAdjunctContribution(IContributionItem item) {
 		adjunctContributions.add(item);
@@ -104,9 +108,8 @@ public class ActionSetActionBars extends SubActionBars2 {
 		}
 
 		// remove items from this action set that are in other action bars
-		for (int i = 0; i < adjunctContributions.size(); i++) {
-			ContributionItem item = (ContributionItem) adjunctContributions
-					.get(i);
+		for (IContributionItem adjunctContribution : adjunctContributions) {
+			ContributionItem item = (ContributionItem) adjunctContribution;
 			IContributionManager parent = item.getParent();
 			if (parent != null) {
 				parent.remove(item);
@@ -115,7 +118,7 @@ public class ActionSetActionBars extends SubActionBars2 {
 		}
 		toolBarContributionItem = null;
 		coolItemToolBarMgr = null;
-		adjunctContributions = new ArrayList();
+		adjunctContributions = new ArrayList<>();
 		super.dispose();
 	}
 
@@ -123,19 +126,14 @@ public class ActionSetActionBars extends SubActionBars2 {
 	 * Returns the contribution item that the given contribution item should be
 	 * inserted after.
 	 *
-	 * @param startId
-	 *            the location to start looking alphabetically.
-	 * @param itemId
-	 *            the target item id.
-	 * @param mgr
-	 *            the contribution manager.
-	 * @return the contribution item that the given items should be returned
-	 *         after.
+	 * @param startId the location to start looking alphabetically.
+	 * @param itemId  the target item id.
+	 * @param mgr     the contribution manager.
+	 * @return the contribution item that the given items should be returned after.
 	 *
 	 * @since 3.0
 	 */
-	private IContributionItem findAlphabeticalOrder(String startId,
-			String itemId, IContributionManager mgr) {
+	private IContributionItem findAlphabeticalOrder(String startId, String itemId, IContributionManager mgr) {
 		IContributionItem[] items = mgr.getItems();
 		int insertIndex = 0;
 
@@ -186,16 +184,14 @@ public class ActionSetActionBars extends SubActionBars2 {
 		if (coolBarManager == null) {
 			return null;
 		}
-        return actionBarConfigurer.createToolBarManager();
+		return actionBarConfigurer.createToolBarManager();
 	}
 
 	/**
-	 * Returns the correct tool bar for the given action id. If this action is
-	 * an adjunct type the it returns the toolbar manager from the cool bar
-	 * manager.
+	 * Returns the correct tool bar for the given action id. If this action is an
+	 * adjunct type the it returns the toolbar manager from the cool bar manager.
 	 *
-	 * @param id
-	 *            the id of the action
+	 * @param actionId the id of the action
 	 * @return the tool bar manager
 	 */
 	public IToolBarManager getToolBarManager(String actionId) {
@@ -244,21 +240,18 @@ public class ActionSetActionBars extends SubActionBars2 {
 			// we don't create one for an adjunct type because another action
 			// set action bars contains one
 
-            IContributionItem toolBarContributionItem = actionBarConfigurer
-					.createToolBarContributionItem(coolItemToolBarMgr,
-							toolBarId);
+			IContributionItem toolBarContributionItem = actionBarConfigurer
+					.createToolBarContributionItem(coolItemToolBarMgr, toolBarId);
 
 			toolBarContributionItem.setParent(coolItemToolBarMgr);
 			toolBarContributionItem.setVisible(getActive());
 			coolItemToolBarMgr.markDirty();
 
 			// Now add the tool bar contribution Item to the cool bar manager
-			IContributionItem refItem = findAlphabeticalOrder(
-					IWorkbenchActionConstants.MB_ADDITIONS, toolBarId,
+			IContributionItem refItem = findAlphabeticalOrder(IWorkbenchActionConstants.MB_ADDITIONS, toolBarId,
 					coolBarManager);
 			if (refItem != null) {
-				coolBarManager.insertAfter(refItem.getId(),
-						toolBarContributionItem);
+				coolBarManager.insertAfter(refItem.getId(), toolBarContributionItem);
 			} else {
 				coolBarManager.add(toolBarContributionItem);
 			}
@@ -309,12 +302,10 @@ public class ActionSetActionBars extends SubActionBars2 {
 
 		// 2. Need to set visibility for all adjunct actions
 		if (adjunctContributions.size() > 0) {
-			for (Iterator i = adjunctContributions.iterator(); i.hasNext();) {
-				IContributionItem item = (IContributionItem) i.next();
+			for (IContributionItem item : adjunctContributions) {
 				if (item instanceof ContributionItem) {
 					item.setVisible(set);
-					IContributionManager manager = ((ContributionItem) item)
-							.getParent();
+					IContributionManager manager = ((ContributionItem) item).getParent();
 					manager.markDirty();
 					manager.update(false);
 					if (!coolBarManager.isDirty()) {

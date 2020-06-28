@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.filesystem.EFS;
@@ -809,59 +808,48 @@ public final class IDE {
 	}
 
 	/**
-	 * Returns an editor id appropriate for opening the given file store.
+	 * Returns an editor descriptor appropriate for opening the given file store.
 	 * <p>
-	 * The editor descriptor is determined using a multi-step process. This
-	 * method will attempt to resolve the editor based on content-type bindings
-	 * as well as traditional name/extension bindings.
+	 * The editor descriptor is determined using a multi-step process. This method
+	 * will attempt to resolve the editor based on content-type bindings as well as
+	 * traditional name/extension bindings.
 	 * </p>
 	 * <ol>
 	 * <li>The workbench editor registry is consulted to determine if an editor
-	 * extension has been registered for the file type. If so, an instance of
-	 * the editor extension is opened on the file. See
+	 * extension has been registered for the file type. If so, an instance of the
+	 * editor extension is opened on the file. See
 	 * <code>IEditorRegistry.getDefaultEditor(String)</code>.</li>
-	 * <li>The preferred {@link IUnknownEditorStrategy} is consulted.</li>
-	 * <li>The {@link SystemEditorOrTextEditorStrategy} is consulted, whose
-	 * behavior is
+	 * <li>The preferred {@link IUnassociatedEditorStrategy} is consulted.</li>
+	 * <li>The {@link SystemEditorOrTextEditorStrategy} is consulted, whose behavior
+	 * is
 	 * <ol>
-	 * <li>The operating system is consulted to determine if an in-place
-	 * component editor is available (e.g. OLE editor on Win32 platforms).</li>
-	 * <li>The operating system is consulted to determine if an external editor
-	 * is available.</li>
-	 * <li>The workbench editor registry is consulted to determine if the
-	 * default text editor is available.</li></li>
+	 * <li>The operating system is consulted to determine if an in-place component
+	 * editor is available (e.g. OLE editor on Win32 platforms).</li>
+	 * <li>The operating system is consulted to determine if an external editor is
+	 * available.</li>
+	 * <li>The workbench editor registry is consulted to determine if the default
+	 * text editor is available.</li>
 	 * </ol>
+	 * </li>
 	 * </ol>
-	 * </p>
 	 *
-	 * @param fileStore
-	 *            the file store
-	 * @param allowInteractive
-	 *            Whether user interactions are allowed
-	 * @return the id of an editor, appropriate for opening the file
-	 * @throws PartInitException
-	 *             if no editor can be found
+	 * @param fileStore        the file store
+	 * @param allowInteractive Whether user interactions are allowed
+	 * @return editor descriptor of an editor, appropriate for opening the file
+	 * @throws PartInitException if no editor can be found
+	 * @since 3.16
 	 */
-	private static String getEditorId(IFileStore fileStore, boolean allowInteractive) throws PartInitException {
+	public static IEditorDescriptor getEditorDescriptorForFileStore(IFileStore fileStore, boolean allowInteractive)
+			throws PartInitException {
 		String name = fileStore.fetchInfo().getName();
 		if (name == null) {
 			throw new IllegalArgumentException();
 		}
 
 		IContentType contentType = null;
-		try {
-			InputStream is = null;
-			try {
-				is = fileStore.openInputStream(EFS.NONE, null);
-				contentType = Platform.getContentTypeManager().findContentTypeFor(is, name);
-			} finally {
-				if (is != null) {
-					is.close();
-				}
-			}
-		} catch (CoreException ex) {
-			// continue without content type
-		} catch (IOException ex) {
+		try (InputStream is = fileStore.openInputStream(EFS.NONE, null)) {
+			contentType = Platform.getContentTypeManager().findContentTypeFor(is, name);
+		} catch (CoreException | IOException ex) {
 			// continue without content type
 		}
 
@@ -870,7 +858,7 @@ public final class IDE {
 		IEditorDescriptor defaultEditor = editorReg.getDefaultEditor(name, contentType);
 		defaultEditor = overrideDefaultEditorAssociation(new FileStoreEditorInput(fileStore), contentType,
 				defaultEditor);
-		return getEditorDescriptor(name, editorReg, defaultEditor, allowInteractive).getId();
+		return getEditorDescriptor(name, editorReg, defaultEditor, allowInteractive);
 	}
 
 	/**
@@ -1125,7 +1113,7 @@ public final class IDE {
 	/**
 	 * Get the editor descriptor for a given name using the editorDescriptor
 	 * passed in as a default as a starting point. It may delegate computation
-	 * to the active {@link IUnknownEditorStrategy}.
+	 * to the active {@link IUnassociatedEditorStrategy}.
 	 *
 	 * @param name
 	 *            The name of the element to open.
@@ -1134,7 +1122,7 @@ public final class IDE {
 	 * @param defaultDescriptor
 	 *            IEditorDescriptor or <code>null</code>
 	 * @param allowInteractive
-	 *            Whether we ask selected {@link IUnknownEditorStrategy}, that
+	 *            Whether we ask selected {@link IUnassociatedEditorStrategy}, that
 	 *            can be interactive.
 	 * @return IEditorDescriptor
 	 * @throws PartInitException
@@ -1347,12 +1335,12 @@ public final class IDE {
 		return editor;
 	}
 
-    /**
+	/**
 	 * Opens an editor on the given IFileStore object.
 	 * <p>
-     * Unlike the other <code>openEditor</code> methods, this one
-     * can be used to open files that reside outside the workspace
-     * resource set.
+	 * Unlike the other <code>openEditor</code> methods, this one
+	 * can be used to open files that reside outside the workspace
+	 * resource set.
 	 * </p>
 	 * <p>
 	 * If the page already has an editor open on the target object then that
@@ -1371,22 +1359,22 @@ public final class IDE {
 	 * @since 3.3
 	 */
 	public static IEditorPart openEditorOnFileStore(IWorkbenchPage page, IFileStore fileStore) throws PartInitException {
-        //sanity checks
-        if (page == null) {
+		//sanity checks
+		if (page == null) {
 			throw new IllegalArgumentException();
 		}
 
-        IEditorInput input = getEditorInput(fileStore);
+		IEditorInput input = getEditorInput(fileStore);
 		String editorId;
 		try {
-			editorId = getEditorId(fileStore, true);
+			editorId = getEditorDescriptorForFileStore(fileStore, true).getId();
 		} catch (OperationCanceledException ex) {
 			return null;
 		}
 
-        // open the editor on the file
-        return page.openEditor(input, editorId);
-    }
+		// open the editor on the file
+		return page.openEditor(input, editorId);
+	}
 
 	/**
 	 * Opens an internal editor on the given IFileStore object.
@@ -1427,9 +1415,7 @@ public final class IDE {
 		try {
 			is = fileStore.openInputStream(EFS.NONE, null);
 			contentTypes = Platform.getContentTypeManager().findContentTypesFor(is, name);
-		} catch (CoreException ex) {
-			// it's OK, ignore
-		} catch (IOException ex) {
+		} catch (CoreException | IOException ex) {
 			// it's OK, ignore
 		} finally {
 			if (is != null) {
@@ -1612,8 +1598,7 @@ public final class IDE {
 	 */
 	public static List<IResource> computeSelectedResources(IStructuredSelection originalSelection) {
 		List<IResource> resources = null;
-		for (Iterator<?> e = originalSelection.iterator(); e.hasNext();) {
-			Object next = e.next();
+		for (Object next : originalSelection) {
 			IResource resource = Adapters.adapt(next, IResource.class);
 			if (resource != null) {
 				if (resources == null) {
@@ -1797,23 +1782,24 @@ public final class IDE {
 	 * @since 3.5
 	 */
 	public static void registerAdapters() {
-        IAdapterManager manager = Platform.getAdapterManager();
-        IAdapterFactory factory = new WorkbenchAdapterFactory();
-        manager.registerAdapters(factory, IWorkspace.class);
-        manager.registerAdapters(factory, IWorkspaceRoot.class);
-        manager.registerAdapters(factory, IProject.class);
-        manager.registerAdapters(factory, IFolder.class);
-        manager.registerAdapters(factory, IFile.class);
-        manager.registerAdapters(factory, IMarker.class);
+		IAdapterManager manager = Platform.getAdapterManager();
+		IAdapterFactory factory = new WorkbenchAdapterFactory();
+		manager.registerAdapters(factory, IWorkspace.class);
+		manager.registerAdapters(factory, IWorkspaceRoot.class);
+		manager.registerAdapters(factory, IProject.class);
+		manager.registerAdapters(factory, IFolder.class);
+		manager.registerAdapters(factory, IFile.class);
+		manager.registerAdapters(factory, IMarker.class);
 
-        // properties adapters
-        IAdapterFactory paFactory = new StandardPropertiesAdapterFactory();
-        manager.registerAdapters(paFactory, IWorkspace.class);
-        manager.registerAdapters(paFactory, IWorkspaceRoot.class);
-        manager.registerAdapters(paFactory, IProject.class);
-        manager.registerAdapters(paFactory, IFolder.class);
-        manager.registerAdapters(paFactory, IFile.class);
-        manager.registerAdapters(paFactory, IMarker.class);
+		// properties adapters
+		IAdapterFactory paFactory = new StandardPropertiesAdapterFactory();
+		manager.registerAdapters(paFactory, IWorkspace.class);
+		manager.registerAdapters(paFactory, IWorkspaceRoot.class);
+		manager.registerAdapters(paFactory, IProject.class);
+		manager.registerAdapters(paFactory, IFolder.class);
+		manager.registerAdapters(paFactory, IFile.class);
+		manager.registerAdapters(paFactory, IMarker.class);
+		manager.registerAdapters(paFactory, IEditorPart.class);
 	}
 
 	private static boolean isIgnoredStatus(IStatus status,

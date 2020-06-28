@@ -8,7 +8,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors: IBM Corporation - initial API and implementation
  ******************************************************************************/
 package org.eclipse.equinox.internal.simpleconfigurator.utils;
@@ -65,12 +65,9 @@ public class BundleInfo {
 		this.baseLocation = baseLocation;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append("BundleInfo("); //$NON-NLS-1$
 		if (symbolicName != null)
 			buffer.append(symbolicName);
@@ -127,9 +124,10 @@ public class BundleInfo {
 		if (location == null || other.location == null)
 			return true;
 
-		//compare absolute location URIs
+		// compare absolute location URIs
 		URI absoluteLocation = baseLocation == null ? location : URIUtil.append(baseLocation, location.toString());
-		URI otherAbsoluteLocation = other.baseLocation == null ? other.location : URIUtil.append(other.baseLocation, other.location.toString());
+		URI otherAbsoluteLocation = other.baseLocation == null ? other.location
+				: URIUtil.append(other.baseLocation, other.location.toString());
 		return URIUtil.sameURI(absoluteLocation, otherAbsoluteLocation);
 	}
 }

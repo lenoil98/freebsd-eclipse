@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,6 +14,7 @@
  *     Lars Vogel <Lars.Vogel@vogella.com> - Bug 402439, 475689
  *     Thorsten Maack <tm@tmaack.de> - Bug 482163
  *     Jan-Ove Weichel <janove.weichel@vogella.com> - Bug 481490
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 548314
  *******************************************************************************/
 package org.eclipse.jface.viewers;
 
@@ -33,7 +34,6 @@ import org.eclipse.jface.util.OpenStrategy;
 import org.eclipse.jface.util.Policy;
 import org.eclipse.jface.util.SafeRunnable;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.TableTreeItem;
 import org.eclipse.swt.dnd.DragSource;
 import org.eclipse.swt.dnd.DragSourceListener;
 import org.eclipse.swt.dnd.DropTarget;
@@ -276,39 +276,6 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 			clear();
 		}
 
-		@Override
-		public void applyFontsAndColors(TableTreeItem control) {
-
-			if(colorProvider == null){
-				if(usedDecorators){
-					//If there is no provider only apply set values
-					if(background != null) {
-						control.setBackground(background);
-					}
-
-					if(foreground != null) {
-						control.setForeground(foreground);
-					}
-				}
-			}
-			else{
-				//Always set the value if there is a provider
-				control.setBackground(background);
-				control.setForeground(foreground);
-			}
-
-			if(fontProvider == null){
-				if(usedDecorators && font != null) {
-					control.setFont(font);
-				}
-			} else {
-				control.setFont(font);
-			}
-
-			clear();
-		}
-
-
 	}
 
 	/**
@@ -363,9 +330,9 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 		}
 
 		/**
-		 * Apply the fonts and colors to the control if
-		 * required.
-		 * @param control
+		 * Apply the fonts and colors to the control if required.
+		 *
+		 * @param control control to apply font and color on
 		 */
 		public void applyFontsAndColors(TableItem control) {
 
@@ -387,9 +354,9 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 		}
 
 		/**
-		 * Apply the fonts and colors to the control if
-		 * required.
-		 * @param control
+		 * Apply the fonts and colors to the control if required.
+		 *
+		 * @param control control to apply font and color on
 		 */
 		public void applyFontsAndColors(TreeItem control) {
 			if(usedDecorators){
@@ -410,45 +377,27 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 		}
 
 		/**
-		 * Apply the fonts and colors to the control if
-		 * required.
-		 * @param control
-		 */
-		public void applyFontsAndColors(TableTreeItem control) {
-			if(usedDecorators){
-				//If there is no provider only apply set values
-				if(background != null) {
-					control.setBackground(background);
-				}
-
-				if(foreground != null) {
-					control.setForeground(foreground);
-				}
-
-				if(font != null) {
-					control.setFont(font);
-				}
-			}
-			clear();
-		}
-
-		/**
 		 * Set the background color.
-		 * @param background
+		 *
+		 * @param background color to set
 		 */
 		public void setBackground(Color background) {
 			this.background = background;
 		}
+
 		/**
 		 * Set the font.
-		 * @param font
+		 *
+		 * @param font font to set
 		 */
 		public void setFont(Font font) {
 			this.font = font;
 		}
+
 		/**
 		 * Set the foreground color.
-		 * @param foreground
+		 *
+		 * @param foreground color to set
 		 */
 		public void setForeground(Color foreground) {
 			this.foreground = foreground;
@@ -584,7 +533,7 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * @param elements
 	 *            the array to check
 	 */
-	protected void assertElementsNotNull(Object[] elements) {
+	protected void assertElementsNotNull(Object... elements) {
 		Assert.isNotNull(elements);
 		for (Object element : elements) {
 			Assert.isNotNull(element);
@@ -658,11 +607,11 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * Returns the widget in this viewer's control which represents the given
 	 * element if it is the viewer's input.
 	 * <p>
-	 * This method is internal to the framework; subclassers should not call
-	 * this method.
+	 * This method is internal to the framework; subclassers should not call this
+	 * method.
 	 * </p>
 	 *
-	 * @param element
+	 * @param element the element to find the representing widget for
 	 * @return the corresponding widget, or <code>null</code> if none
 	 */
 	protected abstract Widget doFindInputItem(Object element);
@@ -671,11 +620,11 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * Returns the widget in this viewer's control which represent the given
 	 * element. This method searches all the children of the input element.
 	 * <p>
-	 * This method is internal to the framework; subclassers should not call
-	 * this method.
+	 * This method is internal to the framework; subclassers should not call this
+	 * method.
 	 * </p>
 	 *
-	 * @param element
+	 * @param element the element to find the representing widget for
 	 * @return the corresponding widget, or <code>null</code> if none
 	 */
 	protected abstract Widget doFindItem(Object element);
@@ -693,8 +642,8 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * this method.
 	 * </p>
 	 *
-	 * @param item
-	 * @param element element
+	 * @param item widget item to update
+	 * @param element the element to represent
 	 * @param fullMap
 	 *            <code>true</code> if mappings are added and removed, and
 	 *            <code>false</code> if only the new map gets installed
@@ -728,12 +677,12 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 */
 	protected Object[] filter(Object[] elements) {
 		if (filters != null) {
-			ArrayList filtered = new ArrayList(elements.length);
+			List<Object> filtered = new ArrayList<>(elements.length);
 			Object root = getRoot();
 			for (Object element : elements) {
 				boolean add = true;
-				for (int j = 0; j < filters.size(); j++) {
-					add = filters.get(j).select(this, root, element);
+				for (ViewerFilter filter : filters) {
+					add = filter.select(this, root, element);
 					if (!add) {
 						break;
 					}
@@ -901,6 +850,9 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 */
 	protected Object[] getFilteredChildren(Object parent) {
 		Object[] result = getRawChildren(parent);
+		if (result.length == 0) {
+			return result;
+		}
 		if (filters != null) {
 			for (Object element : filters) {
 				ViewerFilter f = (ViewerFilter) element;
@@ -1034,7 +986,7 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 		if (control == null || control.isDisposed()) {
 			return StructuredSelection.EMPTY;
 		}
-		List list = getSelectionFromWidget();
+		List<?> list = getSelectionFromWidget();
 		return new StructuredSelection(list, comparer);
 	}
 
@@ -1065,6 +1017,7 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 *
 	 * @return the list of selected elements
 	 */
+	@SuppressWarnings("rawtypes")
 	protected abstract List getSelectionFromWidget();
 
 	/**
@@ -1091,9 +1044,9 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * one.  If this viewer has a comparator that was set via
 	 * <code>setComparator(ViewerComparator)</code> then this method will return
 	 * <code>null</code> if the comparator is not an instance of ViewerSorter.
-     * <p>
-     * It is recommended to use <code>getComparator()</code> instead.
-     * </p>
+	 * <p>
+	 * It is recommended to use <code>getComparator()</code> instead.
+	 * </p>
 	 *
 	 * @return a viewer sorter, or <code>null</code> if none or if the comparator is
 	 * 				not an instance of ViewerSorter
@@ -1109,7 +1062,7 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * This method should be used instead of <code>getSorter()</code>.
 	 *
 	 * @return a viewer comparator, or <code>null</code> if none
-     *
+	 *
 	 * @since 3.2
 	 */
 	public ViewerComparator getComparator(){
@@ -1362,8 +1315,7 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 		}
 
 		if (filters != null) {
-			for (int i = 0, n = filters.size(); i < n; ++i) {
-				ViewerFilter filter = filters.get(i);
+			for (ViewerFilter filter : filters) {
 				if (filter.isFilterProperty(element, property)) {
 					return true;
 				}
@@ -1415,6 +1367,7 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * false, or to reveal the selection if <code>reveal</code> is true.
 	 * <p>
 	 * The default implementation of this method:
+	 * </p>
 	 * <ul>
 	 * <li>discovers the old selection (via <code>getSelection</code>)</li>
 	 * <li>runs the given runnable</li>
@@ -1424,7 +1377,6 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * <li>calls <code>handleInvalidSelection</code> if the selection did not
 	 * take</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @param updateCode
 	 *            the code to run
@@ -1541,9 +1493,9 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * this method.
 	 * </p>
 	 * @param widget
-     *            the widget
+	 *            the widget
 	 * @param element
-     *            the element
+	 *            the element
 	 */
 	protected final void refreshItem(Widget widget, Object element) {
 		SafeRunnable.run(new UpdateItemSafeRunnable(widget, element, true));
@@ -1591,7 +1543,7 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 		if (filters != null) {
 			// Note: can't use List.remove(Object). Use identity comparison
 			// instead.
-			for (Iterator i = filters.iterator(); i.hasNext();) {
+			for (Iterator<ViewerFilter> i = filters.iterator(); i.hasNext();) {
 				Object o = i.next();
 				if (o == filter) {
 					i.remove();
@@ -1662,9 +1614,9 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	}
 
 	/**
-	 * Assert that the content provider is of one of the
-	 * supported types.
-	 * @param provider
+	 * Assert that the content provider is of one of the supported types.
+	 *
+	 * @param provider content provider to check
 	 */
 	protected void assertContentProviderType(IContentProvider provider) {
 		Assert.isTrue(provider instanceof IStructuredContentProvider);
@@ -1678,16 +1630,8 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 					"Need an underlying widget to be able to set the input." + //$NON-NLS-1$
 							"(Has the widget been disposed?)"); //$NON-NLS-1$
 		}
-		try {
-			//		fInChange= true;
-
-			unmapAllElements();
-
-			super.setInput(input);
-
-		} finally {
-			//		fInChange= false;
-		}
+		unmapAllElements();
+		super.setInput(input);
 	}
 
 	@Override
@@ -1738,7 +1682,7 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 *            <code>true</code> if the selection is to be made visible,
 	 *            and <code>false</code> otherwise
 	 */
-	protected abstract void setSelectionToWidget(List l, boolean reveal);
+	protected abstract void setSelectionToWidget(@SuppressWarnings("rawtypes") List l, boolean reveal);
 
 	/**
 	 * Converts the selection to a <code>List</code> and calls
@@ -1759,7 +1703,7 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 		if (selection instanceof IStructuredSelection) {
 			setSelectionToWidget(((IStructuredSelection) selection).toList(), reveal);
 		} else {
-			setSelectionToWidget((List) null, reveal);
+			setSelectionToWidget((List<?>) null, reveal);
 		}
 	}
 
@@ -1786,16 +1730,16 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	 * Sets this viewer's comparator to be used for sorting elements, and triggers refiltering and
 	 * resorting of this viewer's element.  <code>null</code> turns sorting off.
 	 * To get the viewer's comparator, call <code>getComparator()</code>.
-     * <p>
-     * IMPORTANT: This method was introduced in 3.2. If a reference to this viewer object
-     * is passed to clients who call <code>getSorter()</code>, null may be returned from
-     * from that method even though the viewer is sorting its elements using the
-     * viewer's comparator.
-     * </p>
+	 * <p>
+	 * IMPORTANT: This method was introduced in 3.2. If a reference to this viewer object
+	 * is passed to clients who call <code>getSorter()</code>, null may be returned from
+	 * from that method even though the viewer is sorting its elements using the
+	 * viewer's comparator.
+	 * </p>
 	 *
 	 * @param comparator a viewer comparator, or <code>null</code> if none
-     *
-     * @since 3.2
+	 *
+	 * @since 3.2
 	 */
 	public void setComparator(ViewerComparator comparator){
 		if (this.sorter != comparator){
@@ -1806,12 +1750,17 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 
 	/**
 	 * Configures whether this structured viewer uses an internal hash table to
-	 * speeds up the mapping between elements and SWT items. This must be called
+	 * speed up the mapping between elements and SWT items. This must be called
 	 * before the viewer is given an input (via <code>setInput</code>).
+	 * <p>
+	 * Note: enabling hash lookup requires from client code that elements managed by
+	 * the viewer properly implement {@link #hashCode()} and {@link #equals(Object)}
+	 * and that equal elements are not added to the same parent in the tree (each
+	 * equal element should have a different parent chain).
+	 * </p>
 	 *
-	 * @param enable
-	 *            <code>true</code> to enable hash lookup, and
-	 *            <code>false</code> to disable it
+	 * @param enable <code>true</code> to enable hash lookup, and <code>false</code>
+	 *               to disable it
 	 */
 	public void setUseHashlookup(boolean enable) {
 		Assert.isTrue(getInput() == null,
@@ -1878,8 +1827,9 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 
 	/**
 	 * Hook for testing.
-	 * @param element
-	 * @return Widget
+	 *
+	 * @param element the element
+	 * @return the corresponding widget, or <code>null</code> if none
 	 */
 	public Widget testFindItem(Object element) {
 		return findItem(element);
@@ -1887,8 +1837,9 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 
 	/**
 	 * Hook for testing.
-	 * @param element
-	 * @return Widget[]
+	 *
+	 * @param element the element
+	 * @return the corresponding widgets
 	 * @since 3.2
 	 */
 	public Widget[] testFindItems(Object element) {
@@ -2090,24 +2041,24 @@ public abstract class StructuredViewer extends ContentViewer implements IPostSel
 	}
 
 	/**
-     * Updates the given element's presentation when one or more of its
-     * properties changes. Only the given element is updated.
-     * <p>
-     * EXPERIMENTAL.  Not to be used except by JDT.
-     * This method was added to support JDT's explorations
-     * into grouping by working sets, which requires viewers to support multiple
-     * equal elements.  See bug 76482 for more details.  This support will
-     * likely be removed in Eclipse 3.3 in favor of proper support for
-     * multiple equal elements (which was implemented for AbtractTreeViewer in 3.2).
-     * </p>
-     * @param widget
-     *            the widget for the element
-     * @param element
-     *            the element
-     * @param properties
-     *            the properties that have changed, or <code>null</code> to
-     *            indicate unknown
-     */
+	 * Updates the given element's presentation when one or more of its
+	 * properties changes. Only the given element is updated.
+	 * <p>
+	 * EXPERIMENTAL.  Not to be used except by JDT.
+	 * This method was added to support JDT's explorations
+	 * into grouping by working sets, which requires viewers to support multiple
+	 * equal elements.  See bug 76482 for more details.  This support will
+	 * likely be removed in Eclipse 3.3 in favor of proper support for
+	 * multiple equal elements (which was implemented for AbtractTreeViewer in 3.2).
+	 * </p>
+	 * @param widget
+	 *            the widget for the element
+	 * @param element
+	 *            the element
+	 * @param properties
+	 *            the properties that have changed, or <code>null</code> to
+	 *            indicate unknown
+	 */
 	protected void internalUpdate(Widget widget, Object element, String[] properties) {
 		boolean needsRefilter = false;
 		if (properties != null) {

@@ -17,7 +17,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -157,7 +156,7 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 
 	/**
 	 * Creates an instance of this class.
-	 * 
+	 *
 	 * @param jarPackage the JAR package data
 	 */
 	public JarManifestWizardPage(JarPackageData jarPackage) {
@@ -474,15 +473,14 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 			MainMethodSearchEngine engine= new MainMethodSearchEngine();
 			try {
 				fMainTypes= engine.searchMainMethods(getContainer(), searchScope, 0);
-			} catch (InvocationTargetException ex) {
-				// null
-			} catch (InterruptedException e) {
+			} catch (InvocationTargetException | InterruptedException ex) {
 				// null
 			}
 		}
-		for (int i= 0; i < fMainTypes.length; i++) {
-			if (fMainTypes[i].getFullyQualifiedName().equals(name))
-			 return fMainTypes[i];
+		for (IType mainType : fMainTypes) {
+			if (mainType.getFullyQualifiedName().equals(name)) {
+				return mainType;
+			}
 		}
 		return null;
 	}
@@ -498,7 +496,7 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 		dialog.setTitle(JarPackagerMessages.JarManifestWizardPage_mainTypeSelectionDialog_title);
 		dialog.setMessage(JarPackagerMessages.JarManifestWizardPage_mainTypeSelectionDialog_message);
 		if (fJarPackage.getManifestMainClass() != null)
-			dialog.setInitialSelections(new Object[] {fJarPackage.getManifestMainClass()});
+			dialog.setInitialSelections(fJarPackage.getManifestMainClass());
 
 		if (dialog.open() == Window.OK) {
 			fJarPackage.setManifestMainClass((IType)dialog.getResult()[0]);
@@ -567,23 +565,33 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 		if (fJarPackage.isJarSealed()) {
 			fSealPackagesLabel.setText(""); //$NON-NLS-1$
 			int i= fJarPackage.getPackagesToUnseal().length;
-			if (i == 0)
+			switch (i) {
+			case 0:
 				fSealJarLabel.setText(JarPackagerMessages.JarManifestWizardPage_jarSealed);
-			else if (i == 1)
+				break;
+			case 1:
 				fSealJarLabel.setText(JarPackagerMessages.JarManifestWizardPage_jarSealedExceptOne);
-			else
+				break;
+			default:
 				fSealJarLabel.setText(Messages.format(JarPackagerMessages.JarManifestWizardPage_jarSealedExceptSome, Integer.valueOf(i)));
+				break;
+			}
 
 		}
 		else {
 			fSealJarLabel.setText(""); //$NON-NLS-1$
 			int i= fJarPackage.getPackagesToSeal().length;
-			if (i == 0)
+			switch (i) {
+			case 0:
 				fSealPackagesLabel.setText(JarPackagerMessages.JarManifestWizardPage_nothingSealed);
-			else if (i == 1)
+				break;
+			case 1:
 				fSealPackagesLabel.setText(JarPackagerMessages.JarManifestWizardPage_onePackageSealed);
-			else
+				break;
+			default:
 				fSealPackagesLabel.setText(Messages.format(JarPackagerMessages.JarManifestWizardPage_somePackagesSealed, Integer.valueOf(i)));
+				break;
+			}
 		}
 	}
 	/*
@@ -900,8 +908,8 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 	 */
 	protected SelectionDialog createPackageDialog(Set<IJavaElement> packageFragments) {
 		List<IPackageFragment> packages= new ArrayList<>(packageFragments.size());
-		for (Iterator<IJavaElement> iter= packageFragments.iterator(); iter.hasNext();) {
-			IPackageFragment fragment= (IPackageFragment)iter.next();
+		for (IJavaElement iJavaElement : packageFragments) {
+			IPackageFragment fragment= (IPackageFragment)iJavaElement;
 			boolean containsJavaElements= false;
 			int kind;
 			try {
@@ -933,8 +941,8 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 			@Override
 			public IStatus validate(Object[] selection) {
 				StatusInfo res= new StatusInfo();
-				for (int i= 0; i < selection.length; i++) {
-					if (!(selection[i] instanceof IPackageFragment)) {
+				for (Object s : selection) {
+					if (!(s instanceof IPackageFragment)) {
 						res.setError(JarPackagerMessages.JarManifestWizardPage_error_mustContainPackages);
 						return res;
 					}
@@ -999,9 +1007,7 @@ class JarManifestWizardPage extends WizardPage implements IJarPackageWizardPage 
 	 */
 	private Set<IJavaElement> getPackagesForSelectedResources() {
 		Set<IJavaElement> packages= new HashSet<>();
-		int n= fJarPackage.getElements().length;
-		for (int i= 0; i < n; i++) {
-			Object element= fJarPackage.getElements()[i];
+		for (Object element : fJarPackage.getElements()) {
 			if (element instanceof ICompilationUnit) {
 				packages.add(((ICompilationUnit) element).getParent());
 			}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2006 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,7 +14,7 @@
 package org.eclipse.ui.tests.contexts;
 
 import org.eclipse.jface.action.ContributionItem;
-import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
@@ -40,19 +40,13 @@ public class MockViewPart5 extends MockWorkbenchPart implements IViewPart {
 
 	private ContributionItem toolbarItem = new ContributionItem("someId") {
 
-		private DisposeListener disposeListener = new DisposeListener() {
-			@Override
-			public void widgetDisposed(DisposeEvent e) {
-				toolbarContributionItemWidgetDisposed();
-			}
-
-		};
+		private DisposeListener disposeListener = e -> toolbarContributionItemWidgetDisposed();
 
 		@Override
 		public void fill(ToolBar parent, int index) {
 			super.fill(parent, index);
 
-			ToolItem item = new ToolItem(parent, index);
+			ToolItem item = new ToolItem(parent, SWT.NONE, index);
 
 			item.addDisposeListener(disposeListener);
 			item.setImage(WorkbenchImages.getImage(ISharedImages.IMG_DEF_VIEW));

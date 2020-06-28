@@ -40,8 +40,7 @@ public class CSS2FontPropertiesHelpers {
 	 * @param control
 	 * @return
 	 */
-	public static CSS2FontProperties getCSS2FontProperties(
-			CSSElementContext context) {
+	public static CSS2FontProperties getCSS2FontProperties(CSSElementContext context) {
 		// Search into Data of context if CSS2FontProperties exist.
 		return (CSS2FontProperties) context.getData(CSS2FONT_KEY);
 	}
@@ -53,10 +52,10 @@ public class CSS2FontPropertiesHelpers {
 	 * @param fontProperties
 	 * @param context
 	 */
-	public static void setCSS2FontProperties(CSS2FontProperties fontProperties,
-			CSSElementContext context) {
-		if (fontProperties == null)
+	public static void setCSS2FontProperties(CSS2FontProperties fontProperties, CSSElementContext context) {
+		if (fontProperties == null) {
 			return;
+		}
 		context.setData(CSS2FONT_KEY, fontProperties);
 	}
 
@@ -68,33 +67,40 @@ public class CSS2FontPropertiesHelpers {
 	 * @param property
 	 * @return
 	 */
-	public static CSS2FontProperties createCSS2FontProperties(CSSValue value,
-			String property) {
+	public static CSS2FontProperties createCSS2FontProperties(CSSValue value, String property) {
 		CSS2FontProperties fontProperties = new CSS2FontPropertiesImpl();
 		updateCSSPropertyFont(fontProperties, property, value);
 		return fontProperties;
 	}
 
 	/**
-	 * Update the <code>property of</code> <code>fontProperties</code>
-	 * instance with the <code>value</code>.
+	 * Update the <code>property of</code> <code>fontProperties</code> instance with
+	 * the <code>value</code>.
 	 *
 	 * @param fontProperties
 	 * @param property
 	 * @param value
 	 */
-	public static void updateCSSPropertyFont(CSS2FontProperties fontProperties,
-			String property, CSSValue value) {
-		if ("font-family".equals(property))
+	public static void updateCSSPropertyFont(CSS2FontProperties fontProperties, String property, CSSValue value) {
+		switch (property) {
+		case "font-family":
 			updateCSSPropertyFontFamily(fontProperties, value);
-		else if ("font-size".equals(property))
+			break;
+		case "font-size":
 			updateCSSPropertyFontSize(fontProperties, value);
-		else if ("font-style".equals(property))
+			break;
+		case "font-style":
 			updateCSSPropertyFontStyle(fontProperties, value);
-		else if ("font-weight".equals(property))
+			break;
+		case "font-weight":
 			updateCSSPropertyFontWeight(fontProperties, value);
-		else if ("font".equals(property))
+			break;
+		case "font":
 			updateCSSPropertyFontComposite(fontProperties, value);
+			break;
+		default:
+			break;
+		}
 	}
 
 	/**
@@ -105,8 +111,7 @@ public class CSS2FontPropertiesHelpers {
 	 * @param font
 	 * @param value
 	 */
-	public static void updateCSSPropertyFontComposite(CSS2FontProperties font,
-			CSSValue value) {
+	public static void updateCSSPropertyFontComposite(CSS2FontProperties font, CSSValue value) {
 		if (value.getCssValueType() == CSSValue.CSS_VALUE_LIST) {
 			CSSValueList valueList = (CSSValueList) value;
 			int length = valueList.getLength();
@@ -116,8 +121,7 @@ public class CSS2FontPropertiesHelpers {
 			}
 		} else {
 			if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-				String property = CSS2FontHelper
-						.getCSSFontPropertyName((CSSPrimitiveValue) value);
+				String property = CSS2FontHelper.getCSSFontPropertyName((CSSPrimitiveValue) value);
 				updateCSSPropertyFont(font, property, value);
 			}
 		}
@@ -130,8 +134,7 @@ public class CSS2FontPropertiesHelpers {
 	 * @param value
 	 * @throws Exception
 	 */
-	public static void updateCSSPropertyFontFamily(CSS2FontProperties font,
-			CSSValue value) {
+	public static void updateCSSPropertyFontFamily(CSS2FontProperties font, CSSValue value) {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
 			font.setFamily((CSSPrimitiveValue) value);
 		}
@@ -144,8 +147,7 @@ public class CSS2FontPropertiesHelpers {
 	 * @param value
 	 * @throws Exception
 	 */
-	public static void updateCSSPropertyFontSize(CSS2FontProperties font,
-			CSSValue value) {
+	public static void updateCSSPropertyFontSize(CSS2FontProperties font, CSSValue value) {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
 			font.setSize((CSSPrimitiveValue) value);
 		}
@@ -158,8 +160,7 @@ public class CSS2FontPropertiesHelpers {
 	 * @param value
 	 * @throws Exception
 	 */
-	public static void updateCSSPropertyFontStyle(CSS2FontProperties font,
-			CSSValue value) {
+	public static void updateCSSPropertyFontStyle(CSS2FontProperties font, CSSValue value) {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
 			font.setStyle((CSSPrimitiveValue) value);
 		}
@@ -172,8 +173,7 @@ public class CSS2FontPropertiesHelpers {
 	 * @param value
 	 * @throws Exception
 	 */
-	public static void updateCSSPropertyFontWeight(CSS2FontProperties font,
-			CSSValue value) {
+	public static void updateCSSPropertyFontWeight(CSS2FontProperties font, CSSValue value) {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
 			font.setWeight((CSSPrimitiveValue) value);
 		}

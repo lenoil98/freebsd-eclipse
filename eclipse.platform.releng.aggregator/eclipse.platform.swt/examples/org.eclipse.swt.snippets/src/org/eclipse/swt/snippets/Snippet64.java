@@ -28,6 +28,7 @@ public class Snippet64 {
 public static void main (String [] args) {
 	Display display = new Display ();
 	Shell shell = new Shell (display);
+	shell.setText("Snippet 64");
 	final Table table = new Table (shell, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
 	for (int i=0; i<16; i++) {
 		TableItem item = new TableItem (table, 0);
@@ -37,14 +38,14 @@ public static void main (String [] args) {
 	table.setBounds (clientArea.x, clientArea.y, 100, 100);
 	table.addListener (SWT.Selection, e -> {
 		String string = "";
-		TableItem [] selection = table.getSelection ();
-		for (int i=0; i<selection.length; i++) string += selection [i] + " ";
+		for (TableItem item : table.getSelection ())
+			string += item + " ";
 		System.out.println ("Selection={" + string + "}");
 	});
 	table.addListener (SWT.DefaultSelection, e -> {
 		String string = "";
-		TableItem [] selection = table.getSelection ();
-		for (int i=0; i<selection.length; i++) string += selection [i] + " ";
+		for (TableItem item : table.getSelection ())
+			string += item + " ";
 		System.out.println ("DefaultSelection={" + string + "}");
 	});
 	shell.pack ();

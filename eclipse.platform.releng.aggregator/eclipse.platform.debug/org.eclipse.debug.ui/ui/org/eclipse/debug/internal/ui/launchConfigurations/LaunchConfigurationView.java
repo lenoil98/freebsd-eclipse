@@ -16,6 +16,8 @@
 package org.eclipse.debug.internal.ui.launchConfigurations;
 
 
+import java.text.MessageFormat;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
@@ -49,8 +51,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PatternFilter;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * A tree view of launch configurations
@@ -310,13 +310,13 @@ public class LaunchConfigurationView extends AbstractDebugView implements ILaunc
 		}
 	}
 
-    /**
-     * The given launch configuration has been added. Add it to the tree.
-     * @param configuration the added configuration
-     */
-    private void handleConfigurationAdded(ILaunchConfiguration configuration, ILaunchConfiguration from) {
-        TreeViewer viewer = getTreeViewer();
-        if (viewer != null) {
+	/**
+	 * The given launch configuration has been added. Add it to the tree.
+	 * @param configuration the added configuration
+	 */
+	private void handleConfigurationAdded(ILaunchConfiguration configuration, ILaunchConfiguration from) {
+		TreeViewer viewer = getTreeViewer();
+		if (viewer != null) {
 			try {
 				viewer.getControl().setRedraw(false);
 				if (configuration.getPrototype() != null) {
@@ -324,49 +324,49 @@ public class LaunchConfigurationView extends AbstractDebugView implements ILaunc
 				} else {
 					viewer.add(configuration.getType(), configuration);
 				}
-                // if moved, remove original now
-                if (from != null) {
-                    viewer.remove(from);
-                }
-                if (isAutoSelect()) {
-    				viewer.setSelection(new StructuredSelection(configuration), true);
-    			}
-                updateFilterLabel();
+				// if moved, remove original now
+				if (from != null) {
+					viewer.remove(from);
+				}
+				if (isAutoSelect()) {
+					viewer.setSelection(new StructuredSelection(configuration), true);
+				}
+				updateFilterLabel();
 			}
 			catch (CoreException e) {}
 			finally {
 				viewer.getControl().setRedraw(true);
 			}
-        }
-    }
+		}
+	}
 
-    /**
-     * Returns if the specified configuration is supported by this instance of the view.
-     * Supported means that:
-     * <ul>
-     * <li>The configuration is not private</li>
-     * <li>AND that the configurations' type supports the mode of the current launch group</li>
-     * <li>AND that the category of the configurations' type matches that of the current launch group</li>
-     * </ul>
-     * @param configuration the configuration
-     * @return true if the configuration is supported by this instance of the view, false otherwise
-     *
-     * @since 3.4
-     */
-    protected boolean isSupportedConfiguration(ILaunchConfiguration configuration) {
-    	try {
-    		ILaunchConfigurationType type = configuration.getType();
-    		return !configuration.getAttribute(IDebugUIConstants.ATTR_PRIVATE, false) &&
-    				type.supportsMode(getLaunchGroup().getMode()) &&
-    				equalCategories(type.getCategory(), getLaunchGroup().getCategory());
-    	}
-    	catch(CoreException ce) {
-    		DebugUIPlugin.log(ce);
-    	}
-    	return false;
-    }
+	/**
+	 * Returns if the specified configuration is supported by this instance of the view.
+	 * Supported means that:
+	 * <ul>
+	 * <li>The configuration is not private</li>
+	 * <li>AND that the configurations' type supports the mode of the current launch group</li>
+	 * <li>AND that the category of the configurations' type matches that of the current launch group</li>
+	 * </ul>
+	 * @param configuration the configuration
+	 * @return true if the configuration is supported by this instance of the view, false otherwise
+	 *
+	 * @since 3.4
+	 */
+	protected boolean isSupportedConfiguration(ILaunchConfiguration configuration) {
+		try {
+			ILaunchConfigurationType type = configuration.getType();
+			return !configuration.getAttribute(IDebugUIConstants.ATTR_PRIVATE, false) &&
+					type.supportsMode(getLaunchGroup().getMode()) &&
+					equalCategories(type.getCategory(), getLaunchGroup().getCategory());
+		}
+		catch(CoreException ce) {
+			DebugUIPlugin.log(ce);
+		}
+		return false;
+	}
 
-    /**
+	/**
 	 * Returns whether the given categories are equal.
 	 *
 	 * @param c1 category identifier or <code>null</code>
@@ -409,14 +409,14 @@ public class LaunchConfigurationView extends AbstractDebugView implements ILaunc
 
 	/**
 	 * The given launch configuration has been removed. Remove it from the tree.
-     * @param configuration the deleted configuration
-     */
-    private void handleConfigurationRemoved(ILaunchConfiguration configuration) {
-        getTreeViewer().remove(configuration);
+	 * @param configuration the deleted configuration
+	 */
+	private void handleConfigurationRemoved(ILaunchConfiguration configuration) {
+		getTreeViewer().remove(configuration);
 		updateFilterLabel();
-    }
+	}
 
-    /**
+	/**
 	 * This is similar to IWorkbenchPart#createPartControl(Composite), but it is
 	 * called by the launch dialog when creating the launch config tree view.
 	 * Since this view is not contained in the workbench, we cannot do all the

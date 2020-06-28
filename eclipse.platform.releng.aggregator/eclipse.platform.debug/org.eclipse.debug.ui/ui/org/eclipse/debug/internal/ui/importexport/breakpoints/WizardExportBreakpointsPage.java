@@ -16,6 +16,7 @@
 package org.eclipse.debug.internal.ui.importexport.breakpoints;
 
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,8 +49,6 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.PlatformUI;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * <p>
@@ -97,9 +96,6 @@ public class WizardExportBreakpointsPage extends WizardPage implements Listener 
 		fSelection = selection;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.swt.widgets.Listener#handleEvent(org.eclipse.swt.widgets.Event)
-	 */
 	@Override
 	public void handleEvent(Event event) {
 		Widget source = event.widget;
@@ -206,17 +202,17 @@ public class WizardExportBreakpointsPage extends WizardPage implements Listener 
 	}
 
 	/**
-     * Creates the buttons for selecting all or none of the elements.
-     *
-     * @param parent the parent control
-     */
-    private void createButtonsGroup(Composite parent) {
-        Composite composite = SWTFactory.createComposite(parent, parent.getFont(), 3, 1, GridData.FILL_HORIZONTAL, 0, 0);
-        fSelectAll = SWTFactory.createPushButton(composite, ImportExportMessages.WizardBreakpointsPage_1, null);
-        fSelectAll.addListener(SWT.Selection, this);
+	 * Creates the buttons for selecting all or none of the elements.
+	 *
+	 * @param parent the parent control
+	 */
+	private void createButtonsGroup(Composite parent) {
+		Composite composite = SWTFactory.createComposite(parent, parent.getFont(), 3, 1, GridData.FILL_HORIZONTAL, 0, 0);
+		fSelectAll = SWTFactory.createPushButton(composite, ImportExportMessages.WizardBreakpointsPage_1, null);
+		fSelectAll.addListener(SWT.Selection, this);
 		fDeselectAll = SWTFactory.createPushButton(composite, ImportExportMessages.WizardBreakpointsPage_2, null);
 		fDeselectAll.addListener(SWT.Selection, this);
-    }
+	}
 
 	/**
 	 * This method is used to determine if the page can be "finished".
@@ -313,8 +309,7 @@ public class WizardExportBreakpointsPage extends WizardPage implements Listener 
 			// collect breakpoints
 			Object[] elements = fTView.getCheckedElements().toArray();
 			List<IBreakpoint> breakpoints = new ArrayList<>();
-			for (int i = 0; i < elements.length; i++) {
-				Object object = elements[i];
+			for (Object object : elements) {
 				if (object instanceof IBreakpoint) {
 					breakpoints.add((IBreakpoint) object);
 				}

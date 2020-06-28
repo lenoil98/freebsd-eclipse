@@ -20,7 +20,6 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -77,11 +76,6 @@ public class RemoteAntBuildLogger extends DefaultLogger {
 	private String fLastFileName = null;
 	private String fLastTaskName = null;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.tools.ant.DefaultLogger#printMessage(java.lang.String, java.io.PrintStream, int)
-	 */
 	@Override
 	protected void printMessage(String message, PrintStream stream, int priority) {
 		marshalMessage(priority, message);
@@ -145,11 +139,6 @@ public class RemoteAntBuildLogger extends DefaultLogger {
 		fWriter.println(msg);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.tools.ant.BuildListener#buildFinished(org.apache.tools.ant.BuildEvent)
-	 */
 	@Override
 	public void buildFinished(BuildEvent event) {
 		if (!fSentProcessId) {
@@ -166,20 +155,20 @@ public class RemoteAntBuildLogger extends DefaultLogger {
 			return;
 		}
 
-		StringBuffer message = new StringBuffer();
-		message.append(StringUtils.LINE_SEP);
+		StringBuilder message = new StringBuilder();
+		message.append(System.lineSeparator());
 		message.append(RemoteAntMessages.getString("RemoteAntBuildLogger.1")); //$NON-NLS-1$
-		message.append(StringUtils.LINE_SEP);
+		message.append(System.lineSeparator());
 		if (Project.MSG_VERBOSE <= this.msgOutputLevel || !(exception instanceof BuildException)) {
 			message.append(StringUtils.getStackTrace(exception));
 		} else {
 			if (exception instanceof BuildException) {
-				message.append(exception.toString()).append(StringUtils.LINE_SEP);
+				message.append(exception.toString()).append(System.lineSeparator());
 			} else {
-				message.append(exception.getMessage()).append(StringUtils.LINE_SEP);
+				message.append(exception.getMessage()).append(System.lineSeparator());
 			}
 		}
-		message.append(StringUtils.LINE_SEP);
+		message.append(System.lineSeparator());
 		printMessage(message.toString(), out, Project.MSG_ERR);
 	}
 
@@ -188,7 +177,7 @@ public class RemoteAntBuildLogger extends DefaultLogger {
 		long minutes = seconds / 60;
 		seconds = seconds % 60;
 
-		StringBuffer result = new StringBuffer(RemoteAntMessages.getString("RemoteAntBuildLogger.Total_time")); //$NON-NLS-1$
+		StringBuilder result = new StringBuilder(RemoteAntMessages.getString("RemoteAntBuildLogger.Total_time")); //$NON-NLS-1$
 		if (minutes > 0) {
 			result.append(minutes);
 			if (minutes > 1) {
@@ -216,11 +205,6 @@ public class RemoteAntBuildLogger extends DefaultLogger {
 		return result.toString();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.tools.ant.BuildListener#targetStarted(org.apache.tools.ant.BuildEvent)
-	 */
 	@Override
 	public void targetStarted(BuildEvent event) {
 		if (!fSentProcessId) {
@@ -241,22 +225,17 @@ public class RemoteAntBuildLogger extends DefaultLogger {
 		}
 
 		fSentProcessId = true;
-		StringBuffer message = new StringBuffer(MessageIds.PROCESS_ID);
+		StringBuilder message = new StringBuilder(MessageIds.PROCESS_ID);
 		message.append(fProcessId);
 		sendMessage(message.toString());
 		if (fEventQueue != null) {
-			for (Iterator<BuildEvent> iter = fEventQueue.iterator(); iter.hasNext();) {
-				processEvent(iter.next());
+			for (BuildEvent buildEvent : fEventQueue) {
+				processEvent(buildEvent);
 			}
 			fEventQueue = null;
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.tools.ant.BuildListener#messageLogged(org.apache.tools.ant.BuildEvent)
-	 */
 	@SuppressWarnings("unused")
 	@Override
 	public void messageLogged(BuildEvent event) {
@@ -382,7 +361,7 @@ public class RemoteAntBuildLogger extends DefaultLogger {
 		Target target = event.getTarget();
 		Location location = AntDebugState.getLocation(target);
 
-		StringBuffer message = new StringBuffer();
+		StringBuilder message = new StringBuilder();
 		message.append(MessageIds.TARGET);
 		message.append(',');
 		message.append(target.getName());
@@ -401,11 +380,6 @@ public class RemoteAntBuildLogger extends DefaultLogger {
 		sendMessage(message.toString());
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.tools.ant.BuildListener#buildStarted(org.apache.tools.ant.BuildEvent)
-	 */
 	@Override
 	public void buildStarted(BuildEvent event) {
 		establishConnection();

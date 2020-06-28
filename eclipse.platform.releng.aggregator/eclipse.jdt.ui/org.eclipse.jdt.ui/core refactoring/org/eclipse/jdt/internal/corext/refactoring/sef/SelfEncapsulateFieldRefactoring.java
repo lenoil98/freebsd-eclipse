@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -20,7 +20,6 @@ package org.eclipse.jdt.internal.corext.refactoring.sef;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -87,12 +86,15 @@ import org.eclipse.jdt.core.refactoring.descriptors.JavaRefactoringDescriptor;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.SearchPattern;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.GetterSetterUtil;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.corext.dom.DimensionRewrite;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 import org.eclipse.jdt.internal.corext.dom.VariableDeclarationRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
 import org.eclipse.jdt.internal.corext.refactoring.JDTRefactoringDescriptorComment;
@@ -114,9 +116,6 @@ import org.eclipse.jdt.internal.corext.util.Messages;
 import org.eclipse.jdt.ui.JavaElementLabels;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
-import org.eclipse.jdt.internal.core.manipulation.StubUtility;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.viewsupport.BindingLabelProvider;
 
 /**
@@ -140,8 +139,10 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	private ImportRewrite fImportRewrite;
 
 	private int fVisibility= -1;
-	private String fGetterName;
-	private String fSetterName;
+	private String fGetterName= ""; //$NON-NLS-1$
+	private boolean fCreateGetter;
+	private String fSetterName= ""; //$NON-NLS-1$
+	private boolean fCreateSetter;
 	private String fArgName;
 	private boolean fSetterMustReturnValue;
 	private int fInsertionIndex;	// -1 represents as first method.
@@ -168,8 +169,8 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	}
 
 	private void initialize(IField field) throws JavaModelException {
-		fGetterName= GetterSetterUtil.getGetterName(field, null);
-		fSetterName= GetterSetterUtil.getSetterName(field, null);
+		setGetterName(GetterSetterUtil.getGetterName(field, null));
+		setSetterName(GetterSetterUtil.getSetterName(field, null));
 		String argBaseName= StubUtility.getBaseName(field);
 		fArgName= StubUtility.suggestArgumentName(field.getJavaProject(), argBaseName, new String[0]);
 		checkArgName();
@@ -192,8 +193,9 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	}
 
 	public void setGetterName(String name) {
+		Assert.isNotNull(name);
 		fGetterName= name;
-		Assert.isNotNull(fGetterName);
+		fCreateGetter= !name.isEmpty();
 	}
 
 	public String getSetterName() {
@@ -201,8 +203,9 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	}
 
 	public void setSetterName(String name) {
+		Assert.isNotNull(name);
 		fSetterName= name;
-		Assert.isNotNull(fSetterName);
+		fCreateSetter= !name.isEmpty();
 	}
 
 	public void setInsertionIndex(int index) {
@@ -239,7 +242,7 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException {
 		if (fVisibility < 0)
 			fVisibility= (fField.getFlags() & (Flags.AccPublic | Flags.AccProtected | Flags.AccPrivate));
-		RefactoringStatus result=  new RefactoringStatus();
+		RefactoringStatus result= new RefactoringStatus();
 		result.merge(Checks.checkAvailability(fField));
 		if (result.hasFatalError())
 			return result;
@@ -288,14 +291,18 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	//---- Input checking ----------------------------------------------------------
 
 	public RefactoringStatus checkMethodNames() {
-		return checkMethodNames(isUsingLocalGetter(),isUsingLocalSetter());
+		return checkMethodNames(isUsingLocalGetter(), isUsingLocalSetter());
 	}
 
 	public RefactoringStatus checkMethodNames(boolean usingLocalGetter, boolean usingLocalSetter) {
 		RefactoringStatus result= new RefactoringStatus();
 		IType declaringType= fField.getDeclaringType();
-		checkName(result, fGetterName, fUsedReadNames, declaringType, usingLocalGetter, fField);
-		checkName(result, fSetterName, fUsedModifyNames, declaringType, usingLocalSetter, fField);
+		if (fCreateGetter) {
+			checkName(result, fGetterName, fUsedReadNames, declaringType, usingLocalGetter, fField);
+		}
+		if (fCreateSetter) {
+			checkName(result, fSetterName, fUsedModifyNames, declaringType, usingLocalSetter, fField);
+		}
 		return result;
 	}
 
@@ -303,16 +310,15 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 		if ("".equals(name)) { //$NON-NLS-1$
 			status.addFatalError(RefactoringCoreMessages.Checks_Choose_name);
 			return;
-	    }
-		boolean isStatic=false;
+		}
+		boolean isStatic= false;
 		try {
 			isStatic= Flags.isStatic(field.getFlags());
 		} catch (JavaModelException e) {
 			JavaPlugin.log(e);
 		}
 		status.merge(Checks.checkMethodName(name, field));
-		for (Iterator<IMethodBinding> iter= usedNames.iterator(); iter.hasNext(); ) {
-			IMethodBinding method= iter.next();
+		for (IMethodBinding method : usedNames) {
 			String selector= method.getName();
 			if (selector.equals(name)) {
 				if (!reUseExistingField) {
@@ -338,14 +344,14 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException {
 		pm.beginTask(NO_NAME, 12);
 		pm.setTaskName(RefactoringCoreMessages.SelfEncapsulateField_checking_preconditions);
-		
+
 		RefactoringStatus result= new RefactoringStatus();
 		fRewriter= ASTRewrite.create(fRoot.getAST());
 		fChangeManager.clear();
-		
-		boolean usingLocalGetter=isUsingLocalGetter();
-		boolean usingLocalSetter=isUsingLocalSetter();
-		result.merge(checkMethodNames(usingLocalGetter,usingLocalSetter));
+
+		boolean usingLocalGetter= isUsingLocalGetter();
+		boolean usingLocalSetter= isUsingLocalSetter();
+		result.merge(checkMethodNames(usingLocalGetter, usingLocalSetter));
 		pm.worked(1);
 		if (result.hasFatalError())
 			return result;
@@ -371,8 +377,7 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 		ICompilationUnit owner= fField.getCompilationUnit();
 		fImportRewrite= StubUtility.createImportRewrite(fRoot, true);
 
-		for (int i= 0; i < affectedCUs.length; i++) {
-			ICompilationUnit unit= affectedCUs[i];
+		for (ICompilationUnit unit : affectedCUs) {
 			sub.subTask(BasicElementLabels.getFileName(unit));
 			CompilationUnit root= null;
 			ASTRewrite rewriter= null;
@@ -411,7 +416,7 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 
 		sub.done();
 		IFile[] filesToBeModified= ResourceUtil.getFiles(fChangeManager.getAllCompilationUnits());
-		result.merge(Checks.validateModifiesFiles(filesToBeModified, getValidationContext()));
+		result.merge(Checks.validateModifiesFiles(filesToBeModified, getValidationContext(), pm));
 		if (result.hasFatalError())
 			return result;
 		ResourceChangeChecker.checkFilesToBeChanged(filesToBeModified, new SubProgressMonitor(pm, 1));
@@ -424,8 +429,8 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 		change.setEdit(root);
 		root.addChild(importRewrite.rewriteImports(null));
 		root.addChild(rewriter.rewriteAST());
-		for (Iterator<TextEditGroup> iter= groups.iterator(); iter.hasNext();) {
-			change.addTextEditGroup(iter.next());
+		for (TextEditGroup textEditGroup : groups) {
+			change.addTextEditGroup(textEditGroup);
 		}
 	}
 
@@ -448,8 +453,12 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 		final String header= Messages.format(RefactoringCoreMessages.SelfEncapsulateFieldRefactoring_descriptor_description, new String[] { JavaElementLabels.getElementLabel(fField, JavaElementLabels.ALL_FULLY_QUALIFIED), JavaElementLabels.getElementLabel(declaring, JavaElementLabels.ALL_FULLY_QUALIFIED)});
 		final JDTRefactoringDescriptorComment comment= new JDTRefactoringDescriptorComment(project, this, header);
 		comment.addSetting(Messages.format(RefactoringCoreMessages.SelfEncapsulateField_original_pattern, JavaElementLabels.getElementLabel(fField, JavaElementLabels.ALL_FULLY_QUALIFIED)));
-		comment.addSetting(Messages.format(RefactoringCoreMessages.SelfEncapsulateField_getter_pattern, BasicElementLabels.getJavaElementName(fGetterName)));
-		comment.addSetting(Messages.format(RefactoringCoreMessages.SelfEncapsulateField_setter_pattern, BasicElementLabels.getJavaElementName(fSetterName)));
+		if (fCreateGetter) {
+			comment.addSetting(Messages.format(RefactoringCoreMessages.SelfEncapsulateField_getter_pattern, BasicElementLabels.getJavaElementName(fGetterName)));
+		}
+		if (fCreateSetter) {
+			comment.addSetting(Messages.format(RefactoringCoreMessages.SelfEncapsulateField_setter_pattern, BasicElementLabels.getJavaElementName(fSetterName)));
+		}
 		String visibility= JdtFlags.getVisibilityString(fVisibility);
 		if ("".equals(visibility)) //$NON-NLS-1$
 			visibility= RefactoringCoreMessages.SelfEncapsulateField_default_visibility;
@@ -462,18 +471,22 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 			comment.addSetting(RefactoringCoreMessages.SelfEncapsulateField_generate_comments);
 		final EncapsulateFieldDescriptor descriptor= RefactoringSignatureDescriptorFactory.createEncapsulateFieldDescriptor(project, description, comment.asString(), arguments, flags);
 		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_INPUT, JavaRefactoringDescriptorUtil.elementToHandle(project, fField));
-		arguments.put(ATTRIBUTE_VISIBILITY, Integer.valueOf(fVisibility).toString());
-		arguments.put(ATTRIBUTE_INSERTION, Integer.valueOf(fInsertionIndex).toString());
-		arguments.put(ATTRIBUTE_SETTER, fSetterName);
-		arguments.put(ATTRIBUTE_GETTER, fGetterName);
-		arguments.put(ATTRIBUTE_COMMENTS, Boolean.valueOf(fGenerateJavadoc).toString());
-		arguments.put(ATTRIBUTE_DECLARING, Boolean.valueOf(fEncapsulateDeclaringClass).toString());
+		arguments.put(ATTRIBUTE_VISIBILITY, Integer.toString(fVisibility));
+		arguments.put(ATTRIBUTE_INSERTION, Integer.toString(fInsertionIndex));
+		if (fCreateSetter) {
+			arguments.put(ATTRIBUTE_SETTER, fSetterName);
+		}
+		if (fCreateGetter) {
+			arguments.put(ATTRIBUTE_GETTER, fGetterName);
+		}
+		arguments.put(ATTRIBUTE_COMMENTS, Boolean.toString(fGenerateJavadoc));
+		arguments.put(ATTRIBUTE_DECLARING, Boolean.toString(fEncapsulateDeclaringClass));
 		final DynamicValidationRefactoringChange result= new DynamicValidationRefactoringChange(descriptor, getName());
 		TextChange[] changes= fChangeManager.getAllChanges();
 		pm.beginTask(NO_NAME, changes.length);
 		pm.setTaskName(RefactoringCoreMessages.SelfEncapsulateField_create_changes);
-		for (int i= 0; i < changes.length; i++) {
-			result.add(changes[i]);
+		for (TextChange change : changes) {
+			result.add(change);
 			pm.worked(1);
 		}
 		pm.done();
@@ -488,13 +501,11 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	//---- Helper methods -------------------------------------------------------------
 
 	private void checkCompileErrors(RefactoringStatus result, CompilationUnit root, ICompilationUnit element) {
-		IProblem[] messages= root.getProblems();
-		for (int i= 0; i < messages.length; i++) {
-			IProblem problem= messages[i];
+		for (IProblem problem : root.getProblems()) {
 			if (!isIgnorableProblem(problem)) {
 				result.addWarning(Messages.format(
-						RefactoringCoreMessages.SelfEncapsulateField_compiler_errors_update,
-						BasicElementLabels.getFileName(element)), JavaStatusContext.create(element));
+					RefactoringCoreMessages.SelfEncapsulateField_compiler_errors_update,
+					BasicElementLabels.getFileName(element)), JavaStatusContext.create(element));
 				return;
 			}
 		}
@@ -505,9 +516,14 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 		ITypeBinding type= declaration.resolveBinding();
 		if (type != null) {
 			ITypeBinding fieldType= fFieldDeclaration.resolveBinding().getType();
-			checkMethodInHierarchy(type, fGetterName, fieldType, new ITypeBinding[0], status, usingLocalGetter);
-			checkMethodInHierarchy(type, fSetterName, fFieldDeclaration.getAST().resolveWellKnownType("void"), //$NON-NLS-1$
-				new ITypeBinding[] {fieldType}, status, usingLocalSetter);
+			if (fCreateGetter) {
+				checkMethodInHierarchy(type, fGetterName, fieldType,
+						new ITypeBinding[0], status, usingLocalGetter);
+			}
+			if (fCreateSetter) {
+				checkMethodInHierarchy(type, fSetterName, fFieldDeclaration.getAST().resolveWellKnownType("void"), //$NON-NLS-1$
+						new ITypeBinding[] { fieldType }, status, usingLocalSetter);
+			}
 		}
 	}
 
@@ -550,10 +566,8 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 		fUsedModifyNames= new ArrayList<>(0);
 		IVariableBinding binding= fFieldDeclaration.resolveBinding();
 		ITypeBinding type= binding.getType();
-		IMethodBinding[] methods= binding.getDeclaringClass().getDeclaredMethods();
-		for (int i= 0; i < methods.length; i++) {
-			IMethodBinding method= methods[i];
-			ITypeBinding[] parameters= methods[i].getParameterTypes();
+		for (IMethodBinding method : binding.getDeclaringClass().getDeclaredMethods()) {
+			ITypeBinding[] parameters = method.getParameterTypes();
 			if (parameters == null || parameters.length == 0) {
 				fUsedReadNames.add(method);
 			} else if (parameters.length == 1 && parameters[0] == type) {
@@ -569,8 +583,7 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 		int position= 0;
 		int numberOfMethods= 0;
 		List<BodyDeclaration> members= ASTNodes.getBodyDeclarations(decl.getParent());
-		for (Iterator<BodyDeclaration> iter= members.iterator(); iter.hasNext();) {
-			BodyDeclaration element= iter.next();
+		for (BodyDeclaration element : members) {
 			if (element.getNodeType() == ASTNode.METHOD_DECLARATION) {
 				if (fInsertionIndex == -1) {
 					break;
@@ -584,17 +597,17 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 		}
 		TextEditGroup description;
 		ListRewrite rewrite= fRewriter.getListRewrite(decl.getParent(), getBodyDeclarationsProperty(decl.getParent()));
-		if (!usingLocalGetter) {
+		if (!usingLocalGetter && fCreateGetter) {
 			description= new TextEditGroup(RefactoringCoreMessages.SelfEncapsulateField_add_getter);
 			result.add(description);
 			rewrite.insertAt(createGetterMethod(ast, rewriter, lineDelimiter), position++, description);
 		}
-		if (!JdtFlags.isFinal(fField) && !usingLocalSetter) {
+		if (!JdtFlags.isFinal(fField) && !usingLocalSetter && fCreateSetter) {
 			description= new TextEditGroup(RefactoringCoreMessages.SelfEncapsulateField_add_setter);
 			result.add(description);
 			rewrite.insertAt(createSetterMethod(ast, rewriter, lineDelimiter), position, description);
 		}
-		if (!JdtFlags.isPrivate(fField))
+		if (!JdtFlags.isPrivate(fField) && fCreateGetter && fCreateSetter)
 			result.add(makeDeclarationPrivate(rewriter, decl));
 		return result;
 	}
@@ -654,7 +667,7 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
         }
         if (fGenerateJavadoc) {
 			String string= CodeGeneration.getSetterComment(
-				fField.getCompilationUnit() , getTypeName(field.getParent()), fSetterName,
+				fField.getCompilationUnit(), getTypeName(field.getParent()), fSetterName,
 				fField.getElementName(), ASTNodes.asString(type), fArgName,
 				StubUtility.getBaseName(fField),
 				lineDelimiter);
@@ -704,13 +717,13 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	private int createModifiers() throws JavaModelException {
 		int result= 0;
 		if (Flags.isPublic(fVisibility))
-			result |= Modifier.PUBLIC;
+			result|= Modifier.PUBLIC;
 		else if (Flags.isProtected(fVisibility))
-			result |= Modifier.PROTECTED;
+			result|= Modifier.PROTECTED;
 		else if (Flags.isPrivate(fVisibility))
-			result |= Modifier.PRIVATE;
+			result|= Modifier.PRIVATE;
 		if (JdtFlags.isStatic(fField))
-			result |= Modifier.STATIC;
+			result|= Modifier.STATIC;
 		return result;
 	}
 
@@ -772,23 +785,23 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, JavaRefactoringDescriptorUtil.ATTRIBUTE_INPUT));
 		String name= arguments.getAttribute(ATTRIBUTE_GETTER);
-		if (name != null && !"".equals(name)) //$NON-NLS-1$
+		if (name != null && !name.isEmpty())
 			fGetterName= name;
 		else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_GETTER));
 		name= arguments.getAttribute(ATTRIBUTE_SETTER);
-		if (name != null && !"".equals(name)) //$NON-NLS-1$
+		if (name != null && !name.isEmpty())
 			fSetterName= name;
 		else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_SETTER));
 		final String encapsulate= arguments.getAttribute(ATTRIBUTE_DECLARING);
 		if (encapsulate != null) {
-			fEncapsulateDeclaringClass= Boolean.valueOf(encapsulate).booleanValue();
+			fEncapsulateDeclaringClass= Boolean.parseBoolean(encapsulate);
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_DECLARING));
 		final String matches= arguments.getAttribute(ATTRIBUTE_COMMENTS);
 		if (matches != null) {
-			fGenerateJavadoc= Boolean.valueOf(matches).booleanValue();
+			fGenerateJavadoc= Boolean.parseBoolean(matches);
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_COMMENTS));
 		final String visibility= arguments.getAttribute(ATTRIBUTE_VISIBILITY);
@@ -823,8 +836,7 @@ public class SelfEncapsulateFieldRefactoring extends Refactoring {
 	}
 
 	private static boolean checkName(String name, List<IMethodBinding> usedNames) {
-		for (Iterator<IMethodBinding> iter= usedNames.iterator(); iter.hasNext(); ) {
-			IMethodBinding method= iter.next();
+		for (IMethodBinding method : usedNames) {
 			String selector= method.getName();
 			if (selector.equals(name)) {
 				return true;

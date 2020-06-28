@@ -59,13 +59,10 @@ public class ArchiveSourceContainer extends AbstractSourceContainer {
 		fFile = archive;
 		fDetectRoot = detectRootPath;
 		if (archive.exists() && archive.getLocation() != null) {
-		    fDelegateContainer = new ExternalArchiveSourceContainer(archive.getLocation().toOSString(), detectRootPath);
+			fDelegateContainer = new ExternalArchiveSourceContainer(archive.getLocation().toOSString(), detectRootPath);
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.sourcelookup.ISourceContainer#getName()
-	 */
 	@Override
 	public String getName() {
 		return fFile.getName();
@@ -80,72 +77,54 @@ public class ArchiveSourceContainer extends AbstractSourceContainer {
 		return fFile;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.sourcelookup.ISourceContainer#getType()
-	 */
 	@Override
 	public ISourceContainerType getType() {
 		return getSourceContainerType(TYPE_ID);
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
 	@Override
 	public boolean equals(Object obj) {
 		return obj instanceof ArchiveSourceContainer &&
 			((ArchiveSourceContainer)obj).getName().equals(getName());
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
 	@Override
 	public int hashCode() {
 		return getName().hashCode();
 	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.core.sourcelookup.ISourceContainer#findSourceElements(java.lang.String)
-     */
-    @Override
+	@Override
 	public Object[] findSourceElements(String name) throws CoreException {
-        ExternalArchiveSourceContainer container = getDelegateContainer();
-        if (container != null) {
-            return container.findSourceElements(name);
-        }
-        return EMPTY;
-    }
+		ExternalArchiveSourceContainer container = getDelegateContainer();
+		if (container != null) {
+			return container.findSourceElements(name);
+		}
+		return EMPTY;
+	}
 
-    /**
-     * Returns the underlying external archive source container.
-     *
-     * @return underlying external archive source container
-     * @since 3.0.1.1
-     */
-    private ExternalArchiveSourceContainer getDelegateContainer() {
-        return fDelegateContainer;
-    }
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.core.sourcelookup.ISourceContainer#init(org.eclipse.debug.core.sourcelookup.ISourceLookupDirector)
-     */
-    @Override
+	/**
+	 * Returns the underlying external archive source container.
+	 *
+	 * @return underlying external archive source container
+	 * @since 3.0.1.1
+	 */
+	private ExternalArchiveSourceContainer getDelegateContainer() {
+		return fDelegateContainer;
+	}
+	@Override
 	public void init(ISourceLookupDirector director) {
-        super.init(director);
-        if (fDelegateContainer != null) {
-            fDelegateContainer.init(director);
-        }
-    }
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.core.sourcelookup.ISourceContainer#dispose()
-     */
-    @Override
+		super.init(director);
+		if (fDelegateContainer != null) {
+			fDelegateContainer.init(director);
+		}
+	}
+	@Override
 	public void dispose() {
-        super.dispose();
-        if (fDelegateContainer != null) {
-            fDelegateContainer.dispose();
-        }
-    }
+		super.dispose();
+		if (fDelegateContainer != null) {
+			fDelegateContainer.dispose();
+		}
+	}
 
 	/**
 	 * Returns whether root paths are automatically detected in this

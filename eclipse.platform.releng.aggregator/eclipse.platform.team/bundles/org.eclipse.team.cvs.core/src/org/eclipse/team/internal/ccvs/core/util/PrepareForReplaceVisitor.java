@@ -45,9 +45,7 @@ public class PrepareForReplaceVisitor implements ICVSResourceVisitor {
 		this.session = session;
 	}
 	
-	/**
-	 * @see ICVSResourceVisitor#visitFile(ICVSFile)
-	 */
+	@Override
 	public void visitFile(ICVSFile file) throws CVSException {
 		byte[] syncBytes = file.getSyncBytes();
 		if (syncBytes == null) {
@@ -136,9 +134,7 @@ public class PrepareForReplaceVisitor implements ICVSResourceVisitor {
 		return false;
 	}
 
-	/**
-	 * @see ICVSResourceVisitor#visitFolder(ICVSFolder)
-	 */
+	@Override
 	public void visitFolder(ICVSFolder folder) throws CVSException {
 		// Delete unmanaged folders if the user wants them deleted
 		if (!folder.isCVSFolder()) {
@@ -153,14 +149,13 @@ public class PrepareForReplaceVisitor implements ICVSResourceVisitor {
 				folder.acceptChildren(this);
 			} else if (depth == IResource.DEPTH_ONE) {
 				ICVSResource[] files = folder.members(ICVSFolder.FILE_MEMBERS);
-				for (int i = 0; i < files.length; i++) {
-					files[i].accept(this);
+				for (ICVSResource file : files) {
+					file.accept(this);
 				}
 			}
 			// Also delete ignored child files that start with .#
 			ICVSResource[] ignoredFiles = folder.members(ICVSFolder.FILE_MEMBERS | ICVSFolder.IGNORED_MEMBERS);
-			for (int i = 0; i < ignoredFiles.length; i++) {
-				ICVSResource cvsResource = ignoredFiles[i];
+			for (ICVSResource cvsResource : ignoredFiles) {
 				if (cvsResource.getName().startsWith(".#")) { //$NON-NLS-1$
 					cvsResource.delete();
 				}
@@ -175,11 +170,11 @@ public class PrepareForReplaceVisitor implements ICVSResourceVisitor {
 		CVSWorkspaceRoot.getCVSFolderFor(project).run(pm1 -> {
 			monitor = Policy.infiniteSubMonitorFor(pm1, 100);
 			monitor.beginTask(null, 512);
-			for (int i = 0; i < resources.length; i++) {
+			for (ICVSResource resource : resources) {
 				if (oneArgMessage != null) {
-					monitor.subTask(NLS.bind(oneArgMessage, new String[] { resources[i].getIResource().getFullPath().toString() })); 
+					monitor.subTask(NLS.bind(oneArgMessage, new String[]{resource.getIResource().getFullPath().toString()})); 
 				}
-				resources[i].accept(PrepareForReplaceVisitor.this);
+				resource.accept(PrepareForReplaceVisitor.this);
 			}
 			monitor.done();
 		}, pm);

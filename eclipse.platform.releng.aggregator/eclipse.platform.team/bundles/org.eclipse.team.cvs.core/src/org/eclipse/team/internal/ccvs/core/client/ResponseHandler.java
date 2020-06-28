@@ -37,7 +37,8 @@ public abstract class ResponseHandler {
 	 * Handles a server response.
 	 * <p>
 	 * Suppose as a result of performing a command the CVS server responds
-	 * as follows:<br>
+	 * as follows:
+	 * </p>
 	 * <pre>
 	 *   [...]
 	 *   Clear-sticky myDirectory \n
@@ -48,8 +49,7 @@ public abstract class ResponseHandler {
 	 * for <em>Clear-sticky</em> will be invoked with <code>argument</code>
 	 * set to <em>"myDirectory"</em>.  It must then read the remaining
 	 * response data from the connection (<em>"/u/cvsroot/myDirectory"</em>
-	 * including the newline) and take any necessary action.
-	 * </p><p>
+	 * including the newline) and take any necessary action.<p>
 	 * Note:  The type and quantity of additional data that must be read
 	 * from the connection varies on a per-response basis.
 	 * </p>
@@ -83,39 +83,39 @@ public abstract class ResponseHandler {
 		}
 		if (! folder.isCVSFolder()) {
 			String repositoryRoot = session.getRepositoryRoot();
-            String relativePath;
-            if (repositoryDir.startsWith(repositoryRoot)) {
-                // The repositoryDir is an absolute path
-                relativePath = Util.getRelativePath(repositoryRoot, repositoryDir);
-            } else {
-                // The repositoryDir is already a relative path
-                relativePath = repositoryDir;
-            }
-            IResource resource = folder.getIResource();
-            if (resource != null) {
-            	IProject project = resource.getProject();
+			String relativePath;
+			if (repositoryDir.startsWith(repositoryRoot)) {
+				// The repositoryDir is an absolute path
+				relativePath = Util.getRelativePath(repositoryRoot, repositoryDir);
+			} else {
+				// The repositoryDir is already a relative path
+				relativePath = repositoryDir;
+			}
+			IResource resource = folder.getIResource();
+			if (resource != null) {
+				IProject project = resource.getProject();
 				if (project != null && project.isAccessible() && !CVSTeamProvider.isSharedWithCVS(project)) {
-	            	// The project isn't shared but we are about to perform an operation on it.
-	            	// we need to flag the project as shared so that the sync info management works
-	            	CVSTeamProvider.markAsTempShare(project);
-            	}
-            }
-            try{
-            folder.setFolderSyncInfo(new FolderSyncInfo(
+					// The project isn't shared but we are about to perform an operation on it.
+					// we need to flag the project as shared so that the sync info management works
+					CVSTeamProvider.markAsTempShare(project);
+				}
+			}
+			try{
+			folder.setFolderSyncInfo(new FolderSyncInfo(
 				relativePath,
 				session.getCVSRepositoryLocation().getLocation(false),
 				null, false));
-            } catch (CVSException ex){
-            	IStatus status = ex.getStatus();
-            	if (status != null){
-            		if (status.getCode() == IResourceStatus.INVALID_VALUE){
-            			//if it's an invalid value, just ignore the exception (see Bug# 152053),
-            			//else throw it again
-            		} else {
-            			throw ex;
-            		}
-            	}
-            }
+			} catch (CVSException ex){
+				IStatus status = ex.getStatus();
+				if (status != null){
+					if (status.getCode() == IResourceStatus.INVALID_VALUE){
+						//if it's an invalid value, just ignore the exception (see Bug# 152053),
+						//else throw it again
+					} else {
+						throw ex;
+					}
+				}
+			}
 		}
 		return folder;
 	}
@@ -127,13 +127,13 @@ public abstract class ResponseHandler {
 				IContainer container = (IContainer)mParent.getIResource();
 				if (container != null) {
 					try {
-                        // Create all the parents as need
-                        recreatePhantomFolders(mParent);
-                    } catch (CVSException e) {
-                        if (!handleInvalidResourceName(session, mParent, e)) {
-                            throw e;
-                        }
-                    }
+						// Create all the parents as need
+						recreatePhantomFolders(mParent);
+					} catch (CVSException e) {
+						if (!handleInvalidResourceName(session, mParent, e)) {
+							throw e;
+						}
+					}
 				}
 			}
 			return mParent;
@@ -159,32 +159,32 @@ public abstract class ResponseHandler {
 		return this;
 	}
 	
-    protected boolean handleInvalidResourceName(Session session, ICVSResource resource, CVSException e) {
-        int code = e.getStatus().getCode();
-        if (code == IResourceStatus.INVALID_VALUE
-                || code == IResourceStatus.INVALID_RESOURCE_NAME
-                || code == IResourceStatus.RESOURCE_NOT_FOUND
-                || code == IResourceStatus.RESOURCE_EXISTS
-                || code == IResourceStatus.RESOURCE_WRONG_TYPE
-                || code == IResourceStatus.CASE_VARIANT_EXISTS
-                || code == IResourceStatus.PATH_OCCUPIED) {
-            
-            try {
-                IResource local = resource.getIResource();
-                String path;
-                if (local == null) {
-                    path = resource.getRepositoryRelativePath();
-                } else {
-                    path = local.getFullPath().toString();
-                }
-                IStatus status = new CVSStatus(IStatus.ERROR, CVSStatus.INVALID_LOCAL_RESOURCE_PATH, NLS.bind(CVSMessages.ResponseHandler_0, new String[] { path, e.getMessage() }), e, session.getLocalRoot()); 
-                session.handleResponseError(status);
-            } catch (CVSException e1) {
-                CVSProviderPlugin.log(e1);
-            }
-            return true;
-        }
-        return false;
-    }
+	protected boolean handleInvalidResourceName(Session session, ICVSResource resource, CVSException e) {
+		int code = e.getStatus().getCode();
+		if (code == IResourceStatus.INVALID_VALUE
+				|| code == IResourceStatus.INVALID_RESOURCE_NAME
+				|| code == IResourceStatus.RESOURCE_NOT_FOUND
+				|| code == IResourceStatus.RESOURCE_EXISTS
+				|| code == IResourceStatus.RESOURCE_WRONG_TYPE
+				|| code == IResourceStatus.CASE_VARIANT_EXISTS
+				|| code == IResourceStatus.PATH_OCCUPIED) {
+			
+			try {
+				IResource local = resource.getIResource();
+				String path;
+				if (local == null) {
+					path = resource.getRepositoryRelativePath();
+				} else {
+					path = local.getFullPath().toString();
+				}
+				IStatus status = new CVSStatus(IStatus.ERROR, CVSStatus.INVALID_LOCAL_RESOURCE_PATH, NLS.bind(CVSMessages.ResponseHandler_0, new String[] { path, e.getMessage() }), e, session.getLocalRoot()); 
+				session.handleResponseError(status);
+			} catch (CVSException e1) {
+				CVSProviderPlugin.log(e1);
+			}
+			return true;
+		}
+		return false;
+	}
 }
 

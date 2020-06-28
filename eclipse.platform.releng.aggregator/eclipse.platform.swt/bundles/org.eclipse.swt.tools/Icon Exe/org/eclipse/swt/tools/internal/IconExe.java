@@ -28,11 +28,11 @@ import org.eclipse.swt.*;
  */
 public class IconExe {
 	
-	 /**
+	/**
 	 * Replace the Desktop icons provided in the Windows executable program
 	 * with matching icons provided by the user.
 	 *
- 	 * Takes 2 arguments
+	 * Takes 2 arguments
 	 * argument 0: the Windows executable e.g c:/eclipse/eclipse.exe
 	 * argument 1: The .ico file to write to the given executable e.g. c:/myApp.ico
 	 *
@@ -144,13 +144,13 @@ public class IconExe {
 			IconExe iconExe = new IconExe();
 			IconResInfo[] iconInfo = iconExe.getIcons(raf);
 			int cnt = 0;
-			for (int i = 0; i < iconInfo.length; i++) {
-				for (int j = 0; j < icons.length; j++)
-					if (iconInfo[i].data.width == icons[j].width && 
-					iconInfo[i].data.height == icons[j].height && 
-					iconInfo[i].data.depth == icons[j].depth) {
-						raf.seek(iconInfo[i].offset);
-						unloadIcon(raf, icons[j]);
+			for (IconResInfo element : iconInfo) {
+				for (ImageData icon : icons)
+					if (element.data.width == icon.width && 
+					element.data.height == icon.height && 
+					element.data.depth == icon.depth) {
+						raf.seek(element.offset);
+						unloadIcon(raf, icon);
 						cnt++;
 					}
 			}
@@ -233,15 +233,12 @@ void dumpResourceDirectory(RandomAccessFile raf, int imageResourceDirectoryOffse
 		imageResourceDirectoryEntries[i] = new IMAGE_RESOURCE_DIRECTORY_ENTRY();
 		read(raf, imageResourceDirectoryEntries[i]);
 	}
-	for (int i = 0; i < imageResourceDirectoryEntries.length; i++) {
-		if (imageResourceDirectoryEntries[i].DataIsDirectory) {
-			dumpResourceDirectory(raf, imageResourceDirectoryEntries[i].OffsetToDirectory + resourceBase, resourceBase, delta, imageResourceDirectoryEntries[i].Id, level + 1, rt_icon_root ? true : type == RT_ICON);
+	for (IMAGE_RESOURCE_DIRECTORY_ENTRY irde : imageResourceDirectoryEntries) {
+		if (irde.DataIsDirectory) {
+			dumpResourceDirectory(raf, irde.OffsetToDirectory + resourceBase, resourceBase, delta, irde.Id, level + 1, rt_icon_root ? true : type == RT_ICON);
 		} else {
-			// Resource found
-			/// pResDirEntry->Name
-			IMAGE_RESOURCE_DIRECTORY_ENTRY irde = imageResourceDirectoryEntries[i];
 			IMAGE_RESOURCE_DATA_ENTRY data = new IMAGE_RESOURCE_DATA_ENTRY();
-			raf.seek(imageResourceDirectoryEntries[i].OffsetToData + resourceBase);
+			raf.seek(irde.OffsetToData + resourceBase);
 			read(raf, data);
 			if (DEBUG) System.out.println("Resource Id "+irde.Id+" Data Offset RVA "+data.OffsetToData+", Size "+data.Size);
 			if (rt_icon_root) {
@@ -258,7 +255,7 @@ void dumpResourceDirectory(RandomAccessFile raf, int imageResourceDirectoryOffse
 				}
 			}
 		}
- 	}
+	}
 }
 
 static ImageData parseIcon(RandomAccessFile raf, int offset) throws IOException {
@@ -2616,13 +2613,13 @@ static class LEDataInputStream extends InputStream {
 	}
 	
 	/**
- 	 * Reads at most <code>length</code> bytes from this LEDataInputStream and 
- 	 * stores them in byte array <code>buffer</code> starting at <code>offset</code>.
- 	 * <p>
- 	 * Answer the number of bytes actually read or -1 if no bytes were read and 
- 	 * end of stream was encountered.  This implementation reads bytes from 
- 	 * the pushback buffer first, then the target stream if more bytes are required
- 	 * to satisfy <code>count</code>.
+	 * Reads at most <code>length</code> bytes from this LEDataInputStream and 
+	 * stores them in byte array <code>buffer</code> starting at <code>offset</code>.
+	 * <p>
+	 * Answer the number of bytes actually read or -1 if no bytes were read and 
+	 * end of stream was encountered.  This implementation reads bytes from 
+	 * the pushback buffer first, then the target stream if more bytes are required
+	 * to satisfy <code>count</code>.
 	 * </p>
 	 * @param buffer the byte array in which to store the read bytes.
 	 * @param offset the offset in <code>buffer</code> to store the read bytes.
@@ -2635,9 +2632,9 @@ static class LEDataInputStream extends InputStream {
 	private int readData(byte[] buffer, int offset, int length) throws IOException {
 		if (buf == null) throw new IOException();
 		if (offset < 0 || offset > buffer.length ||
-  		 	length < 0 || (length > buffer.length - offset)) {
-	 		throw new ArrayIndexOutOfBoundsException();
-		 	}
+				length < 0 || (length > buffer.length - offset)) {
+			throw new ArrayIndexOutOfBoundsException();
+		}
 				
 		int cacheCopied = 0;
 		int newOffset = offset;

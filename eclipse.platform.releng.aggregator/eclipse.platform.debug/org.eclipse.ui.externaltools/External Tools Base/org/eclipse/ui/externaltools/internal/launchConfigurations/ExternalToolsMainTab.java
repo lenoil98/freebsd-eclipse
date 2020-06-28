@@ -36,8 +36,6 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -116,9 +114,6 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 		Composite mainComposite = new Composite(parent, SWT.NONE);
@@ -164,7 +159,7 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 		Composite buttonComposite = new Composite(group, SWT.NONE);
 		layout = new GridLayout();
 		layout.marginHeight = 0;
-        layout.marginWidth = 0;
+		layout.marginWidth = 0;
 		layout.numColumns = 3;
 		gridData = new GridData(GridData.HORIZONTAL_ALIGN_END);
 		buttonComposite.setLayout(layout);
@@ -216,8 +211,8 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 
 		Composite buttonComposite = new Composite(group, SWT.NONE);
 		layout = new GridLayout();
-        layout.marginWidth = 0;
-        layout.marginHeight = 0;
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
 		layout.numColumns = 3;
 		gridData = new GridData(GridData.HORIZONTAL_ALIGN_END);
 		buttonComposite.setLayout(layout);
@@ -260,15 +255,12 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 		GridData gridData = new GridData(GridData.FILL_BOTH);
 		group.setLayout(layout);
 		group.setLayoutData(gridData);
-        group.setFont(parent.getFont());
+		group.setFont(parent.getFont());
 
 		argumentField = new Text(group, SWT.MULTI | SWT.WRAP | SWT.BORDER | SWT.V_SCROLL);
-		argumentField.addTraverseListener(new TraverseListener() {
-			@Override
-			public void keyTraversed(TraverseEvent event) {
-				if (event.detail == SWT.TRAVERSE_RETURN && (event.stateMask & SWT.MODIFIER_MASK) != 0) {
-					event.doit= true;
-				}
+		argumentField.addTraverseListener(event -> {
+			if (event.detail == SWT.TRAVERSE_RETURN && (event.stateMask & SWT.MODIFIER_MASK) != 0) {
+				event.doit= true;
 			}
 		});
 
@@ -282,8 +274,8 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 		Composite composite = new Composite(group, SWT.NONE);
 		layout = new GridLayout();
 		layout.numColumns= 1;
-        layout.marginHeight= 0;
-        layout.marginWidth= 0;
+		layout.marginHeight= 0;
+		layout.marginWidth= 0;
 		gridData = new GridData(GridData.HORIZONTAL_ALIGN_END);
 		composite.setLayout(layout);
 		composite.setLayoutData(gridData);
@@ -300,17 +292,11 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 		instruction.setLayoutData(gridData);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#setDefaults(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
-	 */
 	@Override
 	public void setDefaults(ILaunchConfigurationWorkingCopy configuration) {
 		configuration.setAttribute(FIRST_EDIT, true);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#initializeFrom(org.eclipse.debug.core.ILaunchConfiguration)
-	 */
 	@Override
 	public void initializeFrom(ILaunchConfiguration configuration) {
 		fInitializing= true;
@@ -363,9 +349,6 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 		argumentField.setText(arguments);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#performApply(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
-	 */
 	@Override
 	public void performApply(ILaunchConfigurationWorkingCopy configuration) {
 		String location= locationField.getText().trim();
@@ -394,17 +377,11 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getName()
-	 */
 	@Override
 	public String getName() {
 		return ExternalToolsLaunchConfigurationMessages.ExternalToolsMainTab__Main_17;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#isValid(org.eclipse.debug.core.ILaunchConfiguration)
-	 */
 	@Override
 	public boolean isValid(ILaunchConfiguration launchConfig) {
 		setErrorMessage(null);
@@ -623,24 +600,15 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 		return dialog.getVariableExpression();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getImage()
-	 */
 	@Override
 	public Image getImage() {
 		return ExternalToolsImages.getImage(org.eclipse.ui.externaltools.internal.model.IExternalToolConstants.IMG_TAB_MAIN);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#deactivated(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
-	 */
 	@Override
 	public void deactivated(ILaunchConfigurationWorkingCopy workingCopy) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#activated(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
-	 */
 	@Override
 	public void activated(ILaunchConfigurationWorkingCopy workingCopy) {
 	}
@@ -651,9 +619,9 @@ public abstract class ExternalToolsMainTab extends AbstractLaunchConfigurationTa
 	public void addControlAccessibleListener(Control control, String controlName) {
 		//strip mnemonic (&)
 		String[] strs = controlName.split("&"); //$NON-NLS-1$
-		StringBuffer stripped = new StringBuffer();
-		for (int i = 0; i < strs.length; i++) {
-			stripped.append(strs[i]);
+		StringBuilder stripped = new StringBuilder();
+		for (String str : strs) {
+			stripped.append(str);
 		}
 		control.getAccessible().addAccessibleListener(new ControlAccessibleListener(stripped.toString()));
 	}

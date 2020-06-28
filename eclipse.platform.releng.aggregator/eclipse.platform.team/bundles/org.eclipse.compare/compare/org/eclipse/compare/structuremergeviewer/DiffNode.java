@@ -13,13 +13,13 @@
  *******************************************************************************/
 package org.eclipse.compare.structuremergeviewer;
 
+import java.text.MessageFormat;
+
 import org.eclipse.compare.IEditableContent;
 import org.eclipse.compare.ITypedElement;
 import org.eclipse.compare.internal.Utilities;
 import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.swt.graphics.Image;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Diff node are used as the compare result of the differencing engine.
@@ -136,8 +136,9 @@ public class DiffNode extends DiffContainer implements ICompareInput {
 	protected void fireChange() {
 		if (fListener != null) {
 			Object[] listeners= fListener.getListeners();
-			for (int i= 0; i < listeners.length; i++)
-				((ICompareInputChangeListener) listeners[i]).compareInputChanged(this);
+			for (Object listener : listeners) {
+				((ICompareInputChangeListener) listener).compareInputChanged(this);
+			}
 		}
 	}
 
@@ -317,8 +318,7 @@ public class DiffNode extends DiffContainer implements ICompareInput {
 	public int hashCode() {
 		String[] path= getPath(this, 0);
 		int hashCode= 1;
-		for (int i= 0; i < path.length; i++) {
-			String s= path[i];
+		for (String s : path) {
 			hashCode= (31 * hashCode) + (s != null ? s.hashCode() : 0);
 		}
 		return hashCode;

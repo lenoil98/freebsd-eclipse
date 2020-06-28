@@ -20,6 +20,7 @@ import org.eclipse.debug.internal.ui.viewers.model.provisional.VirtualTreeModelV
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.junit.Test;
 
 /**
  * Tests which verify the operation of the virtual viewer in the lazy mode.
@@ -30,10 +31,6 @@ import org.eclipse.swt.widgets.Shell;
  */
 public class VirtualViewerLazyModeTests extends AbstractViewerModelTest {
 
-    public VirtualViewerLazyModeTests(String name) {
-        super(name);
-    }
-
 	@Override
 	protected TestModelUpdatesListener createListener(IInternalTreeModelViewer viewer) {
 		return new TestModelUpdatesListener(viewer, false, false);
@@ -42,9 +39,10 @@ public class VirtualViewerLazyModeTests extends AbstractViewerModelTest {
 	@Override
 	protected IInternalTreeModelViewer createViewer(Display display, Shell shell) {
 		return new VirtualTreeModelViewer(display, SWT.VIRTUAL, new PresentationContext("TestViewer")); //$NON-NLS-1$
-    }
+	}
 
-    public void test() {
-        // TODO
-    }
+	@Test
+	public void test() {
+		// TODO
+	}
 }

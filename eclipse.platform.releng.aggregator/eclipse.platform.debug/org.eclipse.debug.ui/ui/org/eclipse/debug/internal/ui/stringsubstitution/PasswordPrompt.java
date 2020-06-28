@@ -33,63 +33,51 @@ public class PasswordPrompt extends PromptingResolver {
 
 	private String returnValue;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.stringsubstitution.PromptingResolver#prompt()
-	 */
 	@Override
 	public void prompt() {
 		Dialog dialog = new Dialog((Shell)null){
 			private Text text;
 
-			/* (non-Javadoc)
-			 * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets.Composite)
-			 */
 			@Override
 			protected Control createDialogArea(Composite parent) {
 				 // create composite
-		        Composite composite = (Composite) super.createDialogArea(parent);
-		        // create message
-		        if (dialogMessage != null) {
-		            Label label = new Label(composite, SWT.WRAP);
-		            label.setText(dialogMessage);
-		            GridData data = new GridData(GridData.GRAB_HORIZONTAL
-		                    | GridData.GRAB_VERTICAL | GridData.HORIZONTAL_ALIGN_FILL
-		                    | GridData.VERTICAL_ALIGN_CENTER);
-		            data.widthHint = convertHorizontalDLUsToPixels(IDialogConstants.MINIMUM_MESSAGE_AREA_WIDTH);
-		            label.setLayoutData(data);
-		            label.setFont(parent.getFont());
-		        }
-		        text = new Text(composite, SWT.SINGLE | SWT.BORDER | SWT.PASSWORD);
-		        text.setLayoutData(new GridData(GridData.GRAB_HORIZONTAL
-		                | GridData.HORIZONTAL_ALIGN_FILL));
-		        String value = defaultValue == null ? lastValue : defaultValue;
-		        if (value != null){
-		        	text.setText(value);
-		        }
-		        applyDialogFont(composite);
-		        return composite;
+				Composite composite = (Composite) super.createDialogArea(parent);
+				// create message
+				if (dialogMessage != null) {
+					Label label = new Label(composite, SWT.WRAP);
+					label.setText(dialogMessage);
+					GridData data = new GridData(GridData.GRAB_HORIZONTAL
+							| GridData.GRAB_VERTICAL | GridData.HORIZONTAL_ALIGN_FILL
+							| GridData.VERTICAL_ALIGN_CENTER);
+					data.widthHint = convertHorizontalDLUsToPixels(IDialogConstants.MINIMUM_MESSAGE_AREA_WIDTH);
+					label.setLayoutData(data);
+					label.setFont(parent.getFont());
+				}
+				text = new Text(composite, SWT.SINGLE | SWT.BORDER | SWT.PASSWORD);
+				text.setLayoutData(new GridData(GridData.GRAB_HORIZONTAL
+						| GridData.HORIZONTAL_ALIGN_FILL));
+				String value = defaultValue == null ? lastValue : defaultValue;
+				if (value != null){
+					text.setText(value);
+				}
+				applyDialogFont(composite);
+				return composite;
 			}
 
-			/* (non-Javadoc)
-			 * @see org.eclipse.jface.dialogs.Dialog#buttonPressed(int)
-			 */
 			@Override
 			protected void buttonPressed(int buttonId) {
 				if (buttonId == IDialogConstants.OK_ID) {
 					returnValue = text.getText();
-		        } else {
-		        	returnValue = null;
-		        }
-		        super.buttonPressed(buttonId);
+				} else {
+					returnValue = null;
+				}
+				super.buttonPressed(buttonId);
 			}
 
-			/* (non-Javadoc)
-			 * @see org.eclipse.jface.window.Window#configureShell(org.eclipse.swt.widgets.Shell)
-			 */
 			@Override
 			protected void configureShell(Shell newShell) {
-		        super.configureShell(newShell);
-		        newShell.setText(StringSubstitutionMessages.StringPromptExpander_0);
+				super.configureShell(newShell);
+				newShell.setText(StringSubstitutionMessages.StringPromptExpander_0);
 			}
 
 		};

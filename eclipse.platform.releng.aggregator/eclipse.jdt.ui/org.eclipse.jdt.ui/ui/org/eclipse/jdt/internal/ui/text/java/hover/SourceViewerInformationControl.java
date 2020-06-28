@@ -110,7 +110,7 @@ public class SourceViewerInformationControl
 	private Font fStatusTextFont;
 	/**
 	 * The color of the optional status text label or <code>null</code> if none.
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	private Color fStatusTextForegroundColor;
@@ -223,13 +223,14 @@ public class SourceViewerInformationControl
 			fStatusField.setText(statusFieldText);
 			Font font= fStatusField.getFont();
 			FontData[] fontDatas= font.getFontData();
-			for (int i= 0; i < fontDatas.length; i++)
-				fontDatas[i].setHeight(fontDatas[i].getHeight() * 9 / 10);
+			for (FontData fontData : fontDatas) {
+				fontData.setHeight(fontData.getHeight() * 9 / 10);
+			}
 			fStatusTextFont= new Font(fStatusField.getDisplay(), fontDatas);
 			fStatusField.setFont(fStatusTextFont);
 			GridData gd2= new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING);
 			fStatusField.setLayoutData(gd2);
-			
+
 			RGB javaDefaultColor= JavaUI.getColorManager().getColor(IJavaColorConstants.JAVA_DEFAULT).getRGB();
 			fStatusTextForegroundColor= new Color(fStatusField.getDisplay(), blend(fBackgroundColor.getRGB(), javaDefaultColor, 0.56f));
 			fStatusField.setForeground(fStatusTextForegroundColor);
@@ -256,7 +257,7 @@ public class SourceViewerInformationControl
 		Assert.isLegal(bg != null);
 		Assert.isLegal(fg != null);
 		Assert.isLegal(factor >= 0f && factor <= 1f);
-		
+
 		float complement= 1f - factor;
 		return new RGB(
 				(int) (complement * bg.red + factor * fg.red),
@@ -264,7 +265,7 @@ public class SourceViewerInformationControl
 				(int) (complement * bg.blue + factor * fg.blue)
 		);
 	}
-	
+
 	private void initializeColors() {
 		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
 		RGB bgRGB;
@@ -285,18 +286,18 @@ public class SourceViewerInformationControl
 	/**
 	 * Returns <code>null</code> if {@link SWT#COLOR_INFO_BACKGROUND} is visibly distinct from the
 	 * default Java source text color. Otherwise, returns the editor background color.
-	 * 
+	 *
 	 * @param display the display
 	 * @return an RGB or <code>null</code>
 	 * @since 3.6.1
 	 */
 	public static RGB getVisibleBackgroundColor(Display display) {
 		float[] infoBgHSB= display.getSystemColor(SWT.COLOR_INFO_BACKGROUND).getRGB().getHSB();
-		
+
 		Color javaDefaultColor= JavaUI.getColorManager().getColor(IJavaColorConstants.JAVA_DEFAULT);
 		RGB javaDefaultRGB= javaDefaultColor != null ? javaDefaultColor.getRGB() : new RGB(255, 255, 255);
 		float[] javaDefaultHSB= javaDefaultRGB.getHSB();
-		
+
 		if (Math.abs(infoBgHSB[2] - javaDefaultHSB[2]) < 0.5f) {
 			// workaround for dark tooltip background color, see https://bugs.eclipse.org/309334
 			IPreferenceStore preferenceStore= JavaPlugin.getDefault().getCombinedPreferenceStore();

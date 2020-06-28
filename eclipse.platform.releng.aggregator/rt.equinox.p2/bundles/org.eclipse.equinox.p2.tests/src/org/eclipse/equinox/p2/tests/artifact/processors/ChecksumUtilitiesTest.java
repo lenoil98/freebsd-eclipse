@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2018 Mykola Nikishov
+ *  Copyright (c) 2018, 2019 Mykola Nikishov
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.equinox.p2.tests.artifact.processors;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -55,7 +56,8 @@ public class ChecksumUtilitiesTest {
 			{IArtifactDescriptor.ARTIFACT_CHECKSUM, IArtifactDescriptor.ARTIFACT_CHECKSUM.concat(".sha-256"), "123456789_123456789_123456789_123456789_123456789_123456789_1234", "SHA-256", "sha-256"},
 			{IArtifactDescriptor.DOWNLOAD_CHECKSUM, IArtifactDescriptor.DOWNLOAD_MD5, "123456789_123456789_123456789_12", "MD5", "md5"},
 			{IArtifactDescriptor.DOWNLOAD_CHECKSUM, IArtifactDescriptor.DOWNLOAD_CHECKSUM.concat(".md5"), "123456789_123456789_123456789_12", "MD5", "md5"},
-			{IArtifactDescriptor.DOWNLOAD_CHECKSUM, IArtifactDescriptor.DOWNLOAD_CHECKSUM.concat(".sha-256"), "123456789_123456789_123456789_123456789_123456789_123456789_1234", "SHA-256", "sha-256"}});
+			{IArtifactDescriptor.DOWNLOAD_CHECKSUM, IArtifactDescriptor.DOWNLOAD_CHECKSUM.concat(".sha-256"), "123456789_123456789_123456789_123456789_123456789_123456789_1234", "SHA-256", "sha-256"}
+		});
 	}
 
 	private ArtifactDescriptor artifactDescriptor;
@@ -69,9 +71,9 @@ public class ChecksumUtilitiesTest {
 	@Test
 	public void testChecksumProperty() {
 		Collection<ProcessingStep> checksumVerifiers = ChecksumUtilities.getChecksumVerifiers(artifactDescriptor, propertyType, emptySet());
-		ChecksumVerifier verifier = (ChecksumVerifier) checksumVerifiers.iterator().next();
 
-		assertEquals(1, checksumVerifiers.size());
+		assertEquals(format("Verifier for property=%s", property), 1, checksumVerifiers.size());
+		ChecksumVerifier verifier = (ChecksumVerifier) checksumVerifiers.iterator().next();
 		assertEquals(digestAlgorithm, verifier.getAlgorithmName());
 		assertEquals(algorithmId, verifier.getAlgorithmId());
 		assertEquals(value, verifier.getExpectedChecksum());

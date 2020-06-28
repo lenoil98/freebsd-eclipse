@@ -29,15 +29,15 @@ public class RangeDifferencerTest extends PerformanceTestCase {
 	// static private final String EXPLANATION = "Performance decrease caused by changes in the compare framework, see bug 210688";
 
 	public RangeDifferencerTest(String name) {
-        super(name);
-    }
+		super(name);
+	}
 
 	/*
 	 * Creates document with 5000 lines.
 	 * Parameter code determines where additional lines are added.
 	 */
 	private IDocument createDocument(int code) {
-		StringBuffer sb= new StringBuffer();
+		StringBuilder sb= new StringBuilder();
 		for (int i= 0; i < 5000; i++) {
 			sb.append("line "); //$NON-NLS-1$
 			sb.append(Integer.toString(i));

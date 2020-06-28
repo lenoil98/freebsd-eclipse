@@ -50,13 +50,13 @@ public class NavigatorFilterService implements INavigatorFilterService {
 	private final NavigatorContentService contentService;
 
 	/* Map of (ICommonFilterDescriptor, ViewerFilter)-pairs */
-	private final Map<ICommonFilterDescriptor, ViewerFilter> declaredViewerFilters = new HashMap<ICommonFilterDescriptor, ViewerFilter>();
+	private final Map<ICommonFilterDescriptor, ViewerFilter> declaredViewerFilters = new HashMap<>();
 
 	/* Set of ViewerFilters enforced from visible/active content extensions */
 	private final Set enforcedViewerFilters = new HashSet();
 
 	/* A set of active filter String ids */
-	private final Set<String> activeFilters = new HashSet<String>();
+	private final Set<String> activeFilters = new HashSet<>();
 
 	/**
 	 * @param aContentService
@@ -158,7 +158,7 @@ public class NavigatorFilterService implements INavigatorFilterService {
 		CommonFilterDescriptor[] descriptors = CommonFilterDescriptorManager
 				.getInstance().findVisibleFilters(contentService);
 
-		List<ViewerFilter> filters = new ArrayList<ViewerFilter>();
+		List<ViewerFilter> filters = new ArrayList<>();
 
 		ViewerFilter instance;
 		for (CommonFilterDescriptor descriptor : descriptors) {
@@ -242,31 +242,29 @@ public class NavigatorFilterService implements INavigatorFilterService {
 
 		List<String> nonUiVisible = null;
 
-		/* is there a delta? */
-		for (int i = 0; i < visibleFilterDescriptors.length; i++) {
-			indexofFilterIdToBeActivated = Arrays.binarySearch(filterIdsToActivate,
-					visibleFilterDescriptors[i].getId());
+	    /* is there a delta? */
+		for (CommonFilterDescriptor visibleFilterDescriptor : visibleFilterDescriptors) {
+			indexofFilterIdToBeActivated = Arrays.binarySearch(filterIdsToActivate, visibleFilterDescriptor.getId());
 			/*
-			 * Either we have a filter that should be active that isn't XOR a
-			 * filter that shouldn't be active that is currently
+			 * Either we have a filter that should be active that isn't XOR a filter that
+			 * shouldn't be active that is currently
 			 */
-			if (indexofFilterIdToBeActivated >= 0 ^ isActive(visibleFilterDescriptors[i].getId())) {
+			if (indexofFilterIdToBeActivated >= 0 ^ isActive(visibleFilterDescriptor.getId())) {
 				updateFilterActivation = true;
 			}
-
-			// We don't turn of non-UI visible filters here, they have to be manipulated explicitly
-			if (!visibleFilterDescriptors[i].isVisibleInUi()) {
+			// We don't turn of non-UI visible filters here, they have to be manipulated
+			// explicitly
+			if (!visibleFilterDescriptor.isVisibleInUi()) {
 				if (nonUiVisible == null)
-					nonUiVisible = new ArrayList<String>();
-				nonUiVisible.add(visibleFilterDescriptors[i].getId());
+					nonUiVisible = new ArrayList<>();
+				nonUiVisible.add(visibleFilterDescriptor.getId());
 			}
 		}
 
 		/* If so, update */
 		if (updateFilterActivation) {
 			if (nonUiVisible != null) {
-				for (String filterIdToActivate : filterIdsToActivate)
-					nonUiVisible.add(filterIdToActivate);
+				nonUiVisible.addAll(Arrays.asList(filterIdsToActivate));
 				filterIdsToActivate = nonUiVisible.toArray(new String[]{});
 			}
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2017 TwelveTone LLC and others.
+ * Copyright (c) 2014, 2019 TwelveTone LLC and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -447,14 +447,15 @@ public class NonReferencedResourceDialog extends TitleAreaDialog {
 
 		// Get source bundle version from manifest
 		String version = null;
+		@SuppressWarnings("resource")
 		InputStream srcStream = null;
 		try {
 			Manifest manifestSource;
 			if (installLocation.endsWith(".jar")) { //$NON-NLS-1$
-				final ZipFile zip = new ZipFile(installLocation);
-				srcStream = zip.getInputStream(zip.getEntry("META-INF/MANIFEST.MF")); //$NON-NLS-1$
-				manifestSource = new Manifest(srcStream);
-				zip.close();
+				try (ZipFile zip = new ZipFile(installLocation)) {
+					srcStream = zip.getInputStream(zip.getEntry("META-INF/MANIFEST.MF")); //$NON-NLS-1$
+					manifestSource = new Manifest(srcStream);
+				}
 			} else {
 				srcStream = new BufferedInputStream(new FileInputStream(installLocation + "/META-INF/MANIFEST.MF")); //$NON-NLS-1$
 				manifestSource = new Manifest(srcStream);

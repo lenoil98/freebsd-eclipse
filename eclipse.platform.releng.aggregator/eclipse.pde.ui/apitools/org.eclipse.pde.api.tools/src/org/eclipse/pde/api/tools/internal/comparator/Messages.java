@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2017 IBM Corporation and others.
+ * Copyright (c) 2008, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.pde.api.tools.internal.comparator;
 
+import java.text.MessageFormat;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Locale;
@@ -23,8 +24,6 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.pde.api.tools.internal.provisional.RestrictionModifiers;
 import org.eclipse.pde.api.tools.internal.provisional.comparator.IDelta;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Class that manages the messages for compatible deltas.
@@ -68,9 +67,7 @@ public class Messages extends NLS {
 			try {
 				int messageID = Integer.parseInt(key);
 				templates.put(Integer.valueOf(messageID), bundle.getString(key));
-			} catch (NumberFormatException e) {
-				// key ill-formed
-			} catch (MissingResourceException e) {
+			} catch (NumberFormatException | MissingResourceException e) {
 				// available ID
 			}
 		}
@@ -87,6 +84,12 @@ public class Messages extends NLS {
 			return MessageFormat.format(Messages.problem_message_not_found, String.valueOf(key));
 		}
 		String[] arguments = delta.getArguments();
+		if (arguments != null) {
+			// for expanded and contracted superset
+			if (arguments.length == 2) {
+				return MessageFormat.format(message, (Object[]) arguments);
+			}
+		}
 		if (arguments.length != 0) {
 			return MessageFormat.format(message, (Object[]) arguments);
 		}
@@ -260,6 +263,8 @@ public class Messages extends NLS {
 									return 31;
 								}
 								return 32;
+							case IDelta.RESTRICTIONS:
+								return 112;
 							case IDelta.TYPE_MEMBER:
 								if (Flags.isProtected(delta.getOldModifiers())) {
 									return 33;
@@ -432,6 +437,8 @@ public class Messages extends NLS {
 								return 61;
 							case IDelta.DEPRECATION:
 								return 111;
+							case IDelta.RESTRICTIONS:
+								return 112;
 							default:
 								break;
 						}

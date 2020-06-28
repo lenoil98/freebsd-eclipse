@@ -5,7 +5,6 @@ package org.eclipse.e4.tools.emf.ui.internal.common.component.virtual;
  */
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -20,6 +19,7 @@ import org.eclipse.e4.tools.emf.ui.internal.common.E4PickList;
 import org.eclipse.e4.tools.emf.ui.internal.common.EClassLabelProvider;
 import org.eclipse.e4.tools.emf.ui.internal.common.VirtualEntry;
 import org.eclipse.e4.ui.model.application.MApplication;
+import org.eclipse.e4.ui.model.application.ui.MSnippetContainer;
 import org.eclipse.e4.ui.model.application.ui.advanced.impl.AdvancedPackageImpl;
 import org.eclipse.e4.ui.model.application.ui.basic.impl.BasicPackageImpl;
 import org.eclipse.e4.ui.model.application.ui.impl.UiPackageImpl;
@@ -40,13 +40,13 @@ import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 
-public class VSnippetsEditor extends AbstractComponentEditor {
+public class VSnippetsEditor extends AbstractComponentEditor<MSnippetContainer> {
 
 	/** Define the classes available to create snippets */
 	public static final EClass[] SNIPPET_CHILDREN = new EClass[] { AdvancedPackageImpl.Literals.AREA, BasicPackageImpl.Literals.PART,
 			BasicPackageImpl.Literals.PART_SASH_CONTAINER, BasicPackageImpl.Literals.PART_STACK,
-			AdvancedPackageImpl.Literals.PERSPECTIVE, AdvancedPackageImpl.Literals.PERSPECTIVE_STACK,
-			MenuPackageImpl.Literals.TRIM_CONTRIBUTION,
+			BasicPackageImpl.Literals.COMPOSITE_PART, AdvancedPackageImpl.Literals.PERSPECTIVE,
+			AdvancedPackageImpl.Literals.PERSPECTIVE_STACK, MenuPackageImpl.Literals.TRIM_CONTRIBUTION,
 			BasicPackageImpl.Literals.TRIMMED_WINDOW, BasicPackageImpl.Literals.WINDOW,
 			BasicPackageImpl.Literals.TRIM_BAR };
 
@@ -78,6 +78,14 @@ public class VSnippetsEditor extends AbstractComponentEditor {
 			@Override
 			public void run() {
 				handleAdd(BasicPackageImpl.Literals.PART);
+			}
+		});
+
+		actions.add(new Action(Messages.VWindowControlEditor_AddCompositePart,
+				createImageDescriptor(ResourceProvider.IMG_PartSashContainer)) {
+			@Override
+			public void run() {
+				handleAdd(BasicPackageImpl.Literals.COMPOSITE_PART);
 			}
 		});
 
@@ -133,7 +141,7 @@ public class VSnippetsEditor extends AbstractComponentEditor {
 				handleAdd(BasicPackageImpl.Literals.WINDOW);
 			}
 		});
-		actions.add(new Action(Messages.VWindowTrimEditor_AddWindowTrim,
+		actions.add(new Action(Messages.VWindowTrimEditor_AddTrim,
 				createImageDescriptor(ResourceProvider.IMG_WindowTrim)) {
 			@Override
 			public void run() {
@@ -141,7 +149,7 @@ public class VSnippetsEditor extends AbstractComponentEditor {
 			}
 		});
 
-		Collections.sort(actions, (o1, o2) -> o1.getText().compareTo(o2.getText()));
+		actions.sort((o1, o2) -> o1.getText().compareTo(o2.getText()));
 
 	}
 
@@ -166,13 +174,15 @@ public class VSnippetsEditor extends AbstractComponentEditor {
 			context = new EMFDataBindingContext();
 			composite = createForm(parent, context, getMaster());
 		}
-		final VirtualEntry<?> o = (VirtualEntry<?>) object;
+		@SuppressWarnings("unchecked")
+		final VirtualEntry<MSnippetContainer, ?> o = (VirtualEntry<MSnippetContainer, ?>) object;
 		viewer.setInput(o.getList());
 		getMaster().setValue(o.getOriginalParent());
 		return composite;
 	}
 
-	private Composite createForm(Composite parent, EMFDataBindingContext context, WritableValue master) {
+	private Composite createForm(Composite parent, EMFDataBindingContext context,
+			WritableValue<MSnippetContainer> master) {
 		final CTabFolder folder = new CTabFolder(parent, SWT.BOTTOM);
 
 		final CTabItem item = new CTabItem(folder, SWT.NONE);
@@ -207,7 +217,7 @@ public class VSnippetsEditor extends AbstractComponentEditor {
 	}
 
 	@Override
-	public IObservableList getChildList(Object element) {
+	public IObservableList<?> getChildList(Object element) {
 		return null;
 	}
 

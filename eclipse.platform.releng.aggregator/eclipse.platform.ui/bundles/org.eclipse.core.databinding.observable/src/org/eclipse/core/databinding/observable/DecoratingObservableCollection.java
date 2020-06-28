@@ -24,13 +24,16 @@ import java.util.Iterator;
  * @param <E> type of the elements in the collection
  *
  * @since 1.2
+ * @implNote If methods are added to the interface which this class implements
+ *           then implementations of those methods must be added to this class.
  */
 public class DecoratingObservableCollection<E> extends DecoratingObservable implements IObservableCollection<E> {
 	private IObservableCollection<E> decorated;
 
 	/**
-	 * @param decorated
-	 * @param disposeDecoratedOnDispose
+	 * @param decorated                 the observable being decorated.
+	 * @param disposeDecoratedOnDispose whether the decorated observable should be
+	 *                                  disposed when the decorator is disposed
 	 */
 	public DecoratingObservableCollection(IObservableCollection<E> decorated,
 			boolean disposeDecoratedOnDispose) {
@@ -39,7 +42,7 @@ public class DecoratingObservableCollection<E> extends DecoratingObservable impl
 	}
 
 	@Override
-        public boolean add(E o) {
+		public boolean add(E o) {
 		getterCalled();
 		return decorated.add(o);
 	}

@@ -17,7 +17,6 @@ package org.eclipse.jdt.internal.corext.fix;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -334,8 +333,7 @@ public class NullAnnotationsRewriteOperations {
 					return;
 				}
 
-				for (Iterator<IExtendedModifier> iterator= modifiers.iterator(); iterator.hasNext();) {
-					IExtendedModifier modifier= iterator.next();
+				for (IExtendedModifier modifier : modifiers) {
 					if (modifier instanceof MarkerAnnotation) {
 						MarkerAnnotation annotation= (MarkerAnnotation) modifier;
 						IAnnotationBinding annotationBinding= annotation.resolveAnnotationBinding();
@@ -426,11 +424,10 @@ public class NullAnnotationsRewriteOperations {
 				if (annotationType == null) {
 					return false;
 				}
-				IAnnotation[] annotations= annotationType.getAnnotations();
-				for (int i= 0; i < annotations.length; i++) {
+				for (IAnnotation annotation : annotationType.getAnnotations()) {
 					if (annotationType.isBinary()) {
-						if (annotations[i].getElementName().equals(Target.class.getName())) {
-							for (IMemberValuePair valuePair : annotations[i].getMemberValuePairs()) {
+						if (annotation.getElementName().equals(Target.class.getName())) {
+							for (IMemberValuePair valuePair : annotation.getMemberValuePairs()) {
 								if (TYPE_USE_NAME.equals(valuePair.getValue())) {
 									return true;
 								}
@@ -438,20 +435,19 @@ public class NullAnnotationsRewriteOperations {
 							return false;
 						}
 					} else {
-						String[][] resolveType= annotationType.resolveType(annotations[i].getElementName());
+						String[][] resolveType= annotationType.resolveType(annotation.getElementName());
 						if (resolveType != null && resolveType.length == 1 && (resolveType[0][0].equals(Target.class.getPackage().getName())
-								&& resolveType[0][1].equals(Target.class.getSimpleName()))) {
-							for (IMemberValuePair valuePair : annotations[i].getMemberValuePairs()) {
+							&& resolveType[0][1].equals(Target.class.getSimpleName()))) {
+							for (IMemberValuePair valuePair : annotation.getMemberValuePairs()) {
 								final Object value= valuePair.getValue();
 								if (value instanceof String) {
 									if (((String) value).endsWith(ElementType.TYPE_USE.name())) {
 										return true;
 									}
 								} else if (value instanceof Object[]) {
-									Object[] values= (Object[]) value;
-									for (int k= 0; k < values.length; k++) {
-										if (values[k] instanceof String) {
-											if (((String) values[k]).endsWith(ElementType.TYPE_USE.name())) {
+									for (Object v : (Object[]) value) {
+										if (v instanceof String) {
+											if (((String) v).endsWith(ElementType.TYPE_USE.name())) {
 												return true;
 											}
 										}
@@ -844,5 +840,8 @@ public class NullAnnotationsRewriteOperations {
 			}
 			return null;
 		}
+	}
+
+	private NullAnnotationsRewriteOperations() {
 	}
 }

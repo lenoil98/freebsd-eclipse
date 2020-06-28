@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,10 +13,11 @@
  *******************************************************************************/
 package org.eclipse.help.internal.webapp.data;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.help.internal.base.*;
+import org.eclipse.help.internal.base.BaseHelpSystem;
 
 /**
  * Helper class for contents.jsp initialization
@@ -31,7 +32,6 @@ public class RequestData {
 	protected HttpServletResponse response;
 	protected String locale;
 	protected WebappPreferences preferences;
-	protected boolean advancedUI;
 	/**
 	 * Constructs the data for a request.
 	 *
@@ -46,8 +46,6 @@ public class RequestData {
 		preferences = new WebappPreferences();
 
 		locale = UrlUtil.getLocale(request, response);
-		String agent = request.getHeader("User-Agent"); //$NON-NLS-1$
-		advancedUI = UrlUtil.isAdvanced(agent);
 	}
 
 	/**
@@ -109,8 +107,4 @@ public class RequestData {
 	public int getMode() {
 		return BaseHelpSystem.getMode();
 	}
-	public boolean isAdvancedUI() {
-		return advancedUI;
-	}
-
 }

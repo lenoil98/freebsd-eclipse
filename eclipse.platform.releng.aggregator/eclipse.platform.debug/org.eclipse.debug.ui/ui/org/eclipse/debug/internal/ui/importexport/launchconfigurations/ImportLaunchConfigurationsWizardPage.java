@@ -15,8 +15,8 @@
 package org.eclipse.debug.internal.ui.importexport.launchconfigurations;
 
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -55,8 +55,6 @@ import org.eclipse.ui.dialogs.WizardResourceImportPage;
 import org.eclipse.ui.model.AdaptableList;
 import org.eclipse.ui.model.WorkbenchContentProvider;
 import org.eclipse.ui.wizards.datatransfer.FileSystemStructureProvider;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * This class providers the one and only page for the import launch configurations wizard
@@ -143,9 +141,6 @@ public class ImportLaunchConfigurationsWizardPage extends WizardResourceImportPa
 		setMessage(WizardMessages.ImportLaunchConfigurationsWizardPage_5);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.IDialogPage#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 		Composite comp = SWTFactory.createComposite(parent, 1, 1, GridData.FILL_BOTH);
@@ -172,13 +167,12 @@ public class ImportLaunchConfigurationsWizardPage extends WizardResourceImportPa
 		settings.put(OVERWRITE, fOverwrite.getSelection());
 		settings.put(OLD_PATH, fFromDirectory.getText().trim());
 		boolean overwrite = fOverwrite.getSelection();
-		List<?> items = getSelectedResources();
 		File config, newconfig = null;
 		boolean owall = false, nowall = false;
 		MessageDialog dialog = null;
 		final List<File> filesToImport = new ArrayList<>();
-		for (Iterator<?> iter = items.iterator(); iter.hasNext();) {
-			config = (File) ((DebugFileSystemElement) iter.next()).getFileSystemObject();
+		for (Object resource :  getSelectedResources()) {
+			config = (File) ((DebugFileSystemElement) resource).getFileSystemObject();
 			newconfig = new File(new Path(LaunchManager.LOCAL_LAUNCH_CONFIGURATION_CONTAINER_PATH.toOSString()).append(config.getName()).toOSString());
 			if(newconfig.exists() & !overwrite) {
 				if(nowall) {
@@ -237,26 +231,16 @@ public class ImportLaunchConfigurationsWizardPage extends WizardResourceImportPa
 		return true;
 	}
 
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.wizard.WizardPage#getImage()
-	 */
 	@Override
 	public Image getImage() {
 		return DebugUITools.getImage(IInternalDebugUIConstants.IMG_WIZBAN_IMPORT_CONFIGS);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.dialogs.WizardResourceImportPage#updateWidgetEnablements()
-	 */
 	@Override
 	protected void updateWidgetEnablements() {
 		setPageComplete(determinePageCompletion());
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.dialogs.WizardResourceImportPage#determinePageCompletion()
-	 */
 	@Override
 	protected boolean determinePageCompletion() {
 		if(fFromDirectory.getText().trim().equals(IInternalDebugCoreConstants.EMPTY_STRING)) {
@@ -272,23 +256,20 @@ public class ImportLaunchConfigurationsWizardPage extends WizardResourceImportPa
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.dialogs.WizardResourceImportPage#createSourceGroup(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected void createSourceGroup(Composite parent) {}
 
 	/**
-     *	Create the group for creating the root directory
-     */
-    protected void createRootDirectoryGroup(Composite parent) {
-    	Composite comp = SWTFactory.createComposite(parent, parent.getFont(), 3, 1, GridData.FILL_HORIZONTAL, 0, 0);
-    	SWTFactory.createLabel(comp, WizardMessages.ImportLaunchConfigurationsWizardPage_6, 1);
-      // source name entry field
-    	fFromDirectory = SWTFactory.createText(comp, SWT.BORDER | SWT.SINGLE | SWT.READ_ONLY, 1, GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
-        // source browse button
-        Button browse = SWTFactory.createPushButton(comp, WizardMessages.ImportLaunchConfigurationsWizardPage_7, null);
-        browse.addSelectionListener(new SelectionAdapter () {
+	 *	Create the group for creating the root directory
+	 */
+	protected void createRootDirectoryGroup(Composite parent) {
+		Composite comp = SWTFactory.createComposite(parent, parent.getFont(), 3, 1, GridData.FILL_HORIZONTAL, 0, 0);
+		SWTFactory.createLabel(comp, WizardMessages.ImportLaunchConfigurationsWizardPage_6, 1);
+		// source name entry field
+		fFromDirectory = SWTFactory.createText(comp, SWT.BORDER | SWT.SINGLE | SWT.READ_ONLY, 1, GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
+		// source browse button
+		Button browse = SWTFactory.createPushButton(comp, WizardMessages.ImportLaunchConfigurationsWizardPage_7, null);
+		browse.addSelectionListener(new SelectionAdapter () {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				DirectoryDialog dd = new DirectoryDialog(getContainer().getShell(), SWT.SHEET);
@@ -303,14 +284,14 @@ public class ImportLaunchConfigurationsWizardPage extends WizardResourceImportPa
 					}
 				}
 			}
-        });
-    }
+		});
+	}
 
-    /**
-     * Resets the selection of the tree root element for the viewer
-     * @param path the path from the text widget
-     */
-    protected void resetSelection(final IPath path) {
+	/**
+	 * Resets the selection of the tree root element for the viewer
+	 * @param path the path from the text widget
+	 */
+	protected void resetSelection(final IPath path) {
 		BusyIndicator.showWhile(getShell().getDisplay(), () -> {
 			File file = new File(path.toOSString());
 			DebugFileSystemElement dummyparent = new DebugFileSystemElement(IInternalDebugCoreConstants.EMPTY_STRING,
@@ -322,53 +303,47 @@ public class ImportLaunchConfigurationsWizardPage extends WizardResourceImportPa
 			element.getFiles();
 			selectionGroup.setRoot(dummyparent);
 		});
-    }
+	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.dialogs.WizardResourceImportPage#getFileProvider()
-	 */
 	@Override
 	protected ITreeContentProvider getFileProvider() {
 		return new WorkbenchContentProvider() {
-            @Override
+			@Override
 			public Object[] getChildren(Object o) {
-                if (o instanceof DebugFileSystemElement) {
-                    DebugFileSystemElement element = (DebugFileSystemElement) o;
-                    return element.getFiles().getChildren(element);
-                }
-                return new Object[0];
-            }
-        };
+				if (o instanceof DebugFileSystemElement) {
+					DebugFileSystemElement element = (DebugFileSystemElement) o;
+					return element.getFiles().getChildren(element);
+				}
+				return new Object[0];
+			}
+		};
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.dialogs.WizardResourceImportPage#getFolderProvider()
-	 */
 	@Override
 	protected ITreeContentProvider getFolderProvider() {
 		return new WorkbenchContentProvider() {
-            @Override
+			@Override
 			public Object[] getChildren(Object o) {
-                if (o instanceof DebugFileSystemElement) {
-                    DebugFileSystemElement element = (DebugFileSystemElement) o;
-                    return element.getFolders().getChildren();
-                }
-                return new Object[0];
-            }
+				if (o instanceof DebugFileSystemElement) {
+					DebugFileSystemElement element = (DebugFileSystemElement) o;
+					return element.getFolders().getChildren();
+				}
+				return new Object[0];
+			}
 
-            @Override
+			@Override
 			public boolean hasChildren(Object o) {
-                if (o instanceof DebugFileSystemElement) {
-                    DebugFileSystemElement element = (DebugFileSystemElement) o;
-                    if (element.isPopulated()) {
+				if (o instanceof DebugFileSystemElement) {
+					DebugFileSystemElement element = (DebugFileSystemElement) o;
+					if (element.isPopulated()) {
 						return getChildren(element).length > 0;
 					}
-                    //If we have not populated then wait until asked
-                    return true;
-                }
-                return false;
-            }
-        };
+					//If we have not populated then wait until asked
+					return true;
+				}
+				return false;
+			}
+		};
 	}
 
 }

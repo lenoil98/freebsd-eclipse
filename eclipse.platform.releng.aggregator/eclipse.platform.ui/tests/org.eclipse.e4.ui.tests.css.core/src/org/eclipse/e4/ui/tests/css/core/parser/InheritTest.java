@@ -1,11 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2014 Stefan Winkler and others.
  *
- * This program and the accompanying materials are made available under the terms of
- * the Eclipse Public License 2.0 which accompanies this distribution, and is
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Stefan Winkler - initial API and implementation
@@ -92,8 +93,7 @@ public class InheritTest {
 		DocumentCSSImpl docCss = new DocumentCSSImpl();
 		docCss.addStyleSheet(styleSheet);
 
-		// mock engine
-		CSSEngineImpl engine = new CSSEngineImpl(docCss) {
+		return new CSSEngineImpl(docCss) {
 			{
 				registerCSSPropertyHandlerProvider(new TestHandlerProvider());
 			}
@@ -111,8 +111,6 @@ public class InheritTest {
 				return super.getElement(element);
 			}
 		};
-
-		return engine;
 	}
 
 	/**
@@ -183,5 +181,5 @@ public class InheritTest {
 		public Collection<String> getCSSProperties(Object element) {
 			return Collections.singleton("property");
 		}
-	};
+	}
 }

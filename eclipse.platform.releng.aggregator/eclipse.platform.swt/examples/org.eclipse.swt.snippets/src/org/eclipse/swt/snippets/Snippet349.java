@@ -43,6 +43,7 @@ public static void main(String [] args) {
 	images[2] = createImage(display, 48, 16);
 
 	Shell shell = new Shell(display);
+	shell.setText("Snippet 349");
 	shell.setLayout(new FillLayout());
 	Table table = new Table(shell, SWT.NONE);
 	for (int i = 0; i < COLUMN_COUNT; i++) {
@@ -136,9 +137,9 @@ public static void main(String [] args) {
 	while (!shell.isDisposed()) {
 		if (!display.readAndDispatch()) display.sleep();
 	}
-	for (int i = 0; i < images.length; i++) {
-		if (images[i] != null) {
-			images[i].dispose();
+	for (Image image : images) {
+		if (image != null) {
+			image.dispose();
 		}
 	}
 	display.dispose();

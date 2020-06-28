@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2015 IBM Corporation and others.
+ * Copyright (c) 2011, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,14 +10,13 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 
 package org.eclipse.help.internal.base;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -76,7 +75,7 @@ public class MissingContentManager {
 
 	private static MissingContentManager instance;
 	private List<Placeholder> placeholders;
-    private Set<String> bundlesToIgnore; // A set of bundles the user does not want to see reference to
+	private Set<String> bundlesToIgnore; // A set of bundles the user does not want to see reference to
 
 	public static MissingContentManager getInstance() {
 		if ( instance == null ) {
@@ -89,17 +88,16 @@ public class MissingContentManager {
 	 * Read the extension registry
 	 */
 	private MissingContentManager() {
-        IExtensionRegistry registry = Platform.getExtensionRegistry();
+		IExtensionRegistry registry = Platform.getExtensionRegistry();
 		placeholders = new ArrayList<>();
 		bundlesToIgnore = new HashSet<>();
-        if ( BaseHelpSystem.getMode() == BaseHelpSystem.MODE_INFOCENTER ) {
-        	return; // Placeholders are not shown for infocenters
-        }
-        // Read the placeholders from the extension registry
+		if ( BaseHelpSystem.getMode() == BaseHelpSystem.MODE_INFOCENTER ) {
+			return; // Placeholders are not shown for infocenters
+		}
+		// Read the placeholders from the extension registry
 		IConfigurationElement[] elements = registry
 				.getConfigurationElementsFor(EXTENSION_POINT_ID_TOC);
-		for (int i = 0; i < elements.length; ++i) {
-			IConfigurationElement elem = elements[i];
+		for (IConfigurationElement elem : elements) {
 			String pluginId = elem.getContributor().getName();
 			if (elem.getName().equals(ELEMENT_NAME_PLACEHOLDER)) {
 				try {
@@ -111,11 +109,11 @@ public class MissingContentManager {
 				} catch (Exception e) {
 					// log and skip
 					String msg = "Exception reading " + ELEMENT_NAME_PLACEHOLDER + " extension in bundle" + pluginId; //$NON-NLS-1$ //$NON-NLS-2$
-					HelpPlugin.logError(msg, e);
+					Platform.getLog(getClass()).error(msg, e);
 				}
 			}
 		}
-		Collections.sort(placeholders);
+		placeholders.sort(null);
 		// Read the preferences to find any ignored placeholders
 		String ignoredBundles = Platform.getPreferencesService().getString(HelpBasePlugin.PLUGIN_ID, IGNORE_MISSING_PLACEHOLDER_PREFERENCE, "", null); //$NON-NLS-1$
 		if (ignoredBundles.length() > 0) {
@@ -127,18 +125,17 @@ public class MissingContentManager {
 	}
 
 	/**
-     * Called when a page cannot be found
+	 * Called when a page cannot be found
 	 * @param path the path of the page that could not be loaded
 	 * @return a place holder page if defined, otherwise an error page
 	 */
 	public String getPageNotFoundPage(String path, boolean showPlaceholderPage) {
-		for (Iterator<Placeholder> iter = placeholders.iterator(); iter.hasNext(); ) {
-			Placeholder placeholder = iter.next();
+		for (Placeholder placeholder : placeholders) {
 			if (path.startsWith(placeholder.path) && Platform.getBundle(placeholder.bundle) == null) {
 				if ( showPlaceholderPage) {
-				    return placeholder.placeholderPage;
+					return placeholder.placeholderPage;
 				} else {
-				    return "/org.eclipse.help.webapp/" + MISSING_TOPIC_PATH + path.substring(HELP_PROTOCOL.length()); //$NON-NLS-1$
+					return "/org.eclipse.help.webapp/" + MISSING_TOPIC_PATH + path.substring(HELP_PROTOCOL.length()); //$NON-NLS-1$
 				}
 			}
 		}
@@ -166,10 +163,10 @@ public class MissingContentManager {
 	public String getHelpMissingPage(boolean isHelpView) {
 		Placeholder[] unresolvedPlaceHolders = getUnresolvedPlaceholders();
 		if (unresolvedPlaceHolders.length == 0) {
-		    	return null;
+				return null;
 		} else {
-			    String suffix = isHelpView ? MISSING_BOOKS_HELP_VIEW_HREF : MISSING_BOOKS_HREF;
-		    	return "/org.eclipse.help.webapp" + '/'+ suffix; //$NON-NLS-1$
+				String suffix = isHelpView ? MISSING_BOOKS_HELP_VIEW_HREF : MISSING_BOOKS_HREF;
+				return "/org.eclipse.help.webapp" + '/'+ suffix; //$NON-NLS-1$
 		}
 	}
 
@@ -178,7 +175,7 @@ public class MissingContentManager {
 	 */
 	public String getRemoteHelpUnavailablePage(boolean isHelpView) {
 		if ( BaseHelpSystem.getMode()!=BaseHelpSystem.MODE_INFOCENTER ) {
-		    String suffix = isHelpView ? REMOTE_STATUS_HELP_VIEW_HREF : REMOTE_STATUS_HREF;
+			String suffix = isHelpView ? REMOTE_STATUS_HELP_VIEW_HREF : REMOTE_STATUS_HREF;
 			return "/org.eclipse.help.webapp/" + suffix; //$NON-NLS-1$
 		}
 		return null;
@@ -187,13 +184,12 @@ public class MissingContentManager {
 	public Placeholder[] getUnresolvedPlaceholders() {
 		List<Placeholder> unresolved;
 		unresolved = new ArrayList<>();
-		for (Iterator<Placeholder> iter = placeholders.iterator(); iter.hasNext(); ) {
-			Placeholder ph = iter.next();
+		for (Placeholder ph : placeholders) {
 			String bundle = ph.bundle;
 			if (bundle != null && !bundlesToIgnore.contains(bundle) ) {
-			    if (Platform.getBundle(bundle) == null ) {
-			    	unresolved.add(ph);
-			    }
+				if (Platform.getBundle(bundle) == null ) {
+					unresolved.add(ph);
+				}
 			}
 		}
 		return unresolved.toArray(new Placeholder[unresolved.size()]);
@@ -203,8 +199,8 @@ public class MissingContentManager {
 	public void ignoreAllMissingPlaceholders() {
 		Placeholder[] unresolved = getUnresolvedPlaceholders();
 		String ignoredBundles = Platform.getPreferencesService().getString(HelpBasePlugin.PLUGIN_ID, IGNORE_MISSING_PLACEHOLDER_PREFERENCE, "", null); //$NON-NLS-1$
-		for ( int i = 0; i < unresolved.length; i++) {
-			String bundle = unresolved[i].bundle;
+		for (Placeholder element : unresolved) {
+			String bundle = element.bundle;
 			bundlesToIgnore.add(bundle);
 			if (ignoredBundles.length() > 0) {
 				ignoredBundles = ignoredBundles + ',';
@@ -218,7 +214,7 @@ public class MissingContentManager {
 		try {
 			prefs.flush();
 		} catch (BackingStoreException e) {
-			HelpBasePlugin.logError("Cannot save preferences", e); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Cannot save preferences", e); //$NON-NLS-1$
 		}
 	}
 

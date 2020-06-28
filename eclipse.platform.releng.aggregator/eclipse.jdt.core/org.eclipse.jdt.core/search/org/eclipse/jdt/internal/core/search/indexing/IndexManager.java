@@ -56,8 +56,6 @@ import org.eclipse.jdt.internal.core.index.DiskIndex;
 import org.eclipse.jdt.internal.core.index.FileIndexLocation;
 import org.eclipse.jdt.internal.core.index.Index;
 import org.eclipse.jdt.internal.core.index.IndexLocation;
-import org.eclipse.jdt.internal.core.nd.indexer.Indexer;
-import org.eclipse.jdt.internal.core.nd.java.JavaIndex;
 import org.eclipse.jdt.internal.core.search.BasicSearchEngine;
 import org.eclipse.jdt.internal.core.search.PatternSearchJob;
 import org.eclipse.jdt.internal.core.search.processing.IJob;
@@ -75,9 +73,9 @@ public class IndexManager extends JobManager implements IIndexConstants {
 	private SimpleLookupTable indexes = new SimpleLookupTable();
 
 	/**
-	 * The new indexer
+	 * The new indexer is disabled, see bug 544898
 	 */
-	private Indexer indexer = Indexer.getInstance();
+//	private Indexer indexer = Indexer.getInstance();
 
 	/* need to save ? */
 	private boolean needToSave = false;
@@ -95,7 +93,7 @@ public class IndexManager extends JobManager implements IIndexConstants {
 	public static final Integer REBUILDING_STATE = 3;
 	public static final Integer REUSE_STATE = 4;
 
-	private final IndexNamesRegistry nameRegistry = new IndexNamesRegistry(new File(getSavedIndexesDirectory(), 
+	private final IndexNamesRegistry nameRegistry = new IndexNamesRegistry(new File(getSavedIndexesDirectory(),
 			"savedIndexNames.txt"), getJavaPluginWorkingLocation()); //$NON-NLS-1$
 	// search participants who register indexes with the index manager
 	private SimpleLookupTable participantsContainers = null;
@@ -255,7 +253,8 @@ private void deleteIndexFiles(SimpleSet pathsToKeep, IProgressMonitor monitor) {
  * Creates an empty index at the given location, for the given container path, if none exist.
  */
 public synchronized void ensureIndexExists(IndexLocation indexLocation, IPath containerPath) {
-	this.indexer.makeWorkspacePathDirty(containerPath);
+	// New index is disabled, see bug 544898
+    // this.indexer.makeWorkspacePathDirty(containerPath);
 	SimpleLookupTable states = getIndexStates();
 	Object state = states.get(indexLocation);
 	if (state == null) {
@@ -473,8 +472,8 @@ private SimpleLookupTable getIndexStates() {
 			}
 		}
 	} else {
-		// All the index files are getting deleted and hence there is no need to 
-		// further check for change in javaLikeNames. 
+		// All the index files are getting deleted and hence there is no need to
+		// further check for change in javaLikeNames.
 		writeJavaLikeNamesFile();
 		this.javaLikeNamesChanged = false;
 		deleteIndexFiles();
@@ -500,12 +499,12 @@ private File getSavedIndexesDirectory() {
 /*
  * see https://bugs.eclipse.org/bugs/show_bug.cgi?id=286379
  * Returns true if there is a change in javaLikeNames since it
- * has been last stored. 
- * The javaLikeNames stored in the file javaLikeNames.txt 
- * is compared with the current javaLikeNames and if there is a change, this 
- * function returns true. If the file javaLikeNames.txt doesn't exist and there 
- * is only one javaLikeName (.java), then this returns false so that no-reindexing 
- * happens. 
+ * has been last stored.
+ * The javaLikeNames stored in the file javaLikeNames.txt
+ * is compared with the current javaLikeNames and if there is a change, this
+ * function returns true. If the file javaLikeNames.txt doesn't exist and there
+ * is only one javaLikeName (.java), then this returns false so that no-reindexing
+ * happens.
  */
 private boolean hasJavaLikeNamesChanged() {
 	char[][] currentNames = Util.getJavaLikeExtensions();
@@ -523,12 +522,12 @@ private boolean hasJavaLikeNamesChanged() {
 		return true;
 	}
 	if (current > 1) {
-		// Sort the current java like names. 
+		// Sort the current java like names.
 		// Copy the array to avoid modifying the Util static variable
 		System.arraycopy(currentNames, 0, currentNames = new char[current][], 0, current);
 		Util.sort(currentNames);
 	}
-	
+
 	// The JavaLikeNames would have been sorted before getting stored in the file,
 	// hence just do a direct compare.
 	for (int i = 0; i < current; i++) {
@@ -551,12 +550,12 @@ public void indexDocument(SearchDocument searchDocument, SearchParticipant searc
 public void indexResolvedDocument(SearchDocument searchDocument, SearchParticipant searchParticipant, Index index, IPath indexLocation) {
 	searchParticipant.resolveDocument(searchDocument);
 	ReadWriteMonitor monitor = index.monitor;
-	if (monitor == null) 
+	if (monitor == null)
 		return; // index got deleted since acquired
 	try {
 		monitor.enterWrite(); // ask permission to write
 		searchDocument.setIndex(index);
-		searchParticipant.indexResolvedDocument(searchDocument, indexLocation);	
+		searchParticipant.indexResolvedDocument(searchDocument, indexLocation);
 	} finally {
 		searchDocument.setIndex(null);
 		monitor.exitWrite();
@@ -567,7 +566,8 @@ public void indexResolvedDocument(SearchDocument searchDocument, SearchParticipa
  * Note: the actual operation is performed in background
  */
 public void indexAll(IProject project) {
-	this.indexer.makeDirty(project);
+	// New index is disabled, see bug 544898
+	// this.indexer.makeDirty(project);
 	if (JavaCore.getPlugin() == null) return;
 
 	try {
@@ -617,7 +617,8 @@ private boolean isJrt(String fileName) {
  * Note: the actual operation is performed in background
  */
 public void indexLibrary(IPath path, IProject requestingProject, URL indexURL, final boolean updateIndex) {
-	this.indexer.makeWorkspacePathDirty(path);
+	// New index is disabled, see bug 544898
+	// this.indexer.makeWorkspacePathDirty(path);
 	// requestingProject is no longer used to cancel jobs but leave it here just in case
 	IndexLocation indexFile = null;
 	boolean forceIndexUpdate = false;
@@ -639,7 +640,7 @@ public void indexLibrary(IPath path, IProject requestingProject, URL indexURL, f
 	IndexRequest request = null;
 	Object target = JavaModel.getTarget(path, true);
 	if (target instanceof IFile) {
-		request = isJrt(((IFile) target).getFullPath().toOSString()) ? 
+		request = isJrt(((IFile) target).getFullPath().toOSString()) ?
 				new AddJrtToIndex((IFile) target, indexFile, this, forceIndexUpdate) :
 					new AddJarFileToIndex((IFile) target, indexFile, this, forceIndexUpdate);
 	} else if (target instanceof File) {
@@ -673,7 +674,8 @@ synchronized boolean addIndex(IPath containerPath, IndexLocation indexFile) {
  */
 public void indexSourceFolder(JavaProject javaProject, IPath sourceFolder, char[][] inclusionPatterns, char[][] exclusionPatterns) {
 	IProject project = javaProject.getProject();
-	this.indexer.makeWorkspacePathDirty(sourceFolder);
+	// New index is disabled, see bug 544898
+	// this.indexer.makeWorkspacePathDirty(sourceFolder);
 	if (this.jobEnd > this.jobStart) {
 		// skip it if a job to index the project is already in the queue
 		IndexRequest request = new IndexAllProject(project, this);
@@ -717,7 +719,7 @@ public String processName(){
 }
 private char[][] readJavaLikeNamesFile() {
 	try {
-		String pathName = getJavaPluginWorkingLocation().toOSString();	
+		String pathName = getJavaPluginWorkingLocation().toOSString();
 		File javaLikeNamesFile = new File(pathName, "javaLikeNames.txt"); //$NON-NLS-1$
 		if (!javaLikeNamesFile.exists())
 			return null;
@@ -736,7 +738,8 @@ private void rebuildIndex(IndexLocation indexLocation, IPath containerPath) {
 	rebuildIndex(indexLocation, containerPath, false);
 }
 private void rebuildIndex(IndexLocation indexLocation, IPath containerPath, final boolean updateIndex) {
-	this.indexer.makeWorkspacePathDirty(containerPath);
+	// New index is disabled, see bug 544898
+	// this.indexer.makeWorkspacePathDirty(containerPath);
 	Object target = JavaModel.getTarget(containerPath, true);
 	if (target == null) return;
 
@@ -752,7 +755,7 @@ private void rebuildIndex(IndexLocation indexLocation, IPath containerPath, fina
 	} else if (target instanceof IFolder) {
 		request = new IndexBinaryFolder((IFolder) target, this);
 	} else if (target instanceof IFile) {
-		request = isJrt(((IFile) target).getFullPath().toOSString()) ? 
+		request = isJrt(((IFile) target).getFullPath().toOSString()) ?
 				new AddJrtToIndex((IFile) target, null, this, updateIndex) :
 					new AddJarFileToIndex((IFile) target, null, this, updateIndex);
 	} else if (target instanceof File) {
@@ -795,7 +798,8 @@ public synchronized Index recreateIndex(IPath containerPath) {
  * Note: the actual operation is performed in background
  */
 public void remove(String containerRelativePath, IPath indexedContainer){
-	this.indexer.makeWorkspacePathDirty(indexedContainer);
+	// New index is disabled, see bug 544898
+	// this.indexer.makeWorkspacePathDirty(indexedContainer);
 	request(new RemoveFromIndex(containerRelativePath, indexedContainer, this));
 }
 /**
@@ -805,7 +809,8 @@ public void remove(String containerRelativePath, IPath indexedContainer){
 public synchronized void removeIndex(IPath containerPath) {
 	if (VERBOSE || DEBUG)
 		Util.verbose("removing index " + containerPath); //$NON-NLS-1$
-	this.indexer.makeWorkspacePathDirty(containerPath);
+	// New index is disabled, see bug 544898
+	// this.indexer.makeWorkspacePathDirty(containerPath);
 	IndexLocation indexLocation = computeIndexLocation(containerPath);
 	Index index = getIndex(indexLocation);
 	File indexFile = null;
@@ -835,7 +840,8 @@ public synchronized void removeIndex(IPath containerPath) {
 public synchronized void removeIndexPath(IPath path) {
 	if (VERBOSE || DEBUG)
 		Util.verbose("removing index path " + path); //$NON-NLS-1$
-	this.indexer.makeWorkspacePathDirty(path);
+	// New index is disabled, see bug 544898
+	// this.indexer.makeWorkspacePathDirty(path);
 	Object[] keyTable = this.indexes.keyTable;
 	Object[] valueTable = this.indexes.valueTable;
 	IndexLocation[] locations = null;
@@ -882,7 +888,8 @@ public synchronized void removeIndexPath(IPath path) {
  * Removes all indexes whose paths start with (or are equal to) the given path.
  */
 public synchronized void removeIndexFamily(IPath path) {
-	this.indexer.makeWorkspacePathDirty(path);
+	// New index is disabled, see bug 544898
+	// this.indexer.makeWorkspacePathDirty(path);
 	// only finds cached index files... shutdown removes all non-cached index files
 	ArrayList toRemove = null;
 	Object[] containerPaths = this.indexLocations.keyTable;
@@ -903,7 +910,8 @@ public synchronized void removeIndexFamily(IPath path) {
  * Remove the content of the given source folder from the index.
  */
 public void removeSourceFolderFromIndex(JavaProject javaProject, IPath sourceFolder, char[][] inclusionPatterns, char[][] exclusionPatterns) {
-	this.indexer.makeWorkspacePathDirty(sourceFolder);
+	// New index is disabled, see bug 544898
+	// this.indexer.makeWorkspacePathDirty(sourceFolder);
 	IProject project = javaProject.getProject();
 	if (this.jobEnd > this.jobStart) {
 		// skip it if a job to index the project is already in the queue
@@ -1046,10 +1054,11 @@ public void saveIndexes() {
 	this.needToSave = !allSaved;
 }
 public void scheduleDocumentIndexing(final SearchDocument searchDocument, IPath container, final IndexLocation indexLocation, final SearchParticipant searchParticipant) {
-	IPath targetLocation = JavaIndex.getLocationForPath(new Path(searchDocument.getPath()));
-	if (targetLocation != null) {
-		this.indexer.makeDirty(targetLocation);
-	}
+	// New index is disabled, see bug 544898
+//	IPath targetLocation = JavaIndex.getLocationForPath(new Path(searchDocument.getPath()));
+//	if (targetLocation != null) {
+//		 this.indexer.makeDirty(targetLocation);
+//	}
 	request(new IndexRequest(container, this) {
 		@Override
 		public boolean execute(IProgressMonitor progressMonitor) {
@@ -1112,7 +1121,7 @@ private void readIndexMap() {
 					this.indexLocations.put(new Path(new String(names[i+1])), indexPath );
 					this.indexStates.put(indexPath, REUSE_STATE);
 				}
-			}		
+			}
 		}
 	} catch (IOException ignored) {
 		if (VERBOSE)
@@ -1128,14 +1137,14 @@ private void readParticipantsIndexNamesFile() {
 			char[][] names = CharOperation.splitOn('\n', participantIndexNames);
 			if (names.length >= 3) {
 				// First line is DiskIndex signature  (see writeParticipantsIndexNamesFile())
-				if (DiskIndex.SIGNATURE.equals(new String(names[0]))) {					
+				if (DiskIndex.SIGNATURE.equals(new String(names[0]))) {
 					for (int i = 1, l = names.length-1 ; i < l ; i+=2) {
 						IndexLocation indexLocation = new FileIndexLocation(new File(new String(names[i])), true);
 						containers.put(indexLocation, new Path(new String(names[i+1])));
 					}
-				}				
+				}
 			}
-		}	
+		}
 	} catch (IOException ignored) {
 		if (VERBOSE)
 			Util.verbose("Failed to read participant index file names"); //$NON-NLS-1$
@@ -1204,11 +1213,11 @@ public void updateParticipant(IPath indexPath, IPath containerPath) {
 private void writeJavaLikeNamesFile() {
 	BufferedWriter writer = null;
 	String pathName = getJavaPluginWorkingLocation().toOSString();
-	try {		
+	try {
 		char[][] currentNames = Util.getJavaLikeExtensions();
 		int length = currentNames.length;
 		if (length > 1) {
-			// Sort the current java like names. 
+			// Sort the current java like names.
 			// Copy the array to avoid modifying the Util static variable
 			System.arraycopy(currentNames, 0, currentNames=new char[length][], 0, length);
 			Util.sort(currentNames);
@@ -1219,9 +1228,9 @@ private void writeJavaLikeNamesFile() {
 			writer.write(currentNames[i]);
 			writer.write('\n');
 		}
-		if (length > 0) 
+		if (length > 0)
 			writer.write(currentNames[length-1]);
-		
+
 	} catch (IOException ignored) {
 		if (VERBOSE)
 			Util.verbose("Failed to write javaLikeNames file", System.err); //$NON-NLS-1$

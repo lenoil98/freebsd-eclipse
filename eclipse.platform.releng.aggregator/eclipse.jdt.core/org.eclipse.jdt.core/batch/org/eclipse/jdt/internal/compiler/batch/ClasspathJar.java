@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -150,16 +149,14 @@ public NameEnvironmentAnswer findClass(char[] typeName, String qualifiedPackageN
 			}
 			return new NameEnvironmentAnswer(reader, fetchAccessRestriction(qualifiedBinaryFileName), modName);
 		}
-	} catch(ClassFormatException e) {
-		// treat as if class file is missing
-	} catch (IOException e) {
+	} catch (ClassFormatException | IOException e) {
 		// treat as if class file is missing
 	}
 	return null;
 }
 @Override
 public boolean hasAnnotationFileFor(String qualifiedTypeName) {
-	return this.zipFile.getEntry(qualifiedTypeName+ExternalAnnotationProvider.ANNOTATION_FILE_SUFFIX) != null; 
+	return this.zipFile.getEntry(qualifiedTypeName+ExternalAnnotationProvider.ANNOTATION_FILE_SUFFIX) != null;
 }
 @Override
 public char[][][] findTypeNames(final String qualifiedPackageName, String moduleName) {
@@ -208,7 +205,7 @@ void acceptModule(ClassFileReader reader) {
 	}
 }
 void acceptModule(byte[] content) {
-	if (content == null) 
+	if (content == null)
 		return;
 	ClassFileReader reader = null;
 	try {
@@ -238,7 +235,7 @@ public synchronized char[][] getModulesDeclaringPackage(String qualifiedPackageN
 
 	this.packageCache = new HashSet<>(41);
 	this.packageCache.add(Util.EMPTY_STRING);
-	
+
 	for (Enumeration e = this.zipFile.entries(); e.hasMoreElements(); ) {
 		String fileName = ((ZipEntry) e.nextElement()).getName();
 		addToPackageCache(fileName, false);
@@ -257,9 +254,22 @@ public boolean hasCompilationUnit(String qualifiedPackageName, String moduleName
 			if (tail.toLowerCase().endsWith(SUFFIX_STRING_class))
 				return true;
 		}
-	}	
+	}
 	return false;
 }
+
+@Override
+public char[][] listPackages() {
+	Set<String> packageNames = new HashSet<>();
+	for (Enumeration<? extends ZipEntry> e = this.zipFile.entries(); e.hasMoreElements(); ) {
+		String fileName = e.nextElement().getName();
+		int lastSlash = fileName.lastIndexOf('/');
+		if (lastSlash != -1 && fileName.toLowerCase().endsWith(SUFFIX_STRING_class))
+			packageNames.add(fileName.substring(0, lastSlash).replace('/', '.'));
+	}
+	return packageNames.stream().map(String::toCharArray).toArray(char[][]::new);
+}
+
 @Override
 public void reset() {
 	super.reset();
@@ -319,18 +329,6 @@ public int getMode() {
 
 @Override
 public IModule getModule() {
-	if (this.isAutoModule && this.module == null) {
-		Manifest manifest = null;
-		try {
-			initialize();
-			ZipEntry entry = this.zipFile.getEntry(TypeConstants.META_INF_MANIFEST_MF);
-			if (entry != null)
-				manifest = new Manifest(this.zipFile.getInputStream(entry));
-		} catch (IOException e) {
-			// no usable manifest 
-		}
-		return this.module = IModule.createAutomatic(this.file.getName(), true, manifest);
-	}
 	return this.module;
 }
 }

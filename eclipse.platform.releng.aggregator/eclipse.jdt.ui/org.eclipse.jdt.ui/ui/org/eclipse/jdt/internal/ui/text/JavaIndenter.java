@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -383,8 +383,8 @@ public final class JavaIndenter {
 	private int fPreviousPos;
 	/** The most recent token. */
 	private int fToken;
-	/** The line of <code>fPosition</code>. */
-	private int fLine;
+	/** The scan position of most resent token. */
+	private int fTokenPos;
 	/**
 	 * The scanner we will use to scan the document. It has to be installed
 	 * on the same document as the one we get.
@@ -837,7 +837,7 @@ public final class JavaIndenter {
 
 	/**
 	 * Tells whether the given string is a continuation expression.
-	 * 
+	 *
 	 * @param offset the offset for which the check is done
 	 * @return <code>true</code> if the offset is part of a string continuation, <code>false</code>
 	 *         otherwise
@@ -858,7 +858,7 @@ public final class JavaIndenter {
 
 	/**
 	 * Checks if extra indentation for second line of string continuation is required.
-	 * 
+	 *
 	 * @param offset the offset for which the check is done
 	 * @return returns <code>true</code> if extra indentation for second line of string continuation
 	 *         is required
@@ -880,7 +880,7 @@ public final class JavaIndenter {
 						break;
 
 					case Symbols.TokenPLUS:
-						if ((offsetLine - fLine) > 1) {
+						if ((offsetLine - lineOfToken()) > 1) {
 							return false;
 						}
 						break;
@@ -899,7 +899,7 @@ public final class JavaIndenter {
 						}
 					case Symbols.TokenLBRACKET:
 					case Symbols.TokenEOF:
-						if ((offsetLine - fLine) == 1)
+						if ((offsetLine - lineOfToken()) == 1)
 							return true;
 						else
 							return false;
@@ -922,7 +922,7 @@ public final class JavaIndenter {
 	 * findReferencePosition(offset, danglingElse, matchBrace, matchParen, matchCase, throwsClause)}
 	 * where <code>throwsClause</code> indicates whether a throws clause was found at
 	 * <code>position</code>.
-	 * 
+	 *
 	 * @param offset the offset for which the reference is computed
 	 * @param danglingElse whether a dangling else should be assumed at <code>position</code>
 	 * @param matchBrace whether the position of the matching brace should be returned instead of
@@ -945,7 +945,7 @@ public final class JavaIndenter {
 	 * a method declaration where parameters should be aligned), <code>fAlign</code> will contain
 	 * the absolute position of the alignment reference in <code>fDocument</code>, otherwise
 	 * <code>fAlign</code> is set to <code>JavaHeuristicScanner.NOT_FOUND</code>.
-	 * 
+	 *
 	 * @param offset the offset for which the reference is computed
 	 * @param danglingElse whether a dangling else should be assumed at <code>position</code>
 	 * @param matchBrace whether the position of the matching brace should be returned instead of
@@ -972,7 +972,7 @@ public final class JavaIndenter {
 			if (skipScope(Symbols.TokenLBRACE, Symbols.TokenRBRACE)) {
 				try {
 					// align with the opening brace that is on a line by its own
-					int lineOffset= fDocument.getLineOffset(fLine);
+					int lineOffset= fDocument.getLineInformationOfOffset(fTokenPos).getOffset();
 					if (lineOffset <= fPosition && fDocument.get(lineOffset, fPosition - lineOffset).trim().length() == 0)
 						return fPosition;
 				} catch (BadLocationException e) {
@@ -1088,6 +1088,7 @@ public final class JavaIndenter {
 				return skipToStatementStart(danglingElse, false);
 
 			case Symbols.TokenRBRACKET:
+			case Symbols.TokenRETURN:
 				fIndent= fPrefs.prefContinuationIndent;
 				return fPosition;
 
@@ -1096,8 +1097,8 @@ public final class JavaIndenter {
 					fIndent= fPrefs.prefContinuationIndent;
 					return fPosition;
 				}
-				int line= fLine;
 				int rParen= fPosition;
+				int tokenPos = fTokenPos;
 				if (skipScope(Symbols.TokenLPAREN, Symbols.TokenRPAREN)) {
 					int scope= fPosition;
 					nextToken();
@@ -1124,13 +1125,10 @@ public final class JavaIndenter {
 				}
 				// restore
 				fPosition= offset;
-				fLine= line;
+				fTokenPos = tokenPos;
 
 				return skipToPreviousListItemOrListStart();
-			case Symbols.TokenRETURN:
-				fIndent= fPrefs.prefContinuationIndent;
-				return fPosition;
-			case Symbols.TokenPLUS:
+		case Symbols.TokenPLUS:
 				if (isStringContinuation(fPosition)) {
 					try {
 						if (isSecondLineOfStringContinuation(offset)) {
@@ -1163,12 +1161,12 @@ public final class JavaIndenter {
 	/**
 	 * Checks whether the Symbols.TokenLBRACE after <code>offset</code> probably represents the
 	 * beginning of a method body declaration.
-	 * 
+	 *
 	 * @param offset the document offset for which {@link #peekChar(int) peekChar(offset)} returns
 	 *            Symbols.TokenLBRACE
 	 * @return <code>true</code> if the left brace after <code>offset</code> looks like the
 	 *         beginning of a method body declaration, <code>false</code> otherwise
-	 * 
+	 *
 	 * @since 3.9
 	 */
 	private boolean looksLikeMethodDeclLBrace(int offset) {
@@ -1199,9 +1197,8 @@ public final class JavaIndenter {
 					fPosition= storedPos;
 					break;
 				case Symbols.TokenEOF:
-					return false;
-				default:
-					return false;
+			default:
+				return false;
 			}
 			nextToken();
 		}
@@ -1210,7 +1207,7 @@ public final class JavaIndenter {
 	/**
 	 * Checks if the statement at position is itself a continuation of the previous, else sets the
 	 * indentation to Continuation Indent.
-	 * 
+	 *
 	 * @return the position of the token
 	 * @since 3.7
 	 */
@@ -1235,7 +1232,7 @@ public final class JavaIndenter {
 
 	/**
 	 * Checks if the semicolon at the current position is part of a for statement.
-	 * 
+	 *
 	 * @return returns <code>true</code> if current position is part of for statement
 	 * @since 3.7
 	 */
@@ -1247,23 +1244,21 @@ public final class JavaIndenter {
 				case Symbols.TokenFOR:
 					return true;
 				case Symbols.TokenLBRACE:
+				case Symbols.TokenCOLON:
+				case Symbols.TokenEOF:
 					return false;
 				case Symbols.TokenSEMICOLON:
 					semiColonCount++;
 					if (semiColonCount > 2)
 						return false;
 					break;
-				case Symbols.TokenCOLON:
-					return false;
-				case Symbols.TokenEOF:
-					return false;
 			}
 		}
 	}
 
 	/**
 	 * Checks if the semicolon at the current position is part of a try with resources statement.
-	 * 
+	 *
 	 * @return returns <code>true</code> if current position is part of try with resources statement
 	 * @since 3.7
 	 */
@@ -1274,7 +1269,6 @@ public final class JavaIndenter {
 				case Symbols.TokenTRY:
 					return true;
 				case Symbols.TokenLBRACE:
-					return false;
 				case Symbols.TokenEOF:
 					return false;
 			}
@@ -1520,13 +1514,13 @@ public final class JavaIndenter {
 	 * that has its own indentation, or the list introduction start.
 	 */
 	private int skipToPreviousListItemOrListStart() {
-		int startLine= fLine;
+		int startLine= lineOfToken();
 		int startPosition= fPosition;
 		while (true) {
 			nextToken();
 
 			// if any line item comes with its own indentation, adapt to it
-			if (fLine < startLine) {
+			if (lineOfToken() < startLine) {
 				try {
 					int lineOffset= fDocument.getLineOffset(startLine);
 					int bound= Math.min(fDocument.getLength(), startPosition + 1);
@@ -1544,7 +1538,7 @@ public final class JavaIndenter {
 				case Symbols.TokenRBRACE:
 				case Symbols.TokenGREATERTHAN:
 					skipScope();
-					startLine= fLine;
+					startLine= lineOfToken();
 					startPosition= fPosition;
 					break;
 
@@ -1635,7 +1629,7 @@ public final class JavaIndenter {
 
 	/**
 	 * Returns the contents of the current token.
-	 * 
+	 *
 	 * @return the contents of the current token
 	 * @throws BadLocationException if the indices are out of bounds
 	 * @since 3.1
@@ -1817,7 +1811,6 @@ public final class JavaIndenter {
 					skipScope();
 					break;
 				case Symbols.TokenEOF:
-					return false;
 				default:
 					return false;
 			}
@@ -1826,7 +1819,7 @@ public final class JavaIndenter {
 
 	/**
 	 * Checks if the semicolon at the current position is part of enum body declaration.
-	 * 
+	 *
 	 * @return returns <code>true</code> if the semicolon at the current position is part of enum
 	 *         body declaration
 	 * @since 3.11
@@ -1847,7 +1840,6 @@ public final class JavaIndenter {
 					skipScope();
 					break;
 				case Symbols.TokenEOF:
-					return false;
 				default:
 					return false;
 			}
@@ -1901,14 +1893,14 @@ public final class JavaIndenter {
 	 * be a <code>catch</code> or <code>finally</code> keyword. Returns <code>true</code> if a
 	 * matching <code>try</code> could be found, <code>false</code> otherwise. The cursor (
 	 * <code>fPosition</code>) is set to the offset of the <code>try</code> token.
-	 * 
+	 *
 	 * @return <code>true</code> if a matching <code>try</code> token was found, <code>false</code>
 	 *         otherwise
 	 * @since 3.7
 	 */
 	private boolean skipNextTRY() {
 		Assert.isTrue(fToken == Symbols.TokenCATCH || fToken == Symbols.TokenFINALLY);
-	
+
 		while (true) {
 			nextToken();
 			switch (fToken) {
@@ -1919,11 +1911,11 @@ public final class JavaIndenter {
 				case Symbols.TokenGREATERTHAN:
 					skipScope();
 					break;
-	
+
 				case Symbols.TokenTRY:
 					// found it
 					return true;
-	
+
 					// shortcut scope starts
 				case Symbols.TokenLPAREN:
 				case Symbols.TokenLBRACE:
@@ -1976,8 +1968,8 @@ public final class JavaIndenter {
 
 	/**
 	 * Reads the next token in backward direction from the heuristic scanner
-	 * and sets the fields <code>fToken, fPreviousPosition</code> and <code>fPosition</code>
-	 * accordingly.
+	 * and sets the fields <code>fToken, fTokenPos, fPreviousPosition</code>
+	 * and <code>fPosition</code> accordingly.
 	 */
 	private void nextToken() {
 		nextToken(fPosition);
@@ -1985,7 +1977,7 @@ public final class JavaIndenter {
 
 	/**
 	 * Reads the next token in backward direction of <code>start</code> from
-	 * the heuristic scanner and sets the fields <code>fToken, fPreviousPosition</code>
+	 * the heuristic scanner and sets the fields <code>fToken, fTokenPos, fPreviousPosition</code>
 	 * and <code>fPosition</code> accordingly.
 	 *
 	 * @param start the start offset from which to scan backwards
@@ -1994,17 +1986,26 @@ public final class JavaIndenter {
 		fToken= fScanner.previousToken(start - 1, JavaHeuristicScanner.UNBOUND);
 		fPreviousPos= start;
 		fPosition= fScanner.getPosition() + 1;
+		fTokenPos = fPosition;
+	}
+
+	/**
+	 * Get line in document for most recent token.
+	 *
+	 * @return document line for <code>fTokenPos</code> or <code>-1</code> if invalid
+	 */
+	private int lineOfToken() {
 		try {
-			fLine= fDocument.getLineOfOffset(fPosition);
+			return fDocument.getLineOfOffset(fTokenPos);
 		} catch (BadLocationException e) {
-			fLine= -1;
+			return -1;
 		}
 	}
 
 	/**
 	 * Checks whether the current position represents a method call in string continuation. The
 	 * current token should represent the left parenthesis of method call.
-	 * 
+	 *
 	 * @return <code>true</code> if the current position looks like a method call in string
 	 *         continuation, <code>false</code> otherwise
 	 * @since 3.11
@@ -2071,7 +2072,7 @@ public final class JavaIndenter {
 	/**
 	 * Returns <code>true</code> if the current tokens look like an annotation (i.e. an annotation
 	 * name (potentially qualified) preceded by an at-sign).
-	 * 
+	 *
 	 * @return <code>true</code> if the current position looks like an annotation.
 	 * @since 3.7
 	 */
@@ -2090,7 +2091,7 @@ public final class JavaIndenter {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Returns <code>true</code> if the current tokens look like an anonymous type declaration
 	 * header (i.e. a type name (potentially qualified) and a new keyword). The heuristic calls

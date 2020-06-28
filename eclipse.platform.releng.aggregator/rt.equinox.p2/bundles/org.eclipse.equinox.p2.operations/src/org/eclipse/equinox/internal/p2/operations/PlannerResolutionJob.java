@@ -7,7 +7,7 @@
  *  https://www.eclipse.org/legal/epl-2.0/
  *
  *  SPDX-License-Identifier: EPL-2.0
- * 
+ *
  *  Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -77,10 +77,10 @@ public class PlannerResolutionJob extends ProvisioningJob implements IProfileCha
 			sub = SubMonitor.convert(monitor, 500);
 		}
 
-		plan = ((IPlanner) getSession().getProvisioningAgent().getService(IPlanner.SERVICE_NAME)).getProvisioningPlan(request, firstPass, sub.newChild(500));
+		plan = getSession().getProvisioningAgent().getService(IPlanner.class).getProvisioningPlan(request, firstPass, sub.newChild(500));
 		IStatus status;
 		if (plan == null) {
-			status = new Status(IStatus.ERROR, Activator.ID, Messages.PlannerResolutionJob_NullProvisioningPlan);
+			status = new Status(IStatus.ERROR, Constants.BUNDLE_ID, Messages.PlannerResolutionJob_NullProvisioningPlan);
 			additionalStatus.add(status);
 		} else {
 			status = plan.getStatus();
@@ -97,9 +97,10 @@ public class PlannerResolutionJob extends ProvisioningJob implements IProfileCha
 			return status;
 
 		successful = secondPass;
-		plan = ((IPlanner) getSession().getProvisioningAgent().getService(IPlanner.SERVICE_NAME)).getProvisioningPlan(request, secondPass, sub.newChild(500));
+		plan = getSession().getProvisioningAgent().getService(IPlanner.class).getProvisioningPlan(request, secondPass,
+				sub.newChild(500));
 		if (plan == null) {
-			status = new Status(IStatus.ERROR, Activator.ID, Messages.PlannerResolutionJob_NullProvisioningPlan);
+			status = new Status(IStatus.ERROR, Constants.BUNDLE_ID, Messages.PlannerResolutionJob_NullProvisioningPlan);
 			additionalStatus.add(status);
 			return status;
 		}
@@ -110,7 +111,7 @@ public class PlannerResolutionJob extends ProvisioningJob implements IProfileCha
 		if (report == null) {
 			if (plan == null) {
 				if (additionalStatus.getSeverity() != IStatus.ERROR) {
-					additionalStatus.add(new Status(IStatus.ERROR, Activator.ID, Messages.PlannerResolutionJob_NullProvisioningPlan));
+					additionalStatus.add(new Status(IStatus.ERROR, Constants.BUNDLE_ID, Messages.PlannerResolutionJob_NullProvisioningPlan));
 				}
 				report = new ResolutionResult();
 				report.addSummaryStatus(additionalStatus);

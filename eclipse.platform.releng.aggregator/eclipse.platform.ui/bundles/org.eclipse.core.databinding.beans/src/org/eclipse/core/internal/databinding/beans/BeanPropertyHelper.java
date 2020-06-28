@@ -24,6 +24,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.databinding.observable.value.IObservableValue;
@@ -56,9 +57,7 @@ public class BeanPropertyHelper {
 						"Missing public setter method for " //$NON-NLS-1$
 								+ propertyDescriptor.getName() + " property"); //$NON-NLS-1$
 			}
-			if (!writeMethod.isAccessible()) {
-				writeMethod.setAccessible(true);
-			}
+			setAccessible(writeMethod);
 			writeMethod.invoke(source, value);
 		} catch (InvocationTargetException e) {
 			/*
@@ -93,9 +92,7 @@ public class BeanPropertyHelper {
 				throw new IllegalArgumentException(propertyDescriptor.getName()
 						+ " property does not have a read method."); //$NON-NLS-1$
 			}
-			if (!readMethod.isAccessible()) {
-				readMethod.setAccessible(true);
-			}
+			setAccessible(readMethod);
 			return readMethod.invoke(source);
 		} catch (InvocationTargetException e) {
 			/*
@@ -111,6 +108,20 @@ public class BeanPropertyHelper {
 							IStatus.OK,
 							"Could not read value of " + source + "." + propertyDescriptor.getName(), e)); //$NON-NLS-1$ //$NON-NLS-2$
 			return null;
+		}
+	}
+
+	/**
+	 * Wrapper around deprecated {@link Method#isAccessible}. Using that method is
+	 * still the right thing to do, even in presence of the new methods
+	 * {@link Method#canAccess} and {@link Method#trySetAccessible}, since we only
+	 * do that to avoid redundant calls to {@link Method#setAccessible}, and the
+	 * permission check that entails.
+	 */
+	@SuppressWarnings("deprecation")
+	static void setAccessible(Method method) {
+		if (!method.isAccessible()) {
+			method.setAccessible(true);
 		}
 	}
 
@@ -155,7 +166,7 @@ public class BeanPropertyHelper {
 			}
 		} else {
 			try {
-				List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
+				List<PropertyDescriptor> pds = new ArrayList<>();
 				getInterfacePropertyDescriptors(pds, beanClass);
 				if (pds.size() > 0) {
 					for (PropertyDescriptor descriptor : pds.toArray(new PropertyDescriptor[pds.size()])) {
@@ -188,9 +199,7 @@ public class BeanPropertyHelper {
 			throws IntrospectionException {
 		BeanInfo beanInfo = Introspector.getBeanInfo(iface);
 		PropertyDescriptor[] pds = beanInfo.getPropertyDescriptors();
-		for (PropertyDescriptor pd : pds) {
-			propertyDescriptors.add(pd);
-		}
+		propertyDescriptors.addAll(Arrays.asList(pds));
 		Class<?>[] subIntfs = iface.getInterfaces();
 		for (Class<?> subIntf : subIntfs) {
 			getInterfacePropertyDescriptors(propertyDescriptors, subIntf);
@@ -202,8 +211,8 @@ public class BeanPropertyHelper {
 	 * @param propertyName
 	 * @return property descriptor or <code>null</code>
 	 */
-	/* package */public static PropertyDescriptor getValueTypePropertyDescriptor(
-			IObservableValue observable, String propertyName) {
+	/* package */public static PropertyDescriptor getValueTypePropertyDescriptor(IObservableValue<?> observable,
+			String propertyName) {
 		if (observable.getValueType() != null)
 			return getPropertyDescriptor((Class<?>) observable.getValueType(),
 					propertyName);

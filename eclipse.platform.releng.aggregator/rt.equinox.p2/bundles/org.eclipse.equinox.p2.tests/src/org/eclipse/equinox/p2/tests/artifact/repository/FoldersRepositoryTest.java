@@ -14,11 +14,12 @@
  *******************************************************************************/
 package org.eclipse.equinox.p2.tests.artifact.repository;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.net.URL;
-import java.util.Iterator;
-import junit.framework.TestCase;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -34,33 +35,29 @@ import org.eclipse.equinox.p2.repository.artifact.IArtifactRepositoryManager;
 import org.eclipse.equinox.p2.repository.artifact.spi.ArtifactDescriptor;
 import org.eclipse.equinox.p2.tests.AbstractProvisioningTest;
 import org.eclipse.equinox.p2.tests.TestActivator;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-public class FoldersRepositoryTest extends TestCase {
+public class FoldersRepositoryTest {
 
 	private IArtifactRepositoryManager manager;
 	private File testRepo;
 
-	public FoldersRepositoryTest(String name) {
-		super(name);
-	}
-
-	public FoldersRepositoryTest() {
-		super("");
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		IProvisioningAgent agent = ServiceHelper.getService(TestActivator.getContext(), IProvisioningAgent.class);
 		manager = agent.getService(IArtifactRepositoryManager.class);
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		manager = null;
 		if (testRepo != null)
 			AbstractProvisioningTest.delete(testRepo);
 	}
 
+	@Test
 	public void testFolderRepository() throws Exception {
 		String tempDir = System.getProperty("java.io.tmpdir");
 		testRepo = new File(tempDir, "testRepo");
@@ -80,8 +77,7 @@ public class FoldersRepositoryTest extends TestCase {
 		File[] fileList = pluginsFolder.listFiles(filter);
 		assertEquals(2, fileList.length);
 		IProgressMonitor monitor = new NullProgressMonitor();
-		for (int i = 0; i < fileList.length; i++) {
-			File file = fileList[i];
+		for (File file : fileList) {
 			String fileName = file.getName();
 			if (fileName.endsWith(".jar"))
 				fileName = fileName.substring(0, fileName.length() - 4);
@@ -97,8 +93,7 @@ public class FoldersRepositoryTest extends TestCase {
 		}
 		IQueryResult<IArtifactKey> keys = repo.query(ArtifactKeyQuery.ALL_KEYS, null);
 		assertEquals(2, AbstractProvisioningTest.queryResultSize(keys));
-		for (Iterator<IArtifactKey> iterator = keys.iterator(); iterator.hasNext();) {
-			IArtifactKey key = iterator.next();
+		for (IArtifactKey key : keys) {
 			repo.removeDescriptor(key, monitor);
 		}
 

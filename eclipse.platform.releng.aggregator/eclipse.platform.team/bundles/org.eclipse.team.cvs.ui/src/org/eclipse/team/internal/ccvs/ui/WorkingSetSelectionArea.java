@@ -32,9 +32,9 @@ import org.eclipse.ui.dialogs.IWorkingSetSelectionDialog;
  * @author Administrator
  *
  * To change this generated comment edit the template variable "typecomment":
- * Window>Preferences>Java>Templates.
+ * Window&gt;Preferences&gt;Java&gt;Templates.
  * To enable and disable the creation of type comments go to
- * Window>Preferences>Java>Code Generation.
+ * Window&gt;Preferences&gt;Java&gt;Code Generation.
  */
 public class WorkingSetSelectionArea extends DialogArea {
 
@@ -55,6 +55,7 @@ public class WorkingSetSelectionArea extends DialogArea {
 	 * renamed in the working set selection dialog.
 	 */
 	private IPropertyChangeListener workingSetChangeListener = new IPropertyChangeListener() {
+		@Override
 		public void propertyChange(PropertyChangeEvent event) {
 			String property = event.getProperty();
 			Object newValue = event.getNewValue();
@@ -80,23 +81,19 @@ public class WorkingSetSelectionArea extends DialogArea {
 			}
 		}
 	};
-    private final IDialogSettings settings;
-    private final Shell shell;
+	private final IDialogSettings settings;
+	private final Shell shell;
 		
 	public WorkingSetSelectionArea(Shell shell, String noWorkingSetText, String workingSetText, IDialogSettings settings) {
 		this.shell = shell;
-        this.noWorkingSetText = noWorkingSetText;
+		this.noWorkingSetText = noWorkingSetText;
 		this.workingSetText = workingSetText;
-        this.settings = settings;
+		this.settings = settings;
 	}
 	
-	/**
-	 * Overrides method in Dialog
-	 *
-	 * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(Composite)
-	 */
+	@Override
 	public void createArea(Composite parent) {
-        Dialog.applyDialogFont(parent);
+		Dialog.applyDialogFont(parent);
 		final Composite composite = createComposite(parent, 2, false);
 		initializeDialogUnits(composite);
 		composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -109,6 +106,7 @@ public class WorkingSetSelectionArea extends DialogArea {
 		noWorkingSetButton = createRadioButton(composite, noWorkingSetText, 2);
 		workingSetButton = createRadioButton(composite, workingSetText, 2);
 		workingSetButton.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				handleWorkingSetButtonSelection();
 			}
@@ -129,6 +127,7 @@ public class WorkingSetSelectionArea extends DialogArea {
 
 		selectButton = createButton(composite, CVSUIMessages.WorkingSetSelectionArea_workingSetOther, GridData.HORIZONTAL_ALIGN_FILL); 
 		selectButton.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent event) {
 				handleWorkingSetSelection();
 			}
@@ -138,6 +137,7 @@ public class WorkingSetSelectionArea extends DialogArea {
 		initializeWorkingSet();
 		
 		mruList.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				handleMruSelection();
 			}
@@ -188,9 +188,9 @@ public class WorkingSetSelectionArea extends DialogArea {
 			}
 			// remove deleted working sets from the mru list box
 			String[] mruNames = mruList.getItems();
-			for (int i = 0; i < mruNames.length; i++) {
-				if (workingSetManager.getWorkingSet(mruNames[i]) == null) {
-					mruList.remove(mruNames[i]);
+			for (String mruName : mruNames) {
+				if (workingSetManager.getWorkingSet(mruName) == null) {
+					mruList.remove(mruName);
 				}
 			}
 		}
@@ -232,10 +232,10 @@ public class WorkingSetSelectionArea extends DialogArea {
 	private void initializeMru() {
 		IWorkingSet[] workingSets = PlatformUI.getWorkbench().getWorkingSetManager().getRecentWorkingSets();
 
-		for (int i = 0; i < workingSets.length; i++) {
-			String workingSetName = workingSets[i].getName();
+		for (IWorkingSet w : workingSets) {
+			String workingSetName = w.getName();
 			mruList.add(workingSetName);
-			mruList.setData(workingSetName, workingSets[i]);
+			mruList.setData(workingSetName, w);
 		}
 		if (workingSets.length > 0) {
 			mruList.setText(workingSets[0].getName());

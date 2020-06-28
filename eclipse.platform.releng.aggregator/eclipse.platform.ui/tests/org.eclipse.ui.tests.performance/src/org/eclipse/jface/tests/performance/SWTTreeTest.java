@@ -21,7 +21,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.tests.performance.BasicPerformanceTest;
-import org.eclipse.ui.tests.performance.TestRunnable;
 
 public class SWTTreeTest extends BasicPerformanceTest {
 
@@ -54,7 +53,7 @@ public class SWTTreeTest extends BasicPerformanceTest {
 	private void createChildren() {
 		for (int i = 0; i < TreeAddTest.TEST_COUNT; i++) {
 			TreeItem item = new TreeItem(tree, SWT.NONE);
-			item.setText("Element " + String.valueOf(i));
+			item.setText("Element " + i);
 
 		}
 
@@ -67,18 +66,15 @@ public class SWTTreeTest extends BasicPerformanceTest {
 	public void testGetItems() throws CoreException {
 		openBrowser();
 
-        exercise(new TestRunnable() {
-            @Override
-			public void run() throws Exception {
-                processEvents();
-                startMeasuring();
-                for (int j = 0; j < TreeAddTest.TEST_COUNT; j++) {
-                    tree.getItems();
-                    processEvents();
-                }
-                stopMeasuring();
-            }
-        });
+		exercise(() -> {
+			processEvents();
+			startMeasuring();
+			for (int j = 0; j < TreeAddTest.TEST_COUNT; j++) {
+				tree.getItems();
+				processEvents();
+			}
+			stopMeasuring();
+		});
 
 		commitMeasurements();
 		assertPerformance();
@@ -93,18 +89,15 @@ public class SWTTreeTest extends BasicPerformanceTest {
 	public void testGetItemAt() throws CoreException {
 		openBrowser();
 
-        exercise(new TestRunnable() {
-            @Override
-			public void run() throws Exception {
-                processEvents();
-                startMeasuring();
-                for (int j = 0; j < TreeAddTest.TEST_COUNT; j++) {
-                    tree.getItem(j);
-                    processEvents();
-                }
-                stopMeasuring();
-            }
-        });
+		exercise(() -> {
+			processEvents();
+			startMeasuring();
+			for (int j = 0; j < TreeAddTest.TEST_COUNT; j++) {
+				tree.getItem(j);
+				processEvents();
+			}
+			stopMeasuring();
+		});
 
 		commitMeasurements();
 		assertPerformance();

@@ -8,8 +8,8 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
- * Contributors: 
+ *
+ * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Ericsson AB - ongoing development
  *     Red Hat, Inc. - fragments support added, Bug 460967
@@ -59,7 +59,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 	protected final IProvisioningAgent agent;
 
 	/**
-	 * Reference to Map of String(Profile id)->Profile. 
+	 * Reference to Map of String(Profile id)->Profile.
 	 */
 	private SoftReference<Map<String, Profile>> profiles;
 	private Map<String, ProfileLock> profileLocks = new HashMap<>();
@@ -109,7 +109,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 			//we are the registry for the currently running system
 			self = context.getProperty("eclipse.p2.profile"); //$NON-NLS-1$
 		} else if (agent.getService(IProvisioningAgent.SHARED_CURRENT_AGENT) != null) {
-			// In shared mode, _SELF_ is the value of the current running profile for both agents current and shared   
+			// In shared mode, _SELF_ is the value of the current running profile for both agents current and shared
 			if (((IProvisioningAgent) agent.getService(IProvisioningAgent.SHARED_CURRENT_AGENT)).getService(IProvisioningAgent.SHARED_BASE_AGENT) == agent) {
 				self = context.getProperty("eclipse.p2.profile"); //$NON-NLS-1$
 			}
@@ -160,7 +160,11 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		if (DebugHelper.DEBUG_PROFILE_REGISTRY)
 			DebugHelper.debug(PROFILE_REGISTRY, "SimpleProfileRegistry.updateRoamingProfile"); //$NON-NLS-1$
 		Location installLocation = ServiceHelper.getService(EngineActivator.getContext(), Location.class, Location.INSTALL_FILTER);
-		File location = new File(installLocation.getURL().getPath());
+		File location = URLUtil.toFile(installLocation.getURL());
+		if (location == null) {
+			// fallback: use only path of the URL if the protocol is not 'file'
+			location = new File(installLocation.getURL().getPath());
+		}
 		boolean changed = false;
 		if (!location.equals(new File(selfProfile.getProperty(IProfile.PROP_INSTALL_FOLDER)))) {
 			selfProfile.setProperty(IProfile.PROP_INSTALL_FOLDER, location.getAbsolutePath());
@@ -232,12 +236,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		if (!profileDirectory.isDirectory())
 			return new long[0];
 
-		File[] profileFiles = profileDirectory.listFiles(new FileFilter() {
-			@Override
-			public boolean accept(File pathname) {
-				return (pathname.getName().endsWith(PROFILE_EXT) || pathname.getName().endsWith(PROFILE_GZ_EXT)) && pathname.isFile() && !pathname.getName().startsWith("._"); //$NON-NLS-1$
-			}
-		});
+		File[] profileFiles = profileDirectory.listFiles((FileFilter) pathname -> (pathname.getName().endsWith(PROFILE_EXT) || pathname.getName().endsWith(PROFILE_GZ_EXT)) && pathname.isFile() && !pathname.getName().startsWith("._"));
 
 		long[] timestamps = new long[profileFiles.length];
 		for (int i = 0; i < profileFiles.length; i++) {
@@ -273,7 +272,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 					return null;
 
 				if (resetProfile) {
-					//Now that we created a new profile. Tag it, override the property and register the timestamp in the agent registry for pickup by other  
+					//Now that we created a new profile. Tag it, override the property and register the timestamp in the agent registry for pickup by other
 					internalSetProfileStateProperty(profile, profile.getTimestamp(), IProfile.STATE_PROP_SHARED_INSTALL, IProfile.STATE_SHARED_INSTALL_VALUE_NEW);
 					internalSetProfileStateProperty(profile, profile.getTimestamp(), SIMPLE_PROFILE_REGISTRY_INTERNAL + getBaseTimestamp(profile.getProfileId()), getBaseTimestamp(id));
 					//fragments support - remeber the property
@@ -333,7 +332,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		IProvisioningAgent baseAgent = (IProvisioningAgent) agent.getService(IProvisioningAgent.SHARED_BASE_AGENT);
 		if (baseAgent == null)
 			return null;
-		IProfileRegistry registry = (IProfileRegistry) baseAgent.getService(IProfileRegistry.SERVICE_NAME);
+		IProfileRegistry registry = baseAgent.getService(IProfileRegistry.class);
 		if (registry == null)
 			return null;
 		long[] revisions = registry.listProfileTimestamps(id);
@@ -368,7 +367,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 	}
 
 	/**
-	 * Returns an initialized map of String(Profile id)->Profile. 
+	 * Returns an initialized map of String(Profile id)->Profile.
 	 */
 	protected Map<String, Profile> getProfileMap() {
 		if (profiles != null) {
@@ -401,8 +400,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 
 		current.addProperties(profile.getLocalProperties());
 		IQueryResult<IInstallableUnit> queryResult = profile.query(QueryUtil.createIUAnyQuery(), null);
-		for (Iterator<IInstallableUnit> queryResultIt = queryResult.iterator(); queryResultIt.hasNext();) {
-			IInstallableUnit iu = queryResultIt.next();
+		for (IInstallableUnit iu : queryResult) {
 			current.addInstallableUnit(iu);
 			Map<String, String> iuProperties = profile.getInstallableUnitProperties(iu);
 			if (iuProperties != null)
@@ -460,8 +458,8 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 			return;
 
 		List<String> subProfileIds = profile.getSubProfileIds();
-		for (int i = 0; i < subProfileIds.size(); i++) {
-			removeProfile(subProfileIds.get(i));
+		for (String subProfileId : subProfileIds) {
+			removeProfile(subProfileId);
 		}
 		internalLockProfile(profile);
 		// The above call recursively locked the parent(s). So save it away to rewind the locking process.
@@ -506,7 +504,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		}
 		FileUtils.deleteAll(profileFile);
 		// Ignore the return value here. If there was a problem removing the profile state
-		// properties we don't want to fail the whole operation since the profile state itself 
+		// properties we don't want to fail the whole operation since the profile state itself
 		// was removed successfully
 		removeProfileStateProperties(id, timestamp, null);
 	}
@@ -525,29 +523,24 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 			throw new IllegalStateException(NLS.bind(Messages.reg_dir_not_available, store));
 
 		Parser parser = new Parser(EngineActivator.getContext(), EngineActivator.ID);
-		File[] profileDirectories = store.listFiles(new FileFilter() {
-			@Override
-			public boolean accept(File pathname) {
-				return pathname.getName().endsWith(PROFILE_EXT) && pathname.isDirectory();
-			}
-		});
+		File[] profileDirectories = store.listFiles((FileFilter) pathname -> pathname.getName().endsWith(PROFILE_EXT) && pathname.isDirectory());
 		// protect against NPE
 		if (profileDirectories == null) {
 			parser.getProfileMap();
 		}
-		for (int i = 0; i < profileDirectories.length; i++) {
-			String directoryName = profileDirectories[i].getName();
+		for (File profileDirectorie : profileDirectories) {
+			String directoryName = profileDirectorie.getName();
 			String profileId = unescape(directoryName.substring(0, directoryName.lastIndexOf(PROFILE_EXT)));
 			ProfileLock lock = profileLocks.get(profileId);
 			if (lock == null) {
-				lock = new ProfileLock(this, profileDirectories[i]);
+				lock = new ProfileLock(this, profileDirectorie);
 				profileLocks.put(profileId, lock);
 			}
 
 			boolean locked = false;
 			if (lock.processHoldsLock() || (locked = lock.lock())) {
 				try {
-					File profileFile = findLatestProfileFile(profileDirectories[i]);
+					File profileFile = findLatestProfileFile(profileDirectorie);
 					if (profileFile != null) {
 						try {
 							parser.parse(profileFile);
@@ -570,17 +563,11 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 	private File findLatestProfileFile(File profileDirectory) {
 		File latest = null;
 		long latestTimestamp = 0;
-		File[] profileFiles = profileDirectory.listFiles(new FileFilter() {
-			@Override
-			public boolean accept(File pathname) {
-				return (pathname.getName().endsWith(PROFILE_GZ_EXT) || pathname.getName().endsWith(PROFILE_EXT)) && !pathname.isDirectory();
-			}
-		});
+		File[] profileFiles = profileDirectory.listFiles((FileFilter) pathname -> (pathname.getName().endsWith(PROFILE_GZ_EXT) || pathname.getName().endsWith(PROFILE_EXT)) && !pathname.isDirectory());
 		// protect against NPE
 		if (profileFiles == null)
 			return null;
-		for (int i = 0; i < profileFiles.length; i++) {
-			File profileFile = profileFiles[i];
+		for (File profileFile : profileFiles) {
 			String fileName = profileFile.getName();
 			try {
 				long timestamp = Long.parseLong(fileName.substring(0, fileName.indexOf(PROFILE_EXT)));
@@ -734,7 +721,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 			InputStream is;
 			if (file.getName().endsWith(PROFILE_GZ_EXT)) {
 				is = new BufferedInputStream(new GZIPInputStream(new FileInputStream(file)));
-			} else { // backward compatibility. SimpleProfileRegistry doesn't write non-gzipped profiles any more. 
+			} else { // backward compatibility. SimpleProfileRegistry doesn't write non-gzipped profiles any more.
 				is = new BufferedInputStream(new FileInputStream(file));
 			}
 			parse(is);
@@ -797,8 +784,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 
 			IInstallableUnit[] ius = profileHandler.getInstallableUnits();
 			if (ius != null) {
-				for (int i = 0; i < ius.length; i++) {
-					IInstallableUnit iu = ius[i];
+				for (IInstallableUnit iu : ius) {
 					profile.addInstallableUnit(iu);
 					Map<String, String> iuProperties = profileHandler.getIUProperties(iu);
 					if (iuProperties != null) {
@@ -916,9 +902,6 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.internal.provisional.p2.engine.IProfileRegistry#containsProfile(java.lang.String)
-	 */
 	@Override
 	public synchronized boolean containsProfile(String id) {
 		if (SELF.equals(id))
@@ -935,12 +918,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		File profileDirectory = getProfileFolder(id);
 		if (!profileDirectory.isDirectory())
 			return false;
-		File[] profileFiles = profileDirectory.listFiles(new FileFilter() {
-			@Override
-			public boolean accept(File pathname) {
-				return (pathname.getName().endsWith(PROFILE_GZ_EXT) || pathname.getName().endsWith(PROFILE_EXT)) && pathname.isFile();
-			}
-		});
+		File[] profileFiles = profileDirectory.listFiles((FileFilter) pathname -> (pathname.getName().endsWith(PROFILE_GZ_EXT) || pathname.getName().endsWith(PROFILE_EXT)) && pathname.isFile());
 		return profileFiles.length > 0;
 	}
 
@@ -976,17 +954,11 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		return profileDataArea;
 	}
 
-	/*(non-Javadoc)
-	 * @see org.eclipse.equinox.p2.core.spi.IAgentService#start()
-	 */
 	@Override
 	public void start() {
 		//nothing to do
 	}
 
-	/*(non-Javadoc)
-	 * @see org.eclipse.equinox.p2.core.spi.IAgentService#stop()
-	 */
 	@Override
 	public void stop() {
 		try {
@@ -997,7 +969,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		}
 	}
 
-	// Class representing a particular instance of a profile's state properties. 
+	// Class representing a particular instance of a profile's state properties.
 	// Can be used for caching.
 	class ProfileStateProperties {
 		private String id;
@@ -1044,7 +1016,7 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		if (SELF.equals(id))
 			id = self;
 
-		// if the last cached value is the one we are interested in and up-to-date 
+		// if the last cached value is the one we are interested in and up-to-date
 		// then don't bother reading from disk
 		if (lastAccessedProperties != null && id.equals(lastAccessedProperties.getId()) && lastAccessedProperties.isCurrent())
 			return lastAccessedProperties.getProperties();
@@ -1099,8 +1071,8 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		Properties result = new Properties();
 		long[] timestamps = listProfileTimestamps(id);
 		HashSet<String> timestampsSet = new HashSet<>(timestamps.length);
-		for (int i = 0; i < timestamps.length; i++) {
-			timestampsSet.add(String.valueOf(timestamps[i]));
+		for (long timestamp : timestamps) {
+			timestampsSet.add(String.valueOf(timestamp));
 		}
 
 		Enumeration<Object> keys = properties.keys();
@@ -1129,9 +1101,6 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		return new Status(IStatus.ERROR, EngineActivator.ID, (NLS.bind(Messages.SimpleProfileRegistry_state_not_found, timestamp, id)));
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.p2.engine.IProfileRegistry#setProfileStateProperties(java.lang.String, long, java.util.Map)
-	 */
 	@Override
 	public IStatus setProfileStateProperties(String id, long timestamp, Map<String, String> propertiesToAdd) {
 		if (id == null || propertiesToAdd == null)
@@ -1166,9 +1135,6 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		return Status.OK_STATUS;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.p2.engine.IProfileRegistry#setProfileStateProperty(java.lang.String, long, java.lang.String, java.lang.String)
-	 */
 	@Override
 	public IStatus setProfileStateProperty(String id, long timestamp, String key, String value) {
 		if (id == null)
@@ -1223,9 +1189,6 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.p2.engine.IProfileRegistry#getProfileStateProperties(java.lang.String, java.lang.String)
-	 */
 	@Override
 	public Map<String, String> getProfileStateProperties(String id, String userKey) {
 		if (id == null || userKey == null)
@@ -1263,9 +1226,6 @@ public class SimpleProfileRegistry implements IProfileRegistry, IAgentService {
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.p2.engine.IProfileRegistry#removeProfileStateProperties(java.lang.String, long, java.util.Collection)
-	 */
 	@Override
 	public IStatus removeProfileStateProperties(String id, long timestamp, Collection<String> keys) {
 		if (id == null)

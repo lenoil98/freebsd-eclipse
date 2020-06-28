@@ -11,6 +11,8 @@
 package org.eclipse.ui.internal.ide.application.dialogs;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -24,6 +26,7 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
@@ -58,6 +61,8 @@ public class UriSchemeHandlerPreferencePageTest {
 			OTHER_ECLIPSE_HANDLER_LOCATION);
 
 	private UriSchemeHandlerPreferencePage page;
+	private OperatingSystemRegistrationMock operatingSystemRegistration;
+	private MessageDialogWrapperSpy messageDialogSpy;
 
 	@Before
 	public void setup() {
@@ -76,7 +81,7 @@ public class UriSchemeHandlerPreferencePageTest {
 	@Test
 	public void schemesShown() throws Exception {
 		this.page.createContents(this.page.getShell());
-
+		waitForJob();
 		assertScheme(getTableItem(0), false, noAppSchemeInfo);
 		assertScheme(getTableItem(1), true, thisAppSchemeInfo);
 		assertScheme(getTableItem(2), false, otherAppSchemeInfo);
@@ -85,15 +90,16 @@ public class UriSchemeHandlerPreferencePageTest {
 	@Test
 	public void handlerTextShown() throws Exception {
 		this.page.createContents(this.page.getShell());
-
+		waitForJob();
 		assertHandlerTextForSelection(page, 0, NO_APPLICATION);
 		assertHandlerTextForSelection(page, 1, THIS_ECLIPSE_HANDLER_LOCATION);
 		assertHandlerTextForSelection(page, 2, OTHER_ECLIPSE_HANDLER_LOCATION);
 	}
 
 	@Test
-	public void checkNoAppScheme() {
+	public void checkNoAppScheme() throws Exception {
 		this.page.createContents(this.page.getShell());
+		waitForJob();
 
 		clickTableViewerCheckbox(0, true);
 
@@ -101,8 +107,9 @@ public class UriSchemeHandlerPreferencePageTest {
 	}
 
 	@Test
-	public void uncheckThisAppScheme() {
+	public void uncheckThisAppScheme() throws Exception {
 		this.page.createContents(this.page.getShell());
+		waitForJob();
 
 		clickTableViewerCheckbox(1, false);
 
@@ -110,8 +117,9 @@ public class UriSchemeHandlerPreferencePageTest {
 	}
 
 	@Test
-	public void checkOtherAppSchemeGivesWarningAndRevertsClick() {
+	public void checkOtherAppSchemeGivesWarningAndRevertsClick() throws Exception {
 		this.page.createContents(this.page.getShell());
+		waitForJob();
 
 		clickTableViewerCheckbox(2, true);
 
@@ -124,12 +132,57 @@ public class UriSchemeHandlerPreferencePageTest {
 		assertEquals(expected, spy.message);
 
 		assertScheme(getTableItem(2), false, otherAppSchemeInfo);
+		assertHandlerTextForSelection(page, 2, OTHER_ECLIPSE_HANDLER_LOCATION);
 	}
 
 	@Test
-	public void registersSchemesInOperatingSystemOnApply() {
+	public void checkOtherAppSchemeOnWindowsIsAllowed() throws Exception {
 		this.page.createContents(this.page.getShell());
+		waitForJob();
 
+		operatingSystemRegistration.canOverwriteOtherApplicationsRegistration = true;
+		messageDialogSpy.actualAnswer = true;
+
+		clickTableViewerCheckbox(2, true);
+
+		MessageDialogWrapperSpy spy = (MessageDialogWrapperSpy) page.messageDialogWrapper;
+
+		assertEquals(IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp_Confirmation, spy.title);
+		String expected = NLS.bind(
+				IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp_Confirmation_Description,
+				OTHER_ECLIPSE_HANDLER_LOCATION, "hello2");
+		assertEquals(expected, spy.message);
+
+		assertScheme(getTableItem(2), true, otherAppSchemeInfo);
+		assertHandlerTextForSelection(page, 2, THIS_ECLIPSE_HANDLER_LOCATION);
+	}
+
+	@Test
+	public void checkOtherAppSchemeOnWindowsIsAllowedButNothingChangesWhenUserSaysNo() throws Exception {
+		this.page.createContents(this.page.getShell());
+		waitForJob();
+
+		operatingSystemRegistration.canOverwriteOtherApplicationsRegistration = true;
+		messageDialogSpy.actualAnswer = false;
+
+		clickTableViewerCheckbox(2, true);
+
+		MessageDialogWrapperSpy spy = (MessageDialogWrapperSpy) page.messageDialogWrapper;
+
+		assertEquals(IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp_Confirmation, spy.title);
+		String expected = NLS.bind(
+				IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp_Confirmation_Description,
+				OTHER_ECLIPSE_HANDLER_LOCATION, "hello2");
+		assertEquals(expected, spy.message);
+
+		assertScheme(getTableItem(2), false, otherAppSchemeInfo);
+		assertHandlerTextForSelection(page, 2, OTHER_ECLIPSE_HANDLER_LOCATION);
+	}
+
+	@Test
+	public void registersSchemesInOperatingSystemOnApply() throws Exception {
+		this.page.createContents(this.page.getShell());
+		waitForJob();
 		clickTableViewerCheckbox(0, true);
 		clickTableViewerCheckbox(1, false);
 		page.performOk();
@@ -143,8 +196,9 @@ public class UriSchemeHandlerPreferencePageTest {
 	}
 
 	@Test
-	public void doesNotRegistersSchemesInOperatingSystemOnCancel() {
+	public void doesNotRegistersSchemesInOperatingSystemOnCancel() throws Exception {
 		this.page.createContents(this.page.getShell());
+		waitForJob();
 
 		clickTableViewerCheckbox(0, true);
 		clickTableViewerCheckbox(1, false);
@@ -157,21 +211,38 @@ public class UriSchemeHandlerPreferencePageTest {
 	}
 
 	@Test
-	public void showsErrorOnOperatingSystemRegistrationReadError() {
+	public void doesNotRegistersSchemesInOperatingSystemOnApplyWhenLoading() throws Exception {
+		this.page.createContents(this.page.getShell());
+
+		// tableItem[1] (hello1 scheme) is true (refer to members), but page is still
+		// loading
+		page.performOk();
+
+		OperatingSystemRegistrationMock mock = (OperatingSystemRegistrationMock) page.operatingSystemRegistration;
+		assertEquals(0, mock.addedSchemes.size());
+
+		assertEquals(0, mock.removedSchemes.size());
+		waitForJob();
+	}
+
+	@Test
+	public void showsErrorOnOperatingSystemRegistrationReadError() throws Exception {
 		OperatingSystemRegistrationMock mock = (OperatingSystemRegistrationMock) page.operatingSystemRegistration;
 		mock.schemeInformationReadException = new IOExceptionWithoutStackTrace("Error reading from OS");
 
 		this.page.createContents(this.page.getShell());
+		waitForJob();
 
 		assertErrorStatusRaised(IDEWorkbenchMessages.UrlHandlerPreferencePage_Error_Reading_Scheme);
 	}
 
 	@Test
-	public void showsErrorOnOperatingSystemRegistrationWriteError() {
+	public void showsErrorOnOperatingSystemRegistrationWriteError() throws Exception {
 		OperatingSystemRegistrationMock mock = (OperatingSystemRegistrationMock) page.operatingSystemRegistration;
 		mock.schemeInformationRegisterException = new IOExceptionWithoutStackTrace("Error writing into OS");
 
 		this.page.createContents(this.page.getShell());
+		waitForJob();
 
 		page.performOk();
 
@@ -186,9 +257,41 @@ public class UriSchemeHandlerPreferencePageTest {
 
 		this.page.createContents(this.page.getShell());
 
+		assertFalse(page.tableViewer.getControl().getEnabled());
 		assertTrue(((Collection<?>) page.tableViewer.getInput()).isEmpty());
 
 		assertTrue(page.performOk());
+	}
+
+	@Test
+	public void doesNothingIfEclipseLauncherPathCannotBeDetermined() {
+		operatingSystemRegistration.launcherPath = null;
+
+		this.page.init(null);
+
+		this.page.createContents(this.page.getShell());
+
+		assertFalse(page.tableViewer.getControl().getEnabled());
+		assertNotNull(page.getErrorMessage());
+
+		assertTrue(page.performOk());
+	}
+
+	@Test
+	public void loadingSchemesShownAfterPageOpened() throws Exception {
+		this.page.createContents(this.page.getShell());
+		assertLoadingScheme(getTableItem(0), noAppSchemeInfo);
+		assertLoadingScheme(getTableItem(1), thisAppSchemeInfo);
+		assertLoadingScheme(getTableItem(2), otherAppSchemeInfo);
+		waitForJob();
+	}
+
+	private void waitForJob() throws InterruptedException {
+		this.page.osRegistrationReadingJob.join();
+		// jobs sets data asynchronously in TableViewer
+		Display display = Display.getCurrent();
+		while (display.readAndDispatch()) {
+		}
 	}
 
 	private void clickTableViewerCheckbox(int itemIndex, boolean checked) {
@@ -225,7 +328,22 @@ public class UriSchemeHandlerPreferencePageTest {
 		} else {
 			assertEquals("", tableItem.getText(2));
 		}
+	}
 
+	private void assertLoadingScheme(TableItem tableItem, ISchemeInformation information) {
+		// check pojo
+		UiSchemeInformation uiInformation = (UiSchemeInformation) tableItem.getData();
+		assertFalse(uiInformation.checked);
+		assertEquals(information.getName(), uiInformation.getName());
+		assertEquals(information.getDescription(), uiInformation.getDescription());
+		assertEquals(IDEWorkbenchMessages.UrlHandlerPreferencePage_LoadingText,
+				uiInformation.getHandlerInstanceLocation());
+
+		// check UI
+		assertFalse(tableItem.getChecked());
+		assertEquals(information.getName(), tableItem.getText(0));
+		assertEquals(information.getDescription(), tableItem.getText(1));
+		assertEquals(IDEWorkbenchMessages.UrlHandlerPreferencePage_LoadingText, tableItem.getText(2));
 	}
 
 	private void assertHandlerTextForSelection(UriSchemeHandlerPreferencePage page, int selection, String text) {
@@ -251,14 +369,16 @@ public class UriSchemeHandlerPreferencePageTest {
 			@Override
 			public Shell getShell() {
 				return new Shell();
-			};
+			}
 		};
 
 		page.extensionReader = createExtensionReaderStub();
-		page.operatingSystemRegistration = createOperatingSystemMock();
+		operatingSystemRegistration = createOperatingSystemMock();
+		page.operatingSystemRegistration = operatingSystemRegistration;
 
 		page.statusManagerWrapper = new StatusManagerWrapperSpy();
-		page.messageDialogWrapper = new MessageDialogWrapperSpy();
+		messageDialogSpy = new MessageDialogWrapperSpy();
+		page.messageDialogWrapper = messageDialogSpy;
 
 		page.init(null);
 
@@ -289,11 +409,19 @@ public class UriSchemeHandlerPreferencePageTest {
 
 		public String title;
 		public String message;
+		public boolean actualAnswer = false;
 
 		@Override
 		public void openWarning(Shell shell, String title, String message) {
 			this.title = title;
 			this.message = message;
+		}
+
+		@Override
+		public boolean openQuestion(Shell parent, String title, String message) {
+			this.title = title;
+			this.message = message;
+			return actualAnswer;
 		}
 	}
 
@@ -377,6 +505,8 @@ public class UriSchemeHandlerPreferencePageTest {
 		public Exception schemeInformationRegisterException = null;
 		public Collection<IScheme> addedSchemes = Collections.emptyList();
 		public Collection<IScheme> removedSchemes = Collections.emptyList();
+		public boolean canOverwriteOtherApplicationsRegistration = false;
+		public String launcherPath = THIS_ECLIPSE_HANDLER_LOCATION;
 
 		public OperatingSystemRegistrationMock(List<ISchemeInformation> schemeInformations) {
 			this.schemeInformations = schemeInformations;
@@ -401,7 +531,12 @@ public class UriSchemeHandlerPreferencePageTest {
 
 		@Override
 		public String getEclipseLauncher() {
-			return THIS_ECLIPSE_HANDLER_LOCATION;
+			return launcherPath;
+		}
+
+		@Override
+		public boolean canOverwriteOtherApplicationsRegistration() {
+			return canOverwriteOtherApplicationsRegistration;
 		}
 
 	}

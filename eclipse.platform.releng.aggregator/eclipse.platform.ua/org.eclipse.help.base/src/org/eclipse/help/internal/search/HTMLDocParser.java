@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -42,6 +42,7 @@ public class HTMLDocParser {
 	final static String ATTRIBUTE_HTTP = "http-equiv"; //$NON-NLS-1$
 	final static String ATTRIBUTE_HTTP_VALUE = "content-type"; //$NON-NLS-1$
 	final static String ATTRIBUTE_CONTENT = "content"; //$NON-NLS-1$
+	final static String ATTRIBUTE_CHARSET = "charset"; //$NON-NLS-1$
 
 	// states for parsing elements
 	final static int STATE_ELEMENT_START = 0;
@@ -58,6 +59,11 @@ public class HTMLDocParser {
 	final static int STATE_CONTENT_AFTER_NAME = 1;
 	final static int STATE_CONTENT_AFTER_EQ = 2;
 	final static int STATE_CONTENT_DONE = 3;
+	// states for parsing CHARSET attribute
+	final static int STATE_CHARSET_START = 0;
+	final static int STATE_CHARSET_AFTER_NAME = 1;
+	final static int STATE_CHARSET_AFTER_EQ = 2;
+	final static int STATE_CHARSET_DONE = 3;
 
 	private HTMLParser htmlParser;
 	private InputStream inputStream = null;
@@ -127,31 +133,30 @@ public class HTMLDocParser {
 	/**
 	 * Private. Parses HTML to extract document encoding specified in HTTP
 	 * equivalent META tag in the document header. Example of such META tag is
+	 * <pre>{@code
 	 * <META HTTP-EQUIV="content-type" CONTENT="text/html; charset=UTF-8">
+	 * }</pre>
 	 *
 	 * @return String or null if encoding not found
 	 */
 	public static String getCharsetFromHTML(InputStream is) {
 		// Set up an ascii reader for the document (documents should not use
 		// other characters before encoding is defined)
-		Reader asciiReader = new ASCIIReader(is, MAX_OFFSET);
-		StreamTokenizer tokenizer = new StreamTokenizer(asciiReader);
+		String charset = null;
+		try (Reader asciiReader = new ASCIIReader(is, MAX_OFFSET)) {
+			StreamTokenizer tokenizer = new StreamTokenizer(asciiReader);
 
-		// tokenizer.eolIsSignificant(false);// default false
-		// tokenizer.slashSlashComments(false); // default false
-		// tokenizer.slashStarComments(false);// default false
-		tokenizer.lowerCaseMode(false);
+			// tokenizer.eolIsSignificant(false);// default false
+			// tokenizer.slashSlashComments(false); // default false
+			// tokenizer.slashStarComments(false);// default false
+			tokenizer.lowerCaseMode(false);
 
-		// tokenizer.quoteChar('\"'); // default quote char
-		tokenizer.ordinaryChar('\''); // default quote char
-		tokenizer.ordinaryChar('/'); // default comment character
+			// tokenizer.quoteChar('\"'); // default quote char
+			tokenizer.ordinaryChar('\''); // default quote char
+			tokenizer.ordinaryChar('/'); // default comment character
 
-		String charset = getCharsetFromHTMLTokens(tokenizer);
-		if (asciiReader != null) {
-			try {
-				asciiReader.close();
-			} catch (IOException ioe) {
-			}
+			charset = getCharsetFromHTMLTokens(tokenizer);
+		} catch (IOException ioe) {
 		}
 		return charset;
 	}
@@ -164,6 +169,7 @@ public class HTMLDocParser {
 		int stateContent = STATE_HTTP_START;
 		int stateElement = STATE_ELEMENT_START;
 		int stateHttp = STATE_HTTP_START;
+		int stateCharset = STATE_CHARSET_START;
 
 		try {
 			// in the worst case, process tokens until end of file
@@ -197,6 +203,7 @@ public class HTMLDocParser {
 								// META element opened
 								stateElement = STATE_ELEMENT_META;
 								// initialize state of attributes
+								stateCharset = STATE_CHARSET_START;
 								stateHttp = STATE_HTTP_START;
 								stateContent = STATE_CONTENT_START;
 								contentValue = null;
@@ -239,7 +246,10 @@ public class HTMLDocParser {
 								break;
 							case StreamTokenizer.TT_WORD :
 								// string inside META tag, can be attribute name
-								if (ATTRIBUTE_HTTP
+								if (ATTRIBUTE_CHARSET.equalsIgnoreCase(tokenizer.sval)) {
+									// found CHARSET attribute name
+									stateCharset = STATE_CHARSET_AFTER_NAME;
+								} else if (ATTRIBUTE_HTTP
 										.equalsIgnoreCase(tokenizer.sval)) {
 									// found HTTP-EQUIV attribute name
 									stateHttp = STATE_HTTP_AFTER_NAME;
@@ -258,6 +268,9 @@ public class HTMLDocParser {
 									// some other attribute name or string,
 									// reset states of seeked attributes,
 									// unless successfully processed earlier
+									if (stateCharset != STATE_CHARSET_DONE) {
+										stateCharset = STATE_CHARSET_START;
+									}
 									if (stateHttp != STATE_HTTP_DONE) {
 										stateHttp = STATE_HTTP_START;
 									}
@@ -269,7 +282,10 @@ public class HTMLDocParser {
 							case '=' :
 								// = inside META tag, can separate interesing us
 								// attribute names from values
-								if (stateHttp == STATE_HTTP_AFTER_NAME) {
+								if (stateCharset == STATE_CHARSET_AFTER_NAME) {
+									// we have CHARSET=
+									stateCharset = STATE_CHARSET_AFTER_EQ;
+								} else if (stateHttp == STATE_HTTP_AFTER_NAME) {
 									// we have HTTP-EQUIV=
 									stateHttp = STATE_HTTP_AFTER_EQ;
 								} else if (stateContent == STATE_CONTENT_AFTER_NAME) {
@@ -280,6 +296,9 @@ public class HTMLDocParser {
 									// name or string,
 									// reset states of seeked attributes,
 									// unless successfully processed earlier
+									if (stateCharset != STATE_CHARSET_DONE) {
+										stateCharset = STATE_CHARSET_START;
+									}
 									if (stateHttp != STATE_HTTP_DONE) {
 										stateHttp = STATE_HTTP_START;
 									}
@@ -291,7 +310,12 @@ public class HTMLDocParser {
 							case '\"' :
 								// quoted string inside META tag, can be
 								// attribute value
-								if (stateHttp == STATE_HTTP_AFTER_EQ) {
+								if (stateCharset == STATE_CHARSET_AFTER_EQ) {
+									// value of CHARSET attribute
+									// we found <META CHARSET="***"
+									stateContent = STATE_CHARSET_DONE;
+									return tokenizer.sval.isEmpty() ? null : tokenizer.sval;
+								} else if (stateHttp == STATE_HTTP_AFTER_EQ) {
 									// value of HTTP-EQUIV attribute
 									if (ATTRIBUTE_HTTP_VALUE
 											.equalsIgnoreCase(tokenizer.sval)) {
@@ -312,6 +336,7 @@ public class HTMLDocParser {
 								} else {
 									// value for the attribute is missing
 									// reset states of seeked attributes
+									stateCharset = STATE_CHARSET_START;
 									stateHttp = STATE_HTTP_START;
 									stateContent = STATE_CONTENT_START;
 								}
@@ -320,6 +345,9 @@ public class HTMLDocParser {
 								// other unexpected token inside META tag
 								// reset states of seeked attributes,
 								// unless successfully processed earlier
+								if (stateCharset != STATE_CHARSET_DONE) {
+									stateCharset = STATE_CHARSET_START;
+								}
 								if (stateHttp != STATE_HTTP_DONE) {
 									stateHttp = STATE_HTTP_START;
 								}

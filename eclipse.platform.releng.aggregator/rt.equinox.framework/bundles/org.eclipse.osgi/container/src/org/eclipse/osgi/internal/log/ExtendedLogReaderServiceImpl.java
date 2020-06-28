@@ -25,27 +25,31 @@ public class ExtendedLogReaderServiceImpl implements ExtendedLogReaderService {
 		this.factory = factory;
 	}
 
+	@Override
 	public synchronized void addLogListener(LogListener listener, LogFilter filter) {
 		checkShutdown();
 		if (listener == null)
 			throw new IllegalArgumentException("LogListener must not be null"); //$NON-NLS-1$
 
 		if (filter == null)
-			throw new IllegalArgumentException("LogFilter must not be null"); //$NON-NLS-1$		
+			throw new IllegalArgumentException("LogFilter must not be null"); //$NON-NLS-1$
 
 		listeners.add(listener);
 		factory.addLogListener(listener, filter);
 	}
 
+	@Override
 	public void addLogListener(LogListener listener) {
 		addLogListener(listener, ExtendedLogReaderServiceFactory.NULL_LOGGER_FILTER);
 	}
 
+	@Override
 	public Enumeration<LogEntry> getLog() {
 		checkShutdown();
 		return factory.getLog();
 	}
 
+	@Override
 	public synchronized void removeLogListener(LogListener listener) {
 		checkShutdown();
 		if (listener == null)

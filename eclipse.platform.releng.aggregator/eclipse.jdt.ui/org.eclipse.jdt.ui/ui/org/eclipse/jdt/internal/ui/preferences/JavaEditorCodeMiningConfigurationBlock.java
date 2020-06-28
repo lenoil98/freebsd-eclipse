@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2018 Angelo ZERR.
+ *  Copyright (c) 2018, 2020 Angelo ZERR.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  *  Contributors:
  *     Angelo Zerr <angelo.zerr@gmail.com> - [CodeMining] Provide Java References/Implementation CodeMinings - Bug 529127
+ *     IBM Corporation
  */
 package org.eclipse.jdt.internal.ui.preferences;
 
@@ -19,10 +20,12 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Shell;
 
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.layout.PixelConverter;
 
+import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.preferences.IWorkbenchPreferenceContainer;
 
@@ -66,6 +69,9 @@ public class JavaEditorCodeMiningConfigurationBlock extends OptionsConfiguration
 	private static final Key PREF_SHOW_IMPLEMENTATIONS= getJDTUIKey(
 			PreferenceConstants.EDITOR_JAVA_CODEMINING_SHOW_IMPLEMENTATIONS);
 
+	private static final Key PREF_SHOW_PARAMETER_NAMES= getJDTUIKey(
+			PreferenceConstants.EDITOR_JAVA_CODEMINING_SHOW_PARAMETER_NAMES);
+
 	private static final String SETTINGS_SECTION_NAME= "JavaEditorCodeMiningConfigurationBlock"; //$NON-NLS-1$
 
 	private static final String[] TRUE_FALSE= new String[] { "true", "false" }; //$NON-NLS-1$ //$NON-NLS-2$
@@ -84,13 +90,14 @@ public class JavaEditorCodeMiningConfigurationBlock extends OptionsConfiguration
 	public static Key[] getAllKeys() {
 		return new Key[] { PREF_CODEMINING_ENABLED, PREF_SHOW_CODEMINING_AT_LEAST_ONE, PREF_SHOW_REFERENCES, PREF_SHOW_REFERENCES_ON_TYPES, PREF_SHOW_REFERENCES_ON_FIELDS,
 				PREF_SHOW_REFERENCES_ON_METHODS,
-				PREF_SHOW_IMPLEMENTATIONS };
+				PREF_SHOW_IMPLEMENTATIONS, PREF_SHOW_PARAMETER_NAMES };
 	}
 
 	@Override
 	protected Control createContents(Composite parent) {
 		fPixelConverter= new PixelConverter(parent);
-		setShell(parent.getShell());
+		Shell shell= parent.getShell();
+		setShell(shell);
 
 		Composite mainComp= new Composite(parent, SWT.NONE);
 		mainComp.setFont(parent.getFont());
@@ -100,8 +107,15 @@ public class JavaEditorCodeMiningConfigurationBlock extends OptionsConfiguration
 		mainComp.setLayout(layout);
 
 		// Add enabled code mining checkbox
-		Button codeMiningEnabledCheckBox= addCheckBox(mainComp, PreferencesMessages.JavaEditorCodeMiningConfigurationBlock_enableCodeMining_label, PREF_CODEMINING_ENABLED,
-				TRUE_FALSE, 0);
+		String text= PreferencesMessages.JavaEditorCodeMiningConfigurationBlock_enableCodeMining_label;
+		Button codeMiningEnabledCheckBox= addCheckBoxWithLink(mainComp, text, PREF_CODEMINING_ENABLED, TRUE_FALSE, 0, SWT.DEFAULT, new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if ("org.eclipse.ui.preferencePages.GeneralTextEditor".equals(e.text)) { //$NON-NLS-1$
+					PreferencesUtil.createPreferenceDialogOn(shell, e.text, null, null);
+				}
+			}
+		});
 
 		// - Only if there is at least one result
 		atLeastOneCheckBox= addCheckBox(mainComp,
@@ -116,8 +130,6 @@ public class JavaEditorCodeMiningConfigurationBlock extends OptionsConfiguration
 		codeMiningEnabledCheckBox.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				atLeastOneCheckBox.setEnabled(codeMiningEnabledCheckBox.getSelection());
-				fFilteredPrefTree.setEnabled(codeMiningEnabledCheckBox.getSelection());
 				updateEnableStates();
 			}
 		});
@@ -181,18 +193,28 @@ public class JavaEditorCodeMiningConfigurationBlock extends OptionsConfiguration
 		fFilteredPrefTree.addCheckBox(inner,
 				PreferencesMessages.JavaEditorCodeMiningConfigurationBlock_showImplementations_label,
 				PREF_SHOW_IMPLEMENTATIONS, TRUE_FALSE, defaultIndent, section);
+
+		// - Show parameter names
+		fFilteredPrefTree.addCheckBox(inner,
+				PreferencesMessages.JavaEditorCodeMiningConfigurationBlock_showParameterNames_label,
+				PREF_SHOW_PARAMETER_NAMES, TRUE_FALSE, defaultIndent, section);
+
 	}
 
 	private void updateEnableStates() {
 		boolean enabledCodeMining= getCheckBox(PREF_CODEMINING_ENABLED).getSelection();
 		if (enabledCodeMining) {
 			// Show references checkboxes
+			atLeastOneCheckBox.setEnabled(true);
+			fFilteredPrefTree.setEnabled(true);
+
 			boolean showReferences= getCheckBox(PREF_SHOW_REFERENCES).getSelection();
 			getCheckBox(PREF_SHOW_REFERENCES_ON_TYPES).setEnabled(showReferences);
 			getCheckBox(PREF_SHOW_REFERENCES_ON_FIELDS).setEnabled(showReferences);
 			getCheckBox(PREF_SHOW_REFERENCES_ON_METHODS).setEnabled(showReferences);
 			// Show implementations checkboxes
 			getCheckBox(PREF_SHOW_IMPLEMENTATIONS).getSelection();
+			getCheckBox(PREF_SHOW_PARAMETER_NAMES).getSelection();
 		} else {
 			atLeastOneCheckBox.setEnabled(false);
 			fFilteredPrefTree.setEnabled(false);
@@ -213,7 +235,7 @@ public class JavaEditorCodeMiningConfigurationBlock extends OptionsConfiguration
 			return;
 		}
 		if (changedKey != null) {
-			if (PREF_SHOW_REFERENCES.equals(changedKey) || PREF_SHOW_IMPLEMENTATIONS.equals(changedKey)) {
+			if (PREF_CODEMINING_ENABLED.equals(changedKey) || PREF_SHOW_REFERENCES.equals(changedKey) || PREF_SHOW_IMPLEMENTATIONS.equals(changedKey)) {
 				updateEnableStates();
 			}
 		} else {

@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.core;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,26 +28,29 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchDelegate;
 import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
 
-import com.ibm.icu.text.MessageFormat;
-
 /**
- * Proxy to a launch delegate extension
- * Clients can contribute launch delegates through the <code>launchDelegates</code> extension point
- *
+ * Proxy to a launch delegate extension.
+ * <p>
+ * Clients can contribute launch delegates through the
+ * <code>launchDelegates</code> extension point
+ * </p>
+ * <p>
  * Example contribution of the local java launch delegate
+ * </p>
+ *
  * <pre>
- * <extension point="org.eclipse.debug.core.launchDelegates">
-      <launchDelegate
-            delegate="org.eclipse.jdt.launching.JavaLaunchDelegate"
-            id="org.eclipse.jdt.launching.localJavaApplicationDelegate"
-            modes="run, debug"
-            name="%localJavaApplication"
-            type="org.eclipse.jdt.launching.localJavaApplication">
-          <modeCombination
-    		modes="run, profile">
-    		perspective="com.example.Perspective">
-   		  </modeCombination>
-      </launchDelegate>
+ * &lt;extension point="org.eclipse.debug.core.launchDelegates"&gt;
+ *    &lt;launchDelegate
+ *          delegate="org.eclipse.jdt.launching.JavaLaunchDelegate"
+ *          id="org.eclipse.jdt.launching.localJavaApplicationDelegate"
+ *          modes="run, debug"
+ *          name="%localJavaApplication"
+ *          type="org.eclipse.jdt.launching.localJavaApplication"&gt;
+ *        &lt;modeCombination
+ *          modes="run, profile"&gt;
+ *          perspective="com.example.Perspective"&gt;
+ *        &lt;/modeCombination&gt;
+ *    &lt;/launchDelegate&gt;
  * </pre>
  *
  * Clients are NOT intended to subclass this class
@@ -125,8 +129,8 @@ public final class LaunchDelegate implements ILaunchDelegate {
 		String modes = element.getAttribute(IConfigurationElementConstants.MODES);
 		if (modes != null) {
 			String[] strings = modes.split(","); //$NON-NLS-1$
-			for (int i = 0; i < strings.length; i++) {
-				set.add(strings[i].trim());
+			for (String string : strings) {
+				set.add(string.trim());
 			}
 		}
 		return set;
@@ -139,10 +143,10 @@ public final class LaunchDelegate implements ILaunchDelegate {
 			fPerspectiveIds = new HashMap<>();
 			IConfigurationElement[] children = fElement.getChildren(IConfigurationElementConstants.MODE_COMBINATION);
 			Set<String> modeset = null;
-			for (int i = 0; i < children.length; i++) {
-				modeset = parseModes(children[i]);
+			for (IConfigurationElement child : children) {
+				modeset = parseModes(child);
 				fLaunchModes.add(modeset);
-				fPerspectiveIds.put(modeset, children[i].getAttribute(IConfigurationElementConstants.PERSPECTIVE));
+				fPerspectiveIds.put(modeset, child.getAttribute(IConfigurationElementConstants.PERSPECTIVE));
 			}
 			//try to get the modes from the old definition and make each one
 			//a separate set of one element
@@ -150,9 +154,9 @@ public final class LaunchDelegate implements ILaunchDelegate {
 			String modes = fElement.getAttribute(IConfigurationElementConstants.MODES);
 			if (modes != null) {
 				String[] strings = modes.split(","); //$NON-NLS-1$
-				for (int i = 0; i < strings.length; i++) {
+				for (String string : strings) {
 					modeset = new HashSet<>();
-					modeset.add(strings[i].trim());
+					modeset.add(string.trim());
 					fLaunchModes.add(modeset);
 				}
 			}

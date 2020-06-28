@@ -38,9 +38,6 @@ public class DeletedProjectFilter extends ViewerFilter {
 		super();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ViewerFilter#select(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-	 */
 	@Override
 	public boolean select(Viewer viewer, Object parentElement, Object element) {
 		//always let through types, we only care about configs
@@ -54,8 +51,8 @@ public class DeletedProjectFilter extends ViewerFilter {
 				if(resources == null) {
 					return true;
 				}
-				for(int i = 0; i < resources.length; i++) {
-					IProject project= resources[i].getProject();
+				for (IResource resource : resources) {
+					IProject project = resource.getProject();
 					if(project != null && project.exists()) {
 						return true;
 					}

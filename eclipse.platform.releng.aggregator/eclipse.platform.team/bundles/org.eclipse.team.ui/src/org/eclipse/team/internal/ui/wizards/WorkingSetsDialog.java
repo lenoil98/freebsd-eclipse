@@ -35,8 +35,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.team.internal.ui.TeamUIMessages;
-import org.eclipse.team.internal.ui.TeamUIPlugin;
 import org.eclipse.ui.IWorkingSet;
+import org.eclipse.ui.PlatformUI;
 
 public class WorkingSetsDialog extends TitleAreaDialog {
 
@@ -90,7 +90,7 @@ public class WorkingSetsDialog extends TitleAreaDialog {
 
 		wsTableViewer.setContentProvider(new ArrayContentProvider());
 		wsTableViewer.setLabelProvider(new WorkingSetLabelProvider());
-		wsTableViewer.setInput(TeamUIPlugin.getPlugin().getWorkbench().getWorkingSetManager().getWorkingSets());
+		wsTableViewer.setInput(PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets());
 
 		setupListeners();
 
@@ -101,7 +101,7 @@ public class WorkingSetsDialog extends TitleAreaDialog {
 	protected void okPressed() {
 		selectedWorkingSet = wsNameText.getText();
 
-		if (selectedWorkingSet.equals("")) { //$NON-NLS-1$
+		if (selectedWorkingSet.isEmpty()) {
 			setErrorMessage(TeamUIMessages.WorkingSetsDialog_ErrorMessage);
 			return;
 		}
@@ -133,48 +133,48 @@ public class WorkingSetsDialog extends TitleAreaDialog {
 	}
 
 	class WorkingSetLabelProvider extends LabelProvider {
-		  private Map<ImageDescriptor, Image> icons;
+		private Map<ImageDescriptor, Image> icons;
 
-		    public WorkingSetLabelProvider() {
-		        icons = new Hashtable<>();
-		    }
-
-		    @Override
-			public void dispose() {
-		        Iterator<Image> iterator = icons.values().iterator();
-
-		        while (iterator.hasNext()) {
-		            Image icon = iterator.next();
-		            icon.dispose();
-		        }
-		        super.dispose();
-		    }
-
-		    @Override
-			public Image getImage(Object object) {
-		        Assert.isTrue(object instanceof IWorkingSet);
-		        IWorkingSet workingSet = (IWorkingSet) object;
-		        ImageDescriptor imageDescriptor = workingSet.getImageDescriptor();
-
-		        if (imageDescriptor == null) {
-					return null;
-				}
-
-		        Image icon = icons.get(imageDescriptor);
-		        if (icon == null) {
-		            icon = imageDescriptor.createImage();
-		            icons.put(imageDescriptor, icon);
-		        }
-		        return icon;
-		    }
-
-		    @Override
-			public String getText(Object object) {
-		        Assert.isTrue(object instanceof IWorkingSet);
-		        IWorkingSet workingSet = (IWorkingSet) object;
-		        return workingSet.getLabel();
-		    }
+		public WorkingSetLabelProvider() {
+			icons = new Hashtable<>();
 		}
+
+		@Override
+		public void dispose() {
+			Iterator<Image> iterator = icons.values().iterator();
+
+			while (iterator.hasNext()) {
+				Image icon = iterator.next();
+				icon.dispose();
+			}
+			super.dispose();
+		}
+
+		@Override
+		public Image getImage(Object object) {
+			Assert.isTrue(object instanceof IWorkingSet);
+			IWorkingSet workingSet = (IWorkingSet) object;
+			ImageDescriptor imageDescriptor = workingSet.getImageDescriptor();
+
+			if (imageDescriptor == null) {
+				return null;
+			}
+
+			Image icon = icons.get(imageDescriptor);
+			if (icon == null) {
+				icon = imageDescriptor.createImage();
+				icons.put(imageDescriptor, icon);
+			}
+			return icon;
+		}
+
+		@Override
+		public String getText(Object object) {
+			Assert.isTrue(object instanceof IWorkingSet);
+			IWorkingSet workingSet = (IWorkingSet) object;
+			return workingSet.getLabel();
+		}
+	}
 
 	public String getSelectedWorkingSet(){
 		return selectedWorkingSet;

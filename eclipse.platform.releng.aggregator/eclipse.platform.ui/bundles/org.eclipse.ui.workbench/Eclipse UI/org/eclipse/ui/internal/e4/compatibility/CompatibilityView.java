@@ -156,8 +156,8 @@ public class CompatibilityView extends CompatibilityPart {
 
 		ViewDescriptor desc = reference.getDescriptor();
 		if (desc != null && desc.getPluginId() != null) {
-			parent.setData(new ContributionInfo(desc.getPluginId(),
-					ContributionInfoMessages.ContributionInfo_View, null));
+			parent.setData(
+					new ContributionInfo(desc.getPluginId(), ContributionInfoMessages.ContributionInfo_View, null));
 		}
 
 		// dispose the tb, it will be re-created when the tab is shown
@@ -196,14 +196,13 @@ public class CompatibilityView extends CompatibilityPart {
 							IAction action = actionDescriptor.getAction();
 
 							if (action != null && action.getActionDefinitionId() != null) {
-								hs.activateHandler(action.getActionDefinitionId(),
-										new ActionHandler(action));
+								hs.activateHandler(action.getActionDefinitionId(), new ActionHandler(action));
 							}
 						}
 					}
 				}
 				actionBars.updateActionBars();
-				final Runnable dispose = () -> actionBuilder.dispose();
+				Runnable dispose = () -> actionBuilder.dispose();
 				return dispose;
 			}
 		};

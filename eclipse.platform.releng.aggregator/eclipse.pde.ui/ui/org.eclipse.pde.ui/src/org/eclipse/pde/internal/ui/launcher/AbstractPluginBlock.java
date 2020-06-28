@@ -20,7 +20,6 @@ package org.eclipse.pde.internal.ui.launcher;
 import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 import java.util.*;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import org.eclipse.core.resources.IProject;
@@ -55,6 +54,7 @@ import org.eclipse.swt.custom.TreeEditor;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
@@ -103,43 +103,34 @@ public abstract class AbstractPluginBlock {
 	private PluginStatusDialog fDialog;
 
 	class PluginModelNameBuffer {
-		private List<String> nameList;
+		private Set<String> nameSet;
 
 		PluginModelNameBuffer() {
 			super();
-			nameList = new ArrayList<>();
+			nameSet = new HashSet<>();
 		}
 
 		void add(IPluginModelBase model) {
-			nameList.add(getPluginName(model));
+			nameSet.add(getPluginName(model));
 		}
 
 		private String getPluginName(IPluginModelBase model) {
 			String startLevel = null;
 			String autoStart = null;
-			if (fPluginTreeViewer.getChecked(model)) {
+			if (fPluginTreeViewer.isCheckedLeafElement(model)) {
 				startLevel = levelColumnCache.get(model) != null ? levelColumnCache.get(model).toString() : null;
 				autoStart = autoColumnCache.get(model) != null ? autoColumnCache.get(model).toString() : null;
 			}
 			return BundleLauncherHelper.writeBundleEntry(model, startLevel, autoStart);
 		}
 
+		public Set<String> getNameSet() {
+			return nameSet;
+		}
+
 		@Override
 		public String toString() {
-			Collections.sort(nameList);
-			StringBuilder result = new StringBuilder();
-			for (String name : nameList) {
-				if (result.length() > 0) {
-					result.append(',');
-				}
-				result.append(name);
-			}
-
-			if (result.length() == 0) {
-				return null;
-			}
-
-			return result.toString();
+			return String.join(",", nameSet); //$NON-NLS-1$
 		}
 	}
 
@@ -507,6 +498,14 @@ public abstract class AbstractPluginBlock {
 						fTab.updateLaunchConfigurationDialog();
 					}
 				});
+				// Resize column with on GTK to ensure the Spinner widget will
+				// fit. See bug 552519.
+				if (Util.isGtk()) {
+					Point spinnerSize = spinner.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+					levelColumnEditor.minimumWidth = spinnerSize.x;
+					TreeColumn levelColumn = tree.getColumn(1);
+					levelColumn.setWidth(spinnerSize.x);
+				}
 				levelColumnEditor.setEditor(spinner, item, 1);
 
 				final CCombo combo = new CCombo(tree, SWT.BORDER | SWT.READ_ONLY);
@@ -787,8 +786,8 @@ public abstract class AbstractPluginBlock {
 		Set<String> additionalIds = DependencyManager.getDependencies(toCheck.toArray(),
 				fIncludeOptionalButton.getSelection(), null);
 
-		additionalIds.stream().map(id -> PluginRegistry.findEntry(id))
-				.filter(Objects::nonNull).map(entry -> entry.getModel())
+		additionalIds.stream().map(org.eclipse.pde.core.plugin.PluginRegistry::findEntry)
+				.filter(Objects::nonNull).map(org.eclipse.pde.core.plugin.ModelEntry::getModel)
 				.forEach(model -> toCheck.add(model));
 
 		checked = toCheck.toArray();

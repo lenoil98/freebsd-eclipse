@@ -21,7 +21,7 @@ public class TextProcessorSessionTest extends ConfigurationSessionTestSuite {
 	private String lang = null;
 
 	/**
-	 * Create a session test for the given class.  
+	 * Create a session test for the given class.
 	 * @param pluginId tests plugin id
 	 * @param clazz the test class to run
 	 * @param language the language to run the tests under (the -nl parameter value)
@@ -30,8 +30,9 @@ public class TextProcessorSessionTest extends ConfigurationSessionTestSuite {
 		super(pluginId, clazz);
 		lang = language;
 		String[] ids = ConfigurationSessionTestSuite.MINIMAL_BUNDLE_SET;
-		for (int i = 0; i < ids.length; i++)
-			addBundle(ids[i]);
+		for (String id : ids) {
+			addBundle(id);
+		}
 		addBundle(OSGiTest.PI_OSGI_TESTS);
 	}
 

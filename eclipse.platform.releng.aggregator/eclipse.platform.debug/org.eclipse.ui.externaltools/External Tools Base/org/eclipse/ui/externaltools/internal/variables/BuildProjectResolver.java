@@ -29,9 +29,6 @@ import org.eclipse.ui.externaltools.internal.model.ExternalToolsPlugin;
 
 public class BuildProjectResolver implements IDynamicVariableResolver {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.variables.IDynamicVariableResolver#resolveValue(org.eclipse.core.variables.IDynamicVariable, java.lang.String)
-	 */
 	@Override
 	public String resolveValue(IDynamicVariable variable, String argument) throws CoreException {
 		IResource resource= ExternalToolBuilder.getBuildProject();
@@ -65,7 +62,7 @@ public class BuildProjectResolver implements IDynamicVariableResolver {
 	 * @return vraiable reference expression
 	 */
 	protected String getReferenceExpression(IDynamicVariable variable, String argument) {
-		StringBuffer reference = new StringBuffer();
+		StringBuilder reference = new StringBuilder();
 		reference.append("${"); //$NON-NLS-1$
 		reference.append(variable.getName());
 		if (argument != null) {

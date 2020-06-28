@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -23,6 +23,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -59,6 +61,7 @@ import org.eclipse.jdt.internal.ui.wizards.dialogfields.TreeListDialogField;
 public abstract class BuildPathBasePage {
 
 	private final ClasspathAttributeConfigurationDescriptors fAttributeDescriptors;
+	protected Control fSWTControl;
 
 	public BuildPathBasePage() {
 		fAttributeDescriptors= JavaPlugin.getDefault().getClasspathAttributeConfigurationDescriptors();
@@ -106,9 +109,9 @@ public abstract class BuildPathBasePage {
 					return false;
 				default:
 					throw new IllegalStateException(Messages.format(NewWizardMessages.BuildPathBasePage_unexpectedAnswer_error, String.valueOf(answer)));
-			}			
+			}
 		}
-		ModuleDialog dialog= new ModuleDialog(shell, selElement, selectedJavaElements);
+		ModuleDialog dialog= new ModuleDialog(shell, selElement, selectedJavaElements, this);
 		int res= dialog.open();
 		if (res == Window.OK) {
 			ModuleEncapsulationDetail[] newDetails= dialog.getAllDetails();
@@ -157,8 +160,7 @@ public abstract class BuildPathBasePage {
 			if (value instanceof ModuleEncapsulationDetail[]) {
 				ModuleEncapsulationDetail[] existingDetails= (ModuleEncapsulationDetail[]) value;
 				int count= 0;
-				for (int j= 0; j < existingDetails.length; j++) {
-					ModuleEncapsulationDetail aDetail= existingDetails[j];
+				for (ModuleEncapsulationDetail aDetail : existingDetails) {
 					if (aDetail != detail)
 						existingDetails[count++]= aDetail;
 				}
@@ -219,15 +221,14 @@ public abstract class BuildPathBasePage {
 	}
 
 	public static void fixNestingConflicts(CPListElement[] newEntries, CPListElement[] existing, Set<CPListElement> modifiedSourceEntries) {
-		for (int i= 0; i < newEntries.length; i++) {
-			addExclusionPatterns(newEntries[i], existing, modifiedSourceEntries);
+		for (CPListElement newEntry : newEntries) {
+			addExclusionPatterns(newEntry, existing, modifiedSourceEntries);
 		}
 	}
 
 	private static void addExclusionPatterns(CPListElement newEntry, CPListElement[] existing, Set<CPListElement> modifiedEntries) {
 		IPath entryPath= newEntry.getPath();
-		for (int i= 0; i < existing.length; i++) {
-			CPListElement curr= existing[i];
+		for (CPListElement curr : existing) {
 			if (curr.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
 				IPath currPath= curr.getPath();
 				if (!currPath.equals(entryPath)) {
@@ -259,7 +260,7 @@ public abstract class BuildPathBasePage {
 	}
 
 	protected boolean containsOnlyTopLevelEntries(List<?> selElements) {
-		if (selElements.size() == 0) {
+		if (selElements.isEmpty()) {
 			return true;
 		}
 		for (int i= 0; i < selElements.size(); i++) {
@@ -280,7 +281,7 @@ public abstract class BuildPathBasePage {
 	public abstract Control getControl(Composite parent);
 
 	public abstract void setFocus();
-	
+
 
 	protected boolean getRootExpansionState(TreeListDialogField<CPListElement> list, boolean isClassPathRoot) {
 		for (CPListElement cpListElement : list.getElements()) {
@@ -344,7 +345,17 @@ public abstract class BuildPathBasePage {
 		}
 	}
 
-
+	protected void selectRootNode(TreeListDialogField<CPListElement> list, boolean modulePath) {
+		for (CPListElement cpListElement : list.getElements()) {
+			if (cpListElement instanceof RootCPListElement) {
+				RootCPListElement root= (RootCPListElement) cpListElement;
+				if (root.isModulePathRootNode() == modulePath) {
+					list.selectElements(new StructuredSelection(root));
+					return;
+				}
+			}
+		}
+	}
 
 	protected abstract class CPListAdapter implements IDialogFieldListener, ITreeListAdapter<CPListElement> {
 		private final Object[] EMPTY_ARR= new Object[0];
@@ -377,4 +388,18 @@ public abstract class BuildPathBasePage {
 		}
 	}
 
+	public BuildPathBasePage switchToTab(Class<? extends BuildPathBasePage> tabClass) {
+		if (fSWTControl == null) {
+			JavaPlugin.logErrorMessage("Page does not support tab switching: "+this.getClass()); //$NON-NLS-1$
+			return null;
+		}
+		TabFolder tabFolder= (TabFolder) fSWTControl.getParent();
+		for (TabItem tabItem : tabFolder.getItems()) {
+			if (tabClass.isInstance(tabItem.getData())) {
+				tabFolder.setSelection(tabItem);
+				return (BuildPathBasePage) tabItem.getData();
+			}
+		}
+		return null;
+	}
 }

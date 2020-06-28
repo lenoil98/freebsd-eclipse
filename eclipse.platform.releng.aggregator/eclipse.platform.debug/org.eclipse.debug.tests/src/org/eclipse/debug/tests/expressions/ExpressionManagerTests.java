@@ -13,7 +13,11 @@
  *******************************************************************************/
 package org.eclipse.debug.tests.expressions;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.debug.core.DebugPlugin;
@@ -25,6 +29,8 @@ import org.eclipse.debug.core.model.IWatchExpression;
 import org.eclipse.debug.internal.core.ExpressionManager;
 import org.eclipse.debug.internal.core.IExpressionsListener2;
 import org.eclipse.debug.tests.AbstractDebugTest;
+import org.junit.After;
+import org.junit.Test;
 
 /**
  * Tests expression manager and listener call backs
@@ -71,25 +77,19 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 
 		@Override
 		public void expressionsAdded(IExpression[] expressions) {
-			for (int i = 0; i < expressions.length; i++) {
-				added.add(expressions[i]);
-			}
+			Collections.addAll(added, expressions);
 			addedCallbacks++;
 		}
 
 		@Override
 		public void expressionsRemoved(IExpression[] expressions) {
-			for (int i = 0; i < expressions.length; i++) {
-				removed.add(expressions[i]);
-			}
+			Collections.addAll(removed, expressions);
 			removedCallbacks++;
 		}
 
 		@Override
 		public void expressionsChanged(IExpression[] expressions) {
-			for (int i = 0; i < expressions.length; i++) {
-				changed.add(expressions[i]);
-			}
+			Collections.addAll(changed, expressions);
 			changedCallbacks++;
 		}
 
@@ -105,18 +105,14 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 
 		@Override
 		public void expressionsMoved(IExpression[] expressions, int index) {
-			for (int i = 0; i < expressions.length; i++) {
-				moved.add(expressions[i]);
-			}
+			Collections.addAll(moved, expressions);
 			movedCallbacks++;
 			insertIndex = index;
 		}
 
 		@Override
 		public void expressionsInserted(IExpression[] expressions, int index) {
-			for (int i = 0; i < expressions.length; i++) {
-				inserted.add(expressions[i]);
-			}
+			Collections.addAll(inserted, expressions);
 			insertedCallbacks++;
 			insertIndex = index;
 		}
@@ -133,7 +129,8 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	}
 
 	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		// remove all expressions from the manager
 		getManager().removeExpressions(getManager().getExpressions());
 		super.tearDown();
@@ -158,6 +155,7 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	/**
 	 * Add expressions and ensure proper call backs are received.
 	 */
+	@Test
 	public void testAddExpressions() {
 		IExpressionManager manager = getManager();
 		SinlgeListener single = new SinlgeListener();
@@ -193,6 +191,7 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	/**
 	 * Remove expressions and ensure proper call backs are received.
 	 */
+	@Test
 	public void testRemoveExpressions() {
 		IExpressionManager manager = getManager();
 		SinlgeListener single = new SinlgeListener();
@@ -233,6 +232,7 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	/**
 	 * Change expressions and ensure proper call backs are received.
 	 */
+	@Test
 	public void testChangeExpressions() {
 		IExpressionManager manager = getManager();
 		SinlgeListener single = new SinlgeListener();
@@ -274,6 +274,7 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	/**
 	 * Insert expressions and ensure proper call backs are received.
 	 */
+	@Test
 	public void testInsertBeforeExpressions() {
 		ExpressionManager manager = (ExpressionManager) getManager();
 		SinlgeListener single = new SinlgeListener();
@@ -331,6 +332,7 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	/**
 	 * Insert expressions and ensure proper call backs are received.
 	 */
+	@Test
 	public void testInsertAfterExpressions() {
 		ExpressionManager manager = (ExpressionManager) getManager();
 		SinlgeListener single = new SinlgeListener();
@@ -388,6 +390,7 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	/**
 	 * Move expressions and ensure proper call backs are received.
 	 */
+	@Test
 	public void testMoveBeforeExpressions() {
 		ExpressionManager manager = (ExpressionManager) getManager();
 		SinlgeListener single = new SinlgeListener();
@@ -438,6 +441,7 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	/**
 	 * Move expressions and ensure proper call backs are received.
 	 */
+	@Test
 	public void testMoveAfterExpressions() {
 		ExpressionManager manager = (ExpressionManager) getManager();
 		SinlgeListener single = new SinlgeListener();
@@ -488,6 +492,7 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	/**
 	 * Test persist and restore of expressions
 	 */
+	@Test
 	public void testPersistExpressions() {
 		ExpressionManager manager = (ExpressionManager) getManager();
 		IWatchExpression exp1 = manager.newWatchExpression("exp1"); //$NON-NLS-1$
@@ -514,6 +519,7 @@ public class ExpressionManagerTests extends AbstractDebugTest {
 	 *
 	 * @throws InterruptedException
 	 */
+	@Test
 	public void testConcurrentAccess() throws InterruptedException {
 		final boolean[] done = new boolean[]{false};
 		final Exception[] ex = new Exception[]{null};

@@ -14,11 +14,11 @@
 
 package org.eclipse.core.tests.internal.databinding.validation;
 
-import org.eclipse.core.databinding.conversion.StringToNumberConverter;
+import org.eclipse.core.databinding.conversion.text.StringToNumberConverter;
 import org.eclipse.core.databinding.validation.IValidator;
 import org.eclipse.core.internal.databinding.validation.StringToIntegerValidator;
 
-import com.ibm.icu.text.NumberFormat;
+import java.text.NumberFormat;
 
 /**
  * @since 1.1
@@ -48,6 +48,6 @@ public class StringToIntegerValidatorTest extends
 
 	@Override
 	protected Number getOutOfRangeNumber() {
-		return new Double(Double.MAX_VALUE);
+		return Double.valueOf(Double.MAX_VALUE);
 	}
 }

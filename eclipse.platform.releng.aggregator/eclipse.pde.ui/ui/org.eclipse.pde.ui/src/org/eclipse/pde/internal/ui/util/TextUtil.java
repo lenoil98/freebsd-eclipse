@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2000, 2014 IBM Corporation and others.
+ *  Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -142,7 +142,7 @@ public abstract class TextUtil {
 		value = value.trim();
 		while (value.length() > 0 && !Character.isLetter(value.charAt(0)))
 			value = value.substring(1, value.length());
-		int loc = value.indexOf(":"); //$NON-NLS-1$
+		int loc = value.indexOf(':');
 		if (loc != -1 && loc > 0)
 			value = value.substring(0, loc);
 		else if (loc == 0)
@@ -151,7 +151,13 @@ public abstract class TextUtil {
 	}
 
 	public static String getDefaultLineDelimiter() {
-		return Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null,
+		String defaultLineDelimiter = Platform.getPreferencesService().getString(Platform.PI_RUNTIME,
+				Platform.PREF_LINE_SEPARATOR,
+				null,
 				null);
+		if (defaultLineDelimiter == null) {
+			defaultLineDelimiter = System.lineSeparator();
+		}
+		return defaultLineDelimiter;
 	}
 }

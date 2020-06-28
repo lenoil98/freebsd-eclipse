@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2013 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,14 +14,15 @@
 
 package org.eclipse.jdt.junit.tests;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import org.eclipse.jdt.junit.JUnitCore;
 import org.eclipse.jdt.junit.TestRunListener;
 import org.eclipse.jdt.junit.model.ITestElement.FailureTrace;
 import org.eclipse.jdt.junit.model.ITestElement.ProgressState;
 import org.eclipse.jdt.junit.model.ITestElement.Result;
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
-
-import org.eclipse.core.runtime.Path;
 
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
@@ -42,11 +43,11 @@ public class TestRunFilteredStandardRunnerTest4 extends AbstractTestRunListenerT
 			JUnitCore.removeTestRunListener(testRunListener);
 		}
 	}
-	
+
 	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		fProject= JavaProjectHelper.createJavaProject("TestRunListenerTest", "bin");
-		JavaProjectHelper.addVariableEntry(fProject, new Path("JUNIT_HOME/junit.jar"), null, null);
 		JavaProjectHelper.addToClasspath(fProject, JavaCore.newContainerEntry(JUnitCore.JUNIT4_CONTAINER_PATH));
 		JavaProjectHelper.addRTJar15(fProject);
 		String source=
@@ -64,6 +65,7 @@ public class TestRunFilteredStandardRunnerTest4 extends AbstractTestRunListenerT
 		fATestCase= createType(source, "pack", "ATestCase.java");
 	}
 
+	@Test
 	public void testFilterToTest1Succeed() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase test1Succeed", ProgressState.COMPLETED, Result.OK, 0),
@@ -72,7 +74,7 @@ public class TestRunFilteredStandardRunnerTest4 extends AbstractTestRunListenerT
 		String[] actual= runTreeTest(fATestCase, "test1Succeed", 4);
 		assertEqualLog(expectedSequence, actual);
 	}
-	
+	@Test
 	public void testFilterToTest2Fail() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase test2Fail", ProgressState.COMPLETED, Result.FAILURE, 0),
@@ -81,7 +83,7 @@ public class TestRunFilteredStandardRunnerTest4 extends AbstractTestRunListenerT
 		String[] actual= runTreeTest(fATestCase, "test2Fail", 4);
 		assertEqualLog(expectedSequence, actual);
 	}
-	
+	@Test
 	public void testFilterToNoTestsRemain() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase thisdoesnotexist", ProgressState.COMPLETED, Result.ERROR, 0),
@@ -91,5 +93,5 @@ public class TestRunFilteredStandardRunnerTest4 extends AbstractTestRunListenerT
 		assertEqualLog(expectedSequence, actual);
 	}
 
-	
+
 }

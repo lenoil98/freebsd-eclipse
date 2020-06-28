@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rob Harrop - SpringSource Inc. (bug 247522)
@@ -74,8 +74,9 @@ public class GenericDescriptionImpl extends BaseDescriptionImpl implements Gener
 		this.supplier = supplier;
 	}
 
+	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(Constants.PROVIDE_CAPABILITY).append(": ").append(getType()); //$NON-NLS-1$
 		Map<String, Object> attrs = getDeclaredAttributes();
 		sb.append(toString(attrs, false));
@@ -85,6 +86,7 @@ public class GenericDescriptionImpl extends BaseDescriptionImpl implements Gener
 	/**
 	 * @deprecated
 	 */
+	@Override
 	public String getName() {
 		synchronized (this.monitor) {
 			Object name = attributes != null ? attributes.get(getType()) : null;
@@ -106,6 +108,7 @@ public class GenericDescriptionImpl extends BaseDescriptionImpl implements Gener
 	/**
 	 * @deprecated
 	 */
+	@Override
 	public Version getVersion() {
 		Object version = attributes != null ? attributes.get(Constants.VERSION_ATTRIBUTE) : null;
 		return version instanceof Version ? (Version) version : super.getVersion();
@@ -134,10 +137,12 @@ public class GenericDescriptionImpl extends BaseDescriptionImpl implements Gener
 		}
 	}
 
+	@Override
 	String getInternalNameSpace() {
 		return getType();
 	}
 
+	@Override
 	public BaseDescription getFragmentDeclaration() {
 		return fragmentDeclaration;
 	}

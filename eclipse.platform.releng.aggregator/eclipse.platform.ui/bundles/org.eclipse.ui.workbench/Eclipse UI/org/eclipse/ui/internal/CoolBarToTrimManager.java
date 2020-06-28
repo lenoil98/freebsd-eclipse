@@ -57,7 +57,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.ui.IWorkbenchActionConstants;
-import org.eclipse.ui.internal.menus.ActionSet;
 import org.eclipse.ui.internal.menus.MenuHelper;
 import org.eclipse.ui.menus.CommandContributionItem;
 
@@ -89,7 +88,6 @@ public class CoolBarToTrimManager extends ContributionManager implements ICoolBa
 	}
 
 	private static final String TOOLBAR_SEPARATOR = "toolbarSeparator"; //$NON-NLS-1$
-	private static final String MAIN_TOOLBAR_ID = ActionSet.MAIN_TOOLBAR;
 	public static final String OBJECT = "coolbar.object"; //$NON-NLS-1$
 	private static final String PREV_CHILD_VISIBLE = "prevChildVisible"; //$NON-NLS-1$
 	private MTrimBar topTrim;
@@ -102,14 +100,14 @@ public class CoolBarToTrimManager extends ContributionManager implements ICoolBa
 	private IContributionManagerOverrides toolbarOverrides;
 
 	/**
-	 * Field to indicate whether the trim bars have been added to the window's
-	 * model or not. They should only ever be added once.
+	 * Field to indicate whether the trim bars have been added to the window's model
+	 * or not. They should only ever be added once.
 	 */
 	private boolean trimBarsAdded;
 	private EModelService modelService;
 
-	public CoolBarToTrimManager(MApplication app, MTrimmedWindow window,
-			List<MTrimElement> workbenchTrimElements, IRendererFactory rf) {
+	public CoolBarToTrimManager(MApplication app, MTrimmedWindow window, List<MTrimElement> workbenchTrimElements,
+			IRendererFactory rf) {
 		application = app;
 		this.window = window;
 		rendererFactory = rf;
@@ -117,10 +115,10 @@ public class CoolBarToTrimManager extends ContributionManager implements ICoolBa
 		toolbarExtensions = new ArrayList<>();
 
 		modelService = window.getContext().get(EModelService.class);
-		topTrim = (MTrimBar) modelService.find(MAIN_TOOLBAR_ID, window);
+		topTrim = (MTrimBar) modelService.find(IWorkbenchConstants.MAIN_TOOLBAR_ID, window);
 		if (topTrim == null) {
 			topTrim = modelService.getTrim(window, SideValue.TOP);
-			topTrim.setElementId(MAIN_TOOLBAR_ID);
+			topTrim.setElementId(IWorkbenchConstants.MAIN_TOOLBAR_ID);
 		}
 		topTrim.setToBeRendered(false);
 		MToolBar mToolBar = modelService.createModelElement(MToolBar.class);
@@ -189,8 +187,7 @@ public class CoolBarToTrimManager extends ContributionManager implements ICoolBa
 				return;
 			}
 			for (MTrimElement toolBar : topTrim.getChildren()) {
-				if (item.getId().equals(toolBar.getElementId())
-						&& toolBar.getTags().contains(TOOLBAR_SEPARATOR)) {
+				if (item.getId().equals(toolBar.getElementId()) && toolBar.getTags().contains(TOOLBAR_SEPARATOR)) {
 					// already in the coolbar
 					return;
 				}
@@ -519,9 +516,7 @@ public class CoolBarToTrimManager extends ContributionManager implements ICoolBa
 
 	@Override
 	public IContributionItem remove(IContributionItem item) {
-		final List<MToolBar> children = modelService.findElements(window, null, MToolBar.class, null);
-		for (int i = 0; i < children.size(); i++) {
-			final MToolBar child = children.get(i);
+		for (final MToolBar child : modelService.findElements(window, null, MToolBar.class, null)) {
 			final Object obj = child.getTransientData().get(OBJECT);
 			if (obj != null && obj.equals(item)) {
 				if (child instanceof MToolBarElement) {
@@ -771,7 +766,7 @@ public class CoolBarToTrimManager extends ContributionManager implements ICoolBa
 	private Boolean getOverridenVisibility(IContributionItem item, IContributionManager manager) {
 		IContributionManagerOverrides overrides = manager.getOverrides();
 		return overrides == null ? null : overrides.getVisible(item);
-		}
+	}
 
 	/**
 	 * Computes real item visibility considering possibly overridden state from

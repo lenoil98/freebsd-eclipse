@@ -16,13 +16,14 @@
 
 package org.eclipse.core.databinding.observable;
 
-import org.eclipse.core.internal.databinding.observable.Util;
+import java.util.Objects;
 
 /**
  * An observable which decorates another observable
  *
  * @since 1.2
- *
+ * @implNote If methods are added to the interface which this class implements
+ *           then implementations of those methods must be added to this class.
  */
 public class DecoratingObservable extends AbstractObservable implements
 		IDecoratingObservable {
@@ -68,7 +69,7 @@ public class DecoratingObservable extends AbstractObservable implements
 	@Override
 	protected void firstListenerAdded() {
 		if (staleListener == null) {
-			staleListener = staleEvent -> DecoratingObservable.this.handleStaleEvent(staleEvent);
+			staleListener = DecoratingObservable.this::handleStaleEvent;
 		}
 		decorated.addStaleListener(staleListener);
 	}
@@ -102,9 +103,9 @@ public class DecoratingObservable extends AbstractObservable implements
 			return false;
 		if (getClass() == obj.getClass()) {
 			DecoratingObservable other = (DecoratingObservable) obj;
-			return Util.equals(this.decorated, other.decorated);
+			return Objects.equals(this.decorated, other.decorated);
 		}
-		return Util.equals(decorated, obj);
+		return Objects.equals(decorated, obj);
 	}
 
 	@Override

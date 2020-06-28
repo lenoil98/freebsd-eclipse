@@ -26,13 +26,11 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.team.core.history.IFileRevision;
-import org.eclipse.team.examples.filesystem.FileSystemPlugin;
 import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.ui.IEditorDescriptor;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IEditorRegistry;
-import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.BaseSelectionListenerAction;
 import org.eclipse.ui.ide.IDE;
@@ -47,14 +45,13 @@ public class OpenFileSystemRevisionAction extends BaseSelectionListenerAction {
 		super(text);
 	}
 
+	@Override
 	public void run() {
 		IStructuredSelection structSel = selection;
 
 		Object[] objArray = structSel.toArray();
 
-		for (int i = 0; i < objArray.length; i++) {
-			Object tempRevision = objArray[i];
-
+		for (Object tempRevision : objArray) {
 			final IFileRevision revision = (IFileRevision) tempRevision;
 			if (revision == null || !revision.exists()) {
 				MessageDialog.openError(page.getSite().getShell(), "Deleted Revision", "Can't open a deleted revision");
@@ -88,13 +85,11 @@ public class OpenFileSystemRevisionAction extends BaseSelectionListenerAction {
 					// ignore
 				}
 			}
-
 		}
 	}
 
 	/* private */String getEditorID(String fileName, InputStream contents) {
-		IWorkbench workbench = FileSystemPlugin.getPlugin().getWorkbench();
-		IEditorRegistry registry = workbench.getEditorRegistry();
+		IEditorRegistry registry = PlatformUI.getWorkbench().getEditorRegistry();
 		IContentType type = null;
 		if (contents != null) {
 			try {
@@ -117,6 +112,7 @@ public class OpenFileSystemRevisionAction extends BaseSelectionListenerAction {
 		return id;
 	}
 
+	@Override
 	protected boolean updateSelection(IStructuredSelection selection) {
 		this.selection = selection;
 		return shouldShow();
@@ -133,8 +129,8 @@ public class OpenFileSystemRevisionAction extends BaseSelectionListenerAction {
 		if (objArray.length == 0)
 			return false;
 
-		for (int i = 0; i < objArray.length; i++) {
-			IFileRevision revision = (IFileRevision) objArray[i];
+		for (Object obj : objArray) {
+			IFileRevision revision = (IFileRevision) obj;
 			//check to see if any of the selected revisions are deleted revisions
 			if (revision != null && !revision.exists())
 				return false;
@@ -145,8 +141,8 @@ public class OpenFileSystemRevisionAction extends BaseSelectionListenerAction {
 
 	boolean editorAlreadyOpenOnContents(FileSystemRevisionEditorInput input) {
 		IEditorReference[] editorRefs = page.getSite().getPage().getEditorReferences();
-		for (int i = 0; i < editorRefs.length; i++) {
-			IEditorPart part = editorRefs[i].getEditor(false);
+		for (IEditorReference editorRef : editorRefs) {
+			IEditorPart part = editorRef.getEditor(false);
 			if (part != null && part.getEditorInput() instanceof FileSystemRevisionEditorInput) {
 				IFileRevision inputRevision = input.getAdapter(IFileRevision.class);
 				IFileRevision editorRevision = part.getEditorInput().getAdapter(IFileRevision.class);

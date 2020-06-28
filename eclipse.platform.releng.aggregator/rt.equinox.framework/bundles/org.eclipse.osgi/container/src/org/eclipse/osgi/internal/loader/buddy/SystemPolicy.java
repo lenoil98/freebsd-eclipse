@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -18,7 +18,6 @@ import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
-import org.eclipse.osgi.internal.framework.EquinoxContainerAdaptor;
 
 public class SystemPolicy implements IBuddyPolicy {
 
@@ -30,12 +29,13 @@ public class SystemPolicy implements IBuddyPolicy {
 
 	private ClassLoader classLoader;
 
-	public static SystemPolicy getInstance(final byte type) {
+	public static SystemPolicy getInstance(final byte type, final ClassLoader bootLoader) {
 		if (instances[type] == null) {
 			instances[type] = new SystemPolicy();
 			instances[type].classLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+				@Override
 				public ClassLoader run() {
-					return createClassLoader(type);
+					return createClassLoader(type, bootLoader);
 				}
 			});
 		}
@@ -50,24 +50,25 @@ public class SystemPolicy implements IBuddyPolicy {
 		classLoader = parent;
 	}
 
-	static ClassLoader createClassLoader(byte type) {
+	static ClassLoader createClassLoader(byte type, ClassLoader bootLoader) {
 		switch (type) {
 			case APP :
 				if (ClassLoader.getSystemClassLoader() != null)
 					return ClassLoader.getSystemClassLoader();
-				return EquinoxContainerAdaptor.BOOT_CLASSLOADER;
+				return bootLoader;
 
 			case BOOT :
-				return EquinoxContainerAdaptor.BOOT_CLASSLOADER;
+				return bootLoader;
 
 			case EXT :
 				if (ClassLoader.getSystemClassLoader() != null)
 					return ClassLoader.getSystemClassLoader().getParent();
-				return EquinoxContainerAdaptor.BOOT_CLASSLOADER;
+				return bootLoader;
 		}
 		return null;
 	}
 
+	@Override
 	public Class<?> loadClass(String name) {
 		try {
 			return classLoader.loadClass(name);
@@ -76,10 +77,12 @@ public class SystemPolicy implements IBuddyPolicy {
 		}
 	}
 
+	@Override
 	public URL loadResource(String name) {
 		return classLoader.getResource(name);
 	}
 
+	@Override
 	public Enumeration<URL> loadResources(String name) {
 		try {
 			return classLoader.getResources(name);

@@ -30,33 +30,26 @@ public class HexIntegerRendering extends AbstractIntegerRendering {
 		super(renderingId);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.views.memory.AbstractTableRendering#getString(java.lang.String, java.math.BigInteger, org.eclipse.debug.core.model.MemoryByte[], java.lang.String)
-	 */
 	@Override
 	public String getString(String dataType, BigInteger address,
 			MemoryByte[] data) {
-		StringBuffer strBuffer = new StringBuffer();
+		StringBuilder strBuffer = new StringBuilder();
 		int endianess = getEndianness(data);
 
 		String paddedStr = DebugUIPlugin.getDefault().getPreferenceStore().getString(IDebugUIConstants.PREF_PADDED_STR);
 
-        if (endianess == RenderingsUtil.LITTLE_ENDIAN) {
-            MemoryByte[] swapped = new MemoryByte[data.length];
-            for (int i = 0; i < data.length; i++){
-                swapped[data.length-i-1] = data[i];
-            }
-            data = swapped;
-        }
-
-		for (int i=0; i<data.length; i++)
-		{
-			if (data[i].isReadable())
-			{
-				strBuffer.append(new String(RenderingsUtil.convertByteToCharArray(data[i].getValue())));
+		if (endianess == RenderingsUtil.LITTLE_ENDIAN) {
+			MemoryByte[] swapped = new MemoryByte[data.length];
+			for (int i = 0; i < data.length; i++){
+				swapped[data.length-i-1] = data[i];
 			}
-			else
-			{
+			data = swapped;
+		}
+
+		for (MemoryByte memByte : data) {
+			if (memByte.isReadable()) {
+				strBuffer.append(new String(RenderingsUtil.convertByteToCharArray(memByte.getValue())));
+			} else {
 				// pad with padded string
 				strBuffer.append(paddedStr);
 			}
@@ -65,23 +58,21 @@ public class HexIntegerRendering extends AbstractIntegerRendering {
 		return strBuffer.toString().toUpperCase();
 	}
 
-    /**
-     * @todo davidp needs to add a method comment.
-     * @param data
-     * @return
-     */
-    private int getEndianness (MemoryByte[] data) {
-        // if the user has not set an endianess to the rendering
-        // take default
-        int endianess = getDisplayEndianess();
-        if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN)
-            endianess = getBytesEndianess(data);
-        return endianess;
-    }
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.views.memory.AbstractTableRendering#getBytes(java.lang.String, java.math.BigInteger, org.eclipse.debug.core.model.MemoryByte[], java.lang.String)
+	/**
+	 * @todo davidp needs to add a method comment.
+	 * @param data
+	 * @return
 	 */
+	private int getEndianness (MemoryByte[] data) {
+		// if the user has not set an endianess to the rendering
+		// take default
+		int endianess = getDisplayEndianess();
+		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN) {
+			endianess = getBytesEndianess(data);
+		}
+		return endianess;
+	}
+
 	@Override
 	public byte[] getBytes(String dataType, BigInteger address,
 			MemoryByte[] currentValues, String data) {
@@ -90,13 +81,13 @@ public class HexIntegerRendering extends AbstractIntegerRendering {
 		byte[] bytes = RenderingsUtil.convertHexStringToByteArray(data, currentValues.length, getNumCharsPerByte());
 
 
-        if (endianess == RenderingsUtil.LITTLE_ENDIAN) {
-            byte[] swapped = new byte[bytes.length];
-            for (int i = 0; i < bytes.length; i++){
-                swapped[bytes.length-i-1] = bytes[i];
-            }
-           bytes = swapped;
-        }
+		if (endianess == RenderingsUtil.LITTLE_ENDIAN) {
+			byte[] swapped = new byte[bytes.length];
+			for (int i = 0; i < bytes.length; i++){
+				swapped[bytes.length-i-1] = bytes[i];
+			}
+			bytes = swapped;
+		}
 
 		return bytes;
 	}

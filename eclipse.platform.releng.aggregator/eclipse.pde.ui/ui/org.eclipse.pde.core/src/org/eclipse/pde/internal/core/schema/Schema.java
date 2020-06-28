@@ -328,9 +328,7 @@ public class Schema extends PlatformObject implements ISchema {
 				continue;
 			}
 			ISchemaElement[] ielements = schema.getElements();
-			for (ISchemaElement element : ielements) {
-				result.add(element);
-			}
+			Collections.addAll(result, ielements);
 		}
 		return (ISchemaElement[]) result.toArray(new ISchemaElement[result.size()]);
 	}
@@ -1130,7 +1128,7 @@ public class Schema extends PlatformObject implements ISchema {
 	}
 
 	private String getWritableDescription() {
-		String lineDelimiter = System.getProperty("line.separator"); //$NON-NLS-1$
+		String lineDelimiter = System.lineSeparator(); //$NON-NLS-1$
 		String description = PDEXMLHelper.getWritableString(getDescription());
 		String platformDescription = description.replaceAll("\\r\\n|\\r|\\n", lineDelimiter); //$NON-NLS-1$
 

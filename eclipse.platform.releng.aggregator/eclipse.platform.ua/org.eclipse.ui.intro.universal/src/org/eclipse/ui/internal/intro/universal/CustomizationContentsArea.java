@@ -235,7 +235,7 @@ public class CustomizationContentsArea {
 			} else {
 				event.doit = false;
 			}
-		};
+		}
 
 		@Override
 		public void dragSetData(DragSourceEvent event) {
@@ -407,12 +407,12 @@ public class CustomizationContentsArea {
 			if (previewImage==null) {
 				String path = element.getAttribute("previewImage"); //$NON-NLS-1$
 				if (path!=null) {
-				    String bid = element.getDeclaringExtension().getContributor().getName();
-				    Bundle bundle = Platform.getBundle(bid);
-				    if (bundle!=null) {
-				    	ImageDescriptor desc = ImageUtil.createImageDescriptor(bundle, path);
-				    	previewImage = desc.createImage();
-				    }
+					String bid = element.getDeclaringExtension().getContributor().getName();
+					Bundle bundle = Platform.getBundle(bid);
+					if (bundle!=null) {
+						ImageDescriptor desc = ImageUtil.createImageDescriptor(bundle, path);
+						previewImage = desc.createImage();
+					}
 				}
 			}
 			return previewImage;
@@ -622,7 +622,7 @@ public class CustomizationContentsArea {
 			while (stok.hasMoreTokens()) {
 				String tok = stok.nextToken().trim();
 				if (!NO_ROOT_PAGES.equals(tok)) {
-				    introRootPages.add(tok);
+					introRootPages.add(tok);
 				}
 			}
 		}
@@ -650,11 +650,11 @@ public class CustomizationContentsArea {
 		String pidKey = pid + "_" + key; //$NON-NLS-1$
 		String value;
 		if (!fromDefault) {
-		     prefs = InstanceScope.INSTANCE.getNode(pluginId);
-		     value = getPreference(key, prefs, pidKey, null);
-		     if (value != null) {
-		    	 return value;
-		     }
+			prefs = InstanceScope.INSTANCE.getNode(pluginId);
+			value = getPreference(key, prefs, pidKey, null);
+			if (value != null) {
+				return value;
+			}
 		}
 		prefs = DefaultScope.INSTANCE.getNode(pluginId);
 		return getPreference(key, prefs, pidKey, ""); //$NON-NLS-1$
@@ -725,7 +725,7 @@ public class CustomizationContentsArea {
 
 	public boolean performOk() {
 		saveData();
-		BusyIndicator.showWhile(shell.getDisplay(), () -> restartIntro());
+		BusyIndicator.showWhile(shell.getDisplay(), this::restartIntro);
 		return true;
 	}
 
@@ -782,7 +782,7 @@ public class CustomizationContentsArea {
 			return;
 		String pid = product.getId();
 		StringBuilder sbuf = new StringBuilder();
-		if (introRootPages.size() == 0) {
+		if (introRootPages.isEmpty()) {
 			// An empty string means no preference so special value needed
 			// to indicate no root pages.
 			sbuf.append(NO_ROOT_PAGES);

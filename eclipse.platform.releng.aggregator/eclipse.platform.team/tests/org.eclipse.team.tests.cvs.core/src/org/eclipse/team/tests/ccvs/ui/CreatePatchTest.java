@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2013 IBM Corporation and others.
+ * Copyright (c) 2009, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,8 +21,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.URL;
-
-import junit.framework.Test;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -57,6 +55,8 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
+import junit.framework.Test;
+
 public class CreatePatchTest extends EclipseTest {
 
 	public static final String PATCHDATA = "patchdata";
@@ -81,11 +81,13 @@ public class CreatePatchTest extends EclipseTest {
 		return suite(CreatePatchTest.class);
 	}
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		testProject = createProject("ApplyPatchTest", new String[] {});
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		super.tearDown();
 		testProject.delete(true, null);
@@ -216,7 +218,7 @@ public class CreatePatchTest extends EclipseTest {
 		BufferedReader reader = new BufferedReader(
 				new InputStreamReader(stream));
 		String line = null;
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		try {
 			while ((line = reader.readLine()) != null) {
 				boolean ignore = false;
@@ -301,15 +303,16 @@ public class CreatePatchTest extends EclipseTest {
 							asInputStream("server_response_with_error.txt")));
 
 
+			@Override
 			public String readLine() throws CVSException {
 				try {
 					return serverResp.readLine();
 				} catch (IOException e) {
-					throw new CVSException(new Status(IStatus.ERROR, null,
-							null, e));
+					throw new CVSException(new Status(IStatus.ERROR, CreatePatchTest.class, null, e));
 				}
 			}
 
+			@Override
 			public void close() {
 				try {
 					super.close();
@@ -343,8 +346,8 @@ public class CreatePatchTest extends EclipseTest {
 					children.length > 0);
 			
 			boolean errorLineOccurred = false;
-			for (int i = 0; i < children.length; i++) {
-				if (children[i].getCode() == CVSStatus.ERROR_LINE) {
+			for (IStatus child : children) {
+				if (child.getCode() == CVSStatus.ERROR_LINE) {
 					errorLineOccurred = true;
 					break;
 				}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,6 +19,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -59,8 +60,6 @@ import org.eclipse.text.edits.TextEdit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * This class tests the {@link ApiDescriptionProcessor}
@@ -155,11 +154,11 @@ public class ApiDescriptionProcessorTests extends AbstractApiTest {
 		private boolean containsAllTags(List<TagElement> tags) {
 			boolean allfound = true;
 			TagElement element = null;
-			for (int i = 0; i < expectedtags.length; i++) {
+			for (String expectedtag : expectedtags) {
 				boolean contained = false;
-				for (int j = 0; j < tags.size(); j++) {
-					element = tags.get(j);
-					if (expectedtags[i].equals(element.getTagName())) {
+				for (TagElement tag : tags) {
+					element = tag;
+					if (expectedtag.equals(element.getTagName())) {
 						contained = true;
 					}
 				}
@@ -282,7 +281,7 @@ public class ApiDescriptionProcessorTests extends AbstractApiTest {
 			IJavaProject project = getTestingJavaProject(TESTING_PROJECT_NAME);
 			IType type = project.findType("javadoc", typename); //$NON-NLS-1$
 			assertNotNull("the type for javadoc." + typename + " must exist", type); //$NON-NLS-1$ //$NON-NLS-2$
-			ASTParser parser = ASTParser.newParser(AST.JLS8);
+			ASTParser parser = ASTParser.newParser(AST.JLS14);
 			parser.setSource(type.getCompilationUnit());
 			CompilationUnit cunit = (CompilationUnit) parser.createAST(new NullProgressMonitor());
 			ChangeVisitor visitor = new ChangeVisitor(typename, innertypename, membername, signature, expectedtags);

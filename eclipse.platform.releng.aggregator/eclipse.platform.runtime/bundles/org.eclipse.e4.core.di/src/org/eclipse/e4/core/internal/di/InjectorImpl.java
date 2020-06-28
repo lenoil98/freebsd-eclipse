@@ -28,6 +28,7 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -136,7 +137,7 @@ public class InjectorImpl implements IInjector {
 
 		// We call @PostConstruct after injection. This means that is is called
 		// as a part of both #make() and #inject().
-		processAnnotated(PostConstruct.class, object, object.getClass(), objectSupplier, tempSupplier, new ArrayList<Class<?>>(5));
+		processAnnotated(PostConstruct.class, object, object.getClass(), objectSupplier, tempSupplier, new ArrayList<>(5));
 
 		// remove references to the temporary suppliers
 		for (Requestor<?> requestor : requestors) {
@@ -197,7 +198,7 @@ public class InjectorImpl implements IInjector {
 		try {
 			if (!forgetInjectedObject(object, objectSupplier))
 				return; // not injected at this time
-			processAnnotated(PreDestroy.class, object, object.getClass(), objectSupplier, null, new ArrayList<Class<?>>(5));
+			processAnnotated(PreDestroy.class, object, object.getClass(), objectSupplier, null, new ArrayList<>(5));
 
 			ArrayList<Requestor<?>> requestors = new ArrayList<>();
 			processClassHierarchy(object, objectSupplier, null, true /* track */, false /* inverse order */, requestors);
@@ -223,9 +224,7 @@ public class InjectorImpl implements IInjector {
 					}
 				}
 			}
-		} catch (NoClassDefFoundError e) {
-			throw new InjectionException(e);
-		} catch (NoSuchMethodError e) {
+		} catch (NoClassDefFoundError | NoSuchMethodError e) {
 			throw new InjectionException(e);
 		}
 	}
@@ -236,7 +235,7 @@ public class InjectorImpl implements IInjector {
 				null, true, /* initial */ true, /* track */ false);
 		if (result == IInjector.NOT_A_VALUE) {
 			if (object != null && qualifier != null) {
-				throw new InjectionException("Unable to find matching method to invoke. Searching for the annotation \"" + qualifier.toString() + "\" on an instance of \"" + object.getClass().getSimpleName() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				throw new InjectionException("Unable to find matching method to invoke. Searching for the annotation \"" + qualifier + "\" on an instance of \"" + object.getClass().getSimpleName() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			}
 			throw new InjectionException("Unable to find matching method to invoke. One of the arguments was null."); //$NON-NLS-1$
 		}
@@ -382,13 +381,8 @@ public class InjectorImpl implements IInjector {
 			Constructor<?>[] constructors = getDeclaredConstructors(clazz);
 			// Sort the constructors by descending number of constructor arguments
 			ArrayList<Constructor<?>> sortedConstructors = new ArrayList<>(constructors.length);
-			for (Constructor<?> constructor : constructors)
-				sortedConstructors.add(constructor);
-			Collections.sort(sortedConstructors, (c1, c2) -> {
-				int l1 = c1.getParameterTypes().length;
-				int l2 = c2.getParameterTypes().length;
-				return l2 - l1;
-			});
+			sortedConstructors.addAll(Arrays.asList(constructors));
+			sortedConstructors.sort(Comparator.comparing(c -> c.getParameterTypes().length, Comparator.reverseOrder()));
 
 			for (Constructor<?> constructor : sortedConstructors) {
 				// skip private and protected constructors; allow public and package visibility
@@ -459,7 +453,7 @@ public class InjectorImpl implements IInjector {
 			Object object = objects[i];
 			if (!forgetInjectedObject(object, objectSupplier))
 				continue; // not injected at this time
-			processAnnotated(PreDestroy.class, object, object.getClass(), objectSupplier, null, new ArrayList<Class<?>>(5));
+			processAnnotated(PreDestroy.class, object, object.getClass(), objectSupplier, null, new ArrayList<>(5));
 		}
 		forgetSupplier(objectSupplier);
 	}
@@ -522,7 +516,7 @@ public class InjectorImpl implements IInjector {
 		for (int i = 0; i < actualArgs.length; i++) {
 			if (actualArgs[i] != NOT_A_VALUE)
 				continue; // already resolved
-			ExtendedObjectSupplier extendedSupplier = findExtendedSupplier(descriptors[i], objectSupplier);
+			ExtendedObjectSupplier extendedSupplier = findExtendedSupplier(descriptors[i]);
 			if (extendedSupplier == null)
 				continue;
 			actualArgs[i] = extendedSupplier.get(descriptors[i], requestor, requestor.shouldTrack() && track, requestor.shouldGroupUpdates());
@@ -625,7 +619,7 @@ public class InjectorImpl implements IInjector {
 		return actualArgs;
 	}
 
-	private ExtendedObjectSupplier findExtendedSupplier(IObjectDescriptor descriptor, PrimaryObjectSupplier objectSupplier) {
+	private ExtendedObjectSupplier findExtendedSupplier(IObjectDescriptor descriptor) {
 		Annotation[] qualifiers = descriptor.getQualifiers();
 		if (qualifiers == null)
 			return null;
@@ -655,7 +649,7 @@ public class InjectorImpl implements IInjector {
 	}
 
 	private void processClassHierarchy(Object userObject, PrimaryObjectSupplier objectSupplier, PrimaryObjectSupplier tempSupplier, boolean track, boolean normalOrder, List<Requestor<?>> requestors) {
-		processClass(userObject, objectSupplier, tempSupplier, (userObject == null) ? null : userObject.getClass(), new ArrayList<Class<?>>(5), track, normalOrder, requestors);
+		processClass(userObject, objectSupplier, tempSupplier, (userObject == null) ? null : userObject.getClass(), new ArrayList<>(5), track, normalOrder, requestors);
 	}
 
 	/**
@@ -699,7 +693,7 @@ public class InjectorImpl implements IInjector {
 
 	private void rememberInjectedStatic(Class<?> objectsClass) {
 		synchronized (injectedClasses) {
-			injectedClasses.add(new WeakReference<Class<?>>(objectsClass));
+			injectedClasses.add(new WeakReference<>(objectsClass));
 		}
 	}
 
@@ -725,7 +719,9 @@ public class InjectorImpl implements IInjector {
 	/**
 	 * Make the processor visit all declared methods on the given class.
 	 */
-	private boolean processMethods(final Object userObject, PrimaryObjectSupplier objectSupplier, PrimaryObjectSupplier tempSupplier, Class<?> objectsClass, ArrayList<Class<?>> classHierarchy, boolean track, List<Requestor<?>> requestors) {
+	private boolean processMethods(final Object userObject, PrimaryObjectSupplier objectSupplier,
+			PrimaryObjectSupplier tempSupplier, Class<?> objectsClass, ArrayList<Class<?>> classHierarchy,
+			boolean track, List<Requestor<?>> requestors) {
 		boolean injectedStatic = false;
 		Method[] methods = getDeclaredMethods(objectsClass);
 		for (Method method : methods) {
@@ -733,10 +729,9 @@ public class InjectorImpl implements IInjector {
 			Boolean isOverridden = null;
 			Map<Method, Boolean> methodMap = null;
 			Class<?> originalClass = userObject.getClass();
-			if (isOverriddenCache.containsKey(originalClass)) {
-				methodMap = isOverriddenCache.get(originalClass);
-				if (methodMap.containsKey(method))
-					isOverridden = methodMap.get(method);
+			methodMap = isOverriddenCache.get(originalClass);
+			if (methodMap != null) {
+				isOverridden = methodMap.get(method);
 			}
 			if (isOverridden == null) {
 				isOverridden = isOverridden(method, classHierarchy);
@@ -747,15 +742,18 @@ public class InjectorImpl implements IInjector {
 				methodMap.put(method, isOverridden);
 			}
 
-			if (isOverridden)
+			if (isOverridden) {
 				continue; // process in the subclass
+			}
 			if (Modifier.isStatic(method.getModifiers())) {
-				if (hasInjectedStatic(objectsClass))
+				if (hasInjectedStatic(objectsClass)) {
 					continue;
+				}
 				injectedStatic = true;
 			}
-			if (!isAnnotationPresent(method, Inject.class))
+			if (!isAnnotationPresent(method, Inject.class)) {
 				continue;
+			}
 			requestors.add(new MethodRequestor(method, this, objectSupplier, tempSupplier, userObject, track));
 		}
 		return injectedStatic;

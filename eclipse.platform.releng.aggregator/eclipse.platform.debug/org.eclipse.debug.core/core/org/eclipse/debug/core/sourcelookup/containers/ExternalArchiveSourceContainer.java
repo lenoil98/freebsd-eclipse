@@ -15,6 +15,7 @@ package org.eclipse.debug.core.sourcelookup.containers;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -31,8 +32,6 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.sourcelookup.ISourceContainerType;
 import org.eclipse.debug.internal.core.sourcelookup.SourceLookupMessages;
 import org.eclipse.debug.internal.core.sourcelookup.SourceLookupUtils;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * An archive in the local file system. Returns instances
@@ -78,6 +77,8 @@ public class ExternalArchiveSourceContainer extends AbstractSourceContainer {
 		fDetectRoots = detectRootPaths;
 	}
 
+	// Suppress resource leak warning. The ZipFile is provided from
+	// SourceLookupUtils which take care to close them at some point.
 	@SuppressWarnings("resource")
 	@Override
 	public Object[] findSourceElements(String name) throws CoreException {
@@ -172,11 +173,11 @@ public class ExternalArchiveSourceContainer extends AbstractSourceContainer {
 						fPotentialRoots.add(entry.getName());
 					} else {
 						String entryName = entry.getName();
-						int index = entryName.lastIndexOf("/"); //$NON-NLS-1$
+						int index = entryName.lastIndexOf('/');
 						while (index > 0) {
 							if (fPotentialRoots.add(entryName.substring(0, index + 1))) {
 								entryName = entryName.substring(0, index);
-								index = entryName.lastIndexOf("/"); //$NON-NLS-1$
+								index = entryName.lastIndexOf('/');
 							} else {
 								break;
 							}

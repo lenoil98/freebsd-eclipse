@@ -15,6 +15,7 @@
 package org.eclipse.equinox.internal.p2.ui.model;
 
 import java.util.Collection;
+import java.util.Objects;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.equinox.internal.p2.ui.*;
 import org.eclipse.equinox.p2.metadata.IInstallableUnit;
@@ -24,7 +25,7 @@ import org.eclipse.equinox.p2.metadata.MetadataFactory.InstallableUnitDescriptio
 /**
  * Element wrapper class for installed IU's. Used instead of the plain IU when
  * there should be a parent profile available for operations.
- * 
+ *
  * @since 3.4
  */
 public class InstalledIUElement extends QueriedElement implements IIUElement {
@@ -40,11 +41,6 @@ public class InstalledIUElement extends QueriedElement implements IIUElement {
 		this.isPatch = iu == null ? false : Boolean.valueOf(iu.getProperty(InstallableUnitDescription.PROP_TYPE_PATCH));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.equinox.internal.provisional.p2.ui.model.ProvElement#getImageID(java.lang.Object)
-	 */
 	@Override
 	protected String getImageId(Object obj) {
 		return isPatch ? ProvUIImages.IMG_PATCH_IU : ProvUIImages.IMG_IU;
@@ -94,28 +90,46 @@ public class InstalledIUElement extends QueriedElement implements IIUElement {
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.internal.p2.ui.model.IUElement#getRequirements()
-	 */
 	@Override
 	public Collection<IRequirement> getRequirements() {
 		return iu.getRequirements();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.internal.p2.ui.model.QueriedElement#getDefaultQueryType()
-	 */
 	@Override
 	protected int getDefaultQueryType() {
 		return QueryProvider.INSTALLED_IUS;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.internal.p2.ui.model.IIUElement#shouldShowChildren()
-	 */
 	@Override
 	public boolean shouldShowChildren() {
+		// Check that no parent has the same IU as this parent.
+		// That would lead to a cycle and induce an infinite tree.
+		// See https://bugs.eclipse.org/bugs/show_bug.cgi?id=550265
+		for (Object parent = getParent(this); parent instanceof InstalledIUElement;) {
+			InstalledIUElement installedIUElement = (InstalledIUElement) parent;
+			if (Objects.equals(iu, installedIUElement.getIU())) {
+				return false;
+			}
+			parent = installedIUElement.getParent(installedIUElement);
+		}
 		return true;
+	}
+
+	@Override
+	public Object[] getChildren(Object o) {
+		if (shouldShowChildren()) {
+			// Only show children if that would not induce a cycle.
+			return super.getChildren(o);
+		}
+
+		return new Object[0];
+	}
+
+	@Override
+	protected Object[] getFilteredChildren(Collection<?> results) {
+		// Given the equality definition, a child cannot be equal to a sibling of this
+		// because the child has a different parent.
+		return results.toArray();
 	}
 
 	@Override

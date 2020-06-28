@@ -28,6 +28,7 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.widgets.WidgetFactory;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -41,7 +42,7 @@ import org.eclipse.swt.widgets.TreeColumn;
 /**
  * A simple TreeViewer to demonstrate usage
  *
- * @author Tom Schindl <tom.schindl@bestsolution.at>
+ * @author Tom Schindl &lt;tom.schindl@bestsolution.at&gt;
  *
  */
 public class Snippet027TreeLayout {
@@ -99,7 +100,7 @@ public class Snippet027TreeLayout {
 		public String toString() {
 			String rv = "Item ";
 			if (parent != null) {
-				rv = parent.toString() + ".";
+				rv = parent + ".";
 			}
 
 			rv += counter;
@@ -119,7 +120,7 @@ public class Snippet027TreeLayout {
 
 		@Override
 		public String getColumnText(Object element, int columnIndex) {
-			return "Column " + columnIndex + " => " + element.toString();
+			return "Column " + columnIndex + " => " + element;
 		}
 
 		@Override
@@ -169,8 +170,7 @@ public class Snippet027TreeLayout {
 	}
 
 	private TreeColumn createTreeColumn(Tree tree, String textColumn) {
-		TreeColumn column = new TreeColumn(tree, SWT.NONE);
-		column.setText(textColumn);
+		TreeColumn column = WidgetFactory.treeColumn(SWT.NONE).text(textColumn).create(tree);
 		column.setWidth(200);
 		return column;
 	}

@@ -19,54 +19,55 @@ import org.eclipse.ui.internal.intro.IntroDescriptor;
 import org.eclipse.ui.intro.IIntroPart;
 import org.eclipse.ui.tests.api.IWorkbenchPartTest;
 import org.eclipse.ui.tests.api.MockPart;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * @since 3.0
  */
+@RunWith(JUnit4.class)
 public class NoIntroPartTest extends IWorkbenchPartTest {
 
-    private IntroDescriptor oldDesc;
+	private IntroDescriptor oldDesc;
 
-    /**
-     * @param testName
-     */
-    public NoIntroPartTest(String testName) {
-        super(testName);
-        // TODO Auto-generated constructor stub
-    }
+	public NoIntroPartTest() {
+		super(NoIntroPartTest.class.getSimpleName());
+	}
 
-    @Override
+	@Override
 	protected MockPart openPart(IWorkbenchPage page) throws Throwable {
-        return (MockPart) page.getWorkbenchWindow().getWorkbench()
-                .getIntroManager().showIntro(page.getWorkbenchWindow(), false);
-    }
+		return (MockPart) page.getWorkbenchWindow().getWorkbench()
+				.getIntroManager().showIntro(page.getWorkbenchWindow(), false);
+	}
 
-    @Override
+	@Override
 	protected void closePart(IWorkbenchPage page, MockPart part)
-            throws Throwable {
-        assertTrue(page.getWorkbenchWindow().getWorkbench().getIntroManager()
-                .closeIntro((IIntroPart) part));
-    }
+			throws Throwable {
+		assertTrue(page.getWorkbenchWindow().getWorkbench().getIntroManager()
+				.closeIntro((IIntroPart) part));
+	}
 
-    //only test open..shouldn't work.
-    @Override
+	//only test open..shouldn't work.
+	@Test
+	@Override
 	public void testOpenAndClose() throws Throwable {
-        // Open a part.
-        MockPart part = openPart(fPage);
-        assertNull(part);
-    }
+		// Open a part.
+		MockPart part = openPart(fPage);
+		assertNull(part);
+	}
 
-    @Override
+	@Override
 	protected void doSetUp() throws Exception {
-        super.doSetUp();
-        oldDesc = Workbench.getInstance().getIntroDescriptor();
-        Workbench.getInstance().setIntroDescriptor(null);
-    }
+		super.doSetUp();
+		oldDesc = Workbench.getInstance().getIntroDescriptor();
+		Workbench.getInstance().setIntroDescriptor(null);
+	}
 
-    @Override
+	@Override
 	protected void doTearDown() throws Exception {
-        super.doTearDown();
-        Workbench.getInstance().setIntroDescriptor(oldDesc);
-    }
+		super.doTearDown();
+		Workbench.getInstance().setIntroDescriptor(oldDesc);
+	}
 
 }

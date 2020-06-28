@@ -93,7 +93,7 @@ public class CompareRevisionAction extends BaseSelectionListenerAction {
 		}
 
 		if (file1 == null || file2 == null ||
-		   !file1.exists() || !file2.exists()){
+			!file1.exists() || !file2.exists()){
 			MessageDialog.openError(page.getSite().getShell(), TeamUIMessages.OpenRevisionAction_DeletedRevTitle, TeamUIMessages.CompareRevisionAction_DeleteCompareMessage);
 			return;
 		}
@@ -113,7 +113,7 @@ public class CompareRevisionAction extends BaseSelectionListenerAction {
 		}
 		ITypedElement right = new FileRevisionTypedElement(file2, getLocalEncoding());
 
-	    openInCompare(left, right);
+		openInCompare(left, right);
 	}
 
 	private String getLocalEncoding() {
@@ -226,13 +226,12 @@ public class CompareRevisionAction extends BaseSelectionListenerAction {
 		if (objArray.length == 0)
 			return false;
 
-		for (int i = 0; i < objArray.length; i++) {
-
+		for (Object obj : objArray) {
 			//Don't bother showing if this a category
-			if (objArray[i] instanceof AbstractHistoryCategory)
+			if (obj instanceof AbstractHistoryCategory) {
 				return false;
-
-			IFileRevision revision = (IFileRevision) objArray[i];
+			}
+			IFileRevision revision = (IFileRevision) obj;
 			//check to see if any of the selected revisions are deleted revisions
 			if (revision != null && !revision.exists())
 				return false;

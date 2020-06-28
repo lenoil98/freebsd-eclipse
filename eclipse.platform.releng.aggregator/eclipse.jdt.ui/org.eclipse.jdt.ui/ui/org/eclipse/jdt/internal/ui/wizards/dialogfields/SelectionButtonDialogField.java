@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,6 +17,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -58,8 +59,8 @@ public class SelectionButtonDialogField extends DialogField {
 	 */
 	public void attachDialogFields(DialogField[] dialogFields) {
 		fAttachedDialogFields= dialogFields;
-		for (int i= 0; i < dialogFields.length; i++) {
-			dialogFields[i].setEnabled(fIsSelected);
+		for (DialogField dialogField : dialogFields) {
+			dialogField.setEnabled(fIsSelected);
 		}
 	}
 
@@ -68,8 +69,8 @@ public class SelectionButtonDialogField extends DialogField {
 	 */
 	public boolean isAttached(DialogField editor) {
 		if (fAttachedDialogFields != null) {
-			for (int i=0; i < fAttachedDialogFields.length; i++) {
-				if (fAttachedDialogFields[i] == editor) {
+			for (DialogField dialogField : fAttachedDialogFields) {
+				if (dialogField == editor) {
 					return true;
 				}
 			}
@@ -96,6 +97,28 @@ public class SelectionButtonDialogField extends DialogField {
 
 		button.setLayoutData(gd);
 
+		return new Control[] { button };
+	}
+
+
+	public Control[] doFillIntoGridWithoutMargin(Composite parent, int nColumns, boolean indent) {
+		assertEnoughColumns(nColumns);
+		GridData gd= new GridData(GridData.FILL, GridData.FILL, true, false);
+		gd.horizontalSpan= 3;
+		gd.horizontalIndent= 0;
+		GridLayout layout= new GridLayout();
+		layout.marginHeight= 0;
+		layout.marginWidth= 0;
+		layout.horizontalSpacing= 0;
+		layout.numColumns= nColumns;
+		parent.setLayout(layout);
+		parent.setLayoutData(gd);
+
+		GridData gridData= new GridData(GridData.FILL, GridData.CENTER, false, false);
+		if(indent)
+			gridData.horizontalIndent= 20;
+		Button button= getSelectionButton(parent);
+		button.setLayoutData(gridData);
 		return new Control[] { button };
 	}
 
@@ -148,10 +171,10 @@ public class SelectionButtonDialogField extends DialogField {
 			fIsSelected= newState;
 			if (fAttachedDialogFields != null) {
 				boolean focusSet= false;
-				for (int i= 0; i < fAttachedDialogFields.length; i++) {
-					fAttachedDialogFields[i].setEnabled(fIsSelected);
+				for (DialogField dialogField : fAttachedDialogFields) {
+					dialogField.setEnabled(fIsSelected);
 					if (fIsSelected && !focusSet) {
-						focusSet= fAttachedDialogFields[i].setFocus();
+						focusSet= dialogField.setFocus();
 					}
 				}
 			}

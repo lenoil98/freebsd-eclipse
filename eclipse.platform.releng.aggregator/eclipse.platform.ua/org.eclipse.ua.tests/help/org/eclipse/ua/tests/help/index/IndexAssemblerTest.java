@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2017 IBM Corporation and others.
+ * Copyright (c) 2006, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -38,6 +38,7 @@ import org.eclipse.help.internal.index.IndexFileParser;
 import org.eclipse.help.internal.index.IndexSee;
 import org.eclipse.ua.tests.plugin.UserAssistanceTestPlugin;
 import org.junit.Test;
+import org.xml.sax.SAXParseException;
 
 public class IndexAssemblerTest {
 	@Test
@@ -64,9 +65,9 @@ public class IndexAssemblerTest {
 		IndexAssembler assembler = new IndexAssembler();
 		List<IndexContribution> contributions = new ArrayList<>(Arrays.asList(contrib));
 		Index index = assembler.assemble(contributions, Platform.getNL());
-	    IIndexEntry[] children = index.getEntries();
-	    assertEquals(2,children.length);
-	    IIndexEntry eclipseEntry = children[0];
+		IIndexEntry[] children = index.getEntries();
+		assertEquals(2,children.length);
+		IIndexEntry eclipseEntry = children[0];
 		assertEquals("eclipse", eclipseEntry.getKeyword());
 		IUAElement[] eclipseChildren = eclipseEntry.getChildren();
 		assertEquals(4, eclipseChildren.length);
@@ -78,11 +79,11 @@ public class IndexAssemblerTest {
 		IndexSee seeHeliosRelease = (IndexSee) eclipseChildren[3];
 		assertEquals(0, seeHelios.getSubpathElements().length);
 		assertEquals(1, seeHeliosRelease.getSubpathElements().length);
-	    IIndexEntry heliosEntry = children[1];
+		IIndexEntry heliosEntry = children[1];
 		assertEquals("helios", heliosEntry.getKeyword());
-	    IIndexSee[] heliosSees = ((IIndexEntry2)heliosEntry).getSees();
-	    assertEquals(1, heliosSees.length);
-	    assertEquals("eclipse", heliosSees[0].getKeyword());
+		IIndexSee[] heliosSees = ((IIndexEntry2)heliosEntry).getSees();
+		assertEquals(1, heliosSees.length);
+		assertEquals("eclipse", heliosSees[0].getKeyword());
 	}
 
 	@Test
@@ -92,14 +93,24 @@ public class IndexAssemblerTest {
 		IndexAssembler assembler = new IndexAssembler();
 		List<IndexContribution> contributions = new ArrayList<>(Arrays.asList(contrib));
 		Index index = assembler.assemble(contributions, Platform.getNL());
-	    IIndexEntry[] children = index.getEntries();
-	    assertEquals(1,children.length);
-	    assertEquals("keyword1", children[0].getKeyword());
-	    ITopic[] topics = children[0].getTopics();
-	    assertEquals(3, topics.length);
-	    assertEquals("topic0", topics[0].getLabel());
-	    assertEquals("topic1", topics[1].getLabel());
-	    assertEquals("topic2", topics[2].getLabel());
+		IIndexEntry[] children = index.getEntries();
+		assertEquals(1,children.length);
+		assertEquals("keyword1", children[0].getKeyword());
+		ITopic[] topics = children[0].getTopics();
+		assertEquals(3, topics.length);
+		assertEquals("topic0", topics[0].getLabel());
+		assertEquals("topic1", topics[1].getLabel());
+		assertEquals("topic2", topics[2].getLabel());
+	}
+
+	@Test(expected = SAXParseException.class)
+	public void testInvalid() throws Exception {
+		IndexFileParser parser = new IndexFileParser();
+		IndexContribution contrib = parser.parse(
+				new IndexFile(UserAssistanceTestPlugin.getPluginId(), "data/help/index/assembler/invalid.xml", "en"));
+		IndexAssembler assembler = new IndexAssembler();
+		List<IndexContribution> contributions = new ArrayList<>(Arrays.asList(contrib));
+		assembler.assemble(contributions, Platform.getNL());
 	}
 
 	// Replaces white space between ">" and "<" by a single newline

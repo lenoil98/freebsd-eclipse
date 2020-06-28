@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Stephan Herrmann - Contribution for
@@ -131,11 +131,10 @@ public class ForeachStatement extends Statement {
 
 			if (this.action.complainIfUnreachable(actionInfo, this.scope, initialComplaintLevel, true) < Statement.COMPLAINED_UNREACHABLE) {
 				actionInfo = this.action.analyseCode(this.scope, loopingContext, actionInfo).unconditionalCopy();
-				if (this.action instanceof Block) {
-					FakedTrackingVariable.markForeachElementVar(this.elementVariable);
-					// action.analyseCode() missed the following check due to identical scopes of ForeachStatement and Block:
-					this.scope.checkUnclosedCloseables(actionInfo, loopingContext, null, null);
-				}
+				FakedTrackingVariable.markForeachElementVar(this.elementVariable);
+				// action.analyseCode() missed the following check due to identical scopes of ForeachStatement and action:
+				FlowInfo actionNullInfo = condInfo.copy().addNullInfoFrom(actionInfo); // previously action did not see nullinfo from condInfo
+				this.scope.checkUnclosedCloseables(actionNullInfo, loopingContext, null, null);
 			}
 
 			// code generation can be optimized when no need to continue in the loop
@@ -431,7 +430,7 @@ public class ForeachStatement extends Statement {
 
 	public static TypeBinding getCollectionElementType(BlockScope scope, TypeBinding collectionType) {
 		if (collectionType == null) return null;
-		
+
 		boolean isTargetJsr14 = scope.compilerOptions().targetJDK == ClassFileConstants.JDK1_4;
 		if (collectionType.isCapture()) {
 			TypeBinding upperBound = ((CaptureBinding)collectionType).firstBound;
@@ -678,4 +677,10 @@ public class ForeachStatement extends Statement {
 	public boolean doesNotCompleteNormally() {
 		return false; // may not be entered at all.
 	}
+
+	@Override
+	public boolean canCompleteNormally() {
+		return true;
+	}
+
 }

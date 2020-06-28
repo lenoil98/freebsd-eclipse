@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2016 IBM Corporation and others.
+ * Copyright (c) 2005, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Sopot Cela - Bug 466829
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.search;
 
@@ -24,11 +25,8 @@ import java.util.Properties;
 
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.help.internal.base.HelpBasePlugin;
 import org.eclipse.help.internal.base.util.ProxyUtil;
 import org.eclipse.help.internal.util.ResourceLocator;
 import org.osgi.framework.Bundle;
@@ -78,8 +76,7 @@ public class PluginIndex {
 		boolean found = false;
 		ArrayList<String> availablePrefixes = ResourceLocator.getPathPrefix(targetIndex
 				.getLocale());
-		for (int i = 0; i < availablePrefixes.size(); i++) {
-			String prefix = availablePrefixes.get(i);
+		for (String prefix : availablePrefixes) {
 			IPath prefixedPath = new Path(prefix + path);
 			// find index at this directory in plugin or fragments
 			URL url = FileLocator.find(bundle, prefixedPath, null);
@@ -94,7 +91,8 @@ public class PluginIndex {
 			try {
 				resolved = FileLocator.resolve(url);
 			} catch (IOException ioe) {
-				HelpBasePlugin.logError("Help index directory at " //$NON-NLS-1$
+				Platform.getLog(getClass()).error(
+						"Help index directory at " //$NON-NLS-1$
 						+ prefixedPath + " for plugin " //$NON-NLS-1$
 						+ bundle.getSymbolicName() + " cannot be resolved.", //$NON-NLS-1$
 						ioe);
@@ -120,18 +118,15 @@ public class PluginIndex {
 						}
 					}
 				} catch (IOException ioe) {
-					HelpBasePlugin.logError(
-							"Help index directory at " + prefixedPath //$NON-NLS-1$
-									+ " for plugin " + bundle.getSymbolicName() //$NON-NLS-1$
+					Platform.getLog(getClass())
+							.error("Help index directory at " + prefixedPath + " for plugin " + bundle.getSymbolicName() //$NON-NLS-1$ //$NON-NLS-2$
 									+ " cannot be resolved.", ioe); //$NON-NLS-1$
 					continue;
 				}
 			}
 		}
 		if (!found) {
-			HelpBasePlugin.logError(
-					"Help index declared, but missing for plugin " //$NON-NLS-1$
-							+ getPluginId() + ".", null); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("Help index declared, but missing for plugin " + getPluginId() + ".");//$NON-NLS-1$ //$NON-NLS-2$
 
 		}
 	}
@@ -139,7 +134,7 @@ public class PluginIndex {
 	public boolean isCompatible(Bundle bundle, IPath prefixedPath) {
 		URL url = FileLocator.find(bundle, prefixedPath.append(SearchIndex.DEPENDENCIES_VERSION_FILENAME), null);
 		if (url == null) {
-			HelpBasePlugin.logError(
+			Platform.getLog(getClass()).error(
 					prefixedPath.append(SearchIndex.DEPENDENCIES_VERSION_FILENAME) + " file missing from help index \"" //$NON-NLS-1$
 							+ path + "\" of plugin " + getPluginId(), //$NON-NLS-1$
 					null);
@@ -155,15 +150,14 @@ public class PluginIndex {
 					.getProperty(SearchIndex.DEPENDENCIES_KEY_ANALYZER);
 			if (!targetIndex.isLuceneCompatible(lucene) || !targetIndex.isAnalyzerCompatible(analyzer)) {
 				String message = "Unable to consume Lucene index from bundle '" + bundle.toString() //$NON-NLS-1$
-						+ "'. The index should be rebuilt with Lucene 7.0.0"; //$NON-NLS-1$
-				Status warningStatus = new Status(IStatus.WARNING, HelpBasePlugin.PLUGIN_ID, IStatus.OK, message, null);
-				HelpBasePlugin.logStatus(warningStatus);
+						+ "'. The index should be rebuilt with Lucene 8.4.1"; //$NON-NLS-1$
+				Platform.getLog(getClass()).warn(message);
 				return false;
 			}
 		} catch (MalformedURLException mue) {
 			return false;
 		} catch (IOException ioe) {
-			HelpBasePlugin.logError(
+			Platform.getLog(getClass()).error(
 					"IOException accessing prebuilt index.", ioe); //$NON-NLS-1$
 		}
 		return true;

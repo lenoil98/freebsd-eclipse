@@ -12,22 +12,23 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.team.examples.pessimistic.ui;
- 
+
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.examples.pessimistic.PessimisticFilesystemProvider;
 
 /**
- * Performs a check out on the selected resources.  If a folder is 
+ * Performs a check out on the selected resources.  If a folder is
  * selected all of its children are recursively checked out.
  */
 public class CheckOutAction extends SourceManagementAction {
 	/**
 	 * Answers <code>true</code> if and only if the <code>resource</code>
 	 * is not <code>null</code>, controlled, not ignored and not checked out.
-	 * 
+	 *
 	 * @see PessimisticProviderAction#shouldEnableFor(IResource)
 	 */
+	@Override
 	protected boolean shouldEnableFor(IResource resource) {
 		if (resource == null)
 			return false;
@@ -40,10 +41,8 @@ public class CheckOutAction extends SourceManagementAction {
 			return false;
 		return !provider.isCheckedout(resource);
 	}
-	
-	/*
-	 * @see SourceControlAction#manageResources(PessimisticFilesystemProvider, IResource[], IProgressMonitor)
-	 */
+
+	@Override
 	protected void manageResources(PessimisticFilesystemProvider provider, IResource[] resources, IProgressMonitor monitor) {
 		provider.checkout(resources, monitor);
 	}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,7 +15,6 @@
 package org.eclipse.jdt.ui.actions;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.commands.IHandler;
@@ -48,6 +47,7 @@ import org.eclipse.jdt.ui.IContextMenuConstants;
 
 import org.eclipse.jdt.internal.ui.actions.ActionMessages;
 import org.eclipse.jdt.internal.ui.actions.AddTaskAction;
+import org.eclipse.jdt.internal.ui.actions.AddTextBlockAction;
 import org.eclipse.jdt.internal.ui.actions.AllCleanUpsAction;
 import org.eclipse.jdt.internal.ui.actions.FindBrokenNLSKeysAction;
 import org.eclipse.jdt.internal.ui.actions.JDTQuickMenuCreator;
@@ -139,6 +139,7 @@ public class GenerateActionGroup extends ActionGroup {
 	private AddUnimplementedConstructorsAction fAddUnimplementedConstructors;
 	private GenerateNewConstructorUsingFieldsAction fGenerateConstructorUsingFields;
 	private AddJavaDocStubAction fAddJavaDocStub;
+	private AddTextBlockAction fAddTextBlockStub;
 	private AddBookmarkAction fAddBookmark;
 	private AddTaskAction fAddTaskAction;
 	private ExternalizeStringsAction fExternalizeStrings;
@@ -205,7 +206,7 @@ public class GenerateActionGroup extends ActionGroup {
 		fHashCodeEquals= new GenerateHashCodeEqualsAction(editor);
 		fHashCodeEquals.setActionDefinitionId(IJavaEditorActionDefinitionIds.GENERATE_HASHCODE_EQUALS);
 		editor.setAction("GenerateHashCodeEquals", fHashCodeEquals); //$NON-NLS-1$
-		
+
 		fToString= new GenerateToStringAction(editor);
 		fToString.setActionDefinitionId(IJavaEditorActionDefinitionIds.GENERATE_TOSTRING);
 		editor.setAction("GenerateToString", fToString); //$NON-NLS-1$
@@ -213,6 +214,10 @@ public class GenerateActionGroup extends ActionGroup {
 		fAddJavaDocStub= new AddJavaDocStubAction(editor);
 		fAddJavaDocStub.setActionDefinitionId(IJavaEditorActionDefinitionIds.ADD_JAVADOC_COMMENT);
 		editor.setAction("AddJavadocComment", fAddJavaDocStub); //$NON-NLS-1$
+
+		fAddTextBlockStub= new AddTextBlockAction(editor);
+		fAddTextBlockStub.setActionDefinitionId(IJavaEditorActionDefinitionIds.ADD_TEXTBLOCK);
+		editor.setAction("AddTextBlock", fAddTextBlockStub); //$NON-NLS-1$
 
 		fCleanUp= new AllCleanUpsAction(editor);
 		fCleanUp.setActionDefinitionId(IJavaEditorActionDefinitionIds.CLEAN_UP);
@@ -284,7 +289,7 @@ public class GenerateActionGroup extends ActionGroup {
 
 		fHashCodeEquals= new GenerateHashCodeEqualsAction(site);
 		fHashCodeEquals.setActionDefinitionId(IJavaEditorActionDefinitionIds.GENERATE_HASHCODE_EQUALS);
-		
+
 		fToString= new GenerateToStringAction(site);
 		fToString.setActionDefinitionId(IJavaEditorActionDefinitionIds.GENERATE_TOSTRING);
 
@@ -359,14 +364,12 @@ public class GenerateActionGroup extends ActionGroup {
 				fCleanUp
 		};
 
-		for (int i= 0; i < actions.length; i++) {
-			SelectionDispatchAction action= actions[i];
+		for (SelectionDispatchAction action : actions) {
 			registerSelectionListener(fSelectionProvider, action);
 			if (selectionProvider != null) {
 				action.setSpecialSelectionProvider(fSelectionProvider);
 			}
 		}
-
 		// FIXME, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=213335
 		//installQuickAccessAction();
 	}
@@ -398,7 +401,7 @@ public class GenerateActionGroup extends ActionGroup {
 	 */
 	/**
 	 * Note: This method is for internal use only. Clients should not call this method.
-	 * 
+	 *
 	 * @noreference This method is not intended to be referenced by clients.
 	 * @deprecated As of 3.5, this method is no longer called
 	 */
@@ -497,8 +500,7 @@ public class GenerateActionGroup extends ActionGroup {
 	public void dispose() {
 		if (fRegisteredSelectionListeners != null) {
 			ISelectionProvider provider= fSelectionProvider;
-			for (Iterator<ISelectionChangedListener> iter= fRegisteredSelectionListeners.iterator(); iter.hasNext();) {
-				ISelectionChangedListener listener= iter.next();
+			for (ISelectionChangedListener listener : fRegisteredSelectionListeners) {
 				provider.removeSelectionChangedListener(listener);
 			}
 		}

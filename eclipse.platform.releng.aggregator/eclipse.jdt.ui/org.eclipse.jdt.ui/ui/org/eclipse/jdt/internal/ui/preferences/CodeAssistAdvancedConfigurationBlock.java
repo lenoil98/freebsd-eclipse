@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -53,9 +54,7 @@ import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
-import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -92,12 +91,14 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 	private static final Key PREF_EXCLUDED_CATEGORIES= getJDTUIKey(PreferenceConstants.CODEASSIST_EXCLUDED_CATEGORIES);
 	private static final Key PREF_CATEGORY_ORDER= getJDTUIKey(PreferenceConstants.CODEASSIST_CATEGORY_ORDER);
 	private static final Key PREF_CODEASSIST_TIMEOUT_FOR_PARAMETER_NAME_FROM_ATTACHED_JAVADOC= getJDTCoreKey(JavaCore.TIMEOUT_FOR_PARAMETER_NAME_FROM_ATTACHED_JAVADOC);
+	private static final Key PREF_CODEASSIST_NONUITHREAD_COMPUTATION = getJDTUIKey(PreferenceConstants.CODEASSIST_NONUITHREAD_COMPUTATION);
 
 	private static Key[] getAllKeys() {
 		return new Key[] {
 				PREF_EXCLUDED_CATEGORIES,
 				PREF_CATEGORY_ORDER,
-				PREF_CODEASSIST_TIMEOUT_FOR_PARAMETER_NAME_FROM_ATTACHED_JAVADOC
+				PREF_CODEASSIST_TIMEOUT_FOR_PARAMETER_NAME_FROM_ATTACHED_JAVADOC,
+				PREF_CODEASSIST_NONUITHREAD_COMPUTATION
 		};
 	}
 
@@ -108,8 +109,9 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		 */
 		@Override
 		public Image getColumnImage(Object element, int columnIndex) {
-			if (columnIndex == 0)
+			if (columnIndex == 0) {
 				return ((ModelElement) element).getImage();
+			}
 			return null;
 		}
 
@@ -145,8 +147,9 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		 */
 		@Override
 		public Image getColumnImage(Object element, int columnIndex) {
-			if (columnIndex == 0)
+			if (columnIndex == 0) {
 				return ((ModelElement) element).getImage();
+			}
 			return null;
 		}
 
@@ -188,10 +191,8 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		final List<ModelElement> elements;
 
 		public PreferenceModel(CompletionProposalComputerRegistry registry) {
-			List<CompletionProposalCategory> categories= registry.getProposalCategories();
 			fElements= new ArrayList<>();
-			for (Iterator<CompletionProposalCategory> it= categories.iterator(); it.hasNext();) {
-				CompletionProposalCategory category= it.next();
+			for (CompletionProposalCategory category : registry.getProposalCategories()) {
 				if (category.hasComputers()) {
 					fElements.add(new ModelElement(category, this));
 				}
@@ -220,12 +221,12 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 
     	private void writeInclusionPreference(ModelElement changed, boolean isInDefaultCategory) {
     		StringBuilder buf= new StringBuilder();
-    		for (Iterator<ModelElement> it= fElements.iterator(); it.hasNext();) {
-    			ModelElement item= it.next();
-    			boolean included= changed == item ? isInDefaultCategory : item.isInDefaultCategory();
-    			if (!included)
-    				buf.append(item.getId() + SEPARATOR);
-    		}
+			for (ModelElement item : fElements) {
+				boolean included= changed == item ? isInDefaultCategory : item.isInDefaultCategory();
+				if (!included) {
+					buf.append(item.getId() + SEPARATOR);
+				}
+			}
 
     		String newValue= buf.toString();
     		String oldValue= setValue(PREF_EXCLUDED_CATEGORIES, newValue);
@@ -249,21 +250,21 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 
 
     	private boolean readInclusionPreference(CompletionProposalCategory cat) {
-    		String[] ids= getTokens(getValue(PREF_EXCLUDED_CATEGORIES), SEPARATOR);
-    		for (int i= 0; i < ids.length; i++) {
-    			if (ids[i].equals(cat.getId()))
-    				return false;
-    		}
+    		for (String id : getTokens(getValue(PREF_EXCLUDED_CATEGORIES), SEPARATOR)) {
+				if (id.equals(cat.getId())) {
+					return false;
+				}
+			}
     		return true;
     	}
 
     	private int readOrderPreference(CompletionProposalCategory cat) {
-    		String[] sortOrderIds= getTokens(getValue(PREF_CATEGORY_ORDER), SEPARATOR);
-    		for (int i= 0; i < sortOrderIds.length; i++) {
-    			String[] idAndRank= getTokens(sortOrderIds[i], COLON);
-    			if (idAndRank[0].equals(cat.getId()))
-    				return Integer.parseInt(idAndRank[1]);
-    		}
+    		for (String sortOrderId : getTokens(getValue(PREF_CATEGORY_ORDER), SEPARATOR)) {
+				String[] idAndRank= getTokens(sortOrderId, COLON);
+				if (idAndRank[0].equals(cat.getId())) {
+					return Integer.parseInt(idAndRank[1]);
+				}
+			}
 			return LIMIT - 1;
     	}
 
@@ -308,16 +309,18 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 			return fPreferenceModel.readInclusionPreference(fCategory);
 		}
 		void setInDefaultCategory(boolean included) {
-			if (included != isInDefaultCategory())
+			if (included != isInDefaultCategory()) {
 				fPreferenceModel.writeInclusionPreference(this, included);
+			}
 		}
 		String getId() {
 			return fCategory.getId();
 		}
 		int getRank() {
 			int rank= getInternalRank();
-			if (rank > PreferenceModel.LIMIT)
+			if (rank > PreferenceModel.LIMIT) {
 				return rank - PreferenceModel.LIMIT;
+			}
 			return rank;
 		}
 		void moveUp() {
@@ -334,8 +337,9 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		}
 
 		void setSeparateCommand(boolean separate) {
-			if (separate != isSeparateCommand())
+			if (separate != isSeparateCommand()) {
 				fPreferenceModel.writeOrderPreference(this, separate);
+			}
 		}
 
 		void update() {
@@ -391,6 +395,8 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
         createFiller(composite, columns);
 
 		createParameterTimeoutControl(composite, columns);
+		createFiller(composite, columns);
+		createNonUIThreadControl(composite, columns);
 
 		updateControls();
 		if (fModel.elements.size() > 0) {
@@ -404,13 +410,30 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		return scrolled;
 	}
 
+	private void createNonUIThreadControl(Composite composite, int columns) {
+		PixelConverter pixelConverter= new PixelConverter(composite);
+		String str= PreferencesMessages.CodeAssistAdvancedConfigurationBlock_nonUIThread;
+		Button checkbox = addCheckBox(composite, str, PREF_CODEASSIST_NONUITHREAD_COMPUTATION, new String[] { Boolean.TRUE.toString(), Boolean.FALSE.toString() }, pixelConverter.convertWidthInCharsToPixels(7));
+		checkbox.setLayoutData(new GridData(GridData.FILL, GridData.FILL, true, false, columns, 1));
+		CompletionProposalComputerRegistry registry= CompletionProposalComputerRegistry.getDefault();
+		if (registry.computingCompletionRequiresUIThread()) {
+			Label label = new Label(composite, SWT.NONE);
+			label.setText(Messages.format(PreferencesMessages.CodeAssistAdvancedConfigurationBlock_nonUIThread_computersRequiringUIThread, registry.getComputersRequiringUIThreadNames().map(name -> "* " + name).collect(Collectors.joining("\n")))); //$NON-NLS-1$ //$NON-NLS-2$
+			GridData layoutData= new GridData(GridData.FILL, GridData.FILL, true, false, columns, 1);
+			layoutData.horizontalIndent = 30;
+			label.setLayoutData(layoutData);
+			label.setEnabled(false);
+		}
+	}
+
 	private void createDefaultLabel(Composite composite, int h_span) {
 	    final ICommandService commandSvc= PlatformUI.getWorkbench().getAdapter(ICommandService.class);
 		final Command command= commandSvc.getCommand(ITextEditorActionDefinitionIds.CONTENT_ASSIST_PROPOSALS);
 		ParameterizedCommand pCmd= new ParameterizedCommand(command, null);
 		String key= getKeyboardShortcut(pCmd);
-		if (key == null)
+		if (key == null) {
 			key= PreferencesMessages.CodeAssistAdvancedConfigurationBlock_no_shortcut;
+		}
 
 		PixelConverter pixelConverter= new PixelConverter(composite);
 		int width= pixelConverter.convertWidthInCharsToPixels(40);
@@ -444,16 +467,13 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		keyColumn.setText(PreferencesMessages.CodeAssistAdvancedConfigurationBlock_default_table_keybinding_column_title);
 		keyColumn.setResizable(false);
 
-		fDefaultViewer.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				boolean checked= event.getChecked();
-				ModelElement element= (ModelElement) event.getElement();
-				element.setInDefaultCategory(checked);
-			}
+		fDefaultViewer.addCheckStateListener(event -> {
+			boolean checked= event.getChecked();
+			ModelElement element= (ModelElement) event.getElement();
+			element.setInDefaultCategory(checked);
 		});
 
-		fDefaultViewer.setContentProvider(new ArrayContentProvider());
+		fDefaultViewer.setContentProvider(ArrayContentProvider.getInstance());
 
 		DefaultTableLabelProvider labelProvider= new DefaultTableLabelProvider();
 		fDefaultViewer.setLabelProvider(labelProvider);
@@ -464,9 +484,9 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		final int HEADER_MARGIN= 20;
 		int minNameWidth= computeWidth(table, nameColumn.getText()) + HEADER_MARGIN;
 		int minKeyWidth= computeWidth(table, keyColumn.getText()) + HEADER_MARGIN;
-		for (int i= 0; i < fModel.elements.size(); i++) {
-			minNameWidth= Math.max(minNameWidth, computeWidth(table, labelProvider.getColumnText(fModel.elements.get(i), 0)) + ICON_AND_CHECKBOX_WITH);
-			minKeyWidth= Math.max(minKeyWidth, computeWidth(table, labelProvider.getColumnText(fModel.elements.get(i), 1)));
+		for (ModelElement element : fModel.elements) {
+			minNameWidth= Math.max(minNameWidth, computeWidth(table, labelProvider.getColumnText(element, 0)) + ICON_AND_CHECKBOX_WITH);
+			minKeyWidth= Math.max(minKeyWidth, computeWidth(table, labelProvider.getColumnText(element, 1)));
 		}
 
 		nameColumn.setWidth(minNameWidth);
@@ -525,7 +545,7 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		nameColumn.setText(PreferencesMessages.CodeAssistAdvancedConfigurationBlock_separate_table_category_column_title);
 		nameColumn.setResizable(false);
 
-		fSeparateViewer.setContentProvider(new ArrayContentProvider());
+		fSeparateViewer.setContentProvider(ArrayContentProvider.getInstance());
 
 		ITableLabelProvider labelProvider= new SeparateTableLabelProvider();
 		fSeparateViewer.setLabelProvider(labelProvider);
@@ -534,19 +554,16 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		final int ICON_AND_CHECKBOX_WITH= 50;
 		final int HEADER_MARGIN= 20;
 		int minNameWidth= computeWidth(table, nameColumn.getText()) + HEADER_MARGIN;
-		for (int i= 0; i < fModel.elements.size(); i++) {
-			minNameWidth= Math.max(minNameWidth, computeWidth(table, labelProvider.getColumnText(fModel.elements.get(i), 0)) + ICON_AND_CHECKBOX_WITH);
+		for (ModelElement element : fModel.elements) {
+			minNameWidth= Math.max(minNameWidth, computeWidth(table, labelProvider.getColumnText(element, 0)) + ICON_AND_CHECKBOX_WITH);
 		}
 
 		nameColumn.setWidth(minNameWidth);
 
-		fSeparateViewer.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				boolean checked= event.getChecked();
-				ModelElement element= (ModelElement) event.getElement();
-				element.setSeparateCommand(checked);
-			}
+		fSeparateViewer.addCheckStateListener(event -> {
+			boolean checked= event.getChecked();
+			ModelElement element= (ModelElement) event.getElement();
+			element.setSeparateCommand(checked);
 		});
 
 		table.addSelectionListener(new SelectionAdapter() {
@@ -654,12 +671,13 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		List<ModelElement> defaultChecked= new ArrayList<>(size);
 		List<ModelElement> separateChecked= new ArrayList<>(size);
 
-		for (Iterator<ModelElement> it= fModel.elements.iterator(); it.hasNext();) {
-			ModelElement element= it.next();
-			if (element.isInDefaultCategory())
+		for (ModelElement element : fModel.elements) {
+			if (element.isInDefaultCategory()) {
 				defaultChecked.add(element);
-			if (element.isSeparateCommand())
+			}
+			if (element.isSeparateCommand()) {
 				separateChecked.add(element);
+			}
 		}
 
 		fDefaultViewer.setCheckedElements(defaultChecked.toArray(new Object[defaultChecked.size()]));
@@ -671,8 +689,7 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 	 */
 	@Override
 	protected boolean processChanges(IWorkbenchPreferenceContainer container) {
-		for (Iterator<ModelElement> it= fModel.elements.iterator(); it.hasNext();) {
-			ModelElement item= it.next();
+		for (ModelElement item : fModel.elements) {
 			item.update();
 		}
 
@@ -686,9 +703,9 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 	protected void validateSettings(Key changedKey, String oldValue, String newValue) {
 		if (changedKey == PREF_CODEASSIST_TIMEOUT_FOR_PARAMETER_NAME_FROM_ATTACHED_JAVADOC) {
 			final StatusInfo status= new StatusInfo();
-			if (newValue.length() == 0)
+			if (newValue.length() == 0) {
 				status.setError(PreferencesMessages.CodeAssistAdvancedConfigurationBlock_parameterNameFromAttachedJavadoc_timeout_emptyInput);
-			else {
+			} else {
 				try {
 					int number= Integer.parseInt(newValue);
 					int min= 0;
@@ -722,8 +739,7 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 	 */
 	@Override
 	public void dispose() {
-		for (Iterator<Image> it= fImages.values().iterator(); it.hasNext();) {
-			Image image= it.next();
+		for (Image image : fImages.values()) {
 			image.dispose();
 		}
 
@@ -731,8 +747,9 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 	}
 
 	private int computeWidth(Control control, String name) {
-		if (name == null)
+		if (name == null) {
 			return 0;
+		}
 		GC gc= new GC(control);
 		try {
 			gc.setFont(JFaceResources.getDialogFont());
@@ -749,8 +766,7 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		final Scheme[] definedSchemes= bindingService.getDefinedSchemes();
 		if (definedSchemes != null) {
 			try {
-				for (int i = 0; i < definedSchemes.length; i++) {
-					final Scheme scheme= definedSchemes[i];
+				for (Scheme scheme : definedSchemes) {
 					final Scheme copy= fgLocalBindingManager.getScheme(scheme.getId());
 					copy.define(scheme.getName(), scheme.getDescription(), scheme.getParentId());
 				}
@@ -767,21 +783,24 @@ final class CodeAssistAdvancedConfigurationBlock extends OptionsConfigurationBlo
 		fgLocalBindingManager.setBindings(bindingService.getBindings());
 		try {
 			Scheme activeScheme= bindingService.getActiveScheme();
-			if (activeScheme != null)
+			if (activeScheme != null) {
 				fgLocalBindingManager.setActiveScheme(activeScheme);
+			}
 		} catch (NotDefinedException e) {
 			JavaPlugin.log(e);
 		}
 
 		TriggerSequence[] bindings= fgLocalBindingManager.getActiveBindingsDisregardingContextFor(command);
-		if (bindings.length > 0)
+		if (bindings.length > 0) {
 			return bindings[0].format();
+		}
 		return null;
 	}
 
 	private Image getImage(ImageDescriptor imgDesc) {
-		if (imgDesc == null)
+		if (imgDesc == null) {
 			return null;
+		}
 
 		Image img= fImages.get(imgDesc);
 		if (img == null) {

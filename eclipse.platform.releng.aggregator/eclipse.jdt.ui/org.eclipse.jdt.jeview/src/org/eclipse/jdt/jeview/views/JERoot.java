@@ -38,16 +38,16 @@ public class JERoot extends JEAttribute {
 					return new JEJarEntryResource(null, null, (IJarEntryResource) element);
 				else
 					throw new IllegalArgumentException(String.valueOf(element));
-				
+
 			}
 		}.mapToList(javaElementsOrResources);
-		
+
 //		fJavaElements= Mapper.build(javaElements, new Mapper<IJavaElement, JavaElement>() {
 //			@Override public JavaElement map(IJavaElement element) {
 //				return new JavaElement(null, element);
 //			}
 //		});
-		
+
 //		fJavaElements= new ArrayList<JavaElement>(javaElements.size());
 //		for (IJavaElement javaElement : javaElements) {
 //			fJavaElements.add(new JavaElement(null, javaElement));
@@ -68,10 +68,10 @@ public class JERoot extends JEAttribute {
 	public Object getWrappedObject() {
 		return null;
 	}
-	
+
 	@Override
 	public String getLabel() {
-		StringBuffer buf = new StringBuffer("root: ");
+		StringBuilder buf = new StringBuilder("root: ");
 		boolean first= true;
 		for (JEAttribute att : fJEAttributes) {
 			if (! first)
@@ -89,11 +89,11 @@ public class JERoot extends JEAttribute {
 		if (obj == null || !obj.getClass().equals(getClass())) {
 			return false;
 		}
-		
+
 		JERoot other= (JERoot) obj;
 		return fJEAttributes.equals(other.fJEAttributes);
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return fJEAttributes.hashCode();

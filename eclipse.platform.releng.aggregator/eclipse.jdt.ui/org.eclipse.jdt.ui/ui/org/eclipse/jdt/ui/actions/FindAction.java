@@ -17,6 +17,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IStatus;
@@ -29,6 +30,7 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.jface.text.ITextSelection;
 
 import org.eclipse.ui.IWorkbenchSite;
+import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.progress.IProgressService;
@@ -124,8 +126,8 @@ public abstract class FindAction extends SelectionDispatchAction {
 		if (element == null || fValidTypes == null || fValidTypes.length == 0 || !ActionUtil.isOnBuildPath(element))
 			return false;
 
-		for (int i= 0; i < fValidTypes.length; i++) {
-			if (fValidTypes[i].isInstance(element)) {
+		for (Class<?> fValidType : fValidTypes) {
+			if (fValidType.isInstance(element)) {
 				if (element.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
 					return hasChildren((IPackageFragment)element);
 				else
@@ -228,8 +230,7 @@ public abstract class FindAction extends SelectionDispatchAction {
 	@Override
 	public void run(IStructuredSelection selection) {
 		IJavaElement[] elements= getJavaElements(selection, false);
-		for (int i= 0; i < elements.length; i++) {
-			IJavaElement element= elements[i];
+		for (IJavaElement element : elements) {
 			if (element == null || !element.exists()) {
 				showOperationUnavailableDialog();
 				return;
@@ -301,7 +302,7 @@ public abstract class FindAction extends SelectionDispatchAction {
 
 	/**
 	 * Executes this action for the given Java element List.
-	 * 
+	 *
 	 * @param elements the Java elements to be found
 	 * @since 3.12
 	 */
@@ -318,10 +319,8 @@ public abstract class FindAction extends SelectionDispatchAction {
 			performNewSearch(new JavaSearchQuery(queryList));
 		} catch (JavaModelException ex) {
 			ExceptionHandler.handle(ex, getShell(), SearchMessages.Search_Error_search_notsuccessful_title, SearchMessages.Search_Error_search_notsuccessful_message);
-		} catch (InterruptedException e) {
-			// cancelled
-		} catch (IllegalArgumentException e) {
-			// no element
+		} catch (InterruptedException | IllegalArgumentException e) {
+			// cancelled or no element
 		}
 	}
 
@@ -359,10 +358,44 @@ public abstract class FindAction extends SelectionDispatchAction {
 	 * @throws InterruptedException thrown when the user interrupted the query selection
 	 */
 	QuerySpecification createQuery(IJavaElement element) throws JavaModelException, InterruptedException {
+		return createDefaultQuery(element);
+	}
+
+	QuerySpecification createDefaultQuery(IJavaElement element) {
 		JavaSearchScopeFactory factory= JavaSearchScopeFactory.getInstance();
 		IJavaSearchScope scope= factory.createWorkspaceScope(true);
 		String description= factory.getWorkspaceScopeDescription(true);
 		return new ElementQuerySpecification(element, getLimitTo(), scope, description);
+	}
+
+	/**
+	 * @param element non null
+	 * @param action non null
+	 * @param toUpdate working sets array reference that will be updated in this method
+	 * @return {@link QuerySpecification} for given object and action, that depends on action state
+	 * @throws InterruptedException if working sets query fail
+	 */
+	static QuerySpecification createQueryWithWorkingSets(IJavaElement element, FindAction action, AtomicReference<IWorkingSet[]> toUpdate) throws InterruptedException {
+		JavaSearchScopeFactory factory= JavaSearchScopeFactory.getInstance();
+
+		final IWorkingSet[] workingSets;
+		if (toUpdate.get() == null && action.isFirstElement()) {
+			workingSets= factory.queryWorkingSets();
+			if (workingSets == null) {
+				return action.createDefaultQuery(element); // workspace
+			}
+			if (action.isMultiSelect()) {
+				toUpdate.set(workingSets);
+			}
+		} else if (action.isMultiSelect() && action.isLastElement()) {
+			workingSets = toUpdate.get();
+			toUpdate.set(null);
+		} else {
+			workingSets = toUpdate.get();
+		}
+		SearchUtil.updateLRUWorkingSets(workingSets);
+		String description= factory.getWorkingSetScopeDescription(workingSets, JavaSearchScopeFactory.NO_PROJ);
+		return new LazyScopeQuerySpecification(element, action.getLimitTo(), () -> factory.createJavaSearchScope(workingSets, JavaSearchScopeFactory.NO_PROJ), description);
 	}
 
 	abstract int getLimitTo();
@@ -393,7 +426,7 @@ public abstract class FindAction extends SelectionDispatchAction {
 	boolean isLastElement() {
 		return numberOfElements == processedElementIndex;
 	}
-	
+
 	boolean isFirstElement() {
 		return processedElementIndex == 1;
 	}

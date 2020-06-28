@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2015 IBM Corporation and others.
+ * Copyright (c) 2004, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 548799
  *******************************************************************************/
 package org.eclipse.ui.internal.activities.ws;
 
@@ -21,10 +22,10 @@ import org.eclipse.core.runtime.dynamichelpers.IExtensionChangeHandler;
 import org.eclipse.core.runtime.dynamichelpers.IExtensionTracker;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.activities.Persistence;
 import org.eclipse.ui.internal.registry.IWorkbenchRegistryConstants;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 /**
  * @since 3.1
@@ -40,7 +41,7 @@ public class ImageBindingRegistry implements IExtensionChangeHandler {
 	public ImageBindingRegistry(String tag) {
 		super();
 		this.tag = tag;
-		IExtension [] extensions = getExtensionPointFilter().getExtensions();
+		IExtension[] extensions = getExtensionPointFilter().getExtensions();
 		for (IExtension extension : extensions) {
 			addExtension(PlatformUI.getWorkbench().getExtensionTracker(), extension);
 		}
@@ -48,36 +49,36 @@ public class ImageBindingRegistry implements IExtensionChangeHandler {
 
 	@Override
 	public void addExtension(IExtensionTracker tracker, IExtension extension) {
-		IConfigurationElement [] elements = extension.getConfigurationElements();
+		IConfigurationElement[] elements = extension.getConfigurationElements();
 		for (IConfigurationElement element : elements) {
 			if (element.getName().equals(tag)) {
 				String id = element.getAttribute(IWorkbenchRegistryConstants.ATT_ID);
 				String file = element.getAttribute(IWorkbenchRegistryConstants.ATT_ICON);
 				if (file == null || id == null) {
-					Persistence.log(element, Persistence.ACTIVITY_IMAGE_BINDING_DESC, "definition must contain icon and ID"); //$NON-NLS-1$
-					continue; //ignore - malformed
+					Persistence.log(element, Persistence.ACTIVITY_IMAGE_BINDING_DESC,
+							"definition must contain icon and ID"); //$NON-NLS-1$
+					continue; // ignore - malformed
 				}
 				if (registry.getDescriptor(id) == null) { // first come, first serve
-					ImageDescriptor descriptor = AbstractUIPlugin
-							.imageDescriptorFromPlugin(element.getContributor().getName(), file);
-					if (descriptor != null) {
-						registry.put(id, descriptor);
+					ResourceLocator.imageDescriptorFromBundle(element.getContributor().getName(), file).ifPresent(d -> {
+						registry.put(id, d);
 						tracker.registerObject(extension, id, IExtensionTracker.REF_WEAK);
-					}
+					});
 				}
 			}
 		}
 
 	}
 
-    /**
-     * Return the activity support extension point that this registry is interested in.
-     *
-     * @return the extension point
-     */
+	/**
+	 * Return the activity support extension point that this registry is interested
+	 * in.
+	 *
+	 * @return the extension point
+	 */
 	public IExtensionPoint getExtensionPointFilter() {
-		return Platform.getExtensionRegistry().getExtensionPoint(
-                PlatformUI.PLUGIN_ID, IWorkbenchRegistryConstants.PL_ACTIVITYSUPPORT);
+		return Platform.getExtensionRegistry().getExtensionPoint(PlatformUI.PLUGIN_ID,
+				IWorkbenchRegistryConstants.PL_ACTIVITYSUPPORT);
 	}
 
 	@Override

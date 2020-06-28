@@ -117,7 +117,7 @@ public class ClassPathDetector implements IResourceProxyVisitor {
 
 	/**
 	 * Method detectClasspath.
-	 * 
+	 *
 	 * @param monitor The progress monitor (not null)
 	 * @throws CoreException in case of any failure
 	 */
@@ -183,8 +183,8 @@ public class ClassPathDetector implements IResourceProxyVisitor {
 	private IPath detectOutputFolder() throws CoreException {
 		HashSet<IPath> classFolders= new HashSet<>();
 
-		for (Iterator<IResource> iter= fClassFiles.iterator(); iter.hasNext();) {
-			IFile file= (IFile) iter.next();
+		for (IResource iResource : fClassFiles) {
+			IFile file= (IFile) iResource;
 			IClassFileReader reader= null;
 			InputStream content= null;
 			try {
@@ -246,8 +246,7 @@ public class ClassPathDetector implements IResourceProxyVisitor {
 	private void detectLibraries(ArrayList<IClasspathEntry> cpEntries, IPath outputLocation) {
 		ArrayList<IClasspathEntry> res= new ArrayList<>();
 		Set<IPath> sourceFolderSet= fSourceFolders.keySet();
-		for (Iterator<IPath> iter= fJARFiles.iterator(); iter.hasNext();) {
-			IPath path= iter.next();
+		for (IPath path : fJARFiles) {
 			if (isNested(path, sourceFolderSet.iterator())) {
 				continue;
 			}
@@ -265,11 +264,9 @@ public class ClassPathDetector implements IResourceProxyVisitor {
 	private void detectSourceFolders(ArrayList<IClasspathEntry> resEntries) {
 		ArrayList<IClasspathEntry> res= new ArrayList<>();
 		Set<IPath> sourceFolderSet= fSourceFolders.keySet();
-		for (Iterator<IPath> iter= sourceFolderSet.iterator(); iter.hasNext();) {
-			IPath path= iter.next();
+		for (IPath path : sourceFolderSet) {
 			ArrayList<IPath> excluded= new ArrayList<>();
-			for (Iterator<IPath> inner= sourceFolderSet.iterator(); inner.hasNext();) {
-				IPath other= inner.next();
+			for (IPath other : sourceFolderSet) {
 				if (!path.equals(other) && path.isPrefixOf(other)) {
 					IPath pathToExclude= other.removeFirstSegments(path.segmentCount()).addTrailingSeparator();
 					excluded.add(pathToExclude);
@@ -291,7 +288,7 @@ public class ClassPathDetector implements IResourceProxyVisitor {
 			parser.setFocalPosition(0);
 			CompilationUnit root= (CompilationUnit)parser.createAST(null);
 			PackageDeclaration packDecl= root.getPackage();
-			
+
 			IPath packPath= file.getParent().getFullPath();
 			String cuName= file.getName();
 			if (packDecl == null) {

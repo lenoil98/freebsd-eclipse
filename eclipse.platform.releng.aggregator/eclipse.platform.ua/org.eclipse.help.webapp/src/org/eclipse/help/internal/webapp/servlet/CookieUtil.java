@@ -13,13 +13,16 @@
  *******************************************************************************/
 package org.eclipse.help.internal.webapp.servlet;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.HashSet;
 
-import javax.servlet.http.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.help.internal.webapp.*;
-import org.eclipse.help.internal.webapp.data.*;
+import org.eclipse.help.internal.webapp.HelpWebappPlugin;
+import org.eclipse.help.internal.webapp.WebappResources;
+import org.eclipse.help.internal.webapp.data.UrlUtil;
 
 /**
  * Utilities for working with cookies
@@ -103,8 +106,8 @@ public class CookieUtil {
 		Cookie cookie = new Cookie(name, ""); //$NON-NLS-1$
 		String requestURI = request.getRequestURI();
 		if (!(requestURI.startsWith(cookiePath) && requestURI.indexOf('/', cookiePath.length() + 1) == -1)) {
-		     cookie.setPath(cookiePath);
-	    }
+			cookie.setPath(cookiePath);
+		}
 		cookie.setMaxAge(0);
 		response.addCookie(cookie);
 	}
@@ -115,12 +118,11 @@ public class CookieUtil {
 		HashSet<String> cookiesToDelete = new HashSet<>();
 		if (cookies != null) {
 			for (Cookie cookie : cookies) {
-				    String name = cookie.getName();
-				    if (isObsoleteCookie(name) || cookiesToKeep.contains(name)) {
-				    	cookiesToDelete.add(name);
-				    }
-					cookiesToKeep.add(name); {
+				String name = cookie.getName();
+				if (isObsoleteCookie(name) || cookiesToKeep.contains(name)) {
+					cookiesToDelete.add(name);
 				}
+				cookiesToKeep.add(name);
 			}
 
 			for (String name : cookiesToDelete) {
@@ -150,8 +152,8 @@ public class CookieUtil {
 
 	/**
 	 * Saves string in multiple browser cookies. Cookies can store limited
-	 * length string. This method will attemt to split string among multiple
-	 * cookies. The following cookies will be set name1=length <substing1
+	 * length string. This method will attempt to split string among multiple
+	 * cookies. The following cookies will be set name1=length &lt;substing1
 	 * name2=substring2 ... namen=substringn
 	 *
 	 * @param data

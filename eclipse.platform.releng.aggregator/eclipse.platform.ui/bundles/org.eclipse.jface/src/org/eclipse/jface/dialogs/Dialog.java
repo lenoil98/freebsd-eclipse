@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,8 +14,6 @@
  *******************************************************************************/
 package org.eclipse.jface.dialogs;
 
-import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
-
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -24,6 +22,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.util.Policy;
+import org.eclipse.jface.widgets.WidgetFactory;
 import org.eclipse.jface.window.IShellProvider;
 import org.eclipse.jface.window.SameShellProvider;
 import org.eclipse.jface.window.Window;
@@ -234,22 +233,22 @@ public abstract class Dialog extends Window {
 	private static final int VERTICAL_DIALOG_UNITS_PER_CHAR = 8;
 
 	/**
-	 * Returns the number of pixels corresponding to the height of the given
-	 * number of characters.
+	 * Returns the number of pixels corresponding to the height of the given number
+	 * of characters.
 	 * <p>
 	 * The required <code>FontMetrics</code> parameter may be created in the
-	 * following way: <code>
-	 * 	GC gc = new GC(control);
-	 *	gc.setFont(control.getFont());
-	 *	fontMetrics = gc.getFontMetrics();
-	 *	gc.dispose();
-	 * </code>
+	 * following way:
 	 * </p>
 	 *
-	 * @param fontMetrics
-	 *            used in performing the conversion
-	 * @param chars
-	 *            the number of characters
+	 * <pre>
+	 * GC gc = new GC(control);
+	 * gc.setFont(control.getFont());
+	 * fontMetrics = gc.getFontMetrics();
+	 * gc.dispose();
+	 * </pre>
+	 *
+	 * @param fontMetrics used in performing the conversion
+	 * @param chars       the number of characters
 	 * @return the number of pixels
 	 * @since 2.0
 	 */
@@ -259,49 +258,49 @@ public abstract class Dialog extends Window {
 	}
 
 	/**
-	 * Returns the number of pixels corresponding to the given number of
-	 * horizontal dialog units.
+	 * Returns the number of pixels corresponding to the given number of horizontal
+	 * dialog units.
 	 * <p>
 	 * The required <code>FontMetrics</code> parameter may be created in the
-	 * following way: <code>
-	 * 	GC gc = new GC(control);
-	 *	gc.setFont(control.getFont());
-	 *	fontMetrics = gc.getFontMetrics();
-	 *	gc.dispose();
-	 * </code>
+	 * following way:
 	 * </p>
 	 *
-	 * @param fontMetrics
-	 *            used in performing the conversion
-	 * @param dlus
-	 *            the number of horizontal dialog units
+	 * <pre>
+	 * GC gc = new GC(control);
+	 * gc.setFont(control.getFont());
+	 * fontMetrics = gc.getFontMetrics();
+	 * gc.dispose();
+	 * </pre>
+	 *
+	 * @param fontMetrics used in performing the conversion
+	 * @param dlus        the number of horizontal dialog units
 	 * @return the number of pixels
 	 * @since 2.0
 	 */
 	public static int convertHorizontalDLUsToPixels(FontMetrics fontMetrics,
 			int dlus) {
 		// round to the nearest pixel
-		return (fontMetrics.getAverageCharWidth() * dlus + HORIZONTAL_DIALOG_UNIT_PER_CHAR / 2)
-				/ HORIZONTAL_DIALOG_UNIT_PER_CHAR;
+		return (int) ((fontMetrics.getAverageCharacterWidth() * dlus + HORIZONTAL_DIALOG_UNIT_PER_CHAR / 2)
+				/ HORIZONTAL_DIALOG_UNIT_PER_CHAR);
 	}
 
 	/**
-	 * Returns the number of pixels corresponding to the given number of
-	 * vertical dialog units.
+	 * Returns the number of pixels corresponding to the given number of vertical
+	 * dialog units.
 	 * <p>
 	 * The required <code>FontMetrics</code> parameter may be created in the
-	 * following way: <code>
-	 * 	GC gc = new GC(control);
-	 *	gc.setFont(control.getFont());
-	 *	fontMetrics = gc.getFontMetrics();
-	 *	gc.dispose();
-	 * </code>
+	 * following way:
 	 * </p>
 	 *
-	 * @param fontMetrics
-	 *            used in performing the conversion
-	 * @param dlus
-	 *            the number of vertical dialog units
+	 * <pre>
+	 * GC gc = new GC(control);
+	 * gc.setFont(control.getFont());
+	 * fontMetrics = gc.getFontMetrics();
+	 * gc.dispose();
+	 * </pre>
+	 *
+	 * @param fontMetrics used in performing the conversion
+	 * @param dlus        the number of vertical dialog units
 	 * @return the number of pixels
 	 * @since 2.0
 	 */
@@ -313,43 +312,43 @@ public abstract class Dialog extends Window {
 	}
 
 	/**
-	 * Returns the number of pixels corresponding to the width of the given
-	 * number of characters.
+	 * Returns the number of pixels corresponding to the width of the given number
+	 * of characters.
 	 * <p>
 	 * The required <code>FontMetrics</code> parameter may be created in the
-	 * following way: <code>
-	 * 	GC gc = new GC(control);
-	 *	gc.setFont(control.getFont());
-	 *	fontMetrics = gc.getFontMetrics();
-	 *	gc.dispose();
-	 * </code>
+	 * following way:
 	 * </p>
 	 *
-	 * @param fontMetrics
-	 *            used in performing the conversion
-	 * @param chars
-	 *            the number of characters
+	 * <pre>
+	 * GC gc = new GC(control);
+	 * gc.setFont(control.getFont());
+	 * fontMetrics = gc.getFontMetrics();
+	 * gc.dispose();
+	 * </pre>
+	 *
+	 * @param fontMetrics used in performing the conversion
+	 * @param chars       the number of characters
 	 * @return the number of pixels
 	 * @since 2.0
 	 */
 	public static int convertWidthInCharsToPixels(FontMetrics fontMetrics,
 			int chars) {
-		return fontMetrics.getAverageCharWidth() * chars;
+		return (int) (fontMetrics.getAverageCharacterWidth() * chars);
 	}
 
 	/**
-	 * Shortens the given text <code>textValue</code> so that its width in
-	 * pixels does not exceed the width of the given control. Overrides
-	 * characters in the center of the original string with an ellipsis ("...")
-	 * if necessary. If a <code>null</code> value is given, <code>null</code>
-	 * is returned.
+	 * Try to shorten the given text <code>textValue</code> so that its width in
+	 * pixels does not exceed the width of the given control. Overrides characters
+	 * in the center of the original string with an ellipsis ("...") if necessary.
+	 * If a <code>null</code> value is given, <code>null</code> is returned.
+	 * <p>
+	 * <b>Note:</b> if the text cannot be shortened because the width of control is
+	 * too low the full original string is returned.
+	 * </p>
 	 *
-	 * @param textValue
-	 *            the original string or <code>null</code>
-	 * @param control
-	 *            the control the string will be displayed on
-	 * @return the string to display, or <code>null</code> if null was passed
-	 *         in
+	 * @param textValue the original string or <code>null</code>
+	 * @param control   the control the string will be displayed on
+	 * @return the string to display, or <code>null</code> if null was passed in
 	 *
 	 * @since 3.0
 	 */
@@ -615,11 +614,10 @@ public abstract class Dialog extends Window {
 	protected Button createButton(Composite parent, int id, String label, boolean defaultButton) {
 		// increment the number of columns in the button bar
 		((GridLayout) parent.getLayout()).numColumns++;
-		Button button = new Button(parent, SWT.PUSH);
-		button.setText(label);
-		button.setFont(JFaceResources.getDialogFont());
-		button.setData(Integer.valueOf(id));
-		button.addSelectionListener(widgetSelectedAdapter(event -> buttonPressed(((Integer) event.widget.getData()).intValue())));
+		Button button = WidgetFactory.button(SWT.PUSH).text(label).font(JFaceResources.getDialogFont())
+				.data(Integer.valueOf(id))
+				.onSelect(event -> buttonPressed(((Integer) event.widget.getData()).intValue())).
+				create(parent);
 		if (defaultButton) {
 			Shell shell = parent.getShell();
 			if (shell != null) {
@@ -648,7 +646,6 @@ public abstract class Dialog extends Window {
 	 * @return the button bar control
 	 */
 	protected Control createButtonBar(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
 		// create a layout with spacing and margins appropriate for the font
 		// size.
 		GridLayout layout = new GridLayout();
@@ -658,11 +655,11 @@ public abstract class Dialog extends Window {
 		layout.marginHeight = convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_MARGIN);
 		layout.horizontalSpacing = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_SPACING);
 		layout.verticalSpacing = convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_SPACING);
-		composite.setLayout(layout);
 		GridData data = new GridData(GridData.HORIZONTAL_ALIGN_END
 				| GridData.VERTICAL_ALIGN_CENTER);
-		composite.setLayoutData(data);
-		composite.setFont(parent.getFont());
+
+		Composite composite = WidgetFactory.composite(SWT.NONE).layout(layout).layoutData(data).font(parent.getFont())
+				.create(parent);
 
 		// Add the buttons to the button bar.
 		createButtonsForButtonBar(composite);
@@ -757,13 +754,12 @@ public abstract class Dialog extends Window {
 	@Override
 	protected Control createContents(Composite parent) {
 		// create the top level composite for the dialog
-		Composite composite = new Composite(parent, 0);
 		GridLayout layout = new GridLayout();
 		layout.marginHeight = 0;
 		layout.marginWidth = 0;
 		layout.verticalSpacing = 0;
-		composite.setLayout(layout);
-		composite.setLayoutData(new GridData(GridData.FILL_BOTH));
+		Composite composite = WidgetFactory.composite(0).layout(layout).layoutData(new GridData(GridData.FILL_BOTH))
+				.create(parent);
 		applyDialogFont(composite);
 		// initialize the dialog units
 		initializeDialogUnits(composite);
@@ -804,14 +800,13 @@ public abstract class Dialog extends Window {
 	 */
 	protected Control createDialogArea(Composite parent) {
 		// create a composite with standard margins and spacing
-		Composite composite = new Composite(parent, SWT.NONE);
 		GridLayout layout = new GridLayout();
 		layout.marginHeight = convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_MARGIN);
 		layout.marginWidth = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
 		layout.verticalSpacing = convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_SPACING);
 		layout.horizontalSpacing = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_SPACING);
-		composite.setLayout(layout);
-		composite.setLayoutData(new GridData(GridData.FILL_BOTH));
+		Composite composite = WidgetFactory.composite(SWT.NONE).layout(layout)
+				.layoutData(new GridData(GridData.FILL_BOTH)).create(parent);
 		applyDialogFont(composite);
 		return composite;
 	}
@@ -1291,25 +1286,23 @@ public abstract class Dialog extends Window {
 	}
 
 	/**
-	 * Returns a boolean indicating whether the dialog should be
-	 * considered resizable when the shell style is initially
-	 * set.
+	 * Returns a boolean indicating whether the dialog should be considered
+	 * resizable when the shell style is initially set.
+	 * <p>
+	 * This method is used to ensure that all style bits appropriate for resizable
+	 * dialogs are added to the shell style. Individual dialogs may always set the
+	 * shell style to ensure that a dialog is resizable, but using this method
+	 * ensures that resizable dialogs will be created with the same set of style
+	 * bits.
+	 * </p>
+	 * <p>
+	 * Style bits will never be removed based on the return value of this method.
+	 * For example, if a dialog returns <code>false</code>, but also sets a style
+	 * bit for a SWT.RESIZE border, the style bit will be honored.
+	 * </p>
 	 *
-	 * This method is used to ensure that all style
-	 * bits appropriate for resizable dialogs are added to the
-	 * shell style.  Individual dialogs may always set the shell
-	 * style to ensure that a dialog is resizable, but using this
-	 * method ensures that resizable dialogs will be created with
-	 * the same set of style bits.
-	 *
-	 * Style bits will never be removed based on the return value
-	 * of this method.  For example, if a dialog returns
-	 * <code>false</code>, but also sets a style bit for a
-	 * SWT.RESIZE border, the style bit will be honored.
-	 *
-	 * @return a boolean indicating whether the dialog is
-	 * resizable and should have the default style bits for
-	 * resizable dialogs
+	 * @return a boolean indicating whether the dialog is resizable and should have
+	 *         the default style bits for resizable dialogs
 	 *
 	 * @since 3.4
 	 */

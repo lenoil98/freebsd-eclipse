@@ -202,7 +202,7 @@ Point adjustMoveCursor () {
 	int newY = bounds.y;
 	/*
 	 * Convert to screen coordinates if needed
- 	 */
+	 */
 	if (parent != null) {
 		Point pt = parent.toDisplay (newX, newY);
 		newX = pt.x;
@@ -234,7 +234,7 @@ Point adjustResizeCursor (boolean movePointer) {
 
 	/*
 	 * Convert to screen coordinates if needed
- 	 */
+	 */
 	if (parent != null) {
 		Point pt = parent.toDisplay (newX, newY);
 		newX = pt.x;
@@ -356,6 +356,15 @@ Rectangle [] computeProportions (Rectangle [] rects) {
 
 void drawRectangles (NSWindow window, Rectangle [] rects, boolean erase) {
 	NSGraphicsContext context = window.graphicsContext();
+	if (context == null) {
+		long width = (long) window.frame().width;
+		long height = (long) window.frame().height;
+		NSBitmapImageRep rep = (NSBitmapImageRep) new NSBitmapImageRep().alloc();
+		rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace,
+				OS.NSAlphaFirstBitmapFormat, width * 4, 32);
+		context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
+		rep.release();
+	}
 	NSGraphicsContext.static_saveGraphicsState();
 	NSGraphicsContext.setCurrentContext(context);
 	context.saveGraphicsState();
@@ -368,7 +377,7 @@ void drawRectangles (NSWindow window, Rectangle [] rects, boolean erase) {
 	context.setCompositingOperation(erase ? OS.NSCompositeClear : OS.NSCompositeSourceOver);
 	NSRect rectFrame = new NSRect();
 	NSPoint globalPoint = new NSPoint();
-	double /*float*/ screenHeight = display.getPrimaryFrame().height;
+	double screenHeight = display.getPrimaryFrame().height;
 	for (int i=0; i<rects.length; i++) {
 		Rectangle rect = rects [i];
 		rectFrame.x = rect.x + parentOrigin.x;
@@ -552,7 +561,7 @@ void mouse (NSEvent nsEvent) {
 		}
 		oldX = newX;  oldY = newY;
 	}
-	switch ((int)/*64*/nsEvent.type()) {
+	switch ((int)nsEvent.type()) {
 		case OS.NSLeftMouseUp:
 		case OS.NSRightMouseUp:
 		case OS.NSOtherMouseUp:
@@ -561,8 +570,8 @@ void mouse (NSEvent nsEvent) {
 }
 
 void key (NSEvent nsEvent) {
-	int nsType = (int)/*64*/nsEvent.type();
-	long /*int*/ modifierFlags = nsEvent.modifierFlags();
+	int nsType = (int)nsEvent.type();
+	long modifierFlags = nsEvent.modifierFlags();
 	int nsKeyCode = nsEvent.keyCode();
 	int keyCode = Display.translateKey (nsKeyCode);
 
@@ -780,7 +789,7 @@ public boolean open () {
 	 * NSWindow. Fix is to use one NSWindow per screen.
 	 */
 	NSArray screens = NSScreen.screens();
-	int count = (int)/*64*/screens.count();
+	int count = (int)screens.count();
 	windows = new NSWindow [count];
 	for (int i = 0; i < count; i++) {
 		NSScreen screen = new NSScreen(screens.objectAtIndex(i));
@@ -792,6 +801,15 @@ public boolean open () {
 		window.setContentView(null);
 		window.setBackgroundColor(NSColor.clearColor());
 		NSGraphicsContext context = window.graphicsContext();
+		if (context == null) {
+			long width = (long) window.frame().width;
+			long height = (long) window.frame().height;
+			NSBitmapImageRep rep = (NSBitmapImageRep) new NSBitmapImageRep().alloc();
+			rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace,
+					OS.NSAlphaFirstBitmapFormat, width * 4, 32);
+			context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
+			rep.release();
+		}
 		NSGraphicsContext.static_saveGraphicsState();
 		NSGraphicsContext.setCurrentContext(context);
 		context.setCompositingOperation(OS.NSCompositeClear);
@@ -824,7 +842,7 @@ public boolean open () {
 	NSApplication application = NSApplication.sharedApplication();
 	NSEvent currentEvent = application.currentEvent();
 	if (currentEvent != null) {
-		switch ((int)/*64*/currentEvent.type()) {
+		switch ((int)currentEvent.type()) {
 			case OS.NSLeftMouseDown:
 			case OS.NSLeftMouseDragged:
 			case OS.NSRightMouseDown:
@@ -859,7 +877,7 @@ public boolean open () {
 			display.runDeferredLayouts ();
 			NSEvent event = application.nextEventMatchingMask(OS.NSAnyEventMask, NSDate.distantFuture(), OS.NSDefaultRunLoopMode, true);
 			if (event == null) continue;
-			int type = (int)/*64*/event.type();
+			int type = (int)event.type();
 			switch (type) {
 				case OS.NSLeftMouseUp:
 				case OS.NSRightMouseUp:

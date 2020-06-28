@@ -38,7 +38,7 @@ public abstract class AbstractAnnotationProcessorManager {
 	 * @param compiler the given compiler
 	 * @param compilationUnitLocator the given compilation unit locator
 	 * @param javaProject the given java project
-	 * @param isTestCode 
+	 * @param isTestCode
 	 */
 	public abstract void configureFromPlatform(Compiler compiler, Object compilationUnitLocator, Object javaProject, boolean isTestCode);
 
@@ -80,6 +80,13 @@ public abstract class AbstractAnnotationProcessorManager {
 	 * Reinitialize the receiver
 	 */
 	public abstract void reset();
+
+	/**
+	 * Final cleanup after all rounds have completed.
+	 */
+	protected void cleanUp() {
+		// default: do nothing, because reset() already did the common work
+	}
 
 	/**
 	 * Run a new annotation processing round on the given values.

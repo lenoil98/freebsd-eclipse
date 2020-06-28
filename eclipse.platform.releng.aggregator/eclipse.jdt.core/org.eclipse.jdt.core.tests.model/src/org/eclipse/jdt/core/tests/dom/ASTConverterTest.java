@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -29,9 +29,10 @@ import org.eclipse.jdt.core.util.IModifierConstants;
 public class ASTConverterTest extends ConverterTestSetup {
 
 	/** @deprecated using deprecated code */
+	@Override
 	public void setUpSuite() throws Exception {
 		super.setUpSuite();
-		this.ast = AST.newAST(AST.JLS2);
+		this.ast = AST.newAST(AST.JLS2, false);
 	}
 
 	public ASTConverterTest(String name) {
@@ -44,7 +45,7 @@ public class ASTConverterTest extends ConverterTestSetup {
 	public static Test suite() {
 		return buildModelTestSuite(ASTConverterTest.class);
 	}
-	/** 
+	/**
 	 * Internal access method to MethodDeclaration#thrownExceptions() for avoiding deprecated warnings.
 	 * @deprecated
 	 */
@@ -2177,6 +2178,7 @@ public class ASTConverterTest extends ConverterTestSetup {
 	/**
 	 * SwitchStatement ==> SwitchStatement
 	 */
+	@SuppressWarnings("deprecation")
 	public void test0097() throws JavaModelException {
 		ICompilationUnit sourceUnit = getCompilationUnit("Converter" , "src", "test0097", "Test.java"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 		char[] source = sourceUnit.getSource().toCharArray();
@@ -8337,12 +8339,12 @@ public class ASTConverterTest extends ConverterTestSetup {
 			List thrownExceptions = internalThrownExceptions(methodDeclaration);
 			assertEquals("Wrong size", 1, thrownExceptions.size()); //$NON-NLS-1$
 			Name name = (Name) thrownExceptions.get(0);
-			binding = name.resolveBinding();			
+			binding = name.resolveBinding();
 		} else {
 			List thrownExceptionTypes = methodDeclaration.thrownExceptionTypes();
 			assertEquals("Wrong size", 1, thrownExceptionTypes.size()); //$NON-NLS-1$
 			Type type = (Type) thrownExceptionTypes.get(0);
-			binding = type.resolveBinding();			
+			binding = type.resolveBinding();
 		}
 		assertEquals("wrong type", IBinding.TYPE, binding.getKind()); //$NON-NLS-1$
 		assertEquals("wrong name", "IOException", binding.getName()); //$NON-NLS-1$ //$NON-NLS-2$

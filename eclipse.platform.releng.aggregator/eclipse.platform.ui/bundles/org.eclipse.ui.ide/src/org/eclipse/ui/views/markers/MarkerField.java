@@ -18,6 +18,8 @@ import java.net.URL;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.runtime.IConfigurationElement;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.help.HelpSystem;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
@@ -32,6 +34,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.internal.WorkbenchPlugin;
+import org.eclipse.ui.internal.ide.IDEInternalPreferences;
 import org.eclipse.ui.internal.ide.IDEInternalWorkbenchImages;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.util.BundleUtility;
@@ -48,6 +51,12 @@ public abstract class MarkerField {
 
 	private IConfigurationElement configurationElement;
 	private ResourceManager imageManager;
+	private boolean helpContextAvailabilityCheck;
+
+	public MarkerField() {
+		helpContextAvailabilityCheck = Platform.getPreferencesService().getBoolean(IDEWorkbenchPlugin.IDE_WORKBENCH,
+				IDEInternalPreferences.HELP_CONTEXT_AVAILABILITY_CHECK, true, null); // $NON-NLS-1$
+	}
 
 	/**
 	 * Annotate the image with indicators for whether or not help or quick fix
@@ -67,7 +76,7 @@ public abstract class MarkerField {
 			// one
 			if (marker != null) {
 				String contextId = IDE.getMarkerHelpRegistry().getHelp(marker);
-				if (contextId != null) {
+				if (contextId != null && (!helpContextAvailabilityCheck || HelpSystem.getContext(contextId) != null)) {
 					if (image == null)
 						image = JFaceResources.getImage(Dialog.DLG_IMG_HELP);
 					else {
@@ -102,8 +111,8 @@ public abstract class MarkerField {
 	/**
 	 * Compare item1 and item2 for sorting purposes.
 	 *
-	 * @param item1
-	 * @param item2
+	 * @param item1 first item
+	 * @param item2 second item
 	 * @return Either:
 	 *         <ul>
 	 *         <li>a negative number if the value of item1 is less than the value of
@@ -113,6 +122,7 @@ public abstract class MarkerField {
 	 *         <li>a positive number if the value of item1 is greater than the value
 	 *         of item2 for this field.</li>
 	 *         </ul>
+	 * @see Comparable#compareTo(Object)
 	 */
 	public int compare(MarkerItem item1, MarkerItem item2) {
 		return getValue(item1).compareTo(getValue(item2));
@@ -168,7 +178,7 @@ public abstract class MarkerField {
 
 	/**
 	 * Get the configuration element for the receiver. This is used by the
-	 * markerSupport internals to retreive the values defined in the extenstion.
+	 * markerSupport internals to retrieve the values defined in the extension.
 	 *
 	 * @return IConfigurationElement
 	 */
@@ -211,7 +221,7 @@ public abstract class MarkerField {
 	}
 
 	/**
-	 * @param item
+	 * @param item the object
 	 * @return The String value of the object for this particular field to be
 	 *         displayed to the user.
 	 */
@@ -220,7 +230,7 @@ public abstract class MarkerField {
 	/**
 	 * Set the configuration element used by the receiver.
 	 *
-	 * @param element
+	 * @param element the element
 	 */
 	public final void setConfigurationElement(IConfigurationElement element) {
 		configurationElement = element;
@@ -230,7 +240,7 @@ public abstract class MarkerField {
 	 * Set the imageManager. This is not normally required to be send if using a
 	 * {@link MarkerSupportView} as this is done for you.
 	 *
-	 * @param manager
+	 * @param manager the image manager
 	 */
 	public final void setImageManager(ResourceManager manager) {
 		this.imageManager = manager;
@@ -239,7 +249,7 @@ public abstract class MarkerField {
 	/**
 	 * Update the contents of the cell.
 	 *
-	 * @param cell
+	 * @param cell cell to update; not <code>null</code>
 	 */
 	public void update(ViewerCell cell) {
 		cell.setText(getValue((MarkerItem) cell.getElement()));

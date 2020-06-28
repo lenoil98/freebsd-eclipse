@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) Sep 12, 2018 IBM Corporation and others.
+ * Copyright (c) Sep 12, 2018, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -43,7 +43,6 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.text.edits.TextEditGroup;
-import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.progress.UIJob;
 
 /**
@@ -142,7 +141,7 @@ public class RemoveUnsupportedAnnotationOperation extends UIJob {
 						localMonitor.split(1);
 					}
 					localMonitor.split(1);
-					ASTParser parser = ASTParser.newParser(AST.JLS10);
+					ASTParser parser = ASTParser.newParser(AST.JLS14);
 					parser.setSource(compilationUnit);
 					Integer charStartAttribute = null;
 					charStartAttribute = (Integer) fMarker.getAttribute(IMarker.CHAR_START);
@@ -164,8 +163,6 @@ public class RemoveUnsupportedAnnotationOperation extends UIJob {
 						localMonitor.split(1);
 					}
 				}
-			} catch (JavaModelException jme) {
-			} catch (PartInitException e) {
 			} catch (CoreException e) {
 			}
 		}

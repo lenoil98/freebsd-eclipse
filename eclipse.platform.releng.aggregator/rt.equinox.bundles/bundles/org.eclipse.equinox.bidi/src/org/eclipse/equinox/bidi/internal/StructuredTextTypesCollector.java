@@ -30,8 +30,8 @@ public class StructuredTextTypesCollector implements IRegistryEventListener {
 	private static final String ATTR_TYPE = "type"; //$NON-NLS-1$
 	private static final String ATTR_HANDLER = "class"; //$NON-NLS-1$
 
-	private Map types;
-	private Map factories;
+	private Map<String, StructuredTextTypeHandler> types;
+	private Map<String, IConfigurationElement> factories;
 
 	static private StructuredTextTypesCollector instance = new StructuredTextTypesCollector();
 
@@ -76,12 +76,12 @@ public class StructuredTextTypesCollector implements IRegistryEventListener {
 
 	private void read() {
 		if (types == null)
-			types = new HashMap();
+			types = new HashMap<>();
 		else
 			types.clear();
 
 		if (factories == null)
-			factories = new HashMap();
+			factories = new HashMap<String, IConfigurationElement>();
 		else
 			factories.clear();
 
@@ -92,23 +92,23 @@ public class StructuredTextTypesCollector implements IRegistryEventListener {
 		}
 
 		IExtensionPoint extPoint = registry.getExtensionPoint(EXT_POINT);
-		IExtension[] extensions = extPoint.getExtensions();
 
-		for (int i = 0; i < extensions.length; i++) {
-			IConfigurationElement[] confElements = extensions[i].getConfigurationElements();
-			for (int j = 0; j < confElements.length; j++) {
-				if (!CE_NAME.equals(confElements[j].getName()))
-					StructuredTextActivator.logError("BiDi types: unexpected element name " + confElements[j].getName(), new IllegalArgumentException()); //$NON-NLS-1$
-				String type = confElements[j].getAttribute(ATTR_TYPE);
+		for (IExtension extension : extPoint.getExtensions()) {
+			for (IConfigurationElement confElement : extension.getConfigurationElements()) {
+				if (!CE_NAME.equals(confElement.getName()))
+					StructuredTextActivator.logError("BiDi types: unexpected element name " + confElement.getName(), new IllegalArgumentException()); //$NON-NLS-1$
+				String type = confElement.getAttribute(ATTR_TYPE);
 				Object handler;
 				try {
-					handler = confElements[j].createExecutableExtension(ATTR_HANDLER);
+					handler = confElement.createExecutableExtension(ATTR_HANDLER);
 				} catch (CoreException e) {
 					StructuredTextActivator.logError("BiDi types: unable to create handler for " + type, e); //$NON-NLS-1$
 					continue;
 				}
-				types.put(type, handler);
-				factories.put(type, confElements[j]);
+				if (handler instanceof StructuredTextTypeHandler) {
+					types.put(type, (StructuredTextTypeHandler) handler);
+					factories.put(type, confElement);
+				}
 			}
 		}
 	}
@@ -140,8 +140,8 @@ public class StructuredTextTypesCollector implements IRegistryEventListener {
 	 * @return a map from structured text type handler identifier (key type: {@link String})
 	 *         to structured text type handler (value type: {@link StructuredTextTypeHandler}).
 	 */
-	public static Map getDefaultTypeHandlers() {
-		Map types = new LinkedHashMap();
+	public static Map<String, StructuredTextTypeHandler> getDefaultTypeHandlers() {
+		Map<String, StructuredTextTypeHandler> types = new LinkedHashMap<String, StructuredTextTypeHandler>();
 
 		types.put(StructuredTextTypeHandlerFactory.COMMA_DELIMITED, new StructuredTextComma());
 		types.put(StructuredTextTypeHandlerFactory.EMAIL, new StructuredTextEmail());

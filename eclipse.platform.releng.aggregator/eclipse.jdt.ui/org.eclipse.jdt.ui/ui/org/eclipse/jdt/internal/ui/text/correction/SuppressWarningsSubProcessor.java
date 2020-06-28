@@ -15,7 +15,6 @@
 package org.eclipse.jdt.internal.ui.text.correction;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.graphics.Image;
@@ -23,6 +22,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.core.runtime.CoreException;
 
 import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.PlatformUI;
 
 import org.eclipse.jdt.core.CorrectionEngine;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -45,6 +45,7 @@ import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
@@ -55,6 +56,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
@@ -64,9 +66,7 @@ import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jdt.ui.text.java.correction.ASTRewriteCorrectionProposal;
 import org.eclipse.jdt.ui.text.java.correction.ICommandAccess;
 
-import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 /**
  *
@@ -101,8 +101,7 @@ public class SuppressWarningsSubProcessor {
 		if (warningToken == null) {
 			return;
 		}
-		for (Iterator<ICommandAccess> iter= proposals.iterator(); iter.hasNext();) {
-			Object element= iter.next();
+		for (ICommandAccess element : proposals) {
 			if (element instanceof SuppressWarningsProposal && warningToken.equals(((SuppressWarningsProposal) element).getWarningToken())) {
 				return; // only one at a time
 			}
@@ -112,7 +111,7 @@ public class SuppressWarningsSubProcessor {
 		if (node == null) {
 			return;
 		}
-		
+
 		ASTNode target= node;
 		int relevance= IProposalRelevance.ADD_SUPPRESSWARNINGS;
 		do {
@@ -121,7 +120,7 @@ public class SuppressWarningsSubProcessor {
 				return;
 			target= target.getParent();
 		} while (target != null);
-		
+
 		ASTNode importStatement= ASTNodes.getParent(node, ImportDeclaration.class);
 		if (importStatement != null && !context.getASTRoot().types().isEmpty()) {
 			target= (ASTNode) context.getASTRoot().types().get(0);
@@ -215,8 +214,7 @@ public class SuppressWarningsSubProcessor {
 		}
 
 		private static Expression findValue(List<MemberValuePair> keyValues) {
-			for (int i= 0, len= keyValues.size(); i < len; i++) {
-				MemberValuePair curr= keyValues.get(i);
+			for (MemberValuePair curr : keyValues) {
 				if ("value".equals(curr.getName().getIdentifier())) { //$NON-NLS-1$
 					return curr.getValue();
 				}
@@ -248,14 +246,14 @@ public class SuppressWarningsSubProcessor {
 
 	/**
 	 * Adds a SuppressWarnings proposal if possible and returns whether parent nodes should be processed or not (and with what relevance).
-	 * 
+	 *
 	 * @param cu the compilation unit
 	 * @param node the node on which to add a SuppressWarning token
 	 * @param warningToken the warning token to add
 	 * @param relevance the proposal's relevance
 	 * @param proposals collector to which the proposal should be added
 	 * @return <code>0</code> if no further proposals should be added to parent nodes, or the relevance of the next proposal
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	private static int addSuppressWarningsProposalIfPossible(ICompilationUnit cu, ASTNode node, String warningToken, int relevance, Collection<ICommandAccess> proposals) {
@@ -282,6 +280,10 @@ public class SuppressWarningsSubProcessor {
 			case ASTNode.TYPE_DECLARATION:
 				property= TypeDeclaration.MODIFIERS2_PROPERTY;
 				name= ((TypeDeclaration) node).getName().getIdentifier();
+				break;
+			case ASTNode.RECORD_DECLARATION:
+				property= RecordDeclaration.MODIFIERS2_PROPERTY;
+				name= ((RecordDeclaration) node).getName().getIdentifier();
 				break;
 			case ASTNode.ANNOTATION_TYPE_DECLARATION:
 				property= AnnotationTypeDeclaration.MODIFIERS2_PROPERTY;
@@ -335,9 +337,7 @@ public class SuppressWarningsSubProcessor {
 		StringLiteral literal= (StringLiteral) coveringNode;
 
 		String literalValue= literal.getLiteralValue();
-		String[] allWarningTokens= CorrectionEngine.getAllWarningTokens();
-		for (int i= 0; i < allWarningTokens.length; i++) {
-			String curr= allWarningTokens[i];
+		for (String curr : CorrectionEngine.getAllWarningTokens()) {
 			if (NameMatcher.isSimilarName(literalValue, curr)) {
 				StringLiteral newLiteral= ast.newStringLiteral();
 				newLiteral.setLiteralValue(curr);
@@ -382,9 +382,12 @@ public class SuppressWarningsSubProcessor {
 			return;
 		}
 		String label= Messages.format(CorrectionMessages.SuppressWarningsSubProcessor_remove_annotation_label, literal.getLiteralValue());
-		Image image= JavaPlugin.getDefault().getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_DELETE);
+		Image image= PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_DELETE);
 		ASTRewriteCorrectionProposal proposal= new ASTRewriteCorrectionProposal(label, context.getCompilationUnit(), rewrite, IProposalRelevance.REMOVE_ANNOTATION, image);
 		proposals.add(proposal);
+	}
+
+	private SuppressWarningsSubProcessor() {
 	}
 
 }

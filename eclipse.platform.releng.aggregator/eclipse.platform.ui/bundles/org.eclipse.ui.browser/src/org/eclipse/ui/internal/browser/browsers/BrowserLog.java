@@ -19,12 +19,11 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.eclipse.ui.internal.browser.WebBrowserUIPlugin;
-
-import com.ibm.icu.text.DateFormat;
-import com.ibm.icu.text.SimpleDateFormat;
 /**
  * Log for messages output by external browser processes.
  */
@@ -33,7 +32,7 @@ public class BrowserLog {
 	private String logFileName;
 	private boolean newSession;
 	DateFormat formatter = new SimpleDateFormat("MMM dd, yyyy kk:mm:ss.SS"); //$NON-NLS-1$
-	String LN = System.getProperty("line.separator"); //$NON-NLS-1$
+	String LN = System.lineSeparator();
 	/**
 	 * Constructor
 	 */

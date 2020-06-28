@@ -18,7 +18,6 @@ package org.eclipse.jdt.internal.junit.launcher;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtension;
@@ -70,9 +69,8 @@ public class TestKindRegistry {
 			return;
 
 		ArrayList<TestKind> items= new ArrayList<>();
-		for (Iterator<IConfigurationElement> iter= getConfigurationElements().iterator(); iter.hasNext();) {
-			IConfigurationElement element= iter.next();
-			items.add(new TestKind(element));
+		for (IConfigurationElement configurationElement : getConfigurationElements()) {
+			items.add(new TestKind(configurationElement));
 		}
 
 		Collections.sort(items, new Comparator<TestKind>() {
@@ -91,8 +89,7 @@ public class TestKindRegistry {
 	public ArrayList<String> getDisplayNames() {
 		ArrayList<String> result = new ArrayList<>();
 		ArrayList<TestKind> testTypes = getAllKinds();
-		for (Iterator<TestKind> iter = testTypes.iterator(); iter.hasNext();) {
-			ITestKind type = iter.next();
+		for (ITestKind type : testTypes) {
 			result.add(type.getDisplayName());
 		}
 		return result;
@@ -104,8 +101,7 @@ public class TestKindRegistry {
 	 */
 	public ITestKind getKind(String testKindId) {
 		if (testKindId != null) {
-			for (Iterator<TestKind> iter= getAllKinds().iterator(); iter.hasNext();) {
-				TestKind kind= iter.next();
+			for (TestKind kind : getAllKinds()) {
 				if (testKindId.equals(kind.getId()))
 					return kind;
 			}
@@ -170,14 +166,8 @@ public class TestKindRegistry {
 
 	private ArrayList<IConfigurationElement> getConfigurationElements() {
 		ArrayList<IConfigurationElement> items= new ArrayList<>();
-		IExtension[] extensions= fPoint.getExtensions();
-		for (int i= 0; i < extensions.length; i++) {
-			IExtension extension= extensions[i];
-			IConfigurationElement[] elements= extension.getConfigurationElements();
-			for (int j= 0; j < elements.length; j++) {
-				IConfigurationElement element= elements[j];
-				items.add(element);
-			}
+		for (IExtension extension : fPoint.getExtensions()) {
+			Collections.addAll(items, extension.getConfigurationElements());
 		}
 		return items;
 	}
@@ -185,8 +175,7 @@ public class TestKindRegistry {
 	public String getAllKindIds() {
 		ArrayList<TestKind> allKinds= getAllKinds();
 		String returnThis= ""; //$NON-NLS-1$
-		for (Iterator<TestKind> iter= allKinds.iterator(); iter.hasNext();) {
-			ITestKind kind= iter.next();
+		for (ITestKind kind : allKinds) {
 			returnThis+= "(" + kind.getId() + ")"; //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		return returnThis;

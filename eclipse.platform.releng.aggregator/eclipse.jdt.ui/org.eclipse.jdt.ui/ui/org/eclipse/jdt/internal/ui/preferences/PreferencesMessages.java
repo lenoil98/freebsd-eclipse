@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -65,6 +65,8 @@ public final class PreferencesMessages extends NLS {
 	public static String CodeAssistAdvancedConfigurationBlock_parameterNameFromAttachedJavadoc_timeout_emptyInput;
 	public static String CodeAssistAdvancedConfigurationBlock_parameterNameFromAttachedJavadoc_timeout_invalidInput;
 	public static String CodeAssistAdvancedConfigurationBlock_parameterNameFromAttachedJavadoc_timeout_invalidRange;
+	public static String CodeAssistAdvancedConfigurationBlock_nonUIThread;
+	public static String CodeAssistAdvancedConfigurationBlock_nonUIThread_computersRequiringUIThread;
 	public static String ImportOrganizePreferencePage_title;
 	public static String ImportOrganizeConfigurationBlock_order_label;
 	public static String ImportOrganizeConfigurationBlock_other_static;
@@ -146,6 +148,8 @@ public final class PreferencesMessages extends NLS {
 	public static String JavaEditorPreferencePage_returnKeyword;
 	public static String JavaEditorPreferencePage_keywords;
 	public static String JavaEditorPreferencePage_varKeyword;
+	public static String JavaEditorPreferencePage_yieldKeyword;
+	public static String JavaEditorPreferencePage_recordKeyword;
 	public static String JavaEditorPreferencePage_strings;
 	public static String JavaEditorPreferencePage_others;
 	public static String JavaEditorPreferencePage_operators;
@@ -259,7 +263,8 @@ public final class PreferencesMessages extends NLS {
 	public static String JavadocConfigurationBlock_MalformedURL_error;
 	public static String JavadocConfigurationBlock_validate_button;
 	public static String JavadocConfigurationBlock_InvalidLocation_message;
-	public static String JavadocConfigurationBlock_ValidLocation_message;
+	public static String JavadocConfigurationBlock_ValidPackageListJavadocLocation_message;
+	public static String JavadocConfigurationBlock_ValidElementListJavadocLocation_message;
 	public static String JavadocConfigurationBlock_OK_label;
 	public static String JavadocConfigurationBlock_Open_label;
 	public static String JavadocConfigurationBlock_UnableToValidateLocation_message;
@@ -531,6 +536,8 @@ public final class PreferencesMessages extends NLS {
 	public static String ComplianceConfigurationBlock_codegen_method_parameters_attr;
 	public static String ComplianceConfigurationBlock_compiler_compliance_label;
 	public static String ComplianceConfigurationBlock_default_settings_label;
+	public static String ComplianceConfigurationBlock_enable_preview_label;
+	public static String ComplianceConfigurationBlock_enable_preview_severity_label;
 	public static String ComplianceConfigurationBlock_source_compatibility_label;
 	public static String ComplianceConfigurationBlock_codegen_targetplatform_label;
 	public static String ComplianceConfigurationBlock_pb_assert_as_identifier_label;
@@ -598,6 +605,7 @@ public final class PreferencesMessages extends NLS {
 	public static String CodeTemplateBlock_classbody_label;
 	public static String CodeTemplateBlock_interfacebody_label;
 	public static String CodeTemplateBlock_enumbody_label;
+	public static String CodeTemplateBlock_recordbody_label;
 	public static String CodeTemplateBlock_annotationbody_label;
 	public static String CodeTemplateBlock_typecomment_label;
 	public static String CodeTemplateBlock_fieldcomment_label;
@@ -610,6 +618,7 @@ public final class PreferencesMessages extends NLS {
 	public static String CodeTemplateBlock_settercomment_label;
 	public static String CodeTemplateBlock_getterstub_label;
 	public static String CodeTemplateBlock_setterstub_label;
+	public static String CodeTemplateBlock_modulecomment_label;
 	public static String CodeTemplateBlock_templates_edit_button;
 	public static String CodeTemplateBlock_templates_import_button;
 	public static String CodeTemplateBlock_templates_export_button;
@@ -812,22 +821,25 @@ public final class PreferencesMessages extends NLS {
 	public static String ComplianceConfigurationBlock_jrecompliance_info;
 	public static String ComplianceConfigurationBlock_jrecompliance_info_project;
 	public static String ComplianceConfigurationBlock_jrecompliance_backwardcompatibility_info;
+	public static String ComplianceConfigurationBlock_jrecompliance_backwardcompatibility_warning;
 	public static String ComplianceConfigurationBlock_jrecompliance_backwardcompatibility_label;
 	public static String ProblemSeveritiesConfigurationBlock_section_generics;
 	public static String JavaBasePreferencePage_dialogs;
-	public static String JavaBasePreferencePage_EnableNewJavaIndex;
 	public static String JavaBasePreferencePage_do_not_hide_description;
 	public static String JavaBasePreferencePage_do_not_hide_button;
 	public static String JavaBasePreferencePage_do_not_hide_dialog_title;
 	public static String JavaBasePreferencePage_do_not_hide_dialog_message;
 	public static String CodeAssistConfigurationBlock_matchCamelCase_label;
-	public static String CodeAssistConfigurationBlock_matchSubstring_label;
+	public static String CodeAssistConfigurationBlock_matchSubword_label;
 	public static String ComplianceConfigurationBlock_version16;
 	public static String ComplianceConfigurationBlock_version17;
 	public static String ComplianceConfigurationBlock_version18;
 	public static String ComplianceConfigurationBlock_version9;
 	public static String ComplianceConfigurationBlock_version10;
 	public static String ComplianceConfigurationBlock_version_11;
+	public static String ComplianceConfigurationBlock_version_12;
+	public static String ComplianceConfigurationBlock_version_13;
+	public static String ComplianceConfigurationBlock_version_14;
 	public static String ComplianceConfigurationBlock_versionCLDC11;
 	public static String ComplianceConfigurationBlock_src_greater_compliance;
 	public static String ComplianceConfigurationBlock_classfile_greater_compliance;
@@ -838,6 +850,7 @@ public final class PreferencesMessages extends NLS {
 	public static String ProblemSeveritiesConfigurationBlock_pb_null_reference;
 	public static String ProblemSeveritiesConfigurationBlock_pb_null_spec_violation;
 	public static String ProblemSeveritiesConfigurationBlock_pb_null_unchecked_conversion;
+	public static String ProblemSeveritiesConfigurationBlock_pb_null_annotated_type_argument_to_unannotated;
 	public static String ProblemSeveritiesConfigurationBlock_pb_pessimistic_analysis_for_free_type_variables;
 	public static String ProblemSeveritiesConfigurationBlock_pb_nonnull_typevar_maybe_legacy;
 	public static String ProblemSeveritiesConfigurationBlock_pb_potential_null_reference;
@@ -846,6 +859,7 @@ public final class PreferencesMessages extends NLS {
 	public static String ProblemSeveritiesConfigurationBlock_pb_potentially_missing_static_on_method_label;
 	public static String ProblemSeveritiesConfigurationBlock_pb_fall_through_case;
 	public static String ProblemSeveritiesConfigurationBlock_unused_suppresswarnings_token;
+	public static String ProblemSeveritiesConfigurationBlock_suppresswarnings_not_fully_analysed;
 	public static String CodeAssistConfigurationBlock_hideDeprecated_label;
 
 	public static String CodeAssistStaticMembersConfigurationBlock_description;
@@ -891,4 +905,5 @@ public final class PreferencesMessages extends NLS {
 	public static String JavaEditorCodeMiningConfigurationBlock_showReferences_onFields_label;
 	public static String JavaEditorCodeMiningConfigurationBlock_showReferences_onMethods_label;
 	public static String JavaEditorCodeMiningConfigurationBlock_showImplementations_label;
+	public static String JavaEditorCodeMiningConfigurationBlock_showParameterNames_label;
 }

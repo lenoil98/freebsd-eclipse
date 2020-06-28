@@ -13,7 +13,9 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.ui.contextlaunching;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -67,8 +69,6 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.activities.WorkbenchActivityHelper;
 import org.eclipse.ui.internal.WorkbenchWindow;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * This manager is used to calculate the labels for the current resource or for the current
@@ -278,10 +278,10 @@ public class LaunchingResourceManager implements IPropertyChangeListener, IWindo
 		ILaunch[] launches = DebugPlugin.getDefault().getLaunchManager().getLaunches();
 		boolean launched = false;
 		ILaunchConfiguration tmp = null;
-		for(int i = 0; i < launches.length; i++) {
-			tmp = launches[i].getLaunchConfiguration();
-			if(tmp != null) {
-				if(!launches[i].isTerminated() && tmp.equals(config)) {
+		for (ILaunch launch : launches) {
+			tmp = launch.getLaunchConfiguration();
+			if (tmp != null) {
+				if (!launch.isTerminated() && tmp.equals(config)) {
 					launched = true;
 					break;
 				}
@@ -484,8 +484,8 @@ public class LaunchingResourceManager implements IPropertyChangeListener, IWindo
 			Object o = selection.getFirstElement();
 			LaunchShortcutExtension ext = null;
 			ILaunchConfiguration[] cfgs = null;
-			for(int i = 0; i < shortcuts.size(); i++) {
-				ext = shortcuts.get(i);
+			for (LaunchShortcutExtension shortcut : shortcuts) {
+				ext = shortcut;
 				if(o instanceof IEditorPart) {
 					cfgs = ext.getLaunchConfigurations((IEditorPart)o);
 				}
@@ -498,9 +498,7 @@ public class LaunchingResourceManager implements IPropertyChangeListener, IWindo
 					voteDefault++;
 				} else {
 					if(cfgs.length > 0) {
-						for(int j = 0; j < cfgs.length; j++) {
-							configs.add(cfgs[j]);
-						}
+						Collections.addAll(configs, cfgs);
 					}
 				}
 			}
@@ -534,9 +532,9 @@ public class LaunchingResourceManager implements IPropertyChangeListener, IWindo
 		if (list == null || configs == null) {
 			return;
 		}
-		for (int i = 0; i < configs.length; i++) {
-			if (!list.contains(configs[i])) {
-				list.add(configs[i]);
+		for (ILaunchConfiguration config : configs) {
+			if (!list.contains(config)) {
+				list.add(config);
 			}
 		}
 	}
@@ -550,9 +548,9 @@ public class LaunchingResourceManager implements IPropertyChangeListener, IWindo
 			workbench.addWindowListener(this);
 			// initialize for already open windows
 			IWorkbenchWindow[] workbenchWindows = workbench.getWorkbenchWindows();
-			for (int i = 0; i < workbenchWindows.length; i++) {
-				if (workbenchWindows[i].getSelectionService() != null) {
-					windowOpened(workbenchWindows[i]);
+			for (IWorkbenchWindow workbenchWindow : workbenchWindows) {
+				if (workbenchWindow.getSelectionService() != null) {
+					windowOpened(workbenchWindow);
 				}
 			}
 		}
@@ -666,9 +664,6 @@ public class LaunchingResourceManager implements IPropertyChangeListener, IWindo
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.ISelectionListener#selectionChanged(org.eclipse.ui.IWorkbenchPart, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IWorkbenchPart part, ISelection selection) {
 		if(isContextLaunchEnabled()) {
@@ -676,9 +671,6 @@ public class LaunchingResourceManager implements IPropertyChangeListener, IWindo
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.ILaunchHistoryChangedListener#launchHistoryChanged()
-	 */
 	@Override
 	public void launchHistoryChanged() {
 		//this always must be set to true, because as the history is loaded these events are fired, and we need to
@@ -686,38 +678,26 @@ public class LaunchingResourceManager implements IPropertyChangeListener, IWindo
 		fUpdateLabel = true;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchesListener2#launchesTerminated(org.eclipse.debug.core.ILaunch[])
-	 */
 	@Override
 	public void launchesTerminated(ILaunch[] launches) {
 		fUpdateLabel = true;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchesListener#launchesAdded(org.eclipse.debug.core.ILaunch[])
-	 */
 	@Override
 	public void launchesAdded(ILaunch[] launches) {
 		fUpdateLabel = true;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchesListener#launchesChanged(org.eclipse.debug.core.ILaunch[])
-	 */
 	@Override
 	public void launchesChanged(ILaunch[] launches) {}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchesListener#launchesRemoved(org.eclipse.debug.core.ILaunch[])
-	 */
 	@Override
 	public void launchesRemoved(ILaunch[] launches) {
 		//we want to ensure that even if a launch is removed from the debug view
 		//when it is not terminated we update the label just in case.
 		//bug 195232
-		for(int i = 0; i < launches.length; i++) {
-			if(!launches[i].isTerminated()) {
+		for (ILaunch launch : launches) {
+			if (!launch.isTerminated()) {
 				fUpdateLabel = true;
 				return;
 			}

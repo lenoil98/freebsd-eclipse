@@ -22,7 +22,7 @@ import org.eclipse.equinox.p2.repository.artifact.IArtifactDescriptor;
 public class FileMirrorLog implements IArtifactMirrorLog {
 
 	private static final String INDENT = "\t"; //$NON-NLS-1$
-	private static final String SEPARATOR = System.getProperty("line.separator"); //$NON-NLS-1$
+	private static final String SEPARATOR = System.lineSeparator();
 	private BufferedWriter out;
 	private boolean consoleMessage = false;
 	private int minSeverity = IStatus.OK;
@@ -60,7 +60,9 @@ public class FileMirrorLog implements IArtifactMirrorLog {
 
 	/*
 	 * Write a status to the log, indenting it based on status depth.
+	 * 
 	 * @param status the status to log
+	 * 
 	 * @param depth the depth of the status
 	 */
 	private void log(IStatus status, String prefix) {
@@ -76,13 +78,15 @@ public class FileMirrorLog implements IArtifactMirrorLog {
 			// Write the children of the status to the log
 			IStatus[] nestedStatus = status.getChildren();
 			if (nestedStatus != null)
-				for (int i = 0; i < nestedStatus.length; i++)
-					log(nestedStatus[i], prefix + INDENT);
+				for (IStatus s : nestedStatus) {
+					log(s, prefix + INDENT);
+				}
 		}
 	}
 
 	/*
 	 * Write a message to the log
+	 * 
 	 * @param message the message to write
 	 */
 	private void log(String message) {

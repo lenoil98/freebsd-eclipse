@@ -184,12 +184,18 @@ public class SetupManager {
 				continue;
 			}
 			Element toParse = (Element) next;
-			if (toParse.getTagName().equals("eclipseArg")) {
+			switch (toParse.getTagName()) {
+			case "eclipseArg":
 				loadEclipseArgument(newSetup, toParse);
-			} else if (toParse.getTagName().equals("vmArg")) {
+				break;
+			case "vmArg":
 				loadVMArgument(newSetup, toParse);
-			} else if (toParse.getTagName().equals("systemProperty")) {
+				break;
+			case "systemProperty":
 				loadProperty(newSetup, toParse);
+				break;
+			default:
+				break;
 			}
 		}
 		setups.add(newSetup);
@@ -272,7 +278,7 @@ public class SetupManager {
 				continue;
 			}
 			// the 90% case is that we won't have an escaped equals so check to see if we can short-circuit
-			if (option.indexOf("==") == -1) {
+			if (!option.contains("==")) {
 				String key = option.substring(0, separatorIndex);
 				String value = option.substring(separatorIndex + 1);
 				result.put(key, value);

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -204,6 +204,7 @@ import org.eclipse.jdt.ui.actions.IJavaEditorActionDefinitionIds;
 import org.eclipse.jdt.ui.actions.JavaSearchActionGroup;
 import org.eclipse.jdt.ui.actions.OpenEditorActionGroup;
 import org.eclipse.jdt.ui.actions.OpenViewActionGroup;
+import org.eclipse.jdt.ui.text.IJavaPartitionerManager;
 import org.eclipse.jdt.ui.text.IJavaPartitions;
 import org.eclipse.jdt.ui.text.JavaSourceViewerConfiguration;
 import org.eclipse.jdt.ui.text.JavaTextTools;
@@ -233,6 +234,7 @@ import org.eclipse.jdt.internal.ui.search.MethodExitsFinder;
 import org.eclipse.jdt.internal.ui.text.DocumentCharacterIterator;
 import org.eclipse.jdt.internal.ui.text.JavaChangeHover;
 import org.eclipse.jdt.internal.ui.text.JavaPairMatcher;
+import org.eclipse.jdt.internal.ui.text.JavaPartitionerManager;
 import org.eclipse.jdt.internal.ui.text.JavaWordFinder;
 import org.eclipse.jdt.internal.ui.text.JavaWordIterator;
 import org.eclipse.jdt.internal.ui.text.PreferencesAdapter;
@@ -1501,14 +1503,14 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 
 	/**
 	 * Preference key for highlighting bracket at caret location.
-	 * 
+	 *
 	 * @since 3.8
 	 */
 	protected final static String HIGHLIGHT_BRACKET_AT_CARET_LOCATION= PreferenceConstants.EDITOR_HIGHLIGHT_BRACKET_AT_CARET_LOCATION;
-	
+
 	/**
 	 * Preference key for enclosing brackets.
-	 * 
+	 *
 	 * @since 3.8
 	 */
 	protected final static String ENCLOSING_BRACKETS= PreferenceConstants.EDITOR_ENCLOSING_BRACKETS;
@@ -1743,32 +1745,32 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 
 	/**
 	 * Time when last error message got set.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private long fErrorMessageTime;
 
 	/**
 	 * Timeout for the error message.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private static final long ERROR_MESSAGE_TIMEOUT= 1000;
 
 	/**
 	 * Previous location history for goto matching bracket action.
-	 * 
+	 *
 	 * @since 3.8
 	 */
 	private List<IRegion> fPreviousSelections;
 
 	/**
 	 * Java code mining manager
-	 * 
+	 *
 	 * @since 3.14
 	 */
 	private JavaCodeMiningManager fJavaCodeMiningManager;
-	
+
 	/**
 	 * Returns the most narrow java element including the given offset.
 	 *
@@ -2166,7 +2168,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 	 * @param checkIfOutlinePageActive <code>true</code> if check for active outline page needs to be done
 	 */
 	protected void synchronizeOutlinePage(ISourceReference element, boolean checkIfOutlinePageActive) {
-		if (fOutlinePage != null && element != null && !(checkIfOutlinePageActive && isJavaOutlinePageActive())) {
+		if (fOutlinePage != null && element != null && (!checkIfOutlinePageActive || !isJavaOutlinePageActive())) {
 			fOutlinePage.select(element);
 		}
 	}
@@ -2196,7 +2198,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			return (T) new IShowInTargetList() {
 				@Override
 				public String[] getShowInTargetIds() {
-					return new String[] { JavaUI.ID_PACKAGES, IPageLayout.ID_OUTLINE, JavaPlugin.ID_RES_NAV };
+					return new String[] { JavaUI.ID_PACKAGES, IPageLayout.ID_OUTLINE };
 				}
 
 			};
@@ -2599,6 +2601,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 		SourceViewerConfiguration sourceViewerConfiguration= getSourceViewerConfiguration();
 		if (sourceViewerConfiguration == null || sourceViewerConfiguration instanceof JavaSourceViewerConfiguration) {
 			JavaTextTools textTools= JavaPlugin.getDefault().getJavaTextTools();
+			setEditorInfoInPartitionerManager(this);
 			setSourceViewerConfiguration(new JavaSourceViewerConfiguration(textTools.getColorManager(), store, this, IJavaPartitions.JAVA_PARTITIONING));
 		}
 
@@ -2646,7 +2649,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			PlatformUI.getWorkbench().removeWindowListener(fActivationListener);
 			fActivationListener= null;
 		}
-		
+
 		if (fEncodingSupport != null) {
 			fEncodingSupport.dispose();
 			fEncodingSupport= null;
@@ -2676,6 +2679,8 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			fBreadcrumb.dispose();
 			fBreadcrumb= null;
 		}
+
+		clearEditorInfoInPartitionerManager(this);
 
 		uninstallJavaCodeMining();
 
@@ -2798,28 +2803,22 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 	 * don't want to make this risky method API at this point, since Java editor breadcrumb might
 	 * become a Platform UI feature during 3.5 and hence we can then delete this workaround.
 	 * </p>
-	 * 
+	 *
 	 * @param state <code>true</code> if activated
 	 * @since 3.4
 	 */
 	protected void setActionsActivated(boolean state) {
 		Method method= null;
 		try {
-			method= AbstractTextEditor.class.getDeclaredMethod("setActionActivation", new Class[] { boolean.class }); //$NON-NLS-1$
-		} catch (SecurityException ex) {
-			JavaPlugin.log(ex);
-		} catch (NoSuchMethodException ex) {
+			method= AbstractTextEditor.class.getDeclaredMethod("setActionActivation", boolean.class); //$NON-NLS-1$
+		} catch (SecurityException | NoSuchMethodException ex) {
 			JavaPlugin.log(ex);
 		}
 		Assert.isNotNull(method);
 		method.setAccessible(true);
 		try {
-			method.invoke(this, new Object[] { Boolean.valueOf(state) });
-		} catch (IllegalArgumentException ex) {
-			JavaPlugin.log(ex);
-		} catch (InvocationTargetException ex) {
-			JavaPlugin.log(ex);
-		} catch (IllegalAccessException ex) {
+			method.invoke(this, Boolean.valueOf(state));
+		} catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException ex) {
 			JavaPlugin.log(ex);
 		}
 	}
@@ -2871,7 +2870,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			boolean newBooleanValue= false;
 			Object newValue= event.getNewValue();
 			if (newValue != null)
-				newBooleanValue= Boolean.valueOf(newValue.toString()).booleanValue();
+				newBooleanValue= Boolean.parseBoolean(newValue.toString());
 
 			if (PreferenceConstants.EDITOR_SYNC_OUTLINE_ON_CURSOR_MOVE.equals(property)) {
 				if (newBooleanValue)
@@ -2899,45 +2898,39 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 				}
 				return;
 			}
-			if (PreferenceConstants.EDITOR_MARK_TYPE_OCCURRENCES.equals(property)) {
-				fMarkTypeOccurrences= newBooleanValue;
-				return;
-			}
-			if (PreferenceConstants.EDITOR_MARK_METHOD_OCCURRENCES.equals(property)) {
-				fMarkMethodOccurrences= newBooleanValue;
-				return;
-			}
-			if (PreferenceConstants.EDITOR_MARK_CONSTANT_OCCURRENCES.equals(property)) {
-				fMarkConstantOccurrences= newBooleanValue;
-				return;
-			}
-			if (PreferenceConstants.EDITOR_MARK_FIELD_OCCURRENCES.equals(property)) {
-				fMarkFieldOccurrences= newBooleanValue;
-				return;
-			}
-			if (PreferenceConstants.EDITOR_MARK_LOCAL_VARIABLE_OCCURRENCES.equals(property)) {
-				fMarkLocalVariableypeOccurrences= newBooleanValue;
-				return;
-			}
-			if (PreferenceConstants.EDITOR_MARK_EXCEPTION_OCCURRENCES.equals(property)) {
-				fMarkExceptions= newBooleanValue;
-				return;
-			}
-			if (PreferenceConstants.EDITOR_MARK_METHOD_EXIT_POINTS.equals(property)) {
-				fMarkMethodExitPoints= newBooleanValue;
-				return;
-			}
-			if (PreferenceConstants.EDITOR_MARK_BREAK_CONTINUE_TARGETS.equals(property)) {
-				fMarkBreakContinueTargets= newBooleanValue;
-				return;
-			}
-			if (PreferenceConstants.EDITOR_MARK_IMPLEMENTORS.equals(property)) {
-				fMarkImplementors= newBooleanValue;
-				return;
-			}
-			if (PreferenceConstants.EDITOR_STICKY_OCCURRENCES.equals(property)) {
-				fStickyOccurrenceAnnotations= newBooleanValue;
-				return;
+			switch (property) {
+				case PreferenceConstants.EDITOR_MARK_TYPE_OCCURRENCES:
+					fMarkTypeOccurrences= newBooleanValue;
+					return;
+				case PreferenceConstants.EDITOR_MARK_METHOD_OCCURRENCES:
+					fMarkMethodOccurrences= newBooleanValue;
+					return;
+				case PreferenceConstants.EDITOR_MARK_CONSTANT_OCCURRENCES:
+					fMarkConstantOccurrences= newBooleanValue;
+					return;
+				case PreferenceConstants.EDITOR_MARK_FIELD_OCCURRENCES:
+					fMarkFieldOccurrences= newBooleanValue;
+					return;
+				case PreferenceConstants.EDITOR_MARK_LOCAL_VARIABLE_OCCURRENCES:
+					fMarkLocalVariableypeOccurrences= newBooleanValue;
+					return;
+				case PreferenceConstants.EDITOR_MARK_EXCEPTION_OCCURRENCES:
+					fMarkExceptions= newBooleanValue;
+					return;
+				case PreferenceConstants.EDITOR_MARK_METHOD_EXIT_POINTS:
+					fMarkMethodExitPoints= newBooleanValue;
+					return;
+				case PreferenceConstants.EDITOR_MARK_BREAK_CONTINUE_TARGETS:
+					fMarkBreakContinueTargets= newBooleanValue;
+					return;
+				case PreferenceConstants.EDITOR_MARK_IMPLEMENTORS:
+					fMarkImplementors= newBooleanValue;
+					return;
+				case PreferenceConstants.EDITOR_STICKY_OCCURRENCES:
+					fStickyOccurrenceAnnotations= newBooleanValue;
+					return;
+				default:
+					break;
 			}
 			if (SemanticHighlightings.affectsEnablement(getPreferenceStore(), event)) {
 				if (isSemanticHighlightingEnabled())
@@ -2977,35 +2970,34 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 				return;
 			}
 
-			if (PreferenceConstants.EDITOR_FOLDING_PROVIDER.equals(property)) {
-				if (sourceViewer instanceof ProjectionViewer) {
-					ProjectionViewer projectionViewer= (ProjectionViewer) sourceViewer;
-					if (fProjectionModelUpdater != null)
-						fProjectionModelUpdater.uninstall();
-					// either freshly enabled or provider changed
-					fProjectionModelUpdater= JavaPlugin.getDefault().getFoldingStructureProviderRegistry().getCurrentFoldingProvider();
-					if (fProjectionModelUpdater != null) {
-						fProjectionModelUpdater.install(this, projectionViewer);
+			switch (property) {
+				case PreferenceConstants.EDITOR_FOLDING_PROVIDER:
+					if (sourceViewer instanceof ProjectionViewer) {
+						ProjectionViewer projectionViewer= (ProjectionViewer) sourceViewer;
+						if (fProjectionModelUpdater != null)
+							fProjectionModelUpdater.uninstall();
+						// either freshly enabled or provider changed
+						fProjectionModelUpdater= JavaPlugin.getDefault().getFoldingStructureProviderRegistry().getCurrentFoldingProvider();
+						if (fProjectionModelUpdater != null) {
+							fProjectionModelUpdater.install(this, projectionViewer);
+						}
 					}
-				}
-				return;
-			}
-
-			if (DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE.equals(property)
-					|| DefaultCodeFormatterConstants.FORMATTER_INDENTATION_SIZE.equals(property)
-					|| DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR.equals(property)) {
-				StyledText textWidget= sourceViewer.getTextWidget();
-				int tabWidth= getSourceViewerConfiguration().getTabWidth(sourceViewer);
-				if (textWidget.getTabs() != tabWidth)
-					textWidget.setTabs(tabWidth);
-				return;
-			}
-
-			if (PreferenceConstants.EDITOR_FOLDING_ENABLED.equals(property)) {
-				if (sourceViewer instanceof ProjectionViewer) {
-					new ToggleFoldingRunner().runWhenNextVisible();
-				}
-				return;
+					return;
+				case DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE:
+				case DefaultCodeFormatterConstants.FORMATTER_INDENTATION_SIZE:
+				case DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR:
+					StyledText textWidget= sourceViewer.getTextWidget();
+					int tabWidth= getSourceViewerConfiguration().getTabWidth(sourceViewer);
+					if (textWidget.getTabs() != tabWidth)
+						textWidget.setTabs(tabWidth);
+					return;
+				case PreferenceConstants.EDITOR_FOLDING_ENABLED:
+					if (sourceViewer instanceof ProjectionViewer) {
+						new ToggleFoldingRunner().runWhenNextVisible();
+					}
+					return;
+				default:
+					break;
 			}
 
 		} finally {
@@ -3017,7 +3009,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			Object newValue= event.getNewValue();
 			ISourceViewer viewer= getSourceViewer();
 			if (newValue != null && viewer != null) {
-				if (Boolean.valueOf(newValue.toString()).booleanValue()) {
+				if (Boolean.parseBoolean(newValue.toString())) {
 					// adjust the highlightrange in order to get the magnet right after changing the selection
 					Point selection= viewer.getSelectedRange();
 					adjustHighlightRange(selection.x, selection.y);
@@ -3057,12 +3049,8 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 	 */
 	private void updateHoverBehavior() {
 		SourceViewerConfiguration configuration= getSourceViewerConfiguration();
-		String[] types= configuration.getConfiguredContentTypes(getSourceViewer());
 
-		for (int i= 0; i < types.length; i++) {
-
-			String t= types[i];
-
+		for (String t : configuration.getConfiguredContentTypes(getSourceViewer())) {
 			ISourceViewer sourceViewer= getSourceViewer();
 			if (sourceViewer instanceof ITextViewerExtension2) {
 				// Remove existing hovers
@@ -3071,8 +3059,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 				int[] stateMasks= configuration.getConfiguredTextHoverStateMasks(getSourceViewer(), t);
 
 				if (stateMasks != null) {
-					for (int j= 0; j < stateMasks.length; j++)	{
-						int stateMask= stateMasks[j];
+					for (int stateMask : stateMasks) {
 						ITextHover textHover= configuration.getTextHover(sourceViewer, t, stateMask);
 						((ITextViewerExtension2)sourceViewer).setTextHover(textHover, t, stateMask);
 					}
@@ -3229,7 +3216,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 
 		private boolean isCanceled(IProgressMonitor progressMonitor) {
 			return fCanceled || progressMonitor.isCanceled()
-				||  fPostSelectionValidator != null && !(fPostSelectionValidator.isValid(fSelection) || fForcedMarkOccurrencesSelection == fSelection)
+				||  fPostSelectionValidator != null && (!fPostSelectionValidator.isValid(fSelection) && (fForcedMarkOccurrencesSelection != fSelection))
 				|| LinkedModeModel.hasInstalledModel(fDocument);
 		}
 
@@ -3260,12 +3247,11 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			// Add occurrence annotations
 			int length= fLocations.length;
 			Map<Annotation, Position> annotationMap= new HashMap<>(length);
-			for (int i= 0; i < length; i++) {
+			for (OccurrenceLocation location : fLocations) {
 
 				if (isCanceled(progressMonitor))
 					return Status.CANCEL_STATUS;
 
-				OccurrenceLocation location= fLocations[i];
 				Position position= new Position(location.getOffset(), location.getLength());
 
 				String description= location.getDescription();
@@ -3288,7 +3274,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 						annotationModel.addAnnotation(mapEntry.getKey(), mapEntry.getValue());
 					}
 				}
-				fOccurrenceAnnotations= annotationMap.keySet().toArray(new Annotation[annotationMap.keySet().size()]);
+				fOccurrenceAnnotations= annotationMap.keySet().toArray(new Annotation[annotationMap.size()]);
 			}
 
 			return Status.OK_STATUS;
@@ -3502,8 +3488,8 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 			if (annotationModel instanceof IAnnotationModelExtension) {
 				((IAnnotationModelExtension)annotationModel).replaceAnnotations(fOccurrenceAnnotations, null);
 			} else {
-				for (int i= 0, length= fOccurrenceAnnotations.length; i < length; i++)
-					annotationModel.removeAnnotation(fOccurrenceAnnotations[i]);
+				for (Annotation fOccurrenceAnnotation : fOccurrenceAnnotations)
+					annotationModel.removeAnnotation(fOccurrenceAnnotation);
 			}
 			fOccurrenceAnnotations= null;
 		}
@@ -4255,7 +4241,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 
 	/**
 	 * Returns the bracket matcher.
-	 * 
+	 *
 	 * @return the bracket matcher
 	 * @since 3.8
 	 */
@@ -4265,7 +4251,7 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 
 	/**
 	 * Checks whether called from Outline view.
-	 * 
+	 *
 	 * @return <code>true</code> if called by Outline view
 	 * @since 3.9
 	 */
@@ -4352,15 +4338,33 @@ public abstract class JavaEditor extends AbstractDecoratedTextEditor implements 
 	 * {@link PreferenceConstants#EDITOR_JAVA_CODEMINING_PREFIX}. It provides the capability for
 	 * external plug-ins to contribute with a custom {@link ICodeMiningProvider} and refresh the Java
 	 * Editor mining when preferences changed.
-	 * 
+	 *
 	 * @param property the name of the preference property that changed
-	 * 
+	 *
 	 * @return <code>true</code> if the given property is a Java code mining preference.
-	 * 
+	 *
 	 * @since 3.14
 	 */
 	private boolean isJavaCodeMiningPreference(String property) {
 		return PreferenceConstants.EDITOR_CODEMINING_ENABLED.equals(property) || property.startsWith(PreferenceConstants.EDITOR_JAVA_CODEMINING_PREFIX);
+	}
+
+	private void clearEditorInfoInPartitionerManager(JavaEditor editor) {
+		JavaTextTools textTools= JavaPlugin.getDefault().getJavaTextTools();
+		IJavaPartitionerManager pManager= textTools.getJavaPartitionerManager();
+		if (pManager instanceof JavaPartitionerManager) {
+			JavaPartitionerManager jpManager= (JavaPartitionerManager) pManager;
+			jpManager.clearEditorInfo(editor);
+		}
+	}
+
+	private void setEditorInfoInPartitionerManager(JavaEditor editor) {
+		JavaTextTools textTools= JavaPlugin.getDefault().getJavaTextTools();
+		IJavaPartitionerManager pManager= textTools.getJavaPartitionerManager();
+		if (pManager instanceof JavaPartitionerManager) {
+			JavaPartitionerManager jpManager= (JavaPartitionerManager) pManager;
+			jpManager.setEditorInfo(editor);
+		}
 	}
 
 }

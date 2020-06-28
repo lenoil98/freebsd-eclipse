@@ -51,6 +51,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
@@ -103,7 +104,7 @@ public class JUnitPlugin extends AbstractUIPlugin {
 	public static IWorkbenchWindow getActiveWorkbenchWindow() {
 		if (fgPlugin == null)
 			return null;
-		IWorkbench workBench= fgPlugin.getWorkbench();
+		IWorkbench workBench= PlatformUI.getWorkbench();
 		if (workBench == null)
 			return null;
 		return workBench.getActiveWorkbenchWindow();
@@ -255,7 +256,7 @@ public class JUnitPlugin extends AbstractUIPlugin {
 
 	/**
 	 * Returns a service with the specified name or <code>null</code> if none.
-	 * 
+	 *
 	 * @param serviceName name of service
 	 * @return service object or <code>null</code> if none
 	 * @since 3.5
@@ -342,7 +343,7 @@ public class JUnitPlugin extends AbstractUIPlugin {
 		}
 		return section;
 	}
-	
+
 	public static void asyncShowTestRunnerViewPart() {
 		getDisplay().asyncExec(new Runnable() {
 			@Override
@@ -371,7 +372,7 @@ public class JUnitPlugin extends AbstractUIPlugin {
 			return null;
 		}
 	}
-	
+
 	private static Display getDisplay() {
 //			Shell shell= getActiveWorkbenchShell();
 //			if (shell != null) {

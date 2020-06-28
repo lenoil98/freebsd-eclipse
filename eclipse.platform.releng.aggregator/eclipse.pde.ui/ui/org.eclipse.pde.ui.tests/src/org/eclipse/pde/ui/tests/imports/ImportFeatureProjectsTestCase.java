@@ -13,6 +13,10 @@
  *******************************************************************************/
 package org.eclipse.pde.ui.tests.imports;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.eclipse.core.runtime.*;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.pde.internal.core.PDECore;
@@ -22,13 +26,16 @@ import org.eclipse.pde.internal.ui.PDEPlugin;
 import org.eclipse.pde.internal.ui.wizards.imports.FeatureImportOperation;
 import org.eclipse.pde.internal.ui.wizards.imports.FeatureImportWizard.ReplaceQuery;
 import org.eclipse.pde.ui.tests.wizards.NewProjectTestCase;
+import org.junit.After;
+import org.junit.Test;
 
 public class ImportFeatureProjectsTestCase extends NewProjectTestCase {
 
 	private String fProjectName;
 
 	@Override
-	protected void tearDown() {
+	@After
+	public void tearDown() {
 		fProjectName = null;
 		super.tearDown();
 	}
@@ -58,9 +65,7 @@ public class ImportFeatureProjectsTestCase extends NewProjectTestCase {
 			PDEPlugin.getWorkspace().run(op, new NullProgressMonitor());
 			if (models.length > 0)
 				lookingAtProject(models[0]);
-		} catch (OperationCanceledException e) {
-			fail("Feature import failed...");
-		} catch (CoreException e) {
+		} catch (OperationCanceledException | CoreException e) {
 			fail("Feature import failed...");
 		}
 	}
@@ -96,6 +101,7 @@ public class ImportFeatureProjectsTestCase extends NewProjectTestCase {
 		}
 	}
 
+	@Test
 	public void testImportFeature() {
 		IFeatureModel[] model = PDECore.getDefault().getFeatureModelManager().getModels();
 		if (model.length == 0)
@@ -107,6 +113,7 @@ public class ImportFeatureProjectsTestCase extends NewProjectTestCase {
 		verifyFeature(binary);
 	}
 
+	@Test
 	public void testImportBinaryFeature() {
 		IFeatureModel[] model = PDECore.getDefault().getFeatureModelManager().getModels();
 		if (model.length == 0)
@@ -118,6 +125,7 @@ public class ImportFeatureProjectsTestCase extends NewProjectTestCase {
 		verifyFeature(binary);
 	}
 
+	@Test
 	public void testImportMulitpleFeatures() {
 		IFeatureModel[] models = PDECore.getDefault().getFeatureModelManager().getModels();
 		if (models.length == 0)
@@ -131,6 +139,7 @@ public class ImportFeatureProjectsTestCase extends NewProjectTestCase {
 		assertTrue("Verifing number models imported...", imported.length == models.length);
 	}
 
+	@Test
 	public void testFeaturePlugins() {
 		IFeatureModel[] model = PDECore.getDefault().getFeatureModelManager().getModels();
 		if (model.length == 0)

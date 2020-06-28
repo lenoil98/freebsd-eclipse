@@ -16,8 +16,7 @@
  *******************************************************************************/
 package org.eclipse.core.internal.events;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import org.eclipse.core.internal.resources.ModelObject;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
@@ -152,7 +151,7 @@ public class BuildCommand extends ModelObject implements ICommand {
 	}
 
 	/**
-	 * @return A copy of the internal map {@link IBuildConfiguration} -> {@link IncrementalProjectBuilder} if
+	 * @return A copy of the internal map {@link IBuildConfiguration} -&gt; {@link IncrementalProjectBuilder} if
 	 * this build command supports multiple configurations. Otherwise return the {@link IncrementalProjectBuilder}
 	 * associated with this build command.
 	 */
@@ -166,10 +165,11 @@ public class BuildCommand extends ModelObject implements ICommand {
 	}
 
 	/**
-	 * Return the {@link IncrementalProjectBuilder} for the {@link IBuildConfiguration}
-	 * If this builder is configuration agnostic, the same {@link IncrementalProjectBuilder} is
-	 * returned for all configurations.
-	 * @param config
+	 * Return the {@link IncrementalProjectBuilder} for the
+	 * {@link IBuildConfiguration} If this builder is configuration agnostic, the
+	 * same {@link IncrementalProjectBuilder} is returned for all configurations.
+	 *
+	 * @param config the config to get a builder for
 	 * @return {@link IncrementalProjectBuilder} corresponding to config
 	 */
 	public IncrementalProjectBuilder getBuilder(IBuildConfiguration config) {
@@ -226,7 +226,10 @@ public class BuildCommand extends ModelObject implements ICommand {
 
 	/**
 	 * Set the IncrementalProjectBuilder(s) for this command
-	 * @param value
+	 *
+	 * @param value a single {@link IncrementalProjectBuilder} or a {@link Map} of
+	 *              {@link IncrementalProjectBuilder} indexed by
+	 *              {@link IBuildConfiguration}
 	 */
 	@SuppressWarnings("unchecked")
 	public void setBuilders(Object value) {

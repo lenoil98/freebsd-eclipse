@@ -50,8 +50,8 @@ public class ArchiveSourceContainerBrowser extends AbstractSourceContainerBrowse
 			if (selection.length == 0) {
 				return new Status(IStatus.ERROR, DebugUIPlugin.getUniqueIdentifier(), 0, IInternalDebugCoreConstants.EMPTY_STRING, null);
 			}
-			for (int i= 0; i < selection.length; i++) {
-				if (!(selection[i] instanceof IFile)) {
+			for (Object f : selection) {
+				if (!(f instanceof IFile)) {
 					return new Status(IStatus.ERROR, DebugUIPlugin.getUniqueIdentifier(), 0, IInternalDebugCoreConstants.EMPTY_STRING, null);
 				}
 			}
@@ -69,8 +69,7 @@ public class ArchiveSourceContainerBrowser extends AbstractSourceContainerBrowse
 	protected List<ISourceContainer> getSelectedJars(ISourceLookupDirector director) {
 		ISourceContainer[] containers = director.getSourceContainers();
 		List<ISourceContainer> jars = new ArrayList<>();
-		for (int i = 0; i < containers.length; i++) {
-			ISourceContainer container = containers[i];
+		for (ISourceContainer container : containers) {
 			if (container.getType().getId().equals(ArchiveSourceContainer.TYPE_ID)) {
 				jars.add(container);
 			}
@@ -78,9 +77,6 @@ public class ArchiveSourceContainerBrowser extends AbstractSourceContainerBrowse
 		return jars;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.sourcelookup.ISourceContainerBrowser#createSourceContainers(org.eclipse.swt.widgets.Shell, org.eclipse.debug.internal.core.sourcelookup.ISourceLookupDirector)
-	 */
 	@Override
 	public ISourceContainer[] addSourceContainers(Shell shell, ISourceLookupDirector director) {
 		ViewerFilter filter= new ArchiveFilter(getSelectedJars(director));

@@ -140,12 +140,12 @@ public class MultiElementListSelectionDialog extends AbstractElementListSelectio
 	protected void createButtonsForButtonBar(Composite parent) {
 		fSkipButton= createButton(parent, IDialogConstants.SKIP_ID, IDialogConstants.SKIP_LABEL, false);
 		fBackButton= createButton(parent, IDialogConstants.BACK_ID, IDialogConstants.BACK_LABEL, false);
-		
+
 		// XXX: Workaround for https://bugs.eclipse.org/bugs/show_bug.cgi?id=279425
 		boolean HAS_BUG_279425= true;
 		fNextButton= createButton(parent, IDialogConstants.NEXT_ID, IDialogConstants.NEXT_LABEL, !HAS_BUG_279425);
 		fFinishButton= createButton(parent, IDialogConstants.OK_ID, IDialogConstants.FINISH_LABEL, HAS_BUG_279425);
-		
+
 		createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
 	}
 
@@ -203,18 +203,23 @@ public class MultiElementListSelectionDialog extends AbstractElementListSelectio
 	 */
 	@Override
 	protected void buttonPressed(int buttonId) {
-		if (buttonId == IDialogConstants.SKIP_ID) {
-			boolean isLastPage= fCurrentPage == fNumberOfPages - 1 ? true : false;
-			turnPage(true, true);
-			if (isLastPage) {
-				buttonPressed(IDialogConstants.OK_ID);
-			}
-		} else if (buttonId == IDialogConstants.BACK_ID) {
-			turnPage(false, false);
-		} else if (buttonId == IDialogConstants.NEXT_ID) {
-			turnPage(true, false);
-		} else {
-			super.buttonPressed(buttonId);
+		switch (buttonId) {
+			case IDialogConstants.SKIP_ID:
+				boolean isLastPage= fCurrentPage == fNumberOfPages - 1 ? true : false;
+				turnPage(true, true);
+				if (isLastPage) {
+					buttonPressed(IDialogConstants.OK_ID);
+				}
+				break;
+			case IDialogConstants.BACK_ID:
+				turnPage(false, false);
+				break;
+			case IDialogConstants.NEXT_ID:
+				turnPage(true, false);
+				break;
+			default:
+				super.buttonPressed(buttonId);
+				break;
 		}
 	}
 

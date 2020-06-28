@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2018 IBM Corporation and others.
+ * Copyright (c) 2014, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,7 @@
  *     Martin Karpisek <martin.karpisek@gmail.com> - Bug 438509
  *     Axel Richard (Obeo) - Bug 41353 - Launch configurations prototypes
  *     Kit Lo (IBM) - Bug 244461 - Duplicating colon in error message
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 547222
  *******************************************************************************/
 package org.eclipse.pde.internal.ui;
 
@@ -1385,7 +1386,6 @@ public class PDEUIMessages extends NLS {
 	public static String BaseFeatureSpecPage_patchGroup_title;
 	public static String BaseFeatureSpecPage_featurePropertiesGroup_title;
 	public static String BaseFeatureSpecPage_browse;
-	public static String BaseExtensionPoint_sections_copyright;
 	public static String BaseExportWizard_confirmReplace_title;
 	public static String BaseExtensionPoint_generating;
 	public static String GeneralInfoSection_IdWarning;
@@ -1711,6 +1711,23 @@ public class PDEUIMessages extends NLS {
 	public static String DependencyAnalysisSection_plugin_editable;
 	public static String DependencyAnalysisSection_plugin_notEditable;
 
+	public static String FeaturesView_CollapseAllAction_description;
+	public static String FeaturesView_CollapseAllAction_tooltip;
+	public static String FeaturesView_FeatureAndPluginCopyAction_label;
+	public static String FeaturesView_FilterFeatureChildAction_description;
+	public static String FeaturesView_FilterFeatureChildAction_tooltip;
+	public static String FeaturesView_ShowCalleesContentProviderAction_description;
+	public static String FeaturesView_ShowCalleesContentProviderAction_tooltip;
+	public static String FeaturesView_ShowCallersContentProviderAction_description;
+	public static String FeaturesView_ShowCallersContentProviderAction_tooltip;
+	public static String FeaturesView_ShowPluginsAction_description;
+	public static String FeaturesView_ShowPluginsAction_tooltip;
+	public static String FeaturesView_ShowProductsAction_description;
+	public static String FeaturesView_ShowProductsAction_tooltip;
+	public static String FeaturesView_OpenAction_label;
+	public static String FeaturesView_loadingDescription;
+	public static String FeaturesView_searchPlaceholder;
+
 	public static String HistoryAction_description;
 	public static String HistoryAction_tooltip;
 	public static String HistoryDropDownAction_tooltip;
@@ -1818,6 +1835,8 @@ public class PDEUIMessages extends NLS {
 	public static String compilers_s_create_docs;
 	public static String compilers_s_doc_folder;
 	public static String compilers_s_open_tags;
+	public static String compilers_p_exec_env_too_low;
+
 	public static String compilers_p_exported_pkgs;
 
 	public static String compilers_f_unresolved_plugins;
@@ -1923,6 +1942,16 @@ public class PDEUIMessages extends NLS {
 	public static String CategoryDetails_desc;
 	public static String CategoryDetails_alreadyExists;
 	public static String CategoryDetails_alreadyExists_title;
+
+	public static String FeatureDetails_title;
+	public static String FeatureDetails_sectionDescription;
+	public static String SiteContentDetails_id;
+	public static String SiteContentDetails_version;
+	public static String FeatureDetails_url;
+	public static String FeatureDetails_include_url;
+
+	public static String BundleDetails_title;
+	public static String BundleDetails_sectionDescription;
 
 	public static String FeaturesPage_title;
 	public static String FeaturesPage_header;
@@ -3231,12 +3260,15 @@ public class PDEUIMessages extends NLS {
 	public static String PDEJavaHelper_msgContentAssistAvailableWithKeyBinding;
 
 	public static String AddExportPackageResolution_Label;
+	public static String AddExportPackageInternalDirectiveResolution_Label;
 	public static String AddBundleClassPathResolution_add;
 
 	public static String AddBundleManifestVersionResolution_description;
 	public static String AddBundleManifestVersionResolution_label;
 
 	public static String AddToJavaSearchJob_0;
+
+	public static String AnnotationHover_version_change;
 
 	public static String AntGeneratingExportWizard_0;
 	public static String AntGeneratingExportWizard_1;

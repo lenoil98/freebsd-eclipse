@@ -21,6 +21,7 @@ import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.ui.PlatformUI;
 
 /**
  * This class provides the aciton event for both the context menu in breakpoints view
@@ -44,21 +45,15 @@ public class ImportBreakpoints extends AbstractDebugActionDelegate {
 	@Override
 	public void run(IAction action) {
 		WizardImportBreakpoints wiz = new WizardImportBreakpoints();
-		wiz.init(DebugUIPlugin.getDefault().getWorkbench(), null);
+		wiz.init(PlatformUI.getWorkbench(), null);
 		WizardDialog wizdialog = new WizardDialog(DebugUIPlugin.getShell(), wiz);
 		wizdialog.setBlockOnOpen(true);
 		wizdialog.open();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.actions.AbstractDebugActionDelegate#doAction(java.lang.Object)
-	 */
 	@Override
 	protected void doAction(Object element) throws DebugException {}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.actions.AbstractDebugActionDelegate#update(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	protected void update(IAction action, ISelection s) {
 		super.update(action, s);

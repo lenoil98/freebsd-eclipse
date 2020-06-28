@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,13 +21,14 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.function.IntFunction;
 
 import org.osgi.framework.Bundle;
 
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.widgets.Display;
 
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
@@ -114,6 +115,12 @@ public class JavaPluginImages {
 	public static final String IMG_OBJS_ENUM_PROTECTED= NAME_PREFIX + "enum_protected_obj.gif"; //$NON-NLS-1$
 	public static final String IMG_OBJS_ENUM_PRIVATE= NAME_PREFIX + "enum_private_obj.gif"; //$NON-NLS-1$
 	public static final String IMG_OBJS_ENUM_ALT= NAME_PREFIX + "enum_alt_obj.gif"; //$NON-NLS-1$
+
+	public static final String IMG_OBJS_RECORD= NAME_PREFIX + "record_obj.gif"; //$NON-NLS-1$
+	public static final String IMG_OBJS_RECORD_DEFAULT= NAME_PREFIX + "record_default_obj.gif"; //$NON-NLS-1$
+	public static final String IMG_OBJS_RECORD_PROTECTED= NAME_PREFIX + "record_protected_obj.gif"; //$NON-NLS-1$
+	public static final String IMG_OBJS_RECORD_PRIVATE= NAME_PREFIX + "record_private_obj.gif"; //$NON-NLS-1$
+	public static final String IMG_OBJS_RECORD_ALT= NAME_PREFIX + "record_alt_obj.gif"; //$NON-NLS-1$
 
 	public static final String IMG_OBJS_CUNIT= NAME_PREFIX + "jcu_obj.gif"; 				//$NON-NLS-1$
 	public static final String IMG_OBJS_CUNIT_RESOURCE= NAME_PREFIX + "jcu_resource_obj.gif"; 				//$NON-NLS-1$
@@ -291,6 +298,12 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_OBJS_ENUM_PRIVATE= createManagedFromKey(T_OBJ, IMG_OBJS_ENUM_PRIVATE);
 	public static final ImageDescriptor DESC_OBJS_ENUM_ALT= createManagedFromKey(T_OBJ, IMG_OBJS_ENUM_ALT);
 
+	public static final ImageDescriptor DESC_OBJS_RECORD= createManagedFromKey(T_OBJ, IMG_OBJS_RECORD);
+	public static final ImageDescriptor DESC_OBJS_RECORD_DEFAULT= createManagedFromKey(T_OBJ, IMG_OBJS_RECORD_DEFAULT);
+	public static final ImageDescriptor DESC_OBJS_RECORD_PROTECTED= createManagedFromKey(T_OBJ, IMG_OBJS_RECORD_PROTECTED);
+	public static final ImageDescriptor DESC_OBJS_RECORD_PRIVATE= createManagedFromKey(T_OBJ, IMG_OBJS_RECORD_PRIVATE);
+	public static final ImageDescriptor DESC_OBJS_RECORD_ALT= createManagedFromKey(T_OBJ, IMG_OBJS_RECORD_ALT);
+
 	public static final ImageDescriptor DESC_OBJS_JAR= createManagedFromKey(T_OBJ, IMG_OBJS_JAR);
 	public static final ImageDescriptor DESC_OBJS_JAR_TEST= createManagedFromKey(T_OBJ, IMG_OBJS_JAR_TEST);
 	public static final ImageDescriptor DESC_OBJS_EXTJAR= createManagedFromKey(T_OBJ, IMG_OBJS_EXTJAR);
@@ -440,11 +453,18 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_OVR_FOCUS= createUnManagedCached(T_OVR, "focus_ovr.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OVR_ANNOTATION= createUnManagedCached(T_OVR, "annotation_tsk.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OVR_ENUM= createUnManagedCached(T_OVR, "enum_tsk.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_RECORD= createUnManagedCached(T_OVR, "record_tsk.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OVR_INTERFACE= createUnManagedCached(T_OVR, "interface_tsk.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OVR_CLASS= createUnManagedCached(T_OVR, "class_tsk.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OVR_ABSTRACT_CLASS= createUnManagedCached(T_OVR, "class_abs_tsk.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OVR_LIBRARY= createUnManagedCached(T_OVR, "library_ovr.png"); //$NON-NLS-1$
-	
+	public static final ImageDescriptor DESC_OVR_SYSTEM_MOD= createUnManagedCached(T_OVR, "system_mod_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_AUTO_MOD= createUnManagedCached(T_OVR, "auto_mod_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_EXPORTS= createUnManagedCached(T_OVR, "exports_pkg_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_OPENS= createUnManagedCached(T_OVR, "opens_pkg_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_READS= createUnManagedCached(T_OVR, "reads_mod_ovr.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_OVR_PATCH= createUnManagedCached(T_OVR, "patch_ovr.png"); //$NON-NLS-1$
+
     // Call Hierarchy
     public static final ImageDescriptor DESC_OVR_RECURSIVE= createUnManaged(T_OVR, "recursive_co.png");              //$NON-NLS-1$
     public static final ImageDescriptor DESC_OVR_MAX_LEVEL= createUnManaged(T_OVR, "maxlevel_co.png");                    //$NON-NLS-1$
@@ -452,6 +472,7 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_WIZBAN_NEWCLASS= createUnManaged(T_WIZBAN, "newclass_wiz.png"); 			//$NON-NLS-1$
 	public static final ImageDescriptor DESC_WIZBAN_NEWINT= createUnManaged(T_WIZBAN, "newint_wiz.png"); 				//$NON-NLS-1$
 	public static final ImageDescriptor DESC_WIZBAN_NEWENUM= createUnManaged(T_WIZBAN, "newenum_wiz.png"); 				//$NON-NLS-1$
+	public static final ImageDescriptor DESC_WIZBAN_NEWRECORD= createUnManaged(T_WIZBAN, "newrecord_wiz.png"); 				//$NON-NLS-1$
 	public static final ImageDescriptor DESC_WIZBAN_NEWANNOT= createUnManaged(T_WIZBAN, "newannotation_wiz.png"); 				//$NON-NLS-1$
 	public static final ImageDescriptor DESC_WIZBAN_NEWJPRJ= createUnManaged(T_WIZBAN, "newjprj_wiz.png"); 			//$NON-NLS-1$
 	public static final ImageDescriptor DESC_WIZBAN_NEWSRCFOLDR= createUnManaged(T_WIZBAN, "newsrcfldr_wiz.png"); 	//$NON-NLS-1$
@@ -497,6 +518,9 @@ public class JavaPluginImages {
 	public static final ImageDescriptor DESC_DLCL_COLLAPSEALL= createUnManaged(T_DLCL, "collapseall.png"); //$NON-NLS-1$
 
 	public static final ImageDescriptor DESC_ELCL_MODIFYALL= createUnManaged(T_ELCL, "modifyall.png"); //$NON-NLS-1$
+
+	public static final ImageDescriptor DESC_ELCL_REMOVE_EXTRA_LINES= createUnManaged(T_ELCL, "remove_extra_lines.png"); //$NON-NLS-1$
+	public static final ImageDescriptor DESC_DLCL_REMOVE_EXTRA_LINES= createUnManaged(T_DLCL, "remove_extra_lines.png"); //$NON-NLS-1$
 
 	// Image descriptors used for formatter line wrapping preferences
 	public static final ImageDescriptor DESC_ELCL_INDENT_COLUMN= createUnManaged(T_ELCL, "indent_column.png"); //$NON-NLS-1$
@@ -557,11 +581,11 @@ public class JavaPluginImages {
 
 	private static class SmallIntMap<V> {
 		private static int fgSize = 1;
-		
+
 		private int[] keys = new int[fgSize];
 		@SuppressWarnings("unchecked")
 		private V[] values = (V[]) new Object[fgSize];
-		
+
 		/**
 		 * @param key any int except for 0
 		 * @param computer computes the value for the given key
@@ -657,10 +681,13 @@ public class JavaPluginImages {
 	 */
 	/* package */ static ImageRegistry getImageRegistry() {
 		if (fgImageRegistry == null) {
-			fgImageRegistry= new ImageRegistry();
-			for (Iterator<String> iter= fgAvoidSWTErrorMap.keySet().iterator(); iter.hasNext();) {
-				String key= iter.next();
-				fgImageRegistry.put(key, fgAvoidSWTErrorMap.get(key));
+			Display display = Display.getCurrent();
+			if (display == null) {
+				display = Display.getDefault();
+			}
+			fgImageRegistry= new ImageRegistry(display);
+			for (Entry<String, ImageDescriptor> entry : fgAvoidSWTErrorMap.entrySet()) {
+				fgImageRegistry.put(entry.getKey(), entry.getValue());
 			}
 			fgAvoidSWTErrorMap= null;
 		}
@@ -755,12 +782,9 @@ public class JavaPluginImages {
 		try {
 			URI uri= new URI("platform", null, uriPath.toString(), null); //$NON-NLS-1$
 			url= uri.toURL();
-		} catch (MalformedURLException e) {
-			// no image
-		} catch (URISyntaxException e) {
+		} catch (MalformedURLException | URISyntaxException e) {
 			// no image
 		}
-		
 		URL foundUrl= FileLocator.find(url);
 		if (foundUrl != null) {
 			return ImageDescriptor.createFromURL(url);
@@ -769,5 +793,8 @@ public class JavaPluginImages {
 			return ImageDescriptor.getMissingImageDescriptor();
 		}
 		return null;
+	}
+
+	private JavaPluginImages() {
 	}
 }

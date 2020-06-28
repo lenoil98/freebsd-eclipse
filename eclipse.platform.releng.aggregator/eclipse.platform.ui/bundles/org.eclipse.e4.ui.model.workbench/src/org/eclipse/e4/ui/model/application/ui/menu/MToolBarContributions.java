@@ -41,7 +41,6 @@ import java.util.List;
  * @generated
  */
 public interface MToolBarContributions {
-
 	/**
 	 * Returns the value of the '<em><b>Tool Bar Contributions</b></em>' containment reference list.
 	 * The list contents are of type {@link org.eclipse.e4.ui.model.application.ui.menu.MToolBarContribution}.
@@ -50,8 +49,8 @@ public interface MToolBarContributions {
 	 * <!-- begin-model-doc -->
 	 * <p>
 	 * <strong>Developers</strong>:
-	 * Add more detailed documentation by editing this comment in 
-	 * org.eclipse.ui.model.workbench/model/UIElements.ecore. 
+	 * Add more detailed documentation by editing this comment in
+	 * org.eclipse.ui.model.workbench/model/UIElements.ecore.
 	 * There is a GenModel/documentation node under each type and attribute.
 	 * </p>
 	 * <!-- end-model-doc -->
@@ -60,4 +59,5 @@ public interface MToolBarContributions {
 	 * @generated
 	 */
 	List<MToolBarContribution> getToolBarContributions();
+
 } // MToolBarContributions

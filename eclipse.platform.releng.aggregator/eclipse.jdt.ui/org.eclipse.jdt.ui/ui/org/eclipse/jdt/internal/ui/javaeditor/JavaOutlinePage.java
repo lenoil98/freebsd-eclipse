@@ -21,7 +21,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
@@ -227,8 +226,8 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 					if (children == null || children.length == 0)
 						return null;
 
-					for (int i= 0; i < children.length; i++) {
-						IJavaElementDelta d= findElement(unit, children[i]);
+					for (IJavaElementDelta child : children) {
+						IJavaElementDelta d= findElement(unit, child);
 						if (d != null)
 							return d;
 					}
@@ -275,8 +274,8 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 				protected IJavaElement[] filter(IJavaElement[] children) {
 					boolean initializers= false;
-					for (int i= 0; i < children.length; i++) {
-						if (matches(children[i])) {
+					for (IJavaElement child : children) {
+						if (matches(child)) {
 							initializers= true;
 							break;
 						}
@@ -285,16 +284,15 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 					if (!initializers)
 						return children;
 
-					Vector<IJavaElement> v= new Vector<>();
-					for (int i= 0; i < children.length; i++) {
-						if (matches(children[i]))
+					ArrayList<IJavaElement> v= new ArrayList<>();
+					for (IJavaElement child : children) {
+						if (matches(child)) {
 							continue;
-						v.addElement(children[i]);
+						}
+						v.add(child);
 					}
 
-					IJavaElement[] result= new IJavaElement[v.size()];
-					v.copyInto(result);
-					return result;
+					return v.toArray(new IJavaElement[v.size()]);
 				}
 
 				@Override
@@ -452,8 +450,8 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 					if (changed != null) {
 						IResource resource= getUnderlyingResource();
 						if (resource != null) {
-							for (int i= 0; i < changed.length; i++) {
-								if (changed[i] != null && changed[i].equals(resource)) {
+							for (Object c : changed) {
+								if (c != null && c.equals(resource)) {
 									// change event to a full refresh
 									event= new LabelProviderChangedEvent((IBaseLabelProvider) event.getSource());
 									break;
@@ -612,14 +610,14 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 	 * Formats the code associated with the elements selected in the Outline view. The action
 	 * requires that the selection provided by the site's selection provider is of type
 	 * {@link IStructuredSelection}
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	private class FormatElementAction extends SelectionDispatchAction {
 
 		/**
 		 * Creates a new <code>FormatViewElementAction</code>.
-		 * 
+		 *
 		 * @param site the site providing context information for this action
 		 */
 		FormatElementAction(IPageSite site) {
@@ -629,7 +627,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 		/**
 		 * Executes the action based on the Structured Selection. This formats the non-overlapping
 		 * element(s) that have been selected in the view.
-		 * 
+		 *
 		 * @param selection the current selection
 		 */
 		@Override
@@ -666,7 +664,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 		/**
 		 * Parses the selections for non-overlapping elements and returns their source regions
 		 * ordered by their offsets.
-		 * 
+		 *
 		 * @param selection the selected elements
 		 * @param document the document containing the selected elements
 		 * @return the array of ordered source regions
@@ -704,7 +702,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 		/**
 		 * Calculates the region of the element. The start is at beginning of its first line if from
 		 * the source start to the beginning of the line is all whitespace.
-		 * 
+		 *
 		 * @param element the element whose regions is to be calculated
 		 * @param document the document containing the element whose region is to be calculated
 		 * @return the region for the element
@@ -734,7 +732,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 		/**
 		 * Checks if element has an enclosing parent among other selected elements.
-		 * 
+		 *
 		 * @param element the element to be checked for overlap against all elements
 		 * @param allElements the list of all elements
 		 * @return <code>true</code> if the element has a parent in the list of all elements
@@ -755,7 +753,7 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 		/**
 		 * Notifies the action of a change in the Selection.
-		 * 
+		 *
 		 * @param selection the new Structured Selection
 		 */
 		@Override
@@ -787,14 +785,14 @@ public class JavaOutlinePage extends Page implements IContentOutlinePage, IAdapt
 
 	/**
 	 * Action for Collapse All.
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	private CollapseAllAction fCollapseAllAction;
 
 	/**
 	 * Action for Format Element
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	private FormatElementAction fFormatElement;

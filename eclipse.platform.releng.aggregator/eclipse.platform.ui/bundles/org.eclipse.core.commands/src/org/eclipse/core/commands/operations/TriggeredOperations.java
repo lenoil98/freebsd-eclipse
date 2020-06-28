@@ -146,8 +146,7 @@ public final class TriggeredOperations extends AbstractOperation implements
 		}
 		// the triggering operation remains, check all the children
 		ArrayList<IUndoableOperation> toBeRemoved = new ArrayList<>();
-		for (int i = 0; i < children.size(); i++) {
-			IUndoableOperation child = children.get(i);
+		for (IUndoableOperation child : children) {
 			if (child.hasContext(context)) {
 				if (child.getContexts().length == 1) {
 					toBeRemoved.add(child);
@@ -157,8 +156,8 @@ public final class TriggeredOperations extends AbstractOperation implements
 				recompute = true;
 			}
 		}
-		for (int i = 0; i < toBeRemoved.size(); i++) {
-			remove(toBeRemoved.get(i));
+		for (IUndoableOperation operation : toBeRemoved) {
+			remove(operation);
 		}
 		if (recompute) {
 			recomputeContexts();
@@ -173,10 +172,7 @@ public final class TriggeredOperations extends AbstractOperation implements
 				IStatus status = triggeringOperation.execute(monitor, info);
 				history.closeOperation(status.isOK(), false, IOperationHistory.EXECUTE);
 				return status;
-			} catch (ExecutionException e) {
-				history.closeOperation(false, false, IOperationHistory.EXECUTE);
-				throw e;
-			} catch (RuntimeException e) {
+			} catch (ExecutionException | RuntimeException e) {
 				history.closeOperation(false, false, IOperationHistory.EXECUTE);
 				throw e;
 			}
@@ -199,11 +195,7 @@ public final class TriggeredOperations extends AbstractOperation implements
 				}
 				history.closeOperation(status.isOK(), false, IOperationHistory.REDO);
 				return status;
-			} catch (ExecutionException e) {
-				children = childrenToRestore;
-				history.closeOperation(false, false, IOperationHistory.REDO);
-				throw e;
-			} catch (RuntimeException e) {
+			} catch (ExecutionException | RuntimeException e) {
 				children = childrenToRestore;
 				history.closeOperation(false, false, IOperationHistory.REDO);
 				throw e;
@@ -225,11 +217,7 @@ public final class TriggeredOperations extends AbstractOperation implements
 				}
 				history.closeOperation(status.isOK(), false, IOperationHistory.UNDO);
 				return status;
-			} catch (ExecutionException e) {
-				children = childrenToRestore;
-				history.closeOperation(false, false, IOperationHistory.UNDO);
-				throw e;
-			} catch (RuntimeException e) {
+			} catch (ExecutionException | RuntimeException e) {
 				children = childrenToRestore;
 				history.closeOperation(false, false, IOperationHistory.UNDO);
 				throw e;
@@ -267,8 +255,8 @@ public final class TriggeredOperations extends AbstractOperation implements
 	 */
 	@Override
 	public void dispose() {
-		for (int i = 0; i < children.size(); i++) {
-			(children.get(i)).dispose();
+		for (IUndoableOperation operation : children) {
+			operation.dispose();
 		}
 		if (triggeringOperation != null) {
 			triggeringOperation.dispose();
@@ -282,15 +270,12 @@ public final class TriggeredOperations extends AbstractOperation implements
 		ArrayList<IUndoContext> allContexts = new ArrayList<>();
 		if (triggeringOperation != null) {
 			IUndoContext[] contexts = triggeringOperation.getContexts();
-			for (IUndoContext context : contexts) {
-				allContexts.add(context);
-			}
+			allContexts.addAll(Arrays.asList(contexts));
 		}
-		for (int i = 0; i < children.size(); i++) {
-			IUndoContext[] contexts = children.get(i).getContexts();
-			for (int j = 0; j < contexts.length; j++) {
-				if (!allContexts.contains(contexts[j])) {
-					allContexts.add(contexts[j]);
+		for (IUndoableOperation operation : children) {
+			for (IUndoContext context : operation.getContexts()) {
+				if (!allContexts.contains(context)) {
+					allContexts.add(context);
 				}
 			}
 		}
@@ -389,8 +374,7 @@ public final class TriggeredOperations extends AbstractOperation implements
 			}
 		}
 		// Now check all the children
-		for (int i = 0; i < children.size(); i++) {
-			IUndoableOperation child = children.get(i);
+		for (IUndoableOperation child : children) {
 			if (child.hasContext(original)) {
 				if (child instanceof IContextReplacingOperation) {
 					((IContextReplacingOperation) child).replaceContext(

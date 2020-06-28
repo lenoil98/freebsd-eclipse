@@ -26,8 +26,8 @@ import org.eclipse.swt.widgets.*;
 public class Snippet285 {
 	static void loadPath(Region region, float[] points, byte[] types) {
 		int start = 0, end = 0;
-		for (int i = 0; i < types.length; i++) {
-			switch (types[i]) {
+		for (byte type : types) {
+			switch (type) {
 				case SWT.PATH_MOVE_TO: {
 					if (start != end) {
 						int n = 0;
@@ -64,6 +64,7 @@ public class Snippet285 {
 		int width = 250, height = 250;
 		final Display display = new Display();
 		final Shell shell = new Shell(display, SWT.NO_TRIM);
+		shell.setText("Snippet 285");
 		final Path path = new Path(display);
 		path.addArc(0, 0, width, height, 0, 360);
 		Path path2 = new Path(display, path, 0.1f);

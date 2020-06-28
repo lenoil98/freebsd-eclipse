@@ -32,7 +32,7 @@ import org.eclipse.ui.internal.wizards.newresource.ResourceMessages;
  * <p>
  * Example:
  * </p>
- * 
+ *
  * <pre>
  * IWorkbenchWizard wizard = new BasicNewFolderResourceWizard();
  * wizard.init(workbench, selection);
@@ -45,7 +45,7 @@ import org.eclipse.ui.internal.wizards.newresource.ResourceMessages;
  * workspace path is created, the dialog closes, and the call to
  * <code>open</code> returns.
  * </p>
- * 
+ *
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class BasicNewFolderResourceWizard extends BasicNewResourceWizard {
@@ -56,45 +56,45 @@ public class BasicNewFolderResourceWizard extends BasicNewResourceWizard {
 	 */
 	public static final String WIZARD_ID = "org.eclipse.ui.wizards.new.folder"; //$NON-NLS-1$
 
-    private WizardNewFolderMainPage mainPage;
+	private WizardNewFolderMainPage mainPage;
 
-    /**
-     * Creates a wizard for creating a new folder resource in the workspace.
-     */
-    public BasicNewFolderResourceWizard() {
-        super();
-    }
+	/**
+	 * Creates a wizard for creating a new folder resource in the workspace.
+	 */
+	public BasicNewFolderResourceWizard() {
+		super();
+	}
 
-    @Override
+	@Override
 	public void addPages() {
-        super.addPages();
-        mainPage = new WizardNewFolderMainPage(ResourceMessages.NewFolder_text, getSelection());
-        addPage(mainPage);
-    }
+		super.addPages();
+		mainPage = new WizardNewFolderMainPage(ResourceMessages.NewFolder_text, getSelection());
+		addPage(mainPage);
+	}
 
-    @Override
+	@Override
 	public void init(IWorkbench workbench, IStructuredSelection currentSelection) {
-        super.init(workbench, currentSelection);
-        setWindowTitle(ResourceMessages.NewFolder_title);
-        setNeedsProgressMonitor(true);
-    }
+		super.init(workbench, currentSelection);
+		setWindowTitle(ResourceMessages.NewFolder_title);
+		setNeedsProgressMonitor(true);
+	}
 
-    @Override
+	@Override
 	protected void initializeDefaultPageImageDescriptor() {
-      ImageDescriptor desc = IDEWorkbenchPlugin.getIDEImageDescriptor("wizban/newfolder_wiz.png");//$NON-NLS-1$
-      setDefaultPageImageDescriptor(desc);
+		ImageDescriptor desc = IDEWorkbenchPlugin.getIDEImageDescriptor("wizban/newfolder_wiz.png");//$NON-NLS-1$
+		setDefaultPageImageDescriptor(desc);
 
-    }
+	}
 
-    @Override
+	@Override
 	public boolean performFinish() {
-        IFolder folder = mainPage.createNewFolder();
-        if (folder == null) {
+		IFolder folder = mainPage.createNewFolder();
+		if (folder == null) {
 			return false;
 		}
 
-        selectAndReveal(folder);
+		selectAndReveal(folder);
 
-        return true;
-    }
+		return true;
+	}
 }

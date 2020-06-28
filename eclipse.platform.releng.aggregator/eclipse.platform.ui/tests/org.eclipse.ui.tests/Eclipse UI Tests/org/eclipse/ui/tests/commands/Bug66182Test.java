@@ -15,11 +15,15 @@
 
 package org.eclipse.ui.tests.commands;
 
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Map;
 
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.AbstractHandler;
 import org.eclipse.ui.commands.ExecutionException;
 import org.eclipse.ui.commands.HandlerSubmission;
@@ -28,7 +32,11 @@ import org.eclipse.ui.commands.IHandler;
 import org.eclipse.ui.commands.IWorkbenchCommandSupport;
 import org.eclipse.ui.commands.NotHandledException;
 import org.eclipse.ui.commands.Priority;
+import org.eclipse.ui.tests.harness.util.CloseTestWindowsRule;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  * Tests that dialogs will inherit the handlers from the workbench window, if
@@ -37,17 +45,11 @@ import org.eclipse.ui.tests.harness.util.UITestCase;
  *
  * @since 3.0
  */
-public final class Bug66182Test extends UITestCase {
+@Ignore("broke during e4 transition and still need adjustments")
+public final class Bug66182Test {
 
-	/**
-	 * Constructor for Bug66182Test.
-	 *
-	 * @param name
-	 *            The name of the test
-	 */
-	public Bug66182Test(final String name) {
-		super(name);
-	}
+	@Rule
+	public CloseTestWindowsRule closeTestWindows = new CloseTestWindowsRule();
 
 	/**
 	 * Tests that the dialog handlers will take priority. The set-up is a
@@ -62,6 +64,8 @@ public final class Bug66182Test extends UITestCase {
 	 *             Indicates that no handler was found where one should have
 	 *             been found.
 	 */
+	@Test
+	@Ignore
 	public final void testDialogHandlers() throws ExecutionException,
 			NotHandledException {
 		// Open a test window.
@@ -146,6 +150,8 @@ public final class Bug66182Test extends UITestCase {
 	 *             Indicates that no handler was found where one should have
 	 *             been found.
 	 */
+	@Test
+	@Ignore
 	public final void testFallbackToWindow() throws ExecutionException,
 			NotHandledException {
 		// Open a test window.
@@ -216,10 +222,11 @@ public final class Bug66182Test extends UITestCase {
 	 *             Indicates that no handler was found where one should have
 	 *             been found.
 	 */
+	@Test
 	public final void testFallbackToWindowBlockedByDialog()
 			throws ExecutionException, NotHandledException {
 		// Open a test window.
-		final IWorkbenchWindow window = openTestWindow();
+		final IWorkbenchWindow window = UITestCase.openTestWindow();
 
 		// Define a handler for some random command identifier.
 		final Object windowResult = new Object();
@@ -231,7 +238,7 @@ public final class Bug66182Test extends UITestCase {
 				return windowResult;
 			}
 		};
-		final IWorkbenchCommandSupport commandSupport = fWorkbench
+		final IWorkbenchCommandSupport commandSupport = PlatformUI.getWorkbench()
 				.getCommandSupport();
 		final String commandId = "org.eclipse.ui.tests.Bug66182";
 		final Shell windowShell = window.getShell();
@@ -255,7 +262,7 @@ public final class Bug66182Test extends UITestCase {
 				dialogShell, display.getActiveShell());
 		assertSame(
 				"The active workbench window must be the window created in this test.  If you are activating other workbench windows, then this test will fail",
-				windowShell, fWorkbench.getActiveWorkbenchWindow().getShell());
+				windowShell, PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell());
 		assertTrue(
 				"When a dialog is open, it should not fall back to the active workbench window.",
 				!command.isHandled());
@@ -280,6 +287,8 @@ public final class Bug66182Test extends UITestCase {
 	 *             Indicates that no handler was found where one should have
 	 *             been found.
 	 */
+	@Test
+	@Ignore
 	public final void testWindow() throws ExecutionException,
 			NotHandledException {
 		// Open a test window.

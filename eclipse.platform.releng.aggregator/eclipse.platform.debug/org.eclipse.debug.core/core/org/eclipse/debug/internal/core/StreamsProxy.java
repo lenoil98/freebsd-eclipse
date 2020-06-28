@@ -15,6 +15,7 @@ package org.eclipse.debug.internal.core;
 
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import org.eclipse.debug.core.model.IStreamMonitor;
 import org.eclipse.debug.core.model.IStreamsProxy;
@@ -43,30 +44,47 @@ public class StreamsProxy implements IStreamsProxy, IStreamsProxy2 {
 	 * <code>false</code> by default.
 	 */
 	private boolean fClosed;
+
 	/**
-	 * Creates a <code>StreamsProxy</code> on the streams
-	 * of the given system process.
+	 * Creates a <code>StreamsProxy</code> on the streams of the given system
+	 * process.
 	 *
 	 * @param process system process to create a streams proxy on
-	 * @param encoding the process's encoding or <code>null</code> if default
+	 * @param charset the process's charset or <code>null</code> if default
 	 */
-	public StreamsProxy(Process process, String encoding) {
+	@SuppressWarnings("resource")
+	public StreamsProxy(Process process, Charset charset) {
 		if (process == null) {
 			return;
 		}
-		fOutputMonitor= new OutputStreamMonitor(process.getInputStream(), encoding);
-		fErrorMonitor= new OutputStreamMonitor(process.getErrorStream(), encoding);
-		fInputMonitor= new InputStreamMonitor(process.getOutputStream(), encoding);
+		fOutputMonitor = new OutputStreamMonitor(process.getInputStream(), charset);
+		fErrorMonitor = new OutputStreamMonitor(process.getErrorStream(), charset);
+		fInputMonitor = new InputStreamMonitor(process.getOutputStream(), charset);
 		fOutputMonitor.startMonitoring();
 		fErrorMonitor.startMonitoring();
 		fInputMonitor.startMonitoring();
 	}
 
 	/**
-	 * Causes the proxy to close all
-	 * communications between it and the
-	 * underlying streams after all remaining data
-	 * in the streams is read.
+	 * Creates a <code>StreamsProxy</code> on the streams of the given system
+	 * process.
+	 *
+	 * @param process system process to create a streams proxy on
+	 * @param encoding the process's encoding or <code>null</code> if default
+	 * @deprecated use {@link #StreamsProxy(Process, Charset)} instead
+	 */
+	@Deprecated
+	public StreamsProxy(Process process, String encoding) {
+		// This constructor was once removed in favor of the Charset variant
+		// but Bug 562653 brought up a client which use this internal class via
+		// reflection and breaks without this constructor. So we restored the
+		// old constructor for the time being.
+		this(process, Charset.forName(encoding));
+	}
+
+	/**
+	 * Causes the proxy to close all communications between it and the
+	 * underlying streams after all remaining data in the streams is read.
 	 */
 	public void close() {
 		if (!isClosed(true)) {
@@ -86,11 +104,11 @@ public class StreamsProxy implements IStreamsProxy, IStreamsProxy2 {
 	 * @return Returns whether the stream proxy was already closed.
 	 */
 	private synchronized boolean isClosed(boolean setClosed) {
-	    boolean closed = fClosed;
-	    if (setClosed) {
-	        fClosed = true;
-	    }
-	    return closed;
+		boolean closed = fClosed;
+		if (setClosed) {
+			fClosed = true;
+		}
+		return closed;
 	}
 
 	/**
@@ -100,33 +118,24 @@ public class StreamsProxy implements IStreamsProxy, IStreamsProxy2 {
 	 * Data remaining in the streams is lost.
 	 */
 	public void kill() {
-	    synchronized (this) {
-	        fClosed= true;
-	    }
+		synchronized (this) {
+			fClosed= true;
+		}
 		fOutputMonitor.kill();
 		fErrorMonitor.kill();
 		fInputMonitor.close();
 	}
 
-	/**
-	 * @see IStreamsProxy#getErrorStreamMonitor()
-	 */
 	@Override
 	public IStreamMonitor getErrorStreamMonitor() {
 		return fErrorMonitor;
 	}
 
-	/**
-	 * @see IStreamsProxy#getOutputStreamMonitor()
-	 */
 	@Override
 	public IStreamMonitor getOutputStreamMonitor() {
 		return fOutputMonitor;
 	}
 
-	/**
-	 * @see IStreamsProxy#write(String)
-	 */
 	@Override
 	public void write(String input) throws IOException {
 		if (!isClosed(false)) {
@@ -136,17 +145,14 @@ public class StreamsProxy implements IStreamsProxy, IStreamsProxy2 {
 		}
 	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.core.model.IStreamsProxy2#closeInputStream()
-     */
-    @Override
+	@Override
 	public void closeInputStream() throws IOException {
-        if (!isClosed(false)) {
-            fInputMonitor.closeInputStream();
-        } else {
-            throw new IOException();
-        }
+		if (!isClosed(false)) {
+			fInputMonitor.closeInputStream();
+		} else {
+			throw new IOException();
+		}
 
-    }
+	}
 
 }

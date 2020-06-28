@@ -304,4 +304,28 @@
           type="text">
     </fileTypes>
  </extension>
+ <extension
+       id="apiAnalyzer"
+       point="org.eclipse.core.runtime.applications">
+    <application
+          cardinality="singleton-global"
+          thread="any"
+          visible="true">
+       <run
+             class="org.eclipse.pde.api.tools.internal.ApiAnalysisApplication">
+       </run>
+    </application>
+ </extension>
+ <extension
+       id="apiGeneration"
+       point="org.eclipse.core.runtime.applications">
+    <application
+          cardinality="singleton-global"
+          thread="any"
+          visible="true">
+       <run
+             class="org.eclipse.pde.api.tools.internal.ApiFileGenerationApplication">
+       </run>
+    </application>
+ </extension>
 </plugin>

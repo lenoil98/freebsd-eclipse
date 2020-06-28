@@ -9,7 +9,7 @@
 </head>
 <body>
 <h1>Advanced Java Content Assist Preferences</h1>
-<p>Indicate your preferences for the Advanced settings on the <a class="command-link" href='javascript:executeCommand("org.eclipse.ui.window.preferences(preferencePageId=org.eclipse.jdt.ui.preferences.CodeAssistPreferenceAdvanced)")'> <img src="PLUGINS_ROOT/org.eclipse.help/command_link.png" alt="Opens the Advanced preference page"> <b>Java &gt; Editor &gt; Content Assist &gt; Advanced</b></a> preference page.</p>
+<p>Indicate your preferences for the Advanced settings on the <a class="command-link" href='javascript:executeCommand("org.eclipse.ui.window.preferences(preferencePageId=org.eclipse.jdt.ui.preferences.CodeAssistPreferenceAdvanced)")'> <img src="PLUGINS_ROOT/org.eclipse.help/command_link.svg" alt="Opens the Advanced preference page"> <b>Java &gt; Editor &gt; Content Assist &gt; Advanced</b></a> preference page.</p>
 <table border="1" cellspacing="0" cellpadding="5" summary="Advanced content assist settings">
 	<thead>
 		<tr>
@@ -58,10 +58,27 @@
 			<p>50 ms</p>
 			</td>
 		</tr>
+		<tr>
+			<td valign="top">
+			<p>Do not block UI Thread while computing completion proposals</p>
+			</td>
+			<td valign="top">
+			<p>Run requests for completion in a dedicated thread so the UI Thread isn't blocked.
+			<p>This option is useful when completion proposals are long to compute, as it will
+			still allow to type or use other parts of the IDE in the meantime.</p>
+			<p>Some completion participants may prevent this option from being effective, and UI
+			Thread may still be used even if this option is set.<br>
+			Opened
+			Java file editors need to be closed and reopened for this option to be effective.</p>
+			</td>
+			<td valign="top">
+			<p>disabled (blocks UI Thread)</p>
+			</td>
+		</tr>
 	</tbody>
 </table>
-<p><img src="../../../../images/ngrelr.png" alt="Related reference" border="0"></p>
-<p><a href="../../../../reference/ref-java-editor-code-assist.htm">Content/Code Assist</a><br>
-<a href="../../../../reference/preferences/java/editor/ref-preferences-content-assist.htm">Content Assist preference page</a></p>
+<h3 class="related">Related references</h3>
+<a href="../../../../reference/ref-java-editor-code-assist.htm">Content/Code Assist</a><br>
+<a href="../../../../reference/preferences/java/editor/ref-preferences-content-assist.htm">Content Assist preference page</a>
 </body>
 </html>

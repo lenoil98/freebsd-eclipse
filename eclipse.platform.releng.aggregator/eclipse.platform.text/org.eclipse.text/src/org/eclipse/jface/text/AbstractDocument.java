@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.PatternSyntaxException;
 
 import org.eclipse.core.runtime.Assert;
@@ -245,7 +246,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 	 * Returns all positions managed by the document grouped by category.
 	 *
 	 * @return the document's positions
-     */
+	 */
 	protected Map<String, List<Position>> getDocumentManagedPositions() {
 		return fPositions;
 	}
@@ -293,7 +294,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 
 		fPositions= new HashMap<>();
 		fEndPositions= new HashMap<>();
-		fPositionUpdaters= new ArrayList<>();
+		fPositionUpdaters= new CopyOnWriteArrayList<>();
 		fDocumentListeners= new ListenerList<>(ListenerList.IDENTITY);
 		fPrenotifiedDocumentListeners= new ListenerList<>(ListenerList.IDENTITY);
 		fDocumentPartitioningListeners= new ListenerList<>(ListenerList.IDENTITY);
@@ -452,7 +453,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 	 * @since 3.4
 	 */
 	protected int computeIndexInPositionList(List<? extends Position> positions, int offset, boolean orderedByOffset) {
-		if (positions.size() == 0)
+		if (positions.isEmpty())
 			return 0;
 
 		int left= 0;
@@ -682,7 +683,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 			}
 		}
 
-		if (fPositions.size() > 0)
+		if (!fPositions.isEmpty())
 			updatePositions(event);
 	}
 
@@ -838,7 +839,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 		if (fInitialLineDelimiter != null)
 			return fInitialLineDelimiter;
 
-		String sysLineDelimiter= System.getProperty("line.separator"); //$NON-NLS-1$
+		String sysLineDelimiter= System.lineSeparator();
 		String[] delimiters= getLegalLineDelimiters();
 		Assert.isTrue(delimiters.length > 0);
 		for (String delimiter : delimiters) {
@@ -951,9 +952,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 
 	@Override
 	public IPositionUpdater[] getPositionUpdaters() {
-		IPositionUpdater[] updaters= new IPositionUpdater[fPositionUpdaters.size()];
-		fPositionUpdaters.toArray(updaters);
-		return updaters;
+		return fPositionUpdaters.toArray(new IPositionUpdater[fPositionUpdaters.size()]);
 	}
 
 	@Override
@@ -971,16 +970,12 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 
 	@Override
 	public void insertPositionUpdater(IPositionUpdater updater, int index) {
-
-		for (int i= fPositionUpdaters.size() - 1; i >= 0; i--) {
-			if (fPositionUpdaters.get(i) == updater)
+		for (IPositionUpdater u: fPositionUpdaters) {
+			if (u == updater) {
 				return;
+			}
 		}
-
-		if (index == fPositionUpdaters.size())
-			fPositionUpdaters.add(updater);
-		else
-			fPositionUpdaters.add(index, updater);
+		fPositionUpdaters.add(index, updater);
 	}
 
 	@Override
@@ -1117,7 +1112,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 
 	@Override
 	public void replace(int pos, int length, String text) throws BadLocationException {
-		if (length == 0 && (text == null || text.length() == 0))
+		if (length == 0 && (text == null || text.isEmpty()))
 			replace(pos, length, text, getModificationStamp());
 		else
 			replace(pos, length, text, getNextModificationStamp());
@@ -1154,10 +1149,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 	 *            the positions
 	 */
 	protected void updatePositions(DocumentEvent event) {
-		List<IPositionUpdater> list= new ArrayList<>(fPositionUpdaters);
-		Iterator<IPositionUpdater> e= list.iterator();
-		while (e.hasNext()) {
-			IPositionUpdater u= e.next();
+		for(IPositionUpdater u: fPositionUpdaters) {
 			u.update(event);
 		}
 	}
@@ -1406,7 +1398,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 		if (partitioner == null) {
 			if (fDocumentPartitioners != null) {
 				fDocumentPartitioners.remove(partitioning);
-				if (fDocumentPartitioners.size() == 0)
+				if (fDocumentPartitioners.isEmpty())
 					fDocumentPartitioners= null;
 			}
 		} else {
@@ -1431,7 +1423,7 @@ public abstract class AbstractDocument implements IDocument, IDocumentExtension,
 	 * @since 3.1
 	 */
 	protected void fireRewriteSessionChanged(DocumentRewriteSessionEvent event) {
-		if (fDocumentRewriteSessionListeners.size() > 0) {
+		if (!fDocumentRewriteSessionListeners.isEmpty()) {
 			List<IDocumentRewriteSessionListener> list= new ArrayList<>(fDocumentRewriteSessionListeners);
 			Iterator<IDocumentRewriteSessionListener> e= list.iterator();
 			while (e.hasNext()) {

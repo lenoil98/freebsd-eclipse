@@ -209,7 +209,7 @@ public class OpenAction extends SelectionDispatchAction {
 
 	/**
 	 * Sets the error message in the status line.
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	private void setStatusLineMessage() {
@@ -229,8 +229,7 @@ public class OpenAction extends SelectionDispatchAction {
 	 */
 	private IJavaElement[] selectOpenableElements(IJavaElement[] elements) {
 		List<IJavaElement> result= new ArrayList<>(elements.length);
-		for (int i= 0; i < elements.length; i++) {
-			IJavaElement element= elements[i];
+		for (IJavaElement element : elements) {
 			switch (element.getElementType()) {
 				case IJavaElement.PACKAGE_DECLARATION:
 				case IJavaElement.PACKAGE_FRAGMENT_ROOT:
@@ -265,8 +264,7 @@ public class OpenAction extends SelectionDispatchAction {
 
 		MultiStatus status= new MultiStatus(JavaUI.ID_PLUGIN, IStatus.OK, ActionMessages.OpenAction_multistatus_message, null);
 
-		for (int i= 0; i < elements.length; i++) {
-			Object element= elements[i];
+		for (Object element : elements) {
 			try {
 				Object javaElement= getElementToOpen(element);
 				if (javaElement instanceof IPackageFragment) {
@@ -281,7 +279,7 @@ public class OpenAction extends SelectionDispatchAction {
 						setStatusLineMessage();
 						return;
 					}
-					
+
 				} else {
 					boolean activateOnOpen= fEditor != null ? true : OpenStrategy.activateOnOpen();
 					IEditorPart part= EditorUtility.openInEditor(javaElement, activateOnOpen);
@@ -328,7 +326,7 @@ public class OpenAction extends SelectionDispatchAction {
 			typeRoot= (packageFragment).getCompilationUnit(JavaModelUtil.PACKAGE_INFO_JAVA);
 		if (typeRoot.exists())
 			return typeRoot;
-		
+
 		Object[] nonJavaResources= (packageFragment).getNonJavaResources();
 		for (Object nonJavaResource : nonJavaResources) {
 			if (nonJavaResource instanceof IFile) {

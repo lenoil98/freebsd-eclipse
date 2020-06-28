@@ -121,7 +121,7 @@ public class MessageIds {
 	 * uniqueId = the unique ID of the test provided by JUnit launcher, otherwise an empty string
 	 * <br>
 	 * See: ITestRunListener2#testTreeEntry
-	 * 
+	 *
 	 */
 	public static final String TEST_TREE= "%TSTTREE"; //$NON-NLS-1$
 	/**
@@ -149,6 +149,9 @@ public class MessageIds {
 	 * Test identifier prefix for tests with assumption failures.
 	 */
 	public static final String ASSUMPTION_FAILED_TEST_PREFIX= "@AssumptionFailure: "; //$NON-NLS-1$
+
+	private MessageIds() {
+	}
 }
 
 

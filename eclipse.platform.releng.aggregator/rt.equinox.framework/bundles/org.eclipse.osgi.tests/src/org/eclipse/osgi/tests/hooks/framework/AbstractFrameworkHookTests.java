@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2014 IBM Corporation and others.
+ * Copyright (c) 2013, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,7 +13,12 @@
  *******************************************************************************/
 package org.eclipse.osgi.tests.hooks.framework;
 
+import static org.eclipse.osgi.tests.bundles.AbstractBundleTests.stop;
+
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
@@ -25,14 +30,16 @@ import org.eclipse.osgi.launch.EquinoxFactory;
 import org.eclipse.osgi.tests.OSGiTestsActivator;
 import org.eclipse.osgi.tests.bundles.BundleInstaller;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
 
 public abstract class AbstractFrameworkHookTests extends CoreTest {
 	protected static class BasicURLClassLoader extends URLClassLoader {
-		public BasicURLClassLoader(URL[] urls, ClassLoader parent) {
+		private volatile String testURL;
+
+		public BasicURLClassLoader(URL[] urls, ClassLoader parent, String testURL) {
 			super(urls, parent);
+			this.testURL = testURL;
 		}
 
 		@Override
@@ -56,6 +63,16 @@ public abstract class AbstractFrameworkHookTests extends CoreTest {
 
 		@Override
 		protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+			if (testURL != null) {
+				try {
+					URL fileUrl = new URI(testURL).toURL();
+					fileUrl.toString();
+				} catch (MalformedURLException | URISyntaxException e) {
+					// stop doing the URI creating
+					testURL = null;
+					throw new RuntimeException(e);
+				}
+			}
 			if (name.startsWith("org.eclipse") || name.startsWith("org.osgi.framework.FrameworkUtil")) {
 				Class<?> result = findLoadedClass(name);
 				if (result == null)
@@ -73,6 +90,7 @@ public abstract class AbstractFrameworkHookTests extends CoreTest {
 	protected static final String BUNDLES_ROOT = "bundle_tests";
 
 	protected BasicURLClassLoader classLoader;
+	protected String testURL = null;
 	protected BundleInstaller bundleInstaller;
 
 	public BundleContext getContext() {
@@ -110,34 +128,6 @@ public abstract class AbstractFrameworkHookTests extends CoreTest {
 		setUpClassLoader();
 	}
 
-	protected void stop(Framework framework) throws Exception {
-		stop(framework, false);
-	}
-
-	protected void stopQuietly(Framework framework) {
-		if (framework == null)
-			return;
-		try {
-			stop(framework, true);
-		} catch (Exception e) {
-			// ignore;
-		}
-	}
-
-	private void stop(Framework framework, boolean quietly) throws Exception {
-		try {
-			framework.stop();
-			FrameworkEvent event = framework.waitForStop(10000);
-			if (!quietly) {
-				assertEquals("The framework was not stopped", FrameworkEvent.STOPPED, event.getType());
-			}
-		} catch (Exception e) {
-			if (!quietly) {
-				throw e;
-			}
-		}
-	}
-
 	protected void tearDown() throws Exception {
 		bundleInstaller.shutdown();
 	}
@@ -154,6 +144,6 @@ public abstract class AbstractFrameworkHookTests extends CoreTest {
 			urls = new URL[] {new URL(osgiFramework), new URL(osgiFramework + "bin/")};
 		else
 			urls = new URL[] {new URL(osgiFramework)};
-		classLoader = new BasicURLClassLoader(urls, getClass().getClassLoader());
+		classLoader = new BasicURLClassLoader(urls, getClass().getClassLoader(), testURL);
 	}
 }

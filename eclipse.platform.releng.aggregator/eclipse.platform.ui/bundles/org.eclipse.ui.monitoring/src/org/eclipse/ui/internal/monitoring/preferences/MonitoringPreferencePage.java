@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2014, 2015 Google Inc and others.
+ * Copyright (C) 2014, 2019 Google Inc and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *     Marcus Eng (Google) - initial API and implementation
  *     Sergey Prigogin (Google)
+ *     Christoph Läubrich - change to new preference store API
  *******************************************************************************/
 package org.eclipse.ui.internal.monitoring.preferences;
 
@@ -24,7 +25,6 @@ import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
-import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.IntegerFieldEditor;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
@@ -42,8 +42,6 @@ import org.eclipse.ui.monitoring.PreferenceConstants;
 public class MonitoringPreferencePage extends FieldEditorPreferencePage
 		implements IWorkbenchPreferencePage {
 	private static final int HOUR_IN_MS = 3600000;
-	private static final IPreferenceStore preferences =
-			MonitoringPlugin.getDefault().getPreferenceStore();
 	private BooleanFieldEditor monitoringEnabled;
 	private IntegerEditor longEventWarningThreshold;
 	private IntegerEditor longEventErrorThreshold;
@@ -52,8 +50,8 @@ public class MonitoringPreferencePage extends FieldEditorPreferencePage
 
 	private class IntegerEditor extends IntegerFieldEditor {
 		public IntegerEditor(String name, String labelText, Composite parent, int min, int max) {
-	    	super(name, labelText, parent);
-	    	setValidRange(min, max);
+			super(name, labelText, parent);
+			setValidRange(min, max);
 		}
 
 		@Override
@@ -88,26 +86,26 @@ public class MonitoringPreferencePage extends FieldEditorPreferencePage
 		}
 
 		private boolean checkValue() {
-	        boolean oldState = isValid();
-	        refreshValidState();
+			boolean oldState = isValid();
+			refreshValidState();
 
-	        boolean isValid = isValid();
-	        if (isValid != oldState) {
+			boolean isValid = isValid();
+			if (isValid != oldState) {
 				fireStateChanged(IS_VALID, oldState, isValid);
 			}
-	        return isValid;
-	    }
+			return isValid;
+		}
 	}
 
 	public MonitoringPreferencePage() {
 		super(GRID);
-		editors = new HashMap<FieldEditor, Composite>();
+		editors = new HashMap<>();
 	}
 
 	@Override
 	public void createFieldEditors() {
 		Composite parent = getFieldEditorParent();
-    	PixelConverter pixelConverter = new PixelConverter(parent);
+		PixelConverter pixelConverter = new PixelConverter(parent);
 
 		Composite container = new Composite(parent, SWT.NONE);
 
@@ -191,21 +189,21 @@ public class MonitoringPreferencePage extends FieldEditorPreferencePage
 
 	@Override
 	public void init(IWorkbench workbench) {
-		setPreferenceStore(preferences);
+		setPreferenceStore(MonitoringPlugin.getPreferenceStore());
 	}
 
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
-        if (event.getProperty().equals(FieldEditor.VALUE)) {
-    		Object source = event.getSource();
-    		if (source instanceof FieldEditor) {
-    			String preferenceName = ((FieldEditor) source).getPreferenceName();
+		if (event.getProperty().equals(FieldEditor.VALUE)) {
+			Object source = event.getSource();
+			if (source instanceof FieldEditor) {
+				String preferenceName = ((FieldEditor) source).getPreferenceName();
 				if (preferenceName.equals(PreferenceConstants.MONITORING_ENABLED)) {
-    				boolean enabled = Boolean.TRUE.equals(event.getNewValue());
-	    			enableDependentFields(enabled);
-    			}
-    		}
-        }
+					boolean enabled = Boolean.TRUE.equals(event.getNewValue());
+					enableDependentFields(enabled);
+				}
+			}
+		}
 		super.propertyChange(event);
 	}
 
@@ -241,7 +239,7 @@ public class MonitoringPreferencePage extends FieldEditorPreferencePage
 		editor.fillIntoGrid(parent, 2);
 		editors.put(editor, parent);
 		if (!editor.getPreferenceName().equals(PreferenceConstants.MONITORING_ENABLED)) {
-			boolean enabled = preferences.getBoolean(PreferenceConstants.MONITORING_ENABLED);
+			boolean enabled = MonitoringPlugin.getPreferenceStore().getBoolean(PreferenceConstants.MONITORING_ENABLED);
 			editor.setEnabled(enabled, parent);
 		}
 		return editor;

@@ -33,6 +33,7 @@ import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.jface.dialogs.DialogSettings;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -143,6 +144,8 @@ public class SmartImportWizard extends Wizard implements IImportWizard {
 		}
 	}
 
+	private static final String SMART_IMPORT_SECTION_NAME = SmartImportWizard.class.getSimpleName();
+
 	private File initialSelection;
 	private Set<IWorkingSet> initialWorkingSets = new HashSet<>();
 	private SmartImportRootWizardPage projectRootPage;
@@ -161,7 +164,8 @@ public class SmartImportWizard extends Wizard implements IImportWizard {
 		setForcePreviousAndNextButtons(true);
 		IDialogSettings dialogSettings = getDialogSettings();
 		if (dialogSettings == null) {
-			dialogSettings = IDEWorkbenchPlugin.getDefault().getDialogSettings();
+			dialogSettings = DialogSettings.getOrCreateSection(IDEWorkbenchPlugin.getDefault().getDialogSettings(),
+					SMART_IMPORT_SECTION_NAME);
 			setDialogSettings(dialogSettings);
 		}
 		setWindowTitle(DataTransferMessages.SmartImportWizardPage_importProjectsInFolderTitle);
@@ -189,7 +193,7 @@ public class SmartImportWizard extends Wizard implements IImportWizard {
 	@Override
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
 		if (selection != null) {
-			for (Object item : selection.toList()) {
+			for (Object item : selection) {
 				File asFile = toFile(item);
 				if (asFile != null && this.initialSelection == null) {
 					this.initialSelection = asFile;
@@ -263,14 +267,6 @@ public class SmartImportWizard extends Wizard implements IImportWizard {
 		boolean runInBackground = WorkbenchPlugin.getDefault().getPreferenceStore()
 				.getBoolean(IPreferenceConstants.RUN_IN_BACKGROUND);
 		job.setProperty(IProgressConstants.PROPERTY_IN_DIALOG, runInBackground);
-		if (!runInBackground) {
-			if (projectRootPage.isDetectNestedProject() || projectRootPage.isConfigureProjects()) {
-				SmartImportJobReportDialog dialog = new SmartImportJobReportDialog(null);
-				dialog.setBlockOnOpen(false);
-				getContainer().getShell().setEnabled(false);
-				dialog.show(job, getShell());
-			}
-		}
 		job.schedule();
 		return true;
 	}
@@ -286,8 +282,8 @@ public class SmartImportWizard extends Wizard implements IImportWizard {
 		if (root == null) {
 			return null;
 		}
- 		if (root.isDirectory()) {
- 			this.directoryToImport = root;
+		if (root.isDirectory()) {
+			this.directoryToImport = root;
 		} else if (SmartImportWizard.isValidArchive(root)) {
 			this.directoryToImport = getExpandDirectory(root);
 			if (!directoryToImport.isDirectory()) {
@@ -295,7 +291,7 @@ public class SmartImportWizard extends Wizard implements IImportWizard {
 			}
 		} else {
 			return null;
- 		}
+		}
 		if (this.easymportJob == null || !matchesPage(this.easymportJob, this.projectRootPage)) {
 			this.easymportJob = new SmartImportJob(this.directoryToImport, projectRootPage.getSelectedWorkingSets(),
 					projectRootPage.isConfigureProjects(), projectRootPage.isDetectNestedProject());

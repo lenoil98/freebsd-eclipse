@@ -13,29 +13,19 @@
 
 package org.eclipse.pde.build.internal.tests;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.File;
 import java.util.*;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.pde.build.tests.BuildConfiguration;
 import org.eclipse.pde.build.tests.PDETestCase;
+import org.junit.Test;
 
 public class AssembleTests extends PDETestCase {
-
-	public static Test suite() {
-		TestSuite suite = new TestSuite(AssembleTests.class.getName());
-
-		// add all the normal tests
-		suite.addTestSuite(AssembleTests.class);
-
-		// If running the intermittent tests:
-		// if (System.getProperties().get("pde.build.intermittent") != null) {
-		// }
-		return suite;
-	}
-
+	@Test
 	public void testCustomAssembly() throws Exception {
 		IFolder buildFolder = newTest("customAssembly");
 
@@ -64,6 +54,7 @@ public class AssembleTests extends PDETestCase {
 		assertLogContainsLines(buildFolder.getFile("log.log"), log);
 	}
 
+	@Test
 	public void testBug179612_default() throws Exception {
 		IFolder buildFolder = newTest("179612");
 
@@ -90,6 +81,7 @@ public class AssembleTests extends PDETestCase {
 		assertResourceFile(buildFolder, "I.TestBuild/sdk-TestBuild-win32.win32.x86_64.zip");
 	}
 
+	@Test
 	public void testBug179612_custom() throws Exception {
 		// we have a custom allElements.xml coming from the resources folder
 		IFolder buildFolder = newTest("179612_custom");
@@ -122,6 +114,7 @@ public class AssembleTests extends PDETestCase {
 		assertResourceFile(buildFolder, "I.TestBuild/MyCustomName.zip");
 	}
 
+	@Test
 	public void testBug196754() throws Exception {
 		IFolder buildFolder = newTest("196754");
 
@@ -145,11 +138,12 @@ public class AssembleTests extends PDETestCase {
 
 		buildFolder.refreshLocal(IResource.DEPTH_INFINITE, null);
 		File[] plugins = buildFolder.getFolder("tmp/eclipse/plugins").getLocation().toFile().listFiles();
-		for (int i = 0; i < plugins.length; i++) {
-			assertJarVerifies(plugins[i]);
+		for (File plugin : plugins) {
+			assertJarVerifies(plugin);
 		}
 	}
 
+	@Test
 	public void testBug211605() throws Exception {
 		IFolder buildFolder = newTest("211605");
 
@@ -177,6 +171,7 @@ public class AssembleTests extends PDETestCase {
 		assertEquals(resultFolder.list().length, 3);
 	}
 
+	@Test
 	public void testBug255824() throws Exception {
 		IFolder buildFolder = newTest("255824");
 

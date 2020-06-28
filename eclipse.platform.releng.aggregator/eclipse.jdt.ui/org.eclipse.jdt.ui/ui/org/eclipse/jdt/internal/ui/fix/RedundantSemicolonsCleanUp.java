@@ -85,27 +85,25 @@ public class RedundantSemicolonsCleanUp extends AbstractMultiFix implements ICle
 		return new String[0];
 	}
 
-	@SuppressWarnings("nls")
 	@Override
 	public String getPreview() {
-		StringBuffer buf= new StringBuffer();
-		buf.append("\n");
-		buf.append("enum color {\n");
-		buf.append("  red, yellow, green\n");
+		StringBuilder buf= new StringBuilder();
+		buf.append("enum color {\n"); //$NON-NLS-1$
+		buf.append("  red, yellow, green\n"); //$NON-NLS-1$
 		if (isEnabled(CleanUpConstants.REMOVE_REDUNDANT_SEMICOLONS)) {
-			buf.append("}\n");
+			buf.append("}\n"); //$NON-NLS-1$
 		} else {
-			buf.append("};\n");
+			buf.append("};\n"); //$NON-NLS-1$
 		}
-		buf.append("\npublic class IFoo {\n");
+		buf.append("\npublic class IFoo {\n"); //$NON-NLS-1$
 		if (isEnabled(CleanUpConstants.REMOVE_REDUNDANT_SEMICOLONS)) {
-			buf.append("  int a= 3;\n");
-			buf.append("  public void foo() {}\n");
-			buf.append("}\n");
+			buf.append("  int a= 3;\n"); //$NON-NLS-1$
+			buf.append("  public void foo() {}\n"); //$NON-NLS-1$
+			buf.append("}\n"); //$NON-NLS-1$
 		} else {
-			buf.append("  int a= 3;;\n");
-			buf.append("  public void foo() {;};\n");
-			buf.append("};\n");
+			buf.append("  int a= 3;;\n"); //$NON-NLS-1$
+			buf.append("  public void foo() {;};\n"); //$NON-NLS-1$
+			buf.append("};\n"); //$NON-NLS-1$
 		}
 
 		return buf.toString();
@@ -122,7 +120,7 @@ public class RedundantSemicolonsCleanUp extends AbstractMultiFix implements ICle
 			textedits.add(new TextEditGroup(label, edit));
 		}
 	}
-	
+
 	@Override
 	protected ICleanUpFix createFix(CompilationUnit unit) throws CoreException {
 		if (!isEnabled(CleanUpConstants.REMOVE_REDUNDANT_SEMICOLONS)) {
@@ -176,7 +174,7 @@ public class RedundantSemicolonsCleanUp extends AbstractMultiFix implements ICle
 				}
 				return false;
 			}
-			
+
 			@Override
 			public boolean visit(Block node) {
 				if (!(node.getParent() instanceof LambdaExpression)) {
@@ -213,11 +211,10 @@ public class RedundantSemicolonsCleanUp extends AbstractMultiFix implements ICle
 			return null;
 
 		CompilationUnitChange result= new CompilationUnitChange(fName, fCompilationUnit);
-		for (int i= 0; i < fEditGroups.length; i++) {
-			TextEdit[] edits= fEditGroups[i].getTextEdits();
-			String groupName= fEditGroups[i].getName();
-			for (int j= 0; j < edits.length; j++) {
-				TextChangeCompatibility.addTextEdit(result, groupName, edits[j]);
+		for (TextEditGroup editGroup : fEditGroups) {
+			String groupName= editGroup.getName();
+			for (TextEdit edit : editGroup.getTextEdits()) {
+				TextChangeCompatibility.addTextEdit(result, groupName, edit);
 			}
 		}
 		return result;

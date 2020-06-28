@@ -20,10 +20,8 @@ import org.eclipse.team.core.RepositoryProviderType;
  * The file system repository provider types
  */
 public class FileSystemProviderType extends RepositoryProviderType {
-	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.RepositoryProviderType#getProjectSetCapability()
-	 */
+
+	@Override
 	public ProjectSetCapability getProjectSetCapability() {
 		// Create an empty project set capability to test backwards compatibility
 		return new ProjectSetCapability() {};

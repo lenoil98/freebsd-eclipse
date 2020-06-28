@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -60,10 +60,10 @@ public class Button extends Control {
 	static final int CHECK_WIDTH, CHECK_HEIGHT;
 	static final int ICON_WIDTH = 128, ICON_HEIGHT = 128;
 	static /*final*/ boolean COMMAND_LINK = false;
-	static final long /*int*/ ButtonProc;
+	static final long ButtonProc;
 	static final TCHAR ButtonClass = new TCHAR (0, "BUTTON", true);
 	static {
-		long /*int*/ hBitmap = OS.LoadBitmap (0, OS.OBM_CHECKBOXES);
+		long hBitmap = OS.LoadBitmap (0, OS.OBM_CHECKBOXES);
 		if (hBitmap == 0) {
 			CHECK_WIDTH = OS.GetSystemMetrics (OS.SM_CXVSCROLL);
 			CHECK_HEIGHT = OS.GetSystemMetrics (OS.SM_CYVSCROLL);
@@ -250,7 +250,7 @@ public void addSelectionListener (SelectionListener listener) {
 }
 
 @Override
-long /*int*/ callWindowProc (long /*int*/ hwnd, int msg, long /*int*/ wParam, long /*int*/ lParam) {
+long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
 	if (handle == 0) return 0;
 	return OS.CallWindowProc (ButtonProc, hwnd, msg, wParam, lParam);
 }
@@ -289,14 +289,14 @@ int computeLeftMargin () {
 	if (image != null && text.length () != 0) {
 		Rectangle bounds = image.getBoundsInPixels ();
 		margin += bounds.width + MARGIN * 2;
-		long /*int*/ oldFont = 0;
-		long /*int*/ hDC = OS.GetDC (handle);
-		long /*int*/ newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
+		long oldFont = 0;
+		long hDC = OS.GetDC (handle);
+		long newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 		if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
-		TCHAR buffer = new TCHAR (getCodePage (), text, true);
+		char [] buffer = text.toCharArray ();
 		RECT rect = new RECT ();
 		int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE;
-		OS.DrawText (hDC, buffer, -1, rect, flags);
+		OS.DrawText (hDC, buffer, buffer.length, rect, flags);
 		margin += rect.right - rect.left;
 		if (newFont != 0) OS.SelectObject (hDC, oldFont);
 		OS.ReleaseDC (handle, hDC);
@@ -351,9 +351,9 @@ int computeLeftMargin () {
 				}
 			}
 			if (hasText) {
-				long /*int*/ oldFont = 0;
-				long /*int*/ hDC = OS.GetDC (handle);
-				long /*int*/ newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
+				long oldFont = 0;
+				long hDC = OS.GetDC (handle);
+				long newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 				if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
 				TEXTMETRIC lptm = new TEXTMETRIC ();
 				OS.GetTextMetrics (hDC, lptm);
@@ -362,7 +362,7 @@ int computeLeftMargin () {
 					height = Math.max (height, lptm.tmHeight);
 				} else {
 					extra = Math.max (MARGIN * 2, lptm.tmAveCharWidth);
-					TCHAR buffer = new TCHAR (getCodePage (), text, true);
+					char [] buffer = text.toCharArray ();
 					RECT rect = new RECT ();
 					int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE;
 					if ((style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
@@ -380,7 +380,7 @@ int computeLeftMargin () {
 							}
 						}
 					}
-					OS.DrawText (hDC, buffer, -1, rect, flags);
+					OS.DrawText (hDC, buffer, buffer.length, rect, flags);
 					width += rect.right - rect.left;
 					height = Math.max (height, rect.bottom - rect.top);
 				}
@@ -655,7 +655,7 @@ public String getText () {
 }
 
 private boolean isChecked() {
-	long /*int*/ flags = OS.SendMessage (handle, OS.BM_GETCHECK, 0, 0);
+	long flags = OS.SendMessage (handle, OS.BM_GETCHECK, 0, 0);
 	return flags != OS.BST_UNCHECKED;
 }
 
@@ -733,25 +733,7 @@ int resolveTextDirection() {
 }
 
 void selectRadio () {
-	/*
-	* This code is intentionally commented.  When two groups
-	* of radio buttons with the same parent are separated by
-	* another control, the correct behavior should be that
-	* the two groups act independently.  This is consistent
-	* with radio tool and menu items.  The commented code
-	* implements this behavior.
-	*/
-//	int index = 0;
-//	Control [] children = parent._getChildren ();
-//	while (index < children.length && children [index] != this) index++;
-//	int i = index - 1;
-//	while (i >= 0 && children [i].setRadioSelection (false)) --i;
-//	int j = index + 1;
-//	while (j < children.length && children [j].setRadioSelection (false)) j++;
-//	setSelection (true);
-	Control [] children = parent._getChildren ();
-	for (int i=0; i<children.length; i++) {
-		Control child = children [i];
+	for (Control child : parent._getChildren ()) {
 		if (this != child) child.setRadioSelection (false);
 	}
 	setSelection (true);
@@ -858,7 +840,7 @@ private void setButtonBackground (Color color) {
 
 void setDefault (boolean value) {
 	if ((style & SWT.PUSH) == 0) return;
-	long /*int*/ hwndShell = menuShell ().handle;
+	long hwndShell = menuShell ().handle;
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
 	if (value) {
 		bits |= OS.BS_DEFPUSHBUTTON;
@@ -906,13 +888,6 @@ public void setImage (Image image) {
 	if (image != null && image.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	if ((style & SWT.ARROW) != 0) return;
 	this.image = image;
-	/* This code is intentionally commented */
-//	if (OS.COMCTL32_MAJOR < 6) {
-//		if (image == null || text.length () != 0) {
-//			_setText (text);
-//			return;
-//		}
-//	}
 	_setImage (image);
 }
 
@@ -934,7 +909,7 @@ public void setGrayed (boolean grayed) {
 	checkWidget ();
 	if ((style & SWT.CHECK) == 0) return;
 	this.grayed = grayed;
-	long /*int*/ flags = OS.SendMessage (handle, OS.BM_GETCHECK, 0, 0);
+	long flags = OS.SendMessage (handle, OS.BM_GETCHECK, 0, 0);
 	if (grayed) {
 		if (flags == OS.BST_CHECKED) updateSelection (OS.BST_INDETERMINATE);
 	} else {
@@ -985,20 +960,6 @@ boolean setRadioSelection (boolean value) {
 		sendSelectionEvent (SWT.Selection);
 	}
 	return true;
-}
-
-@Override
-boolean setSavedFocus () {
-	/*
-	* Feature in Windows.  When a radio button gets focus,
-	* it selects the button in WM_SETFOCUS.  If the previous
-	* saved focus widget was a radio button, allowing the shell
-	* to automatically restore the focus to the previous radio
-	* button will unexpectedly check that button.  The fix is to
-	* not assign focus to an unselected radio button.
-	*/
-	if ((style & SWT.RADIO) != 0 && !getSelection ()) return false;
-	return super.setSavedFocus ();
 }
 
 /**
@@ -1066,13 +1027,6 @@ public void setText (String string) {
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if ((style & SWT.ARROW) != 0) return;
 	text = string;
-	/* This code is intentionally commented */
-//	if (OS.COMCTL32_MAJOR < 6) {
-//		if (text.length () == 0 && image != null) {
-//			_setImage (image);
-//			return;
-//		}
-//	}
 	_setText (string);
 }
 
@@ -1173,12 +1127,12 @@ TCHAR windowClass () {
 }
 
 @Override
-long /*int*/ windowProc () {
+long windowProc () {
 	return ButtonProc;
 }
 
 @Override
-LRESULT WM_GETDLGCODE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_GETDLGCODE (long wParam, long lParam) {
 	LRESULT result = super.WM_GETDLGCODE (wParam, lParam);
 	if (result != null) return result;
 	if ((style & SWT.ARROW) != 0) {
@@ -1188,7 +1142,7 @@ LRESULT WM_GETDLGCODE (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_GETOBJECT (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_GETOBJECT (long wParam, long lParam) {
 	/*
 	* Ensure that there is an accessible object created for this
 	* control because support for radio button position in group
@@ -1201,7 +1155,7 @@ LRESULT WM_GETOBJECT (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_KILLFOCUS (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_KILLFOCUS (long wParam, long lParam) {
 	LRESULT result = super.WM_KILLFOCUS (wParam, lParam);
 	if ((style & SWT.PUSH) != 0 && getDefault ()) {
 		menuShell ().setDefaultButton (null, false);
@@ -1210,19 +1164,19 @@ LRESULT WM_KILLFOCUS (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_LBUTTONDOWN (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_LBUTTONDOWN (long wParam, long lParam) {
 	if (ignoreMouse) return null;
 	return super.WM_LBUTTONDOWN (wParam, lParam);
 }
 
 @Override
-LRESULT WM_LBUTTONUP (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_LBUTTONUP (long wParam, long lParam) {
 	if (ignoreMouse) return null;
 	return super.WM_LBUTTONUP (wParam, lParam);
 }
 
 @Override
-LRESULT WM_SETFOCUS (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_SETFOCUS (long wParam, long lParam) {
 	/*
 	* Feature in Windows. When Windows sets focus to
 	* a radio button, it sets the WS_TABSTOP style.
@@ -1244,7 +1198,7 @@ LRESULT WM_SETFOCUS (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_SIZE (long wParam, long lParam) {
 	LRESULT result = super.WM_SIZE (wParam, lParam);
 	if (result != null) return result;
 	if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
@@ -1261,7 +1215,7 @@ LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_SYSCOLORCHANGE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_SYSCOLORCHANGE (long wParam, long lParam) {
 	LRESULT result = super.WM_SYSCOLORCHANGE (wParam, lParam);
 	if (result != null) return result;
 	if (image2 != null) _setImage (image);
@@ -1269,7 +1223,7 @@ LRESULT WM_SYSCOLORCHANGE (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_UPDATEUISTATE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_UPDATEUISTATE (long wParam, long lParam) {
 	LRESULT result = super.WM_UPDATEUISTATE (wParam, lParam);
 	if (result != null) return result;
 	/*
@@ -1295,7 +1249,7 @@ LRESULT WM_UPDATEUISTATE (long /*int*/ wParam, long /*int*/ lParam) {
 		}
 		if (redraw) {
 			OS.InvalidateRect (handle, null, false);
-			long /*int*/ code = OS.DefWindowProc (handle, OS.WM_UPDATEUISTATE, wParam, lParam);
+			long code = OS.DefWindowProc (handle, OS.WM_UPDATEUISTATE, wParam, lParam);
 			return new LRESULT (code);
 		}
 	}
@@ -1315,7 +1269,7 @@ LRESULT WM_UPDATEUISTATE (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT wmCommandChild (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmCommandChild (long wParam, long lParam) {
 	int code = OS.HIWORD (wParam);
 	switch (code) {
 		case OS.BN_CLICKED:
@@ -1337,7 +1291,7 @@ LRESULT wmCommandChild (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT wmNotifyChild (NMHDR hdr, long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 	switch (hdr.code) {
 		case OS.NM_CUSTOMDRAW:
 			// this message will not appear for owner-draw buttons (currently the ARROW button).
@@ -1360,7 +1314,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long /*int*/ wParam, long /*int*/ lParam) {
 						}
 						RECT rect = new RECT ();
 						OS.SetRect (rect, nmcd.left+2, nmcd.top+2, nmcd.right-2, nmcd.bottom-2);
-						long /*int*/ brush = OS.CreateSolidBrush(pixel);
+						long brush = OS.CreateSolidBrush(pixel);
 						OS.FillRect(nmcd.hdc, rect, brush);
 						OS.DeleteObject(brush);
 					}
@@ -1396,7 +1350,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long /*int*/ wParam, long /*int*/ lParam) {
 						OS.SetRect (textRect, left, nmcd.top + border, right, nmcd.bottom - border);
 
 						// draw text
-						TCHAR buffer = new TCHAR (getCodePage (), text, false);
+						char [] buffer = text.toCharArray ();
 						int flags = 0;
 						if ((style & SWT.WRAP) != 0) {
 							flags |= OS.DT_WORDBREAK;
@@ -1406,7 +1360,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long /*int*/ wParam, long /*int*/ lParam) {
 						} else {
 							flags |= OS.DT_SINGLELINE; // TODO: this always draws the prefix
 						}
-						OS.DrawText(nmcd.hdc, buffer, buffer.length(), textRect, flags | OS.DT_CALCRECT);
+						OS.DrawText(nmcd.hdc, buffer, buffer.length, textRect, flags | OS.DT_CALCRECT);
 						OS.OffsetRect(textRect, 0, Math.max(0, (nmcd.bottom  - textRect.bottom - border) / 2));
 						if (image != null) {
 							// The default button with an image doesn't respect the text alignment. So we do the same for styled buttons.
@@ -1425,7 +1379,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long /*int*/ wParam, long /*int*/ lParam) {
 						}
 						OS.SetBkMode(nmcd.hdc, OS.TRANSPARENT);
 						OS.SetTextColor(nmcd.hdc, foreground);
-						OS.DrawText(nmcd.hdc, buffer, buffer.length(), textRect, flags);
+						OS.DrawText(nmcd.hdc, buffer, buffer.length, textRect, flags);
 
 						// draw focus rect
 						if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
@@ -1457,7 +1411,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT wmDrawChild (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmDrawChild (long wParam, long lParam) {
 	if ((style & SWT.ARROW) == 0) return super.wmDrawChild (wParam, lParam);
 	DRAWITEMSTRUCT struct = new DRAWITEMSTRUCT ();
 	OS.MoveMemory (struct, lParam, DRAWITEMSTRUCT.sizeof);

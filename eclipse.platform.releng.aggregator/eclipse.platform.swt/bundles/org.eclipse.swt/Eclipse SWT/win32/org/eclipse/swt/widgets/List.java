@@ -43,7 +43,7 @@ import org.eclipse.swt.internal.win32.*;
  */
 public class List extends Scrollable {
 	static final int INSET = 3;
-	static final long /*int*/ ListProc;
+	static final long ListProc;
 	static final TCHAR ListClass = new TCHAR (0, "LISTBOX", true);
 	boolean addedUCC = false; // indicates whether Bidi UCC were added; 'state & HAS_AUTO_DIRECTION' isn't a sufficient indicator
 	static {
@@ -106,10 +106,10 @@ public void add (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
 	TCHAR buffer = new TCHAR (getCodePage (), string, true);
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_ADDSTRING, 0, buffer);
+	int result = (int)OS.SendMessage (handle, OS.LB_ADDSTRING, 0, buffer);
 	if (result == OS.LB_ERR) error (SWT.ERROR_ITEM_NOT_ADDED);
 	if (result == OS.LB_ERRSPACE) error (SWT.ERROR_ITEM_NOT_ADDED);
-	if ((style & SWT.H_SCROLL) != 0) setScrollWidth (buffer, true);
+	if ((style & SWT.H_SCROLL) != 0) setScrollWidth (buffer.chars, true);
 }
 /**
  * Adds the argument to the receiver's list at the given
@@ -142,17 +142,17 @@ public void add (String string, int index) {
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (index == -1) error (SWT.ERROR_INVALID_RANGE);
 	TCHAR buffer = new TCHAR (getCodePage (), string, true);
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_INSERTSTRING, index, buffer);
+	int result = (int)OS.SendMessage (handle, OS.LB_INSERTSTRING, index, buffer);
 	if (result == OS.LB_ERRSPACE) error (SWT.ERROR_ITEM_NOT_ADDED);
 	if (result == OS.LB_ERR) {
-		int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+		int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 		if (0 <= index && index <= count) {
 			error (SWT.ERROR_ITEM_NOT_ADDED);
 		} else {
 			error (SWT.ERROR_INVALID_RANGE);
 		}
 	}
-	if ((style & SWT.H_SCROLL) != 0) setScrollWidth (buffer, true);
+	if ((style & SWT.H_SCROLL) != 0) setScrollWidth (buffer.chars, true);
 }
 
 /**
@@ -188,7 +188,7 @@ public void addSelectionListener(SelectionListener listener) {
 }
 
 @Override
-long /*int*/ callWindowProc (long /*int*/ hwnd, int msg, long /*int*/ wParam, long /*int*/ lParam) {
+long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
 	if (handle == 0) return 0;
 	boolean redraw = false;
 	switch (msg) {
@@ -199,7 +199,7 @@ long /*int*/ callWindowProc (long /*int*/ hwnd, int msg, long /*int*/ wParam, lo
 			break;
 		}
 	}
-	long /*int*/ code = OS.CallWindowProc (ListProc, hwnd, msg, wParam, lParam);
+	long code = OS.CallWindowProc (ListProc, hwnd, msg, wParam, lParam);
 	switch (msg) {
 		case OS.WM_HSCROLL:
 		case OS.WM_VSCROLL: {
@@ -222,25 +222,24 @@ static int checkStyle (int style) {
 	int width = 0, height = 0;
 	if (wHint == SWT.DEFAULT) {
 		if ((style & SWT.H_SCROLL) != 0) {
-			width = (int)/*64*/OS.SendMessage (handle, OS.LB_GETHORIZONTALEXTENT, 0, 0);
+			width = (int)OS.SendMessage (handle, OS.LB_GETHORIZONTALEXTENT, 0, 0);
 			width -= INSET;
 		} else {
-			int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
-			long /*int*/ newFont, oldFont = 0;
-			long /*int*/ hDC = OS.GetDC (handle);
+			int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+			long newFont, oldFont = 0;
+			long hDC = OS.GetDC (handle);
 			newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 			if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
 			RECT rect = new RECT ();
 			int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE | OS.DT_NOPREFIX;
-			int cp = getCodePage ();
-			TCHAR buffer = new TCHAR (cp, 64 + 1);
+			char [] buffer = new char [64 + 1];
 			for (int i=0; i<count; i++) {
-				int length = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXTLEN, i, 0);
+				int length = (int)OS.SendMessage (handle, OS.LB_GETTEXTLEN, i, 0);
 				if (length != OS.LB_ERR) {
-					if (length + 1 > buffer.length ()) {
-						buffer = new TCHAR (cp, length + 1);
+					if (length + 1 > buffer.length) {
+						buffer = new char [length + 1];
 					}
-					int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXT, i, buffer);
+					int result = (int)OS.SendMessage (handle, OS.LB_GETTEXT, i, buffer);
 					if (result != OS.LB_ERR) {
 						OS.DrawText (hDC, buffer, length, rect, flags);
 						width = Math.max (width, rect.right - rect.left);
@@ -252,9 +251,9 @@ static int checkStyle (int style) {
 		}
 	}
 	if (hHint == SWT.DEFAULT) {
-		int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
-		int itemHeight = (int)/*64*/OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
-	 	height = count * itemHeight;
+		int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+		int itemHeight = (int)OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
+		height = count * itemHeight;
 	}
 	if (width == 0) width = DEFAULT_WIDTH;
 	if (height == 0) height = DEFAULT_HEIGHT;
@@ -299,18 +298,17 @@ public void deselect (int [] indices) {
 	if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (indices.length == 0) return;
 	if ((style & SWT.SINGLE) != 0) {
-		int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
+		int oldIndex = (int)OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
 		if (oldIndex == OS.LB_ERR) return;
-		for (int i=0; i<indices.length; i++) {
-			if (oldIndex == indices [i]) {
+		for (int index : indices) {
+			if (oldIndex == index) {
 				OS.SendMessage (handle, OS.LB_SETCURSEL, -1, 0);
 				return;
 			}
 		}
 		return;
 	}
-	for (int i=0; i<indices.length; i++) {
-		int index = indices [i];
+	for (int index : indices) {
 		if (index != -1) {
 			OS.SendMessage (handle, OS.LB_SETSEL, 0, index);
 		}
@@ -333,7 +331,7 @@ public void deselect (int index) {
 	checkWidget ();
 	if (index == -1) return;
 	if ((style & SWT.SINGLE) != 0) {
-		int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
+		int oldIndex = (int)OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
 		if (oldIndex == OS.LB_ERR) return;
 		if (oldIndex == index) OS.SendMessage (handle, OS.LB_SETCURSEL, -1, 0);
 		return;
@@ -360,7 +358,7 @@ public void deselect (int start, int end) {
 	checkWidget ();
 	if (start > end) return;
 	if ((style & SWT.SINGLE) != 0) {
-		int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
+		int oldIndex = (int)OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
 		if (oldIndex == OS.LB_ERR) return;
 		if (start <= oldIndex && oldIndex <= end) {
 			OS.SendMessage (handle, OS.LB_SETCURSEL, -1, 0);
@@ -373,7 +371,7 @@ public void deselect (int start, int end) {
 	* start = end, LB_SELITEMRANGEEX deselects the
 	* item.
 	*/
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (start < 0 && end < 0) return;
 	if (start >= count && end >= count) return;
 	start = Math.min (count - 1, Math.max (0, start));
@@ -411,9 +409,9 @@ public void deselectAll () {
  */
 public int getFocusIndex () {
 	checkWidget ();
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
+	int result = (int)OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
 	if (result == 0) {
-		int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+		int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 		if (count == 0) return -1;
 	}
 	return result;
@@ -436,13 +434,13 @@ public int getFocusIndex () {
  */
 public String getItem (int index) {
 	checkWidget ();
-	int length = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXTLEN, index, 0);
+	int length = (int)OS.SendMessage (handle, OS.LB_GETTEXTLEN, index, 0);
 	if (length != OS.LB_ERR) {
-		TCHAR buffer = new TCHAR (getCodePage (), length + 1);
-		int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXT, index, buffer);
-		if (result != OS.LB_ERR) return ((state & HAS_AUTO_DIRECTION) != 0) ? buffer.toString (1, length - 1) : buffer.toString (0, length);
+		char [] buffer = new char [length + 1];
+		int result = (int)OS.SendMessage (handle, OS.LB_GETTEXT, index, buffer);
+		if (result != OS.LB_ERR) return ((state & HAS_AUTO_DIRECTION) != 0) ? new String (buffer, 1, length - 1) : new String (buffer, 0, length);
 	}
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (0 <= index && index < count) error (SWT.ERROR_CANNOT_GET_ITEM);
 	error (SWT.ERROR_INVALID_RANGE);
 	return "";
@@ -460,7 +458,7 @@ public String getItem (int index) {
  */
 public int getItemCount () {
 	checkWidget ();
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int result = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (result == OS.LB_ERR) error (SWT.ERROR_CANNOT_GET_COUNT);
 	return result;
 }
@@ -482,7 +480,7 @@ public int getItemHeight () {
 }
 
 int getItemHeightInPixels () {
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
+	int result = (int)OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
 	if (result == OS.LB_ERR) error (SWT.ERROR_CANNOT_GET_ITEM_HEIGHT);
 	return result;
 }
@@ -550,11 +548,11 @@ public String [] getSelection () {
 public int getSelectionCount () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) {
-		int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
+		int result = (int)OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
 		if (result == OS.LB_ERR) return 0;
 		return 1;
 	}
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETSELCOUNT, 0, 0);
+	int result = (int)OS.SendMessage (handle, OS.LB_GETSELCOUNT, 0, 0);
 	if (result == OS.LB_ERR) error (SWT.ERROR_CANNOT_GET_COUNT);
 	return result;
 }
@@ -573,17 +571,17 @@ public int getSelectionCount () {
 public int getSelectionIndex () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) {
-		return (int)/*64*/OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
+		return (int)OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
 	}
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETSELCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETSELCOUNT, 0, 0);
 	if (count == OS.LB_ERR) error (SWT.ERROR_CANNOT_GET_SELECTION);
 	if (count == 0) return -1;
-	int index = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETSEL, index, 0);
+	int index = (int)OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
+	int result = (int)OS.SendMessage (handle, OS.LB_GETSEL, index, 0);
 	if (result == OS.LB_ERR) error (SWT.ERROR_CANNOT_GET_SELECTION);
 	if (result != 0) return index;
 	int [] buffer = new int[1];
-	result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETSELITEMS, 1, buffer);
+	result = (int)OS.SendMessage (handle, OS.LB_GETSELITEMS, 1, buffer);
 	if (result != 1) error (SWT.ERROR_CANNOT_GET_SELECTION);
 	return buffer [0];
 }
@@ -607,14 +605,14 @@ public int getSelectionIndex () {
 public int [] getSelectionIndices () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) {
-		int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
+		int result = (int)OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
 		if (result == OS.LB_ERR) return new int [0];
 		return new int [] {result};
 	}
-	int length = (int)/*64*/OS.SendMessage (handle, OS.LB_GETSELCOUNT, 0, 0);
+	int length = (int)OS.SendMessage (handle, OS.LB_GETSELCOUNT, 0, 0);
 	if (length == OS.LB_ERR) error (SWT.ERROR_CANNOT_GET_SELECTION);
 	int [] indices = new int [length];
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETSELITEMS, length, indices);
+	int result = (int)OS.SendMessage (handle, OS.LB_GETSELITEMS, length, indices);
 	if (result != length) error (SWT.ERROR_CANNOT_GET_SELECTION);
 	return indices;
 }
@@ -633,7 +631,7 @@ public int [] getSelectionIndices () {
  */
 public int getTopIndex () {
 	checkWidget ();
-	return (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+	return (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
 }
 
 /**
@@ -697,12 +695,12 @@ public int indexOf (String string, int start) {
 	}
 
 	/* Use LB_FINDSTRINGEXACT to search for the item */
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (!(0 <= start && start < count)) return -1;
 	int index = start - 1, last;
 	TCHAR buffer = new TCHAR (getCodePage (), string, true);
 	do {
-		index = (int)/*64*/OS.SendMessage (handle, OS.LB_FINDSTRINGEXACT, last = index, buffer);
+		index = (int)OS.SendMessage (handle, OS.LB_FINDSTRINGEXACT, last = index, buffer);
 		if (index == OS.LB_ERR || index <= last) return -1;
 	} while (!string.equals (getItem (index)));
 	return index;
@@ -723,8 +721,13 @@ public int indexOf (String string, int start) {
  */
 public boolean isSelected (int index) {
 	checkWidget ();
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETSEL, index, 0);
+	int result = (int)OS.SendMessage (handle, OS.LB_GETSEL, index, 0);
 	return (result != 0) && (result != OS.LB_ERR);
+}
+
+@Override
+boolean isUseWsBorder () {
+	return super.isUseWsBorder () || ((display != null) && display.useWsBorderList);
 }
 
 /**
@@ -750,13 +753,13 @@ public void remove (int [] indices) {
 	System.arraycopy (indices, 0, newIndices, 0, indices.length);
 	sort (newIndices);
 	int start = newIndices [newIndices.length - 1], end = newIndices [0];
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (!(0 <= start && start <= end && end < count)) {
 		error (SWT.ERROR_INVALID_RANGE);
 	}
-	int topIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+	int topIndex = (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
 	RECT rect = null;
-	long /*int*/ hDC = 0, oldFont = 0, newFont = 0;
+	long hDC = 0, oldFont = 0, newFont = 0;
 	int newWidth = 0;
 	if ((style & SWT.H_SCROLL) != 0) {
 		rect = new RECT ();
@@ -764,24 +767,24 @@ public void remove (int [] indices) {
 		newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 		if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
 	}
-	int cp = getCodePage ();
 	int i = 0, topCount = 0, last = -1;
 	while (i < newIndices.length) {
 		int index = newIndices [i];
 		if (index != last) {
-			TCHAR buffer = null;
+			char [] buffer = null;
+			int length = 0;
 			if ((style & SWT.H_SCROLL) != 0) {
-				int length = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXTLEN, index, 0);
+				length = (int)OS.SendMessage (handle, OS.LB_GETTEXTLEN, index, 0);
 				if (length == OS.LB_ERR) break;
-				buffer = new TCHAR (cp, length + 1);
-				int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXT, index, buffer);
+				buffer = new char [length + 1];
+				int result = (int)OS.SendMessage (handle, OS.LB_GETTEXT, index, buffer);
 				if (result == OS.LB_ERR) break;
 			}
-			int result = (int)/*64*/OS.SendMessage (handle, OS.LB_DELETESTRING, index, 0);
+			int result = (int)OS.SendMessage (handle, OS.LB_DELETESTRING, index, 0);
 			if (result == OS.LB_ERR) break;
 			if ((style & SWT.H_SCROLL) != 0) {
 				int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE | OS.DT_NOPREFIX;
-				OS.DrawText (hDC, buffer, -1, rect, flags);
+				OS.DrawText (hDC, buffer, length, rect, flags);
 				newWidth = Math.max (newWidth, rect.right - rect.left);
 			}
 			if (index < topIndex) topCount++;
@@ -817,26 +820,26 @@ public void remove (int [] indices) {
  */
 public void remove (int index) {
 	checkWidget ();
-	TCHAR buffer = null;
+	char [] buffer = null;
 	if ((style & SWT.H_SCROLL) != 0) {
-		int length = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXTLEN, index, 0);
+		int length = (int)OS.SendMessage (handle, OS.LB_GETTEXTLEN, index, 0);
 		if (length == OS.LB_ERR) {
-			int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+			int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 			if (0 <= index && index < count) error (SWT.ERROR_ITEM_NOT_REMOVED);
 			error (SWT.ERROR_INVALID_RANGE);
 		}
-		buffer = new TCHAR (getCodePage (), length + 1);
-		int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXT, index, buffer);
+		buffer = new char [length + 1];
+		int result = (int)OS.SendMessage (handle, OS.LB_GETTEXT, index, buffer);
 		if (result == OS.LB_ERR) {
-			int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+			int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 			if (0 <= index && index < count) error (SWT.ERROR_ITEM_NOT_REMOVED);
 			error (SWT.ERROR_INVALID_RANGE);
 		}
 	}
-	int topIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_DELETESTRING, index, 0);
+	int topIndex = (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+	int result = (int)OS.SendMessage (handle, OS.LB_DELETESTRING, index, 0);
 	if (result == OS.LB_ERR) {
-		int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+		int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 		if (0 <= index && index < count) error (SWT.ERROR_ITEM_NOT_REMOVED);
 		error (SWT.ERROR_INVALID_RANGE);
 	}
@@ -866,7 +869,7 @@ public void remove (int index) {
 public void remove (int start, int end) {
 	checkWidget ();
 	if (start > end) return;
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (!(0 <= start && start <= end && end < count)) {
 		error (SWT.ERROR_INVALID_RANGE);
 	}
@@ -874,9 +877,9 @@ public void remove (int start, int end) {
 		removeAll ();
 		return;
 	}
-	int topIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+	int topIndex = (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
 	RECT rect = null;
-	long /*int*/ hDC = 0, oldFont = 0, newFont = 0;
+	long hDC = 0, oldFont = 0, newFont = 0;
 	int newWidth = 0;
 	if ((style & SWT.H_SCROLL) != 0) {
 		rect = new RECT ();
@@ -884,22 +887,22 @@ public void remove (int start, int end) {
 		newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 		if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
 	}
-	int cp = getCodePage ();
 	int index = start;
 	int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE | OS.DT_NOPREFIX;
 	while (index <= end) {
-		TCHAR buffer = null;
+		char [] buffer = null;
+		int length = 0;
 		if ((style & SWT.H_SCROLL) != 0) {
-			int length = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXTLEN, start, 0);
+			length = (int)OS.SendMessage (handle, OS.LB_GETTEXTLEN, start, 0);
 			if (length == OS.LB_ERR) break;
-			buffer = new TCHAR (cp, length + 1);
-			int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXT, start, buffer);
+			buffer = new char [length + 1];
+			int result = (int)OS.SendMessage (handle, OS.LB_GETTEXT, start, buffer);
 			if (result == OS.LB_ERR) break;
 		}
-		int result = (int)/*64*/OS.SendMessage (handle, OS.LB_DELETESTRING, start, 0);
+		int result = (int)OS.SendMessage (handle, OS.LB_DELETESTRING, start, 0);
 		if (result == OS.LB_ERR) break;
 		if ((style & SWT.H_SCROLL) != 0) {
-			OS.DrawText (hDC, buffer, -1, rect, flags);
+			OS.DrawText (hDC, buffer, length, rect, flags);
 			newWidth = Math.max (newWidth, rect.right - rect.left);
 		}
 		index++;
@@ -942,7 +945,7 @@ public void remove (String string) {
 
 /**
  * Removes all of the items from the receiver.
- * 
+ *
  * @exception SWTException <ul>
  *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
@@ -1042,7 +1045,7 @@ public void select (int index) {
 
 void select (int index, boolean scroll) {
 	if (index < 0) return;
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (index >= count) return;
 	if (scroll) {
 		if ((style & SWT.SINGLE) != 0) {
@@ -1052,7 +1055,7 @@ void select (int index, boolean scroll) {
 		}
 		return;
 	}
-	int topIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+	int topIndex = (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
 	RECT itemRect = new RECT (), selectedRect = null;
 	OS.SendMessage (handle, OS.LB_GETITEMRECT, index, itemRect);
 	boolean redraw = getDrawing () && OS.IsWindowVisible (handle);
@@ -1062,14 +1065,14 @@ void select (int index, boolean scroll) {
 	}
 	int focusIndex = -1;
 	if ((style & SWT.SINGLE) != 0) {
-		int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
+		int oldIndex = (int)OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
 		if (oldIndex != -1) {
 			selectedRect = new RECT ();
 			OS.SendMessage (handle, OS.LB_GETITEMRECT, oldIndex, selectedRect);
 		}
 		OS.SendMessage (handle, OS.LB_SETCURSEL, index, 0);
 	} else {
-		focusIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
+		focusIndex = (int)OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
 		OS.SendMessage (handle, OS.LB_SETSEL, 1, index);
 	}
 	if ((style & SWT.MULTI) != 0) {
@@ -1113,7 +1116,7 @@ void select (int index, boolean scroll) {
 public void select (int start, int end) {
 	checkWidget ();
 	if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start != end)) return;
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (count == 0 || start >= count) return;
 	start = Math.max (0, start);
 	end = Math.min (end, count - 1);
@@ -1155,7 +1158,7 @@ public void selectAll () {
 
 void setFocusIndex (int index) {
 //	checkWidget ();
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (!(0 <= index && index < count)) return;
 	OS.SendMessage (handle, OS.LB_SETCARETINDEX, index, 0);
 }
@@ -1211,17 +1214,17 @@ public void setItem (int index, String string) {
 public void setItems (String... items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
-	for (int i=0; i<items.length; i++) {
-		if (items [i] == null) error (SWT.ERROR_INVALID_ARGUMENT);
+	for (String item : items) {
+		if (item == null) error (SWT.ERROR_INVALID_ARGUMENT);
 	}
-	long /*int*/ oldProc = OS.GetWindowLongPtr (handle, OS.GWLP_WNDPROC);
+	long oldProc = OS.GetWindowLongPtr (handle, OS.GWLP_WNDPROC);
 	OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, ListProc);
 	boolean redraw = getDrawing () && OS.IsWindowVisible (handle);
 	if (redraw) {
 		OS.SendMessage (handle, OS.WM_SETREDRAW, 0, 0);
 	}
 	RECT rect = null;
-	long /*int*/ hDC = 0, oldFont = 0, newFont = 0;
+	long hDC = 0, oldFont = 0, newFont = 0;
 	int newWidth = 0;
 	if ((style & SWT.H_SCROLL) != 0) {
 		rect = new RECT ();
@@ -1238,7 +1241,7 @@ public void setItems (String... items) {
 	while (index < length) {
 		String string = items [index];
 		TCHAR buffer = new TCHAR (cp, string, true);
-		int result = (int)/*64*/OS.SendMessage (handle, OS.LB_ADDSTRING, 0, buffer);
+		int result = (int)OS.SendMessage (handle, OS.LB_ADDSTRING, 0, buffer);
 		if (result == OS.LB_ERR || result == OS.LB_ERRSPACE) break;
 		if ((style & SWT.H_SCROLL) != 0) {
 			int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE | OS.DT_NOPREFIX;
@@ -1272,20 +1275,19 @@ public void setItems (String... items) {
 void setScrollWidth () {
 	int newWidth = 0;
 	RECT rect = new RECT ();
-	long /*int*/ newFont, oldFont = 0;
-	long /*int*/ hDC = OS.GetDC (handle);
+	long newFont, oldFont = 0;
+	long hDC = OS.GetDC (handle);
 	newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 	if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
-	int cp = getCodePage ();
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE | OS.DT_NOPREFIX;
 	for (int i=0; i<count; i++) {
-		int length = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXTLEN, i, 0);
+		int length = (int)OS.SendMessage (handle, OS.LB_GETTEXTLEN, i, 0);
 		if (length != OS.LB_ERR) {
-			TCHAR buffer = new TCHAR (cp, length + 1);
-			int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXT, i, buffer);
+			char [] buffer = new char [length + 1];
+			int result = (int)OS.SendMessage (handle, OS.LB_GETTEXT, i, buffer);
 			if (result != OS.LB_ERR) {
-				OS.DrawText (hDC, buffer, -1, rect, flags);
+				OS.DrawText (hDC, buffer, length, rect, flags);
 				newWidth = Math.max (newWidth, rect.right - rect.left);
 			}
 		}
@@ -1295,10 +1297,10 @@ void setScrollWidth () {
 	OS.SendMessage (handle, OS.LB_SETHORIZONTALEXTENT, newWidth + INSET, 0);
 }
 
-void setScrollWidth (TCHAR buffer, boolean grow) {
+void setScrollWidth (char[] buffer, boolean grow) {
 	RECT rect = new RECT ();
-	long /*int*/ newFont, oldFont = 0;
-	long /*int*/ hDC = OS.GetDC (handle);
+	long newFont, oldFont = 0;
+	long hDC = OS.GetDC (handle);
 	newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 	if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
 	int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE | OS.DT_NOPREFIX;
@@ -1310,7 +1312,7 @@ void setScrollWidth (TCHAR buffer, boolean grow) {
 
 void setScrollWidth (int newWidth, boolean grow) {
 	newWidth += INSET;
-	int width = (int)/*64*/OS.SendMessage (handle, OS.LB_GETHORIZONTALEXTENT, 0, 0);
+	int width = (int)OS.SendMessage (handle, OS.LB_GETHORIZONTALEXTENT, 0, 0);
 	if (grow) {
 		if (newWidth <= width) return;
 		OS.SendMessage (handle, OS.LB_SETHORIZONTALEXTENT, newWidth, 0);
@@ -1458,7 +1460,7 @@ public void setSelection (int start, int end) {
 	checkWidget ();
 	deselectAll ();
 	if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start != end)) return;
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (count == 0 || start >= count) return;
 	start = Math.max (0, start);
 	end = Math.min (end, count - 1);
@@ -1484,9 +1486,9 @@ public void setSelection (int start, int end) {
  */
 public void setTopIndex (int index) {
 	checkWidget ();
-	int result = (int)/*64*/OS.SendMessage (handle, OS.LB_SETTOPINDEX, index, 0);
+	int result = (int)OS.SendMessage (handle, OS.LB_SETTOPINDEX, index, 0);
 	if (result == OS.LB_ERR) {
-		int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+		int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 		index = Math.min (count - 1, Math.max (0, index));
 		OS.SendMessage (handle, OS.LB_SETTOPINDEX, index, 0);
 	}
@@ -1506,21 +1508,21 @@ public void showSelection () {
 	checkWidget ();
 	int index;
 	if ((style & SWT.SINGLE) != 0) {
-		index = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
+		index = (int)OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
 	} else {
 		int [] indices = new int [1];
-		int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETSELITEMS, 1, indices);
+		int result = (int)OS.SendMessage (handle, OS.LB_GETSELITEMS, 1, indices);
 		index = indices [0];
 		if (result != 1) index = -1;
 	}
 	if (index == -1) return;
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (count == 0) return;
-	int height = (int)/*64*/OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
+	int height = (int)OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
 	forceResize ();
 	RECT rect = new RECT ();
 	OS.GetClientRect (handle, rect);
-	int topIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+	int topIndex = (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
 	int visibleCount = Math.max (rect.bottom / height, 1);
 	int bottomIndex = Math.min (topIndex + visibleCount, count) - 1;
 	if (topIndex <= index && index <= bottomIndex) return;
@@ -1535,19 +1537,18 @@ void updateMenuLocation (Event event) {
 	int focusIndex = getFocusIndex();
 	if (focusIndex != -1) {
 		RECT rect = new RECT ();
-		long /*int*/ newFont, oldFont = 0;
-		long /*int*/ hDC = OS.GetDC (handle);
+		long newFont, oldFont = 0;
+		long hDC = OS.GetDC (handle);
 		newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 		if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
 		int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE | OS.DT_NOPREFIX;
-		int cp = getCodePage ();
-		TCHAR buffer = new TCHAR (cp, 64 + 1);
-		int length = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXTLEN, focusIndex, 0);
+		char [] buffer = new char [64 + 1];
+		int length = (int)OS.SendMessage (handle, OS.LB_GETTEXTLEN, focusIndex, 0);
 		if (length != OS.LB_ERR) {
-			if (length + 1 > buffer.length ()) {
-				buffer = new TCHAR (cp, length + 1);
+			if (length + 1 > buffer.length) {
+				buffer = new char [length + 1];
 			}
-			int result = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXT, focusIndex, buffer);
+			int result = (int)OS.SendMessage (handle, OS.LB_GETTEXT, focusIndex, buffer);
 			if (result != OS.LB_ERR) {
 				OS.DrawText (hDC, buffer, length, rect, flags);
 			}
@@ -1577,23 +1578,20 @@ boolean updateTextDirection (int textDirection) {
 			return super.updateTextDirection (textDirection);
 		}
 	}
-	int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 	if (count == OS.LB_ERR) return false;
-	int selection = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
-	int cp = getCodePage ();
+	int selection = (int)OS.SendMessage (handle, OS.LB_GETCURSEL, 0, 0);
 	addedUCC = false;
 	while (count-- > 0) {
-		int length = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTEXTLEN, count, 0);
+		int length = (int)OS.SendMessage (handle, OS.LB_GETTEXTLEN, count, 0);
 		if (length == OS.LB_ERR) break;
 		if (length == 0) continue;
-		TCHAR buffer = new TCHAR (cp, length + 1);
+		char [] buffer = new char [length + 1];
 		if (OS.SendMessage (handle, OS.LB_GETTEXT, count, buffer) == OS.LB_ERR) break;
 		if (OS.SendMessage (handle, OS.LB_DELETESTRING, count, 0) == OS.LB_ERR) break;
 		if ((state & HAS_AUTO_DIRECTION) == 0) {
 			/* Should remove UCC */
-			char [] chars = new char [length - 1];
-			System.arraycopy (buffer.chars, 1, chars, 0, length - 1); // buffer.chars as we are always Unicode here
-			buffer = new TCHAR (cp, chars, true);
+			System.arraycopy(buffer, 1, buffer, 0, length);
 		}
 		/* Adding UCC is handled in OS.LB_INSERTSTRING */
 		if (OS.SendMessage (handle, OS.LB_INSERTSTRING, count, buffer) == OS.LB_ERR) break;
@@ -1621,12 +1619,12 @@ TCHAR windowClass () {
 }
 
 @Override
-long /*int*/ windowProc () {
+long windowProc () {
 	return ListProc;
 }
 
 @Override
-long /*int*/ windowProc (long /*int*/ hwnd, int msg, long /*int*/ wParam, long /*int*/ lParam) {
+long windowProc (long hwnd, int msg, long wParam, long lParam) {
 	/* Below code is to support auto text direction. */
 	if (handle != 0 && lParam != 0 && (state & HAS_AUTO_DIRECTION) != 0) {
 		switch (msg) {
@@ -1649,11 +1647,11 @@ long /*int*/ windowProc (long /*int*/ hwnd, int msg, long /*int*/ wParam, long /
 				}
 				string = (direction == SWT.RIGHT_TO_LEFT ? RLE : LRE) + string;
 				buffer = new TCHAR (cp, string, true);
-				long /*int*/ hHeap = OS.GetProcessHeap ();
+				long hHeap = OS.GetProcessHeap ();
 				length = buffer.length() * TCHAR.sizeof;
-				long /*int*/ pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, length);
+				long pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, length);
 				OS.MoveMemory (pszText, buffer, length);
-				long /*int*/ code = super.windowProc (hwnd, msg, wParam, pszText);
+				long code = super.windowProc (hwnd, msg, wParam, pszText);
 				OS.HeapFree (hHeap, 0, pszText);
 				addedUCC = true;
 				return code;
@@ -1663,7 +1661,7 @@ long /*int*/ windowProc (long /*int*/ hwnd, int msg, long /*int*/ wParam, long /
 }
 
 @Override
-LRESULT WM_CHAR (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_CHAR (long wParam, long lParam) {
 	LRESULT result = super.WM_CHAR (wParam, lParam);
 	if (result != null) return result;
 	/*
@@ -1675,10 +1673,10 @@ LRESULT WM_CHAR (long /*int*/ wParam, long /*int*/ lParam) {
 	if (OS.GetKeyState (OS.VK_CONTROL) < 0 && OS.GetKeyState (OS.VK_SHIFT) >= 0) {
 		int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
 		if ((bits & OS.LBS_EXTENDEDSEL) != 0) {
-			switch ((int)/*64*/wParam) {
+			switch ((int)wParam) {
 				case OS.VK_SPACE: {
-					int index = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
-					int code = (int)/*64*/OS.SendMessage (handle, OS.LB_GETSEL, index, 0);
+					int index = (int)OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
+					int code = (int)OS.SendMessage (handle, OS.LB_GETSEL, index, 0);
 					if (code == OS.LB_ERR) break;
 					OS.SendMessage (handle, OS.LB_SETSEL, code != 0 ? 0 : 1, index);
 					OS.SendMessage (handle, OS.LB_SETANCHORINDEX, index, 0);
@@ -1692,7 +1690,7 @@ LRESULT WM_CHAR (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_KEYDOWN (long wParam, long lParam) {
 	LRESULT result = super.WM_KEYDOWN (wParam, lParam);
 	if (result != null) return result;
 	/*
@@ -1705,7 +1703,7 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 		int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
 		if ((bits & OS.LBS_EXTENDEDSEL) != 0) {
 			int newIndex = -1;
-			switch ((int)/*64*/wParam) {
+			switch ((int)wParam) {
 				case OS.VK_SPACE: {
 					/*
 					* Ensure that the window proc does not process VK_SPACE
@@ -1717,32 +1715,32 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 				}
 				case OS.VK_UP:
 				case OS.VK_DOWN: {
-					int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
-					newIndex = Math.max (0, oldIndex + (((int)/*64*/wParam) == OS.VK_UP ? -1 : 1));
+					int oldIndex = (int)OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
+					newIndex = Math.max (0, oldIndex + (((int)wParam) == OS.VK_UP ? -1 : 1));
 					break;
 				}
 				case OS.VK_PRIOR: {
-					int topIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
-					int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
+					int topIndex = (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+					int oldIndex = (int)OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
 					if (oldIndex != topIndex) {
 						newIndex = topIndex;
 					} else {
 						forceResize ();
 						RECT rect = new RECT ();
 						OS.GetClientRect (handle, rect);
-						int itemHeight = (int)/*64*/OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
+						int itemHeight = (int)OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
 						int pageSize = Math.max (2, (rect.bottom / itemHeight));
 						newIndex = Math.max (0, topIndex - (pageSize - 1));
 					}
 					break;
 				}
 				case OS.VK_NEXT: {
-					int topIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
-					int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
+					int topIndex = (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+					int oldIndex = (int)OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
 					forceResize ();
 					RECT rect = new RECT ();
 					OS.GetClientRect (handle, rect);
-					int itemHeight = (int)/*64*/OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
+					int itemHeight = (int)OS.SendMessage (handle, OS.LB_GETITEMHEIGHT, 0, 0);
 					int pageSize = Math.max (2, (rect.bottom / itemHeight));
 					int bottomIndex = topIndex + pageSize - 1;
 					if (oldIndex != bottomIndex) {
@@ -1750,7 +1748,7 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 					} else {
 						newIndex = bottomIndex + pageSize - 1;
 					}
-					int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+					int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 					if (count != OS.LB_ERR) newIndex = Math.min (count - 1, newIndex);
 					break;
 				}
@@ -1759,7 +1757,7 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 					break;
 				}
 				case OS.VK_END: {
-					int count = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
+					int count = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
 					if (count == OS.LB_ERR) break;
 					newIndex = count - 1;
 					break;
@@ -1773,7 +1771,7 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 				* the focus indicator changes as a result of something
 				* the user types.
 				*/
-				int uiState = (int)/*64*/OS.SendMessage (handle, OS.WM_QUERYUISTATE, 0, 0);
+				int uiState = (int)OS.SendMessage (handle, OS.WM_QUERYUISTATE, 0, 0);
 				if ((uiState & OS.UISF_HIDEFOCUS) != 0) {
 					OS.SendMessage (handle, OS.WM_CHANGEUISTATE, OS.UIS_INITIALIZE, 0);
 					/*
@@ -1784,7 +1782,7 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 					* control.
 					*/
 					RECT itemRect = new RECT ();
-					int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
+					int oldIndex = (int)OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
 					OS.SendMessage (handle, OS.LB_GETITEMRECT, oldIndex, itemRect);
 					OS.InvalidateRect (handle, itemRect, true);
 				}
@@ -1797,7 +1795,7 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_SETREDRAW (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_SETREDRAW (long wParam, long lParam) {
 	LRESULT result = super.WM_SETREDRAW (wParam, lParam);
 	if (result != null) return result;
 	/*
@@ -1811,7 +1809,7 @@ LRESULT WM_SETREDRAW (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_SIZE (long wParam, long lParam) {
 	/*
 	* Bug in Windows.  If the top index is changed while the
 	* list is being resized, Windows does not redraw properly
@@ -1824,7 +1822,7 @@ LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
 	* is to redraw the control when the horizontal scroll bar is
 	* not at the beginning.
 	*/
-	int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+	int oldIndex = (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
 	LRESULT result = super.WM_SIZE (wParam, lParam);
 	if (!isDisposed ()) {
 		SCROLLINFO info = new SCROLLINFO ();
@@ -1833,14 +1831,14 @@ LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
 		if (OS.GetScrollInfo (handle, OS.SB_HORZ, info)) {
 			if (info.nPos != 0) OS.InvalidateRect (handle, null, true);
 		}
-		int newIndex = (int)/*64*/OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
+		int newIndex = (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
 		if (oldIndex != newIndex) OS.InvalidateRect (handle, null, true);
 	}
 	return result;
 }
 
 @Override
-LRESULT wmCommandChild (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmCommandChild (long wParam, long lParam) {
 	int code = OS.HIWORD (wParam);
 	switch (code) {
 		case OS.LBN_SELCHANGE:

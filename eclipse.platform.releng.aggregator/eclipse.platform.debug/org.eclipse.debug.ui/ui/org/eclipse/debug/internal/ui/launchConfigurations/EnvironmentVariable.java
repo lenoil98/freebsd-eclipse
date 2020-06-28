@@ -11,6 +11,7 @@
  * Contributors:
  *     Keith Seitz (keiths@redhat.com) - initial implementation
  *     IBM Corporation - integration and code cleanup
+ *     Red Hat - Bug 548344
  *******************************************************************************/
 package org.eclipse.debug.internal.ui.launchConfigurations;
 
@@ -52,6 +53,7 @@ public class EnvironmentVariable
 		return value;
 	}
 
+
 	/**
 	 * Sets this variable's value
 	 * @param value
@@ -61,18 +63,21 @@ public class EnvironmentVariable
 		this.value = value;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
+	/**
+	 * Sets this variable's name
+	 *
+	 * @param name
 	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+
 	@Override
 	public String toString() {
 		return getName();
 	}
 
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
 	@Override
 	public boolean equals(Object obj) {
 		boolean equal = false;
@@ -82,9 +87,7 @@ public class EnvironmentVariable
 		}
 		return equal;
 	}
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
+
 	@Override
 	public int hashCode() {
 		return name.hashCode();

@@ -17,7 +17,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -104,7 +103,7 @@ public class ModelEnablementPreferencePage extends PreferencePage implements IWo
 			private String getTextFor(ITeamContentProviderDescriptor teamContentDescriptor) {
 				String name = teamContentDescriptor.getName();
 
-				if (name != null && !name.equals(""))  //$NON-NLS-1$
+				if (name != null && !name.isEmpty())
 					return name;
 
 				String modelProviderID = teamContentDescriptor.getModelProviderId();
@@ -134,8 +133,8 @@ public class ModelEnablementPreferencePage extends PreferencePage implements IWo
 			}
 			@Override
 			public void dispose() {
-				for (Iterator iter = images.values().iterator(); iter.hasNext();) {
-					Image image = (Image) iter.next();
+				for (Object element : images.values()) {
+					Image image = (Image) element;
 					image.dispose();
 				}
 				super.dispose();
@@ -147,10 +146,10 @@ public class ModelEnablementPreferencePage extends PreferencePage implements IWo
 				if (e1 instanceof ITeamContentProviderDescriptor && e2 instanceof ITeamContentProviderDescriptor) {
 					ITeamContentProviderDescriptor d1 = (ITeamContentProviderDescriptor) e1;
 					ITeamContentProviderDescriptor d2 = (ITeamContentProviderDescriptor) e2;
-				    IModelProviderDescriptor md1 = ModelProvider.getModelProviderDescriptor(d1.getModelProviderId());
-				    IModelProviderDescriptor md2 = ModelProvider.getModelProviderDescriptor(d2.getModelProviderId());
-				    if (md1 != null && md2 != null)
-				    	return getLabel(md1).compareTo(getLabel(md2));
+					IModelProviderDescriptor md1 = ModelProvider.getModelProviderDescriptor(d1.getModelProviderId());
+					IModelProviderDescriptor md2 = ModelProvider.getModelProviderDescriptor(d2.getModelProviderId());
+					if (md1 != null && md2 != null)
+						return getLabel(md1).compareTo(getLabel(md2));
 				}
 				return super.compare(viewer, e1, e2);
 			}
@@ -167,8 +166,7 @@ public class ModelEnablementPreferencePage extends PreferencePage implements IWo
 
 	private void updateChecks() {
 		ITeamContentProviderDescriptor[] descriptors = TeamUI.getTeamContentProviderManager().getDescriptors();
-		for (int i = 0; i < descriptors.length; i++) {
-			ITeamContentProviderDescriptor descriptor = descriptors[i];
+		for (ITeamContentProviderDescriptor descriptor : descriptors) {
 			if (descriptor.isEnabled()) {
 				previosulyEnabled.add(descriptor);
 			}
@@ -192,11 +190,10 @@ public class ModelEnablementPreferencePage extends PreferencePage implements IWo
 
 	private boolean hasDescriptorEnablementChanged(Object[] checked) {
 		ITeamContentProviderDescriptor[] descriptors = TeamUI.getTeamContentProviderManager().getDescriptors();
-		for (int i = 0; i < descriptors.length; i++) {
-			ITeamContentProviderDescriptor descriptor = descriptors[i];
+		for (ITeamContentProviderDescriptor descriptor : descriptors) {
 			boolean enable = false;
-			for (int j = 0; j < checked.length; j++) {
-				ITeamContentProviderDescriptor checkedDesc = (ITeamContentProviderDescriptor)checked[j];
+			for (Object c : checked) {
+				ITeamContentProviderDescriptor checkedDesc = (ITeamContentProviderDescriptor) c;
 				if (checkedDesc.getModelProviderId().equals(descriptor.getModelProviderId())) {
 					enable = true;
 					break;

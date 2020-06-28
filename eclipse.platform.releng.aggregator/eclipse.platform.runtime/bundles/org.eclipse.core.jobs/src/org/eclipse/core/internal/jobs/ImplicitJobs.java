@@ -41,7 +41,7 @@ class ImplicitJobs {
 	private final Set<ISchedulingRule> suspendedRules = new HashSet<>(20);
 
 	/**
-	 * Maps (Thread->ThreadJob), threads to the currently running job for that
+	 * Maps (Thread-&gt;ThreadJob), threads to the currently running job for that
 	 * thread.
 	 * @GuardedBy("this")
 	 */
@@ -175,7 +175,7 @@ class ImplicitJobs {
 	 * @GuardedBy("this")
 	 */
 	private boolean isSuspended(ISchedulingRule rule) {
-		if (suspendedRules.size() == 0)
+		if (suspendedRules.isEmpty())
 			return false;
 		for (ISchedulingRule iSchedulingRule : suspendedRules)
 			if (iSchedulingRule.contains(rule))

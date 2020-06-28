@@ -58,8 +58,7 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 		public IResource[] refresh(IResource[] resources, int depth, IProgressMonitor monitor) throws TeamException {
 			// Only refresh the base of a resource once as it should not change
 			List unrefreshed = new ArrayList();
-			for (int i = 0; i < resources.length; i++) {
-				IResource resource = resources[i];
+			for (IResource resource : resources) {
 				if (!hasResourceVariant(resource)) {
 					unrefreshed.add(resource);
 				}
@@ -103,9 +102,7 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 			return Util.equals(mergedBytes, remoteBytes);
 		}
 		
-		/* (non-Javadoc)
-		 * @see org.eclipse.team.internal.ccvs.core.syncinfo.CVSResourceVariantTree#dispose()
-		 */
+		@Override
 		public void dispose() {
 			mergedSynchronizer.dispose();
 			super.dispose();
@@ -140,7 +137,7 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 		initialize();
 	}
 
-	/* (non-Javadoc)
+	/*
 	 * @see org.eclipse.team.internal.ccvs.core.CVSWorkspaceSubscriber#initialize()
 	 */
 	private void initialize() {			
@@ -174,8 +171,7 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 	}
 
 	public void merged(IResource[] resources) throws TeamException {
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			internalMerged(resource);
 		}
 		fireTeamResourceChange(SubscriberChangeEvent.asSyncChangedDeltas(this, resources));
@@ -186,7 +182,7 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 		baseTree.merged(resource, remoteBytes);
 	}
 
-	/* (non-Javadoc)
+	/*
 	 * @see org.eclipse.team.core.sync.TeamSubscriber#cancel()
 	 */
 	public void cancel() {	
@@ -195,16 +191,12 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 		baseTree.dispose();	
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.sync.TeamSubscriber#roots()
-	 */
+	@Override
 	public IResource[] roots() {
-		return (IResource[]) roots.toArray(new IResource[roots.size()]);
+		return roots.toArray(new IResource[roots.size()]);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.sync.TeamSubscriber#isSupervised(org.eclipse.core.resources.IResource)
-	 */
+	@Override
 	public boolean isSupervised(IResource resource) throws TeamException {
 		return getBaseTree().hasResourceVariant(resource) || getRemoteTree().hasResourceVariant(resource); 
 	}
@@ -281,12 +273,11 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 	/* 
 	 * Currently only the workspace subscriber knows when a project has been deconfigured. We will listen for these events
 	 * and remove the root then forward to merge subscriber listeners.
-	 * (non-Javadoc)
+	 * 
 	 * @see org.eclipse.team.core.subscribers.ITeamResourceChangeListener#teamResourceChanged(org.eclipse.team.core.subscribers.TeamDelta[])
 	 */
 	public void subscriberResourceChanged(ISubscriberChangeEvent[] deltas) {		
-		for (int i = 0; i < deltas.length; i++) {
-			ISubscriberChangeEvent delta = deltas[i];
+		for (ISubscriberChangeEvent delta : deltas) {
 			switch(delta.getFlags()) {
 				case ISubscriberChangeEvent.ROOT_REMOVED:
 					IResource resource = delta.getResource();
@@ -300,16 +291,12 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.CVSSyncTreeSubscriber#getBaseSynchronizationCache()
-	 */
+	@Override
 	protected IResourceVariantTree getBaseTree() {
 		return baseTree;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.CVSSyncTreeSubscriber#getRemoteSynchronizationCache()
-	 */
+	@Override
 	protected IResourceVariantTree getRemoteTree() {
 		return remoteTree;
 	}
@@ -327,8 +314,7 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 		SyncInfoFilter.ContentComparisonSyncInfoFilter contentFilter =
 			new SyncInfoFilter.ContentComparisonSyncInfoFilter();
 		monitor.beginTask(null, refreshed.length * 100);
-		for (int i = 0; i < refreshed.length; i++) {
-			IResource resource = refreshed[i];
+		for (IResource resource : refreshed) {
 			if (resource.getType() == IResource.FILE) {
 				ICVSFile local = CVSWorkspaceRoot.getCVSFileFor((IFile)resource);
 				byte[] localBytes = local.getSyncBytes();
@@ -351,14 +337,12 @@ public class CVSMergeSubscriber extends CVSSyncTreeSubscriber implements IResour
 		return (PersistantResourceVariantByteStore)((CVSResourceVariantTree)getRemoteTree()).getByteStore();
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
+	@Override
 	public boolean equals(Object other) {
 		if(this == other) return true;
 		if(! (other instanceof CVSMergeSubscriber)) return false;
 		CVSMergeSubscriber s = (CVSMergeSubscriber)other;
 		return getEndTag().equals(s.getEndTag()) && 
-			   getStartTag().equals(s.getStartTag()) && rootsEqual(s);		
+				getStartTag().equals(s.getStartTag()) && rootsEqual(s);		
 	}
 }

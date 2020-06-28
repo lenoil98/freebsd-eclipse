@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -242,6 +242,10 @@ public final class ActionMessages extends NLS {
 	public static String AddJavaDocStubsAction_error_dialogTitle;
 	public static String AddJavaDocStubsAction_error_actionFailed;
 	public static String AddJavaDocStubsAction_not_applicable;
+	public static String AddTextBlockAction_label;
+	public static String AddTextBlockAction_description;
+	public static String AddTextBlockAction_tooltip;
+	public static String AddTextBlockAction_not_applicable;
 	public static String ExternalizeStringsAction_label;
 	public static String ExternalizeStringsAction_dialog_title;
 	public static String FindStringsToExternalizeAction_label;
@@ -280,7 +284,7 @@ public final class ActionMessages extends NLS {
 	public static String OrganizeImportsAction_error_title;
 	public static String OrganizeImportsAction_error_message;
 	public static String OrganizeImportsAction_single_error_parse;
-	
+
 	/**
 	 * DO NOT REMOVE, used in a product, see https://bugs.eclipse.org/296836 .
 	 * @deprecated As of 3.6, replaced by {@link #OrganizeImportsAction_summary_added_singular} and {@link #OrganizeImportsAction_summary_added_plural}
@@ -383,6 +387,7 @@ public final class ActionMessages extends NLS {
 	public static String SurroundWithTemplateMenuAction_NoneApplicable;
 	public static String SurroundWithTemplateMenuAction_SurroundWithTemplateSubMenuName;
 	public static String SurroundWithTemplateMenuAction_SurroundWithTryCatchActionName;
+	public static String SurroundWithTemplateMenuAction_SurroundWithTryWithResourcesActionName;
 	public static String SurroundWithTemplateMenuAction_SurroundWithTryMultiCatchActionName;
 
 	public static String ToggleLinkingAction_label;
@@ -420,6 +425,9 @@ public final class ActionMessages extends NLS {
 	public static String OpenNewEnumWizardAction_text;
 	public static String OpenNewEnumWizardAction_description;
 	public static String OpenNewEnumWizardAction_tooltip;
+	public static String OpenNewRecordWizardAction_text;
+	public static String OpenNewRecordWizardAction_description;
+	public static String OpenNewRecordWizardAction_tooltip;
 	public static String OpenNewInterfaceWizardAction_text;
 	public static String OpenNewInterfaceWizardAction_description;
 	public static String OpenNewInterfaceWizardAction_tooltip;
@@ -449,6 +457,10 @@ public final class ActionMessages extends NLS {
 	public static String CreateModuleInfoAction_question_message_overwrite_module_info;
 	public static String CreateModuleInfoAction_dialog_finish_button_label;
 	public static String CreateModuleInfoAction_dialog_cancel_button_label;
+
+	public static String EnablePreviewFeaturesAction_convert_message_compliance;
+	public static String EnablePreviewFeaturesAction_error_message_compliance;
+	public static String EnablePreviewFeaturesAction_error_title;
 
 	public static String GenerateToStringAction_label;
 	public static String GenerateToStringAction_description;

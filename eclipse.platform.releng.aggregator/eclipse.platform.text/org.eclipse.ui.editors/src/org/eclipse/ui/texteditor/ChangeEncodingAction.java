@@ -64,7 +64,7 @@ public class ChangeEncodingAction extends TextEditorAction {
 
 	/**
 	 * Creates a new action for the given text editor.
-	 * 
+	 *
 	 * @param editor the text editor
 	 * @see TextEditorAction#TextEditorAction(ResourceBundle, String, ITextEditor)
 	 * @since 3.5
@@ -76,7 +76,7 @@ public class ChangeEncodingAction extends TextEditorAction {
 	/**
 	 * Creates a new action for the given text editor. The action configures its visual
 	 * representation from the given resource bundle.
-	 * 
+	 *
 	 * @param bundle the resource bundle
 	 * @param prefix a prefix to be prepended to the various resource keys (described in
 	 *            <code>ResourceAction</code> constructor), or <code>null</code> if none
@@ -87,7 +87,7 @@ public class ChangeEncodingAction extends TextEditorAction {
 		super(bundle, prefix, editor);
 
 		String key= "dialog.title"; //$NON-NLS-1$;
-		if (prefix != null && prefix.length() > 0)
+		if (prefix != null && !prefix.isEmpty())
 			key= prefix + key;
 
 		fDialogTitle= getString(bundle, key, null);
@@ -161,7 +161,7 @@ public class ChangeEncodingAction extends TextEditorAction {
 					fEncodingEditor.setPage(page);
 					fEncodingEditor.load();
 
-					if (encoding == null || encoding.equals(defaultEncoding) || encoding.length() == 0)
+					if (encoding == null || encoding.equals(defaultEncoding) || encoding.isEmpty())
 						fEncodingEditor.loadDefault();
 				}
 

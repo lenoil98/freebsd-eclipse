@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2016, 2017 SSI Schaefer IT Solutions GmbH and others.
+ *  Copyright (c) 2016, 2019 SSI Schaefer IT Solutions GmbH and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,9 @@
  *******************************************************************************/
 package org.eclipse.debug.tests.launching;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -23,24 +26,34 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
+import org.eclipse.debug.core.ILaunchDelegate;
 import org.eclipse.debug.core.ILaunchListener;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.core.IStreamListener;
 import org.eclipse.debug.core.model.IDisconnect;
+import org.eclipse.debug.core.model.ILaunchConfigurationDelegate2;
 import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.IStreamMonitor;
 import org.eclipse.debug.core.model.IStreamsProxy;
+import org.eclipse.debug.core.model.LaunchConfigurationDelegate;
+import org.eclipse.debug.internal.core.LaunchManager;
 import org.eclipse.debug.internal.core.groups.GroupLaunchConfigurationDelegate;
 import org.eclipse.debug.internal.core.groups.GroupLaunchElement;
 import org.eclipse.debug.internal.core.groups.GroupLaunchElement.GroupElementPostLaunchAction;
+import org.eclipse.debug.internal.ui.DebugUIPlugin;
 import org.eclipse.debug.internal.ui.launchConfigurations.LaunchHistory;
 import org.eclipse.debug.tests.TestUtil;
 import org.eclipse.debug.ui.IDebugUIConstants;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class LaunchGroupTests extends AbstractLaunchTest {
 
@@ -66,12 +79,9 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 		}
 	};
 
-	public LaunchGroupTests() {
-		super("Launch Groups Test"); //$NON-NLS-1$
-	}
-
 	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		super.setUp();
 
 		// reset count
@@ -79,7 +89,8 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 	}
 
 	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		// make sure listener is removed
 		getLaunchManager().removeLaunchListener(lcListener);
 		ILaunch[] launches = getLaunchManager().getLaunches();
@@ -93,7 +104,7 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 					launch.terminate();
 				}
 			} catch (Exception e) {
-				TestUtil.log(IStatus.ERROR, getName(), "Error terminating launch: " + launch, e);
+				TestUtil.log(IStatus.ERROR, name.getMethodName(), "Error terminating launch: " + launch, e);
 			}
 		}
 		super.tearDown();
@@ -130,6 +141,7 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 		return h;
 	}
 
+	@Test
 	public void testNone() throws Exception {
 		ILaunchConfiguration t1 = getLaunchConfiguration("Test1"); //$NON-NLS-1$
 		ILaunchConfiguration t2 = getLaunchConfiguration("Test2"); //$NON-NLS-1$
@@ -146,6 +158,7 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 		assertTrue("history[2] should be Test1", history[2].contentsEqual(t1)); //$NON-NLS-1$
 	}
 
+	@Test
 	public void testDelay() throws Exception {
 		ILaunchConfiguration t1 = getLaunchConfiguration("Test1"); //$NON-NLS-1$
 		ILaunchConfiguration t2 = getLaunchConfiguration("Test2"); //$NON-NLS-1$
@@ -165,6 +178,7 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 		assertTrue("history[2] should be Test1", history[2].contentsEqual(t1)); //$NON-NLS-1$
 	}
 
+	@Test
 	public void testTerminated() throws Exception {
 		final ILaunchConfiguration t1 = getLaunchConfiguration("Test1"); //$NON-NLS-1$
 		final ILaunchConfiguration t2 = getLaunchConfiguration("Test2"); //$NON-NLS-1$
@@ -210,6 +224,7 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 		assertTrue("history[2] should be Test1", history[2].contentsEqual(t1)); //$NON-NLS-1$
 	}
 
+	@Test
 	public void testAdopt() throws Exception {
 		final ILaunchConfiguration t1 = getLaunchConfiguration("Test1"); //$NON-NLS-1$
 		final ILaunchConfiguration grp = createLaunchGroup(DEF_GRP_NAME, createLaunchGroupElement(t1, GroupElementPostLaunchAction.NONE, null, false), createLaunchGroupElement(t1, GroupElementPostLaunchAction.NONE, null, true));
@@ -228,6 +243,7 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 		assertEquals("Test1 should be launched only once", 1, launchCount.get()); //$NON-NLS-1$
 	}
 
+	@Test
 	public void testAdoptComplex() throws Exception {
 		final ILaunchConfiguration t1 = getLaunchConfiguration("Test1"); //$NON-NLS-1$
 
@@ -258,6 +274,7 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 		assertEquals("Test1 should be launched only once", 1, launchCount.get()); //$NON-NLS-1$
 	}
 
+	@Test
 	public void testWaitForOutput() throws Exception {
 		String testOutput = "TestOutput"; //$NON-NLS-1$
 
@@ -311,6 +328,7 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 		assertTrue("history[2] should be Test1", history[2].contentsEqual(t1)); //$NON-NLS-1$
 	}
 
+	@Test
 	public void testRename() throws Exception {
 		ILaunchConfiguration t1 = getLaunchConfiguration("Test1"); //$NON-NLS-1$
 		ILaunchConfiguration t2 = getLaunchConfiguration("Test2"); //$NON-NLS-1$
@@ -327,6 +345,50 @@ public class LaunchGroupTests extends AbstractLaunchTest {
 		List<GroupLaunchElement> elements = GroupLaunchConfigurationDelegate.createLaunchElements(grp);
 
 		assertTrue("group element should be updated", elements.get(0).name.equals("AnotherTest")); //$NON-NLS-1$//$NON-NLS-2$
+	}
+
+	/**
+	 * Test for Bug 529651. Build before launch was not invoked for launches
+	 * started as part of group launch.
+	 */
+	@Test
+	public void testBuildBeforeLaunch() throws CoreException {
+		final AtomicInteger launched = new AtomicInteger(0);
+		final AtomicInteger buildRequested = new AtomicInteger(0);
+		final ILaunchConfigurationDelegate2 customLaunchDelegate = new LaunchConfigurationDelegate() {
+			@Override
+			public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
+				launched.incrementAndGet();
+			}
+
+			@Override
+			public boolean buildForLaunch(ILaunchConfiguration configuration, String mode, IProgressMonitor monitor) throws CoreException {
+				buildRequested.incrementAndGet();
+				return false;
+			}
+		};
+		final ILaunchDelegate launchDelegate = ((LaunchManager) DebugPlugin.getDefault().getLaunchManager()).getLaunchDelegate(LaunchConfigurationTests.ID_TEST_LAUNCH_TYPE);
+		final TestLaunchDelegate testLaunchDelegate = (TestLaunchDelegate) launchDelegate.getDelegate();
+		testLaunchDelegate.setDelegate(customLaunchDelegate);
+		final boolean oldBuildBeforePref = DebugUIPlugin.getDefault().getPreferenceStore().getBoolean(IDebugUIConstants.PREF_BUILD_BEFORE_LAUNCH);
+		try {
+			ILaunchConfigurationWorkingCopy lc = getLaunchConfiguration("Test1").getWorkingCopy(); //$NON-NLS-1$
+			GroupLaunchElement ge = createLaunchGroupElement(lc, GroupElementPostLaunchAction.NONE, null, false);
+			ILaunchConfiguration group = createLaunchGroup(DEF_GRP_NAME, ge);
+
+			DebugUIPlugin.getDefault().getPreferenceStore().setValue(IDebugUIConstants.PREF_BUILD_BEFORE_LAUNCH, false);
+			group.launch(ILaunchManager.RUN_MODE, new NullProgressMonitor(), false);
+			assertEquals("Element not launched.", 1, launched.get()); //$NON-NLS-1$
+			assertEquals("Build even though it was disabled.", 0, buildRequested.get()); //$NON-NLS-1$
+
+			DebugUIPlugin.getDefault().getPreferenceStore().setValue(IDebugUIConstants.PREF_BUILD_BEFORE_LAUNCH, true);
+			group.launch(ILaunchManager.RUN_MODE, new NullProgressMonitor(), true);
+			assertEquals("Element not launched.", 2, launched.get()); //$NON-NLS-1$
+			assertEquals("Requested build was ignored.", 1, buildRequested.get()); //$NON-NLS-1$
+		} finally {
+			testLaunchDelegate.setDelegate(null);
+			DebugUIPlugin.getDefault().getPreferenceStore().setValue(IDebugUIConstants.PREF_BUILD_BEFORE_LAUNCH, oldBuildBeforePref);
+		}
 	}
 
 	private static DummyStream attachDummyProcess(final ILaunch l) {

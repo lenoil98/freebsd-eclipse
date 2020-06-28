@@ -16,13 +16,13 @@ package org.eclipse.ltk.internal.ui.refactoring.util;
 
 /**
  * Utility class for string-related functions.
- * 
+ *
  * @since 3.0
  */
 public final class Strings {
 
 	public static String removeNewLine(String message) {
-		final StringBuffer result= new StringBuffer();
+		final StringBuilder result= new StringBuilder();
 		int current= 0;
 		int index= message.indexOf('\n', 0);
 		while (index != -1) {

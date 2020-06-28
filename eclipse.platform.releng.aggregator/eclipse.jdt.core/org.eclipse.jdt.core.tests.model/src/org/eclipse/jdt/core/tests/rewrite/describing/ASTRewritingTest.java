@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,25 +16,37 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.dom.*;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.PrimitiveType;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jdt.core.tests.model.AbstractJavaModelTests;
 import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.TextEdit;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+
 /**
  * Tests for ASTRewrite. Subclasses must have 2 constructors that forward to
  * constructors with the same signature as this class's constructors.
- * 
+ *
  * Test methods can end with:
  * <ul>
  * <li>"_since_<i>n</i>", where <i>n</i> is an AST.JLS* constant value:
@@ -71,7 +83,9 @@ public class ASTRewritingTest extends AbstractJavaModelTests {
 	/** @deprecated using deprecated code */
 	private final static int JLS10_INTERNAL = AST.JLS10;
 
-	private final static int[] JLS_LEVELS = { JLS2_INTERNAL, JLS3_INTERNAL, JLS4_INTERNAL, JLS8_INTERNAL, JLS9_INTERNAL, JLS10_INTERNAL };
+	private final static int JLS14_INTERNAL = AST.JLS14;
+
+	private final static int[] JLS_LEVELS = { JLS2_INTERNAL, JLS3_INTERNAL, JLS4_INTERNAL, JLS8_INTERNAL, JLS9_INTERNAL, JLS10_INTERNAL, JLS14_INTERNAL };
 
 	private static final String ONLY_AST_STRING = "_only";
 	private static final String SINCE_AST_STRING = "_since";
@@ -95,7 +109,7 @@ public class ASTRewritingTest extends AbstractJavaModelTests {
 	}
 
 	/**
-	 * Creates an instance of a test at a particular AST level. All sub tests of ASTRewritingTest must have a constructor 
+	 * Creates an instance of a test at a particular AST level. All sub tests of ASTRewritingTest must have a constructor
 	 * with the specified parameters.
 	 *
 	 * @param name name of the test method
@@ -108,32 +122,37 @@ public class ASTRewritingTest extends AbstractJavaModelTests {
 
 	public static Test suite() {
 		TestSuite suite= new TestSuite(ASTRewritingTest.class.getName());
-		suite.addTest(ASTRewritingExpressionsTest.suite());
-		suite.addTest(ASTRewritingInsertBoundTest.suite());
-		suite.addTest(ASTRewritingMethodDeclTest.suite());
-		suite.addTest(ASTRewritingMoveCodeTest.suite());
-		suite.addTest(ASTRewritingStatementsTest.suite());
-		suite.addTest(ASTRewritingTrackingTest.suite());
-		suite.addTest(ASTRewritingJavadocTest.suite());
-		suite.addTest(ASTRewritingTypeAnnotationsTest.suite());
-		suite.addTest(ASTRewritingTypeDeclTest.suite());
-		suite.addTest(ASTRewritingGroupNodeTest.suite());
-		suite.addTest(ASTRewritingRevertTest.suite());
-		suite.addTest(LineCommentOffsetsTest.suite());
-		suite.addTest(ASTRewritingWithStatementsRecoveryTest.suite());
-		suite.addTest(ASTRewritePropertyTest.suite());
-		suite.addTest(ASTRewritingPackageDeclTest.suite());
-		suite.addTest(ASTRewritingLambdaExpressionTest.suite());		
-		suite.addTest(ASTRewritingReferenceExpressionTest.suite());		
-		suite.addTest(SourceModifierTest.suite());
-		suite.addTest(ImportRewriteTest.suite());
-		suite.addTest(ImportRewrite18Test.suite());
+
+
+		  suite.addTest(ASTRewritingExpressionsTest.suite());
+		  suite.addTest(ASTRewritingInsertBoundTest.suite());
+		  suite.addTest(ASTRewritingMethodDeclTest.suite());
+		  suite.addTest(ASTRewritingMoveCodeTest.suite());
+		  suite.addTest(ASTRewritingStatementsTest.suite());
+		  suite.addTest(ASTRewritingSwitchExpressionsTest.suite());
+
+		  suite.addTest(ASTRewritingTrackingTest.suite());
+		  suite.addTest(ASTRewritingJavadocTest.suite());
+		  suite.addTest(ASTRewritingTypeAnnotationsTest.suite());
+		  suite.addTest(ASTRewritingTypeDeclTest.suite());
+		  suite.addTest(ASTRewritingGroupNodeTest.suite());
+		  suite.addTest(ASTRewritingRevertTest.suite());
+		  suite.addTest(LineCommentOffsetsTest.suite());
+		  suite.addTest(ASTRewritingWithStatementsRecoveryTest.suite());
+		  suite.addTest(ASTRewritePropertyTest.suite());
+		  suite.addTest(ASTRewritingPackageDeclTest.suite());
+		  suite.addTest(ASTRewritingLambdaExpressionTest.suite());
+		  suite.addTest(ASTRewritingReferenceExpressionTest.suite());
+		  suite.addTest(SourceModifierTest.suite());
+		  suite.addTest(ImportRewriteTest.suite());
+		  suite.addTest(ImportRewrite18Test.suite());
+
 		return suite;
 	}
 
 	/**
 	 * Creates a test suite according to the rules in {@link ASTRewritingTest}.
-	 * 
+	 *
 	 * @param testClass subclass of ASTRewritingTest
 	 * @return test suite that runs all tests with all supported AST levels
 	 */
@@ -143,7 +162,7 @@ public class ASTRewritingTest extends AbstractJavaModelTests {
 
 	/**
 	 * Creates a test suite according to the rules in {@link ASTRewritingTest}.
-	 * 
+	 *
 	 * @param testClass subclass of ASTRewritingTest
 	 * @param classSince smallest supported AST level for this test class, or -1 to support all levels
 	 * @return test suite that runs all tests with all supported AST levels
@@ -156,7 +175,7 @@ public class ASTRewritingTest extends AbstractJavaModelTests {
 			for (int i = 0, max = methods.length; i < max; i++) {
 				String name = methods[i].getName();
 				if (name.startsWith("test")) { //$NON-NLS-1$
-					
+
 					int index = name.indexOf(ONLY_AST_STRING);
 					if (index != -1) {
 						String suffix = name.substring(index + ONLY_AST_STRING.length() + 1);
@@ -164,7 +183,7 @@ public class ASTRewritingTest extends AbstractJavaModelTests {
 						for (int l= 0; l < levels.length; l++) {
 							suite.addTest((Test) cons.newInstance(new Object[]{name,  Integer.valueOf(levels[l])}));
 						}
-					
+
 					} else {
 						int since = -1;
 						index = name.indexOf(SINCE_AST_STRING);
@@ -187,6 +206,7 @@ public class ASTRewritingTest extends AbstractJavaModelTests {
 		return suite;
 	}
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 
@@ -208,6 +228,7 @@ public class ASTRewritingTest extends AbstractJavaModelTests {
 		proj.setOption(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, complianceVersion);
 		return proj;
 	}
+	@Override
 	protected void tearDown() throws Exception {
 		deleteProject("P");
 		super.tearDown();

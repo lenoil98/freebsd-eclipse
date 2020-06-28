@@ -1,3 +1,16 @@
+/*******************************************************************************
+ * Copyright (c) 2014, 2019 Wojciech Sudol and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Wojciech Sudol - initial API and implementation
+ *******************************************************************************/
 package org.eclipse.e4.ui.examples.jobs.views;
 
 import java.lang.reflect.InvocationTargetException;
@@ -25,7 +38,6 @@ import org.eclipse.e4.ui.progress.IProgressService;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -68,15 +80,11 @@ public class JobsView {
 			final long duration = getDuration();
 			final boolean shouldLock = lockField.getSelection();
 			progressService.busyCursorWhile(
-					new IRunnableWithProgress() {
-						@Override
-                        public void run(IProgressMonitor monitor) {
-							if (shouldLock)
-								doRunInWorkspace(duration, monitor);
-							else
-								doRun(duration, monitor);
-						}
-
+					monitor -> {
+						if (shouldLock)
+							doRunInWorkspace(duration, monitor);
+						else
+							doRun(duration, monitor);
 					});
 		} catch (InvocationTargetException e) {
 			e.printStackTrace();
@@ -137,7 +145,7 @@ public class JobsView {
 				result.setProperty(IProgressConstants.ACTION_PROPERTY,
 						new Action("Pop up a dialog") { //$NON-NLS-1$
 							@Override
-                            public void run() {
+							public void run() {
 								MessageDialog
 										.openInformation(
 												parent.getShell(),
@@ -192,7 +200,7 @@ public class JobsView {
 		create.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		create.addSelectionListener(new SelectionAdapter() {
 			@Override
-            public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(SelectionEvent e) {
 				createJobs();
 			}
 		});
@@ -204,7 +212,7 @@ public class JobsView {
 		busyWhile.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		busyWhile.addSelectionListener(new SelectionAdapter() {
 			@Override
-            public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(SelectionEvent e) {
 				busyCursorWhile();
 			}
 		});
@@ -215,7 +223,7 @@ public class JobsView {
 		noFork.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		noFork.addSelectionListener(new SelectionAdapter() {
 			@Override
-            public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(SelectionEvent e) {
 				progressNoFork();
 			}
 		});
@@ -227,7 +235,7 @@ public class JobsView {
 		exception.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		exception.addSelectionListener(new SelectionAdapter() {
 			@Override
-            public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(SelectionEvent e) {
 				jobWithRuntimeException();
 			}
 		});
@@ -239,7 +247,7 @@ public class JobsView {
 		join.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		join.addSelectionListener(new SelectionAdapter() {
 			@Override
-            public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(SelectionEvent e) {
 				joinTestJobs();
 			}
 		});
@@ -251,7 +259,7 @@ public class JobsView {
 		sleep.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		sleep.addSelectionListener(new SelectionAdapter() {
 			@Override
-            public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(SelectionEvent e) {
 				doSleep();
 			}
 		});
@@ -264,7 +272,7 @@ public class JobsView {
 		wake.addSelectionListener(new SelectionAdapter() {
 
 			@Override
-            public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(SelectionEvent e) {
 				doWakeUp();
 			}
 		});
@@ -276,7 +284,7 @@ public class JobsView {
 		showInDialog.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		showInDialog.addSelectionListener(new SelectionAdapter() {
 			@Override
-            public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(SelectionEvent e) {
 				showInDialog();
 			}
 		});
@@ -291,11 +299,11 @@ public class JobsView {
 
 		Job showJob = new Job("Show In Dialog") {//$NON-NLS-1$
 			@Override
-            protected IStatus run(IProgressMonitor monitor) {
+			protected IStatus run(IProgressMonitor monitor) {
 				SubMonitor subMonitor = SubMonitor.convert(monitor, "Run in dialog", 100);//$NON-NLS-1$
 
 				for (int i = 0; i < 100; i++) {
-					subMonitor.split(1); 
+					subMonitor.split(1);
 					try {
 						Thread.sleep(100);
 					} catch (InterruptedException e) {
@@ -482,12 +490,7 @@ public class JobsView {
 	protected void doRunInWorkspace(final long duration,
 			IProgressMonitor monitor) {
 		try {
-			ResourcesPlugin.getWorkspace().run(new IWorkspaceRunnable() {
-				@Override
-                public void run(IProgressMonitor monitor) throws CoreException {
-					doRun(duration, monitor);
-				}
-			}, monitor);
+			ResourcesPlugin.getWorkspace().run((IWorkspaceRunnable) monitor1 -> doRun(duration, monitor1), monitor);
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
@@ -519,7 +522,7 @@ public class JobsView {
 			 * @see org.eclipse.core.runtime.jobs.Job#run(org.eclipse.core.runtime.IProgressMonitor)
 			 */
 			@Override
-            protected IStatus run(IProgressMonitor monitor) {
+			protected IStatus run(IProgressMonitor monitor) {
 				throw new NullPointerException();
 			}
 		};
@@ -535,22 +538,9 @@ public class JobsView {
 			// thread, the workbench will create a default progress monitor
 			// that reports progress in a modal dialog with details area
 			progressService.busyCursorWhile(
-					new IRunnableWithProgress() {
-						@Override
-                        public void run(IProgressMonitor monitor)
-								throws InterruptedException {
-							Job.getJobManager().join(TestJob.FAMILY_TEST_JOB,
-									monitor);
-						}
-					});
-		} catch (InterruptedException e) {
-			// thrown if the user interrupts the join by canceling the progress
-			// monitor
-			// A UI component should swallow the exception and finish the action
-			// or operation. A lower level component should just propagate the
-			// exception
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
+					monitor -> Job.getJobManager().join(TestJob.FAMILY_TEST_JOB,
+							monitor));
+		} catch (InterruptedException | InvocationTargetException e) {
 			// Thrown when the operation running within busyCursorWhile throws
 			// an
 			// exception. This should either be propagated or displayed to the
@@ -564,19 +554,13 @@ public class JobsView {
 			final long duration = getDuration();
 			final boolean shouldLock = lockField.getSelection();
 			progressService.runInUI(progressService,
-					new IRunnableWithProgress() {
-						@Override
-                        public void run(IProgressMonitor monitor)
-								throws InterruptedException {
-							if (shouldLock)
-								doRunInWorkspace(duration, monitor);
-							else
-								doRun(duration, monitor);
-						}
-					}, ResourcesPlugin.getWorkspace().getRoot());
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
+					monitor -> {
+if (shouldLock)
+					doRunInWorkspace(duration, monitor);
+else
+					doRun(duration, monitor);
+}, ResourcesPlugin.getWorkspace().getRoot());
+		} catch (InvocationTargetException | InterruptedException e) {
 			e.printStackTrace();
 		}
 	}

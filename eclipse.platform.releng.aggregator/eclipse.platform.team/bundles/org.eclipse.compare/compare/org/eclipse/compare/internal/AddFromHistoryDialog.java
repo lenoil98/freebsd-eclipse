@@ -15,7 +15,10 @@ package org.eclipse.compare.internal;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.ResourceBundle;
@@ -52,11 +55,6 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.swt.widgets.Widget;
-
-import com.ibm.icu.text.DateFormat;
-import com.ibm.icu.text.MessageFormat;
-import com.ibm.icu.util.Calendar;
-
 
 public class AddFromHistoryDialog extends ResizableDialog {
 
@@ -188,8 +186,7 @@ public class AddFromHistoryDialog extends ResizableDialog {
 		// sort input files
 		final int count= inputFiles.length;
 		final IFile[] files= new IFile[count];
-		for (int i= 0; i < count; i++)
-			files[i]= inputFiles[i];
+		System.arraycopy(inputFiles, 0, files, 0, count);
 		if (count > 1)
 			internalSort(files, 0, count-1);
 
@@ -197,8 +194,7 @@ public class AddFromHistoryDialog extends ResizableDialog {
 		String prefix= root.getFullPath().toString();
 
 		if (fMemberTable != null && !fMemberTable.isDisposed()) {
-			for (int i = 0; i < files.length; i++) {
-				IFile file = files[i];
+			for (IFile file : files) {
 				String path = file.getFullPath().toString();
 
 				// ignore a recently deleted file at the same path as the
@@ -455,9 +451,6 @@ public class AddFromHistoryDialog extends ResizableDialog {
 		return MessageFormat.format(format, date);
 	}
 
-	/* (non-Javadoc)
-	 * Method declared on Dialog.
-	 */
 	@Override
 	protected void createButtonsForButtonBar(Composite parent) {
 		String buttonLabel= Utilities.getString(fBundle, "buttonLabel", IDialogConstants.OK_LABEL); //$NON-NLS-1$

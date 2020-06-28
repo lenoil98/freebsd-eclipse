@@ -15,7 +15,9 @@ package org.eclipse.ui.tests.performance;
 
 import java.util.Enumeration;
 
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -30,6 +32,7 @@ import junit.framework.TestSuite;
  * where both test_class_name and test_name can be a regular expression.
  * <p>
  * For instance:
+ * </p>
  * <pre>
  * 		OpenCloseEditorTest#testOpenAndCloseEditors:perf_outline()
  * </pre>
@@ -41,22 +44,22 @@ import junit.framework.TestSuite;
  * <pre>
  * 		"-Dorg.eclipse.ui.tests.filter=OpenCloseEditorTest#testOpenAndCloseEditors.*"
  * </pre>
- * </p>
  * @since 3.5
  */
 public class FilteredTestSuite extends TestSuite {
 
 	static final public String FILTER_TEST_NAME = "org.eclipse.ui.tests.filter";
 
-    private String filterTestClassName;
-    private String filterTestName;
+	private String filterTestClassName;
+	private String filterTestName;
 
-    public FilteredTestSuite() {
-    	BundleContext context = UIPerformancePlugin.getDefault().getContext();
-    	if (context == null) { // most likely run in a wrong launch mode
-    		System.err.println("UIPerformanceTestSuite was unable to retirieve bundle context; test filtering is disabled");
-    		return;
-    	}
+	public FilteredTestSuite() {
+		Bundle bundle = FrameworkUtil.getBundle(getClass());
+		BundleContext context = bundle != null ? bundle.getBundleContext() : null;
+		if (context == null) { // most likely run in a wrong launch mode
+			System.err.println("UIPerformanceTestSuite was unable to retirieve bundle context; test filtering is disabled");
+			return;
+		}
 		String filterString = context.getProperty(FILTER_TEST_NAME);
 		if (filterString == null)
 			return;
@@ -80,24 +83,24 @@ public class FilteredTestSuite extends TestSuite {
 			filterTestClassName = filterString;
 			filterTestName = null;
 		}
-    }
+	}
 
-    @Override
+	@Override
 	public void addTest(Test test) {
-    	if ((filterTestClassName != null) || (filterTestName != null)) {
-    		if (test instanceof TestSuite) {
-    			addFilteredTestSuite((TestSuite)test);
-    			return;
-    		} else if (test instanceof TestCase) {
-    			addFilteredTestCase((TestCase)test);
-    			return;
-    		}
-    	}
-    	// default processing: no filter or unknown test type
-    	super.addTest(test);
-    }
+		if ((filterTestClassName != null) || (filterTestName != null)) {
+			if (test instanceof TestSuite) {
+				addFilteredTestSuite((TestSuite)test);
+				return;
+			} else if (test instanceof TestCase) {
+				addFilteredTestCase((TestCase)test);
+				return;
+			}
+		}
+		// default processing: no filter or unknown test type
+		super.addTest(test);
+	}
 
-    private void addFilteredTestSuite(TestSuite testSuite) {
+	private void addFilteredTestSuite(TestSuite testSuite) {
 		for (Enumeration<Test> allTests = testSuite.tests(); allTests.hasMoreElements();) {
 			Object subTest = allTests.nextElement();
 
@@ -123,17 +126,17 @@ public class FilteredTestSuite extends TestSuite {
 			}
 			addFilteredTestCase((TestCase)subTest);
 		}
-    }
+	}
 
-    private void addFilteredTestCase(TestCase testCase) {
-   		if (filterTestName == null) {
-   			super.addTest(testCase);
-   			return;
-   		}
+	private void addFilteredTestCase(TestCase testCase) {
+		if (filterTestName == null) {
+			super.addTest(testCase);
+			return;
+		}
 		String testCaseName = testCase.getName();
-   		if (testCaseName == null)
-   			return;
-   		if (testCaseName.matches(filterTestName))
-   			super.addTest(testCase);
-    }
+		if (testCaseName == null)
+			return;
+		if (testCaseName.matches(filterTestName))
+			super.addTest(testCase);
+	}
 }

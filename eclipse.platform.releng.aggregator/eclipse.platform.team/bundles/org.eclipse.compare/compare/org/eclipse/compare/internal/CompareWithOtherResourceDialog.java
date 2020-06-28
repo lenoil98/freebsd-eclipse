@@ -46,6 +46,7 @@ import org.eclipse.swt.dnd.DropTarget;
 import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.DropTargetListener;
 import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.TransferData;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -120,10 +121,10 @@ public class CompareWithOtherResourceDialog extends TitleAreaDialog {
 					event.detail = DND.DROP_NONE;
 			}
 
-			for (int i = 0; i < event.dataTypes.length; i++) {
-				if (resourceTransfer.isSupportedType(event.dataTypes[i])
-						|| textTransfer.isSupportedType(event.dataTypes[i])) {
-					event.currentDataType = event.dataTypes[i];
+			for (TransferData dataType : event.dataTypes) {
+				if (resourceTransfer.isSupportedType(dataType)
+						|| textTransfer.isSupportedType(dataType)) {
+					event.currentDataType = dataType;
 					if (event.detail != DND.DROP_COPY)
 						event.detail = DND.DROP_NONE;
 					break;
@@ -403,8 +404,8 @@ public class CompareWithOtherResourceDialog extends TitleAreaDialog {
 		private void addListenersToRadioButtons() {
 			final ContentTypeElement[] elements = new ContentTypeElement[] { workspaceContent,
 					externalFileContent, externalFolderContent };
-			for (int i = 0; i < elements.length; i++) {
-				elements[i].getRadioButton().addListener(SWT.Selection, event -> {
+			for (ContentTypeElement e : elements) {
+				e.getRadioButton().addListener(SWT.Selection, event -> {
 					for (ContentTypeElement element : elements) {
 						if (event.widget != element.getRadioButton())
 							element.setEnabled(false);
@@ -569,12 +570,10 @@ public class CompareWithOtherResourceDialog extends TitleAreaDialog {
 					} catch (CoreException e) { // in case .project file or folder has been deleted
 						IPath projectPath = stateLocation.append(TMP_PROJECT_NAME);
 						projectPath.toFile().mkdirs();
-						FileOutputStream output = new FileOutputStream(
-								projectPath.append(".project").toOSString()); //$NON-NLS-1$
-						try {
+						try (FileOutputStream output = new FileOutputStream(
+								projectPath.append(".project").toOSString()) //$NON-NLS-1$
+						) {
 							output.write(TMP_PROJECT_FILE.getBytes());
-						} finally {
-							output.close();
 						}
 						project.open(null);
 					}

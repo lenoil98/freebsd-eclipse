@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.ui.launchConfigurations;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -31,14 +32,8 @@ import org.eclipse.jface.dialogs.MessageDialogWithToggle;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.swt.widgets.Shell;
 
-import com.ibm.icu.text.MessageFormat;
-
-
 public class CompileErrorProjectPromptStatusHandler implements IStatusHandler {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.IStatusHandler#handleStatus(org.eclipse.core.runtime.IStatus, java.lang.Object)
-	 */
 	@Override
 	public Object handleStatus(IStatus status, Object source) throws CoreException {
 		ILaunchConfiguration config = null;
@@ -59,7 +54,7 @@ public class CompileErrorProjectPromptStatusHandler implements IStatusHandler {
 			}
 		}
 		Shell shell = DebugUIPlugin.getShell();
-		StringBuffer projectList = new StringBuffer();
+		StringBuilder projectList = new StringBuilder();
 		//we need to limit this
 		int size = Math.min(20, projects.size());
 		for (int i = 0; i < size; i++) {
@@ -93,15 +88,15 @@ public class CompileErrorProjectPromptStatusHandler implements IStatusHandler {
 				0,
 				LaunchConfigurationsMessages.CompileErrorProjectPromptStatusHandler_1,
 				false);
-        int open = dialog.open();
+		int open = dialog.open();
 		if (open == IDialogConstants.PROCEED_ID) {
-        	if(dialog.getToggleState()) {
-        		store.setValue(IInternalDebugUIConstants.PREF_CONTINUE_WITH_COMPILE_ERROR, MessageDialogWithToggle.ALWAYS);
-        	}
-            return Boolean.TRUE;
-        }
-        else {
-            return Boolean.FALSE;
-        }
+			if(dialog.getToggleState()) {
+				store.setValue(IInternalDebugUIConstants.PREF_CONTINUE_WITH_COMPILE_ERROR, MessageDialogWithToggle.ALWAYS);
+			}
+			return Boolean.TRUE;
+		}
+		else {
+			return Boolean.FALSE;
+		}
 	}
 }

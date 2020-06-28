@@ -13,15 +13,18 @@
  *******************************************************************************/
 package org.eclipse.help.internal.webapp.servlet;
 
-import java.io.*;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.StringTokenizer;
 
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServletRequest;
 
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.help.internal.base.HelpBasePlugin;
-import org.eclipse.help.internal.webapp.data.*;
+import org.eclipse.help.internal.webapp.data.UrlUtil;
 import org.eclipse.help.webapp.IFilter;
 
 public class HighlightFilter implements IFilter {
@@ -46,7 +49,7 @@ public class HighlightFilter implements IFilter {
 		}
 
 		Collection<String> keywords = getWords(req);
-		if (keywords.size() == 0) {
+		if (keywords.isEmpty()) {
 			return out;
 		}
 		keywords = removeWildCards(keywords);
@@ -165,7 +168,7 @@ public class HighlightFilter implements IFilter {
 		Collection<String> resultPass1 = new ArrayList<>();
 		for (String word : col) {
 			int index;
-			while ((index = word.indexOf("*")) >= 0) { //$NON-NLS-1$
+			while ((index = word.indexOf('*')) >= 0) {
 				if (index > 0)
 					resultPass1.add(word.substring(0, index));
 				if (word.length() > index)
@@ -179,7 +182,7 @@ public class HighlightFilter implements IFilter {
 		Collection<String> resultPass2 = new ArrayList<>();
 		for (String word : resultPass1) {
 			int index;
-			while ((index = word.indexOf("?")) >= 0) { //$NON-NLS-1$
+			while ((index = word.indexOf('?')) >= 0) {
 				if (index > 0)
 					resultPass2.add(word.substring(0, index));
 				if (word.length() > index)

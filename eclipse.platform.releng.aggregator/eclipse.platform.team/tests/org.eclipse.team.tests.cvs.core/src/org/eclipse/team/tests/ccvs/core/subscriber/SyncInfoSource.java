@@ -104,14 +104,13 @@ public class SyncInfoSource {
 	/**
 	 * Refresh the subscriber for the given resources
 	 */
-    public void refresh(Subscriber subscriber, IResource[] resources) throws TeamException {
-        subscriber.refresh(resources, IResource.DEPTH_INFINITE, DEFAULT_MONITOR);
-    }
-    
+	public void refresh(Subscriber subscriber, IResource[] resources) throws TeamException {
+		subscriber.refresh(resources, IResource.DEPTH_INFINITE, DEFAULT_MONITOR);
+	}
+	
 	protected void assertProjectRemoved(Subscriber subscriber, IProject project) {
 		IResource[] roots = subscriber.roots();
-		for (int i = 0; i < roots.length; i++) {
-			IResource resource = roots[i];
+		for (IResource resource : roots) {
 			if (resource.equals(project)) {
 				throw new AssertionFailedError();
 			}
@@ -147,8 +146,8 @@ public class SyncInfoSource {
 			assertDiffKindEquals(message, subscriber, resource, SyncInfoToDiffConverter.asDiffFlags(syncKind));
 		}
 		Assert.assertTrue(message + ": improper sync state for " + resource + " expected " + 
-				   SyncInfo.kindToString(kindOther) + " but was " +
-				   SyncInfo.kindToString(kind), kind == kindOther);
+					SyncInfo.kindToString(kindOther) + " but was " +
+					SyncInfo.kindToString(kind), kind == kindOther);
 		
 	}
 	

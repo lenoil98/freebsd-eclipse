@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors: IBM Corporation - initial API and implementation
  ******************************************************************************/
 package org.eclipse.osgi.internal.signedcontent;
@@ -26,14 +26,17 @@ public class SignerInfoImpl implements SignerInfo {
 		this.mdAlgorithm = mdAlgorithm;
 	}
 
+	@Override
 	public Certificate[] getCertificateChain() {
 		return chain;
 	}
 
+	@Override
 	public Certificate getTrustAnchor() {
 		return trustAnchor;
 	}
 
+	@Override
 	public boolean isTrusted() {
 		return trustAnchor != null;
 	}
@@ -42,20 +45,24 @@ public class SignerInfoImpl implements SignerInfo {
 		this.trustAnchor = trustAnchor;
 	}
 
+	@Override
 	public String getMessageDigestAlgorithm() {
 		return mdAlgorithm;
 	}
 
+	@Override
 	public int hashCode() {
 		int result = mdAlgorithm.hashCode();
-		for (int i = 0; i < chain.length; i++)
-			result += chain[i].hashCode();
+		for (Certificate cert : chain) {
+			result += cert.hashCode();
+		}
 		// Note that we do not hash based on trustAnchor;
-		// this changes dynamically but we need a constant hashCode for purposes of 
+		// this changes dynamically but we need a constant hashCode for purposes of
 		// hashing in a Set.
 		return result;
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof SignerInfo))
 			return false;

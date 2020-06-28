@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,6 +21,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
@@ -74,6 +75,8 @@ import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.corext.util.Messages;
 import org.eclipse.jdt.internal.corext.util.Resources;
+
+import org.eclipse.jdt.internal.ui.util.ASTHelper;
 
 /**
  * This class defines a set of reusable static checks methods.
@@ -176,7 +179,7 @@ public class Checks {
 	 */
 	public static RefactoringStatus checkTypeName(String name, IJavaElement context) {
 		//fix for: 1GF5Z0Z: ITPJUI:WINNT - assertion failed after renameType refactoring
-		if (name.indexOf(".") != -1) //$NON-NLS-1$
+		if (name.contains(".")) //$NON-NLS-1$
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.Checks_no_dot);
 		else
 			return checkName(name, JavaConventionsUtil.validateJavaTypeName(name, context));
@@ -209,7 +212,7 @@ public class Checks {
 	/**
 	 * Returns OK status if the new name is OK, i.e. when no file with that name exists.
 	 * The name of the given CU is not OK.
-	 * 
+	 *
 	 * @param cu CU to rename
 	 * @param newBareName the new name of the CU (without extension)
 	 * @return the status: FATAL if the CU already exists, OK if OK
@@ -224,13 +227,15 @@ public class Checks {
 	}
 
 	public static boolean startsWithLowerCase(String s){
-		if (s == null)
+		if (null == s)
 			return false;
-		else if ("".equals(s)) //$NON-NLS-1$
+		else switch (s) {
+		case "": //$NON-NLS-1$
 			return false;
-		else
+		default:
 			//workaround for JDK bug (see 26529)
 			return s.charAt(0) == Character.toLowerCase(s.charAt(0));
+		}
 	}
 
 	public static boolean resourceExists(IPath resourcePath){
@@ -269,8 +274,9 @@ public class Checks {
 
 	public static RefactoringStatus checkForMainAndNativeMethods(IType[] types) throws JavaModelException {
 		RefactoringStatus result= new RefactoringStatus();
-		for (int i= 0; i < types.length; i++)
-			result.merge(checkForMainAndNativeMethods(types[i]));
+		for (IType type : types) {
+			result.merge(checkForMainAndNativeMethods(type));
+		}
 		return result;
 	}
 
@@ -283,18 +289,17 @@ public class Checks {
 
 	private static RefactoringStatus checkForMainAndNativeMethods(IMethod[] methods) throws JavaModelException {
 		RefactoringStatus result= new RefactoringStatus();
-		for (int i= 0; i < methods.length; i++) {
-			if (JdtFlags.isNative(methods[i])){
-				String typeName= JavaElementLabelsCore.getElementLabel(methods[i].getDeclaringType(), JavaElementLabelsCore.ALL_FULLY_QUALIFIED);
-				String methodName= JavaElementLabelsCore.getElementLabel(methods[i], JavaElementLabelsCore.ALL_DEFAULT);
+		for (IMethod method : methods) {
+			if (JdtFlags.isNative(method)) {
+				String typeName= JavaElementLabelsCore.getElementLabel(method.getDeclaringType(), JavaElementLabelsCore.ALL_FULLY_QUALIFIED);
+				String methodName= JavaElementLabelsCore.getElementLabel(method, JavaElementLabelsCore.ALL_DEFAULT);
 				String msg= Messages.format(RefactoringCoreMessages.Checks_method_native,
-								new String[]{typeName, methodName, "UnsatisfiedLinkError"});//$NON-NLS-1$
-				result.addEntry(RefactoringStatus.ERROR, msg, JavaStatusContext.create(methods[i]), JavaManipulation.getPreferenceNodeId(), RefactoringStatusCodes.NATIVE_METHOD);
+					new String[]{typeName, methodName, "UnsatisfiedLinkError"});//$NON-NLS-1$
+				result.addEntry(RefactoringStatus.ERROR, msg, JavaStatusContext.create(method), JavaManipulation.getPreferenceNodeId(), RefactoringStatusCodes.NATIVE_METHOD);
 			}
-			if (methods[i].isMainMethod()) {
-				String msg= Messages.format(RefactoringCoreMessages.Checks_has_main,
-						JavaElementLabelsCore.getElementLabel(methods[i].getDeclaringType(), JavaElementLabelsCore.ALL_FULLY_QUALIFIED));
-				result.addEntry(RefactoringStatus.WARNING, msg, JavaStatusContext.create(methods[i]), JavaManipulation.getPreferenceNodeId(), RefactoringStatusCodes.MAIN_METHOD);
+			if (method.isMainMethod()) {
+				String msg= Messages.format(RefactoringCoreMessages.Checks_has_main, JavaElementLabelsCore.getElementLabel(method.getDeclaringType(), JavaElementLabelsCore.ALL_FULLY_QUALIFIED));
+				result.addEntry(RefactoringStatus.WARNING, msg, JavaStatusContext.create(method), JavaManipulation.getPreferenceNodeId(), RefactoringStatusCodes.MAIN_METHOD);
 			}
 		}
 		return result;
@@ -386,14 +391,28 @@ public class Checks {
 	public static boolean isEnumCase(ASTNode node) {
 		if (node instanceof SwitchCase) {
 			final SwitchCase caze= (SwitchCase) node;
-			final Expression expression= caze.getExpression();
-			if (expression instanceof Name) {
-				final Name name= (Name) expression;
-				final IBinding binding= name.resolveBinding();
-				if (binding instanceof IVariableBinding) {
-					IVariableBinding variableBinding= (IVariableBinding) binding;
-					return variableBinding.isEnumConstant();
+			if (ASTHelper.isSwitchCaseExpressionsSupportedInAST(node.getAST())) {
+				List<Expression> expressions= caze.expressions();
+				boolean isEnumConst= true;
+				for (Expression expression : expressions) {
+					isEnumConst= isEnumConst && isEnumConst(expression);
 				}
+				return isEnumConst;
+			} else {
+				Expression expression= caze.getExpression();
+				return isEnumConst(expression);
+			}
+		}
+		return false;
+	}
+
+	private static boolean isEnumConst(final Expression expression) {
+		if (expression instanceof Name) {
+			final Name name= (Name) expression;
+			final IBinding binding= name.resolveBinding();
+			if (binding instanceof IVariableBinding) {
+				IVariableBinding variableBinding= (IVariableBinding) binding;
+				return variableBinding.isEnumConstant();
 			}
 		}
 		return false;
@@ -526,8 +545,7 @@ public class Checks {
 	 */
 	public static IMethod findSimilarMethod(IMethod method, IMethod[] methods) throws JavaModelException {
 		boolean isConstructor= method.isConstructor();
-		for (int i= 0; i < methods.length; i++) {
-			IMethod otherMethod= methods[i];
+		for (IMethod otherMethod : methods) {
 			if (otherMethod.isConstructor() == isConstructor && method.isSimilar(otherMethod))
 				return otherMethod;
 		}
@@ -577,8 +595,8 @@ public class Checks {
 	public static SearchResultGroup[] excludeCompilationUnits(SearchResultGroup[] grouped, RefactoringStatus status) throws JavaModelException{
 		List<SearchResultGroup> result= new ArrayList<>();
 		boolean wasEmpty= grouped.length == 0;
-		for (int i= 0; i < grouped.length; i++){
-			IResource resource= grouped[i].getResource();
+		for (SearchResultGroup g : grouped) {
+			IResource resource= g.getResource();
 			IJavaElement element= JavaCore.create(resource);
 			if (! (element instanceof ICompilationUnit))
 				continue;
@@ -588,7 +606,7 @@ public class Checks {
 				status.addError(Messages.format(RefactoringCoreMessages.Checks_cannot_be_parsed, BasicElementLabels.getPathLabel(cu.getPath(), false)));
 				continue; //removed, go to the next one
 			}
-			result.add(grouped[i]);
+			result.add(g);
 		}
 
 		if ((!wasEmpty) && result.isEmpty())
@@ -599,8 +617,9 @@ public class Checks {
 
 	public static RefactoringStatus checkCompileErrorsInAffectedFiles(SearchResultGroup[] grouped) throws JavaModelException {
 		RefactoringStatus result= new RefactoringStatus();
-		for (int i= 0; i < grouped.length; i++)
-			checkCompileErrorsInAffectedFile(result, grouped[i].getResource());
+		for (SearchResultGroup g : grouped) {
+			checkCompileErrorsInAffectedFile(result, g.getResource());
+		}
 		return result;
 	}
 
@@ -611,8 +630,8 @@ public class Checks {
 
 	public static RefactoringStatus checkCompileErrorsInAffectedFiles(SearchResultGroup[] references, IResource declaring) throws JavaModelException {
 		RefactoringStatus result= new RefactoringStatus();
-		for (int i= 0; i < references.length; i++){
-			IResource resource= references[i].getResource();
+		for (SearchResultGroup reference : references) {
+			IResource resource= reference.getResource();
 			if (resource.equals(declaring))
 				declaring= null;
 			checkCompileErrorsInAffectedFile(result, resource);
@@ -624,10 +643,10 @@ public class Checks {
 
 	private static boolean hasCompileErrors(IResource resource) throws JavaModelException {
 		try {
-			IMarker[] problemMarkers= resource.findMarkers(IJavaModelMarker.JAVA_MODEL_PROBLEM_MARKER, true, IResource.DEPTH_INFINITE);
-			for (int i= 0; i < problemMarkers.length; i++) {
-				if (problemMarkers[i].getAttribute(IMarker.SEVERITY, -1) == IMarker.SEVERITY_ERROR)
+			for (IMarker problemMarker : resource.findMarkers(IJavaModelMarker.JAVA_MODEL_PROBLEM_MARKER, true, IResource.DEPTH_INFINITE)) {
+				if (problemMarker.getAttribute(IMarker.SEVERITY, -1) == IMarker.SEVERITY_ERROR) {
 					return true;
+				}
 			}
 			return false;
 		} catch (JavaModelException e){
@@ -662,10 +681,10 @@ public class Checks {
 
 		IContainer container= (IContainer)res;
 		try {
-			IResource[] children= container.members();
-			for (int i= 0; i < children.length; i++) {
-				if (isReadOnly(children[i]))
+			for (IResource child : container.members()) {
+				if (isReadOnly(child)) {
 					return true;
+				}
 			}
 			return false;
 		} catch (JavaModelException e){
@@ -689,11 +708,21 @@ public class Checks {
 
 	//-------- validateEdit checks ----
 
-	public static RefactoringStatus validateModifiesFiles(IFile[] filesToModify, Object context) {
+	public static RefactoringStatus validateModifiesFiles(IFile[] filesToModify, Object context, IProgressMonitor pm) throws CoreException {
 		RefactoringStatus result= new RefactoringStatus();
 		IStatus status= Resources.checkInSync(filesToModify);
-		if (!status.isOK())
-			result.merge(RefactoringStatus.create(status));
+		if (!status.isOK()) {
+			boolean autoRefresh= Platform.getPreferencesService().getBoolean(ResourcesPlugin.PI_RESOURCES, ResourcesPlugin.PREF_LIGHTWEIGHT_AUTO_REFRESH, false, null);
+			if (autoRefresh) {
+				for (IFile resource : filesToModify) {
+					resource.refreshLocal(IResource.DEPTH_INFINITE, pm);
+				}
+				status= Resources.checkInSync(filesToModify);
+			}
+			if (!status.isOK()) {
+				result.merge(RefactoringStatus.create(status));
+			}
+		}
 		status= Resources.makeCommittable(filesToModify, context);
 		if (!status.isOK()) {
 			result.merge(RefactoringStatus.create(status));
@@ -708,20 +737,28 @@ public class Checks {
 		ResourceChangeChecker checker= context.getChecker(ResourceChangeChecker.class);
 		IResourceChangeDescriptionFactory deltaFactory= checker.getDeltaFactory();
 
-		for (int i= 0; i < filesToModify.length; i++) {
-			deltaFactory.change(filesToModify[i]);
+		for (IFile file : filesToModify) {
+			deltaFactory.change(file);
 		}
 	}
 
 
-	public static RefactoringStatus validateEdit(ICompilationUnit unit, Object context) {
+	public static RefactoringStatus validateEdit(ICompilationUnit unit, Object context, IProgressMonitor pm) throws CoreException {
 		IResource resource= unit.getPrimary().getResource();
 		RefactoringStatus result= new RefactoringStatus();
 		if (resource == null)
 			return result;
 		IStatus status= Resources.checkInSync(resource);
-		if (!status.isOK())
-			result.merge(RefactoringStatus.create(status));
+		if (!status.isOK()) {
+			boolean autoRefresh= Platform.getPreferencesService().getBoolean(ResourcesPlugin.PI_RESOURCES, ResourcesPlugin.PREF_LIGHTWEIGHT_AUTO_REFRESH, false, null);
+			if (autoRefresh) {
+				resource.refreshLocal(IResource.DEPTH_INFINITE, pm);
+				status= Resources.checkInSync(resource);
+			}
+			if (!status.isOK()) {
+				result.merge(RefactoringStatus.create(status));
+			}
+		}
 		status= Resources.makeCommittable(resource, context);
 		if (!status.isOK()) {
 			result.merge(RefactoringStatus.create(status));
@@ -834,9 +871,10 @@ public class Checks {
 			if (! iType.isClass())
 				return false;
 			IType[] superTypes= iType.newSupertypeHierarchy(pm).getAllSupertypes(iType);
-			for (int i= 0; i < superTypes.length; i++) {
-				if ("java.lang.Throwable".equals(superTypes[i].getFullyQualifiedName())) //$NON-NLS-1$
+			for (IType superType : superTypes) {
+				if ("java.lang.Throwable".equals(superType.getFullyQualifiedName())) { //$NON-NLS-1$
 					return true;
+				}
 			}
 			return false;
 		} finally{
@@ -860,7 +898,7 @@ public class Checks {
 		}
 		if (e instanceof Annotation)
 			return NOT_RVALUE_MISC;
-			
+
 
 		ITypeBinding tb= e.resolveTypeBinding();
 		boolean guessingRequired= false;

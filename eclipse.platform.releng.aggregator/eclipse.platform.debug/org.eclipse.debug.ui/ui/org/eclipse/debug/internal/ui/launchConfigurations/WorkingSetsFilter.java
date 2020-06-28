@@ -36,9 +36,6 @@ import org.eclipse.ui.IWorkingSet;
  */
 public class WorkingSetsFilter extends ViewerFilter {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ViewerFilter#select(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-	 */
 	@Override
 	public boolean select(Viewer viewer, Object parentElement, Object element) {
 		if(element instanceof ILaunchConfigurationType) {
@@ -65,16 +62,16 @@ public class WorkingSetsFilter extends ViewerFilter {
 				}
 				//remove breakpoint working sets
 				ArrayList<IWorkingSet> ws = new ArrayList<>();
-				for (int i = 0; i < wsets.length; i++) {
-					if(!IDebugUIConstants.BREAKPOINT_WORKINGSET_ID.equals(wsets[i].getId())) {
-						ws.add(wsets[i]);
+				for (IWorkingSet wset : wsets) {
+					if (!IDebugUIConstants.BREAKPOINT_WORKINGSET_ID.equals(wset.getId())) {
+						ws.add(wset);
 					}
 				}
 				if(ws.isEmpty()) {
 					return true;
 				}
-				for (int i = 0; i < resources.length; i++) {
-					if(workingSetContains(ws.toArray(new IWorkingSet[ws.size()]), resources[i])) {
+				for (IResource resource : resources) {
+					if (workingSetContains(ws.toArray(new IWorkingSet[ws.size()]), resource)) {
 						return true;
 					}
 				}
@@ -101,10 +98,10 @@ public class WorkingSetsFilter extends ViewerFilter {
 			}
 		}
 		IResource lres = null;
-		for(int i = 0; i < wsets.length; i++) {
-			IAdaptable[] elements = wsets[i].getElements();
-			for(int j = 0; j < elements.length; j++) {
-				lres = elements[j].getAdapter(IResource.class);
+		for (IWorkingSet wset : wsets) {
+			IAdaptable[] elements = wset.getElements();
+			for (IAdaptable element : elements) {
+				lres = element.getAdapter(IResource.class);
 				if(lres != null) {
 					if(parents.contains(lres)) {
 						return true;

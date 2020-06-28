@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2005 IBM Corporation and others.
+ * Copyright (c) 2004, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 548799
  *******************************************************************************/
 package org.eclipse.ui.examples.jobs;
 
@@ -19,7 +20,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.ui.progress.IProgressConstants;
 
 /**
@@ -48,31 +49,28 @@ public class TestJob extends Job {
 	/**
 	 * Creates a new test job
 	 *
-	 * @param duration
-	 *            Total time that the test job should sleep, in milliseconds.
-	 * @param lock
-	 *            Whether the job should use a workspace scheduling rule
-	 * @param failure
-	 *            Whether the job should fail
-	 * @param indeterminate
-	 *            Whether the job should report indeterminate progress
+	 * @param duration       Total time that the test job should sleep, in
+	 *                       milliseconds.
+	 * @param lock           Whether the job should use a workspace scheduling rule
+	 * @param failure        Whether the job should fail
+	 * @param indeterminate  Whether the job should report indeterminate progress
 	 * @param rescheduleWait
 	 * @param reschedule
 	 */
-	
-	public TestJob(long duration, boolean lock, boolean failure,
-			boolean indeterminate, boolean reschedule, long rescheduleWait) {
+
+	public TestJob(long duration, boolean lock, boolean failure, boolean indeterminate, boolean reschedule,
+			long rescheduleWait) {
 		super("Test job"); //$NON-NLS-1$
 		this.duration = duration;
 		this.failure = failure;
 		this.unknown = indeterminate;
 		this.reschedule = reschedule;
 		this.rescheduleWait = rescheduleWait;
-		setProperty(IProgressConstants.ICON_PROPERTY, AbstractUIPlugin
-				.imageDescriptorFromPlugin(ProgressExamplesPlugin.ID,
-						"icons/sample.gif")); //$NON-NLS-1$
-		if (lock)
+		setProperty(IProgressConstants.ICON_PROPERTY,
+				ResourceLocator.imageDescriptorFromBundle(TestJob.class, "icons/sample.gif")); //$NON-NLS-1$
+		if (lock) {
 			setRule(ResourcesPlugin.getWorkspace().getRoot());
+		}
 	}
 
 	@Override
@@ -86,24 +84,24 @@ public class TestJob extends Job {
 	@Override
 	public IStatus run(IProgressMonitor monitor) {
 		if (failure) {
-			MultiStatus result = new MultiStatus(
-					"org.eclipse.ui.examples.jobs", 1, "This is the MultiStatus message", new RuntimeException("This is the MultiStatus exception")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			result
-					.add(new Status(
-							IStatus.ERROR,
-							"org.eclipse.ui.examples.jobs", 1, "This is the child status message", new RuntimeException("This is the child exception"))); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			MultiStatus result = new MultiStatus("org.eclipse.ui.examples.jobs", 1, "This is the MultiStatus message", //$NON-NLS-1$ //$NON-NLS-2$
+					new RuntimeException("This is the MultiStatus exception")); //$NON-NLS-1$
+			result.add(new Status(IStatus.ERROR, "org.eclipse.ui.examples.jobs", 1, "This is the child status message", //$NON-NLS-1$ //$NON-NLS-2$
+					new RuntimeException("This is the child exception"))); //$NON-NLS-1$
 			return result;
 		}
 		final long sleep = 10;
 		int ticks = (int) (duration / sleep);
-		if (this.unknown)
+		if (this.unknown) {
 			monitor.beginTask(toString(), IProgressMonitor.UNKNOWN);
-		else
+		} else {
 			monitor.beginTask(toString(), ticks);
+		}
 		try {
 			for (int i = 0; i < ticks; i++) {
-				if (monitor.isCanceled())
+				if (monitor.isCanceled()) {
 					return Status.CANCEL_STATUS;
+				}
 				monitor.subTask("Processing tick #" + i); //$NON-NLS-1$
 				try {
 					Thread.sleep(sleep);
@@ -113,9 +111,10 @@ public class TestJob extends Job {
 				monitor.worked(1);
 			}
 		} finally {
-			if (reschedule)
-				schedule(rescheduleWait);
 			monitor.done();
+		}
+		if (reschedule) {
+			schedule(rescheduleWait);
 		}
 		return Status.OK_STATUS;
 	}

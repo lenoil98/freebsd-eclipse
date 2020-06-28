@@ -33,7 +33,7 @@ import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 
 /**
  * Java element variable declaration type hyperlink detector.
- * 
+ *
  * @since 3.7
  */
 public class JavaElementHyperlinkDeclaredTypeDetector extends JavaElementHyperlinkDetector {
@@ -48,8 +48,8 @@ public class JavaElementHyperlinkDeclaredTypeDetector extends JavaElementHyperli
 					if (Signature.getTypeSignatureKind(typeSignature) == Signature.INTERSECTION_TYPE_SIGNATURE) {
 						String[] bounds= Signature.getIntersectionTypeBounds(typeSignature);
 						qualify|= bounds.length >= 2;
-						for (int i= 0; i < bounds.length; i++) {
-							hyperlinksCollector.add(new JavaElementDeclaredTypeHyperlink(wordRegion, openAction, element, bounds[i], qualify));
+						for (String bound : bounds) {
+							hyperlinksCollector.add(new JavaElementDeclaredTypeHyperlink(wordRegion, openAction, element, bound, qualify));
 						}
 					} else {
 						hyperlinksCollector.add(new JavaElementDeclaredTypeHyperlink(wordRegion, openAction, element, qualify));
@@ -63,7 +63,7 @@ public class JavaElementHyperlinkDeclaredTypeDetector extends JavaElementHyperli
 
 	/**
 	 * Returns the type signature of the element.
-	 * 
+	 *
 	 * @param element an instance of <code>ILocalVariable</code> or <code>IField</code>
 	 * @return the type signature of the element
 	 * @throws JavaModelException if this element does not exist or if an exception occurs while

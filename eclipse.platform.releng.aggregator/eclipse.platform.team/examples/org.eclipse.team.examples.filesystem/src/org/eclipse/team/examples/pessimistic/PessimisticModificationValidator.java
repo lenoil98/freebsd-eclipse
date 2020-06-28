@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.team.examples.pessimistic;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -57,9 +58,6 @@ extends FileModificationValidator {
 		fProvider= provider;
 	}
 
-	/**
-	 * @see IFileModificationValidator#validateEdit(IFile[], Object)
-	 */
 	@Override
 	public IStatus validateEdit(IFile[] files, FileModificationValidationContext context) {
 		if (files.length == 0) {
@@ -146,9 +144,6 @@ extends FileModificationValidator {
 		return new MultiStatus( getUid(), IStatus.OK, children, "Some files were not successfully checked out", null);
 	}
 
-	/**
-	 * @see IFileModificationValidator#validateSave(IFile)
-	 */
 	@Override
 	public IStatus validateSave(IFile file) {
 		int checkedInFilesSaved = getPreferences().getInt(IPessimisticFilesystemConstants.PREF_CHECKED_IN_FILES_SAVED);
@@ -248,9 +243,7 @@ extends FileModificationValidator {
 					if (status == Window.OK) {
 						Object[] results= dialog.getResult();
 						result[0] = new HashSet(results.length);
-						for (Object result2 : results) {
-							result[0].add(result2);
-						}
+						Collections.addAll(result[0], results);
 					} else if(status == Window.CANCEL) {
 						statusCode[0] = IStatus.CANCEL;
 					}

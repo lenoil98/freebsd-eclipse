@@ -101,18 +101,18 @@ public abstract class SynchronizeModelAction extends BaseSelectionListenerAction
 		}
 	}
 
-    /**
-     * Create and run the operation for this action. By default, the operation is created
-     * by calling <code>getSubscriberOperation</code> and then run. Subclasses may
-     * override.
-     *
-     * @throws InvocationTargetException
-     * @throws InterruptedException
-     * @since 3.1
-     */
-    protected void runOperation() throws InvocationTargetException, InterruptedException {
-        getSubscriberOperation(configuration, getFilteredDiffElements()).run();
-    }
+	/**
+	 * Create and run the operation for this action. By default, the operation is created
+	 * by calling <code>getSubscriberOperation</code> and then run. Subclasses may
+	 * override.
+	 *
+	 * @throws InvocationTargetException if an error occurs
+	 * @throws InterruptedException if operation is interrupted
+	 * @since 3.1
+	 */
+	protected void runOperation() throws InvocationTargetException, InterruptedException {
+		getSubscriberOperation(configuration, getFilteredDiffElements()).run();
+	}
 
 	/**
 	 * Return whether dirty editor should be saved before this action is run.
@@ -159,9 +159,6 @@ public abstract class SynchronizeModelAction extends BaseSelectionListenerAction
 		Utils.handle(e);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.actions.BaseSelectionListenerAction#updateSelection(org.eclipse.jface.viewers.IStructuredSelection)
-	 */
 	@Override
 	protected boolean updateSelection(IStructuredSelection selection) {
 		super.updateSelection(selection);
@@ -201,8 +198,7 @@ public abstract class SynchronizeModelAction extends BaseSelectionListenerAction
 	protected final IDiffElement[] getFilteredDiffElements() {
 		IDiffElement[] elements = getSelectedDiffElements();
 		List<IDiffElement> filtered = new ArrayList<>();
-		for (int i = 0; i < elements.length; i++) {
-			IDiffElement e = elements[i];
+		for (IDiffElement e : elements) {
 			if (e instanceof SyncInfoModelElement) {
 				SyncInfo info = ((SyncInfoModelElement) e).getSyncInfo();
 				if (info != null && getSyncInfoFilter().select(info)) {

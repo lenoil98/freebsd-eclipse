@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
+ * Copyright (c) 2017, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,7 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -85,7 +85,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 
 		Bundle base = installer.installBundle("mrBundleInputBase");
 
-		Map<String, String> bundleHeaders = new LinkedHashMap<String, String>();
+		Map<String, String> bundleHeaders = new LinkedHashMap<>();
 		bundleHeaders.put(Constants.BUNDLE_MANIFESTVERSION, "2");
 		bundleHeaders.put(Constants.BUNDLE_SYMBOLICNAME, "mrBundle");
 		bundleHeaders.put(Constants.BUNDLE_VERSION, "1.0.0");
@@ -95,7 +95,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 		bundleHeaders.put(Constants.PROVIDE_CAPABILITY, "capbase, cap8, cap9, cap10, cap11");
 		bundleHeaders.put(Constants.BUNDLE_CLASSPATH, "., " + classpathMrJar.getName() + ", classPathDir");
 
-		Map<String, byte[]> bundleEntries = new LinkedHashMap<String, byte[]>();
+		Map<String, byte[]> bundleEntries = new LinkedHashMap<>();
 		bundleEntries.put("multi/", null);
 		bundleEntries.put("multi/release/", null);
 		bundleEntries.put("multi/release/test/", null);
@@ -115,7 +115,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 		bundleEntries.put("multi/release/test/testResource11.txt", getBytes("multi/release/test/testResource11.txt", base));
 
 		bundleEntries.put("META-INF/services/", null);
-		bundleEntries.put("META-INF/services/multi.release.test.TestService", "multi.release.test.TestServiceBase".getBytes("UTF-8"));
+		bundleEntries.put("META-INF/services/multi.release.test.TestService", "multi.release.test.TestServiceBase".getBytes(StandardCharsets.UTF_8));
 		bundleEntries.put("META-INF/versions/", null);
 		bundleEntries.put("META-INF/versions/8/", null);
 		bundleEntries.put("META-INF/versions/8/multi/", null);
@@ -127,11 +127,11 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 		bundleEntries.put("META-INF/versions/8/multi/release/test/testResourceAdd8.txt", getBytes("multi/release/test/testResourceAdd8.txt", base));
 		bundleEntries.put("META-INF/versions/9/", null);
 		bundleEntries.put("META-INF/versions/9/META-INF/", null);
-		bundleEntries.put("META-INF/versions/9/META-INF/addedFor9.txt", "added for 9".getBytes("UTF-8"));
+		bundleEntries.put("META-INF/versions/9/META-INF/addedFor9.txt", "added for 9".getBytes(StandardCharsets.UTF_8));
 		bundleEntries.put("META-INF/versions/9/META-INF/addedDirFor9/", null);
-		bundleEntries.put("META-INF/versions/9/META-INF/addedDirFor9/addedFor9.txt", "added for 9".getBytes("UTF-8"));
+		bundleEntries.put("META-INF/versions/9/META-INF/addedDirFor9/addedFor9.txt", "added for 9".getBytes(StandardCharsets.UTF_8));
 		bundleEntries.put("META-INF/versions/9/META-INF/services/", null);
-		bundleEntries.put("META-INF/versions/9/META-INF/services/multi.release.test.TestService", "multi.release.test.TestService9".getBytes("UTF-8"));
+		bundleEntries.put("META-INF/versions/9/META-INF/services/multi.release.test.TestService", "multi.release.test.TestService9".getBytes(StandardCharsets.UTF_8));
 		bundleEntries.put("META-INF/versions/9/multi/", null);
 		bundleEntries.put("META-INF/versions/9/multi/release/", null);
 		bundleEntries.put("META-INF/versions/9/multi/release/test/", null);
@@ -165,7 +165,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 		bundleEntries.put("META-INF/versions/11/OSGI-INF/", null);
 		bundleEntries.put("META-INF/versions/11/OSGI-INF/MANIFEST.MF", getBytes("manifests/manifest11.mf", base));
 
-		Map<String, byte[]> classPathJarEntries = new LinkedHashMap<String, byte[]>();
+		Map<String, byte[]> classPathJarEntries = new LinkedHashMap<>();
 		classPathJarEntries.put("multi/", null);
 		classPathJarEntries.put("multi/release/", null);
 		classPathJarEntries.put("multi/release/test/", null);
@@ -246,7 +246,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 				"Manifest-Version: 1\n" + //
 						"Multi-Release: true\n\n";
 		bundleEntries.put("classPathDir/META-INF/", null);
-		bundleEntries.put("classPathDir/META-INF/MANIFEST.MF", classPathDirManifest.getBytes(Charset.forName("UTF-8")));
+		bundleEntries.put("classPathDir/META-INF/MANIFEST.MF", classPathDirManifest.getBytes(StandardCharsets.UTF_8));
 		bundleEntries.put("classPathDir/META-INF/versions/", null);
 		bundleEntries.put("classPathDir/META-INF/versions/8/", null);
 		bundleEntries.put("classPathDir/META-INF/versions/8/multi/", null);
@@ -397,12 +397,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			assertEquals("Wrong class.", (rv >= 11) ? "BASE11" : "BASEXX", loadClass("multi.release.test.sub2.TestClass11", mrBundle, false));
 			assertEquals("Wrong class.", (rv >= 11) ? "ADD11" : CNFE, loadClass("multi.release.test.sub2.TestClassAdd11", mrBundle, true));
 		} finally {
-			try {
-				equinox.stop();
-				equinox.waitForStop(10000);
-			} catch (Exception e) {
-				// ignore;
-			}
+			stopQuietly(equinox);
 		}
 	}
 
@@ -480,12 +475,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			assertEquals("Wrong resource.", (rv >= 11) ? "ADD 11" : RNF, readResource("multi/release/test/sub2/testResourceAdd11.txt", mrBundle));
 
 		} finally {
-			try {
-				equinox.stop();
-				equinox.waitForStop(10000);
-			} catch (Exception e) {
-				// ignore;
-			}
+			stopQuietly(equinox);
 		}
 	}
 
@@ -591,12 +581,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			assertEquals("Wrong resource.", (rv >= 11) ? "ADD 11" : RNF, readResources("multi/release/test/sub2/testResourceAdd11.txt", mrBundle));
 
 		} finally {
-			try {
-				equinox.stop();
-				equinox.waitForStop(10000);
-			} catch (Exception e) {
-				// ignore;
-			}
+			stopQuietly(equinox);
 		}
 	}
 
@@ -633,8 +618,8 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			System.setProperty("java.specification.version", Integer.toString(rv));
 		}
 
-		Collection<String> expected = new ArrayList<String>();
-		Collection<String> expectedRecurse = new ArrayList<String>();
+		Collection<String> expected = new ArrayList<>();
+		Collection<String> expectedRecurse = new ArrayList<>();
 
 		expected.add("multi/release/test/testResourceBase.txt");
 		expected.add("multi/release/test/testResource8.txt");
@@ -689,12 +674,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			listResources("multi/release/test", expected, mrBundle, 0);
 			listResources("multi/release/test", expectedRecurse, mrBundle, BundleWiring.LISTRESOURCES_RECURSE);
 		} finally {
-			try {
-				equinox.stop();
-				equinox.waitForStop(10000);
-			} catch (Exception e) {
-				// ignore;
-			}
+			stopQuietly(equinox);
 		}
 	}
 
@@ -755,12 +735,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			assertTrue("Wrong package filter: " + filter, filter.contains(expectedPkg));
 
 		} finally {
-			try {
-				equinox.stop();
-				equinox.waitForStop(10000);
-			} catch (Exception e) {
-				// ignore;
-			}
+			stopQuietly(equinox);
 		}
 	}
 
@@ -776,8 +751,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			location = mrBundle.getLocation();
 			mrBundle.start();
 		} finally {
-			equinox.stop();
-			equinox.waitForStop(10000);
+			stop(equinox);
 		}
 		System.out.println("Equinox state: " + equinox.getState());
 		for (int rv = 8; rv <= 11; rv++) {
@@ -793,8 +767,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			location = mrBundle.getLocation();
 			mrBundle.start();
 		} finally {
-			equinox.stop();
-			equinox.waitForStop(10000);
+			stop(equinox);
 		}
 
 		for (int rv = 8; rv <= 11; rv++) {
@@ -838,12 +811,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			assertTrue("Wrong package filter: " + rv + " " + filter, filter.contains(expectedPkg));
 
 		} finally {
-			try {
-				equinox.stop();
-				equinox.waitForStop(10000);
-			} catch (Exception e) {
-				// ignore;
-			}
+			stopQuietly(equinox);
 		}
 	}
 
@@ -863,8 +831,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			Bundle mrBundle = systemContext.installBundle("reference:" + copyMrJarBundle.toURI().toString());
 			mrBundle.start();
 		} finally {
-			equinox.stop();
-			equinox.waitForStop(1000);
+			stop(equinox);
 		}
 
 		copyMrJarBundle.delete();
@@ -875,8 +842,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 		try {
 			equinox.start();
 		} finally {
-			equinox.stop();
-			equinox.waitForStop(1000);
+			stop(equinox);
 		}
 	}
 
@@ -898,8 +864,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			Object testService = loader.iterator().next();
 			assertEquals("Wrong service found.", "SERVICE_BASE", testService.toString());
 		} finally {
-			equinox.stop();
-			equinox.waitForStop(1000);
+			stop(equinox);
 		}
 	}
 
@@ -927,8 +892,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			}
 
 		} finally {
-			equinox.stop();
-			equinox.waitForStop(1000);
+			stop(equinox);
 		}
 	}
 
@@ -948,8 +912,7 @@ public class MultiReleaseJarTests extends AbstractBundleTests {
 			Collection<String> list = mrBundle.adapt(BundleWiring.class).listResources("/META-INF/", "*.txt", 0);
 			assertTrue("Found versioned META-INF resources: " + list, list.isEmpty());
 		} finally {
-			equinox.stop();
-			equinox.waitForStop(1000);
+			stop(equinox);
 		}
 	}
 }

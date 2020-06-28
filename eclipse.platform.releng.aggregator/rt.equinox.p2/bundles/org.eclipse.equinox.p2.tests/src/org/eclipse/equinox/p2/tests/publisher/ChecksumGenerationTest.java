@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.equinox.p2.tests.publisher;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import java.util.Arrays;
 import java.util.Collection;
 import org.eclipse.equinox.internal.p2.metadata.ArtifactKey;
@@ -21,7 +23,6 @@ import org.eclipse.equinox.p2.repository.artifact.IArtifactDescriptor;
 import org.eclipse.equinox.p2.tests.AbstractProvisioningTest;
 import org.eclipse.equinox.spi.p2.publisher.PublisherHelper;
 import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -37,7 +38,10 @@ public class ChecksumGenerationTest extends AbstractProvisioningTest {
 
 	@Parameters
 	public static Collection<Object[]> generateChecksums() {
-		return Arrays.asList(new Object[][] {{IArtifactDescriptor.DOWNLOAD_MD5, "50d4ea58b02706ab373a908338877e02"}, {IArtifactDescriptor.DOWNLOAD_CHECKSUM.concat(".sha-256"), "11da2dd636ab76f460513cbcbfe8c56a6e5ad47aa9b38b36c6d04f8ee7722252"}});
+		return Arrays.asList(new Object[][] {{IArtifactDescriptor.DOWNLOAD_MD5, "50d4ea58b02706ab373a908338877e02"},
+			{IArtifactDescriptor.DOWNLOAD_CHECKSUM.concat(".md5"), "50d4ea58b02706ab373a908338877e02"},
+			{IArtifactDescriptor.DOWNLOAD_CHECKSUM.concat(".sha-256"), "11da2dd636ab76f460513cbcbfe8c56a6e5ad47aa9b38b36c6d04f8ee7722252"},
+		});
 	}
 
 	@Test
@@ -55,6 +59,6 @@ public class ChecksumGenerationTest extends AbstractProvisioningTest {
 	@Test
 	public void testGenerationNoFolder() {
 		IArtifactDescriptor ad = PublisherHelper.createArtifactDescriptor(new ArtifactKey("classifierTest", "idTest", Version.createOSGi(1, 0, 0)), null);
-		Assert.assertThat(ad.getProperty(checksumProperty), CoreMatchers.not(CoreMatchers.containsString(checksumValue)));
+		assertThat(ad.getProperty(checksumProperty), CoreMatchers.not(CoreMatchers.containsString(checksumValue)));
 	}
 }

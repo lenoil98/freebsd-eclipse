@@ -17,7 +17,6 @@
 package org.eclipse.ui.internal.dialogs;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.ui.internal.workbench.swt.WorkbenchSWTActivator;
@@ -75,8 +74,7 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 	private static final String STORE_EXPANDED_CATEGORIES_ID = DIALOG_SETTING_SECTION_NAME
 			+ ".STORE_EXPANDED_CATEGORIES_ID"; //$NON-NLS-1$
 
-	private static final String STORE_SELECTED_VIEW_ID = DIALOG_SETTING_SECTION_NAME
-			+ ".STORE_SELECTED_VIEW_ID"; //$NON-NLS-1$
+	private static final String STORE_SELECTED_VIEW_ID = DIALOG_SETTING_SECTION_NAME + ".STORE_SELECTED_VIEW_ID"; //$NON-NLS-1$
 
 	private FilteredTree filteredTree;
 
@@ -151,8 +149,7 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 
 	@Override
 	protected void createButtonsForButtonBar(Composite parent) {
-		okButton = createButton(parent, IDialogConstants.OK_ID, WorkbenchMessages.ShowView_open_button_label,
-				true);
+		okButton = createButton(parent, IDialogConstants.OK_ID, WorkbenchMessages.ShowView_open_button_label, true);
 		createButton(parent, IDialogConstants.CANCEL_ID, JFaceResources.getString(IDialogLabelKeys.CANCEL_LABEL_KEY),
 				false);
 		updateButtons();
@@ -186,12 +183,9 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 	/**
 	 * Blends c1 and c2 based in the provided ratio.
 	 *
-	 * @param c1
-	 *            first color
-	 * @param c2
-	 *            second color
-	 * @param ratio
-	 *            percentage of the first color in the blend (0-100)
+	 * @param c1    first color
+	 * @param c2    second color
+	 * @param ratio percentage of the first color in the blend (0-100)
 	 * @return the RGB value of the blended color
 	 *
 	 *         copied from FormColors.java
@@ -211,24 +205,23 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 	/**
 	 * Create a new filtered tree viewer in the parent.
 	 *
-	 * @param parent
-	 *            the parent <code>Composite</code>.
+	 * @param parent the parent <code>Composite</code>.
 	 */
 	private void createFilteredTreeViewer(Composite parent) {
 		PatternFilter filter = new ViewPatternFilter();
 		int styleBits = SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER;
-		filteredTree = new FilteredTree(parent, styleBits, filter, true);
+		filteredTree = new FilteredTree(parent, styleBits, filter, true, true);
 		filteredTree.setQuickSelectionMode(true);
 		filteredTree.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
 
 		TreeViewer treeViewer = filteredTree.getViewer();
 		Control treeControl = treeViewer.getControl();
-		RGB dimmedRGB = blend(treeControl.getForeground().getRGB(), treeControl.getBackground()
-				.getRGB(), 60);
+		RGB dimmedRGB = blend(treeControl.getForeground().getRGB(), treeControl.getBackground().getRGB(), 60);
 		dimmedForeground = new Color(treeControl.getDisplay(), dimmedRGB);
 		treeControl.addDisposeListener(e -> dimmedForeground.dispose());
 
-		treeViewer.setLabelProvider(new ViewLabelProvider(context, modelService, partService, window,dimmedForeground));
+		treeViewer
+				.setLabelProvider(new ViewLabelProvider(context, modelService, partService, window, dimmedForeground));
 		treeViewer.setContentProvider(new ViewContentProvider(application));
 		treeViewer.setComparator(new ViewComparator());
 		treeViewer.setInput(application);
@@ -275,8 +268,7 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 		IStructuredSelection s = (IStructuredSelection) event.getSelection();
 		Object element = s.getFirstElement();
 		if (filteredTree.getViewer().isExpandable(element)) {
-			filteredTree.getViewer().setExpandedState(element,
-					!filteredTree.getViewer().getExpandedState(element));
+			filteredTree.getViewer().setExpandedState(element, !filteredTree.getViewer().getExpandedState(element));
 		} else if (viewDescs.length > 0) {
 			saveWidgetValues();
 			setReturnCode(OK);
@@ -308,8 +300,7 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 	/**
 	 * Layout the top control.
 	 *
-	 * @param control
-	 *            the control.
+	 * @param control the control.
 	 */
 	private void layoutTopControl(Control control) {
 		GridData spec = new GridData(GridData.FILL_BOTH);
@@ -319,8 +310,8 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 	}
 
 	/**
-	 * Use the dialog store to restore widget values to the values that they
-	 * held last time this dialog was used to completion.
+	 * Use the dialog store to restore widget values to the values that they held
+	 * last time this dialog was used to completion.
 	 */
 	protected void restoreWidgetValues() {
 		IDialogSettings settings = getDialogSettings();
@@ -330,15 +321,14 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 			return;
 
 		if (expandedCategoryIds.length > 0)
-			filteredTree.getViewer().setExpandedElements(expandedCategoryIds);
+			filteredTree.getViewer().setExpandedElements((Object[]) expandedCategoryIds);
 
 		String selectedPartId = settings.get(STORE_SELECTED_VIEW_ID);
 		if (selectedPartId != null) {
 			List<MPartDescriptor> descriptors = application.getDescriptors();
 			for (MPartDescriptor descriptor : descriptors) {
 				if (selectedPartId.equals(descriptor.getElementId())) {
-					filteredTree.getViewer()
-							.setSelection(new StructuredSelection(descriptor), true);
+					filteredTree.getViewer().setSelection(new StructuredSelection(descriptor), true);
 					break;
 				}
 			}
@@ -346,8 +336,8 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 	}
 
 	/**
-	 * Since OK was pressed, write widget values to the dialog store so that
-	 * they will persist into the next invocation of this dialog
+	 * Since OK was pressed, write widget values to the dialog store so that they
+	 * will persist into the next invocation of this dialog
 	 */
 	protected void saveWidgetValues() {
 		IDialogSettings settings = getDialogSettings();
@@ -377,8 +367,7 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 	/**
 	 * Notifies that the selection has changed.
 	 *
-	 * @param event
-	 *            event object describing the change
+	 * @param event event object describing the change
 	 */
 	@Override
 	public void selectionChanged(SelectionChangedEvent event) {
@@ -408,9 +397,7 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 	 */
 	protected void updateSelection(SelectionChangedEvent event) {
 		ArrayList<MPartDescriptor> descs = new ArrayList<>();
-		IStructuredSelection sel = event.getStructuredSelection();
-		for (Iterator<?> i = sel.iterator(); i.hasNext();) {
-			Object o = i.next();
+		for (Object o : event.getStructuredSelection()) {
 			if (o instanceof MPartDescriptor) {
 				descs.add((MPartDescriptor) o);
 			}
@@ -434,8 +421,7 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 				Object o = selection.getFirstElement();
 				if (o instanceof MPartDescriptor) {
 					String description = ((MPartDescriptor) o).getTooltip();
-					description = LocalizationHelper.getLocalized(description, (MPartDescriptor) o,
-							context);
+					description = LocalizationHelper.getLocalized(description, (MPartDescriptor) o, context);
 					if (description != null && description.length() == 0)
 						description = WorkbenchMessages.ShowView_noDesc;
 					popUp(description);
@@ -445,8 +431,8 @@ public class ShowViewDialog extends Dialog implements ISelectionChangedListener,
 	}
 
 	private void popUp(final String description) {
-		new PopupDialog(filteredTree.getShell(), PopupDialog.HOVER_SHELLSTYLE, true, false, false,
-				false, false, null, null) {
+		new PopupDialog(filteredTree.getShell(), PopupDialog.HOVER_SHELLSTYLE, true, false, false, false, false, null,
+				null) {
 			private static final int CURSOR_SIZE = 15;
 
 			@Override

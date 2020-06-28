@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2005 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,14 +14,32 @@
 package org.eclipse.jdt.internal.ui.text;
 
 
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IDocumentExtension3;
+import org.eclipse.jface.text.IDocumentPartitioner;
+import org.eclipse.jface.text.ITypedRegion;
+import org.eclipse.jface.text.TextUtilities;
 import org.eclipse.jface.text.rules.ICharacterScanner;
 import org.eclipse.jface.text.rules.IPartitionTokenScanner;
 import org.eclipse.jface.text.rules.IToken;
 import org.eclipse.jface.text.rules.Token;
 
+import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbenchPage;
+
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+
 import org.eclipse.jdt.ui.text.IJavaPartitions;
 
+import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.javaeditor.EditorUtility;
+import org.eclipse.jdt.internal.ui.text.correction.PreviewFeaturesSubProcessor;
 
 /**
  * This scanner recognizes the JavaDoc comments, Java multi line comments, Java single line comments,
@@ -36,6 +54,7 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 	private static final int JAVADOC= 3;
 	private static final int CHARACTER= 4;
 	private static final int STRING= 5;
+	private static final int MULTI_LINE_STRING= 6;
 
 	// beginning of prefixes and postfixes
 	private static final int NONE= 0;
@@ -45,9 +64,12 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 	private static final int SLASH_STAR_STAR= 4; // prefix for MULTI_LINE_COMMENT or JAVADOC
 	private static final int STAR= 5; // postfix for MULTI_LINE_COMMENT or JAVADOC
 	private static final int CARRIAGE_RETURN=6; // postfix for STRING, CHARACTER and SINGLE_LINE_COMMENT
+	private static final int TRIPLE_QUOTE= 9; // prefix for TextBlock.
 
 	/** The scanner. */
 	private final BufferedDocumentScanner fScanner= new BufferedDocumentScanner(1000);	// faster implementation
+
+	private IDocument fCurrentDocument;
 
 	/** The offset of the last returned token. */
 	private int fTokenOffset;
@@ -66,13 +88,16 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 	private int fJavaOffset;
 	private int fJavaLength;
 
+	private IJavaProject fJavaProject;
+
 	private final IToken[] fTokens= new IToken[] {
 		new Token(null),
 		new Token(JAVA_SINGLE_LINE_COMMENT),
 		new Token(JAVA_MULTI_LINE_COMMENT),
 		new Token(JAVA_DOC),
 		new Token(JAVA_CHARACTER),
-		new Token(JAVA_STRING)
+		new Token(JAVA_STRING),
+		new Token(JAVA_MULTI_LINE_STRING)
 	};
 
 	public FastJavaPartitionScanner(boolean emulate) {
@@ -81,6 +106,11 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 
 	public FastJavaPartitionScanner() {
 	    this(false);
+	}
+
+	public FastJavaPartitionScanner(IJavaProject javaProject) {
+		this(false);
+		fJavaProject= javaProject;
 	}
 
 	/*
@@ -276,14 +306,27 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 					}
 
 				case '"':
-					fLast= NONE; // ignore fLast
-					if (fTokenLength > 0)
-						return preFix(JAVA, STRING, NONE, 1);
+					boolean isTextBlockBeginning= scanForTextBlockBeginning();
+					if (isTextBlockBeginning) {
+						if (fTokenLength - getLastLength(fLast) > 0)
+							return preFix(JAVA, MULTI_LINE_STRING, TRIPLE_QUOTE, 3);
+						else {
+							preFix(JAVA, MULTI_LINE_STRING, TRIPLE_QUOTE, 3);
+							fTokenOffset+= fTokenLength;
+							fTokenLength= fPrefixLength;
+							break;
+						}
+					}
 					else {
-						preFix(JAVA, STRING, NONE, 1);
-						fTokenOffset += fTokenLength;
-						fTokenLength= fPrefixLength;
-						break;
+						fLast= NONE; // ignore fLast
+						if (fTokenLength > 0)
+							return preFix(JAVA, STRING, NONE, 1);
+						else {
+							preFix(JAVA, STRING, NONE, 1);
+							fTokenOffset += fTokenLength;
+							fTokenLength= fPrefixLength;
+							break;
+						}
 					}
 
 				default:
@@ -355,6 +398,9 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 	 			case '\\':
 					fLast= (fLast == BACKSLASH) ? NONE : BACKSLASH;
 					fTokenLength++;
+					if (scanForUnicodeSlash()) {
+						fTokenLength= fTokenLength + 5;
+					}
 					break;
 
 				case '\"':
@@ -377,6 +423,9 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 				case '\\':
 					fLast= (fLast == BACKSLASH) ? NONE : BACKSLASH;
 					fTokenLength++;
+					if (scanForUnicodeSlash()) {
+						fTokenLength= fTokenLength + 5;
+					}
 					break;
 
 	 			case '\'':
@@ -393,9 +442,195 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 	 				break;
 	 			}
 	 			break;
+
+	 		case MULTI_LINE_STRING:
+				switch (ch) {
+				case '\\':
+						fLast= (fLast == BACKSLASH) ? NONE : BACKSLASH;
+						fTokenLength++;
+						if (scanForUnicodeSlash()) {
+							fTokenLength= fTokenLength + 5;
+						}
+						break;
+				case '\"':
+					if (fLast == BACKSLASH) {
+	 					consume();
+	 					break;
+		 			} else if (scanForTextBlockClose()) {
+		 				boolean considerEndQuotes= true;
+		 				try {
+		 					IDocumentPartitioner docPartitioner= fCurrentDocument.getDocumentPartitioner();
+		 					if (fCurrentDocument instanceof IDocumentExtension3) {
+		 						docPartitioner= ((IDocumentExtension3)fCurrentDocument).getDocumentPartitioner(IJavaPartitions.JAVA_PARTITIONING);
+		 					}
+		 					if (docPartitioner instanceof FastJavaPartitioner) {
+		 						FastJavaPartitioner fjPartitioner= (FastJavaPartitioner) docPartitioner;
+		 						if (!fjPartitioner.hasPreviewEnabledValueChanged()) {
+				 					ITypedRegion originalPartition= TextUtilities.getPartition(fCurrentDocument, IJavaPartitions.JAVA_PARTITIONING, fTokenOffset, false);
+									ITypedRegion startingPartition= TextUtilities.getPartition(fCurrentDocument, IJavaPartitions.JAVA_PARTITIONING, fTokenOffset+ fTokenLength+2, false);
+									fjPartitioner.resetPositionCache();
+									if (!originalPartition.equals(startingPartition)) {
+										String startingType= startingPartition.getType();
+										if (IJavaPartitions.JAVA_MULTI_LINE_STRING.equals(startingType)) {
+											considerEndQuotes= false;
+										}
+									}
+		 						}
+		 					}
+		 					if (!considerEndQuotes) {
+		 						for (int i=0; i< 3; i++) {
+									fScanner.unread();
+								}
+		 					}
+						} catch (BadLocationException e) {
+							//do nothing
+						}
+		 				if (considerEndQuotes) {
+		 					fTokenLength= fTokenLength + 2;
+		 				} else {
+		 					fTokenLength= fTokenLength - 1;
+		 				}
+						return postFix(MULTI_LINE_STRING);
+					} else {
+						consume();
+						break;
+					}
+				default:
+					consume();
+					break;
+				}
+	 			break;
 	 		}
 		}
  	}
+
+	private boolean scanForUnicodeSlash() {
+		int count= 0;
+		boolean isUnicodeSlash= false;
+		try {
+			int ch= fScanner.read();
+			count++;
+			if (ch == 'u') {
+				ch= fScanner.read();
+				count++;
+				if (ch == '0') {
+					ch= fScanner.read();
+					count++;
+					if (ch == '0') {
+						ch= fScanner.read();
+						count++;
+						if (ch == '5') {
+							ch= fScanner.read();
+							count++;
+							if (ch == 'C') {
+								isUnicodeSlash= true;
+							}
+						}
+					}
+				}
+			}
+			if (ch == ICharacterScanner.EOF) {
+				count--;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			//let it return false;
+		} finally {
+			if (!isUnicodeSlash) {
+				for (int i= count; i > 0; i--) {
+					fScanner.unread();
+				}
+			}
+		}
+		return isUnicodeSlash;
+	}
+
+	private boolean scanForTextBlockBeginning() {
+		if (!isEnablePreviewsAllowed()) {
+			return false;
+		}
+		int count= 0;
+		boolean isTextBlockBeginning= false;
+		try {
+			// Don't change the position and current character unless we are certain
+			// to be dealing with a text block. For producing all errors like before
+			// in case of a valid """ but missing \r or \n, just return false and not
+			// throw any error.
+			count++;
+			int ch= fScanner.read();
+			if (ch == '\"') {
+				count++;
+				ch= fScanner.read();
+				if (ch == '\"') {
+					count++;
+					ch= fScanner.read();
+					while (Character.isWhitespace(ch)) {
+						switch (ch) {
+							case 10: /* \ u000a: LINE FEED               */
+							case 13: /* \ u000d: CARRIAGE RETURN         */
+								isTextBlockBeginning= true;
+								break;
+							case ICharacterScanner.EOF:
+								count--;
+								break;
+							default:
+								count++;
+								ch= fScanner.read();
+								break;
+						}
+						if (isTextBlockBeginning) {
+							break;
+						}
+					}
+				} else if (ch == ICharacterScanner.EOF) {
+					count--;
+				}
+			} else if (ch == ICharacterScanner.EOF) {
+				count--;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			//let it return false;
+		} finally {
+			int ignore= 0;
+			if (isTextBlockBeginning) {
+				ignore= 2;
+			}
+			for (int i= count - ignore; i > 0; i--) {
+				fScanner.unread();
+			}
+		}
+		return isTextBlockBeginning;
+	}
+
+	private boolean scanForTextBlockClose() {
+		int count= 0;
+		boolean isTextBlockEnd= false;
+		try {
+			count++;
+			int ch= fScanner.read();
+			if (ch == '\"') {
+				count++;
+				ch= fScanner.read();
+				if (ch == '\"') {
+					isTextBlockEnd= true;
+				} else if (ch == ICharacterScanner.EOF) {
+					count--;
+				}
+
+			} else if (ch == ICharacterScanner.EOF) {
+				count--;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			//let it return false;
+		} finally {
+			if (!isTextBlockEnd) {
+				for (int i= count; i > 0; i--) {
+					fScanner.unread();
+				}
+			}
+
+		}
+		return isTextBlockEnd;
+	}
 
 	private static final int getLastLength(int last) {
 		switch (last) {
@@ -415,6 +650,7 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 			return 2;
 
 		case SLASH_STAR_STAR:
+		case TRIPLE_QUOTE:
 			return 3;
 		}
 	}
@@ -459,23 +695,22 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 		if (contentType == null)
 			return JAVA;
 
-		else if (contentType.equals(JAVA_SINGLE_LINE_COMMENT))
+		switch (contentType) {
+		case JAVA_SINGLE_LINE_COMMENT:
 			return SINGLE_LINE_COMMENT;
-
-		else if (contentType.equals(JAVA_MULTI_LINE_COMMENT))
+		case JAVA_MULTI_LINE_COMMENT:
 			return MULTI_LINE_COMMENT;
-
-		else if (contentType.equals(JAVA_DOC))
+		case JAVA_DOC:
 			return JAVADOC;
-
-		else if (contentType.equals(JAVA_STRING))
+		case JAVA_STRING:
 			return STRING;
-
-		else if (contentType.equals(JAVA_CHARACTER))
+		case JAVA_CHARACTER:
 			return CHARACTER;
-
-		else
+		case JAVA_MULTI_LINE_STRING:
+			return MULTI_LINE_STRING;
+		default:
 			return JAVA;
+		}
 	}
 
 	/*
@@ -483,7 +718,7 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 	 */
 	@Override
 	public void setPartialRange(IDocument document, int offset, int length, String contentType, int partitionOffset) {
-
+		fCurrentDocument= document;
 		fScanner.setRange(document, offset, length);
 		fTokenOffset= partitionOffset;
 		fTokenLength= 0;
@@ -509,7 +744,7 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 	 */
 	@Override
 	public void setRange(IDocument document, int offset, int length) {
-
+		fCurrentDocument= document;
 		fScanner.setRange(document, offset, length);
 		fTokenOffset= offset;
 		fTokenLength= 0;
@@ -540,4 +775,41 @@ public class FastJavaPartitionScanner implements IPartitionTokenScanner, IJavaPa
 		return fTokenOffset;
 	}
 
+	private void setJavaProject() {
+		if (fJavaProject == null) {
+			IWorkbenchPage page= null;
+			try {
+				page= JavaPlugin.getActivePage();
+			} catch (IllegalStateException e) {
+				//do nothing
+			}
+			if (page != null) {
+				IEditorPart part= page.getActiveEditor();
+				if (part != null) {
+					IEditorInput editorInput= part.getEditorInput();
+					if (editorInput != null) {
+						fJavaProject= EditorUtility.getJavaProject(editorInput);
+					}
+				}
+				if (fJavaProject == null) {
+					ISelection selection= page.getSelection();
+					if (selection instanceof IStructuredSelection && !selection.isEmpty()) {
+						Object obj= ((IStructuredSelection) selection).getFirstElement();
+						if (obj instanceof IJavaElement) {
+							fJavaProject= ((IJavaElement) obj).getJavaProject();
+						}
+					}
+				}
+			}
+		}
+	}
+
+	public boolean isEnablePreviewsAllowed() {
+		boolean isAllowed= false;
+		setJavaProject();
+		if (fJavaProject != null) {
+			isAllowed= PreviewFeaturesSubProcessor.isPreviewFeatureEnabled(fJavaProject);
+		}
+		return isAllowed;
+	}
 }

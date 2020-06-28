@@ -55,9 +55,6 @@ public class AvailableLogicalStructuresAction extends Action implements IMenuCre
 		init();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run() {
 	}
@@ -70,9 +67,6 @@ public class AvailableLogicalStructuresAction extends Action implements IMenuCre
 		fView = view;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IMenuCreator#dispose()
-	 */
 	@Override
 	public void dispose() {
 		if (fMenu != null) {
@@ -83,9 +77,6 @@ public class AvailableLogicalStructuresAction extends Action implements IMenuCre
 		fTypes = null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Control)
-	 */
 	@Override
 	public Menu getMenu(Control parent) {
 		return null;
@@ -96,9 +87,6 @@ public class AvailableLogicalStructuresAction extends Action implements IMenuCre
 		item.fill(parent, -1);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Menu)
-	 */
 	@Override
 	public Menu getMenu(Menu parent) {
 		if (fMenu != null) {
@@ -107,22 +95,22 @@ public class AvailableLogicalStructuresAction extends Action implements IMenuCre
 
 		fMenu= new Menu(parent);
 		ILogicalStructureType[] types = getTypes();
-        ILogicalStructureType enabledType = DebugPlugin.getDefaultStructureType(types);
+		ILogicalStructureType enabledType = DebugPlugin.getDefaultStructureType(types);
 		if (types != null && types.length > 0) {
 			for (int i = 0; i < types.length; i++) {
-                ILogicalStructureType type= types[i];
+				ILogicalStructureType type= types[i];
 				Action action = new SelectLogicalStructureAction(getView(), type, getValue(), types);
 				action.setChecked((enabledType == type) && getView().isShowLogicalStructure());
-                StringBuffer label= new StringBuffer();
-                //add the numerical accelerator
-                if (i < 9) {
-                    label.append('&');
-                    label.append(i + 1);
-                    label.append(' ');
-                }
-                label.append(action.getText());
+				StringBuilder label= new StringBuilder();
+				//add the numerical accelerator
+				if (i < 9) {
+					label.append('&');
+					label.append(i + 1);
+					label.append(' ');
+				}
+				label.append(action.getText());
 				if (enabledType == type) {
-					action.setText(label.toString() + " " + VariablesViewMessages.AvailableLogicalStructuresAction_2); //$NON-NLS-1$
+					action.setText(label + " " + VariablesViewMessages.AvailableLogicalStructuresAction_2); //$NON-NLS-1$
 				} else {
 					action.setText(label.toString());
 				}
@@ -137,9 +125,6 @@ public class AvailableLogicalStructuresAction extends Action implements IMenuCre
 		return fMenu;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ISelectionChangedListener#selectionChanged(org.eclipse.jface.viewers.SelectionChangedEvent)
-	 */
 	public void init() {
 		setValue(null);
 		setTypes(null);

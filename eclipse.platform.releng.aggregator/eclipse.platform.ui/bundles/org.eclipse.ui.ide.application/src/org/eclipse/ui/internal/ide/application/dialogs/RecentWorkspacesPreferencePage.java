@@ -68,7 +68,7 @@ public class RecentWorkspacesPreferencePage extends PreferencePage
 
 	@Override
 	public Control createContents(Composite parent) {
-    	PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,
 				IWorkbenchHelpContextIds.WORKSPACES_PREFERENCE_PAGE);
 
 		Composite container = new Composite(parent, SWT.NULL);
@@ -161,7 +161,7 @@ public class RecentWorkspacesPreferencePage extends PreferencePage
 		// This would be a lot less code if we could use Jakarta CollectionUtils and/or ArrayUtils
 
 		int[] selected = workspacesList.getSelectionIndices();
-		java.util.List<String> workspaces = new ArrayList<String>(Arrays.asList(workspacesList.getItems()));
+		java.util.List<String> workspaces = new ArrayList<>(Arrays.asList(workspacesList.getItems()));
 
 		// Iterate bottom-up because removal changes indices in the list
 		for (int i = selected.length-1; i >= 0; i--) {

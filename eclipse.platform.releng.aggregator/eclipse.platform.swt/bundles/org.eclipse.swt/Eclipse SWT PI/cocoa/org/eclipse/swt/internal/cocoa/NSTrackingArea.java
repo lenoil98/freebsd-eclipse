@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2012 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,7 +19,7 @@ public NSTrackingArea() {
 	super();
 }
 
-public NSTrackingArea(long /*int*/ id) {
+public NSTrackingArea(long id) {
 	super(id);
 }
 
@@ -27,18 +27,13 @@ public NSTrackingArea(id id) {
 	super(id);
 }
 
-public NSTrackingArea initWithRect(NSRect rect, long /*int*/ options, id owner, NSDictionary userInfo) {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_initWithRect_options_owner_userInfo_, rect, options, owner != null ? owner.id : 0, userInfo != null ? userInfo.id : 0);
-	return result == this.id ? this : (result != 0 ? new NSTrackingArea(result) : null);
-}
-
 public id owner() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_owner);
+	long result = OS.objc_msgSend(this.id, OS.sel_owner);
 	return result != 0 ? new id(result) : null;
 }
 
 public NSDictionary userInfo() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_userInfo);
+	long result = OS.objc_msgSend(this.id, OS.sel_userInfo);
 	return result != 0 ? new NSDictionary(result) : null;
 }
 

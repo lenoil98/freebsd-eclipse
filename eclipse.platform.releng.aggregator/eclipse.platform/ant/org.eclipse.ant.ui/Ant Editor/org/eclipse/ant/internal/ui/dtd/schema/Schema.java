@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2013 Object Factory Inc.
+ * Copyright (c) 2002, 2019 Object Factory Inc.
  *
  * This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License 2.0
@@ -28,20 +28,14 @@ public class Schema implements ISchema {
 	private HashMap<String, IElement> fElementMap = new HashMap<>();
 	private Exception fErrorException;
 
-	/**
-	 * @see org.eclipse.ant.internal.ui.dtd.ISchema#getElement(java.lang.String)
-	 */
 	@Override
 	public IElement getElement(String qname) {
 		return fElementMap.get(qname);
 	}
 
-	/**
-	 * @see org.eclipse.ant.internal.ui.dtd.ISchema#getElements()
-	 */
 	@Override
 	public IElement[] getElements() {
-		return fElementMap.entrySet().toArray(new IElement[fElementMap.entrySet().size()]);
+		return fElementMap.values().toArray(new IElement[fElementMap.size()]);
 	}
 
 	/**
@@ -64,11 +58,6 @@ public class Schema implements ISchema {
 		fErrorException = e;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ant.internal.ui.dtd.ISchema#getErrorException()
-	 */
 	@Override
 	public Exception getErrorException() {
 		return fErrorException;

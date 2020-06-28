@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,7 @@ package org.eclipse.swt.internal;
 import java.io.*;
 import java.lang.reflect.*;
 import java.net.*;
+import java.nio.file.*;
 import java.util.function.*;
 import java.util.jar.*;
 
@@ -26,17 +27,17 @@ public class Library {
 	/**
 	 * SWT Major version number (must be >= 0)
 	 */
-    static int MAJOR_VERSION = 4;
+	static int MAJOR_VERSION = 4;
 
 	/**
 	 * SWT Minor version number (must be in the range 0..999)
 	 */
-    static int MINOR_VERSION = 924;
+	static int MINOR_VERSION = 934;
 
 	/**
 	 * SWT revision number (must be >= 0)
 	 */
-	static int REVISION = 25;
+	static int REVISION = 6;
 
 	/**
 	 * The JAVA and SWT versions
@@ -57,7 +58,7 @@ public class Library {
 	static final String SWT_LIB_DIR;
 
 static {
-	DELIMITER = System.getProperty("line.separator"); //$NON-NLS-1$
+	DELIMITER = System.lineSeparator(); //$NON-NLS-1$
 	SEPARATOR = File.separator;
 	USER_HOME = System.getProperty ("user.home");
 	SWT_LIB_DIR = ".swt" + SEPARATOR + "lib" + SEPARATOR + os() + SEPARATOR + arch(); //$NON-NLS-1$ $NON-NLS-2$
@@ -136,45 +137,59 @@ public static int SWT_VERSION (int major, int minor) {
 	return major * 1000 + minor;
 }
 
+private static boolean extractResource(String resourceName, File outFile) {
+	try (InputStream inputStream = Library.class.getResourceAsStream (resourceName)) {
+		if (inputStream == null) return false;
+		Files.copy(inputStream, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+	} catch (Throwable e) {
+		return false;
+	}
+
+	return true;
+}
+
 /**
- *	Extract file with 'mappedName' into path 'extractToFilePath'. Cleanup leftovers if extract failed.
+ * Extract file with 'mappedName' into path 'extractToFilePath'.
+ * Does not overwrite existing file.
+ * Does not leave trash on error.
  * @param extractToFilePath full path of where the file is to be extacted to, inc name of file,
  *                          e.g /home/USER/.swt/lib/linux/x86_64/libswt-MYLIB-gtk-4826.so
  * @param mappedName file to be searched in jar.
  * @return	true upon success, failure if something went wrong.
  */
-static boolean extract (String extractToFilePath, String mappedName, StringBuilder message) {
-	FileOutputStream os = null;
-	InputStream is = null;
+static boolean extract (String extractToFilePath, String mappedName) {
 	File file = new File(extractToFilePath);
-	boolean extracted = false;
+	if (file.exists ()) return true;
+
+	// Write to temp file first, so that other processes don't see
+	// partially written library on disk
+	File tempFile;
 	try {
-		if (!file.exists ()) {
-			is = Library.class.getResourceAsStream ("/" + mappedName); //$NON-NLS-1$
-			if (is != null) {
-				extracted = true;
-				int read;
-				byte [] buffer = new byte [4096];
-				os = new FileOutputStream (extractToFilePath);
-				while ((read = is.read (buffer)) != -1) {
-					os.write(buffer, 0, read);
-				}
-				os.close ();
-				is.close ();
-				chmod ("755", extractToFilePath);
-				return true;
-			}
-		}
+		tempFile = File.createTempFile (file.getName(), ".tmp", file.getParentFile()); //$NON-NLS-1$
 	} catch (Throwable e) {
-		try {
-			if (os != null) os.close ();
-		} catch (IOException e1) {}
-		try {
-			if (is != null) is.close ();
-		} catch (IOException e1) {}
-		if (extracted && file.exists ()) file.delete ();
+		return false;
+				}
+
+	// Extract resource
+	String resourceName = "/" + mappedName; //$NON-NLS-1$
+	if (!extractResource (resourceName, tempFile)) {
+		tempFile.delete();
+		return false;
+			}
+
+	// Make it executable
+	chmod ("755", tempFile.getPath()); //$NON-NLS-1$
+
+	// "Publish" file now that it's ready to use.
+	// If there is a file already, then someone published while we were
+	// extracting, just delete our file and consider it a success.
+	try {
+		Files.move (tempFile.toPath(), file.toPath());
+	} catch (Throwable e) {
+		tempFile.delete();
 	}
-	return false;
+
+	return true;
 }
 
 static boolean isLoadable () {
@@ -211,7 +226,7 @@ static boolean isLoadable () {
 
 static boolean load (String libName, StringBuilder message) {
 	try {
-		if (libName.indexOf (SEPARATOR) != -1) {
+		if (libName.contains (SEPARATOR)) {
 			System.load (libName);
 		} else {
 			System.loadLibrary (libName);
@@ -315,13 +330,11 @@ public static void loadLibrary (String name, boolean mapName) {
 
 	/* Try extracting and loading library from jar. */
 	if (path != null) {
-		if (extract (path + SEPARATOR + fileName1, mappedName1, message)) {
-			load(path + SEPARATOR + fileName1, message);
-			return;
+		if (extract (path + SEPARATOR + fileName1, mappedName1)) {
+			if (load(path + SEPARATOR + fileName1, message)) return;
 		}
-		if (mapName && extract (path + SEPARATOR + fileName2, mappedName2, message)) {
-			load(path + SEPARATOR + fileName2, message);
-			return;
+		if (mapName && extract (path + SEPARATOR + fileName2, mappedName2)) {
+			if (load(path + SEPARATOR + fileName2, message)) return;
 		}
 	}
 
@@ -444,11 +457,10 @@ public static File findResource(String subDir, String resourceName, boolean mapR
 			// Create temp directory if it doesn't exist
 			File tempDir = new File (USER_HOME, SWT_LIB_DIR + maybeSubDirPathWithPrefix);
 			if ((!tempDir.exists () || tempDir.isDirectory ())) {
-				 tempDir.mkdirs ();
+				tempDir.mkdirs ();
 			}
 
-			StringBuilder message = new StringBuilder("");
-			if (extract(file.getPath(), maybeSubDirPath + finalResourceName, message)) {
+			if (extract(file.getPath(), maybeSubDirPath + finalResourceName)) {
 				if (file.exists()) {
 					return file;
 				}

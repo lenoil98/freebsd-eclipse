@@ -14,6 +14,7 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.forms.widgets;
 
+import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -27,11 +28,8 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
-import com.ibm.icu.text.BreakIterator;
-
 /**
  * @version 1.0
- * @author
  */
 public class TextSegment extends ParagraphSegment {
 	private String colorId;
@@ -349,8 +347,7 @@ public class TextSegment extends ParagraphSegment {
 			Rectangle repaintRegion) {
 		if (areaRectangles == null)
 			return;
-		for (int i = 0; i < areaRectangles.size(); i++) {
-			AreaRectangle areaRectangle = areaRectangles.get(i);
+		for (AreaRectangle areaRectangle : areaRectangles) {
 			Rectangle br = areaRectangle.rect;
 			int bx = br.x;
 			int by = br.y;
@@ -403,8 +400,7 @@ public class TextSegment extends ParagraphSegment {
 		int descent = fm.getDescent();
 
 		// paint area rectangles of the segment
-		for (int i = 0; i < areaRectangles.size(); i++) {
-			AreaRectangle areaRectangle = areaRectangles.get(i);
+		for (AreaRectangle areaRectangle : areaRectangles) {
 			Rectangle rect = areaRectangle.rect;
 			String text = areaRectangle.getText();
 			Point extent = gc.textExtent(text);
@@ -451,8 +447,7 @@ public class TextSegment extends ParagraphSegment {
 				gc.setFont(newFont);
 		}
 
-		for (int i = 0; i < areaRectangles.size(); i++) {
-			AreaRectangle areaRectangle = areaRectangles.get(i);
+		for (AreaRectangle areaRectangle : areaRectangles) {
 			Rectangle rect = areaRectangle.rect;
 			String text = areaRectangle.getText();
 			Point extent = gc.textExtent(text);
@@ -559,7 +554,7 @@ public class TextSegment extends ParagraphSegment {
 			int rindex = sstop != -1 ? sstop : s.length();
 			String mid = s.substring(lindex, rindex);
 			if (mid.length() > 0 ) {
-			    selData.addSegment(mid);
+				selData.addSegment(mid);
 			}
 		}
 	}

@@ -166,17 +166,17 @@ abstract public class CVSAction extends TeamAction implements IEditorActionDeleg
 	@Override
 	public void dispose() {
 		super.dispose();
-        IWorkbenchWindow window = getWindow();
-        if (window != null) {
-            IPartService partService = window.getPartService();
-            if (partService != null)
-                partService.removePartListener(retargetAction);
-        }
-        
-        if(retargetAction != null) {
-        	retargetAction.dispose();
-        	retargetAction = null;
-        }
+		IWorkbenchWindow window = getWindow();
+		if (window != null) {
+			IPartService partService = window.getPartService();
+			if (partService != null)
+				partService.removePartListener(retargetAction);
+		}
+		
+		if(retargetAction != null) {
+			retargetAction.dispose();
+			retargetAction = null;
+		}
 	}
 	
 	@Override
@@ -295,8 +295,8 @@ abstract public class CVSAction extends TeamAction implements IEditorActionDeleg
 			return problems[0];
 		}
 		MultiStatus combinedStatus = new MultiStatus(CVSUIPlugin.ID, 0, getMultiStatusMessage(), null); 
-		for (int i = 0; i < problems.length; i++) {
-			combinedStatus.merge(problems[i]);
+		for (IStatus problem : problems) {
+			combinedStatus.merge(problem);
 		}
 		return combinedStatus;
 	}
@@ -317,15 +317,14 @@ abstract public class CVSAction extends TeamAction implements IEditorActionDeleg
 		List<IStatus> problems = new ArrayList<>();
 		IStatus[] status = getAccumulatedStatus();
 		if (status != null) {
-			for (int i = 0; i < status.length; i++) {
-				IStatus iStatus = status[i];
+			for (IStatus iStatus : status) {
 				if ( ! iStatus.isOK() || iStatus.getCode() == CVSStatus.SERVER_ERROR) {
 					problems.add(iStatus);
 				}
 			}
 		}
 		// Handle the case where there are no problem status
-		if (problems.size() == 0) {
+		if (problems.isEmpty()) {
 			if (exception == null) return;
 			handle(exception, getErrorTitle(), null);
 			return;
@@ -535,8 +534,7 @@ abstract public class CVSAction extends TeamAction implements IEditorActionDeleg
 		
 		final boolean[] result = new boolean[] { true };
 		
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			if (resource.getType() != IResource.PROJECT) {
 				ICVSResource cvsResource = CVSWorkspaceRoot.getCVSResourceFor(resource);
 				CVSTag parentTag = cvsResource.getParent().getFolderSyncInfo().getTag();
@@ -580,9 +578,7 @@ abstract public class CVSAction extends TeamAction implements IEditorActionDeleg
 		} 
 		return okToContinue[0];
 	}
-	/**
-	 * @see org.eclipse.team.internal.ui.actions.TeamAction#handle(java.lang.Exception, java.lang.String, java.lang.String)
-	 */
+
 	@Override
 	protected void handle(Exception exception, String title, String message) {
 		CVSUIPlugin.openError(getShell(), title, message, exception, CVSUIPlugin.LOG_NONTEAM_EXCEPTIONS);
@@ -592,34 +588,28 @@ abstract public class CVSAction extends TeamAction implements IEditorActionDeleg
 		return CVSUIPlugin.getPlugin().getRepositoryManager();
 	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.team.internal.ui.actions.TeamAction#getSelectedResources()
-     */
-    protected final IResource[] getSelectedResourcesWithOverlap() {
-    	IStructuredSelection selection = getSelection();
-        CVSActionSelectionProperties props = CVSActionSelectionProperties.getProperties(getSelection());
-        if (props == null) {
-            return Utils.getContributedResources(selection.toArray());
-        }
-        return props.getAllSelectedResources();
-    }
-    
-	/* (non-Javadoc)
+	/*
 	 * @see org.eclipse.team.internal.ui.actions.TeamAction#getSelectedResources()
 	 */
+	protected final IResource[] getSelectedResourcesWithOverlap() {
+		IStructuredSelection selection = getSelection();
+		CVSActionSelectionProperties props = CVSActionSelectionProperties.getProperties(getSelection());
+		if (props == null) {
+			return Utils.getContributedResources(selection.toArray());
+		}
+		return props.getAllSelectedResources();
+	}
+	
 	@Override
 	protected final IResource[] getSelectedResources() {
 		IStructuredSelection selection = getSelection();
-        CVSActionSelectionProperties props = CVSActionSelectionProperties.getProperties(getSelection());
-        if (props == null) {
-            return CVSActionSelectionProperties.getNonOverlapping(Utils.getContributedResources(selection.toArray()));
-        }
-        return props.getNonoverlappingSelectedResources();
+		CVSActionSelectionProperties props = CVSActionSelectionProperties.getProperties(getSelection());
+		if (props == null) {
+			return CVSActionSelectionProperties.getNonOverlapping(Utils.getContributedResources(selection.toArray()));
+		}
+		return props.getNonoverlappingSelectedResources();
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IEditorActionDelegate#setActiveEditor(org.eclipse.jface.action.IAction, org.eclipse.ui.IEditorPart)
-	 */
 	@Override
 	public void setActiveEditor(IAction action, IEditorPart targetEditor) {
 	}
@@ -637,23 +627,20 @@ abstract public class CVSAction extends TeamAction implements IEditorActionDeleg
 	public void addHandlerListener(IHandlerListener handlerListener) {
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.commands.IHandler#isHandled()
-	 */
 	@Override
 	public boolean isHandled() {
 		return true;
 	}
-    
-    protected final ICVSResource getCVSResourceFor(IResource resource) {
-        CVSActionSelectionProperties props = CVSActionSelectionProperties.getProperties(getSelection());
-        if (props == null) {
-            return CVSWorkspaceRoot.getCVSResourceFor(resource);
-        }
-        return props.getCVSResourceFor(resource);
-    }
+	
+	protected final ICVSResource getCVSResourceFor(IResource resource) {
+		CVSActionSelectionProperties props = CVSActionSelectionProperties.getProperties(getSelection());
+		if (props == null) {
+			return CVSWorkspaceRoot.getCVSResourceFor(resource);
+		}
+		return props.getCVSResourceFor(resource);
+	}
 
-    public static CVSTag getAccurateFileTag(ICVSResource cvsResource) throws CVSException {
+	public static CVSTag getAccurateFileTag(ICVSResource cvsResource) throws CVSException {
 		CVSTag tag = null;
 		if (cvsResource != null) {
 			return Util.getAccurateFileTag(cvsResource,  getTags(cvsResource));

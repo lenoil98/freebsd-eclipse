@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rob Harrop - SpringSource Inc. (bug 247522)
@@ -114,7 +114,7 @@ public class ExportPackageDescriptionImpl extends BaseDescriptionImpl implements
 	}
 
 	static String toString(String[] list) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		for (String string : list)
 			buffer.append(string).append(',');
 		if (buffer.length() > 0)
@@ -223,6 +223,7 @@ public class ExportPackageDescriptionImpl extends BaseDescriptionImpl implements
 		this.exporter = exporter;
 	}
 
+	@Override
 	public BaseDescription getFragmentDeclaration() {
 		return fragmentDeclaration;
 	}
@@ -231,10 +232,12 @@ public class ExportPackageDescriptionImpl extends BaseDescriptionImpl implements
 		this.fragmentDeclaration = fragmentDeclaration;
 	}
 
+	@Override
 	public String toString() {
 		return "Export-Package: " + getName() + "; version=\"" + getVersion() + "\""; //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
 	}
 
+	@Override
 	String getInternalNameSpace() {
 		return BundleRevision.PACKAGE_NAMESPACE;
 	}

@@ -222,8 +222,7 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 	private void loadDynamicVariables() {
 		IExtensionPoint point = Platform.getExtensionRegistry().getExtensionPoint(VariablesPlugin.PI_CORE_VARIABLES, EXTENSION_POINT_DYNAMIC_VARIABLES);
 		IConfigurationElement elements[]= point.getConfigurationElements();
-		for (int i = 0; i < elements.length; i++) {
-			IConfigurationElement element = elements[i];
+		for (IConfigurationElement element : elements) {
 			String name= element.getAttribute(ATTR_NAME);
 			if (name == null) {
 				VariablesPlugin.logMessage(NLS.bind("Variable extension missing required 'name' attribute: {0}", new String[] {element.getDeclaringExtension().getLabel()}), null); //$NON-NLS-1$
@@ -236,7 +235,7 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 				DynamicVariable oldVariable = (DynamicVariable)old;
 				VariablesPlugin.logMessage(NLS.bind("Dynamic variable extension from bundle ''{0}'' overrides existing extension variable ''{1}'' from bundle ''{2}''", //$NON-NLS-1$
 						new String[] {element.getDeclaringExtension().getContributor().getName(),oldVariable.getName(),
-						oldVariable.getConfigurationElement().getDeclaringExtension().getContributor().getName()}), null);
+							oldVariable.getConfigurationElement().getDeclaringExtension().getContributor().getName()}), null);
 			}
 		}
 	}
@@ -247,8 +246,7 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 	private void loadContributedValueVariables() {
 		IExtensionPoint point = Platform.getExtensionRegistry().getExtensionPoint(VariablesPlugin.PI_CORE_VARIABLES, EXTENSION_POINT_VALUE_VARIABLES);
 		IConfigurationElement elements[]= point.getConfigurationElements();
-		for (int i = 0; i < elements.length; i++) {
-			IConfigurationElement element = elements[i];
+		for (IConfigurationElement element : elements) {
 			String name= element.getAttribute(ATTR_NAME);
 			if (name == null) {
 				VariablesPlugin.logMessage(NLS.bind("Variable extension missing required 'name' attribute: {0}", new String[] {element.getDeclaringExtension().getLabel()}), null); //$NON-NLS-1$
@@ -263,7 +261,7 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 				StringVariable oldVariable = (StringVariable)old;
 				VariablesPlugin.logMessage(NLS.bind("Contributed variable extension from bundle ''{0}'' overrides existing extension variable ''{1}'' from  bundle ''{2}''", //$NON-NLS-1$
 						new String[] {element.getDeclaringExtension().getContributor().getName(),oldVariable.getName(),
-						oldVariable.getConfigurationElement().getDeclaringExtension().getContributor().getName()}), null);
+							oldVariable.getConfigurationElement().getDeclaringExtension().getContributor().getName()}), null);
 			}
 		}
 	}
@@ -323,9 +321,6 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#getVariables()
-	 */
 	@Override
 	public synchronized IStringVariable[] getVariables() {
 		initialize();
@@ -335,64 +330,44 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 		return list.toArray(new IStringVariable[list.size()]);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#getValueVariables()
-	 */
 	@Override
 	public synchronized IValueVariable[] getValueVariables() {
 		initialize();
 		return fValueVariables.values().toArray(new IValueVariable[fValueVariables.size()]);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#getDynamicVariables()
-	 */
 	@Override
 	public synchronized IDynamicVariable[] getDynamicVariables() {
 		initialize();
 		return fDynamicVariables.values().toArray(new IDynamicVariable[fDynamicVariables.size()]);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#performStringSubstitution(java.lang.String)
-	 */
 	@Override
 	public String performStringSubstitution(String expression) throws CoreException {
 		return performStringSubstitution(expression, true);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#newValueVariable(java.lang.String, java.lang.String)
-	 */
 	@Override
 	public IValueVariable newValueVariable(String name, String description) {
 		return newValueVariable(name, description, false, null);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.variables.IStringVariableManager#newValueVariable(java.lang.String, java.lang.String, boolean, java.lang.String)
-	 */
 	@Override
 	public IValueVariable newValueVariable(String name, String description, boolean readOnly, String value) {
 		return new ValueVariable(name, description, readOnly, value);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#addVariables(org.eclipse.debug.internal.core.stringsubstitution.IValueVariable[])
-	 */
 	@Override
 	public synchronized void addVariables(IValueVariable[] variables) throws CoreException {
 		initialize();
 		MultiStatus status = new MultiStatus(VariablesPlugin.getUniqueIdentifier(), VariablesPlugin.INTERNAL_ERROR, VariablesMessages.StringVariableManager_26, null);
-		for (int i = 0; i < variables.length; i++) {
-			IValueVariable variable = variables[i];
+		for (IValueVariable variable : variables) {
 			if (getValueVariable(variable.getName()) != null) {
 				status.add(new Status(IStatus.ERROR, VariablesPlugin.getUniqueIdentifier(), VariablesPlugin.INTERNAL_ERROR, NLS.bind(VariablesMessages.StringVariableManager_27, new String[]{variable.getName()}), null));
 			}
 		}
 		if (status.isOK()) {
-			for (int i = 0; i < variables.length; i++) {
-				IValueVariable variable = variables[i];
+			for (IValueVariable variable : variables) {
 				fValueVariables.put(variable.getName(), variable);
 			}
 			IValueVariable[] copy = new IValueVariable[variables.length];
@@ -403,15 +378,11 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 		throw new CoreException(status);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#removeVariables(org.eclipse.debug.internal.core.stringsubstitution.IValueVariable[])
-	 */
 	@Override
 	public synchronized void removeVariables(IValueVariable[] variables) {
 		initialize();
 		List<IValueVariable> removed = new ArrayList<>(variables.length);
-		for (int i = 0; i < variables.length; i++) {
-			IValueVariable variable = variables[i];
+		for (IValueVariable variable : variables) {
 			if (fValueVariables.remove(variable.getName()) != null) {
 				removed.add(variable);
 			}
@@ -421,18 +392,12 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#getDynamicVariable(java.lang.String)
-	 */
 	@Override
 	public synchronized IDynamicVariable getDynamicVariable(String name) {
 		initialize();
 		return fDynamicVariables.get(name);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#getValueVariable(java.lang.String)
-	 */
 	@Override
 	public synchronized IValueVariable getValueVariable(String name) {
 		initialize();
@@ -440,17 +405,11 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 	}
 
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#addValueVariableListener(org.eclipse.debug.internal.core.stringsubstitution.IValueVariableListener)
-	 */
 	@Override
 	public void addValueVariableListener(IValueVariableListener listener) {
 		fListeners.add(listener);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#removeValueVariableListener(org.eclipse.debug.internal.core.stringsubstitution.IValueVariableListener)
-	 */
 	@Override
 	public void removeValueVariableListener(IValueVariableListener listener) {
 		fListeners.remove(listener);
@@ -470,8 +429,7 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 		Document document= getDocument();
 		Element rootElement= document.createElement(VALUE_VARIABLES_TAG);
 		document.appendChild(rootElement);
-		for (int i = 0; i < variables.length; i++) {
-			IValueVariable variable = variables[i];
+		for (IValueVariable variable : variables) {
 			if (!variable.isReadOnly()){
 				// don't persist read-only variables or un-initialized contributed variables
 				if (!variable.isContributed() || ((ContributedValueVariable)variable).isInitialized()) {
@@ -571,9 +529,6 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#generateVariableExpression(java.lang.String, java.lang.String)
-	 */
 	@Override
 	public String generateVariableExpression(String varName, String arg) {
 		StringBuilder buffer = new StringBuilder();
@@ -587,36 +542,24 @@ public class StringVariableManager implements IStringVariableManager, IPreferenc
 		return buffer.toString();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IStringVariableManager#performStringSubstitution(java.lang.String, boolean)
-	 */
 	@Override
 	public String performStringSubstitution(String expression,	boolean reportUndefinedVariables) throws CoreException {
 		return new StringSubstitutionEngine().performStringSubstitution(expression, reportUndefinedVariables, true, this);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.variables.IStringVariableManager#validateStringVariables(java.lang.String)
-	 */
 	@Override
 	public void validateStringVariables(String expression) throws CoreException {
 		new StringSubstitutionEngine().validateStringVariables(expression, this);
 	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.core.variables.IStringVariableManager#getContributingPluginId(org.eclipse.core.variables.IStringVariable)
-     */
-    @Override
+	@Override
 	public String getContributingPluginId(IStringVariable variable) {
-        if (variable instanceof StringVariable) {
-            return ((StringVariable) variable).getConfigurationElement().getContributor().getName();
-        }
-        return null;
-    }
+		if (variable instanceof StringVariable) {
+			return ((StringVariable) variable).getConfigurationElement().getContributor().getName();
+		}
+		return null;
+	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener#preferenceChange(org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent)
-	 */
 	@Override
 	public void preferenceChange(PreferenceChangeEvent event) {
 		if (PREF_VALUE_VARIABLES.equals(event.getKey())) {

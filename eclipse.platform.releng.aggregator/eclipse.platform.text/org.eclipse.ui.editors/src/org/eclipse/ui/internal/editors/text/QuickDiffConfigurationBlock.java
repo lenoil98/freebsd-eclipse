@@ -17,7 +17,6 @@ package org.eclipse.ui.internal.editors.text;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -161,10 +160,8 @@ class QuickDiffConfigurationBlock implements IPreferenceConfigurationBlock {
 	}
 
 	private String[][] createQuickDiffReferenceListModel() {
-		List<ReferenceProviderDescriptor> descriptors= new QuickDiff().getReferenceProviderDescriptors();
 		ArrayList<String[]> listModelItems= new ArrayList<>();
-		for (Iterator<ReferenceProviderDescriptor> it= descriptors.iterator(); it.hasNext();) {
-			ReferenceProviderDescriptor descriptor= it.next();
+		for (ReferenceProviderDescriptor descriptor : new QuickDiff().getReferenceProviderDescriptors()) {
 			String label= LegacyActionTools.removeMnemonics(descriptor.getLabel());
 			listModelItems.add(new String[] { descriptor.getId(), label });
 		}
@@ -214,7 +211,7 @@ class QuickDiffConfigurationBlock implements IPreferenceConfigurationBlock {
 		messageLabel.setFont(font);
 		return messageComposite;
 	}
-	
+
 	/**
 	 * Creates page for hover preferences.
 	 *
@@ -259,8 +256,8 @@ class QuickDiffConfigurationBlock implements IPreferenceConfigurationBlock {
 		fQuickDiffOverviewRulerCheckBox.addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				for (int i= 0; i < fQuickDiffModel.length; i++) {
-					fStore.setValue(fQuickDiffModel[i][1], fQuickDiffOverviewRulerCheckBox.getSelection());
+				for (String[] fQuickDiff : fQuickDiffModel) {
+					fStore.setValue(fQuickDiff[1], fQuickDiffOverviewRulerCheckBox.getSelection());
 				}
 			}
 
@@ -350,7 +347,7 @@ class QuickDiffConfigurationBlock implements IPreferenceConfigurationBlock {
 			}
 
 		});
-		
+
 		fQuickDiffProviderNote= createNoteComposite(parent.getFont(), editorComposite, TextEditorMessages.QuickDiffConfigurationBlock_referenceProviderNoteTitle,
 				TextEditorMessages.QuickDiffConfigurationBlock_referenceProviderNoteMessage);
 		gd= new GridData(SWT.BEGINNING, SWT.FILL, false, true);
@@ -378,12 +375,13 @@ class QuickDiffConfigurationBlock implements IPreferenceConfigurationBlock {
 		final boolean enabled= fEnablementCheckbox.getSelection();
 		fQuickDiffOverviewRulerCheckBox.setEnabled(enabled);
 		fQuickDiffProviderCombo.setEnabled(enabled);
-		for (int i= 0; i < fQuickDiffColorEditors.length; i++)
-			fQuickDiffColorEditors[i].setEnabled(enabled);
+		for (ColorSelector fQuickDiffColorEditor : fQuickDiffColorEditors) {
+			fQuickDiffColorEditor.setEnabled(enabled);
+		}
 		fQuickDiffProviderNote.setEnabled(enabled);
 		Control[] quickDiffProviderNoteChildren= fQuickDiffProviderNote.getChildren();
-		for (int i= 0; i < quickDiffProviderNoteChildren.length; i++) {
-			quickDiffProviderNoteChildren[i].setEnabled(enabled);
+		for (Control child : quickDiffProviderNoteChildren) {
+			child.setEnabled(enabled);
 		}
 	}
 
@@ -400,11 +398,11 @@ class QuickDiffConfigurationBlock implements IPreferenceConfigurationBlock {
 	@Override
 	public void initialize() {
 
-		for (int i= 0; i < fQuickDiffProviderListModel.length; i++) {
-			String label= fQuickDiffProviderListModel[i][1];
+		for (String[] fQuickDiffProvider : fQuickDiffProviderListModel) {
+			String label = fQuickDiffProvider[1];
 			fQuickDiffProviderCombo.add(label);
 		}
-		fQuickDiffProviderCombo.getDisplay().asyncExec(() -> updateProviderList());
+		fQuickDiffProviderCombo.getDisplay().asyncExec(this::updateProviderList);
 
 		initializeFields();
 	}

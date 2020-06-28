@@ -20,11 +20,11 @@ import java.net.URL;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.WeakHashMap;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.e4.ui.css.core.dom.properties.ICSSPropertyHandler;
 import org.eclipse.e4.ui.css.core.engine.CSSEngine;
 import org.eclipse.e4.ui.css.swt.dom.definition.ThemeDefinitionElement;
 import org.eclipse.e4.ui.css.swt.helpers.URI;
-import org.eclipse.e4.ui.internal.css.swt.CSSActivator;
 import org.eclipse.e4.ui.internal.css.swt.definition.IThemeElementDefinitionOverridable;
 import org.eclipse.osgi.service.localization.BundleLocalization;
 import org.osgi.framework.Bundle;
@@ -42,12 +42,12 @@ public class CSSPropertyThemeElementDefinitionHandler implements ICSSPropertyHan
 
 	private static final String MESSAGE_QUERY_PARAM = "message";
 
-	private Map<Long, ResourceBundle> bundleToResourceBundles = new WeakHashMap<Long, ResourceBundle>();
+	private Map<Long, ResourceBundle> bundleToResourceBundles = new WeakHashMap<>();
 
 	@Override
 	public boolean applyCSSProperty(Object element, String property,
 			CSSValue value, String pseudo, CSSEngine engine) throws Exception {
-		if (!(element instanceof ThemeDefinitionElement<?>)) {
+		if (!(element instanceof ThemeDefinitionElement<?>) || property == null) {
 			return false;
 		}
 
@@ -55,12 +55,18 @@ public class CSSPropertyThemeElementDefinitionHandler implements ICSSPropertyHan
 				(IThemeElementDefinitionOverridable<?>) ((ThemeDefinitionElement<?>) element)
 				.getNativeWidget();
 
-		if (CATEGORY_PROP.equals(property)) {
+		switch (property) {
+		case CATEGORY_PROP:
 			definition.setCategoryId(normalizeId(value.getCssText().substring(1)));
-		} else if (LABEL_PROP.equals(property)) {
+			break;
+		case LABEL_PROP:
 			definition.setName(getLabel(value));
-		} else if (DESCRIPTION_PROP.equals(property)) {
+			break;
+		case DESCRIPTION_PROP:
 			definition.setDescription(getLabel(value));
+			break;
+		default:
+			return false;
 		}
 
 		return true;
@@ -99,7 +105,7 @@ public class CSSPropertyThemeElementDefinitionHandler implements ICSSPropertyHan
 	}
 
 	private Bundle getBundle(URI uri) throws BundleException {
-		Bundle bundle = CSSActivator.getDefault().getBundleForName(uri.lastSegment());
+		Bundle bundle = Platform.getBundle(uri.lastSegment());
 		if (bundle != null && (bundle.getState() & Bundle.ACTIVE) == 0) {
 			bundle.start(); // Bundle is lazy init
 		}

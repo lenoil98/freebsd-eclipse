@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,7 +18,6 @@ package org.eclipse.jdt.internal.ui.wizards.buildpaths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -43,18 +42,19 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 
-
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
-import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.LimitModules;
-import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddExport;
-import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddReads;
-import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModulePatch;
 
 import org.eclipse.jdt.launching.JavaRuntime;
 
 import org.eclipse.jdt.ui.JavaUI;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.LimitModules;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddExport;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddExpose;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddOpens;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddReads;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModulePatch;
 
 public class CPListElement {
 
@@ -109,11 +109,11 @@ public class CPListElement {
 	public CPListElement(Object parent, IJavaProject project, int entryKind, IPath path, IResource res, IPath linkTarget) {
 		this(parent, project, entryKind, path, false, res, linkTarget);
 	}
-	
+
 	public CPListElement(Object parent, IJavaProject project, int entryKind, IPath path, boolean newElement, IResource res, IPath linkTarget) {
 		this(parent, project, null, entryKind, path, null, newElement, res, linkTarget);
 	}
-	
+
 	public CPListElement(Object parent, IJavaProject project, IClasspathEntry entry, int entryKind, IPath path, IModuleDescription module, boolean newElement, IResource res, IPath linkTarget) {
 		fProject= project;
 
@@ -180,8 +180,7 @@ public class CPListElement {
 									return;
 								}
 							}
-							for (int i= 0; i < entries.length; i++) {
-								IClasspathEntry currEntry= entries[i];
+							for (IClasspathEntry currEntry : entries) {
 								if (currEntry != null) {
 									CPListElement curr= createFromExisting(this, currEntry, fProject);
 									fChildren.add(curr);
@@ -205,13 +204,22 @@ public class CPListElement {
 		boolean modulesAdded= false;
 		if (containerEntry != null) {
 			IPackageFragmentRoot[] fragmentRoots= fProject.findPackageFragmentRoots(containerEntry);
-			if (fragmentRoots != null && fragmentRoots.length > 1) {
-				for (IPackageFragmentRoot fragmentRoot : fragmentRoots) {
-					IModuleDescription currModule= fragmentRoot.getModuleDescription();
-					if (currModule != null) {
-						CPListElement curr= create(this, pseudoEntry, currModule, true, fProject);
-						fChildren.add(curr);
-						modulesAdded= true;
+			if (fragmentRoots != null) {
+				// detect if system library:
+				boolean addChildren= false;
+				if (fragmentRoots.length > 0) {
+					IModuleDescription module= fragmentRoots[0].getModuleDescription();
+					if (module != null && module.isSystemModule())
+						addChildren= true;
+				}
+				if (addChildren) {
+					for (IPackageFragmentRoot fragmentRoot : fragmentRoots) {
+						IModuleDescription currModule= fragmentRoot.getModuleDescription();
+						if (currModule != null) {
+							CPListElement curr= create(this, pseudoEntry, currModule, true, fProject);
+							fChildren.add(curr);
+							modulesAdded= true;
+						}
 					}
 				}
 			}
@@ -231,8 +239,7 @@ public class CPListElement {
 
 	private IClasspathAttribute[] getClasspathAttributes() {
 		ArrayList<IClasspathAttribute> res= new ArrayList<>();
-		for (int i= 0; i < fChildren.size(); i++) {
-			Object curr= fChildren.get(i);
+		for (Object curr : fChildren) {
 			if (curr instanceof CPListElementAttribute) {
 				CPListElementAttribute elem= (CPListElementAttribute) curr;
 				if (!elem.isBuiltIn()) {
@@ -250,6 +257,10 @@ public class CPListElement {
 					String encodedExports= ModuleEncapsulationDetail.encodeFiltered(detailValue, ModuleAddExport.class);
 					if (!encodedExports.isEmpty()) {
 						res.add(JavaCore.newClasspathAttribute(IClasspathAttribute.ADD_EXPORTS, encodedExports));
+					}
+					String encodedOpens= ModuleEncapsulationDetail.encodeFiltered(detailValue, ModuleAddOpens.class);
+					if (!encodedOpens.isEmpty()) {
+						res.add(JavaCore.newClasspathAttribute(IClasspathAttribute.ADD_OPENS, encodedOpens));
 					}
 					String encodedReads= ModuleEncapsulationDetail.encodeFiltered(detailValue, ModuleAddReads.class);
 					if (!encodedReads.isEmpty()) {
@@ -406,8 +417,7 @@ public class CPListElement {
 	}
 
 	public CPListElementAttribute findAttributeElement(String key) {
-		for (int i= 0; i < fChildren.size(); i++) {
-			Object curr= fChildren.get(i);
+		for (Object curr : fChildren) {
 			if (curr instanceof CPListElementAttribute) {
 				CPListElementAttribute elem= (CPListElementAttribute) curr;
 				if (key.equals(elem.getKey())) {
@@ -429,8 +439,7 @@ public class CPListElement {
 
 	public CPListElementAttribute[] getAllAttributes() {
 		ArrayList<Object> res= new ArrayList<>();
-		for (int i= 0; i < fChildren.size(); i++) {
-			Object curr= fChildren.get(i);
+		for (Object curr : fChildren) {
 			if (curr instanceof CPListElementAttribute) {
 				res.add(curr);
 			}
@@ -443,9 +452,10 @@ public class CPListElement {
 		if (moduleDetails instanceof ModuleEncapsulationDetail[]) {
 			ModuleEncapsulationDetail[] details= (ModuleEncapsulationDetail[]) moduleDetails;
 			List<T> elements= new ArrayList<>(details.length);
-			for (int i= 0; i < details.length; i++) {
-				if (clazz.isInstance(details[i]))
-					elements.add(clazz.cast(details[i]));
+			for (ModuleEncapsulationDetail detail : details) {
+				if (clazz.isInstance(detail)) {
+					elements.add(clazz.cast(detail));
+				}
 			}
 			return elements;
 		} else {
@@ -453,16 +463,18 @@ public class CPListElement {
 		}
 	}
 
-	private void createAttributeElement(String key, Object value, boolean builtIn) {
-		fChildren.add(new CPListElementAttribute(this, key, value, builtIn));
+	public CPListElementAttribute createAttributeElement(String key, Object value, boolean builtIn) {
+		CPListElementAttribute attribute= new CPListElementAttribute(this, key, value, builtIn);
+		fChildren.add(attribute);
+		return attribute;
 	}
 
 	private static boolean isFiltered(Object entry, String[] filteredKeys) {
 		if (entry instanceof CPListElementAttribute) {
 			CPListElementAttribute curr= (CPListElementAttribute) entry;
 			String key= curr.getKey();
-			for (int i= 0; i < filteredKeys.length; i++) {
-				if (key.equals(filteredKeys[i])) {
+			for (String filteredKey : filteredKeys) {
+				if (key.equals(filteredKey)) {
 					return true;
 				}
 			}
@@ -480,8 +492,7 @@ public class CPListElement {
 		int nChildren= fChildren.size();
 		ArrayList<Object> res= new ArrayList<>(nChildren);
 
-		for (int i= 0; i < nChildren; i++) {
-			Object curr= fChildren.get(i);
+		for (Object curr : fChildren) {
 			if (!isFiltered(curr, filteredKeys)) {
 				res.add(curr);
 			}
@@ -508,7 +519,7 @@ public class CPListElement {
 
 	/**
 	 * Sets the parent container.
-	 * 
+	 *
 	 * @param parent the parent container
 	 * @since 3.7
 	 */
@@ -591,7 +602,15 @@ public class CPListElement {
 	public boolean equals(Object other) {
 		if (other != null && other.getClass().equals(getClass())) {
 			CPListElement elem= (CPListElement) other;
-			return getClasspathEntry().equals(elem.getClasspathEntry());
+			if (!getClasspathEntry().equals(elem.getClasspathEntry())) {
+				return false;
+			}
+			if (this.fModule != null && elem.fModule != null) {
+				if (!this.fModule.equals(elem.fModule)) {
+					return false;
+				}
+			}
+			return this.fModule == null && elem.fModule == null;
 		}
 		return false;
 	}
@@ -603,7 +622,11 @@ public class CPListElement {
 	public int hashCode() {
 		if(fPath==null)
 			return super.hashCode();
-		return fPath.hashCode() + fEntryKind;
+		int code= fPath.hashCode() + fEntryKind;
+		if (this.fModule != null) {
+			code= 31 * code + this.fModule.hashCode();
+		}
+		return code;
 	}
 
 	@Override
@@ -624,8 +647,7 @@ public class CPListElement {
 	 * @return Returns a boolean
 	 */
 	public boolean hasMissingChildren() {
-		for (int i= 0; i < fChildren.size(); i++) {
-			Object curr= fChildren.get(i);
+		for (Object curr : fChildren) {
 			if (curr instanceof CPListElement && ((CPListElement) curr).isMissing()) {
 				return true;
 			}
@@ -678,7 +700,7 @@ public class CPListElement {
 		//Note: Some old clients of this method could actually mean create(parent, curr, true, project)
 		return create(parent, curr, null, false, project);
 	}
-	
+
 	public static CPListElement create(IClasspathEntry curr, boolean newElement, IJavaProject project) {
 		return create(null, curr, null, newElement, project);
 	}
@@ -752,14 +774,13 @@ public class CPListElement {
 		elem.setAttribute(COMBINE_ACCESSRULES, Boolean.valueOf(curr.combineAccessRules()));
 
 		IClasspathAttribute[] extraAttributes= curr.getExtraAttributes();
-		for (int i= 0; i < extraAttributes.length; i++) {
-			IClasspathAttribute attrib= extraAttributes[i];
+		for (IClasspathAttribute attrib : extraAttributes) {
 			CPListElementAttribute attribElem= elem.findAttributeElement(attrib.getName());
 			if (attribElem == null) {
 				if (!isModuleAttribute(attrib.getName())) {
 					elem.createAttributeElement(attrib.getName(), attrib.getValue(), false);
 				} else if (attrib.getName().equals(MODULE)) {
-					attribElem = new CPListElementAttribute(elem, MODULE, null, true);
+					attribElem= new CPListElementAttribute(elem, MODULE, null, true);
 					attribElem.setValue(getModuleAttributeValue(attribElem, attrib, extraAttributes));
 					elem.fChildren.add(attribElem);
 				}
@@ -779,12 +800,13 @@ public class CPListElement {
 	private static Object getModuleAttributeValue(CPListElementAttribute attribElem, IClasspathAttribute attrib, IClasspathAttribute[] extraAttributes) {
 		if (ModuleAttributeConfiguration.TRUE.equals(attrib.getValue())) {
 			List<ModuleEncapsulationDetail> details= new ArrayList<>();
-			for (int j= 0; j < extraAttributes.length; j++) {
-				IClasspathAttribute otherAttrib= extraAttributes[j];
+			for (IClasspathAttribute otherAttrib : extraAttributes) {
 				if (IClasspathAttribute.PATCH_MODULE.equals(otherAttrib.getName())) {
-					details.add(ModulePatch.fromString(attribElem, otherAttrib.getValue()));
+					details.addAll(ModulePatch.fromMultiString(attribElem, otherAttrib.getValue()));
 				} else if (IClasspathAttribute.ADD_EXPORTS.equals(otherAttrib.getName())) {
-					details.addAll(ModuleAddExport.fromMultiString(attribElem, otherAttrib.getValue()));
+					details.addAll(ModuleAddExpose.fromMultiString(attribElem, otherAttrib.getValue(), true));
+				} else if (IClasspathAttribute.ADD_OPENS.equals(otherAttrib.getName())) {
+					details.addAll(ModuleAddExpose.fromMultiString(attribElem, otherAttrib.getValue(), false));
 				} else if (IClasspathAttribute.ADD_READS.equals(otherAttrib.getName())) {
 					details.addAll(ModuleAddReads.fromMultiString(attribElem, otherAttrib.getValue()));
 				} else if (IClasspathAttribute.LIMIT_MODULES.equals(otherAttrib.getName())) {
@@ -799,7 +821,7 @@ public class CPListElement {
 
 	private static boolean isModuleAttribute(String attributeName) {
 		return Stream.of(IClasspathAttribute.MODULE, IClasspathAttribute.LIMIT_MODULES,
-					IClasspathAttribute.PATCH_MODULE, IClasspathAttribute.ADD_EXPORTS, IClasspathAttribute.ADD_READS)
+					IClasspathAttribute.PATCH_MODULE, IClasspathAttribute.ADD_EXPORTS, IClasspathAttribute.ADD_OPENS, IClasspathAttribute.ADD_READS)
 				.anyMatch(attributeName::equals);
 	}
 
@@ -825,8 +847,8 @@ public class CPListElement {
 	public static StringBuffer appendEncodedFilter(IPath[] filters, StringBuffer buf) {
 		if (filters != null) {
 			buf.append('[').append(filters.length).append(']');
-			for (int i= 0; i < filters.length; i++) {
-				appendEncodePath(filters[i], buf).append(';');
+			for (IPath filter : filters) {
+				appendEncodePath(filter, buf).append(';');
 			}
 		} else {
 			buf.append('[').append(']');
@@ -837,9 +859,9 @@ public class CPListElement {
 	public static StringBuffer appendEncodedAccessRules(IAccessRule[] rules, StringBuffer buf) {
 		if (rules != null) {
 			buf.append('[').append(rules.length).append(']');
-			for (int i= 0; i < rules.length; i++) {
-				appendEncodePath(rules[i].getPattern(), buf).append(';');
-				buf.append(rules[i].getKind()).append(';');
+			for (IAccessRule rule : rules) {
+				appendEncodePath(rule.getPattern(), buf).append(';');
+				buf.append(rule.getKind()).append(';');
 			}
 		} else {
 			buf.append('[').append(']');
@@ -857,36 +879,49 @@ public class CPListElement {
 			appendEncodePath(getLinkTarget(), buf).append(';');
 		}
 		buf.append(Boolean.valueOf(fIsExported)).append(';');
-		for (int i= 0; i < fChildren.size(); i++) {
-			Object curr= fChildren.get(i);
+		for (Object curr : fChildren) {
 			if (curr instanceof CPListElementAttribute) {
 				CPListElementAttribute elem= (CPListElementAttribute) curr;
 				if (elem.isBuiltIn()) {
 					String key= elem.getKey();
-					if (OUTPUT.equals(key) || SOURCEATTACHMENT.equals(key)) {
-						appendEncodePath((IPath) elem.getValue(), buf).append(';');
-					} else if (EXCLUSION.equals(key) || INCLUSION.equals(key)) {
-						appendEncodedFilter((IPath[]) elem.getValue(), buf).append(';');
-					} else if (ACCESSRULES.equals(key)) {
-						appendEncodedAccessRules((IAccessRule[]) elem.getValue(), buf).append(';');
-					} else if (COMBINE_ACCESSRULES.equals(key)) {
-						buf.append(((Boolean) elem.getValue()).booleanValue()).append(';');
-					} else if (MODULE.equals(key)) {
-						Object value= elem.getValue();
-						if (value instanceof ModuleEncapsulationDetail[]) {
-							buf.append(MODULE+"=true;"); //$NON-NLS-1$
-							for (ModuleEncapsulationDetail detail : ((ModuleEncapsulationDetail[]) value)) {
-								if (detail instanceof ModulePatch)
-									buf.append(IClasspathAttribute.PATCH_MODULE+':'+detail.toString()).append(';');
-								if (detail instanceof ModuleAddExport)
-									buf.append(IClasspathAttribute.ADD_EXPORTS+':'+detail.toString()).append(';');
-								if (detail instanceof ModuleAddReads)
-									buf.append(IClasspathAttribute.ADD_READS+':'+detail.toString()).append(';');
-								if (detail instanceof LimitModules)
-									buf.append(IClasspathAttribute.LIMIT_MODULES+':'+detail.toString()).append(';');
-							}
-						} else {
-							buf.append(MODULE+"=false;"); //$NON-NLS-1$
+					if (key != null) {
+						switch (key) {
+							case OUTPUT:
+							case SOURCEATTACHMENT:
+								appendEncodePath((IPath) elem.getValue(), buf).append(';');
+								break;
+							case EXCLUSION:
+							case INCLUSION:
+								appendEncodedFilter((IPath[]) elem.getValue(), buf).append(';');
+								break;
+							case ACCESSRULES:
+								appendEncodedAccessRules((IAccessRule[]) elem.getValue(), buf).append(';');
+								break;
+							case COMBINE_ACCESSRULES:
+								buf.append(((Boolean) elem.getValue()).booleanValue()).append(';');
+								break;
+							case MODULE:
+								Object value= elem.getValue();
+								if (value instanceof ModuleEncapsulationDetail[]) {
+									buf.append(MODULE+"=true;"); //$NON-NLS-1$
+									for (ModuleEncapsulationDetail detail : ((ModuleEncapsulationDetail[]) value)) {
+										if (detail instanceof ModulePatch)
+											buf.append(IClasspathAttribute.PATCH_MODULE+':'+detail.toString()).append(';');
+										if (detail instanceof ModuleAddExport)
+											buf.append(IClasspathAttribute.ADD_EXPORTS+':'+detail.toString()).append(';');
+										if (detail instanceof ModuleAddOpens)
+											buf.append(IClasspathAttribute.ADD_OPENS+':'+detail.toString()).append(';');
+										if (detail instanceof ModuleAddReads)
+											buf.append(IClasspathAttribute.ADD_READS+':'+detail.toString()).append(';');
+										if (detail instanceof LimitModules)
+											buf.append(IClasspathAttribute.LIMIT_MODULES+':'+detail.toString()).append(';');
+									}
+								} else {
+									buf.append(MODULE+"=false;"); //$NON-NLS-1$
+								}
+								break;
+							default:
+								break;
 						}
 					}
 				} else {
@@ -944,8 +979,7 @@ public class CPListElement {
 	public static IClasspathEntry[] convertToClasspathEntries(List<CPListElement> cpList) {
 		IClasspathEntry[] result= new IClasspathEntry[cpList.size()];
 		int i= 0;
-		for (Iterator<CPListElement> iter= cpList.iterator(); iter.hasNext();) {
-			CPListElement cur= iter.next();
+		for (CPListElement cur : cpList) {
 			result[i]= cur.getClasspathEntry();
 			i++;
 		}
@@ -963,8 +997,8 @@ public class CPListElement {
 
 	public static boolean isProjectSourceFolder(CPListElement[] existing, IJavaProject project) {
 		IPath projPath= project.getProject().getFullPath();
-		for (int i= 0; i < existing.length; i++) {
-			IClasspathEntry curr= existing[i].getClasspathEntry();
+		for (CPListElement e : existing) {
+			IClasspathEntry curr= e.getClasspathEntry();
 			if (curr.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
 				if (projPath.equals(curr.getPath())) {
 					return true;
@@ -995,14 +1029,13 @@ public class CPListElement {
     	result.fParentContainer= fParentContainer;
     	result.fCachedEntry= null;
     	result.fChildren= new ArrayList<>(fChildren.size());
-    	for (Iterator<Object> iterator= fChildren.iterator(); iterator.hasNext();) {
-    		Object child= iterator.next();
-    		if (child instanceof CPListElement) {
-    			result.fChildren.add(((CPListElement)child).copy());
-    		} else {
-	        	result.fChildren.add(((CPListElementAttribute)child).copy());
-    		}
-        }
+		for (Object child : fChildren) {
+			if (child instanceof CPListElement) {
+				result.fChildren.add(((CPListElement)child).copy());
+			} else {
+				result.fChildren.add(((CPListElementAttribute)child).copy());
+			}
+		}
     	result.fLinkTarget= fLinkTarget;
     	result.fOrginalLinkTarget= fOrginalLinkTarget;
 	    return result;
@@ -1010,9 +1043,7 @@ public class CPListElement {
 
     public void setAttributesFromExisting(CPListElement existing) {
     	Assert.isTrue(existing.getEntryKind() == getEntryKind());
-		CPListElementAttribute[] attributes= existing.getAllAttributes();
-		for (int i= 0; i < attributes.length; i++) {
-			CPListElementAttribute curr= attributes[i];
+		for (CPListElementAttribute curr : existing.getAllAttributes()) {
 			CPListElementAttribute elem= findAttributeElement(curr.getKey());
 			if (elem == null) {
 				createAttributeElement(curr.getKey(), curr.getValue(), curr.isBuiltIn());
@@ -1033,11 +1064,10 @@ public class CPListElement {
 			moduleAttribute.setValue(new ModuleEncapsulationDetail[0]);
 		}
 	}
-	
+
 	public void updateExtraAttributeOfClasspathEntry() {
 		if (fChildren != null) {
-			for (int i= 0; i < fChildren.size(); i++) {
-				Object curr= fChildren.get(i);
+			for (Object curr : fChildren) {
 				if (curr instanceof CPListElementAttribute) {
 					CPListElementAttribute elem= (CPListElementAttribute) curr;
 					String key= elem.getKey();
@@ -1059,9 +1089,9 @@ public class CPListElement {
 	boolean isModulePathRootNode() {
 		return false;
 	}
-	
+
 	boolean isClassPathRootNode() {
-		return false; 
+		return false;
 	}
 
 

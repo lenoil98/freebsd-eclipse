@@ -37,16 +37,17 @@ public class ProjectPresentationHandler extends AbstractHandler {
 		IWorkbenchPart part = HandlerUtil.getActivePart(event);
 		if (part instanceof CommonNavigator) {
 			CommonNavigator navigator = (CommonNavigator)part;
-			boolean previousNest = navigator.getNavigatorContentService().getActivationService().isNavigatorExtensionActive(NestedProjectsContentProvider.EXTENSION_ID);
 			String newNestParam = event.getParameter(ProjectPresentationHandler.NEST_PARAMETER);
 			boolean newNest = false;
 			if (newNestParam != null) {
 				newNest = Boolean.parseBoolean(newNestParam);
 			}
+			boolean previousNest = navigator.getNavigatorContentService().getActivationService()
+					.isNavigatorExtensionActive(NestedProjectsContentProvider.EXTENSION_ID);
 			if (newNest != previousNest) {
 				ISelection initialSelection = navigator.getCommonViewer().getSelection();
 				INavigatorFilterService filterService = navigator.getNavigatorContentService().getFilterService();
-				Set<String> filters = new HashSet<String>();
+				Set<String> filters = new HashSet<>();
 				for (ICommonFilterDescriptor desc : filterService.getVisibleFilterDescriptors()) {
 					if (filterService.isActive(desc.getId())) {
 						filters.add(desc.getId());
@@ -66,12 +67,10 @@ public class ProjectPresentationHandler extends AbstractHandler {
 				navigator.getCommonViewer().refresh();
 				navigator.getCommonViewer().setSelection(initialSelection);
 			}
-
 			HandlerUtil.updateRadioState(event.getCommand(), Boolean.toString(newNest));
 
 			return Boolean.valueOf(newNest);
 		}
-
 		return false;
 	}
 

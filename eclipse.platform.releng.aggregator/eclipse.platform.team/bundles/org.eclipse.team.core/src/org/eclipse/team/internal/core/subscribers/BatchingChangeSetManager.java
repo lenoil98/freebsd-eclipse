@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.team.internal.core.subscribers;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -64,14 +65,8 @@ public class BatchingChangeSetManager extends ChangeSetManager {
 				changed.put(changeSet, allAffectedResources);
 			} else {
 				Set<IPath> allPaths = new HashSet<>();
-				for (int i = 0; i < paths.length; i++) {
-					IPath path = paths[i];
-					allPaths.add(path);
-				}
-				for (int i = 0; i < allAffectedResources.length; i++) {
-					IPath path = allAffectedResources[i];
-					allPaths.add(path);
-				}
+				Collections.addAll(allPaths, paths);
+				Collections.addAll(allPaths, allAffectedResources);
 				changed.put(changeSet, allPaths.toArray(new IPath[allPaths.size()]));
 			}
 		}
@@ -123,16 +118,16 @@ public class BatchingChangeSetManager extends ChangeSetManager {
 		}
 	}
 
-    private void fireChanges(final IProgressMonitor monitor) {
-    	if (changes.isEmpty()) {
-    		return;
-    	}
-    	final CollectorChangeEvent event = changes;
-    	changes = new CollectorChangeEvent(this);
-        Object[] listeners = getListeners();
-        for (int i = 0; i < listeners.length; i++) {
-            final IChangeSetChangeListener listener = (IChangeSetChangeListener)listeners[i];
-            if (listener instanceof IChangeSetCollectorChangeListener) {
+	private void fireChanges(final IProgressMonitor monitor) {
+		if (changes.isEmpty()) {
+			return;
+		}
+		final CollectorChangeEvent event = changes;
+		changes = new CollectorChangeEvent(this);
+		Object[] listeners = getListeners();
+		for (Object l : listeners) {
+			final IChangeSetChangeListener listener = (IChangeSetChangeListener) l;
+			if (listener instanceof IChangeSetCollectorChangeListener) {
 				final IChangeSetCollectorChangeListener csccl = (IChangeSetCollectorChangeListener) listener;
 				SafeRunner.run(new ISafeRunnable() {
 					@Override
@@ -145,44 +140,44 @@ public class BatchingChangeSetManager extends ChangeSetManager {
 					}
 				});
 			}
-        }
+		}
 	}
 
-    @Override
+	@Override
 	public void add(ChangeSet set) {
-    	try {
-    		beginInput();
-    		super.add(set);
-    		changes.setAdded(set);
-    	} finally {
-    		endInput(null);
-    	}
-    }
+		try {
+			beginInput();
+			super.add(set);
+			changes.setAdded(set);
+		} finally {
+			endInput(null);
+		}
+	}
 
-    @Override
+	@Override
 	public void remove(ChangeSet set) {
-    	try {
-    		beginInput();
-    		super.remove(set);
-    		changes.setRemoved(set);
-    	} finally {
-    		endInput(null);
-    	}
-    }
+		try {
+			beginInput();
+			super.remove(set);
+			changes.setRemoved(set);
+		} finally {
+			endInput(null);
+		}
+	}
 
-    @Override
+	@Override
 	protected void fireResourcesChangedEvent(ChangeSet changeSet, IPath[] allAffectedResources) {
-    	super.fireResourcesChangedEvent(changeSet, allAffectedResources);
-    	try {
-    		beginInput();
-    		changes.changed(changeSet, allAffectedResources);
-    	} finally {
-    		endInput(null);
-    	}
-    }
+		super.fireResourcesChangedEvent(changeSet, allAffectedResources);
+		try {
+			beginInput();
+			changes.changed(changeSet, allAffectedResources);
+		} finally {
+			endInput(null);
+		}
+	}
 
-    @Override
+	@Override
 	protected void initializeSets() {
-    	// Nothing to do
-    }
+		// Nothing to do
+	}
 }

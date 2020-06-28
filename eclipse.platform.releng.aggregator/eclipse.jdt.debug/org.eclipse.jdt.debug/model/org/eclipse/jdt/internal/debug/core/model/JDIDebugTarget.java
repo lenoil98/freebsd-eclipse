@@ -17,6 +17,7 @@ package org.eclipse.jdt.internal.debug.core.model;
 
 import java.io.IOException;
 import java.net.URI;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,7 +96,6 @@ import org.eclipse.jdt.internal.debug.core.JDIDebugPlugin;
 import org.eclipse.jdt.internal.debug.core.breakpoints.JavaBreakpoint;
 import org.eclipse.jdt.internal.debug.core.breakpoints.JavaLineBreakpoint;
 
-import com.ibm.icu.text.MessageFormat;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.InternalException;
 import com.sun.jdi.Location;
@@ -676,7 +676,21 @@ public class JDIDebugTarget extends JDIDebugElement implements
 	@Override
 	public IThread[] getThreads() {
 		synchronized (fThreads) {
-			return fThreads.toArray(new IThread[0]);
+			IThread[] threads = new IThread[fThreads.size()];
+			int index = 0;
+			for (JDIThread thread : fThreads) {
+				if (!thread.isSystemThread()) {
+					threads[index] = thread;
+					++index;
+				}
+			}
+			for (JDIThread thread : fThreads) {
+				if (thread.isSystemThread()) {
+					threads[index] = thread;
+					++index;
+				}
+			}
+			return threads;
 		}
 	}
 
@@ -1999,7 +2013,7 @@ public class JDIDebugTarget extends JDIDebugElement implements
 					try {
 						org.eclipse.jdi.hcr.ReferenceType rt = (org.eclipse.jdi.hcr.ReferenceType) type;
 						if (rt.isVersionKnown()) {
-							return new Integer(rt.getClassFileVersion());
+							return Integer.valueOf(rt.getClassFileVersion());
 						}
 					} catch (RuntimeException e) {
 						targetRequestFailed(
@@ -2027,7 +2041,7 @@ public class JDIDebugTarget extends JDIDebugElement implements
 						new VMDisconnectedException());
 			}
 			List<ReferenceType> classes = vm.classesByName(name);
-			if (classes.size() == 0) {
+			if (classes.isEmpty()) {
 				switch (name.charAt(0)) {
 				case 'b':
 					if (name.equals("boolean")) { //$NON-NLS-1$
@@ -2391,12 +2405,14 @@ public class JDIDebugTarget extends JDIDebugElement implements
 		private static final String METHOD_SIGNATURE = "(Ljava/lang/String;)V"; //$NON-NLS-1$
 
 		private EventRequest request;
+		private ThreadChangeNotifierJob notfierJob;
 
 		ThreadNameChangeHandler() {
 			String disableListenerSystemProperty = System.getProperty(DISABLE_THREAD_NAME_CHANGE_LISTENER);
 			boolean isDisabled = String.valueOf(Boolean.TRUE).equals(disableListenerSystemProperty);
 			if (!isDisabled) {
 				createRequest();
+				notfierJob = new ThreadChangeNotifierJob();
 			}
 		}
 
@@ -2450,6 +2466,9 @@ public class JDIDebugTarget extends JDIDebugElement implements
 			if (request != null) {
 				removeJDIEventListener(this, request);
 			}
+			if (notfierJob != null) {
+				notfierJob.stop();
+			}
 		}
 
 		@Override
@@ -2461,7 +2480,7 @@ public class JDIDebugTarget extends JDIDebugElement implements
 			}
 			if (thread != null) {
 				// trigger updates on the thread
-				DebugPlugin.getDefault().fireDebugEventSet(new DebugEvent[] { new DebugEvent(thread, DebugEvent.CHANGE, DebugEvent.STATE) });
+				notfierJob.notifyAboutChange(thread);
 			}
 			// we never suspend the thread
 			return true;
@@ -2481,6 +2500,59 @@ public class JDIDebugTarget extends JDIDebugElement implements
 			if (isAvailable()) {
 				JDIDebugPlugin.log(status);
 			}
+		}
+	}
+
+	/**
+	 * Job to throttle thread name change events notification.
+	 */
+	class ThreadChangeNotifierJob extends Job {
+
+		private final LinkedHashSet<JDIThread> queue;
+
+		public ThreadChangeNotifierJob() {
+			super(JDIDebugModelMessages.JDIDebugTarget_ThreadNameNotifier);
+			setSystem(true);
+			setPriority(Job.DECORATE);
+			queue = new LinkedHashSet<>();
+		}
+
+		public void notifyAboutChange(JDIThread thread) {
+			synchronized (queue) {
+				if (queue.add(thread)) {
+					// if there are too many threads changing names, they may slow down debugger
+					int delay = Math.min(1000, 300 * queue.size());
+					schedule(delay);
+				}
+			}
+		}
+
+		void stop() {
+			synchronized (queue) {
+				queue.clear();
+			}
+			cancel();
+		}
+
+		@Override
+		protected IStatus run(IProgressMonitor monitor) {
+			DebugEvent[] events;
+			synchronized (queue) {
+				events = queue.stream().map(t -> new DebugEvent(t, DebugEvent.CHANGE, DebugEvent.STATE)).toArray(DebugEvent[]::new);
+				queue.clear();
+			}
+			if (monitor.isCanceled()) {
+				return Status.CANCEL_STATUS;
+			}
+			// Dispatch known events
+			DebugPlugin.getDefault().fireDebugEventSet(events);
+			return Status.OK_STATUS;
+		}
+
+
+		@Override
+		public boolean belongsTo(Object family) {
+			return family == JDIDebugTarget.this;
 		}
 	}
 

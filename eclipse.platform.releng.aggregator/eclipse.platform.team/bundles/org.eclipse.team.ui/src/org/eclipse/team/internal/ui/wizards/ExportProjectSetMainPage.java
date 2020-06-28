@@ -16,6 +16,7 @@ package org.eclipse.team.internal.ui.wizards;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -56,7 +57,6 @@ import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.internal.ui.IHelpContextIds;
 import org.eclipse.team.internal.ui.SWTUtils;
 import org.eclipse.team.internal.ui.TeamUIMessages;
-import org.eclipse.team.internal.ui.TeamUIPlugin;
 import org.eclipse.team.internal.ui.Utils;
 import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.IWorkingSetManager;
@@ -95,12 +95,12 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 		public TreePath[] getParents(Object element) {
 			if (element instanceof IProject){
 				ArrayList<IWorkingSet> treePaths = new ArrayList<>();
-				IWorkingSet[] workingSets = TeamUIPlugin.getPlugin().getWorkbench().getWorkingSetManager().getWorkingSets();
-				for (int i = 0; i < workingSets.length; i++) {
-					IAdaptable[] elements = workingSets[i].getElements();
-					for (int j = 0; j < elements.length; j++) {
-						if (elements[j].equals(element)){
-							treePaths.add(workingSets[i]);
+				IWorkingSet[] workingSets = PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets();
+				for (IWorkingSet workingSet : workingSets) {
+					IAdaptable[] elements = workingSet.getElements();
+					for (IAdaptable d : elements) {
+						if (d.equals(element)) {
+							treePaths.add(workingSet);
 							break;
 						}
 					}
@@ -125,9 +125,9 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 				IWorkspaceRoot root = (IWorkspaceRoot) inputElement;
 				List<IProject> projectList = new ArrayList<>();
 				IProject[] workspaceProjects = root.getProjects();
-				for (int i = 0; i < workspaceProjects.length; i++) {
-					if (isProjectExportable(workspaceProjects[i])) {
-						projectList.add(workspaceProjects[i]);
+				for (IProject workspaceProject : workspaceProjects) {
+					if (isProjectExportable(workspaceProject)) {
+						projectList.add(workspaceProject);
 					}
 				}
 				return projectList.toArray(new IProject[projectList.size()]);
@@ -135,9 +135,11 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 				IWorkingSetManager manager = (IWorkingSetManager) inputElement;
 				IWorkingSet[] allSets = manager.getAllWorkingSets();
 				ArrayList<IWorkingSet> resourceSets = new ArrayList<>();
-				for (int i = 0; i < allSets.length; i++)
-					if (isWorkingSetSupported(allSets[i]))
-						resourceSets.add(allSets[i]);
+				for (IWorkingSet set : allSets) {
+					if (isWorkingSetSupported(set)) {
+						resourceSets.add(set);
+					}
+				}
 
 				return resourceSets.toArray(new IWorkingSet[resourceSets.size()]);
 			} else if (inputElement instanceof IAdaptable){
@@ -173,7 +175,7 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 
 		}
 
-	};
+	}
 
 	private class ExportProjectSetLabelProvider extends WorkbenchLabelProvider {
 
@@ -202,8 +204,8 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 
 	private IProject[] getProjectsForAdaptables(IAdaptable[] adaptable) {
 		Set<IProject> projectSet = new HashSet<>();
-		for (int i = 0; i < adaptable.length; i++) {
-			IProject[] projects = getProjectsForObject(adaptable[i]);
+		for (IAdaptable a : adaptable) {
+			IProject[] projects = getProjectsForObject(a);
 			if (projects != null)
 				projectSet.addAll(Arrays.asList(projects));
 		}
@@ -216,8 +218,8 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 	private static boolean isWorkingSetSupported(IWorkingSet workingSet) {
 		if (!workingSet.isEmpty() && !workingSet.isAggregateWorkingSet()) {
 			IAdaptable[] elements = workingSet.getElements();
-			for (int i = 0; i < elements.length; i++) {
-				IResource resource = ResourceUtil.getResource(elements[i]);
+			for (IAdaptable element : elements) {
+				IResource resource = ResourceUtil.getResource(element);
 				if (resource != null)
 					// support a working set if it contains at least one resource
 					return true;
@@ -254,8 +256,8 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 
 		// filter out unexportable projects
 		List passedInExportableProjects = new ArrayList();
-		for (Iterator iterator = passedInSelectedProjects.iterator(); iterator.hasNext();) {
-			IProject project = (IProject) iterator.next();
+		for (Object element : passedInSelectedProjects) {
+			IProject project = (IProject) element;
 			if (isProjectExportable(project))
 				passedInExportableProjects.add(project);
 		}
@@ -380,13 +382,11 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 					IWorkingSet workingSet = (IWorkingSet) temp;
 					if (event.getChecked()){
 						IAdaptable[] elements1 = workingSet.getElements();
-						for (int i1 = 0; i1 < elements1.length; i1++) {
-							selectedProjects.add(elements1[i1]);
-						}
+						Collections.addAll(selectedProjects, elements1);
 					} else {
 						IAdaptable[] elements2 = workingSet.getElements();
-						for (int i2 = 0; i2 < elements2.length; i2++) {
-							selectedProjects.remove(elements2[i2]);
+						for (IAdaptable element : elements2) {
+							selectedProjects.remove(element);
 						}
 					}
 				}
@@ -413,9 +413,7 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 				tableViewer.setAllChecked(true);
 				selectedProjects.removeAll(selectedProjects);
 				Object[] checked = tableViewer.getCheckedElements();
-				for (int i = 0; i < checked.length; i++) {
-					selectedProjects.add(checked[i]);
-				}
+				Collections.addAll(selectedProjects, checked);
 				updateEnablement();
 			});
 
@@ -557,7 +555,7 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 				updateEnablement();
 			});
 
-			wsTableViewer.setInput(TeamUIPlugin.getPlugin().getWorkbench().getWorkingSetManager());
+			wsTableViewer.setInput(PlatformUI.getWorkbench().getWorkingSetManager());
 		}
 
 		private void addButtons(Composite projectComposite){
@@ -584,10 +582,10 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 				selectedProjects.removeAll(selectedProjects);
 				selectedWorkingSet.removeAll(selectedWorkingSet);
 				Object[] checked = wsTableViewer.getCheckedElements();
-				for (int i = 0; i < checked.length; i++) {
-					selectedWorkingSet.add(checked[i]);
-					if (checked[i] instanceof IWorkingSet){
-						IWorkingSet ws = (IWorkingSet) checked[i];
+				for (Object c : checked) {
+					selectedWorkingSet.add(c);
+					if (c instanceof IWorkingSet) {
+						IWorkingSet ws = (IWorkingSet) c;
 						IAdaptable[] elements = ws.getElements();
 						addProjects(elements);
 					}
@@ -622,7 +620,7 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 			newWorkingSet.setLayoutData(data);
 			newWorkingSet.setText(TeamUIMessages.ExportProjectSetMainPage_EditButton);
 			newWorkingSet.addListener(SWT.Selection, event -> {
-				final IWorkingSetManager workingSetManager = TeamUIPlugin.getPlugin().getWorkbench().getWorkingSetManager();
+				final IWorkingSetManager workingSetManager = PlatformUI.getWorkbench().getWorkingSetManager();
 				IWorkingSetSelectionDialog wsWizard = workingSetManager.createWorkingSetSelectionDialog(getShell(), false);
 				if (wsWizard != null) {
 					IPropertyChangeListener propListener = null;
@@ -640,10 +638,10 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 						selectedProjects.removeAll(selectedProjects);
 						wsTableViewer.setInput(workingSetManager);
 						Object[] checked = wsTableViewer.getCheckedElements();
-						for (int i = 0; i < checked.length; i++) {
-							selectedWorkingSet.add(checked[i]);
-							if (checked[i] instanceof IWorkingSet) {
-								IWorkingSet ws = (IWorkingSet) checked[i];
+						for (Object c : checked) {
+							selectedWorkingSet.add(c);
+							if (c instanceof IWorkingSet) {
+								IWorkingSet ws = (IWorkingSet) c;
 								IAdaptable[] elements = ws.getElements();
 								addProjects(elements);
 							}
@@ -670,7 +668,7 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 		}
 
 		public void refresh(){
-			wsTableViewer.setInput(TeamUIPlugin.getPlugin().getWorkbench().getWorkingSetManager());
+			wsTableViewer.setInput(PlatformUI.getWorkbench().getWorkingSetManager());
 		}
 
 		private void updateEnablement() {
@@ -681,9 +679,8 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 			// check if there is at least one exportable project selected
 			if (complete || !pageShown) {
 				complete = false;
-				for (Iterator iterator = selectedProjects.iterator(); iterator
-						.hasNext();) {
-					IProject selectedProject = (IProject) iterator.next();
+				for (Object element : selectedProjects) {
+					IProject selectedProject = (IProject) element;
 					if (isProjectExportable(selectedProject)) {
 						complete = true;
 					} else {
@@ -739,16 +736,15 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 			selectedWorkingSet.remove(workingSet);
 
 			Set<IProject> tempSet = new HashSet<>();
-			for (int i = 0; i < elements.length; i++) {
-				IProject[] projects = getProjectsForObject(elements[i]);
+			for (IAdaptable element : elements) {
+				IProject[] projects = getProjectsForObject(element);
 				if (projects != null)
 					tempSet.addAll(Arrays.asList(projects));
 			}
 
 			if (!tempSet.isEmpty()) {
 				selectedProjects.removeAll(tempSet);
-				for (Iterator iterator = tempSet.iterator(); iterator.hasNext();) {
-					Object element = iterator.next();
+				for (Object element : tempSet) {
 					referenceCountProjects.remove(element);
 				}
 				selectedProjects.addAll(referenceCountProjects);
@@ -757,8 +753,8 @@ public class ExportProjectSetMainPage extends TeamWizardPage {
 
 		private void addProjects(IAdaptable[] elements) {
 			Set<IProject> tempSet = new HashSet<>();
-			for (int j = 0; j < elements.length; j++) {
-				IProject[] projects = getProjectsForObject(elements[j]);
+			for (IAdaptable element : elements) {
+				IProject[] projects = getProjectsForObject(element);
 				if (projects != null)
 					tempSet.addAll(Arrays.asList(projects));
 			}

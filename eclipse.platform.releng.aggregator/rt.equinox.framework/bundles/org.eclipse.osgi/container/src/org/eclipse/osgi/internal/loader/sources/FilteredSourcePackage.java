@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -29,18 +29,21 @@ public class FilteredSourcePackage extends SingleSourcePackage {
 		this.excludes = excludes != null ? ManifestElement.getArrayFromList(excludes) : null;
 	}
 
+	@Override
 	public URL getResource(String name) {
 		if (isFiltered(name, getId()))
 			return null;
 		return super.getResource(name);
 	}
 
+	@Override
 	public Enumeration<URL> getResources(String name) {
 		if (isFiltered(name, getId()))
 			return null;
 		return super.getResources(name);
 	}
 
+	@Override
 	public Class<?> loadClass(String name) throws ClassNotFoundException {
 		if (isFiltered(name, getId()))
 			return null;
@@ -71,18 +74,21 @@ public class FilteredSourcePackage extends SingleSourcePackage {
 	}
 
 	private boolean isInList(String name, String[] list) {
-		for (int i = 0; i < list.length; i++) {
-			int len = list[i].length();
+		for (String s : list) {
+			int len = s.length();
 			if (len == 0)
 				continue;
-			if (list[i].charAt(0) == ALL && len == 1)
+			if (s.charAt(0) == ALL && len == 1) {
 				return true; // handles "*" wild card
-			if (list[i].charAt(len - 1) == ALL)
-				if (name.startsWith(list[i].substring(0, len - 1)))
+			}
+			if (s.charAt(len - 1) == ALL) {
+				if (name.startsWith(s.substring(0, len - 1))) {
 					return true;
-			if (name.equals(list[i]))
+				}
+			}
+			if (name.equals(s)) {
 				return true;
-
+			}
 		}
 		return false;
 	}

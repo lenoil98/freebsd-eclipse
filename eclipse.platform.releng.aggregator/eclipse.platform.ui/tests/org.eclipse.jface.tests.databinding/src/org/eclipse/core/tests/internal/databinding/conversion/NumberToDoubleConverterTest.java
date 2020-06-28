@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 import org.eclipse.core.databinding.conversion.IConverter;
 import org.eclipse.core.internal.databinding.conversion.NumberToDoubleConverter;
 
-import com.ibm.icu.text.NumberFormat;
+import java.text.NumberFormat;
 
 /**
  * @since 1.1
@@ -27,7 +27,7 @@ import com.ibm.icu.text.NumberFormat;
 public class NumberToDoubleConverterTest extends NumberToNumberTestHarness {
 	@Override
 	protected Number doGetOutOfRangeNumber() {
-		return new BigDecimal(Double.MAX_VALUE).add(new BigDecimal(Double.MAX_VALUE));
+		return BigDecimal.valueOf(Double.MAX_VALUE).add(BigDecimal.valueOf(Double.MAX_VALUE));
 	}
 
 	@Override

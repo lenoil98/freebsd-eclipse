@@ -16,7 +16,6 @@ package org.eclipse.debug.internal.ui.views.launch;
 
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
-
 import org.eclipse.ui.IPropertyListener;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartSite;
@@ -28,106 +27,70 @@ import org.eclipse.ui.IWorkbenchPartSite;
  */
 class BreadcrumbWorkbenchPart implements IWorkbenchPart {
 
-    private IWorkbenchPartSite fSite = null;
+	private IWorkbenchPartSite fSite = null;
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
+	@Override
 	public boolean equals(Object obj) {
-        return (obj instanceof BreadcrumbWorkbenchPart);
-    }
+		return (obj instanceof BreadcrumbWorkbenchPart);
+	}
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
+	@Override
 	public int hashCode() {
-        return getClass().hashCode();
-    }
+		return getClass().hashCode();
+	}
 
-    /**
-     * Constructs a part for the given console that binds to the given
-     * site
-     * @param site the backing site
-     */
-    public BreadcrumbWorkbenchPart(IWorkbenchPartSite site) {
-        fSite = site;
-    }
+	/**
+	 * Constructs a part for the given console that binds to the given
+	 * site
+	 * @param site the backing site
+	 */
+	public BreadcrumbWorkbenchPart(IWorkbenchPartSite site) {
+		fSite = site;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IWorkbenchPart#addPropertyListener(org.eclipse.ui.IPropertyListener)
-     */
-    @Override
+	@Override
 	public void addPropertyListener(IPropertyListener listener) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IWorkbenchPart#createPartControl(org.eclipse.swt.widgets.Composite)
-     */
-    @Override
+	@Override
 	public void createPartControl(Composite parent) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IWorkbenchPart#dispose()
-     */
-    @Override
+	@Override
 	public void dispose() {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IWorkbenchPart#getSite()
-     */
-    @Override
+	@Override
 	public IWorkbenchPartSite getSite() {
-        return fSite;
-    }
+		return fSite;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IWorkbenchPart#getTitle()
-     */
-    @Override
+	@Override
 	public String getTitle() {
-        return ""; //$NON-NLS-1$
-    }
+		return ""; //$NON-NLS-1$
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IWorkbenchPart#getTitleImage()
-     */
-    @Override
+	@Override
 	public Image getTitleImage() {
-        return null;
-    }
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IWorkbenchPart#getTitleToolTip()
-     */
-    @Override
+	@Override
 	public String getTitleToolTip() {
-        return ""; //$NON-NLS-1$
-    }
+		return ""; //$NON-NLS-1$
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IWorkbenchPart#removePropertyListener(org.eclipse.ui.IPropertyListener)
-     */
-    @Override
+	@Override
 	public void removePropertyListener(IPropertyListener listener) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IWorkbenchPart#setFocus()
-     */
-    @Override
+	@Override
 	public void setFocus() {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.core.runtime.IAdaptable#getAdapter(java.lang.Class)
-     */
-    @Override
+	@Override
 	public <T> T getAdapter(Class<T> adapter) {
-        return null;
-    }
+		return null;
+	}
 }
 

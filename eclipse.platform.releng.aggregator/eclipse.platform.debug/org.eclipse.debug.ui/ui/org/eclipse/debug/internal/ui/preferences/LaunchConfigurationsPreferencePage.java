@@ -88,49 +88,31 @@ public class LaunchConfigurationsPreferencePage extends PreferencePage implement
 			setShellStyle(getShellStyle() | SWT.RESIZE);
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getDialogSettingsId()
-		 */
 		@Override
 		protected String getDialogSettingsId() {
 			return IDebugUIConstants.PLUGIN_ID + ".MIGRATION_SELECTION_DIALOG"; //$NON-NLS-1$
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getHelpContextId()
-		 */
 		@Override
 		protected String getHelpContextId() {
 			return IDebugHelpContextIds.SELECT_LAUNCH_CONFIGURATION_MIGRATION_DIALOG;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getViewerInput()
-		 */
 		@Override
 		protected Object getViewerInput() {
 			return fInput;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getViewerLabel()
-		 */
 		@Override
 		protected String getViewerLabel() {
 			return DebugPreferencesMessages.LaunchingPreferencePage_0;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getContentProvider()
-		 */
 		@Override
 		protected IContentProvider getContentProvider() {
 			return new WorkbenchContentProvider();
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getLabelProvider()
-		 */
 		@Override
 		protected IBaseLabelProvider getLabelProvider() {
 			return DebugUITools.newDebugModelPresentation();
@@ -188,18 +170,12 @@ public class LaunchConfigurationsPreferencePage extends PreferencePage implement
 		setTitle(DebugPreferencesMessages.LaunchConfigurationsPreferencePage_1);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.preference.PreferencePage#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 		super.createControl(parent);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(getControl(), IDebugHelpContextIds.LAUNCH_CONFIGURATION_PREFERENCE_PAGE);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.preference.PreferencePage#createContents(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected Control createContents(Composite parent) {
 		fFieldEditors = new ArrayList<>();
@@ -305,16 +281,15 @@ public class LaunchConfigurationsPreferencePage extends PreferencePage implement
 			ILaunchConfiguration[] configurations = lmanager.getMigrationCandidates();
 			//separate the private from the public
 			List<ILaunchConfiguration> pub = new ArrayList<>();
-			for(int i = 0; i < configurations.length; i++) {
-				if(DebugUITools.isPrivate(configurations[i])) {
+			for (ILaunchConfiguration configuration : configurations) {
+				if (DebugUITools.isPrivate(configuration)) {
 					//auto-migrate private ones
-					configurations[i].migrate();
-				}
-				else {
-					pub.add(configurations[i]);
+					configuration.migrate();
+				} else {
+					pub.add(configuration);
 				}
 			}
-			if(pub.size() == 0) {
+			if(pub.isEmpty()) {
 				MessageDialog.openInformation(getShell(), DebugPreferencesMessages.LaunchingPreferencePage_29, DebugPreferencesMessages.LaunchingPreferencePage_30);
 				return;
 			}
@@ -325,9 +300,9 @@ public class LaunchConfigurationsPreferencePage extends PreferencePage implement
 				fMonitor = new ProgressMonitorPart(fMigrateNow.getParent(), new GridLayout());
 				Object[] objs = listd.getResult();
 				fMonitor.beginTask(DebugPreferencesMessages.LaunchingPreferencePage_31, objs.length);
-				for(int i = 0; i < objs.length; i++) {
-					if(objs[i] instanceof ILaunchConfiguration) {
-						((ILaunchConfiguration)objs[i]).migrate();
+				for (Object obj : objs) {
+					if (obj instanceof ILaunchConfiguration) {
+						((ILaunchConfiguration) obj).migrate();
 					}
 					fMonitor.worked(1);
 				}
@@ -338,9 +313,6 @@ public class LaunchConfigurationsPreferencePage extends PreferencePage implement
 		catch (CoreException e) {DebugUIPlugin.log(e);}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWorkbenchPreferencePage#init(org.eclipse.ui.IWorkbench)
-	 */
 	@Override
 	public void init(IWorkbench workbench) {}
 
@@ -349,9 +321,7 @@ public class LaunchConfigurationsPreferencePage extends PreferencePage implement
 	 * @since 3.2
 	 */
 	private void initFieldEditors() {
-		FieldEditor editor;
-		for(int i = 0; i < fFieldEditors.size(); i++) {
-			editor = fFieldEditors.get(i);
+		for (FieldEditor editor : fFieldEditors) {
 			editor.setPreferenceStore(getPreferenceStore());
 			editor.load();
 		}
@@ -359,53 +329,42 @@ public class LaunchConfigurationsPreferencePage extends PreferencePage implement
 				Platform.getPreferencesService().getBoolean(DebugPlugin.getUniqueIdentifier(),
 				DebugPlugin.PREF_DELETE_CONFIGS_ON_PROJECT_DELETE, true, null));
 		//restore the tables' checked state
-		String[] types = getPreferenceStore().getString(IInternalDebugUIConstants.PREF_FILTER_TYPE_LIST).split("\\,"); //$NON-NLS-1$
 		TableItem[] items = fTable.getItems();
 		ILaunchConfigurationType type;
-		for(int i = 0; i < types.length; i++) {
-			for(int j = 0; j < items.length; j++) {
-				type = (ILaunchConfigurationType)items[j].getData();
-				if(type.getIdentifier().equals(types[i])) {
-					items[j].setChecked(true);
+		for (String t : getPreferenceStore().getString(IInternalDebugUIConstants.PREF_FILTER_TYPE_LIST).split("\\,")) { //$NON-NLS-1$
+			for (TableItem item : items) {
+				type = (ILaunchConfigurationType) item.getData();
+				if (type.getIdentifier().equals(t)) {
+					item.setChecked(true);
 				}
 			}
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.preference.PreferencePage#performDefaults()
-	 */
 	@Override
 	protected void performDefaults() {
 		fDeleteConfigs.setSelection(Preferences.getDefaultBoolean(DebugPlugin.getUniqueIdentifier(), DebugPlugin.PREF_DELETE_CONFIGS_ON_PROJECT_DELETE, true));
-		FieldEditor editor = null;
-		for(int i = 0; i < fFieldEditors.size(); i++) {
-			editor = fFieldEditors.get(i);
+		for (FieldEditor editor : fFieldEditors) {
 			editor.loadDefault();
 			if(editor instanceof BooleanFieldEditor2) {
 				fTable.setEnabled(((BooleanFieldEditor2)editor).getBooleanValue());
 			}
 		}
-
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.preference.PreferencePage#performOk()
-	 */
 	@Override
 	public boolean performOk() {
 		//save field editors
-		for(int i = 0; i < fFieldEditors.size(); i++) {
-			fFieldEditors.get(i).store();
+		for (FieldEditor editor : fFieldEditors) {
+			editor.store();
 		}
 		Preferences.setBoolean(DebugPlugin.getUniqueIdentifier(), DebugPlugin.PREF_DELETE_CONFIGS_ON_PROJECT_DELETE, fDeleteConfigs.getSelection(), null);
 		//save table
 		String types = IInternalDebugCoreConstants.EMPTY_STRING;
-		TableItem[] items = fTable.getItems();
 		ILaunchConfigurationType type;
-		for(int i = 0; i < items.length; i++) {
-			if(items[i].getChecked()) {
-				type = (ILaunchConfigurationType)items[i].getData();
+		for (TableItem item : fTable.getItems()) {
+			if (item.getChecked()) {
+				type = (ILaunchConfigurationType) item.getData();
 				types += type.getIdentifier()+","; //$NON-NLS-1$
 			}
 		}

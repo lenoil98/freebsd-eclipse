@@ -14,6 +14,10 @@
 
 package org.eclipse.ui.tests.menus;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.ISelectionProvider;
@@ -26,21 +30,24 @@ import org.eclipse.ui.internal.PartSite;
 import org.eclipse.ui.internal.PopupMenuExtender;
 import org.eclipse.ui.tests.api.ListElement;
 import org.eclipse.ui.tests.api.ListView;
+import org.eclipse.ui.tests.harness.util.CloseTestWindowsRule;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  * @since 3.5
  * @author Prakash G.R.
  *
  */
-public class Bug264804Test extends UITestCase {
+public class Bug264804Test {
 
-	public Bug264804Test(String testName) {
-		super(testName);
-	}
+	@Rule
+	public CloseTestWindowsRule closeTestWindows = new CloseTestWindowsRule();
 
+	@Test
 	public void testPopup() throws Exception {
-		IWorkbenchWindow window = openTestWindow();
+		IWorkbenchWindow window = UITestCase.openTestWindow();
 
 		ListView part = (ListView) window.getActivePage().showView(
 				"org.eclipse.ui.tests.api.IActionFilterTest1");
@@ -66,7 +73,7 @@ public class Bug264804Test extends UITestCase {
 			// contextMenu.setVisible(true);
 			Event e = new Event();
 			e.widget = contextMenu;
-			processEvents();
+			UITestCase.processEvents();
 			contextMenu.notifyListeners(SWT.Show, e);
 
 			find("org.eclipse.ui.file.close", manager.getItems());
@@ -76,7 +83,7 @@ public class Bug264804Test extends UITestCase {
 			// to run
 			contextMenu.notifyListeners(SWT.Hide, e);
 			contextMenu.notifyListeners(SWT.Show, e);
-			processEvents();
+			UITestCase.processEvents();
 
 			find("org.eclipse.ui.file.close", manager.getItems());
 		} finally {

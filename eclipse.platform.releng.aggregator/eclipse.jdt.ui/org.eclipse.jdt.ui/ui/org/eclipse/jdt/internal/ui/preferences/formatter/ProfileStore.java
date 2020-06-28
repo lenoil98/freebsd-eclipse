@@ -89,31 +89,29 @@ public class ProfileStore {
 		@Override
 		public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
 
-			if (qName.equals(XML_NODE_SETTING)) {
-
+			switch (qName) {
+			case XML_NODE_SETTING:
 				final String key= attributes.getValue(XML_ATTRIBUTE_ID);
 				final String value= attributes.getValue(XML_ATTRIBUTE_VALUE);
 				fSettings.put(key, value);
-
-			} else if (qName.equals(XML_NODE_PROFILE)) {
-
+				break;
+			case XML_NODE_PROFILE:
 				fName= attributes.getValue(XML_ATTRIBUTE_NAME);
 				fKind= attributes.getValue(XML_ATTRIBUTE_PROFILE_KIND);
 				if (fKind == null) //Can only be an CodeFormatterProfile created pre 3.3M2
 					fKind= ProfileVersioner.CODE_FORMATTER_PROFILE_KIND;
-
 				fSettings= new HashMap<>(200);
-
-			}
-			else if (qName.equals(XML_NODE_ROOT)) {
-
+				break;
+			case XML_NODE_ROOT:
 				fProfiles= new ArrayList<>();
 				try {
 					fVersion= Integer.parseInt(attributes.getValue(XML_ATTRIBUTE_VERSION));
 				} catch (NumberFormatException ex) {
 					throw new SAXException(ex);
 				}
-
+				break;
+			default:
+				break;
 			}
 		}
 
@@ -197,8 +195,8 @@ public class ProfileStore {
 			try {
 				List<Profile> res= readProfilesFromStream(new InputSource(is));
 				if (res != null) {
-					for (int i= 0; i < res.size(); i++) {
-						fProfileVersioner.update((CustomProfile) res.get(i));
+					for (Profile re : res) {
+						fProfileVersioner.update((CustomProfile) re);
 					}
 				}
 				return res;
@@ -243,11 +241,7 @@ public class ProfileStore {
 		    final SAXParserFactory factory= SAXParserFactory.newInstance();
 			final SAXParser parser= factory.newSAXParser();
 			parser.parse(inputSource, handler);
-		} catch (SAXException e) {
-			throw createException(e, FormatterMessages.CodingStyleConfigurationBlock_error_reading_xml_message);
-		} catch (IOException e) {
-			throw createException(e, FormatterMessages.CodingStyleConfigurationBlock_error_reading_xml_message);
-		} catch (ParserConfigurationException e) {
+		} catch (SAXException | IOException | ParserConfigurationException e) {
 			throw createException(e, FormatterMessages.CodingStyleConfigurationBlock_error_reading_xml_message);
 		}
 		return handler.getProfiles();
@@ -293,8 +287,7 @@ public class ProfileStore {
 
 			document.appendChild(rootElement);
 
-			for(final Iterator<Profile> iter= profiles.iterator(); iter.hasNext();) {
-				final Profile profile= iter.next();
+			for (Profile profile : profiles) {
 				if (profile.isProfileToSave()) {
 					final Element profileElement= createProfileElement(profile, document, profileVersioner);
 					rootElement.appendChild(profileElement);
@@ -306,9 +299,7 @@ public class ProfileStore {
 			transformer.setOutputProperty(OutputKeys.ENCODING, encoding);
 			transformer.setOutputProperty(OutputKeys.INDENT, "yes"); //$NON-NLS-1$
 			transformer.transform(new DOMSource(document), new StreamResult(stream));
-		} catch (TransformerException e) {
-			throw createException(e, FormatterMessages.CodingStyleConfigurationBlock_error_serializing_xml_message);
-		} catch (ParserConfigurationException e) {
+		} catch (TransformerException | ParserConfigurationException e) {
 			throw createException(e, FormatterMessages.CodingStyleConfigurationBlock_error_serializing_xml_message);
 		}
 	}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2016 IBM Corporation and others.
+ * Copyright (c) 2005, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -25,11 +25,6 @@ public class EclipseDefaultExecutor extends DefaultExecutor {
 
 	private static final EclipseSingleCheckExecutor SUB_EXECUTOR = new EclipseSingleCheckExecutor();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.tools.ant.Executor#executeTargets(org.apache.tools.ant.Project, java.lang.String[])
-	 */
 	@SuppressWarnings("unused")
 	@Override
 	public void executeTargets(Project project, String[] targetNames) throws BuildException {
@@ -39,11 +34,6 @@ public class EclipseDefaultExecutor extends DefaultExecutor {
 		super.executeTargets(project, targetNames);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.tools.ant.Executor#getSubProjectExecutor()
-	 */
 	@Override
 	public Executor getSubProjectExecutor() {
 		return SUB_EXECUTOR;

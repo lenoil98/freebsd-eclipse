@@ -64,7 +64,7 @@ public class OpenFolderAsProjectAction extends Action {
 	public void run() {
 		try {
 			IProject parentProject = this.folder.getProject();
-			Set<IWorkingSet> parentWorkingSets = new HashSet<IWorkingSet>();
+			Set<IWorkingSet> parentWorkingSets = new HashSet<>();
 			IWorkingSetManager workingSetManager = PlatformUI.getWorkbench().getWorkingSetManager();
 			for (IWorkingSet workingSet : workingSetManager.getWorkingSets()) {
 				for (IAdaptable element : workingSet.getElements()) {
@@ -72,7 +72,7 @@ public class OpenFolderAsProjectAction extends Action {
 						parentWorkingSets.add(workingSet);
 						break;
 					}
- 				}
+				}
 			}
 			IProjectDescription desc = ResourcesPlugin.getWorkspace().loadProjectDescription(
 					folder.getLocation().append(IProjectDescription.DESCRIPTION_FILE_NAME));
@@ -86,13 +86,7 @@ public class OpenFolderAsProjectAction extends Action {
 			} else {
 				WorkbenchNavigatorPlugin.getDefault().getLog().log(status);
 			}
-		} catch (CoreException e) {
-			WorkbenchNavigatorPlugin
-					.getDefault()
-					.getLog()
-					.log(new Status(IStatus.ERROR, WorkbenchNavigatorPlugin.getDefault().getBundle().getSymbolicName(),
-							"Failed to import " + folder.getName(), e)); //$NON-NLS-1$
-		} catch (ExecutionException e) {
+		} catch (CoreException | ExecutionException e) {
 			WorkbenchNavigatorPlugin
 					.getDefault()
 					.getLog()

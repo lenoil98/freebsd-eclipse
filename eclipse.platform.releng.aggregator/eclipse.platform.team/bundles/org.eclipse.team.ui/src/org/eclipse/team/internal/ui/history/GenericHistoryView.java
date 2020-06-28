@@ -14,6 +14,7 @@
  *******************************************************************************/
 package org.eclipse.team.internal.ui.history;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -73,9 +74,6 @@ import org.eclipse.ui.part.PageBookView;
 import org.eclipse.ui.part.PluginTransfer;
 import org.eclipse.ui.part.ResourceTransfer;
 import org.eclipse.ui.part.ShowInContext;
-
-import com.ibm.icu.text.SimpleDateFormat;
-
 
 public class GenericHistoryView extends PageBookView implements IHistoryView, IPropertyChangeListener, IShowInTarget {
 	private static final String HISTORY_VIEW_GROUP = "org.eclipse.team.ui.historyView"; //$NON-NLS-1$
@@ -178,8 +176,7 @@ public class GenericHistoryView extends PageBookView implements IHistoryView, IP
 		public void updateName(IHistoryPage historyPage,
 				IHistoryPageSource pageSource) {
 			NavigationHistoryEntry[] historyEntries = getEntries();
-			for (int i = 0; i < historyEntries.length; i++) {
-				NavigationHistoryEntry historyEntry = historyEntries[i];
+			for (NavigationHistoryEntry historyEntry : historyEntries) {
 				if (historyEntry.matches(historyPage, pageSource))
 					historyEntry.name = historyPage.getName();
 			}
@@ -285,9 +282,8 @@ public class GenericHistoryView extends PageBookView implements IHistoryView, IP
 
 		private IAction[] createActions() {
 			NavigationHistoryEntry[] entries = getDropDownEntries();
-			List<NavigationHistoryEntryAction> actions = new ArrayList<NavigationHistoryEntryAction>();
-			for (int i = 0; i < entries.length; i++) {
-				NavigationHistoryEntry navigationHistoryEntry = entries[i];
+			List<NavigationHistoryEntryAction> actions = new ArrayList<>();
+			for (NavigationHistoryEntry navigationHistoryEntry : entries) {
 				actions.add(new NavigationHistoryEntryAction(navigationHistoryEntry));
 			}
 			return actions.toArray(new IAction[actions.size()]);
@@ -317,8 +313,7 @@ public class GenericHistoryView extends PageBookView implements IHistoryView, IP
 
 		private void updateCheckState() {
 			IAction[] actions = getActions();
-			for (int i = 0; i < actions.length; i++) {
-				IAction action = actions[i];
+			for (IAction action : actions) {
 				if (action instanceof NavigationHistoryEntryAction) {
 					NavigationHistoryEntryAction a = (NavigationHistoryEntryAction) action;
 					a.update();
@@ -735,9 +730,9 @@ public class GenericHistoryView extends PageBookView implements IHistoryView, IP
 	private IHistoryPage searchHistoryViewsForObject(Object object, boolean  refresh, IHistoryPageSource pageSource) {
 		IWorkbenchPage page = getSite().getPage();
 		IViewReference[] historyViews = page.getViewReferences();
-		for (int i = 0; i < historyViews.length; i++) {
-			if (historyViews[i].getId().equals(VIEW_ID)){
-				IViewPart historyView = historyViews[i].getView(true);
+		for (IViewReference h : historyViews) {
+			if (h.getId().equals(VIEW_ID)) {
+				IViewPart historyView = h.getView(true);
 				if (historyView instanceof GenericHistoryView) {
 					GenericHistoryView ghv = (GenericHistoryView)historyView;
 					IHistoryPage historyPage = ghv.checkForExistingPage(object, refresh, pageSource);
@@ -753,9 +748,9 @@ public class GenericHistoryView extends PageBookView implements IHistoryView, IP
 	public GenericHistoryView findUnpinnedHistoryView(){
 		IWorkbenchPage page = getSite().getPage();
 		IViewReference[] historyViews = page.getViewReferences();
-		for (int i = 0; i < historyViews.length; i++) {
-			if (historyViews[i].getId().equals(VIEW_ID)){
-				IViewPart historyView = historyViews[i].getView(false);
+		for (IViewReference h : historyViews) {
+			if (h.getId().equals(VIEW_ID)) {
+				IViewPart historyView = h.getView(false);
 				if (!((GenericHistoryView)historyView).isViewPinned())
 					return (GenericHistoryView) historyView;
 			}

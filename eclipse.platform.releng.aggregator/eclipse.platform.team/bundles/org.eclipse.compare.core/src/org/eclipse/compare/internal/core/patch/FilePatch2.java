@@ -58,17 +58,17 @@ public class FilePatch2 implements IFilePatch2 {
 	 * @param newPath the path of the after state
 	 * @param newDate the timestamp of the after state
 	 */
- 	public FilePatch2(IPath oldPath, long oldDate, IPath newPath, long newDate) {
+	public FilePatch2(IPath oldPath, long oldDate, IPath newPath, long newDate) {
 		this.fOldPath= oldPath;
 		this.oldDate = oldDate;
 		this.fNewPath= newPath;
 		this.newDate = newDate;
 	}
 
- 	/**
- 	 * Return the parent project or <code>null</code> if there isn't one.
- 	 * @return the parent project or <code>null</code>
- 	 */
+	/**
+	 * Return the parent project or <code>null</code> if there isn't one.
+	 * @return the parent project or <code>null</code>
+	 */
 	public DiffProject getProject() {
 		return this.fProject;
 	}
@@ -223,8 +223,7 @@ public class FilePatch2 implements IFilePatch2 {
 			adjustedNewPath = new Path(null, this.fProject.getName()).append(this.fNewPath);
 		}
 		FilePatch2 diff = create(adjustedOldPath, 0, adjustedNewPath, 0);
-		for (Iterator<Hunk> iterator = this.fHunks.iterator(); iterator.hasNext();) {
-			Hunk hunk = iterator.next();
+		for (Hunk hunk : this.fHunks) {
 			// Creating the hunk adds it to the parent diff
 			new Hunk(diff, hunk);
 		}

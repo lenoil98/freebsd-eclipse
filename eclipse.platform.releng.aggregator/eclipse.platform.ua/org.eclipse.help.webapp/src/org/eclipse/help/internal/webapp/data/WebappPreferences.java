@@ -13,10 +13,11 @@
  *******************************************************************************/
 package org.eclipse.help.internal.webapp.data;
 
-import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
-import org.eclipse.help.internal.base.*;
+import org.eclipse.help.internal.base.BaseHelpSystem;
+import org.eclipse.help.internal.base.HelpBasePlugin;
 import org.eclipse.help.internal.util.ProductPreferences;
 import org.osgi.service.prefs.BackingStoreException;
 
@@ -80,10 +81,6 @@ public class WebappPreferences {
 		return getPreferenceString("advanced.toolbarBackground"); //$NON-NLS-1$
 	}
 
-	public String getBasicToolbarBackground() {
-		return getPreferenceString("basic.toolbarBackground"); //$NON-NLS-1$
-	}
-
 	public String getToolbarFont() {
 		return getPreferenceString("advanced.toolbarFont"); //$NON-NLS-1$
 	}
@@ -98,10 +95,6 @@ public class WebappPreferences {
 			return (""); //$NON-NLS-1$
 		}
 		return "background-color: " + viewBackground + ";";  //$NON-NLS-1$ //$NON-NLS-2$
-	}
-
-	public String getBasicViewBackground() {
-		return getPreferenceString("basic.viewBackground"); //$NON-NLS-1$
 	}
 
 	public String getViewFont() {

@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 #*******************************************************************************
 # Copyright (c) 2019 IBM Corporation and others.
@@ -25,7 +25,7 @@ source $1
 mkdir $CJE_ROOT/tmp
 
 cd $CJE_ROOT/gitCache/eclipse.platform.releng.aggregator
-mvn --update-snapshots org.eclipse.tycho:tycho-versions-plugin:1.3.0:update-pom \
+mvn --update-snapshots org.eclipse.tycho:tycho-versions-plugin:1.7.0:update-pom \
   -Dmaven.repo.local=$LOCAL_REPO \
   -Djava.io.tmpdir=$CJE_ROOT/tmp \
   -DaggregatorBuild=true \

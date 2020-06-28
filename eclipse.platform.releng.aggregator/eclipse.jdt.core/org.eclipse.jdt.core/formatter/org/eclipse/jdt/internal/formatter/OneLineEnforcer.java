@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2018 Mateusz Matela and others.
+ * Copyright (c) 2018, 2019 Mateusz Matela and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,7 +10,7 @@
  *
  * Contributors:
  *     Mateusz Matela <mateusz.matela@gmail.com> - Initial API and implementation
- *     
+ *
  *******************************************************************************/
 package org.eclipse.jdt.internal.formatter;
 
@@ -40,6 +40,7 @@ import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.ModuleDeclaration;
 import org.eclipse.jdt.core.dom.PrimitiveType;
+import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.ThrowStatement;
@@ -56,6 +57,12 @@ public class OneLineEnforcer extends ASTVisitor {
 	public OneLineEnforcer(TokenManager tokenManager, DefaultCodeFormatterOptions options) {
 		this.tm = tokenManager;
 		this.options = options;
+	}
+
+	@Override
+	public boolean preVisit2(ASTNode node) {
+		boolean isMalformed = (node.getFlags() & ASTNode.MALFORMED) != 0;
+		return !isMalformed;
 	}
 
 	@Override
@@ -80,6 +87,12 @@ public class OneLineEnforcer extends ASTVisitor {
 	}
 
 	@Override
+	public void endVisit(RecordDeclaration node) {
+		tryKeepOnOneLine(node, node.getName(), node.bodyDeclarations(),
+				this.options.keep_record_declaration_on_one_line);
+	}
+
+	@Override
 	public void endVisit(AnonymousClassDeclaration node) {
 		if (node.getParent() instanceof EnumConstantDeclaration) {
 			tryKeepOnOneLine(node, null, node.bodyDeclarations(),
@@ -98,9 +111,10 @@ public class OneLineEnforcer extends ASTVisitor {
 			return; // this is a fake block created by parsing in statements mode
 		String oneLineOption;
 		if (parent instanceof MethodDeclaration) {
-			oneLineOption = this.options.keep_method_body_on_one_line;
+			MethodDeclaration method = (MethodDeclaration) parent;
+			oneLineOption = method.isCompactConstructor() ? this.options.keep_record_constructor_on_one_line
+					: this.options.keep_method_body_on_one_line;
 			if (this.options.keep_simple_getter_setter_on_one_line) {
-				MethodDeclaration method = (MethodDeclaration) parent;
 				String name = method.getName().getIdentifier();
 				Type returnType = method.getReturnType2();
 				boolean returnsVoid = returnType instanceof PrimitiveType

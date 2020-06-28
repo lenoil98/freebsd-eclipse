@@ -16,7 +16,6 @@ package org.eclipse.ui.internal.util;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import org.eclipse.jface.resource.ColorDescriptor;
 import org.eclipse.jface.resource.DeviceResourceDescriptor;
@@ -225,14 +224,14 @@ public final class Descriptors {
 		callMethod(label, "setImage", descriptor, Image.class); //$NON-NLS-1$
 	}
 
-	private static ResourceMethod getResourceMethod(Widget toCall, String methodName, Class resourceType)
+	private static ResourceMethod getResourceMethod(Widget toCall, String methodName, Class<?> resourceType)
 			throws NoSuchMethodException {
 		Object oldData = toCall.getData(DISPOSE_LIST);
 
 		if (oldData instanceof List) {
 			// Check for existing data
-			for (Iterator iter = ((List) oldData).iterator(); iter.hasNext();) {
-				ResourceMethod method = (ResourceMethod) iter.next();
+			for (Object element : ((List<?>) oldData)) {
+				ResourceMethod method = (ResourceMethod) element;
 
 				if (method.id == methodName) {
 					return method;
@@ -244,15 +243,15 @@ public final class Descriptors {
 				return ((ResourceMethod) oldData);
 			}
 
-			List newList = new ArrayList();
-			newList.add(oldData);
+			List<ResourceMethod> newList = new ArrayList<>();
+			newList.add((ResourceMethod) oldData);
 			oldData = newList;
 			toCall.setData(DISPOSE_LIST, oldData);
 		}
 
 		// At this point, the DISPOSE_LIST data is either null or points to an ArrayList
 
-		Class clazz = toCall.getClass();
+		Class<?> clazz = toCall.getClass();
 
 		Method method;
 		try {
@@ -267,14 +266,14 @@ public final class Descriptors {
 			toCall.setData(DISPOSE_LIST, result);
 			toCall.addDisposeListener(disposeListener);
 		} else {
-			((List) oldData).add(result);
+			((List<ResourceMethod>) oldData).add(result);
 		}
 
 		return result;
 	}
 
 	private static void callMethod(Widget toCall, String methodName, DeviceResourceDescriptor descriptor,
-			Class resourceType) {
+			Class<?> resourceType) {
 		ResourceMethod method;
 		try {
 			method = getResourceMethod(toCall, methodName, resourceType);
@@ -290,8 +289,8 @@ public final class Descriptors {
 		Object oldData = widget.getData(DISPOSE_LIST);
 
 		if (oldData instanceof ArrayList) {
-			ArrayList list = ((ArrayList) oldData);
-			ResourceMethod[] data = (ResourceMethod[]) list.toArray(new ResourceMethod[list.size()]);
+			ArrayList<ResourceMethod> list = ((ArrayList<ResourceMethod>) oldData);
+			ResourceMethod[] data = list.toArray(new ResourceMethod[list.size()]);
 
 			// Clear out the images
 			for (ResourceMethod method : data) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2017 IBM Corporation and others.
+ * Copyright (c) 2012, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -18,6 +18,7 @@ import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -45,7 +46,8 @@ import org.osgi.framework.hooks.bundle.EventHook;
 public class EquinoxEventPublisher {
 	static final String eventHookName = EventHook.class.getName();
 	static final String collisionHookName = CollisionHook.class.getName();
-	static final int FRAMEWORK_STOPPED_MASK = (FrameworkEvent.STOPPED | FrameworkEvent.STOPPED_BOOTCLASSPATH_MODIFIED | FrameworkEvent.STOPPED_UPDATE);
+	static final int FRAMEWORK_STOPPED_MASK = (FrameworkEvent.STOPPED | FrameworkEvent.STOPPED_BOOTCLASSPATH_MODIFIED
+			| FrameworkEvent.STOPPED_UPDATE | FrameworkEvent.STOPPED_SYSTEM_REFRESHED);
 
 	static final int BUNDLEEVENT = 1;
 	static final int BUNDLEEVENTSYNC = 2;
@@ -65,13 +67,13 @@ public class EquinoxEventPublisher {
 	 * installed in the Framework.
 	 */
 	// Map of BundleContexts for bundle's BundleListeners.
-	private final Map<BundleContextImpl, CopyOnWriteIdentityMap<BundleListener, BundleListener>> allBundleListeners = new HashMap<>();
+	private final Map<BundleContextImpl, CopyOnWriteIdentityMap<BundleListener, BundleListener>> allBundleListeners = new LinkedHashMap<>();
 
 	// Map of BundleContexts for bundle's SynchronousBundleListeners.
-	private final Map<BundleContextImpl, CopyOnWriteIdentityMap<SynchronousBundleListener, SynchronousBundleListener>> allSyncBundleListeners = new HashMap<>();
+	private final Map<BundleContextImpl, CopyOnWriteIdentityMap<SynchronousBundleListener, SynchronousBundleListener>> allSyncBundleListeners = new LinkedHashMap<>();
 
 	// Map of BundleContexts for bundle's FrameworkListeners.
-	private final Map<BundleContextImpl, CopyOnWriteIdentityMap<FrameworkListener, FrameworkListener>> allFrameworkListeners = new HashMap<>();
+	private final Map<BundleContextImpl, CopyOnWriteIdentityMap<FrameworkListener, FrameworkListener>> allFrameworkListeners = new LinkedHashMap<>();
 
 	public EquinoxEventPublisher(EquinoxContainer container) {
 		this.container = container;
@@ -119,7 +121,7 @@ public class EquinoxEventPublisher {
 	/**
 	 * Deliver a BundleEvent to SynchronousBundleListeners (synchronous) and
 	 * BundleListeners (asynchronous).
-	 * 
+	 *
 	 * @param type
 	 *            BundleEvent type.
 	 * @param bundle
@@ -140,6 +142,7 @@ public class EquinoxEventPublisher {
 			publishBundleEventPrivileged(event);
 		} else {
 			AccessController.doPrivileged(new PrivilegedAction<Void>() {
+				@Override
 				public Void run() {
 					publishBundleEventPrivileged(event);
 					return null;
@@ -162,7 +165,7 @@ public class EquinoxEventPublisher {
 		BundleContextImpl systemContext = null;
 		Set<Map.Entry<SynchronousBundleListener, SynchronousBundleListener>> systemBundleListenersSync = null;
 		synchronized (allSyncBundleListeners) {
-			listenersSync = new HashMap<>(allSyncBundleListeners.size());
+			listenersSync = new LinkedHashMap<>(allSyncBundleListeners.size());
 			for (Map.Entry<BundleContextImpl, CopyOnWriteIdentityMap<SynchronousBundleListener, SynchronousBundleListener>> entry : allSyncBundleListeners.entrySet()) {
 				CopyOnWriteIdentityMap<SynchronousBundleListener, SynchronousBundleListener> listeners = entry.getValue();
 				if (!listeners.isEmpty()) {
@@ -182,7 +185,7 @@ public class EquinoxEventPublisher {
 		Set<Map.Entry<BundleListener, BundleListener>> systemBundleListenersAsync = null;
 		if ((event.getType() & (BundleEvent.STARTING | BundleEvent.STOPPING | BundleEvent.LAZY_ACTIVATION)) == 0) {
 			synchronized (allBundleListeners) {
-				listenersAsync = new HashMap<>(allBundleListeners.size());
+				listenersAsync = new LinkedHashMap<>(allBundleListeners.size());
 				for (Map.Entry<BundleContextImpl, CopyOnWriteIdentityMap<BundleListener, BundleListener>> entry : allBundleListeners.entrySet()) {
 					CopyOnWriteIdentityMap<BundleListener, BundleListener> listeners = entry.getValue();
 					if (!listeners.isEmpty()) {
@@ -248,22 +251,25 @@ public class EquinoxEventPublisher {
 
 	private void notifyEventHooksPrivileged(final BundleEvent event, final Collection<BundleContext> result) {
 		if (container.getConfiguration().getDebug().DEBUG_HOOKS) {
-			Debug.println("notifyBundleEventHooks(" + event.getType() + ":" + event.getBundle() + ", " + result + " )"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$  
+			Debug.println("notifyBundleEventHooks(" + event.getType() + ":" + event.getBundle() + ", " + result + " )"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 		}
 
 		ServiceRegistry serviceRegistry = container.getServiceRegistry();
 		if (serviceRegistry != null) {
 			serviceRegistry.notifyHooksPrivileged(new HookContext() {
+				@Override
 				public void call(Object hook, ServiceRegistration<?> hookRegistration) throws Exception {
 					if (hook instanceof EventHook) {
 						((EventHook) hook).event(event, result);
 					}
 				}
 
+				@Override
 				public String getHookClassName() {
 					return eventHookName;
 				}
 
+				@Override
 				public String getHookMethodName() {
 					return "event"; //$NON-NLS-1$
 				}
@@ -278,7 +284,7 @@ public class EquinoxEventPublisher {
 
 	/**
 	 * Deliver a FrameworkEvent.
-	 * 
+	 *
 	 * @param type
 	 *            FrameworkEvent type.
 	 * @param bundle
@@ -298,6 +304,7 @@ public class EquinoxEventPublisher {
 			publishFrameworkEventPrivileged(event, listeners);
 		} else {
 			AccessController.doPrivileged(new PrivilegedAction<Void>() {
+				@Override
 				public Void run() {
 					publishFrameworkEventPrivileged(event, listeners);
 					return null;
@@ -313,7 +320,7 @@ public class EquinoxEventPublisher {
 		// Build the listener snapshot
 		Map<BundleContextImpl, Set<Map.Entry<FrameworkListener, FrameworkListener>>> listenerSnapshot;
 		synchronized (allFrameworkListeners) {
-			listenerSnapshot = new HashMap<>(allFrameworkListeners.size());
+			listenerSnapshot = new LinkedHashMap<>(allFrameworkListeners.size());
 			for (Map.Entry<BundleContextImpl, CopyOnWriteIdentityMap<FrameworkListener, FrameworkListener>> entry : allFrameworkListeners.entrySet()) {
 				CopyOnWriteIdentityMap<FrameworkListener, FrameworkListener> listeners = entry.getValue();
 				if (!listeners.isEmpty()) {

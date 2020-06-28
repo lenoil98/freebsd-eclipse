@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -34,9 +34,9 @@ package com.sun.mirror.type;
 
 /**
  * Represents a primitive type.  These include
- * <tt>boolean</tt>, <tt>byte</tt>, <tt>short</tt>, <tt>int</tt>,
- * <tt>long</tt>, <tt>char</tt>, <tt>float</tt>, and <tt>double</tt>.
- * 
+ * <code>boolean</code>, <code>byte</code>, <code>short</code>, <code>int</code>,
+ * <code>long</code>, <code>char</code>, <code>float</code>, and <code>double</code>.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @version 1.1 04/01/26
@@ -56,13 +56,13 @@ public interface PrimitiveType extends TypeMirror {
      * An enumeration of the different kinds of primitive types.
      */
     enum Kind {
-	/** The primitive type <tt>boolean</tt> */	BOOLEAN,
-	/** The primitive type <tt>byte</tt> */		BYTE,
-	/** The primitive type <tt>short</tt> */	SHORT,
-	/** The primitive type <tt>int</tt> */		INT,
-	/** The primitive type <tt>long</tt> */		LONG,
-	/** The primitive type <tt>char</tt> */		CHAR,
-	/** The primitive type <tt>float</tt> */	FLOAT,
-	/** The primitive type <tt>double</tt> */	DOUBLE
+	/** The primitive type <code>boolean</code> */	BOOLEAN,
+	/** The primitive type <code>byte</code> */		BYTE,
+	/** The primitive type <code>short</code> */	SHORT,
+	/** The primitive type <code>int</code> */		INT,
+	/** The primitive type <code>long</code> */		LONG,
+	/** The primitive type <code>char</code> */		CHAR,
+	/** The primitive type <code>float</code> */	FLOAT,
+	/** The primitive type <code>double</code> */	DOUBLE
     }
 }

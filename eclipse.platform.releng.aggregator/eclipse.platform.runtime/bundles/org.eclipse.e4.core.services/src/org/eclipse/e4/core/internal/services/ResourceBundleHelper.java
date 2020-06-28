@@ -118,6 +118,7 @@ public class ResourceBundleHelper {
 	 * {@link Locale} out of an OSGi {@link Bundle}.
 	 * <p>
 	 * Following URIs are supported:
+	 * </p>
 	 * <ul>
 	 * <li>platform:/[plugin|fragment]/[Bundle-SymbolicName]<br>
 	 * Load the OSGi resource bundle out of the bundle/fragment named [Bundle-SymbolicName]</li>
@@ -129,7 +130,6 @@ public class ResourceBundleHelper {
 	 * named [Bundle-SymbolicName]. Note that the class needs to be a subtype of
 	 * {@link ResourceBundle}.</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @param contributionURI
 	 *            The URI that points to a {@link ResourceBundle}
@@ -183,7 +183,7 @@ public class ResourceBundleHelper {
 			}
 			bundleName = uri.getAuthority();
 			// remove the leading /
-			if (uri.getPath() != null && uri.getPath().length() > 0) {
+			if (uri.getPath() != null && !uri.getPath().isEmpty()) {
 				classPath = uri.getPath().substring(1);
 			} else {
 				if (logger != null) {
@@ -210,7 +210,7 @@ public class ResourceBundleHelper {
 							logger.error("Failed to load specified ResourceBundle: {}", contributionURI, e); //$NON-NLS-1$
 						}
 					}
-				} else if (resourcePath != null && resourcePath.length() > 0) {
+				} else if (resourcePath != null && !resourcePath.isEmpty()) {
 					// the specified URI points to a resource
 					// therefore we try to load the .properties files into a ResourceBundle
 					result = getEquinoxResourceBundle(resourcePath.replace('.', '/'), locale,
@@ -233,6 +233,7 @@ public class ResourceBundleHelper {
 	 * <p>
 	 * If the value for this system property is set to an empty String the default search order for
 	 * ResourceBundles is used:
+	 * </p>
 	 * <ul>
 	 * <li>bn + Ls + "_" + Cs + "_" + Vs</li>
 	 * <li>bn + Ls + "_" + Cs</li>
@@ -242,6 +243,7 @@ public class ResourceBundleHelper {
 	 * <li>bn + Ld</li>
 	 * <li>bn</li>
 	 * </ul>
+	 * <p>
 	 * Where bn is this bundle's localization basename, Ls, Cs and Vs are the specified locale
 	 * (language, country, variant) and Ld, Cd and Vd are the default locale (language, country,
 	 * variant).
@@ -249,6 +251,7 @@ public class ResourceBundleHelper {
 	 * <p>
 	 * If Ls equals the value of <code>equinox.root.locale</code> then the following search order is
 	 * used:
+	 * </p>
 	 * <ul>
 	 * <li>bn + Ls + "_" + Cs + "_" + Vs</li>
 	 * <li>bn + Ls + "_" + Cs</li>
@@ -259,9 +262,10 @@ public class ResourceBundleHelper {
 	 * <li>bn + Ld</li>
 	 * <li>bn</li>
 	 * </ul>
-	 * </p>
+	 * <p>
 	 * If <code>equinox.root.locale=en</code> and en_XX or en is asked for then this allows the root
 	 * file to be used instead of falling back to the default locale.
+	 * </p>
 	 *
 	 * @param baseName
 	 *            the base name of the resource bundle, a fully qualified class name
@@ -281,7 +285,7 @@ public class ResourceBundleHelper {
 		// if the equinox.root.locale is not empty and the specified locale equals the
 		// equinox.root.locale
 		// -> use the special search order
-		if (equinoxLocale.length() > 0 && locale.toString().startsWith(equinoxLocale)) {
+		if (!equinoxLocale.isEmpty() && locale.toString().startsWith(equinoxLocale)) {
 			// there is a equinox.root.locale configured that matches the specified locale
 			// so the special search order is used
 			// to achieve this we first search without a fallback to the default locale
@@ -326,6 +330,7 @@ public class ResourceBundleHelper {
 	 * <p>
 	 * If the value for this system property is set to an empty String the default search order for
 	 * ResourceBundles is used:
+	 * </p>
 	 * <ul>
 	 * <li>bn + Ls + "_" + Cs + "_" + Vs</li>
 	 * <li>bn + Ls + "_" + Cs</li>
@@ -335,6 +340,7 @@ public class ResourceBundleHelper {
 	 * <li>bn + Ld</li>
 	 * <li>bn</li>
 	 * </ul>
+	 * <p>
 	 * Where bn is this bundle's localization basename, Ls, Cs and Vs are the specified locale
 	 * (language, country, variant) and Ld, Cd and Vd are the default locale (language, country,
 	 * variant).
@@ -342,6 +348,7 @@ public class ResourceBundleHelper {
 	 * <p>
 	 * If Ls equals the value of <code>equinox.root.locale</code> then the following search order is
 	 * used:
+	 * </p>
 	 * <ul>
 	 * <li>bn + Ls + "_" + Cs + "_" + Vs</li>
 	 * <li>bn + Ls + "_" + Cs</li>
@@ -352,9 +359,10 @@ public class ResourceBundleHelper {
 	 * <li>bn + Ld</li>
 	 * <li>bn</li>
 	 * </ul>
-	 * </p>
+	 * <p>
 	 * If <code>equinox.root.locale=en</code> and en_XX or en is asked for then this allows the root
 	 * file to be used instead of falling back to the default locale.
+	 * </p>
 	 *
 	 * @param baseName
 	 *            the base name of the resource bundle, a fully qualified class name
@@ -381,6 +389,7 @@ public class ResourceBundleHelper {
 	 * <p>
 	 * If the value for this system property is set to an empty String the default search order for
 	 * ResourceBundles is used:
+	 * </p>
 	 * <ul>
 	 * <li>bn + Ls + "_" + Cs + "_" + Vs</li>
 	 * <li>bn + Ls + "_" + Cs</li>
@@ -390,6 +399,7 @@ public class ResourceBundleHelper {
 	 * <li>bn + Ld</li>
 	 * <li>bn</li>
 	 * </ul>
+	 * <p>
 	 * Where bn is this bundle's localization basename, Ls, Cs and Vs are the specified locale
 	 * (language, country, variant) and Ld, Cd and Vd are the default locale (language, country,
 	 * variant).
@@ -397,6 +407,7 @@ public class ResourceBundleHelper {
 	 * <p>
 	 * If Ls equals the value of <code>equinox.root.locale</code> then the following search order is
 	 * used:
+	 * </p>
 	 * <ul>
 	 * <li>bn + Ls + "_" + Cs + "_" + Vs</li>
 	 * <li>bn + Ls + "_" + Cs</li>
@@ -407,9 +418,10 @@ public class ResourceBundleHelper {
 	 * <li>bn + Ld</li>
 	 * <li>bn</li>
 	 * </ul>
-	 * </p>
+	 * <p>
 	 * If <code>equinox.root.locale=en</code> and en_XX or en is asked for then this allows the root
 	 * file to be used instead of falling back to the default locale.
+	 * </p>
 	 *
 	 * @param baseName
 	 *            the base name of the resource bundle, a fully qualified class name
@@ -433,7 +445,7 @@ public class ResourceBundleHelper {
 		// if the equinox.root.locale is not empty and the specified locale equals the
 		// equinox.root.locale
 		// -> use the special search order
-		if (equinoxLocale.length() > 0 && locale.toString().startsWith(equinoxLocale)) {
+		if (!equinoxLocale.isEmpty() && locale.toString().startsWith(equinoxLocale)) {
 			// there is a equinox.root.locale configured that matches the specified locale
 			// so the special search order is used
 			// to achieve this we first search without a fallback to the default locale
@@ -598,12 +610,12 @@ public class ResourceBundleHelper {
 
 		String[] localeParts = localeString.split("_"); //$NON-NLS-1$
 		if (localeParts.length == 0 || localeParts.length > 3
-				|| (localeParts.length == 1 && localeParts[0].length() == 0)) {
+				|| (localeParts.length == 1 && localeParts[0].isEmpty())) {
 			logInvalidFormat(localeString, logger);
 			return defaultLocale;
 		}
 
-		if (localeParts[0].length() > 0 && !localeParts[0].matches("[a-zA-Z]{2,8}")) { //$NON-NLS-1$
+		if (!localeParts[0].isEmpty() && !localeParts[0].matches("[a-zA-Z]{2,8}")) { //$NON-NLS-1$
 			logInvalidFormat(localeString, logger);
 			return defaultLocale;
 		}
@@ -611,8 +623,8 @@ public class ResourceBundleHelper {
 		language = localeParts[0];
 
 		if (localeParts.length > 1) {
-			if (localeParts[1].length() > 0 && !localeParts[1].matches("[a-zA-Z]{2}|[0-9]{3}")) { //$NON-NLS-1$
-				if (language.length() > 0) {
+			if (!localeParts[1].isEmpty() && !localeParts[1].matches("[a-zA-Z]{2}|[0-9]{3}")) { //$NON-NLS-1$
+				if (!language.isEmpty()) {
 					if (logger != null) {
 						logger.error(
 								"Invalid locale format: {} - Only language part will be used to create the Locale.", //$NON-NLS-1$
@@ -628,7 +640,7 @@ public class ResourceBundleHelper {
 		}
 
 		if (localeParts.length == 3) {
-			if (localeParts[2].length() == 0) {
+			if (localeParts[2].isEmpty()) {
 				if (logger != null) {
 					logger.error(
 							"Invalid locale format: {} - Only language and country part will be used to create the Locale.", //$NON-NLS-1$
@@ -697,27 +709,24 @@ public class ResourceBundleHelper {
 
 			String bundleName = toBundleName(baseName, locale);
 			ResourceBundle bundle = null;
-			if (format.equals("java.properties")) { //$NON-NLS-1$
+			if ("java.properties".equals(format)) { //$NON-NLS-1$
 				final String resourceName = toResourceName(bundleName, "properties"); //$NON-NLS-1$
 				InputStream stream = null;
 				try {
 					stream = AccessController
-							.doPrivileged(new PrivilegedExceptionAction<InputStream>() {
-								@Override
-								public InputStream run() throws IOException {
-									InputStream is = null;
-									URL url = osgiBundle.getEntry(resourceName);
-									if (url != null) {
-										URLConnection connection = url.openConnection();
-										if (connection != null) {
-											// Disable caches to get fresh data for
-											// reloading.
-											connection.setUseCaches(false);
-											is = connection.getInputStream();
-										}
+							.doPrivileged((PrivilegedExceptionAction<InputStream>) () -> {
+								InputStream is = null;
+								URL url = osgiBundle.getEntry(resourceName);
+								if (url != null) {
+									URLConnection connection = url.openConnection();
+									if (connection != null) {
+										// Disable caches to get fresh data for
+										// reloading.
+										connection.setUseCaches(false);
+										is = connection.getInputStream();
 									}
-									return is;
 								}
+								return is;
 							});
 				} catch (PrivilegedActionException e) {
 					throw (IOException) e.getException();

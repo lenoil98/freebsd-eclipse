@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2012, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,18 +12,19 @@
  *     IBM Corporation - initial API and implementation
  *     Brock Janiczak (brockj_eclipse@ihug.com.au) - handler registration
  *     Dirk Fauth <dirk.fauth@googlemail.com> - Bug 473063
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 548799
  *******************************************************************************/
 package org.eclipse.ui.internal.registry;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.ui.IPerspectiveDescriptor;
 import org.eclipse.ui.IPerspectiveFactory;
 import org.eclipse.ui.IPluginContribution;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.internal.WorkbenchImages;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 /**
  * PerspectiveDescriptor.
@@ -33,15 +34,14 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
  * <ol>
  * <li>It <code>isPredefined()</code>, in which case it was defined from an
  * extension point.</li>
- * <li>It <code>isPredefined()</code> and <code>hasCustomFile</code>, in
- * which case the user has customized a predefined perspective.</li>
+ * <li>It <code>isPredefined()</code> and <code>hasCustomFile</code>, in which
+ * case the user has customized a predefined perspective.</li>
  * <li>It <code>hasCustomFile</code>, in which case the user created a new
  * perspective.</li>
  * </ol>
  *
  */
-public class PerspectiveDescriptor implements IPerspectiveDescriptor,
-		IPluginContribution {
+public class PerspectiveDescriptor implements IPerspectiveDescriptor, IPluginContribution {
 
 	private String id;
 	private String label;
@@ -74,8 +74,7 @@ public class PerspectiveDescriptor implements IPerspectiveDescriptor,
 
 	public IPerspectiveFactory createFactory() {
 		try {
-			return (IPerspectiveFactory) configElement
-					.createExecutableExtension(IWorkbenchRegistryConstants.ATT_CLASS);
+			return (IPerspectiveFactory) configElement.createExecutableExtension(IWorkbenchRegistryConstants.ATT_CLASS);
 		} catch (CoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -103,32 +102,29 @@ public class PerspectiveDescriptor implements IPerspectiveDescriptor,
 
 	@Override
 	public ImageDescriptor getImageDescriptor() {
-		if (image != null)
+		if (image != null) {
 			return image;
-
+		}
 		// Try and get an image from the IConfigElement
 		if (configElement != null) {
 			String icon = configElement.getAttribute(IWorkbenchRegistryConstants.ATT_ICON);
 			if (icon != null) {
-				image = AbstractUIPlugin.imageDescriptorFromPlugin(
-						configElement.getNamespaceIdentifier(), icon);
+				image = ResourceLocator.imageDescriptorFromBundle(configElement.getNamespaceIdentifier(), icon)
+						.orElse(null);
 			}
 		}
-
 		// Get a default image
-		if (image == null)
+		if (image == null) {
 			image = WorkbenchImages.getImageDescriptor(ISharedImages.IMG_ETOOL_DEF_PERSPECTIVE);
-
+		}
 		return image;
 	}
 
 	/**
 	 * Set the {@link ImageDescriptor} that should be used to provide the
-	 * perspective icon. Needed for contributing perspectives via model
-	 * fragments.
+	 * perspective icon. Needed for contributing perspectives via model fragments.
 	 *
-	 * @param image
-	 *            The {@link ImageDescriptor} to use
+	 * @param image The {@link ImageDescriptor} to use
 	 */
 	public void setImageDescriptor(ImageDescriptor image) {
 		this.image = image;
@@ -136,8 +132,7 @@ public class PerspectiveDescriptor implements IPerspectiveDescriptor,
 
 	@Override
 	public String getLabel() {
-		return configElement == null ? label : configElement
-				.getAttribute(IWorkbenchRegistryConstants.ATT_NAME);
+		return configElement == null ? label : configElement.getAttribute(IWorkbenchRegistryConstants.ATT_NAME);
 	}
 
 	@Override
@@ -164,8 +159,7 @@ public class PerspectiveDescriptor implements IPerspectiveDescriptor,
 	}
 
 	/**
-	 * Returns <code>true</code> if this perspective is predefined by an
-	 * extension.
+	 * Returns <code>true</code> if this perspective is predefined by an extension.
 	 *
 	 * @return boolean whether this perspective is predefined by an extension
 	 */

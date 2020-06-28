@@ -32,10 +32,12 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
@@ -196,6 +198,9 @@ public class JavaElementLabelComposerCore {
 				break;
 			case IJavaElement.PACKAGE_FRAGMENT_ROOT:
 				appendPackageFragmentRootLabel((IPackageFragmentRoot) element, flags);
+				break;
+			case IJavaElement.JAVA_MODULE:
+				appendModuleLabel((IModuleDescription) element, flags);
 				break;
 			case IJavaElement.IMPORT_CONTAINER:
 			case IJavaElement.IMPORT_DECLARATION:
@@ -456,7 +461,11 @@ public class JavaElementLabelComposerCore {
 			}
 
 		} catch (JavaModelException e) {
-			JavaManipulationPlugin.logException("", e); //$NON-NLS-1$ // NotExistsException will not reach this point
+			if(e.getStatus().getCode() == IJavaModelStatusConstants.ELEMENT_DOES_NOT_EXIST) {
+				// don't care, we are decorating already removed element
+				return;
+			}
+			JavaManipulationPlugin.logException("Error rendering method label", e); //$NON-NLS-1$ // NotExistsException will not reach this point
 		}
 	}
 
@@ -467,8 +476,7 @@ public class JavaElementLabelComposerCore {
 
 
 	protected void appendAnnotationLabels(IAnnotation[] annotations, long flags) throws JavaModelException {
-		for (int j= 0; j < annotations.length; j++) {
-			IAnnotation annotation= annotations[j];
+		for (IAnnotation annotation : annotations) {
 			appendAnnotationLabel(annotation, flags);
 			fBuffer.append(' ');
 		}
@@ -672,7 +680,7 @@ public class JavaElementLabelComposerCore {
 			}
 
 		} catch (JavaModelException e) {
-			JavaManipulationPlugin.logException("", e); //$NON-NLS-1$ // NotExistsException will not reach this point
+			JavaManipulationPlugin.logException("Error rendering type parameters", e); //$NON-NLS-1$ // NotExistsException will not reach this point
 		}
 	}
 
@@ -1194,6 +1202,18 @@ public class JavaElementLabelComposerCore {
 			appendArchiveLabel(root, flags);
 		} else {
 			appendFolderLabel(root, flags);
+		}
+	}
+
+	protected void appendModuleLabel(IModuleDescription module, long flags) {
+		fBuffer.append(module.getElementName());
+		// category
+		if (getFlag(flags, JavaElementLabelsCore.MOD_CATEGORY) && module.exists()) {
+			try {
+				appendCategoryLabel(module, flags);
+			} catch (JavaModelException e) {
+				// ignore
+			}
 		}
 	}
 

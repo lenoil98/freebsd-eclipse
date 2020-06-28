@@ -152,9 +152,7 @@ public class BinaryBasedSourceGenerator {
 
 		Field thisField = null;
 
-		List<Field> fields = referenceType.visibleFields();
-		for (Iterator<Field> iterator = fields.iterator(); iterator.hasNext();) {
-			Field field = iterator.next();
+		for (Field field : referenceType.visibleFields()) {
 			if (field.name().startsWith("this$")) { //$NON-NLS-1$
 				thisField = field;
 				break;
@@ -205,7 +203,7 @@ public class BinaryBasedSourceGenerator {
 				source.append(getUniqueMethodName(EVAL_METHOD_NAME,
 						referenceType));
 				source.append("() {\nnew "); //$NON-NLS-1$
-				if (interfaceList.size() != 0) {
+				if (!interfaceList.isEmpty()) {
 					source.append(getDotName(interfaceList
 							.get(0).name()));
 				} else {
@@ -214,7 +212,7 @@ public class BinaryBasedSourceGenerator {
 				source.append("()"); //$NON-NLS-1$
 			} else {
 				source.append("public class ").append(ANONYMOUS_CLASS_NAME).append(" "); //$NON-NLS-1$ //$NON-NLS-2$
-				if (interfaceList.size() != 0) {
+				if (!interfaceList.isEmpty()) {
 					source.append(" implements ").append(getDotName(interfaceList.get(0).name())); //$NON-NLS-1$
 				} else {
 					source.append(" extends ").append(getDotName(superClassName)); //$NON-NLS-1$
@@ -296,7 +294,7 @@ public class BinaryBasedSourceGenerator {
 					} catch (ClassNotPreparedException e) {
 						return new StringBuilder();
 					}
-					if (interfaces.size() != 0) {
+					if (!interfaces.isEmpty()) {
 						source.append("implements "); //$NON-NLS-1$
 						Iterator<InterfaceType> iterator = interfaces.iterator();
 						InterfaceType interface_ = iterator
@@ -330,39 +328,33 @@ public class BinaryBasedSourceGenerator {
 			source.append(buffer);
 		}
 
-		List<Field> fields = referenceType.fields();
-		for (Iterator<Field> iterator = fields.iterator(); iterator.hasNext();) {
-			Field field = iterator.next();
+		for (Field field : referenceType.fields()) {
 			if (!field.name().startsWith("this$")) { //$NON-NLS-1$
 				source.append(buildFieldDeclaration(field));
 			}
 		}
 
-		List<Method> methods = referenceType.methods();
-		for (Iterator<Method> iterator = methods.iterator(); iterator.hasNext();) {
-			Method method = iterator.next();
+		for (Method method : referenceType.methods()) {
 			if (!method.isConstructor() && !method.isStaticInitializer()
-					&& !method.isBridge()) {
+				&& !method.isBridge()) {
 				source.append(buildMethodDeclaration(method));
 			}
 		}
 
 		List<ReferenceType> nestedTypes = referenceType.nestedTypes();
 		if (nestedTypeName == null) {
-			for (Iterator<ReferenceType> iterator = nestedTypes.iterator(); iterator.hasNext();) {
-				ReferenceType nestedType = iterator.next();
+			for (ReferenceType nestedType : nestedTypes) {
 				if (isADirectInnerType(typeName, nestedType.name())) {
 					source.append(buildTypeDeclaration(nestedType, null, null,
-							true));
+						true));
 				}
 			}
 		} else {
-			for (Iterator<ReferenceType> iterator = nestedTypes.iterator(); iterator.hasNext();) {
-				ReferenceType nestedType = iterator.next();
+			for (ReferenceType nestedType : nestedTypes) {
 				if (!nestedTypeName.equals(nestedType.name())
-						&& isADirectInnerType(typeName, nestedType.name())) {
+					&& isADirectInnerType(typeName, nestedType.name())) {
 					source.append(buildTypeDeclaration(nestedType, null, null,
-							true));
+						true));
 				}
 			}
 		}
@@ -494,7 +486,7 @@ public class BinaryBasedSourceGenerator {
 
 			List<String> arguments = method.argumentTypeNames();
 			int i = 0;
-			if (arguments.size() != 0) {
+			if (!arguments.isEmpty()) {
 				Iterator<String> iterator = arguments.iterator();
 				source.append(getDotName(iterator.next()))
 						.append(" arg").append(i++); //$NON-NLS-1$

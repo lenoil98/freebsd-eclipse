@@ -27,21 +27,27 @@ import org.w3c.dom.css.CSSValue;
 public class CSSBorderPropertiesHelpers {
 
 	/**
-	 * Update the <code>property of</code> <code>borderProperties</code>
-	 * instance with the <code>value</code>.
+	 * Update the <code>property of</code> <code>borderProperties</code> instance
+	 * with the <code>value</code>.
 	 *
 	 * @param border
 	 * @param property
 	 * @param value
 	 */
-	public static void updateCSSProperty(CSSBorderProperties borderProperties,
-			String property, CSSValue value) {
-		if ("border-style".equals(property))
+	public static void updateCSSProperty(CSSBorderProperties borderProperties, String property, CSSValue value) {
+		switch (property) {
+		case "border-style":
 			updateCSSPropertyBorderStyle(borderProperties, value);
-		else if ("border-color".equals(property))
+			break;
+		case "border-color":
 			updateCSSPropertyBorderColor(borderProperties, value);
-		else if ("border-width".equals(property))
+			break;
+		case "border-width":
 			updateCSSPropertyBorderWidth(borderProperties, value);
+			break;
+		default:
+			break;
+		}
 	}
 
 	/**
@@ -51,11 +57,9 @@ public class CSSBorderPropertiesHelpers {
 	 * @param borderProperties
 	 * @param value
 	 */
-	public static void updateCSSPropertyBorderStyle(
-			CSSBorderProperties borderProperties, CSSValue value) {
+	public static void updateCSSPropertyBorderStyle(CSSBorderProperties borderProperties, CSSValue value) {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-			borderProperties.setStyle(((CSSPrimitiveValue) value)
-					.getStringValue());
+			borderProperties.setStyle(((CSSPrimitiveValue) value).getStringValue());
 		}
 	}
 
@@ -66,8 +70,7 @@ public class CSSBorderPropertiesHelpers {
 	 * @param borderProperties
 	 * @param value
 	 */
-	public static void updateCSSPropertyBorderColor(
-			CSSBorderProperties borderProperties, CSSValue value) {
+	public static void updateCSSPropertyBorderColor(CSSBorderProperties borderProperties, CSSValue value) {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
 			borderProperties.setColor((CSSPrimitiveValue) value);
 		}
@@ -80,11 +83,9 @@ public class CSSBorderPropertiesHelpers {
 	 * @param borderProperties
 	 * @param value
 	 */
-	public static void updateCSSPropertyBorderWidth(
-			CSSBorderProperties borderProperties, CSSValue value) {
+	public static void updateCSSPropertyBorderWidth(CSSBorderProperties borderProperties, CSSValue value) {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-			borderProperties.setWidth((int) ((CSSPrimitiveValue) value)
-					.getFloatValue(CSSPrimitiveValue.CSS_PT));
+			borderProperties.setWidth((int) ((CSSPrimitiveValue) value).getFloatValue(CSSPrimitiveValue.CSS_PT));
 		}
 	}
 

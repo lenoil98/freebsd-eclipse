@@ -60,7 +60,7 @@ import org.osgi.util.tracker.ServiceTracker;
 public class MigrationPage extends WizardPage implements ISelectableIUsPage, Listener {
 
 	protected String currentMessage;
-	//	protected Button destinationBrowseButton;
+	// protected Button destinationBrowseButton;
 	protected CheckboxTreeViewer viewer = null;
 	protected Exception finishException;
 	protected boolean entryChanged = false;
@@ -77,17 +77,19 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 
 	protected IProvisioningAgent otherInstanceAgent = null;
 	private Collection<IInstallableUnit> unitsToMigrate;
-	private Set<IInstallableUnit> selectedUnitsToMigrate; // selected units to be migrated, initially contains all units not installed in current profile.
+	private Set<IInstallableUnit> selectedUnitsToMigrate; // selected units to be migrated, initially contains all units
+															// not installed in current profile.
 	private IProfile toImportFrom = null;
-	//	private File instancePath = null;
+	// private File instancePath = null;
 	private URI[] metaURIs = null;
 	private URI[] artiURIs = null;
 
 	/**
-	 * {@link DelayedFilterCheckboxTree} has a timing bug to prevent restoring the check state,
-	 * the methods {@link DeferredTreeContentManager}'s runClearPlaceholderJob and
-	 * DelayedFilterCheckboxTree.doCreateRefreshJob().new JobChangeAdapter() {...}.done(IJobChangeEvent) has timing issue,
-	 * I can't find a way to guarantee the first job is executed firstly
+	 * {@link DelayedFilterCheckboxTree} has a timing bug to prevent restoring the
+	 * check state, the methods {@link DeferredTreeContentManager}'s
+	 * runClearPlaceholderJob and DelayedFilterCheckboxTree.doCreateRefreshJob().new
+	 * JobChangeAdapter() {...}.done(IJobChangeEvent) has timing issue, I can't find
+	 * a way to guarantee the first job is executed firstly
 	 *
 	 */
 	final class ImportExportFilteredTree extends FilteredTree {
@@ -112,10 +114,13 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 						Object[] checked = viewer.getCheckedElements();
 						if (checkState == null)
 							checkState = new ArrayList<>(checked.length);
-						for (int i = 0; i < checked.length; i++)
-							if (!viewer.getGrayed(checked[i]))
-								if (!checkState.contains(checked[i]))
-									checkState.add(checked[i]);
+						for (Object checked1 : checked) {
+							if (!viewer.getGrayed(checked1)) {
+								if (!checkState.contains(checked1)) {
+									checkState.add(checked1);
+								}
+							}
+						}
 					});
 				}
 
@@ -195,8 +200,7 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		}
 
 		/**
-		 * @param sortColumn
-		 *            The sortColumn to set.
+		 * @param sortColumn The sortColumn to set.
 		 */
 		public void setSortColumn(int sortColumn) {
 			if (this.sortColumn != sortColumn) {
@@ -214,8 +218,7 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		}
 
 		/**
-		 * @param ascending
-		 *            The ascending to set.
+		 * @param ascending The ascending to set.
 		 */
 		public void setAscending(boolean ascending) {
 			this.ascending = ascending;
@@ -224,26 +227,29 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 
 	static {
 		BundleContext context = Platform.getBundle(ProvUIActivator.PLUGIN_ID).getBundleContext();
-		ServiceTracker<IProvisioningAgent, IProvisioningAgent> tracker = new ServiceTracker<>(context, IProvisioningAgent.class, null);
+		ServiceTracker<IProvisioningAgent, IProvisioningAgent> tracker = new ServiceTracker<>(context,
+				IProvisioningAgent.class, null);
 		tracker.open();
 		agent = tracker.getService();
 		tracker.close();
 		if (agent != null)
-			profileRegistry = (IProfileRegistry) agent.getService(IProfileRegistry.SERVICE_NAME);
+			profileRegistry = agent.getService(IProfileRegistry.class);
 	}
 
 	public MigrationPage(String pageName) {
 		super(pageName);
 	}
 
-	public MigrationPage(ProvisioningUI ui, ProvisioningOperationWizard wizard, IProfile toImportFrom, Collection<IInstallableUnit> unitsToMigrate, boolean firstTime) {
+	public MigrationPage(ProvisioningUI ui, ProvisioningOperationWizard wizard, IProfile toImportFrom,
+			Collection<IInstallableUnit> unitsToMigrate, boolean firstTime) {
 		super("MigrationPageInstance"); //$NON-NLS-1$
 		this.wizard = wizard;
 		this.ui = ui;
 		profile = getSelfProfile();
 		this.toImportFrom = toImportFrom;
 		this.unitsToMigrate = unitsToMigrate;
-		setTitle(firstTime ? ProvUIMessages.MigrationPage_DIALOG_TITLE_FIRSTRUN : ProvUIMessages.MigrationPage_DIALOG_TITLE);
+		setTitle(firstTime ? ProvUIMessages.MigrationPage_DIALOG_TITLE_FIRSTRUN
+				: ProvUIMessages.MigrationPage_DIALOG_TITLE);
 		setDescription(NLS.bind(ProvUIMessages.MigrationPage_DIALOG_DESCRIPTION, Platform.getProduct().getName()));
 	}
 
@@ -251,7 +257,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		super("importfrominstancepage"); //$NON-NLS-1$
 		this.wizard = wizard;
 		this.ui = ui;
-		setTitle(firstTime ? ProvUIMessages.MigrationPage_DIALOG_TITLE_FIRSTRUN : ProvUIMessages.MigrationPage_DIALOG_TITLE);
+		setTitle(firstTime ? ProvUIMessages.MigrationPage_DIALOG_TITLE_FIRSTRUN
+				: ProvUIMessages.MigrationPage_DIALOG_TITLE);
 		setDescription(NLS.bind(ProvUIMessages.MigrationPage_DIALOG_DESCRIPTION, Platform.getProduct().getName()));
 	}
 
@@ -266,7 +273,7 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 	}
 
 	private void createColumns(TreeViewer treeViewer) {
-		String[] titles = {ProvUIMessages.Column_Name, ProvUIMessages.Column_Version, ProvUIMessages.Column_Id};
+		String[] titles = { ProvUIMessages.Column_Name, ProvUIMessages.Column_Version, ProvUIMessages.Column_Id };
 		for (int i = 0; i < titles.length; i++) {
 			TreeViewerColumn column = new TreeViewerColumn(treeViewer, SWT.NONE);
 			column.getColumn().setText(titles[i]);
@@ -280,7 +287,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 			}
 
 			final int columnIndex = i;
-			column.getColumn().addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> updateTableSorting(columnIndex)));
+			column.getColumn().addSelectionListener(
+					SelectionListener.widgetSelectedAdapter(e -> updateTableSorting(columnIndex)));
 		}
 	}
 
@@ -299,7 +307,7 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 	@Override
 	public void createControl(Composite parent) {
 		initializeDialogUnits(parent);
-		//		initializeService();
+		// initializeService();
 		Composite composite = new Composite(parent, SWT.NULL);
 		GridLayout layout = new GridLayout(1, true);
 		layout.horizontalSpacing = 0;
@@ -316,12 +324,18 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		}
 
 		setControl(composite);
-		//		giveFocusToDestination();
+		// giveFocusToDestination();
 		Dialog.applyDialogFont(composite);
 	}
 
 	protected IUColumnConfig[] getColumnConfig() {
-		return new IUColumnConfig[] {new IUColumnConfig(org.eclipse.equinox.internal.p2.ui.ProvUIMessages.ProvUI_NameColumnTitle, IUColumnConfig.COLUMN_NAME, ILayoutConstants.DEFAULT_PRIMARY_COLUMN_WIDTH), new IUColumnConfig(org.eclipse.equinox.internal.p2.ui.ProvUIMessages.ProvUI_VersionColumnTitle, IUColumnConfig.COLUMN_VERSION, ILayoutConstants.DEFAULT_SMALL_COLUMN_WIDTH), new IUColumnConfig(org.eclipse.equinox.internal.p2.ui.ProvUIMessages.ProvUI_IdColumnTitle, IUColumnConfig.COLUMN_ID, ILayoutConstants.DEFAULT_COLUMN_WIDTH)};
+		return new IUColumnConfig[] {
+				new IUColumnConfig(org.eclipse.equinox.internal.p2.ui.ProvUIMessages.ProvUI_NameColumnTitle,
+						IUColumnConfig.COLUMN_NAME, ILayoutConstants.DEFAULT_PRIMARY_COLUMN_WIDTH),
+				new IUColumnConfig(org.eclipse.equinox.internal.p2.ui.ProvUIMessages.ProvUI_VersionColumnTitle,
+						IUColumnConfig.COLUMN_VERSION, ILayoutConstants.DEFAULT_SMALL_COLUMN_WIDTH),
+				new IUColumnConfig(org.eclipse.equinox.internal.p2.ui.ProvUIMessages.ProvUI_IdColumnTitle,
+						IUColumnConfig.COLUMN_ID, ILayoutConstants.DEFAULT_COLUMN_WIDTH) };
 	}
 
 	protected void createContents(Composite composite) {
@@ -344,7 +358,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 
 		PatternFilter filter = getPatternFilter();
 		filter.setIncludeLeadingWildcard(true);
-		final ImportExportFilteredTree filteredTree = new ImportExportFilteredTree(sashComposite, SWT.MULTI | SWT.FULL_SELECTION | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER, filter, true);
+		final ImportExportFilteredTree filteredTree = new ImportExportFilteredTree(sashComposite,
+				SWT.MULTI | SWT.FULL_SELECTION | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER, filter, true);
 		viewer = (CheckboxTreeViewer) filteredTree.getViewer();
 		final Tree tree = viewer.getTree();
 		tree.setHeaderVisible(true);
@@ -363,15 +378,15 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		viewer.addCheckStateListener(event -> {
 			if (!event.getChecked() && filteredTree.checkState != null) {
 				ArrayList<Object> toRemove = new ArrayList<>(1);
-				// See bug 258117.  Ideally we would get check state changes
+				// See bug 258117. Ideally we would get check state changes
 				// for children when the parent state changed, but we aren't, so
 				// we need to remove all children from the additive check state
 				// cache.
 				if (contentProvider.hasChildren(event.getElement())) {
 					Set<Object> unchecked = new HashSet<>();
 					Object[] children = contentProvider.getChildren(event.getElement());
-					for (int i = 0; i < children.length; i++) {
-						unchecked.add(children[i]);
+					for (Object child : children) {
+						unchecked.add(child);
 					}
 					Iterator<Object> iter = filteredTree.checkState.iterator();
 					while (iter.hasNext()) {
@@ -384,8 +399,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 					for (Object element : filteredTree.checkState) {
 						if (viewer.getComparer().equals(element, event.getElement())) {
 							toRemove.add(element);
-							// Do not break out of the loop.  We may have duplicate equal
-							// elements in the cache.  Since the cache is additive, we want
+							// Do not break out of the loop. We may have duplicate equal
+							// elements in the cache. Since the cache is additive, we want
 							// to be sure we've gotten everything.
 						}
 					}
@@ -394,7 +409,7 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 			}
 		});
 		parent.addControlListener(new ControlAdapter() {
-			private final int[] columnRate = new int[] {4, 2, 2};
+			private final int[] columnRate = new int[] { 4, 2, 2 };
 
 			@Override
 			public void controlResized(ControlEvent e) {
@@ -502,7 +517,9 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		Set<IInstallableUnit> ius = new HashSet<>();
 		if (profile != null) {
 			for (IInstallableUnit iu : unitsToMigrate) {
-				IQueryResult<IInstallableUnit> collector = profile.query(QueryUtil.createIUQuery(iu.getId(), new VersionRange(iu.getVersion(), true, null, false)), new NullProgressMonitor());
+				IQueryResult<IInstallableUnit> collector = profile.query(
+						QueryUtil.createIUQuery(iu.getId(), new VersionRange(iu.getVersion(), true, null, false)),
+						new NullProgressMonitor());
 				if (collector.isEmpty()) {
 					ius.add(iu);
 				}
@@ -570,7 +587,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 
 	protected boolean determinePageCompletion() {
 		currentMessage = null;
-		// validate groups in order of priority so error message is the most important one
+		// validate groups in order of priority so error message is the most important
+		// one
 		boolean complete = validateOptionsGroup();
 
 		// Avoid draw flicker by not clearing the error
@@ -588,15 +606,15 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		return SWT.OPEN;
 	}
 
-	//TODO remove the implementation of Listener
+	// TODO remove the implementation of Listener
 	@Override
 	public void handleEvent(Event event) {
-		//		Widget source = event.widget;
+		// Widget source = event.widget;
 		//
-		//		if (source == destinationBrowseButton) {
-		//			handleDestinationBrowseButtonPressed();
-		//		}
-		//		updatePageCompletion();
+		// if (source == destinationBrowseButton) {
+		// handleDestinationBrowseButtonPressed();
+		// }
+		// updatePageCompletion();
 	}
 
 	/**
@@ -627,12 +645,14 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 	}
 
 	public boolean hasInstalled(IInstallableUnit iu) {
-		IQueryResult<IInstallableUnit> results = profile.query(QueryUtil.createIUQuery(iu.getId(), new VersionRange(iu.getVersion(), true, null, false)), null);
+		IQueryResult<IInstallableUnit> results = profile
+				.query(QueryUtil.createIUQuery(iu.getId(), new VersionRange(iu.getVersion(), true, null, false)), null);
 		return !results.isEmpty();
 	}
 
 	public String getIUNameWithDetail(IInstallableUnit iu) {
-		IQueryResult<IInstallableUnit> results = profile.query(QueryUtil.createIUQuery(iu.getId(), new VersionRange(iu.getVersion(), true, null, false)), null);
+		IQueryResult<IInstallableUnit> results = profile
+				.query(QueryUtil.createIUQuery(iu.getId(), new VersionRange(iu.getVersion(), true, null, false)), null);
 		String text = iu.getProperty(IProfile.PROP_NAME, null);
 		text = (text != null) ? text : iu.getId();
 		if (!results.isEmpty()) {
@@ -679,7 +699,7 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 	}
 
 	protected String getInvalidDestinationMessage() {
-		return "";//ProvUIMessages.ImportFromInstallationPage_INVALID_DESTINATION; //$NON-NLS-1$
+		return "";// ProvUIMessages.ImportFromInstallationPage_INVALID_DESTINATION; //$NON-NLS-1$
 	}
 
 	protected String getNoOptionsMessage() {
@@ -725,17 +745,19 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 	public void cleanLocalRepository() {
 		if (metaURIs != null && metaURIs.length > 0) {
 			IProvisioningAgent runningAgent = getProvisioningUI().getSession().getProvisioningAgent();
-			IMetadataRepositoryManager manager = (IMetadataRepositoryManager) runningAgent.getService(IMetadataRepositoryManager.SERVICE_NAME);
+			IMetadataRepositoryManager manager = runningAgent.getService(IMetadataRepositoryManager.class);
 			for (URI uri : metaURIs)
 				manager.removeRepository(uri);
-			IArtifactRepositoryManager artifactManager = (IArtifactRepositoryManager) runningAgent.getService(IArtifactRepositoryManager.SERVICE_NAME);
+			IArtifactRepositoryManager artifactManager = runningAgent.getService(IArtifactRepositoryManager.class);
 			for (URI uri : artiURIs)
 				artifactManager.removeRepository(uri);
 		}
 	}
 
-	// Both checkedElements and checkedElementsUpdates and the logic inside the getCheckedIUElements method
-	// are used to prevent unnecessary call to getUpdates method due to computational cost.
+	// Both checkedElements and checkedElementsUpdates and the logic inside the
+	// getCheckedIUElements method
+	// are used to prevent unnecessary call to getUpdates method due to
+	// computational cost.
 	@SuppressWarnings("rawtypes")
 	private Set checkedElements;
 	@SuppressWarnings("rawtypes")
@@ -749,7 +771,9 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 
 			Object[] latestUpdates = getLatestVersionOfCheckedElements();
 
-			// If the getUpdades operation is cancelled, then set checkedElements and checkedElementsUpdates to null to force the lookup for updates again. Thereafter throw OperationCanceledException.
+			// If the getUpdades operation is cancelled, then set checkedElements and
+			// checkedElementsUpdates to null to force the lookup for updates again.
+			// Thereafter throw OperationCanceledException.
 			if (getUpdatesCanceled) {
 
 				this.checkedElements = null;
@@ -761,7 +785,7 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		return viewer.getCheckedElements();
 	}
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private Object[] getLatestVersionOfCheckedElements() {
 
 		Object[] checkedArray = viewer.getCheckedElements();
@@ -772,7 +796,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 
 		} else {
 			Set checkedElementsNow = new HashSet(Arrays.asList(checkedArray));
-			if (checkedElementsNow.size() != this.checkedElements.size() || (!checkedElementsNow.containsAll(checkedElements))) {
+			if (checkedElementsNow.size() != this.checkedElements.size()
+					|| (!checkedElementsNow.containsAll(checkedElements))) {
 				// only if the set of checkedElements has changed get the update for them
 				this.checkedElements = checkedElementsNow; //
 				this.checkedElementsUpdates = new HashSet(Arrays.asList(getUpdates(checkedArray)));
@@ -793,7 +818,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		new UnsupportedOperationException();
 	}
 
-	// Look for update of the current selected installation units and replace the old ons with the updated version
+	// Look for update of the current selected installation units and replace the
+	// old ons with the updated version
 	private Object[] getUpdates(final Object[] _checkedElements) {
 
 		final Collection<IInstallableUnit> toInstall = new ArrayList<>();
@@ -801,7 +827,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 		try {
 			getContainer().run(false, true, monitor -> {
 				SubMonitor sub = SubMonitor.convert(monitor, _checkedElements.length);
-				ProvisioningContext context = new ProvisioningContext(getProvisioningUI().getSession().getProvisioningAgent());
+				ProvisioningContext context = new ProvisioningContext(
+						getProvisioningUI().getSession().getProvisioningAgent());
 
 				for (Object iu : _checkedElements) {
 
@@ -814,7 +841,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 
 					if (iu instanceof AvailableIUElement) {
 						IInstallableUnit unit = ((AvailableIUElement) iu).getIU();
-						IuUpdateAndPatches updateAndPatches = filterToInstall(unit, updatesFor(unit, context, sub.newChild(1)));
+						IuUpdateAndPatches updateAndPatches = filterToInstall(unit,
+								updatesFor(unit, context, sub.newChild(1)));
 						if (updateAndPatches.update != null) {
 							toInstall.add(updateAndPatches.update);
 						} else {
@@ -849,22 +877,23 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 	}
 
 	private static boolean hasHigherFidelity(IInstallableUnit iu, IInstallableUnit currentIU) {
-		if (Boolean.parseBoolean(currentIU.getProperty(IInstallableUnit.PROP_PARTIAL_IU)) && !Boolean.parseBoolean(iu.getProperty(IInstallableUnit.PROP_PARTIAL_IU)))
+		if (Boolean.parseBoolean(currentIU.getProperty(IInstallableUnit.PROP_PARTIAL_IU))
+				&& !Boolean.parseBoolean(iu.getProperty(IInstallableUnit.PROP_PARTIAL_IU)))
 			return true;
 		return false;
 	}
 
-	public Collection<IInstallableUnit> updatesFor(IInstallableUnit toUpdate, ProvisioningContext context, IProgressMonitor monitor) {
-		//		IPlanner planner = (IPlanner) getProvisioningUI().getSession().getProvisioningAgent().getService(IPlanner.SERVICE_NAME);
-		//		return planner.updatesFor(toUpdate, context, monitor).toSet();
+	public Collection<IInstallableUnit> updatesFor(IInstallableUnit toUpdate, ProvisioningContext context,
+			IProgressMonitor monitor) {
+		// IPlanner planner = (IPlanner)
+		// getProvisioningUI().getSession().getProvisioningAgent().getService(IPlanner.SERVICE_NAME);
+		// return planner.updatesFor(toUpdate, context, monitor).toSet();
 
 		Map<String, IInstallableUnit> resultsMap = new HashMap<>();
 
 		SubMonitor sub = SubMonitor.convert(monitor, 1000);
 		IQueryable<IInstallableUnit> queryable = context.getMetadata(sub.newChild(500));
-		IQueryResult<IInstallableUnit> matches = queryable.query(new UpdateQuery(toUpdate), sub.newChild(500));
-		for (Iterator<IInstallableUnit> it = matches.iterator(); it.hasNext();) {
-			IInstallableUnit iu = it.next();
+		for (IInstallableUnit iu : queryable.query(new UpdateQuery(toUpdate), sub.newChild(500))) {
 			String key = iu.getId() + "_" + iu.getVersion().toString(); //$NON-NLS-1$
 			IInstallableUnit currentIU = resultsMap.get(key);
 			if (currentIU == null || hasHigherFidelity(iu, currentIU))
@@ -888,9 +917,10 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 
 	/**
 	 *
-	 * @param iu original unit.
+	 * @param iu      original unit.
 	 * @param updates list of updates: patches or true updates.
-	 * @return a structure holding the original unit, its most recent update and any available patches.
+	 * @return a structure holding the original unit, its most recent update and any
+	 *         available patches.
 	 */
 	private IuUpdateAndPatches filterToInstall(IInstallableUnit iu, Collection<IInstallableUnit> updates) {
 
@@ -901,7 +931,8 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 			if (QueryUtil.isPatch(update)) {
 				updateAndPatches.patches.add(update);
 			} else {
-				if (updateAndPatches.update == null || updateAndPatches.update.getVersion().compareTo(update.getVersion()) < 0) {
+				if (updateAndPatches.update == null
+						|| updateAndPatches.update.getVersion().compareTo(update.getVersion()) < 0) {
 					updateAndPatches.update = update;
 				}
 			}
@@ -911,8 +942,10 @@ public class MigrationPage extends WizardPage implements ISelectableIUsPage, Lis
 	}
 
 	public static boolean loadCustomizedSetting() {
-		IScopeContext[] contexts = new IScopeContext[] {InstanceScope.INSTANCE, DefaultScope.INSTANCE, BundleDefaultsScope.INSTANCE, ConfigurationScope.INSTANCE};
-		boolean updateToLatest = Platform.getPreferencesService().getBoolean(AutomaticUpdatePlugin.PLUGIN_ID, "updateToLatest", false, contexts);
+		IScopeContext[] contexts = new IScopeContext[] { InstanceScope.INSTANCE, DefaultScope.INSTANCE,
+				BundleDefaultsScope.INSTANCE, ConfigurationScope.INSTANCE };
+		boolean updateToLatest = Platform.getPreferencesService().getBoolean(AutomaticUpdatePlugin.PLUGIN_ID,
+				"updateToLatest", false, contexts);
 		return updateToLatest;
 	}
 

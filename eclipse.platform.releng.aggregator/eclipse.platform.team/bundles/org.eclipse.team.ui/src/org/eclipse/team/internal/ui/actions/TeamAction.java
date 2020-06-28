@@ -63,6 +63,7 @@ import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.ide.ResourceUtil;
 
@@ -100,7 +101,11 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 
 		@Override
 		public void partClosed(IWorkbenchPartReference partRef) {
-			if (targetPart == partRef.getPart(false)) {
+			if(targetPart == null) {
+				return;
+			}
+			IWorkbenchPart part = partRef.getPart(false);
+			if (targetPart == part) {
 				targetPart = null;
 			}
 		}
@@ -191,8 +196,7 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 		IResource[] selectedResources = getSelectedResources();
 		if (selectedResources.length == 0) return new IProject[0];
 		ArrayList<IProject> projects = new ArrayList<>();
-		for (int i = 0; i < selectedResources.length; i++) {
-			IResource resource = selectedResources[i];
+		for (IResource resource : selectedResources) {
 			if (resource.getType() == IResource.PROJECT) {
 				projects.add((IProject) resource);
 			}
@@ -228,44 +232,42 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 	}
 
 	/**
-     * Return the selected resource mappins that contain resources in
-     * projects that are associated with a repository of the given id.
-     * @param providerId the repository provider id
-     * @return the resource mappings that contain resources associated with the given provider
+	 * Return the selected resource mappins that contain resources in
+	 * projects that are associated with a repository of the given id.
+	 * @param providerId the repository provider id
+	 * @return the resource mappings that contain resources associated with the given provider
 	 */
-    protected ResourceMapping[] getSelectedResourceMappings(String providerId) {
-        Object[] elements = getSelection().toArray();
-        ArrayList<ResourceMapping> providerMappings = new ArrayList<>();
-        for (int i = 0; i < elements.length; i++) {
-            Object object = elements[i];
-            Object adapted = getResourceMapping(object);
-            if (adapted instanceof ResourceMapping) {
-                ResourceMapping mapping = (ResourceMapping) adapted;
-                if (providerId == null || isMappedToProvider(mapping, providerId)) {
-                    providerMappings.add(mapping);
-                }
-            }
-        }
-        return providerMappings.toArray(new ResourceMapping[providerMappings.size()]);
-    }
+	protected ResourceMapping[] getSelectedResourceMappings(String providerId) {
+		Object[] elements = getSelection().toArray();
+		ArrayList<ResourceMapping> providerMappings = new ArrayList<>();
+		for (Object object : elements) {
+			Object adapted = getResourceMapping(object);
+			if (adapted instanceof ResourceMapping) {
+				ResourceMapping mapping = (ResourceMapping) adapted;
+				if (providerId == null || isMappedToProvider(mapping, providerId)) {
+					providerMappings.add(mapping);
+				}
+			}
+		}
+		return providerMappings.toArray(new ResourceMapping[providerMappings.size()]);
+	}
 
-    private Object getResourceMapping(Object object) {
-        if (object instanceof ResourceMapping)
-            return object;
-        return Utils.getResourceMapping(object);
-    }
+	private Object getResourceMapping(Object object) {
+		if (object instanceof ResourceMapping)
+			return object;
+		return Utils.getResourceMapping(object);
+	}
 
-    private boolean isMappedToProvider(ResourceMapping element, String providerId) {
-        IProject[] projects = element.getProjects();
-        for (int k = 0; k < projects.length; k++) {
-            IProject project = projects[k];
-            RepositoryProvider provider = RepositoryProvider.getProvider(project);
-            if (provider != null && provider.getID().equals(providerId)) {
-                return true;
-            }
-        }
-        return false;
-    }
+	private boolean isMappedToProvider(ResourceMapping element, String providerId) {
+		IProject[] projects = element.getProjects();
+		for (IProject project : projects) {
+			RepositoryProvider provider = RepositoryProvider.getProvider(project);
+			if (provider != null && provider.getID().equals(providerId)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Convenience method for getting the current shell.
@@ -276,11 +278,11 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 		if (shell != null) {
 			return shell;
 		} else if (targetPart != null) {
-		    return targetPart.getSite().getShell();
+			return targetPart.getSite().getShell();
 		} else if (window != null) {
 			return window.getShell();
 		} else {
-			IWorkbench workbench = TeamUIPlugin.getPlugin().getWorkbench();
+			IWorkbench workbench = PlatformUI.getWorkbench();
 			if (workbench == null) return null;
 			IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
 			if (window == null) return null;
@@ -397,14 +399,14 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 	 */
 	protected Hashtable<RepositoryProvider, List<IResource>> getProviderMapping(IResource[] resources) {
 		Hashtable<RepositoryProvider, List<IResource>> result = new Hashtable<>();
-		for (int i = 0; i < resources.length; i++) {
-			RepositoryProvider provider = RepositoryProvider.getProvider(resources[i].getProject());
+		for (IResource resource : resources) {
+			RepositoryProvider provider = RepositoryProvider.getProvider(resource.getProject());
 			List<IResource> list = result.get(provider);
 			if (list == null) {
 				list = new ArrayList<>();
 				result.put(provider, list);
 			}
-			list.add(resources[i]);
+			list.add(resource);
 		}
 		return result;
 	}
@@ -413,13 +415,13 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 	 * @return IWorkbenchPart
 	 */
 	protected IWorkbenchPart getTargetPart() {
-        if(targetPart == null) {
-            IWorkbenchPage  page = TeamUIPlugin.getActivePage();
-            if (page != null) {
-                targetPart = page.getActivePart();
-            }
-        }
-        return targetPart;
+		if(targetPart == null) {
+			IWorkbenchPage  page = TeamUIPlugin.getActivePage();
+			if (page != null) {
+				targetPart = page.getActivePart();
+			}
+		}
+		return targetPart;
 
 	}
 
@@ -428,8 +430,17 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 	 * @return IWorkbenchPage
 	 */
 	protected IWorkbenchPage getTargetPage() {
-		if (getTargetPart() == null) return TeamUIPlugin.getActivePage();
-		return getTargetPart().getSite().getPage();
+		IWorkbenchPart target = getTargetPart();
+		if (target == null) {
+			return TeamUIPlugin.getActivePage();
+		}
+		IWorkbenchPage page = target.getSite().getPage();
+		if(page == null) {
+			// part was disposed => null targetPart to avoid memory leak
+			targetPart = null;
+			return TeamUIPlugin.getActivePage();
+		}
+		return page;
 	}
 
 	/**
@@ -447,9 +458,6 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IViewActionDelegate#init(org.eclipse.ui.IViewPart)
-	 */
 	@Override
 	public void init(IViewPart view) {
 		if(view != null) {
@@ -472,7 +480,6 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 
 	@Override
 	public void dispose() {
-		super.dispose();
 		if(window != null) {
 			window.getSelectionService().removePostSelectionListener(selectionListener);
 			if (window.getActivePage() != null) {
@@ -481,10 +488,11 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 			targetPartListener = null;
 		}
 		// Don't hold on to anything when we are disposed to prevent memory leaks (see bug 195521)
-        selection = null;
-        window = null;
-        targetPart = null;
-        shell = null;
+		selection = null;
+		window = null;
+		targetPart = null;
+		shell = null;
+		super.dispose();
 	}
 
 	/**
@@ -576,28 +584,25 @@ public abstract class TeamAction extends AbstractHandler implements IObjectActio
 		handle(e, TeamUIMessages.TeamAction_errorTitle, null);
 	}
 
-    /**
-     * The <code>TeamAction</code> implementation of this
-     * <code>IActionDelegate2</code> method does nothing. Subclasses may
-     * reimplement.
-     */
-    @Override
-	public void init(IAction action) {
-    }
-
-    /**
-     * The <code>TeamAction</code> implementation of this
-     * <code>IActionDelegate2</code> method redirects to the <code>run</code>
-     * method. Subclasses may reimplement.
-     */
-    @Override
-	final public void runWithEvent(IAction action, Event event) {
-        run(action);
-    }
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.commands.AbstractHandler#setEnabled(java.lang.Object)
+	/**
+	 * The <code>TeamAction</code> implementation of this
+	 * <code>IActionDelegate2</code> method does nothing. Subclasses may
+	 * reimplement.
 	 */
+	@Override
+	public void init(IAction action) {
+	}
+
+	/**
+	 * The <code>TeamAction</code> implementation of this
+	 * <code>IActionDelegate2</code> method redirects to the <code>run</code>
+	 * method. Subclasses may reimplement.
+	 */
+	@Override
+	final public void runWithEvent(IAction action, Event event) {
+		run(action);
+	}
+
 	@Override
 	public void setEnabled(Object evaluationContext) {
 		IWorkbenchWindow activeWorkbenchWindow = (IWorkbenchWindow) HandlerUtil

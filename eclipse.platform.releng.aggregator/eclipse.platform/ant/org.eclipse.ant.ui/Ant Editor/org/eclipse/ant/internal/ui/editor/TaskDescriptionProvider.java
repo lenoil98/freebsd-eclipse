@@ -29,7 +29,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.eclipse.ant.internal.core.IAntCoreConstants;
 import org.eclipse.ant.internal.ui.AntUIPlugin;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IProgressService;
@@ -43,10 +42,10 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * The <code>TaskDescriptionProvider</code> provides the additional descriptions for tasks and attributes for the code assist.
- * <P>
+ * <p>
  * Descriptions for task are originally provided with the XML file <code>TASKS_DESCRIPTION_XML_FILE_NAME</code>. This file is parsed by the provider
  * and requested descriptions are returned.
- * <P>
+ * </p>
  */
 public class TaskDescriptionProvider {
 
@@ -112,12 +111,7 @@ public class TaskDescriptionProvider {
 	public static TaskDescriptionProvider getDefault() {
 		if (fgDefault == null) {
 			fgDefault = new TaskDescriptionProvider();
-			IRunnableWithProgress runnable = new IRunnableWithProgress() {
-				@Override
-				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-					fgDefault.initialize();
-				}
-			};
+			IRunnableWithProgress runnable = monitor -> fgDefault.initialize();
 
 			IProgressService service = PlatformUI.getWorkbench().getProgressService();
 			try {

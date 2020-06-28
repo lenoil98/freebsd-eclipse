@@ -72,8 +72,8 @@ public class EmbeddedBrowserAdapter implements IBrowser, IBrowserCloseListener{
 		/* only attempt to use a second thread if the Browser's native renderer is IE */
 		boolean useUIThread2 = BaseHelpSystem.getMode() == BaseHelpSystem.MODE_WORKBENCH
 				&& Constants.OS_WIN32.equalsIgnoreCase(Platform.getOS())
-		        && !Constants.WS_WPF.equalsIgnoreCase(SWT.getPlatform())
-		        && "ie".equalsIgnoreCase(browserType); //$NON-NLS-1$
+				&& !Constants.WS_WPF.equalsIgnoreCase(SWT.getPlatform())
+				&& "ie".equalsIgnoreCase(browserType); //$NON-NLS-1$
 		if (useUIThread2) {
 			if (secondThread == null) {
 				secondThread = new UIThread2();
@@ -118,7 +118,7 @@ public class EmbeddedBrowserAdapter implements IBrowser, IBrowserCloseListener{
 		if (getBrowserDisplay() == Display.getCurrent()) {
 			uiClose();
 		} else {
-			getBrowserDisplay().syncExec(() -> uiClose());
+			getBrowserDisplay().syncExec(this::uiClose);
 		}
 	}
 	/*

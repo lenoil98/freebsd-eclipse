@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,22 +14,19 @@
  *     Tonny Madsen, RCP Company - bug 201055
  *     Lars Vogel <Lars.Vogel@vogella.com> - Bug 440136
  *     Patrik Suzzi <psuzzi@gmail.com> - Bug 485313
+ *     Christoph Läubrich - Bug 552773 - Simplify logging in platform code base
  *******************************************************************************/
 package org.eclipse.ui.internal;
 
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer;
 import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent;
 import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.eclipse.core.runtime.preferences.InstanceScope;
-import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.swt.SWT;
 import org.eclipse.ui.IWorkbenchPreferenceConstants;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.keys.IBindingService;
 import org.osgi.service.prefs.BackingStoreException;
 
@@ -70,17 +67,16 @@ public class UIPreferenceInitializer extends AbstractPreferenceInitializer {
 		node.putBoolean(IWorkbenchPreferenceConstants.LINK_NAVIGATOR_TO_EDITOR,
 				false);
 
-		node
-				.putBoolean(
-						IWorkbenchPreferenceConstants.SHOW_TRADITIONAL_STYLE_TABS,
-						true);
 		node.putBoolean(IWorkbenchPreferenceConstants.ENABLE_ANIMATIONS, false);
+		node.putBoolean(IWorkbenchPreferenceConstants.USE_ROUND_TABS, false);
 		node.putBoolean(IWorkbenchPreferenceConstants.USE_COLORED_LABELS, true);
 		node.put(IWorkbenchPreferenceConstants.DOCK_PERSPECTIVE_BAR,
 				IWorkbenchPreferenceConstants.TOP_LEFT);
 		node.putBoolean(
 				IWorkbenchPreferenceConstants.SHOW_TEXT_ON_PERSPECTIVE_BAR,
 				false);
+		node.putBoolean(
+				IWorkbenchPreferenceConstants.SHOW_TEXT_ON_QUICK_ACCESS, false);
 		node.putBoolean(
 				IWorkbenchPreferenceConstants.SHOW_OTHER_IN_PERSPECTIVE_MENU,
 				true);
@@ -158,8 +154,6 @@ public class UIPreferenceInitializer extends AbstractPreferenceInitializer {
 
 		node.putInt(IWorkbenchPreferenceConstants.RECENTLY_USED_WORKINGSETS_SIZE, 5);
 
-		migrateInternalPreferences();
-
 		IEclipsePreferences rootNode = (IEclipsePreferences) Platform
 				.getPreferencesService().getRootNode()
 				.node(InstanceScope.SCOPE);
@@ -173,10 +167,7 @@ public class UIPreferenceInitializer extends AbstractPreferenceInitializer {
 								.getSingleton());
 			}
 		} catch (BackingStoreException e) {
-			IStatus status = new Status(IStatus.ERROR, UIPlugin.getDefault()
-					.getBundle().getSymbolicName(), IStatus.ERROR, e
-					.getLocalizedMessage(), e);
-			UIPlugin.getDefault().getLog().log(status);
+			UIPlugin.getDefault().getLog().error(e.getLocalizedMessage(), e);
 		}
 
 		rootNode
@@ -202,46 +193,5 @@ public class UIPreferenceInitializer extends AbstractPreferenceInitializer {
 				});
 	}
 
-	/**
-	 * Migrate any old internal preferences to the API store.
-	 */
-	private void migrateInternalPreferences() {
-
-		IPreferenceStore internalStore = WorkbenchPlugin.getDefault()
-				.getPreferenceStore();
-		IPreferenceStore apiStore = PlatformUI.getPreferenceStore();
-		// Is there a value there?
-		if (internalStore
-				.contains(IWorkbenchPreferenceConstants.VIEW_TAB_POSITION)) {
-			apiStore.setValue(IWorkbenchPreferenceConstants.VIEW_TAB_POSITION,
-					internalStore.getInt(IWorkbenchPreferenceConstants.VIEW_TAB_POSITION));
-			internalStore
-				.setToDefault(IWorkbenchPreferenceConstants.VIEW_TAB_POSITION);
-		}
-
-		// Is there a value there?
-		if (internalStore
-				.contains(IWorkbenchPreferenceConstants.EDITOR_TAB_POSITION)) {
-
-			apiStore.setValue(
-					IWorkbenchPreferenceConstants.EDITOR_TAB_POSITION,
-					internalStore.getInt(IWorkbenchPreferenceConstants.EDITOR_TAB_POSITION));
-			internalStore
-				.setToDefault(IWorkbenchPreferenceConstants.EDITOR_TAB_POSITION);
-		}
-
-		// As default is true we need to check if a value was set
-
-		if (internalStore
-				.contains(IWorkbenchPreferenceConstants.SHOW_MULTIPLE_EDITOR_TABS)) {
-			apiStore
-					.setValue(
-							IWorkbenchPreferenceConstants.SHOW_MULTIPLE_EDITOR_TABS,
-							internalStore
-							.getBoolean(IWorkbenchPreferenceConstants.SHOW_MULTIPLE_EDITOR_TABS));
-			internalStore
-					.setToDefault(IWorkbenchPreferenceConstants.SHOW_MULTIPLE_EDITOR_TABS);
-		}
-	}
 
 }

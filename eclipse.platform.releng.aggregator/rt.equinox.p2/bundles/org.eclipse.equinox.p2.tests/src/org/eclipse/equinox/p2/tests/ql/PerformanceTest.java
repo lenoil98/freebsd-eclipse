@@ -198,8 +198,7 @@ public class PerformanceTest extends AbstractProvisioningTest {
 			start = System.currentTimeMillis();
 			for (int idx = 0; idx < 80; ++idx) {
 				int sz = 0;
-				for (Iterator<IInstallableUnit> iter = repo.query(QueryUtil.createIUAnyQuery(), new NullProgressMonitor()).iterator(); iter.hasNext();) {
-					IInstallableUnit candidate = iter.next();
+				for (IInstallableUnit candidate : repo.query(QueryUtil.createIUAnyQuery(), new NullProgressMonitor())) {
 					if (candidate.getId().startsWith("org.eclipse."))
 						sz++;
 				}
@@ -290,6 +289,24 @@ public class PerformanceTest extends AbstractProvisioningTest {
 			tradQueryMS += (System.currentTimeMillis() - start);
 		}
 		System.out.println("CapabilityQuery took: " + tradQueryMS + " milliseconds");
+		System.out.println();
+	}
+
+	public void testCapabilityQueryPerformanceOsgiService() throws Exception {
+
+		IMetadataRepository repo = getMDR("/testData/2018-12");
+
+		IRequirement capability = MetadataFactory.createRequirement("osgi.service", "(objectClass=org.osgi.service.event.EventAdmin)", null, 0, 0, false);
+		IQuery<IInstallableUnit> capabilityQuery = QueryUtil.createMatchQuery(capability.getMatches());
+		IQueryResult<IInstallableUnit> result;
+
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < 1000; ++i) {
+			result = repo.query(capabilityQuery, new NullProgressMonitor());
+			assertEquals(1, queryResultSize(result));
+			assertEquals("org.eclipse.equinox.event", result.iterator().next().getId());
+		}
+		System.out.println("1000 * CapabilityQuery for osgi.service took: " + (System.currentTimeMillis() - start) + " milliseconds");
 		System.out.println();
 	}
 
@@ -427,8 +444,8 @@ public class PerformanceTest extends AbstractProvisioningTest {
 	private IInstallableUnit[] gatherAvailableInstallableUnits(IQueryable<IInstallableUnit> queryable) {
 		ArrayList<IInstallableUnit> list = new ArrayList<>();
 		IQueryResult<IInstallableUnit> matches = queryable.query(QueryUtil.createIUAnyQuery(), null);
-		for (Iterator<IInstallableUnit> it = matches.iterator(); it.hasNext();)
-			list.add(it.next());
+		for (IInstallableUnit iInstallableUnit : matches)
+			list.add(iInstallableUnit);
 		return list.toArray(new IInstallableUnit[list.size()]);
 	}
 }

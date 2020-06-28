@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.browser;
 
@@ -54,8 +55,8 @@ public class MozillaBrowserAdapter implements IBrowser {
 	/**
 	 * Constructor
 	 *
-	 * @executable executable filename to launch
-	 * @executableName name of the program to display when error occurs
+	 * @param executable     executable filename to launch
+	 * @param executableName name of the program to display when error occurs
 	 */
 	MozillaBrowserAdapter(String executable, String executableName) {
 		this.uiThread = Thread.currentThread();
@@ -152,6 +153,7 @@ public class MozillaBrowserAdapter implements IBrowser {
 		 * @param browserCmd
 		 * @return int 0 if success
 		 */
+		@SuppressWarnings("resource")
 		private int openBrowser(String browserCmd) {
 			try {
 				Process pr = Runtime.getRuntime().exec(browserCmd);
@@ -168,8 +170,7 @@ public class MozillaBrowserAdapter implements IBrowser {
 				return ret;
 			} catch (InterruptedException e) {
 			} catch (IOException e) {
-				HelpBasePlugin.logError("Launching " + executableName //$NON-NLS-1$
-						+ " has failed.", e); //$NON-NLS-1$
+				Platform.getLog(getClass()).error("Launching " + executableName + " has failed.", e); //$NON-NLS-1$ //$NON-NLS-2$
 				String msg = NLS.bind(HelpBaseResources.MozillaBrowserAdapter_executeFailed, executableName);
 				BaseHelpSystem.getDefaultErrorUtil()
 						.displayError(msg, uiThread);
@@ -181,32 +182,23 @@ public class MozillaBrowserAdapter implements IBrowser {
 
 		/**
 		 * On some OSes 0 is always returned by netscape -remote. It is
-		 * necessary to examine ouput to find out failure
+		 * necessary to examine output to find out failure
 		 *
 		 * @param outputs
 		 * @param errors
-		 * @return @throws
-		 *         InterruptedException
+		 * @return
 		 */
-		private boolean errorsInOutput(StreamConsumer outputs,
-				StreamConsumer errors) {
+		private boolean errorsInOutput(StreamConsumer outputs, StreamConsumer errors) {
 			try {
 				outputs.join(1000);
-				if (outputs.getLastLine() != null
-						&& (outputs.getLastLine().indexOf(
-								"No running window found") //$NON-NLS-1$
-						>= 0 || outputs.getLastLine().indexOf(
-								"not running on display") //$NON-NLS-1$
-						>= 0)) {
+				if (outputs.getLastLine() != null && (outputs.getLastLine().contains("No running window found") //$NON-NLS-1$
+						|| outputs.getLastLine().contains("not running on display"))) {//$NON-NLS-1$
 					return true;
 				}
 				errors.join(1000);
-				if (errors.getLastLine() != null
-						&& (errors.getLastLine().indexOf(
-								"No running window found") //$NON-NLS-1$
-						>= 0 || errors.getLastLine().indexOf(
-								"not running on display") //$NON-NLS-1$
-						>= 0)) {
+				if (errors.getLastLine() != null && (errors.getLastLine().contains("No running window found") //$NON-NLS-1$
+						|| errors.getLastLine().contains("not running on display"))) {//$NON-NLS-1$
+
 					return true;
 				}
 			} catch (InterruptedException ie) {
@@ -221,8 +213,7 @@ public class MozillaBrowserAdapter implements IBrowser {
 			waitForBrowser();
 			if (exitRequested)
 				return;
-			if (openBrowser(executable + " -remote openURL(" + url + ")") //$NON-NLS-1$ //$NON-NLS-2$
-			== 0) {
+			if (openBrowser(executable + " -remote openURL(" + url + ")") == 0) {//$NON-NLS-1$ //$NON-NLS-2$
 				return;
 			}
 			if (exitRequested)

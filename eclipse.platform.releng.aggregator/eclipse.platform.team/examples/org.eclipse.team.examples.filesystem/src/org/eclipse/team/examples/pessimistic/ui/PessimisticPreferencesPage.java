@@ -18,7 +18,11 @@ import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.team.examples.pessimistic.IPessimisticFilesystemConstants;
 import org.eclipse.team.examples.pessimistic.PessimisticFilesystemProviderPlugin;
 import org.eclipse.ui.IWorkbench;
@@ -38,7 +42,7 @@ public class PessimisticPreferencesPage
 	/*
 	 * Widget for the files are edited without a context preference
 	 */
-	private Combo filesAreEditedNoPromptCombo;	
+	private Combo filesAreEditedNoPromptCombo;
 	/*
 	 * Widget for the files are saved preference
 	 */
@@ -55,47 +59,47 @@ public class PessimisticPreferencesPage
 	 * Widget for the fail validate edit preference
 	 */
 	private Button failValidateEdit;
-	
+
 	/*
 	 * Option strings for the files are edited preference.
 	 */
-	private static final String[] EDIT_OPTION_STRINGS= 
-		new String[] { 
-			"Prompt to checkout", 
-			"Checkout", 
+	private static final String[] EDIT_OPTION_STRINGS=
+		new String[] {
+			"Prompt to checkout",
+			"Checkout",
 			"Do nothing", };
 	/*
 	 * Option values for the files are edited preference.
 	 */
 	private static final int[] EDIT_OPTION_KEYS=
-		new int[] { 
+		new int[] {
 			IPessimisticFilesystemConstants.OPTION_PROMPT,
 			IPessimisticFilesystemConstants.OPTION_AUTOMATIC,
 			IPessimisticFilesystemConstants.OPTION_DO_NOTHING, };
-			
+
 	/*
 	 * Option strings for the files are edited without a context preference.
 	 */
-	private static final String[] EDIT_NO_PROMPT_OPTION_STRINGS= 
-		new String[] { 
-			"Checkout", 
-			"Do nothing", };		
+	private static final String[] EDIT_NO_PROMPT_OPTION_STRINGS=
+		new String[] {
+			"Checkout",
+			"Do nothing", };
 
 	/*
 	 * Option strings for the files are saved preference.
 	 */
-	private static final String[] SAVE_OPTION_STRINGS= 
-		new String[] { 
-			"Checkout", 
+	private static final String[] SAVE_OPTION_STRINGS=
+		new String[] {
+			"Checkout",
 			"Do nothing", };
 	/*
 	 * Option values for the files are saved preference.
 	 */
 	private static final int[] SAVE_OPTION_KEYS=
-		new int[] { 
+		new int[] {
 			IPessimisticFilesystemConstants.OPTION_AUTOMATIC,
 			IPessimisticFilesystemConstants.OPTION_DO_NOTHING, };
-			
+
 	/*
 	 * Option strings for the add to control preference.
 	 */
@@ -108,15 +112,13 @@ public class PessimisticPreferencesPage
 	 * Option values for the add to control preference.
 	 */
 	private static final int[] ADD_TO_CONTROL_OPTION_KEYS=
-		new int[] { 
+		new int[] {
 			IPessimisticFilesystemConstants.OPTION_PROMPT,
 			IPessimisticFilesystemConstants.OPTION_AUTOMATIC,
-			IPessimisticFilesystemConstants.OPTION_DO_NOTHING, };		
-	
+			IPessimisticFilesystemConstants.OPTION_DO_NOTHING, };
 
-	/*
-	 * @see org.eclipse.jface.preference.PreferencePage#doGetPreferenceStore()
-	 */
+
+	@Override
 	protected IPreferenceStore doGetPreferenceStore() {
 		return PessimisticFilesystemProviderPlugin.getInstance().getPreferenceStore();
 	}
@@ -139,9 +141,7 @@ public class PessimisticPreferencesPage
 		group.setLayoutData(data);
 	}
 
-	/*
-	 * @see org.eclipse.jface.preference.PreferencePage#createContents(Composite)
-	 */
+	@Override
 	protected Control createContents(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NULL);
 		setDefaultLayout(composite, 1);
@@ -161,13 +161,13 @@ public class PessimisticPreferencesPage
 		gridData = new GridData();
 		gridData.horizontalSpan = 1;
 		gridData.horizontalAlignment = GridData.FILL;
-		label.setLayoutData(gridData);		
+		label.setLayoutData(gridData);
 
 		filesAreEditedCombo= new Combo(options, SWT.BORDER | SWT.READ_ONLY);
 		gridData = new GridData();
 		gridData.horizontalSpan= 1;
 		gridData.horizontalAlignment = GridData.FILL;
-		filesAreEditedCombo.setLayoutData(gridData);	
+		filesAreEditedCombo.setLayoutData(gridData);
 		filesAreEditedCombo.setItems(EDIT_OPTION_STRINGS);
 
 		label = new Label(options, SWT.NONE);
@@ -175,22 +175,22 @@ public class PessimisticPreferencesPage
 		gridData = new GridData();
 		gridData.horizontalSpan = 1;
 		gridData.horizontalAlignment = GridData.FILL;
-		label.setLayoutData(gridData);		
+		label.setLayoutData(gridData);
 
 		filesAreEditedNoPromptCombo= new Combo(options, SWT.BORDER | SWT.READ_ONLY);
 		gridData = new GridData();
 		gridData.horizontalSpan= 1;
 		gridData.horizontalAlignment = GridData.FILL;
-		filesAreEditedNoPromptCombo.setLayoutData(gridData);	
+		filesAreEditedNoPromptCombo.setLayoutData(gridData);
 		filesAreEditedNoPromptCombo.setItems(EDIT_NO_PROMPT_OPTION_STRINGS);
-		
+
 		label = new Label(options, SWT.NONE);
 		label.setText("When checked in files are saved:");
 		gridData = new GridData();
 		gridData.horizontalSpan = 1;
 		gridData.horizontalAlignment = GridData.FILL;
 		label.setLayoutData(gridData);
-		
+
 		filesAreSavedCombo= new Combo(options, SWT.BORDER | SWT.READ_ONLY);
 		gridData = new GridData();
 		gridData.horizontalSpan = 1;
@@ -204,7 +204,7 @@ public class PessimisticPreferencesPage
 		gridData.horizontalSpan = 1;
 		gridData.horizontalAlignment = GridData.FILL;
 		label.setLayoutData(gridData);
-		
+
 		addToControlCombo= new Combo(options, SWT.BORDER | SWT.READ_ONLY);
 		gridData = new GridData();
 		gridData.horizontalSpan = 1;
@@ -237,16 +237,12 @@ public class PessimisticPreferencesPage
 		return composite;
 	}
 
-	/*
-	 * @see org.eclipse.ui.IWorkbenchPreferencePage#init(IWorkbench)
-	 */
+	@Override
 	public void init(IWorkbench workbench) {
 		// do nothing
 	}
 
-	/*
-	 * @see org.eclipse.jface.preference.PreferencePage#performDefaults()
-	 */
+	@Override
 	protected void performDefaults() {
 		IPreferenceStore store = getPreferenceStore();
 
@@ -257,7 +253,7 @@ public class PessimisticPreferencesPage
 		filesAreSavedCombo.select(
 			getSaveOptionIndex(store.getDefaultInt(IPessimisticFilesystemConstants.PREF_CHECKED_IN_FILES_SAVED)));
 		addToControlCombo.select(
-			getAddToControlOptionIndex(store.getDefaultInt(IPessimisticFilesystemConstants.PREF_ADD_TO_CONTROL)));			
+			getAddToControlOptionIndex(store.getDefaultInt(IPessimisticFilesystemConstants.PREF_ADD_TO_CONTROL)));
 		failValidateEdit.setSelection(
 			store.getDefaultBoolean(IPessimisticFilesystemConstants.PREF_FAIL_VALIDATE_EDIT));
 		changeFileContents.setSelection(
@@ -265,15 +261,13 @@ public class PessimisticPreferencesPage
 		super.performDefaults();
 	}
 
-	/*
-	 * @see org.eclipse.jface.preference.IPreferencePage#performOk()
-	 */
+	@Override
 	public boolean performOk() {
 		IPreferenceStore store = getPreferenceStore();
 
 		int selectionIndex = filesAreEditedCombo.getSelectionIndex();
 		if (selectionIndex != -1)
-	        store.setValue(
+			store.setValue(
 				IPessimisticFilesystemConstants.PREF_CHECKED_IN_FILES_EDITED,
 				EDIT_OPTION_KEYS[selectionIndex]);
 		selectionIndex = filesAreEditedNoPromptCombo.getSelectionIndex();
@@ -292,8 +286,8 @@ public class PessimisticPreferencesPage
 				IPessimisticFilesystemConstants.PREF_ADD_TO_CONTROL,
 				ADD_TO_CONTROL_OPTION_KEYS[selectionIndex]);
 		store.setValue(
-			IPessimisticFilesystemConstants.PREF_FAIL_VALIDATE_EDIT, 
-			failValidateEdit.getSelection());		
+			IPessimisticFilesystemConstants.PREF_FAIL_VALIDATE_EDIT,
+			failValidateEdit.getSelection());
 		store.setValue(
 			IPessimisticFilesystemConstants.PREF_TOUCH_DURING_VALIDATE_EDIT,
 			changeFileContents.getSelection());
@@ -309,7 +303,7 @@ public class PessimisticPreferencesPage
 		filesAreEditedCombo.select(
 			getEditOptionIndex(store.getInt(IPessimisticFilesystemConstants.PREF_CHECKED_IN_FILES_EDITED)));
 		filesAreEditedNoPromptCombo.select(
-			getEditNoPromptOptionIndex(store.getInt(IPessimisticFilesystemConstants.PREF_CHECKED_IN_FILES_EDITED_NOPROMPT)));			
+			getEditNoPromptOptionIndex(store.getInt(IPessimisticFilesystemConstants.PREF_CHECKED_IN_FILES_EDITED_NOPROMPT)));
 		filesAreSavedCombo.select(
 			getSaveOptionIndex(store.getInt(IPessimisticFilesystemConstants.PREF_CHECKED_IN_FILES_SAVED)));
 		addToControlCombo.select(
@@ -319,10 +313,10 @@ public class PessimisticPreferencesPage
 		changeFileContents.setSelection(
 			store.getBoolean(IPessimisticFilesystemConstants.PREF_TOUCH_DURING_VALIDATE_EDIT));
 	}
-	
+
 	/*
 	 * Answers the index of the given key.
-	 */	
+	 */
 	protected int getEditOptionIndex(int key) {
 		for(int i= 0; i < EDIT_OPTION_KEYS.length; i++) {
 			if (EDIT_OPTION_KEYS[i] == key)
@@ -330,10 +324,10 @@ public class PessimisticPreferencesPage
 		}
 		return -1;
 	}
-	
+
 	/*
 	 * Answers the index of the given key.
-	 */	
+	 */
 	protected int getSaveOptionIndex(int key) {
 		for(int i= 0; i < SAVE_OPTION_KEYS.length; i++) {
 			if (SAVE_OPTION_KEYS[i] == key)
@@ -341,21 +335,21 @@ public class PessimisticPreferencesPage
 		}
 		return -1;
 	}
-	
+
 	/*
 	 * Answers the index of the given key.
-	 */	
+	 */
 	protected int getEditNoPromptOptionIndex(int key) {
 		for(int i= 0; i < SAVE_OPTION_KEYS.length; i++) {
 			if (SAVE_OPTION_KEYS[i] == key)
 				return i;
 		}
 		return -1;
-	}			
-	
+	}
+
 	/*
 	 * Answers the index of the given key.
-	 */	
+	 */
 	protected int getAddToControlOptionIndex(int key) {
 		for(int i= 0; i < ADD_TO_CONTROL_OPTION_KEYS.length; i++) {
 			if (ADD_TO_CONTROL_OPTION_KEYS[i] == key)

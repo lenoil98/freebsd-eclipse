@@ -310,8 +310,8 @@ public abstract class SaveableCompareEditorInput extends CompareEditorInput impl
 	 *
 	 * @param monitor a progress monitor
 	 * @return the compare input
-	 * @throws InvocationTargetException
-	 * @throws InterruptedException
+	 * @throws InvocationTargetException if an error occurs
+	 * @throws InterruptedException if operation is interrupted
 	 */
 	protected abstract ICompareInput prepareCompareInput(IProgressMonitor monitor)
 		throws InvocationTargetException, InterruptedException;
@@ -378,8 +378,8 @@ public abstract class SaveableCompareEditorInput extends CompareEditorInput impl
 	void propogateInputChange() {
 		if (!inputChangeListeners.isEmpty()) {
 			Object[] allListeners = inputChangeListeners.getListeners();
-			for (int i = 0; i < allListeners.length; i++) {
-				final ICompareInputChangeListener listener = (ICompareInputChangeListener)allListeners[i];
+			for (Object l : allListeners) {
+				final ICompareInputChangeListener listener = (ICompareInputChangeListener) l;
 				SafeRunner.run(new ISafeRunnable() {
 					@Override
 					public void run() throws Exception {

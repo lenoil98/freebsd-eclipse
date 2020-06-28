@@ -23,6 +23,12 @@ import org.eclipse.ui.internal.views.navigator.ResourceNavigatorMessages;
  * Shows a list of resources to the user with a text entry field for a string
  * pattern used to filter the list of resources.
  *
+ * @noextend This class is not intended to be subclassed by clients.
+ * @noinstantiate This class is not intended to be instantiated by clients.
+ * @noreference This class is not intended to be referenced by clients.
+ *
+ *              Planned to be deleted, please see Bug
+ *              https://bugs.eclipse.org/bugs/show_bug.cgi?id=549953
  * @deprecated as of 3.5, use the Common Navigator Framework classes instead
  */
 @Deprecated
@@ -31,11 +37,9 @@ import org.eclipse.ui.internal.views.navigator.ResourceNavigatorMessages;
 	/**
 	 * Creates a new instance of the class.
 	 */
-	protected GotoResourceDialog(Shell parentShell, IContainer container,
-			int typesMask) {
+	protected GotoResourceDialog(Shell parentShell, IContainer container, int typesMask) {
 		super(parentShell, false, container, typesMask);
 		setTitle(ResourceNavigatorMessages.Goto_title);
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(parentShell,
-				INavigatorHelpContextIds.GOTO_RESOURCE_DIALOG);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(parentShell, INavigatorHelpContextIds.GOTO_RESOURCE_DIALOG);
 	}
 }

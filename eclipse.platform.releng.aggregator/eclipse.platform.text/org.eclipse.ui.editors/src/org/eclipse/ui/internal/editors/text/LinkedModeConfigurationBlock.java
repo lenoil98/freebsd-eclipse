@@ -13,12 +13,11 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.editors.text;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-
-import com.ibm.icu.text.Collator;
 
 import org.osgi.service.prefs.BackingStoreException;
 
@@ -205,13 +204,13 @@ class LinkedModeConfigurationBlock implements IPreferenceConfigurationBlock {
 
 	private List<String[]> getStyles(Object type) {
 		if (type.equals(MASTER))
-			return Arrays.asList(new String[][] {BOX, DASHED_BOX, HIGHLIGHT, UNDERLINE, SQUIGGLES});
+			return Arrays.asList(BOX, DASHED_BOX, HIGHLIGHT, UNDERLINE, SQUIGGLES);
 		if (type.equals(SLAVE))
-			return Arrays.asList(new String[][] {BOX, DASHED_BOX, HIGHLIGHT, UNDERLINE, SQUIGGLES});
+			return Arrays.asList(BOX, DASHED_BOX, HIGHLIGHT, UNDERLINE, SQUIGGLES);
 		if (type.equals(TARGET))
-			return Arrays.asList(new String[][] {BOX, DASHED_BOX, HIGHLIGHT, UNDERLINE, SQUIGGLES});
+			return Arrays.asList(BOX, DASHED_BOX, HIGHLIGHT, UNDERLINE, SQUIGGLES);
 		if (type.equals(EXIT))
-			return Arrays.asList(new String[][] {IBEAM});
+			return Arrays.asList(new String[][] { IBEAM });
 		return new ArrayList<>();
 	}
 
@@ -375,12 +374,12 @@ class LinkedModeConfigurationBlock implements IPreferenceConfigurationBlock {
 	 * @param chars the number of characters
 	 * @return the number of pixels
 	 */
-    protected int convertWidthInCharsToPixels(int chars) {
-        // test for failure to initialize for backward compatibility
-        if (fFontMetrics == null)
-            return 0;
-        return Dialog.convertWidthInCharsToPixels(fFontMetrics, chars);
-    }
+	protected int convertWidthInCharsToPixels(int chars) {
+		// test for failure to initialize for backward compatibility
+		if (fFontMetrics == null)
+			return 0;
+		return Dialog.convertWidthInCharsToPixels(fFontMetrics, chars);
+	}
 
 	/**
 	 * Returns the number of pixels corresponding to the height of the given number of characters.
@@ -394,12 +393,12 @@ class LinkedModeConfigurationBlock implements IPreferenceConfigurationBlock {
 	 * @param chars the number of characters
 	 * @return the number of pixels
 	 */
-    protected int convertHeightInCharsToPixels(int chars) {
-        // test for failure to initialize for backward compatibility
-        if (fFontMetrics == null)
-            return 0;
-        return Dialog.convertHeightInCharsToPixels(fFontMetrics, chars);
-    }
+	protected int convertHeightInCharsToPixels(int chars) {
+		// test for failure to initialize for backward compatibility
+		if (fFontMetrics == null)
+			return 0;
+		return Dialog.convertHeightInCharsToPixels(fFontMetrics, chars);
+	}
 
 	/**
 	 * Initializes the computation of horizontal and vertical dialog units based on the size of
@@ -410,13 +409,13 @@ class LinkedModeConfigurationBlock implements IPreferenceConfigurationBlock {
 	 *
 	 * @param testControl a control from which to obtain the current font
 	 */
-    protected void initializeDialogUnits(Control testControl) {
-        // Compute and store a font metric
-        GC gc = new GC(testControl);
-        gc.setFont(JFaceResources.getDialogFont());
-        fFontMetrics = gc.getFontMetrics();
-        gc.dispose();
-    }
+	protected void initializeDialogUnits(Control testControl) {
+		// Compute and store a font metric
+		GC gc = new GC(testControl);
+		gc.setFont(JFaceResources.getDialogFont());
+		fFontMetrics = gc.getFontMetrics();
+		gc.dispose();
+	}
 
 	private void handleAnnotationListSelection() {
 		ListItem item= getSelectedItem();
@@ -466,8 +465,7 @@ class LinkedModeConfigurationBlock implements IPreferenceConfigurationBlock {
 			// set selection
 			if (selection == null) {
 				String val= getPreferenceStore().getString(item.textStyleKey);
-				for (Iterator<String[]> iter= list.iterator(); iter.hasNext();) {
-					String[] elem= iter.next();
+				for (String[] elem : list) {
 					if (elem[1].equals(val)) {
 						selection= elem;
 						break;
@@ -527,8 +525,8 @@ class LinkedModeConfigurationBlock implements IPreferenceConfigurationBlock {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				boolean state= master.getSelection();
-				for (int i= 0; i < slaves.length; i++) {
-					slaves[i].setEnabled(state);
+				for (Control slave : slaves) {
+					slave.setEnabled(state);
 				}
 			}
 
@@ -545,12 +543,12 @@ class LinkedModeConfigurationBlock implements IPreferenceConfigurationBlock {
 
 	private void initializeFields() {
 
-        // Update slaves
-        Iterator<SelectionListener> iter= fMasterSlaveListeners.iterator();
-        while (iter.hasNext()) {
-            SelectionListener listener= iter.next();
-            listener.widgetSelected(null);
-        }
+		// Update slaves
+		Iterator<SelectionListener> iter= fMasterSlaveListeners.iterator();
+		while (iter.hasNext()) {
+			SelectionListener listener= iter.next();
+			listener.widgetSelected(null);
+		}
 	}
 
 	@Override

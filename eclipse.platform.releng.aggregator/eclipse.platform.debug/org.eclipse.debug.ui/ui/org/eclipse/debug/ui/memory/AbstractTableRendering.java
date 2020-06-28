@@ -264,11 +264,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 			updateActionLabel();
 		}
 
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see org.eclipse.jface.action.IAction#run()
-		 */
 		@Override
 		public void run() {
 			fIsShowAddressColumn = !fIsShowAddressColumn;
@@ -276,9 +271,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 			updateActionLabel();
 		}
 
-		/**
-		 *
-		 */
 		private void updateActionLabel() {
 			if (fIsShowAddressColumn) {
 				setText(DebugUIMessages.ShowAddressColumnAction_0);
@@ -332,9 +324,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		super(renderingId);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
-	 */
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		// if memory view table font has changed
@@ -721,9 +710,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public Control createControl(Composite parent) {
 
@@ -968,7 +954,7 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		if (!validated)
 		{
 			// pop up dialog to ask user for default values
-			StringBuffer msgBuffer = new StringBuffer(DebugUIMessages.AbstractTableRendering_20);
+			StringBuilder msgBuffer = new StringBuilder(DebugUIMessages.AbstractTableRendering_20);
 			msgBuffer.append(" "); //$NON-NLS-1$
 			msgBuffer.append(this.getLabel());
 			msgBuffer.append("\n\n"); //$NON-NLS-1$
@@ -1153,7 +1139,7 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		};
 		fTableCursor.addKeyListener(fCursorKeyAdapter);
 
-		fCursorTraverseListener = e -> handleCursorTraverseEvt(e);
+		fCursorTraverseListener = this::handleCursorTraverseEvt;
 
 		fTableCursor.addTraverseListener(fCursorTraverseListener);
 
@@ -1464,17 +1450,15 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 			// clean up old columns
 			TableColumn[] oldColumns = fTableViewer.getTable().getColumns();
 
-			for (int i=0; i<oldColumns.length; i++)
-			{
-				oldColumns[i].dispose();
+			for (TableColumn oldColumn : oldColumns) {
+				oldColumn.dispose();
 			}
 
 			// clean up old cell editors
 			CellEditor[] oldCellEditors = fTableViewer.getCellEditors();
 
-			for (int i=0; i<oldCellEditors.length; i++)
-			{
-				oldCellEditors[i].dispose();
+			for (CellEditor oldCellEditor : oldCellEditors) {
+				oldCellEditor.dispose();
 			}
 		}
 
@@ -1645,9 +1629,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		return fIsShowingErrorPage;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#getControl()
-	 */
 	@Override
 	public Control getControl() {
 		return fPageBook;
@@ -2361,9 +2342,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		return fTableViewer;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#dispose()
-	 */
 	@Override
 	public void dispose() {
 		try {
@@ -2397,9 +2375,8 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 			fTableCursor = null;
 
 			// clean up cell editors
-			for (int i=0; i<fEditors.length; i++)
-			{
-				fEditors[i].dispose();
+			for (CellEditor editor : fEditors) {
+				editor.dispose();
 			}
 
 			// remove font change listener when the view tab is disposed
@@ -2433,8 +2410,9 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		return bytesPerLine/columnSize;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IMemoryViewTab#setFont(org.eclipse.swt.graphics.Font)
+	/*
+	 * @see
+	 * org.eclipse.debug.ui.IMemoryViewTab#setFont(org.eclipse.swt.graphics.Font)
 	 */
 	private void setFont(Font font)
 	{
@@ -2770,9 +2748,7 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		int colNum = -1;
 		int numCol = fTableViewer.getColumnProperties().length;
 
-		for (int j=0; j<tableItems.length; j++)
-		{
-			TableItem item = tableItems[j];
+		for (TableItem item : tableItems) {
 			for (int i=0; i<numCol; i++)
 			{
 				Rectangle bound = item.getBounds(i);
@@ -3168,9 +3144,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		fTableViewer.getCellModifier().modify(tableItem, (String)property, newValue);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#becomesHidden()
-	 */
 	@Override
 	public void becomesHidden() {
 
@@ -3195,9 +3168,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#becomesVisible()
-	 */
 	@Override
 	public void becomesVisible() {
 
@@ -3375,9 +3345,8 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 			// check each of the items and find the minimum
 			TableItem[] items = table.getItems();
 			int minHeight = table.getItemHeight();
-			for (int i=0; i<items.length; i++)
-			{
-				minHeight = Math.min(items[i].getBounds(0).height, minHeight);
+			for (TableItem item : items) {
+				minHeight = Math.min(item.getBounds(0).height, minHeight);
 			}
 
 			return minHeight;
@@ -3386,9 +3355,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		return table.getItemHeight();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.runtime.IAdaptable#getAdapter(java.lang.Class)
-	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getAdapter(Class<T> adapter) {
@@ -3460,7 +3426,7 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 						}
 
 						// update UI asynchronously
-						Display display = DebugUIPlugin.getDefault().getWorkbench().getDisplay();
+						Display display = PlatformUI.getWorkbench().getDisplay();
 						display.asyncExec(() -> {
 							updateLabels();
 
@@ -3704,14 +3670,12 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 	private TableItem getItem(Point point)
 	{
 		TableItem[] items = fTableViewer.getTable().getItems();
-		for (int i=0; i<items.length; i++)
-		{
-			Point start = new Point(items[i].getBounds(0).x, items[i].getBounds(0).y);
+		for (TableItem item : items) {
+			Point start = new Point(item.getBounds(0).x, item.getBounds(0).y);
 			start = fTableViewer.getTable().toDisplay(start);
-			Point end = new Point(start.x + items[i].getBounds(0).width, start.y + items[i].getBounds(0).height);
-
+			Point end = new Point(start.x + item.getBounds(0).width, start.y + item.getBounds(0).height);
 			if (start.y < point.y && point.y < end.y) {
-				return items[i];
+				return item;
 			}
 		}
 		return null;
@@ -3760,10 +3724,6 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 		return fToolTipLabel;
 	}
 
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IResettableMemoryRendering#resetRendering()
-	 */
 	@Override
 	public void resetRendering() throws DebugException {
 		resetToBaseAddress();
@@ -3828,7 +3788,7 @@ public abstract class AbstractTableRendering extends AbstractBaseTableRendering 
 	 */
 	protected String getToolTipText(BigInteger address, MemoryByte[] bytes)
 	{
-		StringBuffer buf = new StringBuffer("0x"); //$NON-NLS-1$
+		StringBuilder buf = new StringBuilder("0x"); //$NON-NLS-1$
 		buf.append(address.toString(16).toUpperCase());
 
 		return buf.toString();

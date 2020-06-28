@@ -5,15 +5,15 @@
  * and is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors: IBM Corporation - initial API and implementation
- * 
+ *
  * Ericsson AB (Pascal Rapicault) - Bug 397216 -[Shared] Better shared
  * configuration change discovery
- * 
+ *
  * Red Hat, Inc (Krzysztof Daniel) - Bug 421935: Extend simpleconfigurator to
  * read .info files from many locations
- * 
+ *
  *******************************************************************************/
 package org.eclipse.equinox.internal.simpleconfigurator.manipulator;
 
@@ -49,14 +49,15 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 	public static final String CONFIG_FOLDER = "configuration"; //$NON-NLS-1$
 	public static final String CONFIGURATOR_FOLDER = "org.eclipse.equinox.simpleconfigurator"; //$NON-NLS-1$
 	public static final String PROP_KEY_CONFIGURL = "org.eclipse.equinox.simpleconfigurator.configUrl"; //$NON-NLS-1$
-	public static final String SHARED_BUNDLES_INFO = CONFIG_FOLDER + File.separatorChar + CONFIGURATOR_FOLDER + File.separatorChar + CONFIG_LIST;
+	public static final String SHARED_BUNDLES_INFO = CONFIG_FOLDER + File.separatorChar + CONFIGURATOR_FOLDER
+			+ File.separatorChar + CONFIG_LIST;
 
 	private Set<Manipulator> manipulators = new HashSet<>();
 
-	/**	
-	 * Return the ConfiguratorConfigFile which is determined 
-	 * by the parameters set in Manipulator. 
-	 * 
+	/**
+	 * Return the ConfiguratorConfigFile which is determined by the parameters set
+	 * in Manipulator.
+	 *
 	 * @param manipulator
 	 * @return File
 	 */
@@ -79,7 +80,8 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 				else
 					baseDir = fwConfigLoc.getParentFile();
 			else {
-				// TODO We need to decide whether launcher data configLocation is the location of a file or a directory 
+				// TODO We need to decide whether launcher data configLocation is the location
+				// of a file or a directory
 				if (fwConfigLoc.getName().endsWith(".ini")) //$NON-NLS-1$
 					baseDir = fwConfigLoc.getParentFile();
 				else
@@ -98,11 +100,12 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 
 		if (info.prerequisiteLocations == null)
 			return false;
-		for (int i = 0; i < info.prerequisiteLocations.length; i++)
-			if (location.equals(info.prerequisiteLocations[i])) {
+		for (URI prerequisiteLocation : info.prerequisiteLocations) {
+			if (location.equals(prerequisiteLocation)) {
 				ret = true;
 				break;
 			}
+		}
 
 		return ret;
 	}
@@ -119,68 +122,70 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 		boolean ret = false;
 		if (info.systemFragmentedBundleLocations == null)
 			return false;
-		for (int i = 0; i < info.systemFragmentedBundleLocations.length; i++)
-			if (location.equals(info.systemFragmentedBundleLocations[i])) {
+		for (URI systemFragmentedBundleLocation : info.systemFragmentedBundleLocations) {
+			if (location.equals(systemFragmentedBundleLocation)) {
 				ret = true;
 				break;
 			}
+		}
 		return ret;
 	}
 
 	private static boolean isTargetConfiguratorBundle(BundleInfo[] bInfos) {
-		for (int i = 0; i < bInfos.length; i++) {
-			if (isTargetConfiguratorBundle(bInfos[i].getLocation())) {
+		for (BundleInfo bInfo : bInfos) {
+			if (isTargetConfiguratorBundle(bInfo.getLocation())) {
 				return true;
-				//TODO confirm that startlevel of configurator bundle must be no larger than beginning start level of fw. However, there is no way to know the start level of cached ones.
+				// TODO confirm that startlevel of configurator bundle must be no larger than
+				// beginning start level of fw. However, there is no way to know the start level
+				// of cached ones.
 			}
 		}
 		return false;
 	}
 
 	private static boolean isTargetConfiguratorBundle(URI location) {
-		final String symbolic = Utils.getPathFromClause(Utils.getManifestMainAttributes(location, Constants.BUNDLE_SYMBOLICNAME));
+		final String symbolic = Utils
+				.getPathFromClause(Utils.getManifestMainAttributes(location, Constants.BUNDLE_SYMBOLICNAME));
 		return (SimpleConfiguratorManipulator.SERVICE_PROP_VALUE_CONFIGURATOR_SYMBOLICNAME.equals(symbolic));
 	}
 
-	private void algorithm(int initialSl, SortedMap<Integer, List<BundleInfo>> bslToList, BundleInfo configuratorBInfo, List<BundleInfo> setToInitialConfig, List<BundleInfo> setToSimpleConfig, LocationInfo info) {
+	private void algorithm(int initialSl, SortedMap<Integer, List<BundleInfo>> bslToList, BundleInfo configuratorBInfo,
+			List<BundleInfo> setToInitialConfig, List<BundleInfo> setToSimpleConfig, LocationInfo info) {
 		int configuratorSL = configuratorBInfo.getStartLevel();
 
 		Integer sL0 = bslToList.keySet().iterator().next();// StartLevel == 0;
 		List<BundleInfo> list0 = bslToList.get(sL0);
 		if (sL0.intValue() == 0)
-			for (Iterator<BundleInfo> ite2 = list0.iterator(); ite2.hasNext();) {
-				BundleInfo bInfo = ite2.next();
+			for (BundleInfo bInfo : list0) {
 				if (isSystemBundle(bInfo.getLocation(), info)) {
 					setToSimpleConfig.add(bInfo);
 					break;
 				}
 			}
 
-		for (Iterator<Integer> ite = bslToList.keySet().iterator(); ite.hasNext();) {
-			Integer sL = ite.next();
+		for (Integer sL : bslToList.keySet()) {
 			List<BundleInfo> list = bslToList.get(sL);
 
 			if (sL.intValue() < configuratorSL) {
-				for (Iterator<BundleInfo> ite2 = list.iterator(); ite2.hasNext();) {
-					BundleInfo bInfo = ite2.next();
+				for (BundleInfo bInfo : list) {
 					if (!isSystemBundle(bInfo.getLocation(), info))
 						setToInitialConfig.add(bInfo);
 				}
 			} else if (sL.intValue() > configuratorSL) {
-				for (Iterator<BundleInfo> ite2 = list.iterator(); ite2.hasNext();) {
-					BundleInfo bInfo = ite2.next();
-					if (isPrerequisiteBundles(bInfo.getLocation(), info) || isSystemFragmentBundle(bInfo.getLocation(), info))
+				for (BundleInfo bInfo : list) {
+					if (isPrerequisiteBundles(bInfo.getLocation(), info)
+							|| isSystemFragmentBundle(bInfo.getLocation(), info))
 						if (!isSystemBundle(bInfo.getLocation(), info))
 							setToInitialConfig.add(bInfo);
 					setToSimpleConfig.add(bInfo);
 				}
 			} else {
 				boolean found = false;
-				for (Iterator<BundleInfo> ite2 = list.iterator(); ite2.hasNext();) {
-					BundleInfo bInfo = ite2.next();
+				for (BundleInfo bInfo : list) {
 					if (found) {
 						if (!isSystemBundle(bInfo.getLocation(), info))
-							if (isPrerequisiteBundles(bInfo.getLocation(), info) || isSystemFragmentBundle(bInfo.getLocation(), info))
+							if (isPrerequisiteBundles(bInfo.getLocation(), info)
+									|| isSystemFragmentBundle(bInfo.getLocation(), info))
 								setToInitialConfig.add(bInfo);
 						setToSimpleConfig.add(bInfo);
 						continue;
@@ -197,7 +202,7 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 		setToInitialConfig.add(configuratorBInfo);
 	}
 
-	private boolean checkResolve(BundleInfo bInfo, BundlesState state) {//throws ManipulatorException {
+	private boolean checkResolve(BundleInfo bInfo, BundlesState state) {// throws ManipulatorException {
 		if (bInfo == null)
 			throw new IllegalArgumentException("bInfo is null."); //$NON-NLS-1$
 
@@ -211,7 +216,8 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 		return true;
 	}
 
-	private boolean divideBundleInfos(Manipulator manipulator, List<BundleInfo> setToInitialConfig, List<BundleInfo> setToSimpleConfig, final int initialBSL) {
+	private boolean divideBundleInfos(Manipulator manipulator, List<BundleInfo> setToInitialConfig,
+			List<BundleInfo> setToSimpleConfig, final int initialBSL) {
 		BundlesState state = manipulator.getBundlesState();
 		BundleInfo[] targetBundleInfos = null;
 		if (state.isFullySupported()) {
@@ -220,10 +226,10 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 			targetBundleInfos = manipulator.getConfigData().getBundles();
 		}
 		BundleInfo configuratorBInfo = null;
-		for (int i = 0; i < targetBundleInfos.length; i++) {
-			if (isTargetConfiguratorBundle(targetBundleInfos[i].getLocation())) {
-				if (targetBundleInfos[i].isMarkedAsStarted()) {
-					configuratorBInfo = targetBundleInfos[i];
+		for (BundleInfo targetBundleInfo : targetBundleInfos) {
+			if (isTargetConfiguratorBundle(targetBundleInfo.getLocation())) {
+				if (targetBundleInfo.isMarkedAsStarted()) {
+					configuratorBInfo = targetBundleInfo;
 					break;
 				}
 			}
@@ -256,8 +262,8 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 
 	private SortedMap<Integer, List<BundleInfo>> getSortedMap(int initialSl, BundleInfo[] bInfos) {
 		SortedMap<Integer, List<BundleInfo>> bslToList = new TreeMap<>();
-		for (int i = 0; i < bInfos.length; i++) {
-			Integer sL = Integer.valueOf(bInfos[i].getStartLevel());
+		for (BundleInfo bInfo : bInfos) {
+			Integer sL = Integer.valueOf(bInfo.getStartLevel());
 			if (sL.intValue() == BundleInfo.NO_LEVEL)
 				sL = Integer.valueOf(initialSl);
 			List<BundleInfo> list = bslToList.get(sL);
@@ -265,7 +271,7 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 				list = new LinkedList<>();
 				bslToList.put(sL, list);
 			}
-			list.add(bInfos[i]);
+			list.add(bInfo);
 		}
 		return bslToList;
 	}
@@ -273,8 +279,7 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 	private BundleInfo[] orderingInitialConfig(List<BundleInfo> setToInitialConfig) {
 		List<BundleInfo> notToBeStarted = new LinkedList<>();
 		List<BundleInfo> toBeStarted = new LinkedList<>();
-		for (Iterator<BundleInfo> ite2 = setToInitialConfig.iterator(); ite2.hasNext();) {
-			BundleInfo bInfo = ite2.next();
+		for (BundleInfo bInfo : setToInitialConfig) {
 			if (bInfo.isMarkedAsStarted())
 				toBeStarted.add(bInfo);
 			else
@@ -292,16 +297,18 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 			StringBuffer sb = new StringBuffer();
 			sb.append("Missing constraints:\n"); //$NON-NLS-1$
 			String[] missings = state.getUnsatisfiedConstraints(bInfo);
-			for (int i = 0; i < missings.length; i++)
-				sb.append(" " + missings[i] + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
+			for (String missing : missings) {
+				sb.append(" " + missing + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
+			}
 			System.out.println(sb.toString());
 		}
 	}
 
 	/**
-	 * Like {@link SimpleConfiguratorImpl#chooseConfigurationURL(URL, URL[])} but it doesn't check
-	 * file timestamps because if the {@link SimpleConfiguratorImpl#PROP_IGNORE_USER_CONFIGURATION}
-	 * property is set then we already know that timestamps have been checked and we need to ignore
+	 * Like {@link SimpleConfiguratorImpl#chooseConfigurationURL(URL, URL[])} but it
+	 * doesn't check file timestamps because if the
+	 * {@link SimpleConfiguratorImpl#PROP_IGNORE_USER_CONFIGURATION} property is set
+	 * then we already know that timestamps have been checked and we need to ignore
 	 * the user config.
 	 */
 	private URL chooseConfigurationURL(String relativePath, URL[] configURL) throws MalformedURLException {
@@ -347,7 +354,8 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 			configURL = chooseConfigurationURL(infoPath, configURLs);
 		}
 
-		// At this point the file specified by configURL should definitely exist or be null
+		// At this point the file specified by configURL should definitely exist or be
+		// null
 		if (configURL == null) {
 			return NULL_BUNDLEINFOS;
 		}
@@ -372,26 +380,25 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 
 	/*
 	 * InputStream must be closed
-	 * (non-Javadoc)
-	 * @see org.eclipse.equinox.simpleconfigurator.manipulator.SimpleConfiguratorManipulator#loadConfiguration(java.io.InputStream, java.net.URI)
 	 */
 	@Override
 	public BundleInfo[] loadConfiguration(InputStream stream, URI installArea) throws IOException {
 		if (stream == null)
 			return NULL_BUNDLEINFOS;
 
-		List<org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo> simpleBundles = SimpleConfiguratorUtils.readConfiguration(stream, installArea);
+		List<org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo> simpleBundles = SimpleConfiguratorUtils
+				.readConfiguration(stream, installArea);
 
 		// convert to FrameworkAdmin BundleInfo Type
 		BundleInfo[] result = new BundleInfo[simpleBundles.size()];
 		int i = 0;
-		for (Iterator<org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo> iterator = simpleBundles.iterator(); iterator.hasNext();) {
-			org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo simpleInfo = iterator.next();
+		for (org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo simpleInfo : simpleBundles) {
 			URI location = simpleInfo.getLocation();
 			if (!location.isAbsolute() && simpleInfo.getBaseLocation() != null)
 				location = URIUtil.makeAbsolute(location, simpleInfo.getBaseLocation());
 
-			BundleInfo bundleInfo = new BundleInfo(simpleInfo.getSymbolicName(), simpleInfo.getVersion(), location, simpleInfo.getStartLevel(), simpleInfo.isMarkedAsStarted());
+			BundleInfo bundleInfo = new BundleInfo(simpleInfo.getSymbolicName(), simpleInfo.getVersion(), location,
+					simpleInfo.getStartLevel(), simpleInfo.isMarkedAsStarted());
 			bundleInfo.setBaseLocation(simpleInfo.getBaseLocation());
 			result[i++] = bundleInfo;
 		}
@@ -400,7 +407,8 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 
 	@Override
 	public void saveConfiguration(BundleInfo[] configuration, OutputStream stream, URI installArea) throws IOException {
-		org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo[] simpleInfos = convertBundleInfos(configuration, installArea);
+		org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo[] simpleInfos = convertBundleInfos(
+				configuration, installArea);
 		SimpleConfiguratorManipulatorUtils.writeConfiguration(simpleInfos, stream);
 	}
 
@@ -409,7 +417,8 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 		saveConfiguration(configuration, outputFile, installArea, false);
 	}
 
-	private void saveConfiguration(BundleInfo[] configuration, File outputFile, URI installArea, boolean backup) throws IOException {
+	private void saveConfiguration(BundleInfo[] configuration, File outputFile, URI installArea, boolean backup)
+			throws IOException {
 		if (backup && outputFile.exists()) {
 			File backupFile = Utils.getSimpleDataFormattedFile(outputFile);
 			if (!outputFile.renameTo(backupFile)) {
@@ -417,7 +426,8 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 			}
 		}
 
-		org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo[] simpleInfos = convertBundleInfos(configuration, installArea);
+		org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo[] simpleInfos = convertBundleInfos(
+				configuration, installArea);
 
 		// if empty remove the configuration file
 		if (simpleInfos == null || simpleInfos.length == 0) {
@@ -431,7 +441,8 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 			return;
 		}
 		SimpleConfiguratorManipulatorUtils.writeConfiguration(simpleInfos, outputFile);
-		if (CONFIG_LIST.equals(outputFile.getName()) && installArea != null && isSharedInstallSetup(URIUtil.toFile(installArea), outputFile))
+		if (CONFIG_LIST.equals(outputFile.getName()) && installArea != null
+				&& isSharedInstallSetup(URIUtil.toFile(installArea), outputFile))
 			rememberSharedBundlesInfoTimestamp(installArea, outputFile.getParentFile());
 	}
 
@@ -444,8 +455,10 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 			return;
 
 		Properties timestampToPersist = new Properties();
-		timestampToPersist.put(SimpleConfiguratorImpl.KEY_BUNDLESINFO_TIMESTAMP, Long.toString(SimpleConfiguratorUtils.getFileLastModified(sharedBundlesInfo)));
-		timestampToPersist.put(SimpleConfiguratorImpl.KEY_EXT_TIMESTAMP, Long.toString(SimpleConfiguratorUtils.getExtendedTimeStamp()));
+		timestampToPersist.put(SimpleConfiguratorImpl.KEY_BUNDLESINFO_TIMESTAMP,
+				Long.toString(SimpleConfiguratorUtils.getFileLastModified(sharedBundlesInfo)));
+		timestampToPersist.put(SimpleConfiguratorImpl.KEY_EXT_TIMESTAMP,
+				Long.toString(SimpleConfiguratorUtils.getExtendedTimeStamp()));
 		OutputStream os = null;
 		try {
 			try {
@@ -461,7 +474,8 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 		}
 	}
 
-	private org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo[] convertBundleInfos(BundleInfo[] configuration, URI installArea) {
+	private org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo[] convertBundleInfos(
+			BundleInfo[] configuration, URI installArea) {
 		// convert to SimpleConfigurator BundleInfo Type
 		org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo[] simpleInfos = new org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo[configuration.length];
 		for (int i = 0; i < configuration.length; i++) {
@@ -469,10 +483,12 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 			URI location = bundleInfo.getLocation();
 			if (bundleInfo.getSymbolicName() == null || bundleInfo.getVersion() == null || location == null)
 				throw new IllegalArgumentException("Cannot persist bundleinfo: " + bundleInfo.toString()); //$NON-NLS-1$
-			//only need to make a new BundleInfo if we are changing it.
+			// only need to make a new BundleInfo if we are changing it.
 			if (installArea != null)
 				location = URIUtil.makeRelative(location, installArea);
-			simpleInfos[i] = new org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo(bundleInfo.getSymbolicName(), bundleInfo.getVersion(), location, bundleInfo.getStartLevel(), bundleInfo.isMarkedAsStarted());
+			simpleInfos[i] = new org.eclipse.equinox.internal.simpleconfigurator.utils.BundleInfo(
+					bundleInfo.getSymbolicName(), bundleInfo.getVersion(), location, bundleInfo.getStartLevel(),
+					bundleInfo.isMarkedAsStarted());
 			simpleInfos[i].setBaseLocation(bundleInfo.getBaseLocation());
 		}
 		return simpleInfos;
@@ -484,13 +500,17 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 		List<BundleInfo> setToSimpleConfig = new LinkedList<>();
 		ConfigData configData = manipulator.getConfigData();
 
-		if (!divideBundleInfos(manipulator, setToInitialConfig, setToSimpleConfig, configData.getInitialBundleStartLevel()))
+		if (!divideBundleInfos(manipulator, setToInitialConfig, setToSimpleConfig,
+				configData.getInitialBundleStartLevel()))
 			return configData.getBundles();
 
 		File outputFile = getConfigFile(manipulator);
-		URI installArea = ParserUtils.getOSGiInstallArea(Arrays.asList(manipulator.getLauncherData().getProgramArgs()), manipulator.getConfigData().getProperties(), manipulator.getLauncherData()).toURI();
-		saveConfiguration(setToSimpleConfig.toArray(new BundleInfo[setToSimpleConfig.size()]), outputFile, installArea, backup);
-		configData.setProperty(SimpleConfiguratorManipulatorImpl.PROP_KEY_CONFIGURL, outputFile.toURL().toExternalForm());
+		URI installArea = ParserUtils.getOSGiInstallArea(Arrays.asList(manipulator.getLauncherData().getProgramArgs()),
+				manipulator.getConfigData().getProperties(), manipulator.getLauncherData()).toURI();
+		saveConfiguration(setToSimpleConfig.toArray(new BundleInfo[setToSimpleConfig.size()]), outputFile, installArea,
+				backup);
+		configData.setProperty(SimpleConfiguratorManipulatorImpl.PROP_KEY_CONFIGURL,
+				outputFile.toURL().toExternalForm());
 		return orderingInitialConfig(setToInitialConfig);
 	}
 
@@ -512,7 +532,7 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 		BundleInfo systemBundleInfo = state.getSystemBundle();
 		if (systemBundleInfo == null) {
 			// TODO Log
-			//throw new IllegalStateException("There is no systemBundle.\n");
+			// throw new IllegalStateException("There is no systemBundle.\n");
 			return;
 		}
 		if (state.isFullySupported())
@@ -544,58 +564,62 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 			return;
 		Properties properties = new Properties();
 		String[] jvmArgs = manipulator.getLauncherData().getJvmArgs();
-		for (int i = 0; i < jvmArgs.length; i++) {
-			if (jvmArgs[i].startsWith("-D")) { //$NON-NLS-1$
-				int index = jvmArgs[i].indexOf("="); //$NON-NLS-1$
-				if (index > 0 && jvmArgs[i].length() > 2) {
-					String key = jvmArgs[i].substring(2, index);
-					String value = jvmArgs[i].substring(index + 1);
+		for (String jvmArg : jvmArgs) {
+			if (jvmArg.startsWith("-D")) {
+				// $NON-NLS-1$
+				int index = jvmArg.indexOf("="); //$NON-NLS-1$
+				if (index > 0 && jvmArg.length() > 2) {
+					String key = jvmArg.substring(2, index);
+					String value = jvmArg.substring(index + 1);
 					properties.setProperty(key, value);
 				}
 			}
 		}
 
 		Utils.appendProperties(properties, manipulator.getConfigData().getProperties());
-		boolean exclusiveInstallation = Boolean.parseBoolean(properties.getProperty(SimpleConfiguratorManipulatorImpl.PROP_KEY_EXCLUSIVE_INSTALLATION));
+		boolean exclusiveInstallation = Boolean.parseBoolean(
+				properties.getProperty(SimpleConfiguratorManipulatorImpl.PROP_KEY_EXCLUSIVE_INSTALLATION));
 		File configFile = getConfigFile(manipulator);
 
-		File installArea = ParserUtils.getOSGiInstallArea(Arrays.asList(manipulator.getLauncherData().getProgramArgs()), manipulator.getConfigData().getProperties(), manipulator.getLauncherData());
+		File installArea = ParserUtils.getOSGiInstallArea(Arrays.asList(manipulator.getLauncherData().getProgramArgs()),
+				manipulator.getConfigData().getProperties(), manipulator.getLauncherData());
 		BundleInfo[] toInstall = new BundleInfo[0];
 
 		boolean isShared = isSharedInstallSetup(installArea, configFile);
 		if (!isShared || (isShared && !hasBaseChanged(installArea.toURI(), configFile.getParentFile()))) {
 			try {
-				//input stream will be closed for us
+				// input stream will be closed for us
 				toInstall = loadConfiguration(new FileInputStream(configFile), installArea.toURI());
 			} catch (FileNotFoundException e) {
-				//no file, just return an empty list
+				// no file, just return an empty list
 				toInstall = new BundleInfo[0];
 			}
 		}
 
 		List<BundleInfo> toUninstall = new LinkedList<>();
 		if (exclusiveInstallation)
-			for (int i = 0; i < currentBInfos.length; i++) {
+			for (BundleInfo currentBInfo : currentBInfos) {
 				boolean install = false;
-				for (int j = 0; j < toInstall.length; j++)
-					if (currentBInfos[i].getLocation().equals(toInstall[j].getLocation())) {
+				for (BundleInfo toInstall1 : toInstall) {
+					if (currentBInfo.getLocation().equals(toInstall1.getLocation())) {
 						install = true;
 						break;
 					}
-				if (!install)
-					toUninstall.add(currentBInfos[i]);
+				}
+				if (!install) {
+					toUninstall.add(currentBInfo);
+				}
 			}
 
-		for (int i = 0; i < toInstall.length; i++) {
+		for (BundleInfo toInstall1 : toInstall) {
 			try {
-				bundleState.installBundle(toInstall[i]);
+				bundleState.installBundle(toInstall1);
 			} catch (RuntimeException e) {
-				//Ignore
+				// Ignore
 			}
 		}
 		if (exclusiveInstallation)
-			for (Iterator<BundleInfo> ite = toUninstall.iterator(); ite.hasNext();) {
-				BundleInfo bInfo = ite.next();
+			for (BundleInfo bInfo : toUninstall) {
 				bundleState.uninstallBundle(bInfo);
 			}
 
@@ -616,8 +640,12 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 		String rememberedTimestamp;
 		String extensionTimestsamp;
 		try {
-			rememberedTimestamp = (String) loadProperties(new File(outputFolder, SimpleConfiguratorImpl.BASE_TIMESTAMP_FILE_BUNDLESINFO)).get(SimpleConfiguratorImpl.KEY_BUNDLESINFO_TIMESTAMP);
-			extensionTimestsamp = (String) loadProperties(new File(outputFolder, SimpleConfiguratorImpl.BASE_TIMESTAMP_FILE_BUNDLESINFO)).get(SimpleConfiguratorImpl.KEY_EXT_TIMESTAMP);
+			rememberedTimestamp = (String) loadProperties(
+					new File(outputFolder, SimpleConfiguratorImpl.BASE_TIMESTAMP_FILE_BUNDLESINFO))
+							.get(SimpleConfiguratorImpl.KEY_BUNDLESINFO_TIMESTAMP);
+			extensionTimestsamp = (String) loadProperties(
+					new File(outputFolder, SimpleConfiguratorImpl.BASE_TIMESTAMP_FILE_BUNDLESINFO))
+							.get(SimpleConfiguratorImpl.KEY_EXT_TIMESTAMP);
 		} catch (IOException e) {
 			return false;
 		}
@@ -627,11 +655,14 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 		File sharedBundlesInfo = new File(URIUtil.append(installArea, SHARED_BUNDLES_INFO));
 		if (!sharedBundlesInfo.exists())
 			return true;
-		return !(String.valueOf(SimpleConfiguratorUtils.getFileLastModified(sharedBundlesInfo)).equals(rememberedTimestamp) && String.valueOf(SimpleConfiguratorUtils.getExtendedTimeStamp()).equals(extensionTimestsamp));
+		return !(String.valueOf(SimpleConfiguratorUtils.getFileLastModified(sharedBundlesInfo))
+				.equals(rememberedTimestamp)
+				&& String.valueOf(SimpleConfiguratorUtils.getExtendedTimeStamp()).equals(extensionTimestsamp));
 	}
 
 	private boolean isSharedInstallSetup(File installArea, File outputFile) {
-		//An instance is treated as shared if the bundles.info file is not located in the install area.
+		// An instance is treated as shared if the bundles.info file is not located in
+		// the install area.
 		return !new File(installArea, SHARED_BUNDLES_INFO).equals(outputFile);
 	}
 
@@ -646,7 +677,7 @@ public class SimpleConfiguratorManipulatorImpl implements SimpleConfiguratorMani
 				if (is != null)
 					is.close();
 			} catch (IOException e) {
-				//Do nothing
+				// Do nothing
 			}
 			is = null;
 		}

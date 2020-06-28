@@ -41,14 +41,13 @@ public abstract class DescriptorManager {
 			init();
 
 		List<AbstractDescriptor> candidates= new ArrayList<>(1);
-		for (int i= 0; i < fExtensions.length; i++) {
-			AbstractDescriptor descriptor= fExtensions[i];
+		for (AbstractDescriptor descriptor : fExtensions) {
 			if (descriptor.matches(element, fVariableName)) {
 				candidates.add(descriptor);
 			}
 			descriptor.clear();
 		}
-		if (candidates.size() == 0)
+		if (candidates.isEmpty())
 			return null;
 		// No support for conflicts yet.
 		return candidates.get(0);

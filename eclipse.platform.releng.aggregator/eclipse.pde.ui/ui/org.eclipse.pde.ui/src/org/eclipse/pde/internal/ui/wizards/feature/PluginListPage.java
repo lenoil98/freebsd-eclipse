@@ -17,8 +17,8 @@ package org.eclipse.pde.internal.ui.wizards.feature;
 
 import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
-import com.ibm.icu.text.Collator;
 import java.lang.reflect.InvocationTargetException;
+import java.text.Collator;
 import java.util.TreeSet;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.*;
@@ -57,8 +57,7 @@ public class PluginListPage extends BasePluginListPage {
 							throw new InterruptedException();
 						}
 					});
-				} catch (InvocationTargetException e) {
-				} catch (InterruptedException e) {
+				} catch (InvocationTargetException | InterruptedException e) {
 				}
 			}
 		}

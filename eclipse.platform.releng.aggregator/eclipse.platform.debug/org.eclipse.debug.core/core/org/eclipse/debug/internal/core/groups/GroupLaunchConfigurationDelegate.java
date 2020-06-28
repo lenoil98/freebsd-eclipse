@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2009, 2016 QNX Software Systems and others.
+ *  Copyright (c) 2009, 2019 QNX Software Systems and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -12,13 +12,13 @@
  *      QNX Software Systems - initial API and implementation
  *      Freescale Semiconductor
  *      SSI Schaefer
+ *      Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 529651
  *******************************************************************************/
 package org.eclipse.debug.internal.core.groups;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +58,8 @@ public class GroupLaunchConfigurationDelegate extends LaunchConfigurationDelegat
 	public static final int CODE_GROUP_LAUNCH_START = 233;
 	public static final int CODE_GROUP_LAUNCH_DONE = 234;
 
+	private static final int CODE_BUILD_BEFORE_LAUNCH = 206;
+
 	private static final String NAME_PROP = "name"; //$NON-NLS-1$
 	private static final String ENABLED_PROP = "enabled"; //$NON-NLS-1$
 	private static final String ADOPT_PROP = "adoptIfRunning"; //$NON-NLS-1$
@@ -74,6 +76,8 @@ public class GroupLaunchConfigurationDelegate extends LaunchConfigurationDelegat
 
 	private static final Status GROUP_LAUNCH_START = new Status(IStatus.INFO, DEBUG_CORE, CODE_GROUP_LAUNCH_START, IInternalDebugCoreConstants.EMPTY_STRING, null);
 	private static final Status GROUP_LAUNCH_DONE = new Status(IStatus.INFO, DEBUG_CORE, CODE_GROUP_LAUNCH_DONE, IInternalDebugCoreConstants.EMPTY_STRING, null);
+
+	private static final Status BUILD_BEFORE_LAUNCH = new Status(IStatus.INFO, DEBUG_CORE, CODE_BUILD_BEFORE_LAUNCH, IInternalDebugCoreConstants.EMPTY_STRING, null);
 
 	@Override
 	public ILaunch getLaunch(ILaunchConfiguration configuration, String mode) throws CoreException {
@@ -152,7 +156,17 @@ public class GroupLaunchConfigurationDelegate extends LaunchConfigurationDelegat
 		ILaunch subLaunch = running.stream().findFirst().orElse(null);
 		boolean launched = false;
 		if (subLaunch == null) {
-			subLaunch = child.launch(localMode, monitor);
+			boolean build = true;// see DebugUIPreferenceInitializer
+			IStatusHandler buildHandler = DebugPlugin.getDefault().getStatusHandler(BUILD_BEFORE_LAUNCH);
+			try {
+				Object resolution = buildHandler.handleStatus(BUILD_BEFORE_LAUNCH, child);
+				if (resolution instanceof Boolean) {
+					build = ((Boolean) resolution).booleanValue();
+				}
+			} catch (Exception e) {
+				// ignore and use default
+			}
+			subLaunch = child.launch(localMode, monitor, build);
 			launched = true;
 		}
 
@@ -257,25 +271,11 @@ public class GroupLaunchConfigurationDelegate extends LaunchConfigurationDelegat
 		return true;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.core.model.LaunchConfigurationDelegate#buildProjects(
-	 * org.eclipse.core.resources.IProject[],
-	 * org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected void buildProjects(IProject[] projects, IProgressMonitor monitor) throws CoreException {
 		// do nothing, project can be rebuild for each launch individually
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.core.model.LaunchConfigurationDelegate#buildForLaunch(
-	 * org.eclipse.debug.core.ILaunchConfiguration, java.lang.String,
-	 * org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	public boolean buildForLaunch(ILaunchConfiguration configuration, String mode, IProgressMonitor monitor) throws CoreException {
 		// not build for this one
@@ -285,10 +285,9 @@ public class GroupLaunchConfigurationDelegate extends LaunchConfigurationDelegat
 	protected static ILaunchConfiguration findLaunchConfiguration(String name) throws CoreException {
 		ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
 		ILaunchConfiguration[] launchConfigurations = launchManager.getLaunchConfigurations();
-		for (int i = 0; i < launchConfigurations.length; i++) {
-			ILaunchConfiguration lConf = launchConfigurations[i];
-			if (lConf.getName().equals(name)) {
-				return lConf;
+		for (ILaunchConfiguration config : launchConfigurations) {
+			if (config.getName().equals(name)) {
+				return config;
 			}
 		}
 		return null;
@@ -321,9 +320,9 @@ public class GroupLaunchConfigurationDelegate extends LaunchConfigurationDelegat
 	public static List<GroupLaunchElement> createLaunchElements(ILaunchConfiguration configuration) {
 		List<GroupLaunchElement> result = new ArrayList<>();
 		try {
-			Map<?, ?> attrs = configuration.getAttributes();
-			for (Iterator<?> iterator = attrs.keySet().iterator(); iterator.hasNext();) {
-				String attr = (String) iterator.next();
+			Map<String, Object> attrs = configuration.getAttributes();
+			for (Map.Entry<String, Object> entry : attrs.entrySet()) {
+				String attr = entry.getKey();
 				try {
 					if (attr.startsWith(MULTI_LAUNCH_CONSTANTS_PREFIX)) {
 						String prop = attr.substring(MULTI_LAUNCH_CONSTANTS_PREFIX.length() + 1);
@@ -334,7 +333,7 @@ public class GroupLaunchConfigurationDelegate extends LaunchConfigurationDelegat
 						if (name.equals(NAME_PROP)) {
 							GroupLaunchElement el = new GroupLaunchElement();
 							el.index = index;
-							el.name = (String) attrs.get(attr);
+							el.name = (String) entry.getValue();
 
 							Object actionParam = null;
 							String actionStr = (String) attrs.get(getProp(index, ACTION_PROP));
@@ -406,9 +405,7 @@ public class GroupLaunchConfigurationDelegate extends LaunchConfigurationDelegat
 
 	public static void removeLaunchElements(ILaunchConfigurationWorkingCopy configuration) {
 		try {
-			Map<?, ?> attrs = configuration.getAttributes();
-			for (Iterator<?> iterator = attrs.keySet().iterator(); iterator.hasNext();) {
-				String attr = (String) iterator.next();
+			for (String attr : configuration.getAttributes().keySet()) {
 				try {
 					if (attr.startsWith(MULTI_LAUNCH_CONSTANTS_PREFIX)) {
 						configuration.removeAttribute(attr);

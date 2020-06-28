@@ -70,7 +70,7 @@ public class InfoForm {
 		fForegroundColor= display.getSystemColor(SWT.COLOR_LIST_FOREGROUND);
 		fSeparatorColor= new Color(display, 152, 170, 203);
 
-		fPropertyChangeListener = event -> handlePropertyChange(event);
+		fPropertyChangeListener = this::handlePropertyChange;
 		JFaceResources.getFontRegistry().addListener(fPropertyChangeListener);
 
 		fScrolledComposite= new ScrolledComposite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -149,7 +149,7 @@ public class InfoForm {
 		fText.setText(info);
 	}
 
-    /**
+	/**
 	 * Handles the property change.
 	 *
 	 * @param event the property change event object describing which property changed and how

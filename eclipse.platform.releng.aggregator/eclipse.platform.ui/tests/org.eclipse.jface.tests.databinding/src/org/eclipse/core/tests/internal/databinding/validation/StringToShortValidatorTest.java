@@ -18,7 +18,7 @@ import org.eclipse.core.databinding.validation.IValidator;
 import org.eclipse.core.internal.databinding.conversion.StringToShortConverter;
 import org.eclipse.core.internal.databinding.validation.StringToShortValidator;
 
-import com.ibm.icu.text.NumberFormat;
+import java.text.NumberFormat;
 
 /**
  * @since 1.1
@@ -28,7 +28,7 @@ public class StringToShortValidatorTest extends
 
 	@Override
 	protected Number getInRangeNumber() {
-		return new Short(Short.MAX_VALUE);
+		return Short.valueOf(Short.MAX_VALUE);
 	}
 
 	@Override

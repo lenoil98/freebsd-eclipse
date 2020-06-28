@@ -21,8 +21,6 @@ import org.eclipse.e4.ui.progress.IProgressService;
 import org.eclipse.e4.ui.progress.UIJob;
 import org.eclipse.jface.dialogs.IconAndMessageDialog;
 import org.eclipse.jface.resource.JFaceResources;
-import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
@@ -142,15 +140,15 @@ public class BlockedJobsDialog extends IconAndMessageDialog {
 	 * @return BlockedJobsDialog
 	 */
 	public static BlockedJobsDialog createBlockedDialog(Shell parentShell,
-	        IProgressMonitor blockedMonitor, IStatus reason, String taskName,
-	        IProgressService progressService, FinishedJobs finishedJobs,
-	        ProgressViewUpdater viewUpdater, ProgressManager progressManager) {
+			IProgressMonitor blockedMonitor, IStatus reason, String taskName,
+			IProgressService progressService, FinishedJobs finishedJobs,
+			ProgressViewUpdater viewUpdater, ProgressManager progressManager) {
 		// use an existing dialog if available
 		if (singleton != null) {
 			return singleton;
 		}
 		singleton = new BlockedJobsDialog(parentShell, blockedMonitor, reason,
-		        progressService, finishedJobs, viewUpdater, progressManager);
+				progressService, finishedJobs, viewUpdater, progressManager);
 
 		if (taskName == null || taskName.length() == 0)
 			singleton
@@ -172,7 +170,7 @@ public class BlockedJobsDialog extends IconAndMessageDialog {
 						return Status.CANCEL_STATUS;
 					}
 					if (ProgressManagerUtil.rescheduleIfModalShellOpen(this,
-					        Services.getInstance().getProgressService())) {
+							Services.getInstance().getProgressService())) {
 						return Status.CANCEL_STATUS;
 					}
 					singleton.open();
@@ -218,9 +216,9 @@ public class BlockedJobsDialog extends IconAndMessageDialog {
 	 *            A status describing why the monitor is blocked
 	 */
 	private BlockedJobsDialog(Shell parentShell, IProgressMonitor blocking,
-	        IStatus blockingStatus, IProgressService progressService,
-	        FinishedJobs finishedJobs, ProgressViewUpdater viewUpdater,
-	        ProgressManager progressManager) {
+			IStatus blockingStatus, IProgressService progressService,
+			FinishedJobs finishedJobs, ProgressViewUpdater viewUpdater,
+			ProgressManager progressManager) {
 		super(parentShell == null ? ProgressManagerUtil.getDefaultParent()
 				: parentShell);
 		blockingMonitor = blocking;
@@ -261,13 +259,7 @@ public class BlockedJobsDialog extends IconAndMessageDialog {
 	void showJobDetails(Composite parent) {
 		viewer = new DetailedProgressViewer(parent, SWT.MULTI | SWT.H_SCROLL
 				| SWT.V_SCROLL | SWT.BORDER, progressService, finishedJobs);
-		viewer.setComparator(new ViewerComparator() {
-			@Override
-			@SuppressWarnings("unchecked")
-            public int compare(Viewer testViewer, Object e1, Object e2) {
-				return ((Comparable<Object>) e1).compareTo(e2);
-			}
-		});
+		viewer.setComparator(ProgressManagerUtil.getProgressViewerComparator());
 		ProgressViewerContentProvider provider = getContentProvider();
 		viewer.setContentProvider(provider);
 		viewer.setInput(provider);
@@ -287,7 +279,7 @@ public class BlockedJobsDialog extends IconAndMessageDialog {
 	 */
 	private ProgressViewerContentProvider getContentProvider() {
 		return new ProgressViewerContentProvider(viewer, finishedJobs,
-		        progressViewUpdater, progressManager, true, false) {
+				progressViewUpdater, progressManager, true, false) {
 
 			@Override
 			public Object[] getElements(Object inputElement) {
@@ -357,11 +349,12 @@ public class BlockedJobsDialog extends IconAndMessageDialog {
 	}
 
 	/**
-	 * Requests that the blocked jobs dialog be closed. The supplied monitor
-	 * must be the same one that was passed to the createBlockedDialog method.
+	 * Requests that the blocked jobs dialog be closed. The supplied monitor must be
+	 * the same one that was passed to the createBlockedDialog method.
 	 *
-	 * @param monitor
-	 * @return IProgressMonitor
+	 * @param monitor the monitor associated with this block dialog. Dialog will not
+	 *                close if it is another monitor.
+	 * @return <code>true</code> if successfully closed
 	 */
 	public boolean close(IProgressMonitor monitor) {
 		// ignore requests to close the dialog from all but the first monitor

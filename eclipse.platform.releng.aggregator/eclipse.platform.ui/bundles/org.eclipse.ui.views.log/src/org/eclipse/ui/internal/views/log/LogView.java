@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -22,19 +22,22 @@
 
 package org.eclipse.ui.internal.views.log;
 
-import com.ibm.icu.text.DateFormat;
-import com.ibm.icu.text.SimpleDateFormat;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.e4.ui.dialogs.filteredtree.FilteredTree;
+import org.eclipse.e4.ui.dialogs.filteredtree.PatternFilter;
 import org.eclipse.jface.action.*;
 import org.eclipse.jface.dialogs.*;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -53,13 +56,14 @@ import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.ui.*;
 import org.eclipse.ui.actions.ActionFactory;
-import org.eclipse.ui.dialogs.FilteredTree;
-import org.eclipse.ui.dialogs.PatternFilter;
 import org.eclipse.ui.part.ViewPart;
+import org.osgi.framework.*;
+import org.osgi.service.log.*;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
+import org.osgi.util.tracker.ServiceTracker;
 
-public class LogView extends ViewPart implements ILogListener {
+public class LogView extends ViewPart implements LogListener {
 	public static final String P_LOG_WARNING = "warning"; //$NON-NLS-1$
 	public static final String P_LOG_ERROR = "error"; //$NON-NLS-1$
 	public static final String P_LOG_INFO = "info"; //$NON-NLS-1$
@@ -102,6 +106,8 @@ public class LogView extends ViewPart implements ILogListener {
 	public static final int GROUP_BY_SESSION = 1;
 	public static final int GROUP_BY_PLUGIN = 2;
 
+	private ServiceTracker<LogReaderService, LogReaderService> logReaderServiceTracker;
+
 	private List<AbstractEntry> elements;
 	private Map<Object, Group> groups;
 	private LogSession currentSession;
@@ -143,7 +149,7 @@ public class LogView extends ViewPart implements ILogListener {
 	private Action fExportLogEntryAction;
 
 	/**
-	 * Action called when user selects "Group by -> ..." from menu.
+	 * Action called when user selects "Group by -&gt; ..." from menu.
 	 */
 	class GroupByAction extends Action {
 		private int groupBy;
@@ -171,14 +177,33 @@ public class LogView extends ViewPart implements ILogListener {
 	 * Constructor
 	 */
 	public LogView() {
-		elements = new ArrayList<>();
-		groups = new HashMap<>();
+		elements = new CopyOnWriteArrayList<>();
+		groups = new ConcurrentHashMap<>();
 		batchedEntries = new ArrayList<>();
 		fInputFile = Platform.getLogFileLocation().toFile();
 	}
 
 	@Override
 	public void createPartControl(Composite parent) {
+		BundleContext context = FrameworkUtil.getBundle(getClass()).getBundleContext();
+		this.logReaderServiceTracker = new ServiceTracker<LogReaderService, LogReaderService>(context,
+				LogReaderService.class, null) {
+			@Override
+			public LogReaderService addingService(ServiceReference<LogReaderService> reference) {
+				LogReaderService service = context.getService(reference);
+				if (service != null) {
+					service.addLogListener(LogView.this);
+				}
+				return service;
+			}
+
+			@Override
+			public void removedService(ServiceReference<LogReaderService> reference, LogReaderService service) {
+				service.removeLogListener(LogView.this);
+			}
+		};
+		this.logReaderServiceTracker.open();
+
 		Composite composite = new Composite(parent, SWT.NONE);
 		GridLayout layout = new GridLayout();
 		layout.horizontalSpacing = 0;
@@ -188,7 +213,6 @@ public class LogView extends ViewPart implements ILogListener {
 		composite.setLayout(layout);
 		composite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-		readLogFile();
 		createViewer(composite);
 		getSite().setSelectionProvider(fFilteredTree.getViewer());
 		createActions();
@@ -198,8 +222,10 @@ public class LogView extends ViewPart implements ILogListener {
 
 		makeHoverShell();
 
-		Platform.addLogListener(this);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(fFilteredTree, IHelpContextIds.LOG_VIEW);
+
+		readLogFile();
+
 		getSite().getWorkbenchWindow().addPerspectiveListener(new IPerspectiveListener2() {
 
 			@Override
@@ -416,7 +442,7 @@ public class LogView extends ViewPart implements ILogListener {
 		action.setDisabledImageDescriptor(SharedImages.getImageDescriptor(SharedImages.DESC_IMPORT_DISABLED));
 		return action;
 	}
-	
+
 	private Action createOpenLogAction() {
 		Action action = null;
 		try {
@@ -538,7 +564,7 @@ public class LogView extends ViewPart implements ILogListener {
 			}
 		};
 		filter.setIncludeLeadingWildcard(true);
-		fFilteredTree = new FilteredTree(parent, SWT.FULL_SELECTION, filter, true);
+		fFilteredTree = new FilteredTree(parent, SWT.FULL_SELECTION, filter);
 		// need to give filter Textbox some space from the border
 		if (fFilteredTree.getFilterControl() != null) {
 			Composite filterComposite = fFilteredTree.getFilterControl().getParent(); // FilteredTree new look lays filter Text on additional composite
@@ -565,6 +591,7 @@ public class LogView extends ViewPart implements ILogListener {
 			fPropertiesAction.run();
 		});
 		fFilteredTree.getViewer().setInput(this);
+		fFilteredTree.setEnabled(false); // enable when log was read
 		addMouseListeners();
 		addDragSource();
 	}
@@ -648,8 +675,11 @@ public class LogView extends ViewPart implements ILogListener {
 	@Override
 	public void dispose() {
 		writeSettings();
-		Platform.removeLogListener(this);
-		fClipboard.dispose();
+		this.logReaderServiceTracker.close();
+
+		if (fClipboard != null) {
+			fClipboard.dispose();
+		}
 		if (fTextShell != null)
 			fTextShell.dispose();
 		fLabelProvider.disconnect(this);
@@ -704,8 +734,7 @@ public class LogView extends ViewPart implements ILogListener {
 		ProgressMonitorDialog pmd = new ProgressMonitorDialog(getViewSite().getShell());
 		try {
 			pmd.run(true, true, op);
-		} catch (InvocationTargetException e) { // do nothing
-		} catch (InterruptedException e) { // do nothing
+		} catch (InvocationTargetException | InterruptedException e) { // do nothing
 		} finally {
 			fReadLogAction.setText(Messages.LogView_readLog_reload);
 			fReadLogAction.setToolTipText(Messages.LogView_readLog_reload);
@@ -727,13 +756,14 @@ public class LogView extends ViewPart implements ILogListener {
 			fDirectory = outputFile.getParent();
 			if (outputFile.exists()) {
 				String message = NLS.bind(Messages.LogView_confirmOverwrite_message, outputFile.toString());
-				if (!MessageDialog.openQuestion(getViewSite().getShell(), (exportWholeLog ? Messages.LogView_exportLog : Messages.LogView_exportLogEntry), message))
+				if (!MessageDialog.openQuestion(getViewSite().getShell(),
+						(exportWholeLog ? Messages.LogView_exportLog : Messages.LogView_exportLogEntry), message))
 					return;
 			}
 
 			BufferedReader in = null;
 			try (BufferedWriter out = new BufferedWriter(
-					new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8));) {
+					new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8))) {
 				// $NON-NLS-1$
 				if (exportWholeLog) {
 					in = new BufferedReader(
@@ -791,16 +821,14 @@ public class LogView extends ViewPart implements ILogListener {
 	public void fillContextMenu(IMenuManager manager) { // nothing
 	}
 
-	public synchronized AbstractEntry[] getElements() {
+	public AbstractEntry[] getElements() {
 		return elements.toArray(new AbstractEntry[elements.size()]);
 	}
 
 	protected void handleClear() {
 		BusyIndicator.showWhile(fTree.getDisplay(), () -> {
-			synchronized (this) {
-				elements.clear();
-				groups.clear();
-			}
+			elements.clear();
+			groups.clear();
 			if (currentSession != null) {
 				currentSession.removeAllChildren();
 			}
@@ -820,8 +848,7 @@ public class LogView extends ViewPart implements ILogListener {
 		ProgressMonitorDialog pmd = new ProgressMonitorDialog(getViewSite().getShell());
 		try {
 			pmd.run(true, true, op);
-		} catch (InvocationTargetException e) { // do nothing
-		} catch (InterruptedException e) { // do nothing
+		} catch (InvocationTargetException | InterruptedException e) { // do nothing
 		} finally {
 			fReadLogAction.setText(Messages.LogView_readLog_restore);
 			fReadLogAction.setToolTipText(Messages.LogView_readLog_restore);
@@ -834,24 +861,56 @@ public class LogView extends ViewPart implements ILogListener {
 	 * Reads the chosen backing log file
 	 */
 	void readLogFile() {
-		synchronized (this) {
-			elements.clear();
-			groups.clear();
-		}
+		setContentDescription(Messages.LogView_readLog_loading);
+		fetchLogEntries().thenAccept(this::updateLogViewer);
+	}
 
-		List<LogEntry> result = new ArrayList<>();
-		LogSession lastLogSession = LogReader.parseLogFile(this.fInputFile, getLogMaxTailSize(), result, this.fMemento);
-		if (lastLogSession != null && (lastLogSession.getDate() == null || isEclipseStartTime(lastLogSession.getDate()))) {
-			currentSession = lastLogSession;
-		} else {
-			currentSession = null;
-		}
+	private CompletableFuture<List<LogEntry>> fetchLogEntries() {
+		return CompletableFuture.supplyAsync(() -> {
+			List<LogEntry> result = new ArrayList<>();
+			LogSession lastLogSession = LogReader.parseLogFile(this.fInputFile, getLogMaxTailSize(), result,
+					this.fMemento);
+			if (lastLogSession != null
+					&& (lastLogSession.getDate() == null || isEclipseStartTime(lastLogSession.getDate()))) {
+				currentSession = lastLogSession;
+			} else {
+				currentSession = null;
+			}
+			return result;
+		});
+	}
 
-		group(result);
+	private void updateLogViewer(List<LogEntry> entries) {
+		elements.clear();
+		groups.clear();
+		group(entries);
 		limitEntriesCount();
+		setContentDescription(getTitleSummary());
 
-		getSite().getShell().getDisplay().asyncExec(() -> setContentDescription(getTitleSummary()));
+		asyncRefresh(false);
+	}
 
+	private Display getDisplay() {
+		return PlatformUI.getWorkbench().getDisplay();
+	}
+
+	@Override
+	protected void setContentDescription(String description) {
+		Runnable uiTask = () -> {
+			if (!isDisposed()) {
+				super.setContentDescription(description);
+			}
+		};
+		if (Display.getCurrent() == null) {
+			// We might be called from non UI thread
+			getDisplay().asyncExec(uiTask);
+		} else {
+			uiTask.run();
+		}
+	}
+
+	private boolean isDisposed() {
+		return fFilteredTree == null || fFilteredTree.isDisposed();
 	}
 
 	private boolean isEclipseStartTime(Date date) {
@@ -896,8 +955,7 @@ public class LogView extends ViewPart implements ILogListener {
 		if (fMemento.getInteger(P_GROUP_BY).intValue() == GROUP_BY_NONE) {
 			elements.addAll(entries);
 		} else {
-			for (Iterator<LogEntry> i = entries.iterator(); i.hasNext();) {
-				LogEntry entry = i.next();
+			for (LogEntry entry : entries) {
 				Group group = getGroup(entry);
 				group.addChild(entry);
 			}
@@ -908,7 +966,7 @@ public class LogView extends ViewPart implements ILogListener {
 	 * Limits the number of entries according to the max entries limit set in
 	 * memento.
 	 */
-	private synchronized void limitEntriesCount() {
+	private void limitEntriesCount() {
 		int limit = Integer.MAX_VALUE;
 		if (fMemento.getString(LogView.P_USE_LIMIT).equals("true")) {//$NON-NLS-1$
 			limit = fMemento.getInteger(LogView.P_LOG_LIMIT).intValue();
@@ -919,32 +977,26 @@ public class LogView extends ViewPart implements ILogListener {
 		if (entriesCount <= limit) {
 			return;
 		}
-		Comparator<LogEntry> dateComparator = (o1, o2) -> {
-			Date l1 = o1.getDate();
-			Date l2 = o2.getDate();
-			if ((l1 != null) && (l2 != null)) {
-				return l1.before(l2) ? -1 : 1;
-			} else if ((l1 == null) && (l2 == null)) {
-				return 0;
-			} else
-				return (l1 == null) ? -1 : 1;
-		};
+		Comparator<AbstractEntry> dateComparator = Comparator.comparing(
+				entry -> entry instanceof LogEntry ? ((LogEntry) entry).getDate() : null,
+				Comparator.nullsLast((d1, d2) -> d1.before(d2) ? -1 : 1));
 
-		if (fMemento.getInteger(P_GROUP_BY).intValue() == GROUP_BY_NONE) {
-			elements.subList(0, elements.size() - limit).clear();
-		} else {
-			List copy = new ArrayList(entriesCount);
-			for (Iterator<AbstractEntry> i = elements.iterator(); i.hasNext();) {
-				AbstractEntry group = i.next();
-				copy.addAll(Arrays.asList(group.getChildren(group)));
-			}
+		synchronized (elements) {
+			if (fMemento.getInteger(P_GROUP_BY).intValue() == GROUP_BY_NONE) {
+				elements.subList(0, elements.size() - limit).clear();
+			} else {
+				List<AbstractEntry> copy = new ArrayList<>(entriesCount);
+				for (AbstractEntry group : elements) {
+					List<AbstractEntry> children = Arrays.asList(group.getChildren(group));
+					copy.addAll(children);
+				}
 
-			Collections.sort(copy, dateComparator);
-			List toRemove = copy.subList(0, copy.size() - limit);
+				copy.sort(dateComparator);
+				List<AbstractEntry> toRemove = copy.subList(0, copy.size() - limit);
 
-			for (Iterator<AbstractEntry> i = elements.iterator(); i.hasNext();) {
-				AbstractEntry group = i.next();
-				group.removeChildren(toRemove);
+				for (AbstractEntry group : elements) {
+					group.removeChildren(toRemove);
+				}
 			}
 		}
 
@@ -955,10 +1007,9 @@ public class LogView extends ViewPart implements ILogListener {
 			return elements.size();
 		}
 		int size = 0;
-		for (Iterator<AbstractEntry> i = elements.iterator(); i.hasNext();) {
-			AbstractEntry group = i.next();
-			size += group.size();
-		}
+	    for (AbstractEntry group : elements) {
+		size += group.size();
+	    }
 		return size;
 	}
 
@@ -1008,13 +1059,13 @@ public class LogView extends ViewPart implements ILogListener {
 	}
 
 	@Override
-	public void logging(IStatus status, String plugin) {
+	public void logged(org.osgi.service.log.LogEntry input) {
 		if (!isPlatformLogOpen())
 			return;
 
 		if (batchEntries) {
 			// create LogEntry immediately to don't loose IStatus creation date.
-			LogEntry entry = createLogEntry(status);
+			LogEntry entry = createLogEntry(input);
 			batchedEntries.add(entry);
 			return;
 		}
@@ -1024,7 +1075,7 @@ public class LogView extends ViewPart implements ILogListener {
 			asyncRefresh(true);
 			fFirstEvent = false;
 		} else {
-			LogEntry entry = createLogEntry(status);
+			LogEntry entry = createLogEntry(input);
 
 			if (!batchedEntries.isEmpty()) {
 				// batch new entry as well, to have only one asyncRefresh()
@@ -1072,6 +1123,29 @@ public class LogView extends ViewPart implements ILogListener {
 		return entry;
 	}
 
+	private LogEntry createLogEntry(org.osgi.service.log.LogEntry input) {
+		// create a status from OSGi LogEntry
+		LogLevel logLevel = input.getLogLevel();
+		int severity;
+		switch (logLevel) {
+		case ERROR:
+			severity = IStatus.ERROR;
+			break;
+		case WARN:
+			severity = IStatus.WARNING;
+			break;
+		case INFO:
+			severity = IStatus.INFO;
+			break;
+		case DEBUG:
+		default:
+			severity = IStatus.OK;
+		}
+		IStatus status = new Status(severity, input.getBundle().getSymbolicName(), input.getMessage(),
+				input.getException());
+		return createLogEntry(status);
+	}
+
 	private synchronized void pushEntry(LogEntry entry) {
 		if (LogReader.isLogged(entry, fMemento)) {
 			group(Collections.singletonList(entry));
@@ -1091,6 +1165,7 @@ public class LogView extends ViewPart implements ILogListener {
 					TreeViewer viewer = fFilteredTree.getViewer();
 					viewer.refresh();
 					viewer.expandToLevel(2);
+					fTree.setEnabled(true);
 					fDeleteLogAction.setEnabled(
 							fInputFile.exists() && fInputFile.equals(Platform.getLogFileLocation().toFile()));
 					fOpenLogAction.setEnabled(fInputFile.exists());
@@ -1106,13 +1181,17 @@ public class LogView extends ViewPart implements ILogListener {
 						}
 					}
 				}
+				if (!isDisposed()) {
+					fFilteredTree.getViewer().refresh();
+					fFilteredTree.setEnabled(true);
+				}
 			});
 		}
 	}
 
 	@Override
 	public void setFocus() {
-		if (fFilteredTree != null) {
+		if (!isDisposed()) {
 			if (fMemento.getBoolean(P_SHOW_FILTER_TEXT).booleanValue()) {
 				Text filterControl = fFilteredTree.getFilterControl();
 				if (filterControl != null && !filterControl.isDisposed()) {

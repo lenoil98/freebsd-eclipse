@@ -63,14 +63,14 @@ public final class UnionSet<E> extends ObservableSet<E> {
 	private StalenessTracker stalenessTracker;
 
 	/**
-	 * @param childSets
+	 * @param childSets the sets that form this union
 	 */
 	public UnionSet(IObservableSet<? extends E>[] childSets) {
-		this(new HashSet<IObservableSet<? extends E>>(Arrays.asList(childSets)));
+		this(new HashSet<>(Arrays.asList(childSets)));
 	}
 
 	/**
-	 * @param childSets
+	 * @param childSets the sets that form this union
 	 * @since 1.6
 	 */
 	public UnionSet(Set<IObservableSet<? extends E>> childSets) {
@@ -78,17 +78,17 @@ public final class UnionSet<E> extends ObservableSet<E> {
 	}
 
 	/**
-	 * @param childSets
-	 * @param elementType
+	 * @param childSets   the sets that form this union
+	 * @param elementType explicit element type for the child set elements
 	 * @since 1.2
 	 */
 	public UnionSet(IObservableSet<? extends E>[] childSets, Object elementType) {
-		this(new HashSet<IObservableSet<? extends E>>(Arrays.asList(childSets)), elementType);
+		this(new HashSet<>(Arrays.asList(childSets)), elementType);
 	}
 
 	/**
-	 * @param childSets
-	 * @param elementType
+	 * @param childSets   the sets that form this union
+	 * @param elementType explicit element type for the child set elements
 	 * @since 1.6
 	 */
 	public UnionSet(Set<IObservableSet<? extends E>> childSets, Object elementType) {

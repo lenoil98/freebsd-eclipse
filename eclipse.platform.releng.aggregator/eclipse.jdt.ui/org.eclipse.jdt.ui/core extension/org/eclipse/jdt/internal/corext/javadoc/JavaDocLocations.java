@@ -77,9 +77,6 @@ public class JavaDocLocations {
 	private static IClasspathEntry getConvertedEntry(IClasspathEntry entry, IJavaProject project, Map<IPath, String> oldLocationMap) {
 		IPath path= null;
 		switch (entry.getEntryKind()) {
-			case IClasspathEntry.CPE_SOURCE:
-			case IClasspathEntry.CPE_PROJECT:
-				return null;
 			case IClasspathEntry.CPE_CONTAINER:
 				convertContainer(entry, project, oldLocationMap);
 				return null;
@@ -89,15 +86,16 @@ public class JavaDocLocations {
 			case IClasspathEntry.CPE_VARIABLE:
 				path= JavaCore.getResolvedVariablePath(entry.getPath());
 				break;
+			case IClasspathEntry.CPE_SOURCE:
+			case IClasspathEntry.CPE_PROJECT:
 			default:
 				return null;
 		}
 		if (path == null) {
 			return null;
 		}
-		IClasspathAttribute[] extraAttributes= entry.getExtraAttributes();
-		for (int i= 0; i < extraAttributes.length; i++) {
-			if (IClasspathAttribute.JAVADOC_LOCATION_ATTRIBUTE_NAME.equals(extraAttributes[i].getName())) {
+		for (IClasspathAttribute extraAttribute : entry.getExtraAttributes()) {
+			if (IClasspathAttribute.JAVADOC_LOCATION_ATTRIBUTE_NAME.equals(extraAttribute.getName())) {
 				return null;
 			}
 		}
@@ -179,9 +177,7 @@ public class JavaDocLocations {
 			throw new IllegalArgumentException("Entry must be of kind CPE_LIBRARY or CPE_VARIABLE"); //$NON-NLS-1$
 		}
 
-		IClasspathAttribute[] extraAttributes= entry.getExtraAttributes();
-		for (int i= 0; i < extraAttributes.length; i++) {
-			IClasspathAttribute attrib= extraAttributes[i];
+		for (IClasspathAttribute attrib : entry.getExtraAttributes()) {
 			if (IClasspathAttribute.JAVADOC_LOCATION_ATTRIBUTE_NAME.equals(attrib.getName())) {
 				return parseURL(attrib.getValue());
 			}
@@ -230,7 +226,7 @@ public class JavaDocLocations {
 		if (!urlString.endsWith("/")) { //$NON-NLS-1$
 			urlBuffer.append('/');
 		}
-		
+
 		StringBuffer pathBuffer= new StringBuffer();
 		StringBuffer fragmentBuffer= new StringBuffer();
 
@@ -309,7 +305,7 @@ public class JavaDocLocations {
 			case IJavaElement.JAVA_MODULE:
 				IModuleDescription module= (IModuleDescription) element;
 				appendModuleSummaryPath(module, pathBuffer);
-				break;	
+				break;
 			default :
 				return null;
 		}
@@ -449,7 +445,7 @@ public class JavaDocLocations {
 
 	/**
 	 * Returns the location of the Javadoc.
-	 * 
+	 *
 	 * @param element whose Javadoc location has to be found
 	 * @param isBinary <code>true</code> if the Java element is from a binary container
 	 * @return the location URL of the Javadoc or <code>null</code> if the location cannot be found
@@ -491,7 +487,7 @@ public class JavaDocLocations {
 
 	/**
 	 * Returns the reason for why the Javadoc of the Java element could not be retrieved.
-	 * 
+	 *
 	 * @param element whose Javadoc could not be retrieved
 	 * @param root the root of the Java element
 	 * @return the String message for why the Javadoc could not be retrieved for the Java element or
@@ -530,7 +526,7 @@ public class JavaDocLocations {
 	 * Handles the exception thrown from JDT Core when the attached Javadoc
 	 * cannot be retrieved due to accessibility issues or location URL issue. This exception is not
 	 * logged but the exceptions occurred due to other reasons are logged.
-	 * 
+	 *
 	 * @param e the exception thrown when retrieving the Javadoc fails
 	 * @return the String message for why the Javadoc could not be retrieved
 	 * @since 3.9
@@ -554,7 +550,7 @@ public class JavaDocLocations {
 	/**
 	 * Parse a URL from a String. This method first tries to treat <code>url</code> as a valid, encoded URL.
 	 * If that didn't work, it tries to recover from bad URLs, e.g. the unencoded form we used to use in persistent storage.
-	 * 
+	 *
 	 * @param url a URL
 	 * @return the parsed URL or <code>null</code> if the URL couldn't be parsed
 	 * @since 3.9
@@ -587,7 +583,7 @@ public class JavaDocLocations {
 	/**
 	 * Returns the {@link File} of a <code>file:</code> URL. This method tries to recover from bad URLs,
 	 * e.g. the unencoded form we used to use in persistent storage.
-	 * 
+	 *
 	 * @param url a <code>file:</code> URL
 	 * @return the file
 	 * @since 3.9
@@ -599,5 +595,8 @@ public class JavaDocLocations {
 			JavaPlugin.log(e);
 			return new File(url.getFile());
 		}
+	}
+
+	private JavaDocLocations() {
 	}
 }

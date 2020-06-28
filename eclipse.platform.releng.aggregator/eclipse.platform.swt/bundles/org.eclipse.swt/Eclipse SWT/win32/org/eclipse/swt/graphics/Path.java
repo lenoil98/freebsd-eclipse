@@ -53,7 +53,7 @@ public class Path extends Resource {
 	 *
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
-	public long /*int*/ handle;
+	public long handle;
 
 	PointF currentPoint = new PointF(), startPoint = new PointF();
 
@@ -220,9 +220,9 @@ void addArcInPixels(float x, float y, float width, float height, float startAngl
 	if (width == height) {
 		Gdip.GraphicsPath_AddArc(handle, x, y, width, height, -startAngle, -arcAngle);
 	} else {
-		long /*int*/ path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
+		long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
 		if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-		long /*int*/ matrix = Gdip.Matrix_new(width, 0, 0, height, x, y);
+		long matrix = Gdip.Matrix_new(width, 0, 0, height, x, y);
 		if (matrix == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 		Gdip.GraphicsPath_AddArc(path, 0, 0, 1, 1, -startAngle, -arcAngle);
 		Gdip.GraphicsPath_Transform(path, matrix);
@@ -315,18 +315,16 @@ void addStringInPixels(String string, float x, float y, Font font) {
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (font == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	if (font.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	int length = string.length();
-	char[] buffer = new char[length];
-	string.getChars(0, length, buffer, 0);
-	long /*int*/ hDC = device.internal_new_GC(null);
-	long /*int*/ [] family = new long /*int*/ [1];
-	long /*int*/ gdipFont = GC.createGdipFont(hDC, font.handle, 0, device.fontCollection, family, null);
+	char[] buffer = string.toCharArray();
+	long hDC = device.internal_new_GC(null);
+	long [] family = new long [1];
+	long gdipFont = GC.createGdipFont(hDC, font.handle, 0, device.fontCollection, family, null);
 	PointF point = new PointF();
 	point.X = x - (Gdip.Font_GetSize(gdipFont) / 6);
 	point.Y = y;
 	int style = Gdip.Font_GetStyle(gdipFont);
 	float size = Gdip.Font_GetSize(gdipFont);
-	Gdip.GraphicsPath_AddString(handle, buffer, length, family[0], style, size, point, 0);
+	Gdip.GraphicsPath_AddString(handle, buffer, buffer.length, family[0], style, size, point, 0);
 	Gdip.GraphicsPath_GetLastPoint(handle, currentPoint);
 	Gdip.FontFamily_delete(family[0]);
 	Gdip.Font_delete(gdipFont);

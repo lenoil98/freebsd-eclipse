@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.ui.refactoring;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -108,8 +107,7 @@ public class ChangeParametersControl extends Composite {
 		}
 		private ParameterInfo[] removeMarkedAsDeleted(List<ParameterInfo> paramInfos){
 			List<ParameterInfo> result= new ArrayList<>(paramInfos.size());
-			for (Iterator<ParameterInfo> iter= paramInfos.iterator(); iter.hasNext();) {
-				ParameterInfo info= iter.next();
+			for (ParameterInfo info : paramInfos) {
 				if (! info.isDeleted())
 					result.add(info);
 			}
@@ -536,12 +534,12 @@ public class ChangeParametersControl extends Composite {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				int index= getTable().getSelectionIndices()[0];
-				ParameterInfo[] selected= getSelectedElements();
-				for (int i= 0; i < selected.length; i++) {
-					if (selected[i].isAdded())
-						fParameterInfos.remove(selected[i]);
-					else
-						selected[i].markAsDeleted();
+				for (ParameterInfo s : getSelectedElements()) {
+					if (s.isAdded()) {
+						fParameterInfos.remove(s);
+					} else {
+						s.markAsDeleted();
+					}
 				}
 				restoreSelection(index);
 			}
@@ -684,8 +682,7 @@ public class ChangeParametersControl extends Composite {
 		List<ParameterInfo> res= new ArrayList<>(elements.size());
 		List<ParameterInfo> deleted= new ArrayList<>();
 		ParameterInfo floating= null;
-		for (Iterator<ParameterInfo> iter= elements.iterator(); iter.hasNext();) {
-			ParameterInfo curr= iter.next();
+		for (ParameterInfo curr : elements) {
 			if (move.contains(curr)) {
 				res.add(curr);
 			} else if (curr.isDeleted()) {
@@ -701,9 +698,7 @@ public class ChangeParametersControl extends Composite {
 		}
 		res.addAll(deleted);
 		elements.clear();
-		for (Iterator<ParameterInfo> iter= res.iterator(); iter.hasNext();) {
-			elements.add(iter.next());
-		}
+		elements.addAll(res);
 	}
 
 	private boolean canMove(boolean up) {
@@ -714,8 +709,8 @@ public class ChangeParametersControl extends Composite {
 		if (indc.length == 0)
 			return false;
 		int invalid= up ? 0 : notDeletedInfosCount - 1;
-		for (int i= 0; i < indc.length; i++) {
-			if (indc[i] == invalid)
+		for (int element : indc) {
+			if (element == invalid)
 				return false;
 		}
 		return true;
@@ -725,8 +720,7 @@ public class ChangeParametersControl extends Composite {
 		if (fParameterInfos == null) // during initialization
 			return 0;
 		int result= 0;
-		for (Iterator<ParameterInfo> iter= fParameterInfos.iterator(); iter.hasNext();) {
-			ParameterInfo info= iter.next();
+		for (ParameterInfo info : fParameterInfos) {
 			if (! info.isDeleted())
 				result++;
 		}

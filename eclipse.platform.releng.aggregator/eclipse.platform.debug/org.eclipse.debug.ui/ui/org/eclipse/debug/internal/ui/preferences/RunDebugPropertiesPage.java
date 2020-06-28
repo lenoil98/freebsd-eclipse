@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.ui.preferences;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,8 +63,6 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PropertyPage;
 import org.eclipse.ui.dialogs.SelectionDialog;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Displays default launch configuration settings for a selected resource - associated launch configurations.
@@ -251,8 +250,8 @@ public class RunDebugPropertiesPage extends PropertyPage {
 		if(fTypeCandidates == null) {
 			String[] types = DebugUIPlugin.getDefault().getLaunchConfigurationManager().getApplicableConfigurationTypes(getResource());
 			fTypeCandidates = new ArrayList<>(types.length);
-			for(int i = 0; i < types.length; i++) {
-				fTypeCandidates.add(DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurationType(types[i]));
+			for (String type : types) {
+				fTypeCandidates.add(DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurationType(type));
 			}
 
 			Collections.sort(fTypeCandidates, new Comparator<ILaunchConfigurationType>() {
@@ -279,8 +278,8 @@ public class RunDebugPropertiesPage extends PropertyPage {
 			fOriginalCandidates = new HashSet<>();
 			try {
 				ILaunchConfiguration[] configs = DebugUIPlugin.getDefault().getLaunchConfigurationManager().getApplicableLaunchConfigurations(null, resource);
-				for(int i = 0; i < configs.length; i++) {
-					fOriginalCandidates.add(configs[i].getWorkingCopy());
+				for (ILaunchConfiguration config : configs) {
+					fOriginalCandidates.add(config.getWorkingCopy());
 				}
 			}
 			catch(CoreException ce) {DebugUIPlugin.log(ce);}
@@ -394,10 +393,10 @@ public class RunDebugPropertiesPage extends PropertyPage {
 		int[] indices = table.getSelectionIndices();
 		Arrays.sort(indices);
 		ILaunchConfigurationWorkingCopy[] configurations = getSelectedConfigurations();
-		for (int i = 0; i < configurations.length; i++) {
-			fDeletedConfigurations.add(configurations[i]);
-			fChangedConfigurations.remove(configurations[i]);
-			fViewer.remove(configurations[i]);
+		for (ILaunchConfigurationWorkingCopy configuration : configurations) {
+			fDeletedConfigurations.add(configuration);
+			fChangedConfigurations.remove(configuration);
+			fViewer.remove(configuration);
 		}
 		if (indices[0] < table.getItemCount()) {
 			fViewer.setSelection(new StructuredSelection(table.getItem(indices[0]).getData()));

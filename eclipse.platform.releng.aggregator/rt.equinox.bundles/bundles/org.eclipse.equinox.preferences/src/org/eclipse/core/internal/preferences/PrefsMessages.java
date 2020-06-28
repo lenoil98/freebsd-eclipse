@@ -55,6 +55,15 @@ public class PrefsMessages extends NLS {
 	public static String childrenNames;
 	public static String childrenNames2;
 
+	public static String OsgiPreferenceMetadataStore_e_null_preference_node;
+	public static String PreferenceMetadata_e_null_default_value;
+	public static String PreferenceMetadata_e_null_description;
+	public static String PreferenceMetadata_e_null_identifier;
+	public static String PreferenceMetadata_e_null_name;
+	public static String PreferenceMetadata_e_null_value_type;
+	public static String PreferenceStorage_e_load_unsupported;
+	public static String PreferenceStorage_e_save_unsupported;
+
 	static {
 		// load message values from bundle file
 		reloadMessages();
@@ -69,7 +78,7 @@ public class PrefsMessages extends NLS {
 	 * Pre-pend the message with the current date and the name of the current thread.
 	 */
 	public static void message(String message) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append(new Date(System.currentTimeMillis()));
 		buffer.append(" - ["); //$NON-NLS-1$
 		buffer.append(Thread.currentThread().getName());

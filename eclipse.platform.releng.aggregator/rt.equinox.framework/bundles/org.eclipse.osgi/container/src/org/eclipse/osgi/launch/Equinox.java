@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -23,7 +23,7 @@ import org.osgi.framework.launch.Framework;
 
 /**
  * The System Bundle implementation for the Equinox Framework.
- * 
+ *
  * @since 3.5
  */
 public class Equinox implements Framework {
@@ -110,58 +110,72 @@ public class Equinox implements Framework {
 		return systemBundle.compareTo(o);
 	}
 
+	@Override
 	public void start(int options) throws BundleException {
 		systemBundle.start(options);
 	}
 
+	@Override
 	public void start() throws BundleException {
 		systemBundle.start();
 	}
 
+	@Override
 	public void stop(int options) throws BundleException {
 		systemBundle.stop(options);
 	}
 
+	@Override
 	public void stop() throws BundleException {
 		systemBundle.stop();
 	}
 
+	@Override
 	public void update(InputStream input) throws BundleException {
 		systemBundle.update(input);
 	}
 
+	@Override
 	public void update() throws BundleException {
 		systemBundle.update();
 	}
 
+	@Override
 	public void uninstall() throws BundleException {
 		systemBundle.uninstall();
 	}
 
+	@Override
 	public long getBundleId() {
 		return systemBundle.getBundleId();
 	}
 
+	@Override
 	public String getLocation() {
 		return systemBundle.getLocation();
 	}
 
+	@Override
 	public String getSymbolicName() {
 		return systemBundle.getSymbolicName();
 	}
 
+	@Override
 	public Enumeration<String> getEntryPaths(String path) {
 		return systemBundle.getEntryPaths(path);
 	}
 
+	@Override
 	public URL getEntry(String path) {
 		return systemBundle.getEntry(path);
 	}
 
+	@Override
 	public Enumeration<URL> findEntries(String path, String filePattern, boolean recurse) {
 		return systemBundle.findEntries(path, filePattern, recurse);
 	}
 
+	@Override
 	public <A> A adapt(Class<A> type) {
 		return systemBundle.adapt(type);
 	}

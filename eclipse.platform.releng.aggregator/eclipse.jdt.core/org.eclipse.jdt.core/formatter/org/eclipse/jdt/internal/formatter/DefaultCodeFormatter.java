@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -95,6 +95,7 @@ public class DefaultCodeFormatter extends CodeFormatter {
 
 	private Object oldCommentFormatOption;
 	private String sourceLevel;
+	public boolean previewEnabled;
 
 	private String sourceString;
 	char[] sourceArray;
@@ -126,13 +127,14 @@ public class DefaultCodeFormatter extends CodeFormatter {
 			this.workingOptions = new DefaultCodeFormatterOptions(options);
 			this.oldCommentFormatOption = getOldCommentFormatOption(options);
 			String compilerSource = options.get(CompilerOptions.OPTION_Source);
-			this.sourceLevel = compilerSource != null ? compilerSource : CompilerOptions.VERSION_11;
+			this.sourceLevel = compilerSource != null ? compilerSource : CompilerOptions.VERSION_14;
+			this.previewEnabled = JavaCore.ENABLED.equals(options.get(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES));
 		} else {
 			Map<String, String> settings = DefaultCodeFormatterConstants.getJavaConventionsSettings();
 			this.originalOptions = new DefaultCodeFormatterOptions(settings);
 			this.workingOptions = new DefaultCodeFormatterOptions(settings);
 			this.oldCommentFormatOption = DefaultCodeFormatterConstants.TRUE;
-			this.sourceLevel = CompilerOptions.VERSION_11;
+			this.sourceLevel = CompilerOptions.VERSION_14;
 		}
 		if (defaultCodeFormatterOptions != null) {
 			this.originalOptions.set(defaultCodeFormatterOptions.getMap());
@@ -300,7 +302,7 @@ public class DefaultCodeFormatter extends CodeFormatter {
 		resultBuilder.setAlignChar(DefaultCodeFormatterOptions.SPACE);
 		for (Token token : this.tokens) {
 			List<Token> structure = token.getInternalStructure();
-			if (structure != null && !structure.isEmpty())
+			if (token.isComment() && structure != null && !structure.isEmpty())
 				resultBuilder.processComment(token);
 		}
 
@@ -323,7 +325,7 @@ public class DefaultCodeFormatter extends CodeFormatter {
 		for (int kindToTry : kindsToTry) {
 			ASTNode astNode = createParser(kindToTry).createAST(null);
 			if (!hasErrors(astNode)) {
-				if (kindToTry == K_MODULE_INFO) 
+				if (kindToTry == K_MODULE_INFO)
 					tokenizeSource(kindToTry); // run scanner again to get module specific tokens
 				return astNode;
 			}
@@ -332,7 +334,7 @@ public class DefaultCodeFormatter extends CodeFormatter {
 	}
 
 	private ASTParser createParser(int kind) {
-		ASTParser parser = ASTParser.newParser(AST.JLS11);
+		ASTParser parser = ASTParser.newParser(AST.JLS14);
 
 		if (kind == K_MODULE_INFO) {
 			parser.setSource(createDummyModuleInfoCompilationUnit());
@@ -344,6 +346,8 @@ public class DefaultCodeFormatter extends CodeFormatter {
 		Map<String, String> parserOptions = JavaCore.getOptions();
 		parserOptions.put(CompilerOptions.OPTION_Source, this.sourceLevel);
 		parserOptions.put(CompilerOptions.OPTION_DocCommentSupport, CompilerOptions.ENABLED);
+		parserOptions.put(CompilerOptions.OPTION_EnablePreviews, CompilerOptions.ENABLED); //TODO
+		parserOptions.put(CompilerOptions.OPTION_ReportPreviewFeatures, CompilerOptions.IGNORE);
 		parser.setCompilerOptions(parserOptions);
 		return parser;
 	}
@@ -386,7 +390,7 @@ public class DefaultCodeFormatter extends CodeFormatter {
 	private void tokenizeSource(int kind) {
 		this.tokens.clear();
 		Scanner scanner = new Scanner(true, false, false/* nls */, CompilerOptions.versionToJdkLevel(this.sourceLevel),
-				null/* taskTags */, null/* taskPriorities */, false/* taskCaseSensitive */);
+				null/* taskTags */, null/* taskPriorities */, false/* taskCaseSensitive */, this.previewEnabled);
 		scanner.setSource(this.sourceArray);
 		scanner.fakeInModule = (kind & K_MODULE_INFO) != 0;
 		while (true) {

@@ -55,8 +55,8 @@ public class SearchResultGroup {
 
 	public static IResource[] getResources(SearchResultGroup[] searchResultGroups){
 		Set<IResource> resourceSet= new HashSet<>(searchResultGroups.length);
-		for (int i= 0; i < searchResultGroups.length; i++) {
-			resourceSet.add(searchResultGroups[i].getResource());
+		for (SearchResultGroup searchResultGroup : searchResultGroups) {
+			resourceSet.add(searchResultGroup.getResource());
 		}
 		return resourceSet.toArray(new IResource[resourceSet.size()]);
 	}
@@ -71,8 +71,7 @@ public class SearchResultGroup {
 	public String toString() {
 		StringBuilder buf= new StringBuilder(fResouce.getFullPath().toString());
 		buf.append('\n');
-		for (int i= 0; i < fSearchMatches.size(); i++) {
-			SearchMatch match= fSearchMatches.get(i);
+		for (SearchMatch match : fSearchMatches) {
 			buf.append("  ").append(match.getOffset()).append(", ").append(match.getLength()); //$NON-NLS-1$//$NON-NLS-2$
 			buf.append(match.getAccuracy() == SearchMatch.A_ACCURATE ? "; acc" : "; inacc"); //$NON-NLS-1$//$NON-NLS-2$
 			if (match.isInsideDocComment())

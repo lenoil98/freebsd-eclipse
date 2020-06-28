@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rob Harrop - SpringSource Inc. (bug 247522)
@@ -75,6 +75,7 @@ public class BundleSpecificationImpl extends VersionConstraintImpl implements Bu
 		}
 	}
 
+	@Override
 	public boolean isSatisfiedBy(BaseDescription supplier) {
 		if (!(supplier instanceof BundleDescriptionImpl))
 			return false;
@@ -115,6 +116,7 @@ public class BundleSpecificationImpl extends VersionConstraintImpl implements Bu
 		return true;
 	}
 
+	@Override
 	public String toString() {
 		return "Require-Bundle: " + getName() + "; bundle-version=\"" + getVersionRange() + "\""; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	}
@@ -135,7 +137,7 @@ public class BundleSpecificationImpl extends VersionConstraintImpl implements Bu
 	}
 
 	private String createFilterDirective() {
-		StringBuffer filter = new StringBuffer();
+		StringBuilder filter = new StringBuilder();
 		filter.append("(&"); //$NON-NLS-1$
 		synchronized (this.monitor) {
 			addFilterAttribute(filter, BundleRevision.BUNDLE_NAMESPACE, getName());

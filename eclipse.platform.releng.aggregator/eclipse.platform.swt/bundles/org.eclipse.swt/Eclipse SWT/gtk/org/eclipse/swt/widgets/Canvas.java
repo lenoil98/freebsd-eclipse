@@ -151,31 +151,31 @@ public IME getIME () {
 }
 
 @Override
-long /*int*/ gtk_button_press_event (long /*int*/ widget, long /*int*/ event) {
+long gtk_button_press_event (long widget, long event) {
 	if (ime != null) {
-		long /*int*/ result = ime.gtk_button_press_event (widget, event);
+		long result = ime.gtk_button_press_event (widget, event);
 		if (result != 0) return result;
 	}
 	return  super.gtk_button_press_event (widget, event);
 }
 
 @Override
-long /*int*/ gtk_commit (long /*int*/ imcontext, long /*int*/ text) {
+long gtk_commit (long imcontext, long text) {
 	if (ime != null) {
-		long /*int*/ result = ime.gtk_commit (imcontext, text);
+		long result = ime.gtk_commit (imcontext, text);
 		if (result != 0) return result;
 	}
 	return super.gtk_commit (imcontext, text);
 }
 
 @Override
-long /*int*/ gtk_draw (long /*int*/ widget, long /*int*/ cairo) {
+long gtk_draw (long widget, long cairo) {
 	if ((state & OBSCURED) != 0) return 0;
-	long /*int*/ result;
+	long result;
 	if ( GTK.GTK_VERSION < OS.VERSION(3, 22, 0)) {
 		boolean isFocus = caret != null && caret.isFocusCaret ();
 		if (isFocus) caret.killFocus ();
-		 result = super.gtk_draw (widget, cairo);
+		result = super.gtk_draw (widget, cairo);
 		if (isFocus) caret.setFocus ();
 	} else {
 		result = super.gtk_draw (widget, cairo);
@@ -194,7 +194,7 @@ long /*int*/ gtk_draw (long /*int*/ widget, long /*int*/ cairo) {
 	return result;
 }
 
-private void drawCaret (long /*int*/ widget, long /*int*/ cairo) {
+private void drawCaret (long widget, long cairo) {
 	if(this.isDisposed()) return;
 	if (cairo == 0) error(SWT.ERROR_NO_HANDLES);
 	if (drawFlag) {
@@ -202,7 +202,7 @@ private void drawCaret (long /*int*/ widget, long /*int*/ cairo) {
 		if (caret.image != null && !caret.image.isDisposed() && caret.image.mask == 0) {
 			Cairo.cairo_set_source_rgb(cairo, 1, 1, 1);
 			Cairo.cairo_set_operator(cairo, Cairo.CAIRO_OPERATOR_DIFFERENCE);
-			long /*int*/ surface = Cairo.cairo_get_target(cairo);
+			long surface = Cairo.cairo_get_target(cairo);
 			int nWidth = 0;
 			switch (Cairo.cairo_surface_get_type(surface)) {
 				case Cairo.CAIRO_SURFACE_TYPE_IMAGE:
@@ -236,23 +236,23 @@ private void drawCaret (long /*int*/ widget, long /*int*/ cairo) {
 }
 
 @Override
-long /*int*/ gtk_focus_in_event (long /*int*/ widget, long /*int*/ event) {
-	long /*int*/ result = super.gtk_focus_in_event (widget, event);
+long gtk_focus_in_event (long widget, long event) {
+	long result = super.gtk_focus_in_event (widget, event);
 	if (caret != null) caret.setFocus ();
 	return result;
 }
 
 @Override
-long /*int*/ gtk_focus_out_event (long /*int*/ widget, long /*int*/ event) {
-	long /*int*/ result = super.gtk_focus_out_event (widget, event);
+long gtk_focus_out_event (long widget, long event) {
+	long result = super.gtk_focus_out_event (widget, event);
 	if (caret != null) caret.killFocus ();
 	return result;
 }
 
 @Override
-long /*int*/ gtk_preedit_changed (long /*int*/ imcontext) {
+long gtk_preedit_changed (long imcontext) {
 	if (ime != null) {
-		long /*int*/ result = ime.gtk_preedit_changed (imcontext);
+		long result = ime.gtk_preedit_changed (imcontext);
 		if (result != 0) return result;
 	}
 	return super.gtk_preedit_changed (imcontext);
@@ -311,6 +311,13 @@ void reskinChildren (int flags) {
 public void scroll (int destX, int destY, int x, int y, int width, int height, boolean all) {
 	checkWidget();
 	if (width <= 0 || height <= 0) return;
+	/*
+	 * scrollInPixels() doesn't seem to be needed on GTK4, so we can return early.
+	 * In fact it doesn't seem to be needed on GTK3 either, but it's been left
+	 * here for stability on older GTK3 versions. The investigation
+	 * as to why it's unneeded is left as a TODO. See bug 546274.
+	 */
+	if (GTK.GTK4) return;
 	Point destination = DPIUtil.autoScaleUp (new Point (destX, destY));
 	Rectangle srcRect = DPIUtil.autoScaleUp (new Rectangle (x, y, width, height));
 	scrollInPixels(destination.x, destination.y, srcRect.x, srcRect.y, srcRect.width, srcRect.height, all);
@@ -327,8 +334,8 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
 	if (!isVisible ()) return;
 	boolean isFocus = caret != null && caret.isFocusCaret ();
 	if (isFocus) caret.killFocus ();
-	long /*int*/ window = paintWindow ();
-	long /*int*/ visibleRegion = GDK.gdk_window_get_visible_region (window);
+	long window = paintWindow ();
+	long visibleRegion = GDK.gdk_window_get_visible_region (window);
 	cairo_rectangle_int_t srcRect = new cairo_rectangle_int_t ();
 	srcRect.x = x;
 	srcRect.y = y;
@@ -338,32 +345,30 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
 	 * location the scrollbars are re-painted when scrolling, causing the
 	 * hopping effect. See bug 480458.
 	 */
-	if (GTK.GTK_VERSION >= OS.VERSION(3, 16, 0)) {
-		long /*int*/ hBarHandle = 0;
-		long /*int*/ vBarHandle = 0;
-		if (GTK.GTK_IS_SCROLLED_WINDOW(scrolledHandle)) {
-			hBarHandle = GTK.gtk_scrolled_window_get_hscrollbar (scrolledHandle);
-			vBarHandle = GTK.gtk_scrolled_window_get_vscrollbar (scrolledHandle);
+	long hBarHandle = 0;
+	long vBarHandle = 0;
+	if (GTK.GTK_IS_SCROLLED_WINDOW(scrolledHandle)) {
+		hBarHandle = GTK.gtk_scrolled_window_get_hscrollbar (scrolledHandle);
+		vBarHandle = GTK.gtk_scrolled_window_get_vscrollbar (scrolledHandle);
+	}
+	GtkRequisition requisition = new GtkRequisition();
+	if (hBarHandle != 0) {
+		gtk_widget_get_preferred_size (hBarHandle, requisition);
+		if (requisition.height > 0) {
+			srcRect.y = y - requisition.height;
 		}
-		GtkRequisition requisition = new GtkRequisition();
-		if (hBarHandle != 0) {
-			gtk_widget_get_preferred_size (hBarHandle, requisition);
-			if (requisition.height > 0) {
-				srcRect.y = y - requisition.height;
-			}
-		}
-		if (vBarHandle != 0) {
-			gtk_widget_get_preferred_size (vBarHandle, requisition);
-			if (requisition.width > 0) {
-				srcRect.x = x - requisition.width;
-			}
+	}
+	if (vBarHandle != 0) {
+		gtk_widget_get_preferred_size (vBarHandle, requisition);
+		if (requisition.width > 0) {
+			srcRect.x = x - requisition.width;
 		}
 	}
 	srcRect.width = width;
 	srcRect.height = height;
-	long /*int*/ copyRegion = Cairo.cairo_region_create_rectangle (srcRect);
+	long copyRegion = Cairo.cairo_region_create_rectangle (srcRect);
 	Cairo.cairo_region_intersect(copyRegion, visibleRegion);
-	long /*int*/ invalidateRegion = Cairo.cairo_region_create_rectangle (srcRect);
+	long invalidateRegion = Cairo.cairo_region_create_rectangle (srcRect);
 	Cairo.cairo_region_subtract (invalidateRegion, visibleRegion);
 	Cairo.cairo_region_translate (invalidateRegion, deltaX, deltaY);
 	cairo_rectangle_int_t copyRect = new cairo_rectangle_int_t();
@@ -377,15 +382,7 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
 		redrawWidget (x, y, width, height, false, false, false);
 		redrawWidget (destX, destY, width, height, false, false, false);
 	} else {
-		long /*int*/ cairo = 0;
-		long /*int*/ context = 0;
-		if (GTK.GTK_VERSION >= OS.VERSION(3, 22, 0)) {
-			long /*int*/ cairo_region = GDK.gdk_window_get_visible_region(window);
-			context = GDK.gdk_window_begin_draw_frame(window, cairo_region);
-			cairo = GDK.gdk_drawing_context_get_cairo_context(context);
-		} else {
-			cairo = GDK.gdk_cairo_create(window);
-		}
+		long cairo = GDK.gdk_cairo_create(window);
 		if (Cairo.cairo_version() < Cairo.CAIRO_VERSION_ENCODE(1, 12, 0)) {
 			GDK.gdk_cairo_set_source_window(cairo, window, 0, 0);
 		} else {
@@ -399,11 +396,7 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
 		Cairo.cairo_rectangle(cairo, copyRect.x + deltaX, copyRect.y + deltaY, copyRect.width, copyRect.height);
 		Cairo.cairo_clip(cairo);
 		Cairo.cairo_paint(cairo);
-		if (GTK.GTK_VERSION >= OS.VERSION(3, 22, 0)) {
-			if (context != 0) GDK.gdk_window_end_draw_frame(window, context);
-		} else {
-			Cairo.cairo_destroy(cairo);
-		}
+		Cairo.cairo_destroy(cairo);
 		boolean disjoint = (destX + width < x) || (x + width < destX) || (destY + height < y) || (y + height < destY);
 		if (disjoint) {
 			cairo_rectangle_int_t rect = new cairo_rectangle_int_t();
@@ -454,9 +447,7 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
 	 * Due to overlay drawing of scrollbars current method of scrolling leaves scrollbar and notifiers for them inside the canvas
 	 * after scroll. Fix is to redraw once done.
 	 */
-	if (GTK.GTK_VERSION >= OS.VERSION(3, 16, 0)) {
-		redraw(false);
-	}
+	redraw(false);
 }
 
 @Override
@@ -531,7 +522,7 @@ public void setIME (IME ime) {
 }
 
 void updateCaret () {
-	long /*int*/ imHandle = imHandle ();
+	long imHandle = imHandle ();
 	if (imHandle == 0) return;
 	GdkRectangle rect = new GdkRectangle ();
 	rect.x = caret.x;

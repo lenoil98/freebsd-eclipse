@@ -29,12 +29,18 @@ import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.handlers.RegistryRadioState;
 import org.eclipse.ui.tests.TestPlugin;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * Tests various aspects of command state.
  *
  * @since 3.2
  */
+@RunWith(JUnit4.class)
+@Ignore("functionality broken since e4 transition because org.eclipse.e4.core.commands.internal.HandlerServiceHandler does not implement org.eclipse.core.commands.IObjectWithState.")
 public class StateTest extends UITestCase {
 
 	/**
@@ -160,6 +166,7 @@ public class StateTest extends UITestCase {
 	 * @throws CommandException
 	 *             Never.
 	 */
+	@Test
 	public final void testCommandNotifiedOfStateChange()
 			throws CommandException {
 		// Attach a listener to the state on the command.
@@ -196,6 +203,7 @@ public class StateTest extends UITestCase {
 	 * @throws CommandException
 	 *             Never.
 	 */
+	@Test
 	public final void testStateChangeReflectedInCommand()
 			throws CommandException {
 		// Get the command.
@@ -222,6 +230,7 @@ public class StateTest extends UITestCase {
 	 * Tests that if the command changes the state, the handler reflects these
 	 * changes.
 	 */
+	@Test
 	public final void testStateChangeReflectedInHandler() {
 		// Check the initial state.
 		assertSame("The initial state was not correct", OBJECT_INITIAL,
@@ -239,6 +248,7 @@ public class StateTest extends UITestCase {
 				OBJECT_CHANGED, handler.currentValue);
 	}
 
+	@Test
 	public final void testTextState() {
 		assertNull(handler.textValue);
 		final ICommandService commandService = fWorkbench
@@ -248,6 +258,7 @@ public class StateTest extends UITestCase {
 		assertEquals(TEXT_HELLO, handler.textValue);
 	}
 
+	@Test
 	public final void testTextStateListener() {
 		assertNull(handler.textValue);
 		final ICommandService commandService = fWorkbench
@@ -265,6 +276,7 @@ public class StateTest extends UITestCase {
 		assertEquals(TEXT_HELLO, listener.textValue);
 	}
 
+	@Test
 	public final void testTextPreference() {
 		final ICommandService commandService = fWorkbench
 				.getService(ICommandService.class);
@@ -283,6 +295,7 @@ public class StateTest extends UITestCase {
 		assertEquals(TEXT_HELLO, nstate.getValue());
 	}
 
+	@Test
 	public final void testRadioState() {
 		RegistryRadioState state1 = new RegistryRadioState();
 		state1.setInitializationData(null, "class", COMMAND_ID);

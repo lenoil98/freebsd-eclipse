@@ -80,8 +80,8 @@ public class InjectionFilter implements IFilter {
 		}
 
 		boolean enabled = isUnfiltered || isNav
-		    || HelpBasePlugin.getActivitySupport().isRoleEnabled(pathInfo)
-		    || isRemote;
+			|| HelpBasePlugin.getActivitySupport().isRoleEnabled(pathInfo)
+			|| isRemote;
 		if ("/ntopic".equals(req.getServletPath())) { //$NON-NLS-1$
 			addNarrow = true;
 			CssUtil.addCssFiles(NARROW_CSS, cssIncludes);
@@ -93,7 +93,7 @@ public class InjectionFilter implements IFilter {
 
 		needsLiveHelp = !enabled && HelpBasePlugin.getActivitySupport().getDocumentMessageUsesLiveHelp(addNarrow);
 
-		if (cssIncludes.size() == 0 && !addDisabled)
+		if (cssIncludes.isEmpty() && !addDisabled)
 			return out;
 
 		IPath path = new Path(pathInfo);
@@ -124,7 +124,7 @@ public class InjectionFilter implements IFilter {
 		buff.append("<img src=\""); //$NON-NLS-1$
 		buff.append(relativePath);
 		buff.append("content/org.eclipse.help.webapp/"); //$NON-NLS-1$
-		buff.append("advanced/images/e_show_all.gif\" border=\"0\" align=\"bottom\">&nbsp;"); //$NON-NLS-1$
+		buff.append("advanced/images/e_show_all.svg\" border=\"0\" align=\"bottom\">&nbsp;"); //$NON-NLS-1$
 		buff.append(message);
 		buff.append("<br><hr></div>"); //$NON-NLS-1$
 	}

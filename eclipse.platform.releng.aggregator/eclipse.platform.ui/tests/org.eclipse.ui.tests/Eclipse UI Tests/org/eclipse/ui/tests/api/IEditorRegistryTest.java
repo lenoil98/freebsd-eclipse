@@ -16,12 +16,19 @@
 package org.eclipse.ui.tests.api;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.internal.content.ContentTypeManager;
@@ -49,27 +56,38 @@ import org.eclipse.ui.tests.harness.util.ArrayUtil;
 import org.eclipse.ui.tests.harness.util.CallHistory;
 import org.eclipse.ui.tests.harness.util.FileUtil;
 import org.hamcrest.Matchers;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import junit.framework.TestCase;
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class IEditorRegistryTest extends TestCase {
+public class IEditorRegistryTest {
 	private IEditorRegistry fReg;
+
+	/**
+	 * Number of received log messages with severity error while running a single
+	 * test method.
+	 */
+	private final AtomicInteger loggedErrors = new AtomicInteger();
+
+	/** Listener to count error messages while testing. */
+	private final ILogListener errorLogListener = (IStatus status, String plugin) -> {
+		if (status.matches(IStatus.ERROR)) {
+			System.out.println(status);
+			loggedErrors.incrementAndGet();
+		}
+	};
 
 	private IProject proj;
 
-	public IEditorRegistryTest(String testName) {
-		super(testName);
-	}
-
-	@Override
+	@Before
 	public void setUp() {
 		fReg = PlatformUI.getWorkbench().getEditorRegistry();
 	}
 
-	@Override
+	@After
 	public void tearDown() {
 		if (proj != null) {
 			try {
@@ -81,6 +99,7 @@ public class IEditorRegistryTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testGetFileEditorMappings() {
 		assertTrue(ArrayUtil.checkNotNull(fReg.getFileEditorMappings()));
 	}
@@ -89,6 +108,7 @@ public class IEditorRegistryTest extends TestCase {
 	 * tests both of the following: IEditorDescriptor[] getEditors(IFile file)
 	 * IEditorDescriptor[] getEditors(String filename)
 	 */
+	@Test
 	public void testGetEditors() throws Throwable {
 		IEditorDescriptor[] editors, editors2;
 		String[][] maps = { { "a.mock1", MockEditorPart.ID1 },
@@ -114,6 +134,7 @@ public class IEditorRegistryTest extends TestCase {
 		assertEquals(editors.length, 0);
 	}
 
+	@Test
 	public void testFindEditor() {
 		String id = MockEditorPart.ID1;
 		IEditorDescriptor editor = fReg.findEditor(id);
@@ -126,6 +147,7 @@ public class IEditorRegistryTest extends TestCase {
 	}
 
 	/** Ensures that OS external editors can be found using {@link IEditorRegistry#findEditor(String)} */
+	@Test
 	public void testFindExternalEditor() {
 		IEditorDescriptor[] sortedEditorsFromOS = ((EditorRegistry) fReg).getSortedEditorsFromOS();
 		assertThat("The OS should have at least one external editor", sortedEditorsFromOS.length,
@@ -154,6 +176,7 @@ public class IEditorRegistryTest extends TestCase {
 	/**
 	 * getDefaultEditor()
 	 */
+	@Test
 	public void testGetDefaultEditor() {
 		assertNotNull(fReg.getDefaultEditor());
 	}
@@ -161,6 +184,7 @@ public class IEditorRegistryTest extends TestCase {
 	/**
 	 * getDefaultEditor(String fileName)
 	 */
+	@Test
 	public void testGetDefaultEditor2() {
 		IEditorDescriptor editor = fReg.getDefaultEditor("a.mock1");
 		assertEquals(editor.getId(), MockEditorPart.ID1);
@@ -176,6 +200,7 @@ public class IEditorRegistryTest extends TestCase {
 	/**
 	 * getDefaultEditor(IFile file)
 	 */
+	@Test
 	public void testGetDefaultEditor3() throws Throwable {
 		proj = FileUtil.createProject("testProject");
 
@@ -208,10 +233,12 @@ public class IEditorRegistryTest extends TestCase {
 	/**
 	 * getDefaultEditor(String)
 	 */
+	@Test
 	public void testGetDefaultEditor4_Bug356116() throws Throwable {
 		assertNotNull(fReg.getDefaultEditor("test.bug356116"));
 	}
 
+	@Test
 	public void testSetDefaultEditor() throws Throwable {
 		proj = FileUtil.createProject("testProject");
 		IFile file = FileUtil.createFile("good.file", proj);
@@ -236,6 +263,7 @@ public class IEditorRegistryTest extends TestCase {
 	 * tests both of the following: getImageDescriptor(IFile file)
 	 * getImageDescriptor(String filename)
 	 */
+	@Test
 	public void testGetImageDescriptor() throws Throwable {
 		proj = FileUtil.createProject("testProject");
 
@@ -270,6 +298,7 @@ public class IEditorRegistryTest extends TestCase {
 
 	}
 
+	@Test
 	public void testAddPropertyListener() throws Throwable {
 		final String METHOD = "propertyChanged";
 
@@ -311,6 +340,7 @@ public class IEditorRegistryTest extends TestCase {
 		fReg.removePropertyListener(listener2);
 	}
 
+	@Test
 	public void testRemovePropertyListener() {
 		IFileEditorMapping[] src = fReg.getFileEditorMappings();
 		FileEditorMapping[] maps = new FileEditorMapping[src.length];
@@ -340,6 +370,7 @@ public class IEditorRegistryTest extends TestCase {
 	/**
 	 * Assert that the content-type based editor is chosen.
 	 */
+	@Test
 	public void testEditorContentTypeByFilenameWithContentType() {
 		IContentType contentType = Platform.getContentTypeManager()
 				.getContentType("org.eclipse.ui.tests.content-type1");
@@ -353,6 +384,7 @@ public class IEditorRegistryTest extends TestCase {
 	/**
 	 * Assert that the content type based editor is chosen.
 	 */
+	@Test
 	public void testEditorContentTypeByExtWithContentType() {
 		IContentType contentType = Platform.getContentTypeManager()
 				.getContentType("org.eclipse.ui.tests.content-type1");
@@ -367,6 +399,7 @@ public class IEditorRegistryTest extends TestCase {
 	 * Assert that in the absence of content type, fall back to the traditional
 	 * filename binding.
 	 */
+	@Test
 	public void testEditorContentTypeByExtWithoutContentType1() {
 		IEditorDescriptor descriptor = fReg
 				.getDefaultEditor("blah.content-type1");
@@ -379,6 +412,7 @@ public class IEditorRegistryTest extends TestCase {
 	 * Assert that in the absence of content type, fall back to the traditional
 	 * filename binding.
 	 */
+	@Test
 	public void testEditorContentTypeByFilenameWithoutContentType1() {
 		IEditorDescriptor descriptor = fReg
 				.getDefaultEditor("content-type1.blah");
@@ -391,6 +425,7 @@ public class IEditorRegistryTest extends TestCase {
 	 * Assert that in the absence of content type, choose the content type
 	 * editor based on content type guess.
 	 */
+	@Test
 	public void testEditorContentTypeByFilenameWithoutContentType2() {
 		IEditorDescriptor descriptor = fReg
 				.getDefaultEditor("content-type2.blah");
@@ -403,6 +438,7 @@ public class IEditorRegistryTest extends TestCase {
 	 * Assert that in the absence of content type, choose the content type
 	 * editor based on content type guess.
 	 */
+	@Test
 	public void testEditorContentTypeByExtWithoutContentType2() {
 		IEditorDescriptor descriptor = fReg
 				.getDefaultEditor("blah.content-type2");
@@ -411,6 +447,7 @@ public class IEditorRegistryTest extends TestCase {
 				.getId());
 	}
 
+	@Test
 	public void testDefaultedContentTypeEditor() {
 		// check the default editor
 		IEditorDescriptor descriptor = fReg
@@ -439,6 +476,7 @@ public class IEditorRegistryTest extends TestCase {
 	 * Assert that IEditorRegistry.getEditors() does not return null children
 	 * when the default editor has been set to null.
 	 */
+	@Test
 	public void testNoDefaultEditors() {
 		IEditorDescriptor desc = fReg.getDefaultEditor("bogusfile.txt");
 
@@ -456,6 +494,7 @@ public class IEditorRegistryTest extends TestCase {
 
 	}
 
+	@Test
 	public void testSwitchDefaultToExternalBug236104() {
 		IEditorDescriptor editor = fReg.getDefaultEditor("a.mock1");
 		assertNotNull("Default editor should not be null", editor);
@@ -519,6 +558,7 @@ public class IEditorRegistryTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testBug308894() throws Throwable {
 		FileEditorMapping newMapping = new FileEditorMapping("*.abc");
 		assertNull(newMapping.getDefaultEditor());
@@ -527,20 +567,9 @@ public class IEditorRegistryTest extends TestCase {
 		FileEditorMapping[] maps = new FileEditorMapping[src.length + 1];
 		System.arraycopy(src, 0, maps, 0, src.length);
 		maps[maps.length - 1] = newMapping;
-
-		final Throwable[] thrownException = new Throwable[1];
-		ILogListener listener = new ILogListener() {
-			@Override
-			public void logging(IStatus status, String plugin) {
-				Throwable throwable = status.getException();
-				if (throwable == null) {
-					thrownException[0] = new CoreException(status);
-				} else {
-					thrownException[0] = throwable;
-				}
-			}
-		};
-		Platform.addLogListener(listener);
+		// add error listener
+		loggedErrors.set(0);
+		Platform.addLogListener(errorLogListener);
 
 		try {
 			// invoke the same code that FileEditorsPreferencePage does
@@ -553,14 +582,12 @@ public class IEditorRegistryTest extends TestCase {
 			((EditorRegistry) fReg).saveAssociations();
 			PrefUtil.savePrefs();
 
-			Platform.removeLogListener(listener);
-
-			if (thrownException[0] != null) {
-				throw thrownException[0];
-			}
+			Platform.removeLogListener(errorLogListener);
+			assertEquals("Test triggered errors during preference save.", 0, loggedErrors.get());
 		}
 	}
 
+	@Test
 	public void testRemoveExtension() {
 		FileEditorMapping mapping1 = new FileEditorMapping(null, "testRemoveExtension1");
 		FileEditorMapping mapping2 = new FileEditorMapping(null, "testRemoveExtension2");
@@ -596,12 +623,14 @@ public class IEditorRegistryTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testAddContentTypeBinding_bug502837() {
 		IEditorDescriptor[] editors = fReg.getEditors("blah.bug502837");
 		assertEquals(1, editors.length);
 		assertEquals(MockEditorPart.ID1, editors[0].getId());
 	}
 
+	@Test
 	public void testRemoveContentType_bug520239() throws CoreException {
 		ContentTypeManager contentTypeManager = (ContentTypeManager) Platform.getContentTypeManager();
 		IContentType contentType = contentTypeManager.addContentType("bug520239", "bug520239", null);

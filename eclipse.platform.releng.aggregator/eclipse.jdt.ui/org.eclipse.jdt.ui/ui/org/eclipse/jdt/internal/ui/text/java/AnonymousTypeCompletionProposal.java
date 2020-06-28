@@ -186,7 +186,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 				return null;
 
 			IMethodBinding[] bindings= StubUtility2Core.getOverridableMethods(astRoot.getAST(), dummyTypeBinding, true);
-			
+
 			if (fSuperType.isInterface()) {
 				ITypeBinding[] dummySuperInterfaces= dummyTypeBinding.getInterfaces();
 				if (dummySuperInterfaces.length == 0 || dummySuperInterfaces.length == 1 && dummySuperInterfaces[0].isRawType())
@@ -196,7 +196,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 				if (dummySuperclass == null || dummySuperclass.isRawType())
 					bindings= new IMethodBinding[0];
 			}
-			
+
 			CodeGenerationSettings settings= JavaPreferencesSettings.getCodeGenerationSettings(fSuperType.getJavaProject());
 
 			IMethodBinding[] methodsToOverride= null;
@@ -217,9 +217,10 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 				if (dialog.open() == Window.OK) {
 					Object[] selection= dialog.getResult();
 					ArrayList<Object> result= new ArrayList<>(selection.length);
-					for (int i= 0; i < selection.length; i++) {
-						if (selection[i] instanceof IMethodBinding)
-							result.add(selection[i]);
+					for (Object s : selection) {
+						if (s instanceof IMethodBinding) {
+							result.add(s);
+						}
 					}
 					methodsToOverride= result.toArray(new IMethodBinding[result.size()]);
 					settings.createComments= dialog.getGenerateComment();
@@ -232,8 +233,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 			} else {
 				settings.createComments= false;
 				List<IMethodBinding> result= new ArrayList<>();
-				for (int i= 0; i < bindings.length; i++) {
-					IMethodBinding curr= bindings[i];
+				for (IMethodBinding curr : bindings) {
 					if (Modifier.isAbstract(curr.getModifiers()))
 						result.add(curr);
 				}
@@ -249,8 +249,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 			ITrackedNodePosition trackedDeclaration= rewrite.track(declaration);
 
 			ListRewrite rewriter= rewrite.getListRewrite(declaration, declaration.getBodyDeclarationsProperty());
-			for (int i= 0; i < methodsToOverride.length; i++) {
-				IMethodBinding curr= methodsToOverride[i];
+			for (IMethodBinding curr : methodsToOverride) {
 				MethodDeclaration stub= StubUtility2.createImplementationStub(workingCopy, rewrite, importRewrite, context, curr, dummyTypeBinding, settings, dummyTypeBinding.isInterface(), focusNode);
 				rewriter.insertFirst(stub, null);
 			}
@@ -437,7 +436,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 			replacementString= replacementString + ';';
 
 		replacementString= Strings.changeIndent(replacementString, 0, project, CodeFormatterUtil.createIndentString(indent, project), lineDelim);
-		
+
 		int beginIndex= replacementString.indexOf('(');
 		if (!isAnonymousConstructorInvoc)
 			beginIndex++;
@@ -459,7 +458,7 @@ public class AnonymousTypeCompletionProposal extends JavaTypeCompletionProposal 
 			}
 		} else
 			setCursorPosition(replacementString.length());
-		
+
 		setReplacementString(replacementString);
 
 		if (pos < document.getLength() && document.getChar(pos) == ')') {

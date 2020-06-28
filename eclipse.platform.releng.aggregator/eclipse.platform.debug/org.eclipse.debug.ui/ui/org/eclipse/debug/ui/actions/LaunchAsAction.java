@@ -102,7 +102,7 @@ public class LaunchAsAction extends Action implements IMenuCreator, IWorkbenchWi
 	}
 
 	private void createAction(Menu parent, IAction action, int count) {
-		StringBuffer label= new StringBuffer();
+		StringBuilder label= new StringBuilder();
 		//add the numerical accelerator
 		if (count < 10) {
 			label.append('&');
@@ -182,8 +182,8 @@ public class LaunchAsAction extends Action implements IMenuCreator, IWorkbenchWi
 			public void menuShown(MenuEvent e) {
 				Menu m = (Menu)e.widget;
 				MenuItem[] items = m.getItems();
-				for (int i=0; i < items.length; i++) {
-					items[i].dispose();
+				for (MenuItem item : items) {
+					item.dispose();
 				}
 				fillMenu();
 			}

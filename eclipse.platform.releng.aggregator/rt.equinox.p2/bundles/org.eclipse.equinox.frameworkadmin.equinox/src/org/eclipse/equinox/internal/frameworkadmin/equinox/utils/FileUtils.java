@@ -7,7 +7,7 @@
  *  https://www.eclipse.org/legal/epl-2.0/
  *
  *  SPDX-License-Identifier: EPL-2.0
- * 
+ *
  *  Contributors:
  *     IBM Corporation - initial API and implementation
  *     Pascal Rapicault - Support for bundled macosx http://bugs.eclipse.org/57349
@@ -108,10 +108,10 @@ public class FileUtils {
 	}
 
 	/**
-	 * If a bundle of the specified location is in the Eclipse plugin format (either plugin-name_version.jar 
+	 * If a bundle of the specified location is in the Eclipse plugin format (either plugin-name_version.jar
 	 * or as a folder named plugin-name_version ), return version string.Otherwise, return null;
-	 * 
-	 * @return version string. If invalid format, return null. 
+	 *
+	 * @return version string. If invalid format, return null.
 	 */
 	private static Version getVersion(String version) {
 		if (version.length() == 0)
@@ -145,28 +145,25 @@ public class FileUtils {
 		File result = null;
 		Version maxVersion = null;
 
-		for (int i = 0; i < candidates.length; i++) {
-			String candidateName = candidates[i].getName();
+		for (File candidate : candidates) {
+			String candidateName = candidate.getName();
 			if (!candidateName.startsWith(pluginName))
 				continue;
-
 			if (candidateName.length() > pluginName.length() && candidateName.charAt(pluginName.length()) != '_') {
 				// allow jar file with no _version tacked on the end
-				if (!candidates[i].isFile() || (candidateName.length() != 4 + pluginName.length()) || !candidateName.endsWith(".jar")) //$NON-NLS-1$
+				if (!candidate.isFile() || (candidateName.length() != 4 + pluginName.length()) || !candidateName.endsWith(".jar")) {
 					continue;
+				}
 			}
-
 			String candidateVersion = ""; //$NON-NLS-1$
 			if (candidateName.length() > pluginName.length() + 1 && candidateName.charAt(pluginName.length()) == '_')
 				candidateVersion = candidateName.substring(pluginName.length() + 1);
-
 			Version currentVersion = getVersion(candidateVersion);
 			if (currentVersion == null)
 				continue;
-
 			if (maxVersion == null || maxVersion.compareTo(currentVersion) < 0) {
 				maxVersion = currentVersion;
-				result = candidates[i];
+				result = candidate;
 			}
 		}
 		return result != null ? result.getAbsoluteFile().toURI() : null;

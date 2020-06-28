@@ -25,6 +25,7 @@ import org.eclipse.core.databinding.observable.set.ISetChangeListener;
 import org.eclipse.core.databinding.observable.set.SetDiff;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.observable.value.WritableValue;
+import org.eclipse.core.databinding.util.Policy;
 import org.eclipse.core.internal.databinding.BindingStatus;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
@@ -62,10 +63,10 @@ public class SetBinding<M, T> extends Binding {
 
 
 	/**
-	 * @param target
-	 * @param model
-	 * @param modelToTargetStrategy
-	 * @param targetToModelStrategy
+	 * @param target                the target side set
+	 * @param model                 the model side set
+	 * @param modelToTargetStrategy strategy to copy model to target elements
+	 * @param targetToModelStrategy strategy to copy target to model elements
 	 */
 	public SetBinding(IObservableSet<T> target, IObservableSet<M> model,
 			UpdateSetStrategy<? super T, ? extends M> targetToModelStrategy,
@@ -96,7 +97,7 @@ public class SetBinding<M, T> extends Binding {
 	@Override
 	protected void postInit() {
 		if (modelToTarget.getUpdatePolicy() == UpdateSetStrategy.POLICY_UPDATE) {
-			model.getRealm().exec(() -> {
+			execAfterDisposalCheck(model, () -> {
 				model.addSetChangeListener(modelChangeListener);
 				updateModelToTarget();
 			});
@@ -105,7 +106,7 @@ public class SetBinding<M, T> extends Binding {
 		}
 
 		if (targetToModel.getUpdatePolicy() == UpdateSetStrategy.POLICY_UPDATE) {
-			target.getRealm().exec(() -> {
+			execAfterDisposalCheck(target, () -> {
 				target.addSetChangeListener(targetChangeListener);
 				if (modelToTarget.getUpdatePolicy() == UpdateSetStrategy.POLICY_NEVER) {
 					// we have to sync from target to model, if the other
@@ -122,7 +123,7 @@ public class SetBinding<M, T> extends Binding {
 
 	@Override
 	public void updateModelToTarget() {
-		model.getRealm().exec(() -> {
+		execAfterDisposalCheck(model, () -> {
 			SetDiff<M> diff = Diffs.computeSetDiff(Collections.emptySet(), model);
 			doUpdate(model, target, diff, modelToTarget, true, true);
 		});
@@ -130,7 +131,7 @@ public class SetBinding<M, T> extends Binding {
 
 	@Override
 	public void updateTargetToModel() {
-		target.getRealm().exec(() -> {
+		execAfterDisposalCheck(target, () -> {
 			SetDiff<T> diff = Diffs.computeSetDiff(Collections.emptySet(), target);
 			doUpdate(target, model, diff, targetToModel, true, true);
 		});
@@ -153,20 +154,24 @@ public class SetBinding<M, T> extends Binding {
 	private <S, D1, D2 extends D1> void doUpdate(final IObservableSet<S> source, final IObservableSet<D1> destination,
 			final SetDiff<? extends S> diff, final UpdateSetStrategy<? super S, D2> updateSetStrategy,
 			final boolean explicit, final boolean clearDestination) {
+
 		final int policy = updateSetStrategy.getUpdatePolicy();
-		if (policy == UpdateSetStrategy.POLICY_NEVER)
+
+		if (policy == UpdateSetStrategy.POLICY_NEVER) {
 			return;
-		if (policy == UpdateSetStrategy.POLICY_ON_REQUEST && !explicit)
+		}
+
+		if (policy == UpdateSetStrategy.POLICY_ON_REQUEST && !explicit) {
 			return;
+		}
+
 		if (!destination.getRealm().isCurrent()) {
-			/*
-			 * If the destination is different from the source realm, we have to avoid lazy
-			 * diff calculation.
-			 */
+			// If the destination is different from the source realm, we have to avoid lazy
+			// diff calculation
 			diff.getAdditions();
 			diff.getRemovals();
 		}
-		destination.getRealm().exec(() -> {
+		execAfterDisposalCheck(destination, () -> {
 			if (destination == target) {
 				updatingTarget = true;
 			} else {
@@ -181,21 +186,18 @@ public class SetBinding<M, T> extends Binding {
 
 				for (S element : diff.getRemovals()) {
 					IStatus setterStatus1 = updateSetStrategy.doRemove(destination, updateSetStrategy.convert(element));
-
 					mergeStatus(multiStatus, setterStatus1);
-					// TODO - at this point, the two sets
-					// will be out of sync if an error
-					// occurred...
+					// TODO: At this point, the two sets will be out of sync if an error occurred.
 				}
 
 				for (S element : diff.getAdditions()) {
 					IStatus setterStatus2 = updateSetStrategy.doAdd(destination, updateSetStrategy.convert(element));
-
 					mergeStatus(multiStatus, setterStatus2);
-					// TODO - at this point, the two sets
-					// will be out of sync if an error
-					// occurred...
+					// TODO: At this point, the two sets will be out of sync if an error occurred.
 				}
+			} catch (Exception ex) {
+				String message = ex.getMessage() != null ? ex.getMessage() : ""; //$NON-NLS-1$
+				multiStatus.add(new Status(IStatus.ERROR, Policy.JFACE_DATABINDING, IStatus.ERROR, message, ex));
 			} finally {
 				setValidationStatus(multiStatus);
 

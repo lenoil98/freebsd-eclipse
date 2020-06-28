@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -42,6 +42,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -56,7 +57,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
@@ -285,7 +285,7 @@ public final class Util {
 
 	private static final String JAVA_LANG_OBJECT = "java.lang.Object"; //$NON-NLS-1$
 	private static final String JAVA_LANG_RUNTIMEEXCEPTION = "java.lang.RuntimeException"; //$NON-NLS-1$
-	public static final String LINE_DELIMITER = System.getProperty("line.separator"); //$NON-NLS-1$
+	public static final String LINE_DELIMITER = System.lineSeparator();
 
 	public static final String UNKNOWN_ELEMENT_KIND = "UNKNOWN_ELEMENT_KIND"; //$NON-NLS-1$
 
@@ -318,6 +318,8 @@ public final class Util {
 	public static final IPath MANIFEST_PROJECT_RELATIVE_PATH = new Path(JarFile.MANIFEST_NAME);
 
 	public static final String ORG_ECLIPSE_SWT = "org.eclipse.swt"; //$NON-NLS-1$
+
+	public static final int LATEST_OPCODES_ASM = Opcodes.ASM8;
 
 	/**
 	 * Throws an exception with the given message and underlying exception.
@@ -463,8 +465,6 @@ public final class Util {
 		try {
 			inputStream = new BufferedInputStream(new FileInputStream(file));
 			bytes = Util.getInputStreamAsByteArray(inputStream, -1);
-		} catch (FileNotFoundException e) {
-			ApiPlugin.log(e);
 		} catch (IOException e) {
 			ApiPlugin.log(e);
 		} finally {
@@ -482,8 +482,6 @@ public final class Util {
 				outputStream = new BufferedOutputStream(new FileOutputStream(newFile));
 				outputStream.write(bytes);
 				outputStream.flush();
-			} catch (FileNotFoundException e) {
-				ApiPlugin.log(e);
 			} catch (IOException e) {
 				ApiPlugin.log(e);
 			} finally {
@@ -632,6 +630,8 @@ public final class Util {
 		if (components == null) {
 			return null;
 		}
+		CoreException ex = null;
+		IApiComponent component = null;
 		for (IApiComponent apiComponent : components) {
 			if (apiComponent != null) {
 				try {
@@ -640,9 +640,15 @@ public final class Util {
 						return classFile;
 					}
 				} catch (CoreException e) {
-					// ignore
+					if (ex == null) {
+						ex = e;
+						component = apiComponent;
+					}
 				}
 			}
+		}
+		if (ex != null) {
+			ApiPlugin.log("Error while resolving class file for: " + typeName + " via " + component.getName(), ex); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		return null;
 	}
@@ -694,13 +700,7 @@ public final class Util {
 		try {
 			Field field = IDeltaClass.getField(elementType);
 			return field.getInt(null);
-		} catch (SecurityException e) {
-			// ignore
-		} catch (IllegalArgumentException e) {
-			// ignore
-		} catch (NoSuchFieldException e) {
-			// ignore
-		} catch (IllegalAccessException e) {
+		} catch (SecurityException | IllegalArgumentException | NoSuchFieldException | IllegalAccessException e) {
 			// ignore
 		}
 		return -1;
@@ -1709,8 +1709,6 @@ public final class Util {
 			try {
 				zipFile = new ZipFile(file);
 				return zipFile.getEntry(IApiCoreConstants.API_DESCRIPTION_XML_NAME) != null;
-			} catch (ZipException e) {
-				// ignore
 			} catch (IOException e) {
 				// ignore
 			} finally {
@@ -1906,13 +1904,7 @@ public final class Util {
 			parser.setErrorHandler(new DefaultHandler());
 			stream = new ByteArrayInputStream(document.getBytes(StandardCharsets.UTF_8));
 			root = parser.parse(stream).getDocumentElement();
-		} catch (ParserConfigurationException e) {
-			abort("Unable to parse XML document.", e); //$NON-NLS-1$
-		} catch (FactoryConfigurationError e) {
-			abort("Unable to parse XML document.", e); //$NON-NLS-1$
-		} catch (SAXException e) {
-			abort("Unable to parse XML document.", e); //$NON-NLS-1$
-		} catch (IOException e) {
+		} catch (ParserConfigurationException | FactoryConfigurationError | SAXException | IOException e) {
 			abort("Unable to parse XML document.", e); //$NON-NLS-1$
 		} finally {
 			try {
@@ -2008,9 +2000,7 @@ public final class Util {
 			StreamResult outputTarget = new StreamResult(s);
 			transformer.transform(source, outputTarget);
 			return s.toString(IApiCoreConstants.UTF_8);
-		} catch (TransformerException e) {
-			abort("Unable to serialize XML document.", e); //$NON-NLS-1$
-		} catch (IOException e) {
+		} catch (TransformerException | IOException e) {
 			abort("Unable to serialize XML document.", e); //$NON-NLS-1$
 		}
 		return null;
@@ -2387,9 +2377,7 @@ public final class Util {
 	public static Set<String> convertAsSet(String[] values) {
 		Set<String> set = new HashSet<>();
 		if (values != null && values.length != 0) {
-			for (String value : values) {
-				set.add(value);
-			}
+			Collections.addAll(set, values);
 		}
 		return set;
 	}
@@ -2538,8 +2526,6 @@ public final class Util {
 							}
 						}
 					}
-				} catch (JavaModelException e) {
-					ApiPlugin.log(e);
 				} catch (CoreException e) {
 					ApiPlugin.log(e);
 				}
@@ -2784,6 +2770,8 @@ public final class Util {
 						return IApiProblemTypes.INCOMPATIBLE_API_COMPONENT_VERSION_REPORT_MAJOR_WITHOUT_BREAKING_CHANGE;
 
 					case IApiProblem.MINOR_VERSION_CHANGE_NO_NEW_API:
+					case IApiProblem.MICRO_VERSION_CHANGE_UNNECESSARILY:
+					case IApiProblem.MINOR_VERSION_CHANGE_UNNECESSARILY:
 						return IApiProblemTypes.INCOMPATIBLE_API_COMPONENT_VERSION_REPORT_MINOR_WITHOUT_API_CHANGE;
 
 					case IApiProblem.MINOR_VERSION_CHANGE_EXECUTION_ENV_CHANGED:

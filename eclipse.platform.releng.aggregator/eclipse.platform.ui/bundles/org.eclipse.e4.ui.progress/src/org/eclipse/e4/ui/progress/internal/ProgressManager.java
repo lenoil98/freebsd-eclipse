@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2017 IBM Corporation and others.
+ * Copyright (c) 2003, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,7 +17,6 @@
  *******************************************************************************/
 package org.eclipse.e4.ui.progress.internal;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -64,11 +63,10 @@ import org.eclipse.swt.widgets.Display;
  */
 public class ProgressManager extends ProgressProvider {
 	/**
-	 * A property to determine if the job was run in the dialog. Kept for
-	 * backwards compatability.
+	 * A property to determine if the job was run in the dialog. Kept for backwards
+	 * compatibility.
 	 *
-	 * @deprecated
-	 * @see IProgressConstants#PROPERTY_IN_DIALOG
+	 * @deprecated use IProgressConstants#PROPERTY_IN_DIALOG instead
 	 */
 	@Deprecated
 	public static final QualifiedName PROPERTY_IN_DIALOG = IProgressConstants.PROPERTY_IN_DIALOG;
@@ -80,13 +78,12 @@ public class ProgressManager extends ProgressProvider {
 	private static ProgressManager singleton;
 
 	final private Map<Job, JobInfo> jobs = Collections
-	        .synchronizedMap(new HashMap<Job, JobInfo>());
+			.synchronizedMap(new HashMap<Job, JobInfo>());
 
-	final Map<Job, JobMonitor> runnableMonitors = Collections
-	        .synchronizedMap(new HashMap<Job, JobMonitor>());
+	final Map<Job, JobMonitor> runnableMonitors = new HashMap<>();
 
 	final private Map<Object, Collection<IJobBusyListener>> familyListeners = Collections
-	        .synchronizedMap(new HashMap<Object, Collection<IJobBusyListener>>());
+			.synchronizedMap(new HashMap<>());
 
 	//	list of IJobProgressManagerListener
 	private ListenerList<IJobProgressManagerListener> listeners = new ListenerList<>();
@@ -126,7 +123,6 @@ public class ProgressManager extends ProgressProvider {
 	@Inject
 	JobInfoFactory jobInfoFactory;
 
-	@Optional
 	@Inject
 	FinishedJobs finishedJobs;
 
@@ -140,12 +136,6 @@ public class ProgressManager extends ProgressProvider {
 		singleton.shutdown();
 	}
 
-//	/**
-//	 * Create a new instance of the receiver.
-//	 */
-//	protected ProgressManager() {
-//	}
-
 	@PostConstruct
 	protected void init(WorkbenchDialogBlockedHandler dialogBlockedHandler) {
 		Dialog.setBlockedHandler(dialogBlockedHandler);
@@ -156,17 +146,18 @@ public class ProgressManager extends ProgressProvider {
 
 		Job.getJobManager().setProgressProvider(this);
 		Job.getJobManager().addJobChangeListener(this.changeListener);
+		addListener(finishedJobs.listener);
 	}
 
 	private void setUpImages() {
 		ImageTools imageTools = ImageTools.getInstance();
 
 		imageTools.putIntoRegistry(SLEEPING_JOB_KEY, PROGRESS_FOLDER
-		        + SLEEPING_JOB);
+				+ SLEEPING_JOB);
 		imageTools.putIntoRegistry(WAITING_JOB_KEY, PROGRESS_FOLDER
-		        + WAITING_JOB);
+				+ WAITING_JOB);
 		imageTools.putIntoRegistry(BLOCKED_JOB_KEY, PROGRESS_FOLDER
-		        + BLOCKED_JOB);
+				+ BLOCKED_JOB);
 		imageTools.putIntoRegistry(ERROR_JOB_KEY, PROGRESS_FOLDER + ERROR_JOB);
 	}
 
@@ -183,7 +174,6 @@ public class ProgressManager extends ProgressProvider {
 	 * @return IProgressMonitor
 	 */
 	public JobMonitor progressFor(Job job) {
-
 		synchronized (runnableMonitors) {
 			JobMonitor monitor = runnableMonitors.get(job);
 			if (monitor == null) {
@@ -193,7 +183,6 @@ public class ProgressManager extends ProgressProvider {
 
 			return monitor;
 		}
-
 	}
 
 	@Override
@@ -290,10 +279,12 @@ public class ProgressManager extends ProgressProvider {
 
 		@Override
 		public void done() {
-			JobInfo info = getJobInfo(job);
-			info.clearTaskInfo();
-			info.clearChildren();
-			runnableMonitors.remove(job);
+			synchronized (runnableMonitors) {
+				JobInfo info = getJobInfo(job);
+				info.clearTaskInfo();
+				info.clearChildren();
+				runnableMonitors.remove(job);
+			}
 			if (listener != null) {
 				listener.done();
 			}
@@ -426,8 +417,7 @@ public class ProgressManager extends ProgressProvider {
 					next.decrementBusy(event.getJob());
 				}
 
-				final JobInfo info = getJobInfo(event.getJob());
-				removeJobInfo(info);
+				removeJob(event.getJob());
 				//TODO E4
 //				if (event.getResult() != null
 //						&& event.getResult().getSeverity() == IStatus.ERROR
@@ -494,10 +484,10 @@ public class ProgressManager extends ProgressProvider {
 	}
 
 	/**
-	 * The job in JobInfo is now sleeping. Refresh it if we are showing it,
-	 * remove it if not.
+	 * The job in JobInfo is now sleeping. Refresh it if we are showing it, remove
+	 * it if not.
 	 *
-	 * @param info
+	 * @param info the job going to sleep
 	 */
 	protected void sleepJobInfo(JobInfo info) {
 		if (isInfrastructureJob(info.getJob()))
@@ -575,7 +565,7 @@ public class ProgressManager extends ProgressProvider {
 	/**
 	 * Refresh the IJobProgressManagerListeners as a result of a change in info.
 	 *
-	 * @param info
+	 * @param info the updated job info
 	 */
 	public void refreshJobInfo(JobInfo info) {
 		GroupInfo group = info.getGroupInfo();
@@ -584,7 +574,7 @@ public class ProgressManager extends ProgressProvider {
 		}
 
 		for (IJobProgressManagerListener listener : listeners) {
-			if (!isCurrentDisplaying(info.getJob(), listener.showsDebug())) {
+			if (!isNeverDisplaying(info.getJob(), listener.showsDebug())) {
 				listener.refreshJobInfo(info);
 			}
 		}
@@ -593,7 +583,7 @@ public class ProgressManager extends ProgressProvider {
 	/**
 	 * Refresh the IJobProgressManagerListeners as a result of a change in info.
 	 *
-	 * @param info
+	 * @param info the updated job group
 	 */
 	public void refreshGroup(GroupInfo info) {
 
@@ -616,22 +606,37 @@ public class ProgressManager extends ProgressProvider {
 	}
 
 	/**
-	 * Refresh the content providers as a result of a deletion of info.
+	 * Refresh the content providers as a result of a deletion of job.
 	 *
-	 * @param info
-	 *            JobInfo
+	 * @param job the job to remove information about
+	 * @return the removed job info
 	 */
-	public void removeJobInfo(JobInfo info) {
-
-		Job job = info.getJob();
-		jobs.remove(job);
-		runnableMonitors.remove(job);
+	public JobInfo removeJob(Job job) {
+		JobInfo info;
+		synchronized (runnableMonitors) {
+			info = getJobInfo(job);
+			jobs.remove(job);
+			runnableMonitors.remove(job);
+		}
 
 		for (IJobProgressManagerListener listener : listeners) {
-			if (!isCurrentDisplaying(info.getJob(), listener.showsDebug())) {
+			if (!isNeverDisplaying(info.getJob(), listener.showsDebug())) {
 				listener.removeJob(info);
 			}
 		}
+		return info;
+	}
+
+	/**
+	 * Refresh the content providers as a result of a deletion of info.
+	 *
+	 * @param info JobInfo
+	 * @deprecated use the more thread safe {@link #removeJob(Job)} instead. See bug
+	 *             558655.
+	 */
+	@Deprecated
+	public void removeJobInfo(JobInfo info) {
+		removeJob(info.getJob());
 	}
 
 	/**
@@ -650,7 +655,7 @@ public class ProgressManager extends ProgressProvider {
 	/**
 	 * Refresh the content providers as a result of an addition of info.
 	 *
-	 * @param info
+	 * @param info the added job info
 	 */
 	public void addJobInfo(JobInfo info) {
 		GroupInfo group = info.getGroupInfo();
@@ -711,7 +716,7 @@ public class ProgressManager extends ProgressProvider {
 	/**
 	 * Return the current job infos filtered on debug mode.
 	 *
-	 * @param debug
+	 * @param debug if the listener is in debug mode
 	 * @return JobInfo[]
 	 */
 	public JobInfo[] getJobInfos(boolean debug) {
@@ -731,7 +736,7 @@ public class ProgressManager extends ProgressProvider {
 	/**
 	 * Return the current root elements filtered on the debug mode.
 	 *
-	 * @param debug
+	 * @param debug if the listener is in debug mode
 	 * @return JobTreeElement[]
 	 */
 	public JobTreeElement[] getRootElements(boolean debug) {
@@ -787,11 +792,7 @@ public class ProgressManager extends ProgressProvider {
 	 */
 	ImageData[] getImageData(URL fileSystemPath, ImageLoader loader) {
 		try (InputStream stream = fileSystemPath.openStream()) {
-			ImageData[] result = loader.load(stream);
-			return result;
-		} catch (FileNotFoundException exception) {
-			ProgressManagerUtil.logException(exception);
-			return null;
+			return loader.load(stream);
 		} catch (IOException exception) {
 			ProgressManagerUtil.logException(exception);
 			return null;
@@ -850,15 +851,14 @@ public class ProgressManager extends ProgressProvider {
 	 * @param job
 	 * @return Collection of IJobBusyListener
 	 */
-	@SuppressWarnings("unchecked")
-    private Collection<IJobBusyListener> busyListenersForJob(Job job) {
+	private Collection<IJobBusyListener> busyListenersForJob(Job job) {
 		if (job.isSystem()) {
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 		}
 		synchronized (familyListeners) {
 
 			if (familyListeners.isEmpty()) {
-				return Collections.EMPTY_LIST;
+				return Collections.emptyList();
 			}
 
 			Collection<IJobBusyListener> returnValue = new HashSet<>();
@@ -898,7 +898,7 @@ public class ProgressManager extends ProgressProvider {
 	 */
 	boolean checkForStaleness(Job job) {
 		if (job.getState() == Job.NONE) {
-			removeJobInfo(getJobInfo(job));
+			removeJob(job);
 			return true;
 		}
 		return false;

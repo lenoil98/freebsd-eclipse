@@ -7,19 +7,31 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.osgi.internal.debug;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import org.eclipse.osgi.internal.framework.EquinoxConfiguration;
 import org.eclipse.osgi.internal.location.LocationHelper;
-import org.eclipse.osgi.service.debug.*;
-import org.osgi.framework.*;
+import org.eclipse.osgi.service.debug.DebugOptions;
+import org.eclipse.osgi.service.debug.DebugOptionsListener;
+import org.eclipse.osgi.service.debug.DebugTrace;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
@@ -27,7 +39,7 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
  * The DebugOptions implementation class that allows accessing the list of debug options specified
  * for the application as well as creating {@link DebugTrace} objects for the purpose of having
  * dynamic enablement of debug tracing.
- * 
+ *
  * @since 3.1
  */
 public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustomizer<DebugOptionsListener, DebugOptionsListener> {
@@ -120,6 +132,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	/**
 	 * @see DebugOptions#getBooleanOption(String, boolean)
 	 */
+	@Override
 	public boolean getBooleanOption(String option, boolean defaultValue) {
 		String optionValue = getOption(option);
 		return optionValue != null ? optionValue.equalsIgnoreCase("true") : defaultValue; //$NON-NLS-1$
@@ -128,6 +141,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	/**
 	 * @see DebugOptions#getOption(String)
 	 */
+	@Override
 	public String getOption(String option) {
 		return getOption(option, null);
 	}
@@ -135,6 +149,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	/**
 	 * @see DebugOptions#getOption(String, String)
 	 */
+	@Override
 	public String getOption(String option, String defaultValue) {
 		synchronized (lock) {
 			if (options != null) {
@@ -147,6 +162,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	/**
 	 * @see DebugOptions#getIntegerOption(String, int)
 	 */
+	@Override
 	public int getIntegerOption(String option, int defaultValue) {
 		String value = getOption(option);
 		try {
@@ -157,6 +173,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
+	@Override
 	public Map<String, String> getOptions() {
 		Map<String, String> snapShot = new HashMap<>();
 		synchronized (lock) {
@@ -197,6 +214,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.service.debug.DebugOptions#removeOption(java.lang.String)
 	 */
+	@Override
 	public void removeOption(String option) {
 		if (option == null)
 			return;
@@ -216,6 +234,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.service.debug.DebugOptions#setOption(java.lang.String, java.lang.String)
 	 */
+	@Override
 	public void setOption(String option, String value) {
 
 		if (option == null || value == null) {
@@ -249,19 +268,19 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	}
 
 	private String getSymbolicName(String option) {
-		int firstSlashIndex = option.indexOf("/"); //$NON-NLS-1$
+		int firstSlashIndex = option.indexOf('/');
 		if (firstSlashIndex > 0)
 			return option.substring(0, firstSlashIndex);
 		return null;
 	}
 
 	@SuppressWarnings("cast")
+	@Override
 	public void setOptions(Map<String, String> ops) {
 		if (ops == null)
 			throw new IllegalArgumentException("The options must not be null."); //$NON-NLS-1$
 		Properties newOptions = new Properties();
-		for (Iterator<Map.Entry<String, String>> entries = ops.entrySet().iterator(); entries.hasNext();) {
-			Map.Entry<String, String> entry = entries.next();
+		for (Map.Entry<String, String> entry : ops.entrySet()) {
 			if (!(entry.getKey() instanceof String) || !(entry.getValue() instanceof String))
 				throw new IllegalArgumentException("Option keys and values must be of type String: " + entry.getKey() + "=" + entry.getValue()); //$NON-NLS-1$ //$NON-NLS-2$
 			newOptions.put(entry.getKey(), entry.getValue().trim());
@@ -285,8 +304,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 				}
 			}
 			// now check for changes to existing values
-			for (Iterator<Map.Entry<Object, Object>> newEntries = newOptions.entrySet().iterator(); newEntries.hasNext();) {
-				Map.Entry<Object, Object> entry = newEntries.next();
+			for (Map.Entry<Object, Object> entry : newOptions.entrySet()) {
 				String existingValue = (String) options.get(entry.getKey());
 				if (!entry.getValue().equals(existingValue)) {
 					String symbolicName = getSymbolicName((String) entry.getKey());
@@ -306,6 +324,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.service.debug.DebugOptions#isDebugEnabled()
 	 */
+	@Override
 	public boolean isDebugEnabled() {
 		synchronized (lock) {
 			return options != null;
@@ -316,6 +335,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.service.debug.DebugOptions#setDebugEnabled()
 	 */
+	@Override
 	public void setDebugEnabled(boolean enabled) {
 		boolean fireChangedEvent = false;
 		synchronized (lock) {
@@ -359,6 +379,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.service.debug.DebugOptions#createTrace(java.lang.String)
 	 */
+	@Override
 	public final DebugTrace newDebugTrace(String bundleSymbolicName) {
 
 		return this.newDebugTrace(bundleSymbolicName, null);
@@ -368,6 +389,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.service.debug.DebugOptions#createTrace(java.lang.String, java.lang.Class)
 	 */
+	@Override
 	public final DebugTrace newDebugTrace(String bundleSymbolicName, Class<?> traceEntryClass) {
 
 		DebugTrace debugTrace = null;
@@ -385,6 +407,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.service.debug.DebugOptions#getFile()
 	 */
+	@Override
 	public final File getFile() {
 
 		return this.outFile;
@@ -394,6 +417,7 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.service.debug.DebugOptions#setFile(java.io.File)
 	 */
+	@Override
 	public void setFile(final File traceFile) {
 		synchronized (lock) {
 			this.outFile = traceFile;
@@ -464,30 +488,33 @@ public class FrameworkDebugOptions implements DebugOptions, ServiceTrackerCustom
 		}
 		if (listenerRefs == null)
 			return;
-		for (int i = 0; i < listenerRefs.length; i++) {
-			DebugOptionsListener service = (DebugOptionsListener) bc.getService(listenerRefs[i]);
+		for (ServiceReference<?> listenerRef : listenerRefs) {
+			DebugOptionsListener service = (DebugOptionsListener) bc.getService(listenerRef);
 			if (service == null)
 				continue;
 			try {
 				service.optionsChanged(this);
-			} catch (Throwable t) {
+			}catch (Throwable t) {
 				// TODO consider logging
 			} finally {
-				bc.ungetService(listenerRefs[i]);
+				bc.ungetService(listenerRef);
 			}
 		}
 	}
 
+	@Override
 	public DebugOptionsListener addingService(ServiceReference<DebugOptionsListener> reference) {
 		DebugOptionsListener listener = context.getService(reference);
 		listener.optionsChanged(this);
 		return listener;
 	}
 
+	@Override
 	public void modifiedService(ServiceReference<DebugOptionsListener> reference, DebugOptionsListener service) {
 		// nothing
 	}
 
+	@Override
 	public void removedService(ServiceReference<DebugOptionsListener> reference, DebugOptionsListener service) {
 		context.ungetService(reference);
 	}

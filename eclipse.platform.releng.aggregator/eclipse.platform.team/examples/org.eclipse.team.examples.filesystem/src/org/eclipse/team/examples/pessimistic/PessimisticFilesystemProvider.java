@@ -68,7 +68,7 @@ public class PessimisticFilesystemProvider extends RepositoryProvider  {
 	private FileModificationValidator validator;
 	/**
 	 * The cache of resources that are currently controlled.
-	 * The cache is a map of parent resource -> set of controlled children.
+	 * The cache is a map of parent resource -&amp; set of controlled children.
 	 */
 	Map<IContainer, Set<IResource>> fControlledResources;
 
@@ -322,9 +322,6 @@ public class PessimisticFilesystemProvider extends RepositoryProvider  {
 		return new ByteArrayInputStream(byteOut.toByteArray());
 	}
 
-	/*
-	 * @see IProjectNature#setProject(IProject)
-	 */
 	@Override
 	public void setProject(IProject project) {
 		if (PessimisticFilesystemProviderPlugin.getInstance().isDebugging()) {
@@ -592,7 +589,7 @@ public class PessimisticFilesystemProvider extends RepositoryProvider  {
 
 	public void appendText(IFile file, String text, boolean prepend) throws CoreException, IOException {
 		String contents = getFileContents(file);
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		if (prepend) {
 			buffer.append(text);
 		}
@@ -604,13 +601,10 @@ public class PessimisticFilesystemProvider extends RepositoryProvider  {
 	}
 
 	public static String getFileContents(IFile file) throws IOException, CoreException {
-		StringBuffer buf = new StringBuffer();
-		Reader reader = new InputStreamReader(new BufferedInputStream(file.getContents()));
-		try {
+		StringBuilder buf = new StringBuilder();
+		try (Reader reader = new InputStreamReader(new BufferedInputStream(file.getContents()))) {
 			int c;
 			while ((c = reader.read()) != -1) buf.append((char)c);
-		} finally {
-			reader.close();
 		}
 		return buf.toString();
 	}

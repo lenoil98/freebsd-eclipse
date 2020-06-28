@@ -82,6 +82,8 @@
 ;${eclipse.platform.ui.bundles}/org.eclipse.e4.ui.css.swt/src
 ;${eclipse.platform.ui.bundles}/org.eclipse.e4.ui.css.swt.theme/src
 ;${eclipse.platform.ui.bundles}/org.eclipse.e4.ui.di/src
+;${eclipse.platform.ui.bundles}/org.eclipse.e4.ui.dialogs/src
+;${eclipse.platform.ui.bundles}/org.eclipse.e4.ui.ide/src
 ;${eclipse.platform.ui.bundles}/org.eclipse.e4.ui.model.workbench/src
 ;${eclipse.platform.ui.bundles}/org.eclipse.e4.ui.services/src
 ;${eclipse.platform.ui.bundles}/org.eclipse.e4.ui.widgets/src
@@ -138,6 +140,7 @@
 ;${dependency.dir}/javax.servlet_*.jar
 ;${dependency.dir}/org.apache.ant_*/lib/ant.jar
 ;${dependency.dir}/org.apache.batik.css_*.jar
+;${dependency.dir}/org.apache.commons.jxpath_*.jar
 ;${dependency.dir}/org.apache.jasper.glassfish_*.jar
 ;${dependency.dir}/org.apache.lucene.analyzers-common_*.jar
 ;${dependency.dir}/org.apache.lucene.core_*.jar
@@ -165,6 +168,8 @@
 ;${dependency.dir}/org.w3c.css.sac_*.jar
 ;${eclipse.equinox.supplement}/${dot.classes}
 ;${eclipse.platform.ua}/org.eclipse.help.appserver/${dot.classes}
+;${eclipse.platform.ui.bundles}/org.eclipse.e4.ui.workbench.addons.swt/${dot.classes}
+;${eclipse.platform.ui.bundles}/org.eclipse.e4.emf.xpath/${dot.classes}
 ;${rt.equinox.framework.bundles}/org.eclipse.osgi/${dot.classes}
 ;${rt.equinox.framework.bundles}/org.eclipse.osgi/osgi/osgi.annotation.jar
 ;${rt.equinox.framework.bundles}/org.eclipse.osgi.services/${dot.classes}
@@ -178,13 +183,12 @@
 -splitIndex
 -windowtitle "Eclipse Platform API Specification"
 -doctitle "Eclipse Platform API Specification"
--header "<span style='font-size:small'><b>Eclipse Platform</b><br>2019-03 (4.11)</span>"
--bottom "<br><span style='font-size:small;float:right'>Copyright (c) 2000, 2019 Eclipse Contributors and others. All rights reserved.</span><span style='font-size:small'><a href='{@docRoot}/../misc/api-usage-rules.html'>Guidelines for using Eclipse APIs.</a></span>"
--link https://docs.oracle.com/javase/8/docs/api/
--link https://docs.oracle.com/javase/8/docs/jre/api/plugin/dom/
--link https://osgi.org/javadoc/osgi.core/7.0.0/
--link https://osgi.org/javadoc/osgi.cmpn/7.0.0/
--link https://osgi.org/javadoc/osgi.enterprise/7.0.0/
+-header "<span style='font-size:small'><b>Eclipse Platform</b><br>2020-06 (4.16)</span>"
+-bottom "<br><span style='font-size:small;float:right'>Copyright (c) 2000, 2020 Eclipse Contributors and others. All rights reserved.</span><span style='font-size:small'><a href='{@docRoot}/../misc/api-usage-rules.html'>Guidelines for using Eclipse APIs.</a></span>"
+-link https://docs.oracle.com/en/java/javase/11/docs/api
+-link https://docs.osgi.org/javadoc/osgi.core/7.0.0/
+-link https://docs.osgi.org/javadoc/osgi.cmpn/7.0.0/
+-link https://docs.osgi.org/javadoc/osgi.enterprise/7.0.0/
 -tag 'noimplement:a:Restriction:'
 -tag 'noextend:a:Restriction:'
 -tag 'noreference:a:Restriction:'
@@ -195,7 +199,10 @@
 -tag 'generated:X:"EMF generated tag"'
 -tag 'ordered:X:"EMF generated tag"'
 -tag 'Immutable:t'
--Xdoclint:reference
+-tag 'implNote:a:<em>Implementation Note:</em>'
+-Xdoclint:reference,html,syntax
+-Xmaxwarns 10000
+-Xmaxerrs 10000
 
 org.eclipse.ant.core
 org.eclipse.compare

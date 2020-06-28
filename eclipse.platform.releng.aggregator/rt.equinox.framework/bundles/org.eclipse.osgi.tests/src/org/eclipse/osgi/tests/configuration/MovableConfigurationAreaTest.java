@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -48,8 +48,9 @@ public class MovableConfigurationAreaTest extends OSGiTest {
 
 		ConfigurationSessionTestSuite initialization = new ConfigurationSessionTestSuite(PI_OSGI_TESTS, MovableConfigurationAreaTest.class.getName());
 		String[] ids = ConfigurationSessionTestSuite.MINIMAL_BUNDLE_SET;
-		for (int i = 0; i < ids.length; i++)
-			initialization.addBundle(ids[i]);
+		for (String id : ids) {
+			initialization.addBundle(id);
+		}
 		initialization.addBundle(PI_OSGI_TESTS);
 		initialization.setReadOnly(true);
 		// disable clean-up, we want to reuse the configuration
@@ -73,8 +74,9 @@ public class MovableConfigurationAreaTest extends OSGiTest {
 
 		ConfigurationSessionTestSuite afterMoving = new ConfigurationSessionTestSuite(PI_OSGI_TESTS, MovableConfigurationAreaTest.class.getName());
 		afterMoving.setConfigurationPath(destinationPath);
-		for (int i = 0; i < ids.length; i++)
-			afterMoving.addBundle(ids[i]);
+		for (String id : ids) {
+			afterMoving.addBundle(id);
+		}
 		afterMoving.setReadOnly(true);
 		// make sure we don't allow priming for the first run
 		afterMoving.setPrime(false);
@@ -94,7 +96,7 @@ public class MovableConfigurationAreaTest extends OSGiTest {
 	 */
 	public void testAfterMoving() throws MalformedURLException, IOException, BundleException {
 		// try to install plug-in
-		// ensure it is not installed		
+		// ensure it is not installed
 		Bundle installed = null;
 		try {
 			installed = BundleTestingHelper.installBundle(getContext(), OSGiTestsActivator.TEST_FILES_ROOT + "configuration/bundle02");
@@ -104,13 +106,13 @@ public class MovableConfigurationAreaTest extends OSGiTest {
 			// success
 		} finally {
 			if (installed != null)
-				// clean-up - only runs if we end-up accepting an invalid manifest				
+				// clean-up - only runs if we end-up accepting an invalid manifest
 				installed.uninstall();
 		}
 	}
 
 	public void testInitialization() throws MalformedURLException, IOException {
-		// initialization session		
+		// initialization session
 		try {
 			Bundle installed = BundleTestingHelper.installBundle("1.0", getContext(), OSGiTestsActivator.TEST_FILES_ROOT + "configuration/bundle01");
 			// not read-only yet, should work fine

@@ -22,6 +22,7 @@ package org.eclipse.swt.snippets;
  * @since 3.0
  */
 import org.eclipse.swt.*;
+import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
 public class Snippet25 {
@@ -128,6 +129,7 @@ static String keyCode (int keyCode) {
 public static void main (String [] args) {
 	Display display = new Display ();
 	Shell shell = new Shell (display);
+	shell.setText("Snippet 25");
 	Listener listener = e -> {
 		String string = e.type == SWT.KeyDown ? "DOWN:" : "UP  :";
 		string += " stateMask=0x" + Integer.toHexString (e.stateMask) + stateMask (e.stateMask) + ",";
@@ -143,7 +145,10 @@ public static void main (String [] args) {
 	};
 	shell.addListener (SWT.KeyDown, listener);
 	shell.addListener (SWT.KeyUp, listener);
+	shell.setLayout(new FillLayout());
 	shell.setSize (200, 200);
+	Label label = new Label(shell, SWT.WRAP);
+	label.setText("Start typing to see key state, code and character in console.");
 	shell.open ();
 	while (!shell.isDisposed ()) {
 		if (!display.readAndDispatch ()) display.sleep ();

@@ -19,8 +19,9 @@ FreeBSD's /usr/ports/java/eclipse.
 * devel/gmake
 * devel/maven
 * devel/pkgconf
-* java/openjdk8
+* java/openjdk11
 * security/libsecret
+* www/webkit2-gtk3
 * x11-toolkits/gtk30
 
 # Workflow
@@ -29,7 +30,7 @@ FreeBSD's /usr/ports/java/eclipse.
 
 1. `bin/fetch-distfiles [additional fetch(1) flags]`
 1. `bin/unpack-distfiles`
-1. `bin/apply-patches`
+1. `bin/apply-patches [directory ...]`
 
 Unpacked distfiles + up-to-date patches => **eclipse.platform.releng.aggregator**
 
@@ -37,20 +38,32 @@ Unpacked distfiles + up-to-date patches => **eclipse.platform.releng.aggregator*
 
 1. Work on **eclipse.platform.releng.aggregator**
 1. `bin/build-eclipse [additional maven flags]` 
-1. Optionally `bin/generate-patches`
+
+The challenge is to get a working build. Changes to
+**eclipse.platform.releng.aggregator** should be committed and pushed to
+the repo as required. At stable checkpoints, patches for the port should
+be generated with:
+
+1. `bin/generate-patches`
+
+On a successful build, `org.eclipse.sdk.ide-freebsd.gtk.${ARCH}.tar.gz` is
+generated. This can be unpacked to test the generated executable:
+
+1. `tar xf org.eclipse.sdk.ide-freebsd.gtk.${ARCH}.tar.gz`
+2. `eclipse/eclipse`
 
 ## java/eclipse port
 
+When a usable executable has been generated the java/eclipse port can be
+updated:
+
 1. `bin/generate-patches`
-1. Update [maven-repo project](https://github.com/daemonblade/maven-repo)
+1. Update the
+[eclipse-maven-repo](https://github.com/daemonblade/eclipse-maven-repo)
+project with the contents of **maven-repo.${TAG}**.
 1. Update **java-eclipse** Makefile, distinfo, etc
 1. Verify port build and installation
 1. Submit port
-
-# Output
-
-On a successful build, `org.eclipse.sdk.ide-freebsd.gtk.${ARCH}.tar.gz` is found
-on top level. Unpack the archive to to run the executable `eclipse/eclipse`
 
 # Notes
 
@@ -61,10 +74,8 @@ changing the following lines of text:
 * `linux.x86_64` => `freebsd.amd64`
 * `linux.ppc64le` => `freebsd.powerpc64`
 
-Some modules have been disabled as they involve updates to a
-maven repository. Some tests have been disabled as they won't
-compile.
-* org.eclipse.swt.tests
+The following modules have been disabled as they involve maven repository
+updates or are uncompilable tests.
 * tests/org.eclipse.swt.tests.gtk
 * eclipse-junit-tests
 * eclipse.platform.repository

@@ -14,7 +14,9 @@
 package org.eclipse.equinox.p2.tests.planner;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.equinox.internal.p2.engine.*;
+import org.eclipse.equinox.internal.p2.engine.InstallableUnitOperand;
+import org.eclipse.equinox.internal.p2.engine.Operand;
+import org.eclipse.equinox.internal.p2.engine.ProvisioningPlan;
 import org.eclipse.equinox.p2.metadata.IInstallableUnit;
 import org.eclipse.equinox.p2.planner.IPlanner;
 import org.eclipse.equinox.p2.query.IQueryResult;
@@ -26,17 +28,11 @@ import org.junit.Assert;
  */
 public class Bug302580 extends AbstractPlannerTest {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.p2.tests.planner.AbstractPlannerTest#getTestDataPath()
-	 */
 	@Override
 	protected String getTestDataPath() {
 		return "testData/bug302580";
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.equinox.p2.tests.planner.AbstractPlannerTest#getProfileId()
-	 */
 	@Override
 	protected String getProfileId() {
 		return "bootProfile";
@@ -50,10 +46,9 @@ public class Bug302580 extends AbstractPlannerTest {
 		Operand ops[] = plan.getOperands();
 
 		String message = "The plan:\n";
-		for (int i = 0; i < ops.length; i++) {
-			if (ops[i] instanceof InstallableUnitOperand) {
-				InstallableUnitOperand iuo = (InstallableUnitOperand) ops[i];
-
+		for (Operand op : ops) {
+			if (op instanceof InstallableUnitOperand) {
+				InstallableUnitOperand iuo = (InstallableUnitOperand) op;
 				if (iuo.first() == null) {
 					message += iuo.second() + " will be installed\n";
 				}
@@ -67,10 +62,9 @@ public class Bug302580 extends AbstractPlannerTest {
 		}
 		System.out.println(message);
 
-		for (int i = 0; i < ops.length; i++) {
-			if (ops[i] instanceof InstallableUnitOperand) {
-				InstallableUnitOperand iuo = (InstallableUnitOperand) ops[i];
-
+		for (Operand op : ops) {
+			if (op instanceof InstallableUnitOperand) {
+				InstallableUnitOperand iuo = (InstallableUnitOperand) op;
 				if (iuo.second() == null) {
 					String id = iuo.first().getId();
 					if (id.equals("toolingorg.eclipse.equinox.launcher") || id.equals("toolingorg.eclipse.equinox.p2.reconciler.dropins") || id.equals("toolingorg.eclipse.equinox.simpleconfigurator")) {

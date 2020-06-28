@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2015 IBM Corporation and others.
+ * Copyright (c) 2002, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,8 +13,8 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.cheatsheets.actions;
 
+import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.cheatsheets.OpenCheatSheetAction;
 import org.eclipse.ui.internal.cheatsheets.CheatSheetHistory;
 import org.eclipse.ui.internal.cheatsheets.CheatSheetPlugin;
@@ -36,8 +37,6 @@ import org.eclipse.ui.internal.cheatsheets.registry.CheatSheetCollectionElement;
 import org.eclipse.ui.internal.cheatsheets.registry.CheatSheetElement;
 import org.eclipse.ui.internal.cheatsheets.registry.CheatSheetRegistryReader;
 import org.eclipse.ui.internal.cheatsheets.views.CheatSheetView;
-
-import com.ibm.icu.text.Collator;
 
 /**
  * A menu for cheatsheet selection.
@@ -131,7 +130,7 @@ public class CheatSheetMenu extends ContributionItem {
 
 		// Collect and sort cheatsheet items.
 		ArrayList<CheatSheetElement> cheatsheets = getCheatSheetItems();
-		Collections.sort(cheatsheets, comparator);
+		cheatsheets.sort(comparator);
 
 		// Add cheatsheet shortcuts
 		for (int i = 0; i < cheatsheets.size(); i++) {
@@ -181,7 +180,7 @@ public class CheatSheetMenu extends ContributionItem {
 	 * @return IWorkbenchPage
 	 */
 	private IWorkbenchPage getActiveWorkbenchPage() {
-		IWorkbench workbench = CheatSheetPlugin.getPlugin().getWorkbench();
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
 
 		//get the active cheatsheet view, if opened
@@ -199,7 +198,7 @@ public class CheatSheetMenu extends ContributionItem {
 	 * is a good guideline to follow).
 	 * </p>
 	 *
-	 * @return an <code>ArrayList<code> of cheatsheet items <code>CheatSheetElement</code>
+	 * @return an <code>ArrayList</code> of cheatsheet items <code>CheatSheetElement</code>
 	 */
 	protected ArrayList<CheatSheetElement> getCheatSheetItems() {
 		ArrayList<CheatSheetElement> list = new ArrayList<>(MAX_CHEATSHEET_ITEMS);
@@ -308,9 +307,9 @@ public class CheatSheetMenu extends ContributionItem {
 
 	/**
 	 * Sets the showActive flag.  If <code>showActive == true</code> then the
-	 * active cheatsheet is hilighted with a check mark.
+	 * active cheatsheet is highlighted with a check mark.
 	 *
-	 * @param the new showActive flag
+	 * @param b the new showActive flag
 	 */
 	protected void showActive(boolean b) {
 		showActive = b;

@@ -16,21 +16,11 @@ package org.eclipse.core.tests.resources.usecase;
 
 import java.util.Arrays;
 import java.util.Hashtable;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 
 public class IProjectTest extends IResourceTest {
 	public static String LOCAL_LOCATION_PATH_STRING_0;
-
-	public IProjectTest() {
-		super();
-	}
-
-	public IProjectTest(String name) {
-		super(name);
-	}
 
 	@Override
 	protected void setUp() throws Exception {
@@ -92,19 +82,13 @@ public class IProjectTest extends IResourceTest {
 		assertTrue(method + "2.1", wb.getRoot().getProjects().length == 0);
 	}
 
-	public static Test suite() {
-		TestSuite suite = new TestSuite(IProjectTest.class.getName());
-		suite.addTest(new IProjectTest("testProject"));
-		return suite;
-	}
-
 	/**
 	 * Create a solution in an open workspace. Don't open the solution.
-	 * Construct a project handle & check its initial state.
+	 * Construct a project handle &amp; check its initial state.
 	 * Try creating the project in the unopened solution.
-	 * Set/get comment & owner after creating the project but before opening. Is this proper?
+	 * Set/get comment &amp; owner after creating the project but before opening. Is this proper?
 	 * Open the solution.
-	 * Create the project & check its state further.
+	 * Create the project &amp; check its state further.
 	 * Delete the project.
 	 * Close the workspace.
 	 *

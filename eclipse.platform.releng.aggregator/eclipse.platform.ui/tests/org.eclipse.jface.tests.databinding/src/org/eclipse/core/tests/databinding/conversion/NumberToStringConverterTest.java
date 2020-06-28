@@ -20,24 +20,24 @@ import static org.junit.Assert.assertEquals;
 import java.lang.reflect.Constructor;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.Format;
 
-import org.eclipse.core.databinding.conversion.NumberToStringConverter;
+import org.eclipse.core.databinding.conversion.text.NumberToStringConverter;
+import org.eclipse.core.internal.databinding.conversion.StringToNumberParser;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.ibm.icu.text.NumberFormat;
 
 /**
  * @since 1.1
  */
 public class NumberToStringConverterTest {
-	private NumberFormat numberFormat;
-	private NumberFormat integerFormat;
+	private Format numberFormat;
+	private Format integerFormat;
 
 	@Before
 	public void setUp() throws Exception {
-		numberFormat = NumberFormat.getNumberInstance();
-		integerFormat = NumberFormat.getIntegerInstance();
+		numberFormat = StringToNumberParser.getDefaultNumberFormat();
+		integerFormat = StringToNumberParser.getDefaultIntegerFormat();
 	}
 
 	@Test
@@ -86,7 +86,7 @@ public class NumberToStringConverterTest {
 
 	@Test
 	public void testConvertDoubleToString() throws Exception {
-		Double input = new Double(1000.1d);
+		Double input = Double.valueOf(1000.1d);
 		String expected = numberFormat.format(input.doubleValue());
 
 		NumberToStringConverter converter = NumberToStringConverter
@@ -97,7 +97,7 @@ public class NumberToStringConverterTest {
 
 	@Test
 	public void testConvertFloatToString() throws Exception {
-		Float input = new Float(1000.1f);
+		Float input = Float.valueOf(1000.1f);
 		String expected = numberFormat.format(input.floatValue());
 
 		NumberToStringConverter converter = NumberToStringConverter
@@ -108,7 +108,7 @@ public class NumberToStringConverterTest {
 
 	@Test
 	public void testConvertLongToString() throws Exception {
-		Long input = new Long(1000l);
+		Long input = Long.valueOf(1000l);
 		String expected = integerFormat.format(input.longValue());
 
 		NumberToStringConverter converter = NumberToStringConverter
@@ -134,53 +134,33 @@ public class NumberToStringConverterTest {
 			icuBigDecimal = Class.forName("com.ibm.icu.math.BigDecimal");
 			icuBigDecimalCtr = icuBigDecimal.getConstructor(BigInteger.class, int.class);
 		}
-		catch(ClassNotFoundException e) {}
-		catch(NoSuchMethodException e) {}
+		catch(ClassNotFoundException | NoSuchMethodException e) {}
 	}
-	/**
-	 * Takes a java.math.BigDecimal and returns an ICU formatted string for it,
-	 * when ICU is available, otherwise platform default. Note that
-	 * Java < 1.5 did not format BigDecimals properly, truncating them via doubleValue(),
-	 * so this method will return bad results, Data Binding will not, so
-	 * the test will FAIL on Java < 1.5 under these conditions.
-	 * @param bd
-	 * @return
-	 * @throws ClassNotFoundException
-	 * @throws NoSuchMethodException
-	 */
-	private String formatBigDecimal(BigDecimal javabd) throws Exception {
-		if(icuBigDecimal != null && icuBigDecimalCtr != null) {
-			// ICU Big Decimal constructor available
-			Number icubd = (Number) icuBigDecimalCtr.newInstance(javabd.unscaledValue(),
-					Integer.valueOf(javabd.scale()));
-			return numberFormat.format(icubd);
-		}
-		throw new IllegalArgumentException("ICU not present. Cannot reliably format large BigDecimal values; needed for testing. Java platforms prior to 1.5 fail to format/parse these decimals correctly.");
-	}
+
 	@Test
 	public void testConvertBigDecimalToString() throws Exception {
 		NumberToStringConverter converter = NumberToStringConverter.fromBigDecimal();
 		// Test 1: Decimal
 		BigDecimal input = new BigDecimal("100.23");
-		String expected = formatBigDecimal(input);
+		String expected = numberFormat.format(input);
 		String result = converter.convert(input);
 		assertEquals("Non-integer BigDecimal", expected, result);
 
 		// Test 2: Long
-		input = new BigDecimal(Integer.MAX_VALUE + 100L);
-		expected = formatBigDecimal(input);
+		input = BigDecimal.valueOf(Integer.MAX_VALUE + 100L);
+		expected = numberFormat.format(input);
 		result = converter.convert(input);
 		assertEquals("Integral BigDecimal in long range", expected, result);
 
 		// Test 3: BigInteger range
 		input = new BigDecimal(BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(100L)));
-		expected = formatBigDecimal(input);
+		expected = numberFormat.format(input);
 		result = converter.convert(input);
 		assertEquals("Integral BigDecimal in BigInteger range", expected, result);
 
 		// Test 4: Very high precision Decimal
 		input = new BigDecimal("100404101.233456783456788934567893456789231982001345678234567890");
-		expected = formatBigDecimal(input);
+		expected = numberFormat.format(input);
 		result = converter.convert(input);
 		assertEquals("High-precision BigDecimal", expected, result);
 

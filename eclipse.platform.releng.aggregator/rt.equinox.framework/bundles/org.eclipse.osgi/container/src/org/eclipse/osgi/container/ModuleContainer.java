@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2018 IBM Corporation and others.
+ * Copyright (c) 2012, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -115,7 +117,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 	final ModuleContainerAdaptor adaptor;
 
 	/**
-	 * The module resolver which implements the ResolverContext and handles calling the 
+	 * The module resolver which implements the ResolverContext and handles calling the
 	 * resolver service.
 	 */
 	private final ModuleResolver moduleResolver;
@@ -129,7 +131,10 @@ public final class ModuleContainer implements DebugOptionsListener {
 
 	private final boolean autoStartOnResolve;
 
+	final boolean restrictParallelStart;
+
 	boolean DEBUG_MONITOR_LAZY = false;
+	boolean DEBUG_BUNDLE_START_TIME = false;
 
 	/**
 	 * Constructs a new container with the specified adaptor, module database.
@@ -166,6 +171,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 			autoStartOnResolveProp = Boolean.toString(true);
 		}
 		this.autoStartOnResolve = Boolean.parseBoolean(autoStartOnResolveProp);
+		this.restrictParallelStart = Boolean.parseBoolean(adaptor.getProperty(EquinoxConfiguration.PROP_EQUINOX_START_LEVEL_RESTRICT_PARALLEL));
 	}
 
 	/**
@@ -185,7 +191,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 	}
 
 	/**
-	 * Returns the module installed with the specified id, or null if no 
+	 * Returns the module installed with the specified id, or null if no
 	 * such module is installed.
 	 * @param id the id of the module
 	 * @return the module with the specified id, or null of no such module is installed.
@@ -195,7 +201,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 	}
 
 	/**
-	 * Returns the module installed with the specified location, or null if no 
+	 * Returns the module installed with the specified location, or null if no
 	 * such module is installed.
 	 * @param location the location of the module
 	 * @return the module with the specified location, or null of no such module is installed.
@@ -218,17 +224,17 @@ public final class ModuleContainer implements DebugOptionsListener {
 
 	/**
 	 * Installs a new module using the specified location.  The specified
-	 * builder is used to create a new {@link ModuleRevision revision} 
+	 * builder is used to create a new {@link ModuleRevision revision}
 	 * which will become the {@link Module#getCurrentRevision() current}
 	 * revision of the new module.
 	 * <p>
-	 * If a module already exists with the specified location then the 
+	 * If a module already exists with the specified location then the
 	 * existing module is returned and the builder is not used.
 	 * @param origin the module performing the install, may be {@code null}.
-	 * @param location The location identifier of the module to install. 
+	 * @param location The location identifier of the module to install.
 	 * @param builder the builder used to create the revision to install.
 	 * @param revisionInfo the revision info for the new revision, may be {@code null}.
-	 * @return a new module or a existing module if one exists at the 
+	 * @return a new module or a existing module if one exists at the
 	 *     specified location.
 	 * @throws BundleException if some error occurs installing the module
 	 */
@@ -319,7 +325,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 
 	/**
 	 * Updates the specified module with a new revision.  The specified
-	 * builder is used to create a new {@link ModuleRevision revision} 
+	 * builder is used to create a new {@link ModuleRevision revision}
 	 * which will become the {@link Module#getCurrentRevision() current}
 	 * revision of the new module.
 	 * @param module the module to update
@@ -342,7 +348,8 @@ public final class ModuleContainer implements DebugOptionsListener {
 			// Attempt to lock the name
 			try {
 				if (name != null && !(nameLocked = nameLocks.tryLock(name, 5, TimeUnit.SECONDS))) {
-					throw new BundleException("Failed to obtain id locks for installation.", BundleException.STATECHANGE_ERROR, new ThreadInfoReport(nameLocks.getLockInfo(name))); //$NON-NLS-1$
+					throw new BundleException("Failed to obtain id locks for installation: " + name, //$NON-NLS-1$
+							BundleException.STATECHANGE_ERROR, new ThreadInfoReport(nameLocks.getLockInfo(name)));
 				}
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
@@ -475,7 +482,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 	 * Attempts to resolve the current revisions of the specified modules.
 	 * @param triggers the modules to resolve or {@code null} to resolve all unresolved
 	 *    current revisions.
-	 * @param triggersMandatory true if the triggers must be resolved.  This will result in 
+	 * @param triggersMandatory true if the triggers must be resolved.  This will result in
 	 *   a {@link ResolutionException} if set to true and one of the triggers could not be resolved.
 	 * @see FrameworkWiring#resolveBundles(Collection)
 	 * @return A resolution report for the resolve operation
@@ -556,7 +563,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 	 * Attempts to resolve the specified dynamic package name request for the specified revision.
 	 * @param dynamicPkgName the package name to attempt a dynamic resolution for
 	 * @param revision the module revision the dynamic resolution request is for
-	 * @return the new resolution wire establishing a dynamic package resolution or null if 
+	 * @return the new resolution wire establishing a dynamic package resolution or null if
 	 * a dynamic wire could not be established.
 	 */
 	public ModuleWire resolveDynamic(String dynamicPkgName, ModuleRevision revision) {
@@ -1135,8 +1142,8 @@ public final class ModuleContainer implements DebugOptionsListener {
 	/**
 	 * Returns the dependency closure of for the specified modules.
 	 * @param initial The initial modules for which to generate the dependency closure
-	 * @return A collection containing a snapshot of the dependency closure of the specified 
-	 *    modules, or an empty collection if there were no specified modules. 
+	 * @return A collection containing a snapshot of the dependency closure of the specified
+	 *    modules, or an empty collection if there were no specified modules.
 	 */
 	public Collection<Module> getDependencyClosure(Collection<Module> initial) {
 		moduleDatabase.readLock();
@@ -1158,11 +1165,11 @@ public final class ModuleContainer implements DebugOptionsListener {
 
 	/**
 	 * Return the active start level value of this container.
-	 * 
+	 *
 	 * If the container is in the process of changing the start level this
 	 * method must return the active start level if this differs from the
 	 * requested start level.
-	 * 
+	 *
 	 * @return The active start level value of the Framework.
 	 */
 	public int getStartLevel() {
@@ -1497,7 +1504,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 					for (Bundle bundle : bundles) {
 						Module module = bundle.adapt(Module.class);
 						if (module == null)
-							throw new IllegalStateException("Could not adapt a bundle to a module."); //$NON-NLS-1$
+							throw new IllegalStateException("Could not adapt a bundle to a module. " + bundle); //$NON-NLS-1$
 						result.add(module);
 					}
 					return result;
@@ -1552,6 +1559,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 		frameworkStartLevel.setDebugOptions();
 		if (options != null) {
 			this.DEBUG_MONITOR_LAZY = options.getBooleanOption(Debug.OPTION_MONITOR_LAZY, false);
+			this.DEBUG_BUNDLE_START_TIME = options.getBooleanOption(Debug.OPTION_DEBUG_BUNDLE_START_TIME, false);
 		}
 	}
 
@@ -1563,7 +1571,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 		private final Object eventManagerLock = new Object();
 		private EventManager startLevelThread = null;
 		private final Object frameworkStartLevelLock = new Object();
-		private boolean debugStartLevel = false;
+		boolean debugStartLevel = false;
 		{
 			setDebugOptions();
 		}
@@ -1708,6 +1716,10 @@ public final class ModuleContainer implements DebugOptionsListener {
 					List<Module> sorted = null;
 					long currentTimestamp = Long.MIN_VALUE;
 					if (newStartLevel > currentSL) {
+						List<Module> lazyStart = null;
+						List<Module> lazyStartParallel = null;
+						List<Module> eagerStart = null;
+						List<Module> eagerStartParallel = null;
 						for (int i = currentSL; i < newStartLevel; i++) {
 							int toStartLevel = i + 1;
 							activeStartLevel.set(toStartLevel);
@@ -1718,12 +1730,17 @@ public final class ModuleContainer implements DebugOptionsListener {
 								moduleDatabase.readLock();
 								try {
 									sorted = moduleDatabase.getSortedModules(Sort.BY_START_LEVEL);
+									lazyStart = new ArrayList<>(sorted.size());
+									lazyStartParallel = new ArrayList<>(sorted.size());
+									eagerStart = new ArrayList<>(sorted.size());
+									eagerStartParallel = new ArrayList<>(sorted.size());
+									separateModulesByActivationPolicy(sorted, lazyStart, lazyStartParallel, eagerStart, eagerStartParallel);
 									currentTimestamp = moduleDatabase.getTimestamp();
 								} finally {
 									moduleDatabase.readUnlock();
 								}
 							}
-							incStartLevel(toStartLevel, sorted);
+							incStartLevel(toStartLevel, lazyStart, lazyStartParallel, eagerStart, eagerStartParallel);
 						}
 					} else {
 						for (int i = currentSL; i > newStartLevel; i--) {
@@ -1749,23 +1766,46 @@ public final class ModuleContainer implements DebugOptionsListener {
 						// of launching or shutting down the framework
 						adaptor.publishContainerEvent(ContainerEvent.START_LEVEL, module, null, listeners);
 					}
-				} catch (Error e) {
-					adaptor.publishContainerEvent(ContainerEvent.ERROR, module, e, listeners);
-					throw e;
-				} catch (RuntimeException e) {
+				} catch (Error | RuntimeException e) {
 					adaptor.publishContainerEvent(ContainerEvent.ERROR, module, e, listeners);
 					throw e;
 				}
 			}
 		}
 
-		private void incStartLevel(int toStartLevel, List<Module> sortedModules) {
-			incStartLevel(toStartLevel, sortedModules, true);
-			incStartLevel(toStartLevel, sortedModules, false);
+		private void incStartLevel(int toStartLevel, List<Module> lazyStart, List<Module> lazyStartParallel, List<Module> eagerStart, List<Module> eagerStartParallel) {
+			// start lazy activated first
+			// start parallel bundles first
+			incStartLevel(toStartLevel, lazyStartParallel, true);
+			incStartLevel(toStartLevel, lazyStart, false);
+			incStartLevel(toStartLevel, eagerStartParallel, true);
+			incStartLevel(toStartLevel, eagerStart, false);
 		}
 
-		private void incStartLevel(int toStartLevel, List<Module> sortedModules, boolean lazyOnly) {
+		private void separateModulesByActivationPolicy(List<Module> sortedModules, List<Module> lazyStart, List<Module> lazyStartParallel, List<Module> eagerStart, List<Module> eagerStartParallel) {
 			for (Module module : sortedModules) {
+				if (!restrictParallelStart || module.isParallelActivated()) {
+					if (module.isLazyActivate()) {
+						lazyStartParallel.add(module);
+					} else {
+						eagerStartParallel.add(module);
+					}
+				} else {
+					if (module.isLazyActivate()) {
+						lazyStart.add(module);
+					} else {
+						eagerStart.add(module);
+					}
+				}
+			}
+		}
+
+		private void incStartLevel(final int toStartLevel, List<Module> candidatesToStart, boolean inParallel) {
+			if (candidatesToStart.isEmpty()) {
+				return;
+			}
+			final List<Module> toStart = new ArrayList<>();
+			for (final Module module : candidatesToStart) {
 				if (isRefreshingSystemModule()) {
 					return;
 				}
@@ -1775,28 +1815,49 @@ public final class ModuleContainer implements DebugOptionsListener {
 						// skip modules who should have already been started
 						continue;
 					} else if (moduleStartLevel == toStartLevel) {
-						boolean isLazyStart = module.isLazyActivate();
-						if (lazyOnly ? isLazyStart : !isLazyStart) {
-							if (debugStartLevel) {
-								Debug.println("StartLevel: resuming bundle; " + toString(module) + "; with startLevel=" + moduleStartLevel); //$NON-NLS-1$ //$NON-NLS-2$
-							}
-							try {
-								module.start(StartOptions.TRANSIENT_IF_AUTO_START, StartOptions.TRANSIENT_RESUME);
-							} catch (BundleException e) {
-								adaptor.publishContainerEvent(ContainerEvent.ERROR, module, e);
-							} catch (IllegalStateException e) {
-								// been uninstalled
-								continue;
-							}
-						}
+						toStart.add(module);
 					} else {
-						// can stop resuming since any remaining modules have a greater startlevel than the active startlevel
 						break;
 					}
 				} catch (IllegalStateException e) {
 					// been uninstalled
 					continue;
 				}
+			}
+			if (toStart.isEmpty()) {
+				return;
+			}
+			final Executor executor = inParallel ? adaptor.getStartLevelExecutor() : new Executor() {
+				@Override
+				public void execute(Runnable command) {
+					command.run();
+				}
+			};
+			final CountDownLatch done = new CountDownLatch(toStart.size());
+			for (final Module module : toStart) {
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							if (debugStartLevel) {
+								Debug.println("StartLevel: resuming bundle; " + ContainerStartLevel.this.toString(module) + "; with startLevel=" + toStartLevel); //$NON-NLS-1$ //$NON-NLS-2$
+							}
+							module.start(StartOptions.TRANSIENT_IF_AUTO_START, StartOptions.TRANSIENT_RESUME);
+						} catch (BundleException e) {
+							adaptor.publishContainerEvent(ContainerEvent.ERROR, module, e);
+						} catch (IllegalStateException e) {
+							// been uninstalled
+						} finally {
+							done.countDown();
+						}
+					}
+				});
+
+			}
+			try {
+				done.await();
+			} catch (InterruptedException e) {
+				adaptor.publishContainerEvent(ContainerEvent.ERROR, moduleDatabase.getModule(0), e);
 			}
 		}
 
@@ -1865,7 +1926,7 @@ public final class ModuleContainer implements DebugOptionsListener {
 			}
 		}
 
-		private String toString(Module m) {
+		String toString(Module m) {
 			Bundle b = m.getBundle();
 			return b != null ? b.toString() : m.toString();
 		}

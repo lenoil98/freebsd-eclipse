@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,11 +10,11 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.search.federated;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.*;
@@ -40,24 +40,21 @@ public class LocalHelp implements ISearchEngine2 {
 
 		AbstractSearchProcessor processors[] = SearchManager.getSearchProcessors();
 		altList = new ArrayList<>();
-		for (int p=0;p<processors.length;p++)
-		{
-			SearchProcessorInfo result =
-				processors[p].preSearch(query);
-			if (result!=null)
-			{
+		for (AbstractSearchProcessor processor : processors) {
+			SearchProcessorInfo result = processor.preSearch(query);
+			if (result != null) {
 				String alternates[] = result.getAlternateTerms();
-				if (alternates!=null)
-					for (int a=0;a<alternates.length;a++)
-						if (!altList.contains(alternates[a]))
-							altList.add(alternates[a]);
+				if (alternates != null)
+					for (String alternate : alternates)
+						if (!altList.contains(alternate))
+							altList.add(alternate);
 
 				String modQuery = result.getQuery();
-				if (modQuery!=null)
+				if (modQuery != null)
 					query = modQuery;
 			}
 		}
-		Collections.sort(altList);
+		altList.sort(null);
 
 
 		SearchQuery searchQuery = new SearchQuery();
@@ -79,9 +76,8 @@ public class LocalHelp implements ISearchEngine2 {
 
 		ISearchResult results[] = SearchManager.convertHitsToResults(localResults.getSearchHits());
 		boolean reset = false;
-		for (int p=0;p<processors.length;p++)
-		{
-			ISearchResult tmp[] = processors[p].postSearch(query,results);
+		for (AbstractSearchProcessor processor : processors) {
+			ISearchResult tmp[] = processor.postSearch(query, results);
 			if (tmp!=null)
 			{
 				reset = true;
@@ -117,8 +113,7 @@ public class LocalHelp implements ISearchEngine2 {
 		}
 		// Filtering of results by activities
 		ArrayList<SearchHit> enabledHits = new ArrayList<>();
-		for (int i = 0; i < searchHits.length; i++) {
-			SearchHit hit = searchHits[i];
+		for (SearchHit hit : searchHits) {
 			if (hit.getParticipantId()!=null) {
 				// hit comes from a search participant
 				if (HelpBasePlugin.getActivitySupport().isEnabled(hit.getHref()))
@@ -156,7 +151,9 @@ public class LocalHelp implements ISearchEngine2 {
 			return participant.open(id);
 		}
 		catch (Throwable t) {
-			HelpBasePlugin.logError("Error occured in search participant trying to open document with id: " + id + ", participant: " + participant.getClass().getName(), t); //$NON-NLS-1$ //$NON-NLS-2$
+			Platform.getLog(getClass())
+					.error("Error occured in search participant trying to open document with id: " + id //$NON-NLS-1$
+							+ ", participant: " + participant.getClass().getName(), t); //$NON-NLS-1$
 			return false;
 		}
 	}

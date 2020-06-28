@@ -222,10 +222,6 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 			updateActionLabel();
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see org.eclipse.jface.action.IAction#run()
-		 */
 		@Override
 		public void run() {
 			fIsShowAddressColumn = !fIsShowAddressColumn;
@@ -237,9 +233,6 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 			updateActionLabel();
 		}
 
-		/**
-		 *
-		 */
 		private void updateActionLabel() {
 			if (fIsShowAddressColumn) {
 				setText(DebugUIMessages.ShowAddressColumnAction_0);
@@ -351,23 +344,11 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 			fObject = lock;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see
-		 * org.eclipse.core.runtime.jobs.ISchedulingRule#contains(org.eclipse
-		 * .core.runtime.jobs.ISchedulingRule)
-		 */
 		@Override
 		public boolean contains(ISchedulingRule rule) {
 			return rule == this;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see
-		 * org.eclipse.core.runtime.jobs.ISchedulingRule#isConflicting(org.eclipse
-		 * .core.runtime.jobs.ISchedulingRule)
-		 */
 		@Override
 		public boolean isConflicting(ISchedulingRule rule) {
 			if (rule instanceof SerialByObjectRule) {
@@ -538,11 +519,6 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 		super(renderingId);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.ui.memory.IResettableMemoryRendering#resetRendering()
-	 */
 	@Override
 	public void resetRendering() throws DebugException {
 		if (!fIsCreated) {
@@ -592,7 +568,7 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 	 * @param parent the parent composite
 	 */
 	private void createTableViewer(final Composite parent) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		IMemoryRenderingType type = DebugUITools.getMemoryRenderingManager().getRenderingType(getRenderingId());
 		buffer.append(type.getLabel());
 		buffer.append(": "); //$NON-NLS-1$
@@ -723,7 +699,7 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 						// create context menu
 						// create pop up menu for the rendering
 						createActions();
-						IMenuListener menuListener = mgr -> fillContextMenu(mgr);
+						IMenuListener menuListener = AbstractAsyncTableRendering.this::fillContextMenu;
 						createPopupMenu(fTableViewer.getControl(), menuListener);
 						createPopupMenu(fTableViewer.getCursor(), menuListener);
 
@@ -911,7 +887,7 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 
 		if (!validated) {
 			// pop up dialog to ask user for default values
-			StringBuffer msgBuffer = new StringBuffer(DebugUIMessages.AbstractTableRendering_20);
+			StringBuilder msgBuffer = new StringBuilder(DebugUIMessages.AbstractTableRendering_20);
 			msgBuffer.append(" "); //$NON-NLS-1$
 			msgBuffer.append(this.getLabel());
 			msgBuffer.append("\n\n"); //$NON-NLS-1$
@@ -968,21 +944,11 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 		return true;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#getControl()
-	 */
 	@Override
 	public Control getControl() {
 		return fPageBook;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse
-	 * .jface.util.PropertyChangeEvent)
-	 */
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		if (!fIsCreated) {
@@ -1515,9 +1481,9 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 			// check each of the items and find the minimum
 			TableItem[] items = table.getItems();
 			int minHeight = table.getItemHeight();
-			for (int i = 0; i < items.length; i++) {
-				if (items[i].getData() != null) {
-					minHeight = Math.min(items[i].getBounds(0).height, minHeight);
+			for (TableItem item : items) {
+				if (item.getData() != null) {
+					minHeight = Math.min(item.getBounds(0).height, minHeight);
 				}
 			}
 
@@ -1777,10 +1743,6 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 		return null;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.AbstractMemoryRendering#dispose()
-	 */
 	@Override
 	public void dispose() {
 
@@ -1901,10 +1863,6 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 		return fLabel;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.core.runtime.PlatformObject#getAdapter(java.lang.Class)
-	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getAdapter(Class<T> adapter) {
@@ -2394,10 +2352,6 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#becomesHidden()
-	 */
 	@Override
 	public void becomesHidden() {
 		// creates new object for storing potential changes in sync properties
@@ -2409,10 +2363,6 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#becomesVisible()
-	 */
 	@Override
 	public void becomesVisible() {
 
@@ -2804,8 +2754,7 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 	 */
 	private TableItem getItem(Point point) {
 		TableItem[] items = fTableViewer.getTable().getItems();
-		for (int i = 0; i < items.length; i++) {
-			TableItem item = items[i];
+		for (TableItem item : items) {
 			if (item.getData() != null) {
 				Point start = new Point(item.getBounds(0).x, item.getBounds(0).y);
 				start = fTableViewer.getTable().toDisplay(start);
@@ -2908,7 +2857,7 @@ public abstract class AbstractAsyncTableRendering extends AbstractBaseTableRende
 	 * @since 3.2
 	 */
 	protected String getToolTipText(BigInteger address, MemoryByte[] bytes) {
-		StringBuffer buf = new StringBuffer("0x"); //$NON-NLS-1$
+		StringBuilder buf = new StringBuilder("0x"); //$NON-NLS-1$
 		buf.append(address.toString(16).toUpperCase());
 
 		return buf.toString();

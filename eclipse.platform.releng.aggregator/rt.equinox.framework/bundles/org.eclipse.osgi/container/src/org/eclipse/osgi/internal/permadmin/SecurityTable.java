@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Connexta, LLC - evaluation cache implementation
@@ -170,9 +170,10 @@ public class SecurityTable extends PermissionCollection {
 	}
 
 	SecurityRow getRow(String name) {
-		for (int i = 0; i < rows.length; i++) {
-			if (name.equals(rows[i].getName()))
-				return rows[i];
+		for (SecurityRow row : rows) {
+			if (name.equals(row.getName())) {
+				return row;
+			}
 		}
 		return null;
 	}
@@ -188,14 +189,17 @@ public class SecurityTable extends PermissionCollection {
 		return encoded;
 	}
 
+	@Override
 	public void add(Permission permission) {
 		throw new SecurityException();
 	}
 
+	@Override
 	public Enumeration<Permission> elements() {
 		return BundlePermissions.EMPTY_ENUMERATION;
 	}
 
+	@Override
 	public boolean implies(Permission permission) {
 		return (evaluate(null, permission) & SecurityTable.GRANTED) != 0;
 	}

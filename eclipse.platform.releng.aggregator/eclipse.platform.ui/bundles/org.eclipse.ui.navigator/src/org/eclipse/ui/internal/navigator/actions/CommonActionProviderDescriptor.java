@@ -16,6 +16,7 @@ package org.eclipse.ui.internal.navigator.actions;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -230,11 +231,9 @@ public class CommonActionProviderDescriptor implements
 				return false;
 			}
 		} else {
-			IEvaluationContext context = null;
 			IEvaluationContext parentContext = NavigatorPlugin.getApplicationContext();
-			Iterator elements = aStructuredSelection.iterator();
-			while (elements.hasNext()) {
-				context = new EvaluationContext(parentContext, elements.next());
+			for (Object element : aStructuredSelection) {
+				IEvaluationContext context = new EvaluationContext(parentContext, element);
 				context.setAllowPluginActivation(true);
 				if (NavigatorPlugin.safeEvaluate(enablement, context) != EvaluationResult.TRUE) {
 					return false;
@@ -330,9 +329,8 @@ public class CommonActionProviderDescriptor implements
 	public int hashCode() {
 		final int PRIME = 31;
 		int result = 1;
-		result = PRIME * result + ((definedId == null) ? 0 : definedId.hashCode());
-		result = PRIME * result + ((visibilityId == null) ? 0 : visibilityId.hashCode());
-		return result;
+		result = PRIME * result + Objects.hashCode(definedId);
+		return PRIME * result + Objects.hashCode(visibilityId);
 	}
 
 	@Override
@@ -344,17 +342,7 @@ public class CommonActionProviderDescriptor implements
 		if (getClass() != obj.getClass())
 			return false;
 		final CommonActionProviderDescriptor other = (CommonActionProviderDescriptor) obj;
-		if (definedId == null) {
-			if (other.definedId != null)
-				return false;
-		} else if (!definedId.equals(other.definedId))
-			return false;
-		if (visibilityId == null) {
-			if (other.visibilityId != null)
-				return false;
-		} else if (!visibilityId.equals(other.visibilityId))
-			return false;
-		return true;
+		return Objects.equals(definedId, other.definedId) && Objects.equals(visibilityId, other.visibilityId);
 	}
 
 

@@ -15,9 +15,9 @@ import java.security.PermissionCollection;
 
 /**
  * Indicates a bundle's authority to log on behalf of other bundles.
- * 
+ *
  * This permission has only a single action: LOG.
- * 
+ *
  * @ThreadSafe
  * @since 3.7
  */
@@ -32,7 +32,7 @@ public class LogPermission extends Permission {
 
 	/**
 	 * Create a new LogPermission.
-	 * 
+	 *
 	 * @param name Name must be &quot;*&quot;.
 	 * @param actions <code>log</code> or &quot;*&quot;.
 	 */
@@ -46,22 +46,27 @@ public class LogPermission extends Permission {
 			throw new IllegalArgumentException("actions must be * or log"); //$NON-NLS-1$
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		return obj instanceof LogPermission;
 	}
 
+	@Override
 	public String getActions() {
 		return LOG;
 	}
 
+	@Override
 	public int hashCode() {
 		return LogPermission.class.hashCode();
 	}
 
+	@Override
 	public boolean implies(Permission permission) {
 		return permission instanceof LogPermission;
 	}
 
+	@Override
 	public PermissionCollection newPermissionCollection() {
 		return new LogPermissionCollection();
 	}

@@ -14,6 +14,7 @@
 package org.eclipse.pde.api.tools.internal.problems;
 
 import java.text.ChoiceFormat;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -32,8 +33,6 @@ import org.eclipse.pde.api.tools.internal.provisional.problems.IApiProblem;
 import org.eclipse.pde.api.tools.internal.provisional.problems.IApiProblemFilter;
 import org.eclipse.pde.api.tools.internal.provisional.problems.IApiProblemTypes;
 import org.eclipse.pde.api.tools.internal.util.Util;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Factory for creating {@link IApiProblem}s
@@ -620,6 +619,10 @@ public class ApiProblemFactory {
 						return 20;
 					case IApiProblem.MINOR_VERSION_CHANGE_EXECUTION_ENV_CHANGED:
 						return 43;
+					case IApiProblem.MICRO_VERSION_CHANGE_UNNECESSARILY:
+						return 58;
+					case IApiProblem.MINOR_VERSION_CHANGE_UNNECESSARILY:
+						return 59;
 
 					default:
 						break;
@@ -1048,6 +1051,8 @@ public class ApiProblemFactory {
 			case IApiProblem.CATEGORY_VERSION: {
 				switch (problem.getKind()) {
 					case IApiProblem.MINOR_VERSION_CHANGE_NO_NEW_API:
+					case IApiProblem.MICRO_VERSION_CHANGE_UNNECESSARILY:
+					case IApiProblem.MINOR_VERSION_CHANGE_UNNECESSARILY:
 						return IApiProblemTypes.INCOMPATIBLE_API_COMPONENT_VERSION_REPORT_MINOR_WITHOUT_API_CHANGE;
 					case IApiProblem.MAJOR_VERSION_CHANGE_NO_BREAKAGE:
 						return IApiProblemTypes.INCOMPATIBLE_API_COMPONENT_VERSION_REPORT_MAJOR_WITHOUT_BREAKING_CHANGE;

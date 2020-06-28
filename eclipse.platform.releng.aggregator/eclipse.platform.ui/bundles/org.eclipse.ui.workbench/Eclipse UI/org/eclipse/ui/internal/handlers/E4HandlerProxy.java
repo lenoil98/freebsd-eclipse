@@ -69,7 +69,9 @@ public class E4HandlerProxy implements IHandler2, IHandlerListener, IElementUpda
 		if (handler instanceof IHandler2) {
 			Object ctx = staticContext;
 			if (ctx == null) {
-				ctx = new ExpressionContext(application.getContext());
+				if (context != null) {
+					ctx = new ExpressionContext(context != null ? context : application.getContext());
+				}
 			}
 			((IHandler2) handler).setEnabled(ctx);
 		}
@@ -77,10 +79,9 @@ public class E4HandlerProxy implements IHandler2, IHandlerListener, IElementUpda
 	}
 
 	@Execute
-	public Object execute(IEclipseContext context,
-			@Optional @Named(HandlerServiceImpl.PARM_MAP) Map parms, @Optional Event trigger,
-			@Optional IEvaluationContext staticContext) throws ExecutionException,
-			NotHandledException {
+	public Object execute(IEclipseContext context, @Optional @Named(HandlerServiceImpl.PARM_MAP) Map parms,
+			@Optional Event trigger, @Optional IEvaluationContext staticContext)
+			throws ExecutionException, NotHandledException {
 		if (Policy.DEBUG_CMDS) {
 			Activator.trace(Policy.DEBUG_CMDS_FLAG, "execute " + command + " and " //$NON-NLS-1$ //$NON-NLS-2$
 					+ handler + " with: " + context, null); //$NON-NLS-1$
@@ -89,12 +90,11 @@ public class E4HandlerProxy implements IHandler2, IHandlerListener, IElementUpda
 		if (appContext == null) {
 			appContext = new ExpressionContext(context);
 		}
-		ExecutionEvent event = new ExecutionEvent(command, parms == null ? Collections.EMPTY_MAP
-				: parms, trigger, appContext);
+		ExecutionEvent event = new ExecutionEvent(command, parms == null ? Collections.EMPTY_MAP : parms, trigger,
+				appContext);
 		if (handler != null) {
 			if (handler.isHandled()) {
-				final Object returnValue = handler.execute(event);
-				return returnValue;
+				return handler.execute(event);
 			}
 			throw new NotHandledException("Handler " + handler //$NON-NLS-1$
 					+ " is not handled for for command " + command); //$NON-NLS-1$
@@ -110,8 +110,7 @@ public class E4HandlerProxy implements IHandler2, IHandlerListener, IElementUpda
 	public void handlerChanged(HandlerEvent handlerEvent) {
 		IHandler handler = command.getHandler();
 		if (handler instanceof HandlerServiceHandler) {
-			IEclipseContext appContext = ((Workbench) PlatformUI.getWorkbench()).getApplication()
-					.getContext();
+			IEclipseContext appContext = ((Workbench) PlatformUI.getWorkbench()).getApplication().getContext();
 			if (HandlerServiceImpl.lookUpHandler(appContext, command.getId()) == this) {
 				((HandlerServiceHandler) handler).fireHandlerChanged(handlerEvent);
 			}

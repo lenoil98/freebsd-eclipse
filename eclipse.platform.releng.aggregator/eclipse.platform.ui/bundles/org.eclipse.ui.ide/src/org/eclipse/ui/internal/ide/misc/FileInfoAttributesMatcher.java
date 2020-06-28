@@ -16,7 +16,7 @@
 package org.eclipse.ui.internal.ide.misc;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -37,9 +37,9 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.text.StringMatcher;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
-import org.eclipse.ui.internal.ide.StringMatcher;
 
 /**
  * A file info filter that matches different file and folder attributes.
@@ -109,18 +109,7 @@ public class FileInfoAttributesMatcher extends AbstractFileInfoMatcher {
 	 */
 	public static boolean supportCreatedKey() {
 		if (Platform.getOS().equals(Platform.OS_WIN32) || Platform.getOS().equals(Platform.OS_MACOSX)) {
-			String system = System.getProperty("java.version"); //$NON-NLS-1$
-			double versionNumber = 0.0;
-			int index = system.indexOf('.');
-			if (index != -1) {
-				versionNumber = Integer.decode(system.substring(0, index)).doubleValue();
-				system = system.substring(index + 1);
-				index = system.indexOf('.');
-				if (index != -1) {
-					versionNumber += Double.parseDouble(system.substring(0, index)) / 10.0;
-				}
-			}
-			return versionNumber >= 1.7;
+			return true;
 		}
 		return false;
 	}
@@ -145,8 +134,8 @@ public class FileInfoAttributesMatcher extends AbstractFileInfoMatcher {
 		return VERSION_IMPLEMENTATION + DELIMITER +
 				argument.key + DELIMITER +
 				argument.operator + DELIMITER +
-				Boolean.toString(argument.caseSensitive) + DELIMITER +
-				Boolean.toString(argument.regularExpression) + DELIMITER +
+				argument.caseSensitive + DELIMITER +
+				argument.regularExpression + DELIMITER +
 				argument.pattern;
 
 	}
@@ -209,8 +198,8 @@ public class FileInfoAttributesMatcher extends AbstractFileInfoMatcher {
 	 * return value in milliseconds since epoch(1970-01-01T00:00:00Z)
 	 */
 	private static long getFileCreationTime(String fullPath) {
-		try (FileSystem fs = java.nio.file.FileSystems.getDefault()) {
-			Path fileRef = fs.getPath(fullPath);
+		try {
+			Path fileRef = FileSystems.getDefault().getPath(fullPath);
 			BasicFileAttributes attributes = Files.readAttributes(fileRef, BasicFileAttributes.class);
 			return attributes.creationTime().toMillis();
 		} catch (IOException e) {
@@ -366,9 +355,7 @@ public class FileInfoAttributesMatcher extends AbstractFileInfoMatcher {
 		try {
 			if ((arguments instanceof String) && ((String) arguments).length() > 0)
 				matcher = new MatcherCache((String) arguments);
-		} catch (PatternSyntaxException e) {
-			throw new CoreException(new Status(IStatus.ERROR, PlatformUI.PLUGIN_ID, Platform.PLUGIN_ERROR, e.getMessage(), e));
-		} catch (NumberFormatException e) {
+		} catch (PatternSyntaxException | NumberFormatException e) {
 			throw new CoreException(new Status(IStatus.ERROR, PlatformUI.PLUGIN_ID, Platform.PLUGIN_ERROR, e.getMessage(), e));
 		}
 	}

@@ -435,10 +435,9 @@ public abstract class AbstractDebugView extends PageBookView implements IDebugVi
 	protected void saveAllCheckedActionStates() {
 		IToolBarManager tbm= getViewSite().getActionBars().getToolBarManager();
 		IContributionItem[] items= tbm.getItems();
-		for (int i = 0; i < items.length; i++) {
-			IContributionItem iContributionItem = items[i];
-			if (iContributionItem instanceof ActionContributionItem) {
-				ActionContributionItem item= (ActionContributionItem)iContributionItem;
+		for (IContributionItem contitem : items) {
+			if (contitem instanceof ActionContributionItem) {
+				ActionContributionItem item= (ActionContributionItem)contitem;
 				IAction action= item.getAction();
 				if (action.getStyle() == IAction.AS_CHECK_BOX && action.isEnabled()) {
 					saveCheckedActionState(action);
@@ -557,7 +556,7 @@ public abstract class AbstractDebugView extends PageBookView implements IDebugVi
 	protected void createContextMenu(Control menuControl) {
 		MenuManager menuMgr= new MenuManager("#PopUp"); //$NON-NLS-1$
 		menuMgr.setRemoveAllWhenShown(true);
-		menuMgr.addMenuListener(mgr -> fillContextMenu(mgr));
+		menuMgr.addMenuListener(this::fillContextMenu);
 		Menu menu= menuMgr.createContextMenu(menuControl);
 		menuControl.setMenu(menu);
 
@@ -570,8 +569,9 @@ public abstract class AbstractDebugView extends PageBookView implements IDebugVi
 
 	/**
 	 * @see IDebugView#getContextMenuManager()
+	 * @see AbstractDebugView#getContextMenuManagers()
 	 *
-	 * @deprecated @see AbstractDebugView.getContextMenuManagers()
+	 * @deprecated
 	 */
 	@Deprecated
 	@Override
@@ -626,9 +626,9 @@ public abstract class AbstractDebugView extends PageBookView implements IDebugVi
 			}
 			IContributionItem[] items = tbm.getItems();
 			if (items != null) {
-				for (int i = 0; i < items.length; i++) {
-					if (items[i] instanceof ActionContributionItem) {
-						IAction action = ((ActionContributionItem) items[i]).getAction();
+				for (IContributionItem item : items) {
+					if (item instanceof ActionContributionItem) {
+						IAction action = ((ActionContributionItem) item).getAction();
 						if (!SkipAllBreakpointsAction.ACTION_ID.equals(action.getId())) {
 							if (action.getStyle() == IAction.AS_CHECK_BOX) {
 								initActionState(action);
@@ -677,7 +677,7 @@ public abstract class AbstractDebugView extends PageBookView implements IDebugVi
 	 * Sets the viewer for this view.
 	 *
 	 * @param viewer viewer
-     * @since 3.1
+	 * @since 3.1
 	 */
 	protected void setViewer(Viewer viewer) {
 		fViewer = viewer;
@@ -735,7 +735,7 @@ public abstract class AbstractDebugView extends PageBookView implements IDebugVi
 	 * <ol>
 	 * <li><code>REMOVE_ACTION</code> when the delete key is pressed</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param event the {@link KeyEvent}
 	 */
 	protected void handleKeyPressed(KeyEvent event) {
@@ -788,7 +788,7 @@ public abstract class AbstractDebugView extends PageBookView implements IDebugVi
 	 * Registers the given runnable with the display
 	 * associated with this view's control, if any.
 	 * @param r the {@link Runnable} to run
- 	 *
+	 *
 	 * @see org.eclipse.swt.widgets.Display#syncExec(java.lang.Runnable)
 	 */
 	public void syncExec(Runnable r) {

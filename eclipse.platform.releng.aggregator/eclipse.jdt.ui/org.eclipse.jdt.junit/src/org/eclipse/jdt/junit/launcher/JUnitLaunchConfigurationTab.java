@@ -244,7 +244,7 @@ public class JUnitLaunchConfigurationTab extends AbstractLaunchConfigurationTab 
 		fTestLoaderViewer.getCombo().setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		ArrayList<TestKind> items= TestKindRegistry.getDefault().getAllKinds();
-		fTestLoaderViewer.setContentProvider(new ArrayContentProvider());
+		fTestLoaderViewer.setContentProvider(ArrayContentProvider.getInstance());
 		fTestLoaderViewer.setLabelProvider(new LabelProvider() {
 			@Override
 			public String getText(Object element) {
@@ -261,7 +261,7 @@ public class JUnitLaunchConfigurationTab extends AbstractLaunchConfigurationTab 
 			}
 		});
 	}
-	
+
 	private void setEnableTagsGroup(SelectionChangedEvent event) {
 		ISelection selection= event.getSelection();
 		if (selection instanceof IStructuredSelection) {
@@ -651,7 +651,7 @@ public class JUnitLaunchConfigurationTab extends AbstractLaunchConfigurationTab 
 							return new ITypeInfoFilterExtension() {
 								@Override
 								public boolean select(ITypeInfoRequestor requestor) {
-									StringBuffer buf= new StringBuffer();
+									StringBuilder buf= new StringBuilder();
 									buf.append(requestor.getPackageName()).append('/');
 									String enclosingName= requestor.getEnclosingName();
 									if (enclosingName.length() > 0)
@@ -886,7 +886,7 @@ public class JUnitLaunchConfigurationTab extends AbstractLaunchConfigurationTab 
 
 		IJavaProject javaProject = getJavaProject();
 		if (javaProject != null) {
-			dialog.setInitialSelections(new Object[] { javaProject });
+			dialog.setInitialSelections(javaProject);
 		}
 		if (dialog.open() == Window.OK) {
 			return (IJavaProject) dialog.getFirstResult();

@@ -27,7 +27,9 @@ public class PinConsoleAction extends Action implements IUpdate {
 	private IConsoleView fView = null;
 
 	/**
-	 * Constructs a 'pin console' action
+	 * Constructs a 'pin console' action.
+	 *
+	 * @param view the view to pin with this action
 	 */
 	public PinConsoleAction(IConsoleView view) {
 		super(ConsoleMessages.PinConsoleAction_0, IAction.AS_CHECK_BOX);
@@ -40,17 +42,11 @@ public class PinConsoleAction extends Action implements IUpdate {
 		update();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run() {
 		fView.setPinned(isChecked());
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.texteditor.IUpdate#update()
-	 */
 	@Override
 	public void update() {
 		setEnabled(fView.getConsole() != null);

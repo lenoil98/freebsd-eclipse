@@ -85,7 +85,7 @@ public class Utils {
 			((MultiStatus) status).add(childrenStatus);
 			((MultiStatus) status).addAll(childrenStatus);
 		} else {
-			StringBuffer completeString = new StringBuffer(""); //$NON-NLS-1$
+			StringBuilder completeString = new StringBuilder(); //$NON-NLS-1$
 			if (s != null)
 				completeString.append(s);
 			if (e != null) {
@@ -224,9 +224,9 @@ public class Utils {
 		if (bundles == null)
 			return null;
 		//Return the first bundle that is not installed or uninstalled
-		for (int i = 0; i < bundles.length; i++) {
-			if ((bundles[i].getState() & (Bundle.INSTALLED | Bundle.UNINSTALLED)) == 0) {
-				return bundles[i];
+		for (Bundle bundle : bundles) {
+			if ((bundle.getState() & (Bundle.INSTALLED | Bundle.UNINSTALLED)) == 0) {
+				return bundle;
 			}
 		}
 		return null;
@@ -268,7 +268,7 @@ public class Utils {
 		StringTokenizer stok = new StringTokenizer(candidateValues, ","); //$NON-NLS-1$
 		while (stok.hasMoreTokens()) {
 			String token = stok.nextToken().toUpperCase();
-			if (siteValues.indexOf(token)!=-1) return true;
+			if (siteValues.contains(token)) return true;
 		}
 		return false;
 	}
@@ -329,15 +329,15 @@ public class Utils {
 	 * <p>
 	 * For example, assume resource bundle plugin.properties contains
 	 * name = Project Name
-	 * <pre>
-	 *     resolveNLString(b,"Hello World") returns "Hello World"</li>
-	 *     resolveNLString(b,"%name") returns "Project Name"</li>
-	 *     resolveNLString(b,"%name Hello World") returns "Project Name"</li>
-	 *     resolveNLString(b,"%abcd Hello World") returns "Hello World"</li>
-	 *     resolveNLString(b,"%abcd") returns "%abcd"</li>
-	 *     resolveNLString(b,"%%name") returns "%name"</li>
-	 * </pre>
 	 * </p>
+	 * <pre>
+	 *     resolveNLString(b,"Hello World") returns "Hello World"
+	 *     resolveNLString(b,"%name") returns "Project Name"
+	 *     resolveNLString(b,"%name Hello World") returns "Project Name"
+	 *     resolveNLString(b,"%abcd Hello World") returns "Hello World"
+	 *     resolveNLString(b,"%abcd") returns "%abcd"
+	 *     resolveNLString(b,"%%name") returns "%name"
+	 * </pre>
 	 * 
 	 * @param resourceBundle resource bundle.
 	 * @param string translatable string from model
@@ -351,7 +351,7 @@ public class Utils {
 
 		String s = string.trim();
 
-		if (s.equals("")) //$NON-NLS-1$
+		if (s.isEmpty())
 			return string;
 
 		if (!s.startsWith(KEY_PREFIX))
@@ -375,7 +375,7 @@ public class Utils {
 	}
 
 	public static boolean isAutomaticallyStartedBundle(String bundleURL) {
-		if (bundleURL.indexOf("org.eclipse.osgi") != -1) //$NON-NLS-1$
+		if (bundleURL.contains("org.eclipse.osgi")) //$NON-NLS-1$
 			return true;
 		
 		String osgiBundles = ConfigurationActivator.getBundleContext().getProperty("osgi.bundles"); //$NON-NLS-1$
@@ -387,10 +387,10 @@ public class Utils {
 				token = token.substring(0,index);
 			if (token.startsWith("reference:file:")) { //$NON-NLS-1$
 				File f = new File(token.substring(15));
-				if (bundleURL.indexOf(f.getName()) != -1)
+				if (bundleURL.contains(f.getName()))
 					return true;
 			}
-			if (bundleURL.indexOf(token) != -1)
+			if (bundleURL.contains(token))
 				return true;
 		}
 		return false;
@@ -484,15 +484,15 @@ public class Utils {
 			return url;
 		try {
 			String path = new URL(url).getPath();			
-	        // normalize to not have leading / so we can check the form
-	        File file = new File(path);
-	        path = file.toString().replace('\\', '/');
-            if (Character.isUpperCase(path.charAt(0))) {
-                char[] chars = path.toCharArray();
-                chars[0] = Character.toLowerCase(chars[0]);
-                path = new String(chars);
-                return new File(path).toURL().toExternalForm();
-            }
+			// normalize to not have leading / so we can check the form
+			File file = new File(path);
+			path = file.toString().replace('\\', '/');
+			if (Character.isUpperCase(path.charAt(0))) {
+				char[] chars = path.toCharArray();
+				chars[0] = Character.toLowerCase(chars[0]);
+				path = new String(chars);
+				return new File(path).toURL().toExternalForm();
+			}
 		} catch (MalformedURLException e) {
 			// default to original url
 		}		

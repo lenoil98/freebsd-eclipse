@@ -82,7 +82,7 @@ public abstract class ObservableList<E> extends AbstractObservable implements
 	protected void fireListChange(ListDiff<E> diff) {
 		// fire general change event first
 		super.fireChange();
-		fireEvent(new ListChangeEvent<E>(this, diff));
+		fireEvent(new ListChangeEvent<>(this, diff));
 	}
 
 	@Override
@@ -406,11 +406,6 @@ public abstract class ObservableList<E> extends AbstractObservable implements
 	protected void fireChange() {
 		throw new RuntimeException(
 				"fireChange should not be called, use fireListChange() instead"); //$NON-NLS-1$
-	}
-
-	@Override
-	public synchronized void dispose() {
-		super.dispose();
 	}
 
 	@Override

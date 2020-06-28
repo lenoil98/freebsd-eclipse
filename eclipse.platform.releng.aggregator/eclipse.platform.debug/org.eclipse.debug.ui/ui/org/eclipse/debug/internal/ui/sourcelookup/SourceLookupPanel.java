@@ -39,6 +39,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.IWorkingSetManager;
+import org.eclipse.ui.PlatformUI;
 
 /**
  * The panel that contains the list of source containers.
@@ -123,7 +124,7 @@ public class SourceLookupPanel extends AbstractLaunchConfigurationTab implements
 
 		//listen to changes user made to the working sets, if a working set is being removed
 		//check current list to validate working sets
-		IWorkingSetManager workingSetMgr = DebugUIPlugin.getDefault().getWorkbench().getWorkingSetManager();
+		IWorkingSetManager workingSetMgr = PlatformUI.getWorkbench().getWorkingSetManager();
 		workingSetMgr.addPropertyChangeListener(this);
 		/*Dialog.applyDialogFont(comp);*/
 		setControl(comp);
@@ -301,32 +302,20 @@ public class SourceLookupPanel extends AbstractLaunchConfigurationTab implements
 		return fPathViewer.getEntries();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.AbstractLaunchConfigurationTab#setDirty(boolean)
-	 */
 	@Override
 	public void setDirty(boolean dirty) {
 		super.setDirty(dirty);
 
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getName()
-	 */
 	@Override
 	public String getName() {
 		return SourceLookupUIMessages.sourceTab_tabTitle;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#setDefaults(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
-	 */
 	@Override
 	public void setDefaults(ILaunchConfigurationWorkingCopy configuration) {}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.AbstractLaunchConfigurationTab#updateLaunchConfigurationDialog()
-	 */
 	@Override
 	protected void updateLaunchConfigurationDialog() {
 		if (getLaunchConfigurationDialog() != null) {
@@ -371,9 +360,6 @@ public class SourceLookupPanel extends AbstractLaunchConfigurationTab implements
 	}
 
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#activated(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
-	 */
 	@Override
 	public void activated(ILaunchConfigurationWorkingCopy workingCopy) {
 		initializeFrom(workingCopy);
@@ -390,15 +376,12 @@ public class SourceLookupPanel extends AbstractLaunchConfigurationTab implements
 		return fLocator;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#dispose()
-	 */
 	@Override
 	public void dispose() {
 		super.dispose();
 		//listen to changes user made to the working sets, if a working set is being removed
 		//check current list to validate working sets
-		IWorkingSetManager workingSetMgr = DebugUIPlugin.getDefault().getWorkbench().getWorkingSetManager();
+		IWorkingSetManager workingSetMgr = PlatformUI.getWorkbench().getWorkingSetManager();
 		workingSetMgr.removePropertyChangeListener(this);
 	}
 }

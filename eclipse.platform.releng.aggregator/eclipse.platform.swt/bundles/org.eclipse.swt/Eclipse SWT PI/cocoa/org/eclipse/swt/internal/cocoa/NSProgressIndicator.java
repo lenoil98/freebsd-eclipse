@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,16 +19,12 @@ public NSProgressIndicator() {
 	super();
 }
 
-public NSProgressIndicator(long /*int*/ id) {
+public NSProgressIndicator(long id) {
 	super(id);
 }
 
 public NSProgressIndicator(id id) {
 	super(id);
-}
-
-public long /*int*/ controlSize() {
-	return OS.objc_msgSend(this.id, OS.sel_controlSize);
 }
 
 public double doubleValue() {
@@ -43,7 +39,7 @@ public double minValue() {
 	return OS.objc_msgSend_fpret(this.id, OS.sel_minValue);
 }
 
-public void setControlSize(long /*int*/ controlSize) {
+public void setControlSize(long controlSize) {
 	OS.objc_msgSend(this.id, OS.sel_setControlSize_, controlSize);
 }
 
@@ -67,16 +63,8 @@ public void setUsesThreadedAnimation(boolean usesThreadedAnimation) {
 	OS.objc_msgSend(this.id, OS.sel_setUsesThreadedAnimation_, usesThreadedAnimation);
 }
 
-public void sizeToFit() {
-	OS.objc_msgSend(this.id, OS.sel_sizeToFit);
-}
-
 public void startAnimation(id sender) {
 	OS.objc_msgSend(this.id, OS.sel_startAnimation_, sender != null ? sender.id : 0);
-}
-
-public void stopAnimation(id sender) {
-	OS.objc_msgSend(this.id, OS.sel_stopAnimation_, sender != null ? sender.id : 0);
 }
 
 }

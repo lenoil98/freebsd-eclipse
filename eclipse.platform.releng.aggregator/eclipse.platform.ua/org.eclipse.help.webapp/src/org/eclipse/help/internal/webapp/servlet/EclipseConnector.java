@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.webapp.servlet;
 
@@ -31,6 +32,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.help.internal.base.BaseHelpSystem;
 import org.eclipse.help.internal.base.MissingContentManager;
 import org.eclipse.help.internal.base.remote.RemoteHelpInputStream;
@@ -47,7 +50,7 @@ import org.eclipse.help.webapp.IFilter;
  */
 public class EclipseConnector {
 	public interface INotFoundCallout {
-		public void notFound(String url);
+		void notFound(String url);
 	}
 	private static final String errorPageBegin = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n" //$NON-NLS-1$
 			+ "<html><head>\n" //$NON-NLS-1$
@@ -67,11 +70,12 @@ public class EclipseConnector {
 	private ServletContext context;
 	private static INotFoundCallout notFoundCallout = null; // For JUnit Testing
 
- 	public EclipseConnector(ServletContext context) {
+	public EclipseConnector(ServletContext context) {
 		this.context= context;
- 	}
+	}
 
 
+	@SuppressWarnings("resource")
 	public void transfer(HttpServletRequest req, HttpServletResponse resp)
 			throws IOException {
 
@@ -86,10 +90,10 @@ public class EclipseConnector {
 
 		try {
 
-		    //System.out.println("Transfer " + url); //$NON-NLS-1$
+			//System.out.println("Transfer " + url); //$NON-NLS-1$
 			// Redirect if the request includes PLUGINS_ROOT and is not a content request
 			int index = url.lastIndexOf(HelpURLConnection.PLUGINS_ROOT);
-			if (index!= -1 && url.indexOf("content/" + HelpURLConnection.PLUGINS_ROOT) == -1) {  //$NON-NLS-1$
+			if (index!= -1 && !url.contains("content/" + HelpURLConnection.PLUGINS_ROOT)) {  //$NON-NLS-1$
 				StringBuilder redirectURL = new StringBuilder();
 
 				redirectURL.append(req.getContextPath());
@@ -115,6 +119,7 @@ public class EclipseConnector {
 				// enable activities matching url
 				// HelpBasePlugin.getActivitySupport().enableActivities(url);
 
+				url = URIUtil.fromString(url).toString();
 				url = "help:" + url; //$NON-NLS-1$
 			}
 
@@ -125,39 +130,39 @@ public class EclipseConnector {
 			try {
 				is = con.getInputStream();
 			} catch (IOException ioe) {
-			    pageNotFound = true;
-			    if (notFoundCallout != null) {
-			    	notFoundCallout.notFound(url);
-			    }
+				pageNotFound = true;
+				if (notFoundCallout != null) {
+					notFoundCallout.notFound(url);
+				}
 
-			    boolean isRTopicPath = isRTopicPath(req.getServletPath());
+				boolean isRTopicPath = isRTopicPath(req.getServletPath());
 
-			    if (requiresErrorPage(lowerCaseuRL) && !isRTopicPath) {
+				if (requiresErrorPage(lowerCaseuRL) && !isRTopicPath) {
 
-			    	String errorPage = null;
-			    	if (RemoteStatusData.isAnyRemoteHelpUnavailable()) {
-			            errorPage = '/'+HelpWebappPlugin.PLUGIN_ID+'/'+ MissingContentManager.MISSING_TOPIC_HREF;
-			    	} else {
-				        errorPage = MissingContentManager.getInstance().getPageNotFoundPage(url, false);
-			    	}
-			        if (errorPage != null && errorPage.length() > 0) {
+					String errorPage = null;
+					if (RemoteStatusData.isAnyRemoteHelpUnavailable()) {
+						errorPage = '/'+HelpWebappPlugin.PLUGIN_ID+'/'+ MissingContentManager.MISSING_TOPIC_HREF;
+					} else {
+						errorPage = MissingContentManager.getInstance().getPageNotFoundPage(url, false);
+					}
+					if (errorPage != null && errorPage.length() > 0) {
 						con = createConnection(req, resp, "help:" + errorPage); //$NON-NLS-1$
 						resp.setContentType("text/html"); //$NON-NLS-1$
 						try {
-						    is = con.getInputStream();
+							is = con.getInputStream();
 						} catch (IOException ioe2) {
 							// Cannot open error page
-						    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+							resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
 							return;
 						}
 					} else {
 						// Error page not defined
-					    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+						resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
 						return;
 					}
 				} else {
 					// Non HTML file
-				    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+					resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
 					return;
 				}
 			}
@@ -202,7 +207,7 @@ public class EclipseConnector {
 
 			transferContent(is, out);
 			try {
-			    out.close();
+				out.close();
 			} catch (IOException ioe) {
 				//  Bug 314324 - do not report an error
 			}
@@ -210,7 +215,7 @@ public class EclipseConnector {
 
 		} catch (Exception e) {
 			String msg = "Error processing help request " + url; //$NON-NLS-1$
-			HelpWebappPlugin.logError(msg, e);
+			Platform.getLog(getClass()).error(msg, e);
 		}
 	}
 
@@ -229,7 +234,7 @@ public class EclipseConnector {
 		}
 		if (!contentType.startsWith("text")) {  //$NON-NLS-1$
 				return false;
-	    }
+		}
 		if (contentType.equals("text/css")) { //$NON-NLS-1$
 			return false;
 		}
@@ -273,12 +278,12 @@ public class EclipseConnector {
 
 	private boolean useMimeType(HttpServletRequest req, String mimeType) {
 		if  ( mimeType == null ) {
-	        return false;
-        }
-        if (mimeType.equals("application/xhtml+xml") && !UrlUtil.isMozilla(req)) { //$NON-NLS-1$
-        	return false;
-        }
-        return true;
+			return false;
+		}
+		if (mimeType.equals("application/xhtml+xml") && !UrlUtil.isMozilla(req)) { //$NON-NLS-1$
+			return false;
+		}
+		return true;
 	}
 
 	/**

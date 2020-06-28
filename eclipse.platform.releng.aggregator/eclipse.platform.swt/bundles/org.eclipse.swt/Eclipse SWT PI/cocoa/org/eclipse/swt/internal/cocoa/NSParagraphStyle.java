@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2012 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,7 +19,7 @@ public NSParagraphStyle() {
 	super();
 }
 
-public NSParagraphStyle(long /*int*/ id) {
+public NSParagraphStyle(long id) {
 	super(id);
 }
 
@@ -27,13 +27,8 @@ public NSParagraphStyle(id id) {
 	super(id);
 }
 
-public long /*int*/ alignment() {
+public long alignment() {
 	return OS.objc_msgSend(this.id, OS.sel_alignment);
-}
-
-public NSArray tabStops() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_tabStops);
-	return result != 0 ? new NSArray(result) : null;
 }
 
 }

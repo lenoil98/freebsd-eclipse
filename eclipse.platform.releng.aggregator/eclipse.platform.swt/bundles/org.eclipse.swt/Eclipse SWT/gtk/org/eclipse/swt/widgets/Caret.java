@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -103,13 +103,13 @@ boolean drawCaret () {
 	if (parent == null) return false;
 	if (parent.isDisposed ()) return false;
 	if (GTK.GTK_VERSION < OS.VERSION (3, 22, 0)) {
-		long /*int*/ window = parent.paintWindow ();
-		long /*int*/ cairo = GDK.gdk_cairo_create(window);
+		long window = parent.paintWindow ();
+		long cairo = GDK.gdk_cairo_create(window);
 		if (cairo == 0) error(SWT.ERROR_NO_HANDLES);
 		Cairo.cairo_set_source_rgba(cairo, 1.0, 1.0, 1.0, 1.0);
 		Cairo.cairo_set_operator(cairo, Cairo.CAIRO_OPERATOR_DIFFERENCE);
 		if (image != null && !image.isDisposed() && image.mask == 0) {
-			long /*int*/ surface = Cairo.cairo_get_target(cairo);
+			long surface = Cairo.cairo_get_target(cairo);
 			int nWidth = 0;
 			switch (Cairo.cairo_surface_get_type(surface)) {
 				case Cairo.CAIRO_SURFACE_TYPE_IMAGE:
@@ -324,7 +324,10 @@ void killFocus () {
 @Override
 void releaseParent () {
 	super.releaseParent ();
-	if (this == parent.getCaret ()) parent.setCaret (null);
+	if (parent != null && this == parent.caret) {
+		if (!parent.isDisposed()) parent.setCaret (null);
+		else parent.caret = null;
+	}
 }
 
 @Override

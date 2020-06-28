@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -25,10 +25,11 @@ import org.eclipse.jdt.core.util.IModifierConstants;
 
 @SuppressWarnings({"rawtypes"})
 public class ASTConverterAST3Test extends ConverterTestSetup {
-	
+
+	@Override
 	public void setUpSuite() throws Exception {
 		super.setUpSuite();
-		this.ast = AST.newAST(getJLS3());
+		this.ast = AST.newAST(getJLS3(), false);
 	}
 
 	public ASTConverterAST3Test(String name) {
@@ -41,7 +42,7 @@ public class ASTConverterAST3Test extends ConverterTestSetup {
 	public static Test suite() {
 		return buildModelTestSuite(ASTConverterAST3Test.class);
 	}
-	/** 
+	/**
 	 * Internal access method to VariableDeclarationFragment#setExtraDimensions() for avoiding deprecated warnings.
 	 *
 	 * @param node
@@ -51,7 +52,7 @@ public class ASTConverterAST3Test extends ConverterTestSetup {
 	private void internalSetExtraDimensions(VariableDeclarationFragment node, int dimensions) {
 		node.setExtraDimensions(dimensions);
 	}
-	/** 
+	/**
 	 * Internal access method to MethodDeclaration#thrownExceptions() for avoiding deprecated warnings.
 	 * @deprecated
 	 */
@@ -2088,6 +2089,7 @@ public class ASTConverterAST3Test extends ConverterTestSetup {
 	/**
 	 * SwitchStatement ==> SwitchStatement
 	 */
+	@SuppressWarnings("deprecation")
 	public void test0097() throws JavaModelException {
 		ICompilationUnit sourceUnit = getCompilationUnit("Converter" , "src", "test0097", "Test.java"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 		char[] source = sourceUnit.getSource().toCharArray();

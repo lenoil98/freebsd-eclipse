@@ -32,7 +32,8 @@ public class PropertyBucket extends Bucket {
 		};
 		private static final String[][] EMPTY_DATA = new String[0][];
 		/**
-		 * value is a String[][] of {{propertyKey.qualifier, propertyKey.localName, propertyValue}}
+		 * value is an array of qualified-key value pairs String[][] of
+		 * {{propertyKey.qualifier, propertyKey.localName, propertyValue}}
 		 */
 		private String[][] value;
 
@@ -130,8 +131,9 @@ public class PropertyBucket extends Bucket {
 		}
 
 		/**
-		 * @param path
-		 * @param value is a String[][] {{propertyKey, propertyValue}}
+		 * @param path  a path to identify this property entry
+		 * @param value an array of qualified-key value pairs
+		 *              (<code>String[][] {{propertyKey.qualifier, propertyKey.localName, propertyValue}}</code>)
 		 */
 		protected PropertyEntry(IPath path, String[][] value) {
 			super(path);
@@ -146,9 +148,11 @@ public class PropertyBucket extends Bucket {
 			if (!isDirty())
 				return;
 			int occurrences = 0;
-			for (int i = 0; i < value.length; i++)
-				if (value[i] != null)
-					value[occurrences++] = value[i];
+			for (String[] s : value) {
+				if (s != null) {
+					value[occurrences++] = s;
+				}
+			}
 			if (occurrences == value.length)
 				// no states deleted
 				return;
@@ -199,7 +203,8 @@ public class PropertyBucket extends Bucket {
 	/** Version number for the current implementation file's format.
 	 * <p>
 	 * Version 1:
-	 * <pre>
+	 * </p>
+	 * <pre> {@code
 	 * FILE ::= VERSION_ID ENTRY+
 	 * ENTRY ::= PATH PROPERTY_COUNT PROPERTY+
 	 * PATH ::= string (does not contain project name)
@@ -210,8 +215,7 @@ public class PropertyBucket extends Bucket {
 	 * QNAME -> byte string
 	 * UUID ::= byte[16]
 	 * LAST_MODIFIED ::= byte[8]
-	 * </pre>
-	 * </p>
+	 * }</pre>
 	 */
 	private static final byte VERSION = 1;
 
@@ -266,16 +270,16 @@ public class PropertyBucket extends Bucket {
 	protected Object readEntryValue(DataInputStream source) throws IOException, CoreException {
 		int length = source.readUnsignedShort();
 		String[][] properties = new String[length][3];
-		for (int j = 0; j < properties.length; j++) {
+		for (String[] propertie : properties) {
 			// qualifier
 			byte constant = source.readByte();
 			switch (constant) {
-				case QNAME :
-					properties[j][0] = source.readUTF();
-					qualifierIndex.add(properties[j][0]);
+				case QNAME:
+					propertie[0] = source.readUTF();
+					qualifierIndex.add(propertie[0]);
 					break;
-				case INDEX :
-					properties[j][0] = qualifierIndex.get(source.readInt());
+				case INDEX:
+					propertie[0] = qualifierIndex.get(source.readInt());
 					break;
 				default :
 					//if we get here the properties file is corrupt
@@ -284,9 +288,9 @@ public class PropertyBucket extends Bucket {
 					throw new ResourceException(IResourceStatus.FAILED_READ_METADATA, null, msg, null);
 			}
 			// localName
-			properties[j][1] = source.readUTF();
+			propertie[1] = source.readUTF();
 			// propertyValue
-			properties[j][2] = source.readUTF();
+			propertie[2] = source.readUTF();
 		}
 		return properties;
 	}

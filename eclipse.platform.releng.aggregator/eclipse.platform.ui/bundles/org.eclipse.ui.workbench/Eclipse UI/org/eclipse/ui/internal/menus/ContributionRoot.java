@@ -33,25 +33,23 @@ import org.eclipse.ui.menus.IMenuService;
  *
  * @since 3.3
  */
-final class ContributionRoot implements
-		IContributionRoot {
+final class ContributionRoot implements IContributionRoot {
 
-	private List topLevelItems = new ArrayList();
+	private List<IContributionItem> topLevelItems = new ArrayList<>();
 	private Map<IContributionItem, Expression> itemsToExpressions = new HashMap<>();
-	Set restriction;
+	Set<?> restriction;
 	private ContributionManager mgr;
 	private AbstractContributionFactory factory;
 
-	public ContributionRoot(IMenuService menuService, Set restriction,
-			ContributionManager mgr, AbstractContributionFactory factory) {
+	public ContributionRoot(IMenuService menuService, Set<?> restriction, ContributionManager mgr,
+			AbstractContributionFactory factory) {
 		this.restriction = restriction;
 		this.mgr = mgr;
 		this.factory = factory;
 	}
 
 	@Override
-	public void addContributionItem(IContributionItem item,
-			Expression visibleWhen) {
+	public void addContributionItem(IContributionItem item, Expression visibleWhen) {
 		if (item == null)
 			throw new IllegalArgumentException();
 		topLevelItems.add(item);
@@ -64,21 +62,22 @@ final class ContributionRoot implements
 	}
 
 	/**
-     * Create the activity identifier for this contribution item.
-     *
+	 * Create the activity identifier for this contribution item.
+	 *
 	 * @param item the item
 	 * @return the identifier
 	 */
 	String createIdentifierId(IContributionItem item) {
 		String namespace = factory.getNamespace();
-		String identifierID = namespace != null ? namespace + '/'
-				+ item.getId() : null; // create the activity identifier ID. If
-										// this factory doesn't have a namespace
-										// it will be null.
-		return identifierID;
+
+																							// identifier ID. If
+																							// this factory doesn't have
+																							// a namespace
+																							// it will be null.
+		return namespace != null ? namespace + '/' + item.getId() : null;
 	}
 
-	public List getItems() {
+	public List<IContributionItem> getItems() {
 		return topLevelItems;
 	}
 
@@ -99,8 +98,7 @@ final class ContributionRoot implements
 	}
 
 	@Override
-	public void registerVisibilityForChild(IContributionItem item,
-			Expression visibleWhen) {
+	public void registerVisibilityForChild(IContributionItem item, Expression visibleWhen) {
 		if (item == null)
 			throw new IllegalArgumentException();
 		if (visibleWhen == null)

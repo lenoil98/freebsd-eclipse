@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.eclipse.core.commands.util.Tracing;
-import org.eclipse.jface.util.Util;
 
 /**
  * <p>
@@ -177,7 +176,7 @@ final class CachedBindingSet {
 	 * @param schemeIds
 	 *            The scheme that was active when this binding set was
 	 *            calculated, followed by its ancestors. This may be
-	 *            <code>null</code or empty. The
+	 *            <code>null</code> or empty. The
 	 *            elements cannot be <code>null</code>.
 	 */
 	CachedBindingSet(final Map activeContextTree, final String[] locales,
@@ -297,10 +296,10 @@ final class CachedBindingSet {
 		if (!hashCodeComputed) {
 			hashCode = HASH_INITIAL;
 			hashCode = hashCode * HASH_FACTOR
-					+ Util.hashCode(activeContextTree);
-			hashCode = hashCode * HASH_FACTOR + Util.hashCode(locales);
-			hashCode = hashCode * HASH_FACTOR + Util.hashCode(platforms);
-			hashCode = hashCode * HASH_FACTOR + Util.hashCode(schemeIds);
+					+ Objects.hashCode(activeContextTree);
+			hashCode = hashCode * HASH_FACTOR + Arrays.hashCode(locales);
+			hashCode = hashCode * HASH_FACTOR + Arrays.hashCode(platforms);
+			hashCode = hashCode * HASH_FACTOR + Arrays.hashCode(schemeIds);
 			hashCodeComputed = true;
 		}
 

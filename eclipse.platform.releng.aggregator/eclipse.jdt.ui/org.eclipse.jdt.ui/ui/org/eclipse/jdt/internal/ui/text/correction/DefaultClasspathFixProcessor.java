@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -145,8 +145,7 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 		HashSet<IClasspathEntry> classpaths= new HashSet<>();
 		HashSet<TypeNameMatch> typesWithModule= new HashSet<>();
 		if (currentModuleDescription != null) {
-			for (int i= 0; i < res.size(); i++) {
-				TypeNameMatch curr= res.get(i);
+			for (TypeNameMatch curr : res) {
 				IType type= curr.getType();
 				if (type != null) {
 					IPackageFragmentRoot root= (IPackageFragmentRoot) type.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
@@ -170,10 +169,10 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 								typeNameMatchToModuleName.put(curr, moduleName);
 							}
 						} else {
-							Object typeNameMatch= classPathEntryToTypeNameMatch.get(entry);
+							TypeNameMatch typeNameMatch= classPathEntryToTypeNameMatch.get(entry);
 							if (typeNameMatch != null) {
 								if (moduleName != null) {
-									Object modName= typeNameMatchToModuleName.get(typeNameMatch);
+									String modName= typeNameMatchToModuleName.get(typeNameMatch);
 									if (!moduleName.equals(modName)) {
 										// remove classpath module if there are multiple type matches
 										// which belong to the same class path but different modules
@@ -197,8 +196,7 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 
 
 		HashSet<Object> addedClaspaths= new HashSet<>();
-		for (int i= 0; i < res.size(); i++) {
-			TypeNameMatch curr= res.get(i);
+		for (TypeNameMatch curr : res) {
 			IType type= curr.getType();
 			if (type != null) {
 				IPackageFragmentRoot root= (IPackageFragmentRoot) type.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
@@ -283,6 +281,9 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 
 	protected void addLibraryProposal(IJavaProject project, IPackageFragmentRoot root, IClasspathEntry entry, Collection<Object> addedClaspaths, Collection<DefaultClasspathFixProposal> proposals,
 			Change additionalChange) throws JavaModelException {
+		if (isJREContainer(entry.getPath()) && hasJREInClassPath(project)) {
+			return;
+		}
 		if (addedClaspaths.add(entry)) {
 			String label= getAddClasspathLabel(entry, root, project);
 			if (label != null) {
@@ -312,6 +313,30 @@ public class DefaultClasspathFixProcessor extends ClasspathFixProcessor {
 		return false;
 	}
 
+	protected boolean isJREContainer(IPath containerPath) {
+		if (containerPath != null && containerPath.segmentCount() > 0) {
+			String id= containerPath.segment(0);
+			if (id.equals(JavaRuntime.JRE_CONTAINER)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	protected boolean hasJREInClassPath(IJavaProject javaProject) {
+		if (javaProject != null) {
+			try {
+				for (IClasspathEntry oldClasspath : javaProject.getRawClasspath()) {
+					if (isJREContainer(oldClasspath.getPath())) {
+						return true;
+					}
+				}
+			} catch (JavaModelException e) {
+				// do nothing
+			}
+		}
+		return false;
+	}
 
 	protected static String getAddClasspathLabel(IClasspathEntry entry, IPackageFragmentRoot root, IJavaProject project) {
 		switch (entry.getEntryKind()) {

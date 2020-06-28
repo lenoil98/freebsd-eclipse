@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.ui.launchConfigurations;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +30,6 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.model.WorkbenchViewerComparator;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * This dialog is used to select one or more launch configurations to add to your favorites
@@ -54,9 +53,9 @@ public class SelectFavoritesDialog extends AbstractDebugCheckboxSelectionDialog 
 			}
 			List<ILaunchConfiguration> list = new ArrayList<>(all.length);
 			ViewerFilter filter = new LaunchGroupFilter(fHistory.getLaunchGroup());
-			for (int i = 0; i < all.length; i++) {
-				if (filter.select(null, null, all[i])) {
-					list.add(all[i]);
+			for (ILaunchConfiguration config : all) {
+				if (filter.select(null, null, config)) {
+					list.add(config);
 				}
 			}
 			list.removeAll(fCurrentFavoriteSet);
@@ -91,47 +90,32 @@ public class SelectFavoritesDialog extends AbstractDebugCheckboxSelectionDialog 
 	/**
 	 * Returns a label to use for launch mode with accelerators removed.
 	 *
-     * @return label to use for launch mode with accelerators removed
-     */
-    private String getModeLabel() {
-        return DebugUIPlugin.removeAccelerators(fHistory.getLaunchGroup().getLabel());
-    }
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getDialogSettingsId()
+	 * @return label to use for launch mode with accelerators removed
 	 */
+	private String getModeLabel() {
+		return DebugUIPlugin.removeAccelerators(fHistory.getLaunchGroup().getLabel());
+	}
+
 	@Override
 	protected String getDialogSettingsId() {
 		return IDebugUIConstants.PLUGIN_ID + ".SELECT_FAVORITESS_DIALOG"; //$NON-NLS-1$
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getViewerInput()
-	 */
 	@Override
 	protected Object getViewerInput() {
 		return fHistory.getLaunchGroup().getMode();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getContentProvider()
-	 */
 	@Override
 	protected IContentProvider getContentProvider() {
 		return new LaunchConfigurationContentProvider();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getHelpContextId()
-	 */
 	@Override
 	protected String getHelpContextId() {
 		return IDebugHelpContextIds.SELECT_FAVORITES_DIALOG;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getViewerLabel()
-	 */
 	@Override
 	protected String getViewerLabel() {
 		return LaunchConfigurationsMessages.FavoritesDialog_7;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,7 +17,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -63,7 +62,7 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.jface.window.Window;
 
-import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ISelectionStatusValidator;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.model.WorkbenchContentProvider;
@@ -77,6 +76,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaConventions;
 import org.eclipse.jdt.core.JavaCore;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
@@ -89,7 +89,6 @@ import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
 import org.eclipse.jdt.internal.ui.dialogs.StatusUtil;
 import org.eclipse.jdt.internal.ui.util.CoreUtility;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.viewsupport.ImageDisposer;
 import org.eclipse.jdt.internal.ui.wizards.IStatusChangeListener;
 import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages;
@@ -143,6 +142,7 @@ public class BuildPathsBlock {
 	private BuildPathBasePage fSourceContainerPage;
 	private ProjectsWorkbookPage fProjectsPage;
 	private LibrariesWorkbookPage fLibrariesPage;
+	private ModuleDependenciesPage fModulesPage;
 
 	private BuildPathBasePage fCurrPage;
 
@@ -243,8 +243,7 @@ public class BuildPathsBlock {
         item.setData(fSourceContainerPage);
         item.setControl(fSourceContainerPage.getControl(folder));
 
-		IWorkbench workbench= JavaPlugin.getDefault().getWorkbench();
-		Image projectImage= workbench.getSharedImages().getImage(IDE.SharedImages.IMG_OBJ_PROJECT);
+		Image projectImage= PlatformUI.getWorkbench().getSharedImages().getImage(IDE.SharedImages.IMG_OBJ_PROJECT);
 
 		fProjectsPage= new ProjectsWorkbookPage(fClassPathList, fPageContainer);
 		item= new TabItem(folder, SWT.NONE);
@@ -271,10 +270,18 @@ public class BuildPathsBlock {
 		item.setData(ordpage);
 		item.setControl(ordpage.getControl(folder));
 
+		fModulesPage= new ModuleDependenciesPage(fContext, fClassPathList);
+		item= new TabItem(folder, SWT.NONE);
+		item.setText(NewWizardMessages.BuildPathsBlock_tab_modules);
+		item.setImage(JavaPluginImages.get(JavaPluginImages.IMG_OBJS_MODULE));
+		item.setData(fModulesPage);
+		item.setControl(fModulesPage.getControl(folder));
+
 		if (fCurrJProject != null) {
 			fSourceContainerPage.init(fCurrJProject);
 			fLibrariesPage.init(fCurrJProject);
 			fProjectsPage.init(fCurrJProject);
+			fModulesPage.init(fCurrJProject);
 			fIs9OrHigher= JavaModelUtil.is9OrHigher(fCurrJProject);
 		}
 
@@ -357,6 +364,7 @@ public class BuildPathsBlock {
 			fSourceContainerPage.init(fCurrJProject);
 			fProjectsPage.init(fCurrJProject);
 			fLibrariesPage.init(fCurrJProject);
+			// fModulesPage will be unconditionally initialized in updateUI() below
 			fIs9OrHigher= JavaModelUtil.is9OrHigher(fCurrJProject);
 		}
 
@@ -385,6 +393,9 @@ public class BuildPathsBlock {
 	}
 
 	protected void doUpdateUI() {
+		if (fModulesPage.needReInit()) {
+			init(fCurrJProject, null, null); // extent of system modules was changed, re-init fClassPathList
+		}
 		fBuildPathDialogField.refresh();
 		fClassPathList.refresh();
 		boolean is9OrHigherAfter= JavaModelUtil.is9OrHigher(fCurrJProject);
@@ -394,6 +405,7 @@ public class BuildPathsBlock {
 			fProjectsPage.init(fCurrJProject);
 			fIs9OrHigher= is9OrHigherAfter;
 		}
+		fModulesPage.init(fCurrJProject); // always update, Apply might have made more modules visible
 		doStatusLineUpdate();
 	}
 
@@ -433,8 +445,7 @@ public class BuildPathsBlock {
 	private ArrayList<CPListElement> getCPListElements(IClasspathEntry[] classpathEntries, IClasspathEntry[] existingEntries) {
 		List<IClasspathEntry> existing= existingEntries == null ? Collections.<IClasspathEntry>emptyList() : Arrays.asList(existingEntries);
 		ArrayList<CPListElement> newClassPath= new ArrayList<>();
-		for (int i= 0; i < classpathEntries.length; i++) {
-			IClasspathEntry curr= classpathEntries[i];
+		for (IClasspathEntry curr : classpathEntries) {
 			newClassPath.add(CPListElement.create(curr, ! existing.contains(curr), fCurrJProject));
 		}
 		return newClassPath;
@@ -621,7 +632,7 @@ public class BuildPathsBlock {
 					entryMissing= currElement;
 				}
 			}
-			if (entryDeprecated == null & currElement.isDeprecated()) {
+			if (entryDeprecated == null && currElement.isDeprecated()) {
 				entryDeprecated= currElement;
 			}
 		}
@@ -751,21 +762,21 @@ public class BuildPathsBlock {
 	public void configureJavaProject(IProgressMonitor monitor) throws CoreException, OperationCanceledException {
 		configureJavaProject(null, monitor);
 	}
-	
+
 	public void configureJavaProject(String newProjectCompliance, IProgressMonitor monitor) throws CoreException, OperationCanceledException {
 		flush(fClassPathList.getElements(), getOutputLocation(), getJavaProject(), newProjectCompliance, monitor);
 		initializeTimeStamps();
 
 		updateUI();
 	}
-	
+
 	/**
 	 * Sets the configured build path and output location to the given Java project.
 	 * If the project already exists, only build paths are updated.
 	 * <p>
 	 * If the classpath contains an Execution Environment entry, the EE's compiler compliance options
 	 * are used as project-specific options (unless the classpath already contained the same Execution Environment)
-	 * 
+	 *
 	 * @param classPathEntries the new classpath entries (list of {@link CPListElement})
 	 * @param outputLocation the output location
 	 * @param javaProject the Java project
@@ -830,8 +841,7 @@ public class BuildPathsBlock {
 			IClasspathEntry[] classpath= new IClasspathEntry[nEntries];
 			int i= 0;
 
-			for (Iterator<CPListElement> iter= classPathEntries.iterator(); iter.hasNext();) {
-				CPListElement entry= iter.next();
+			for (CPListElement entry : classPathEntries) {
 				if(entry.isRootNodeForPath()){
 					continue;
 				}
@@ -942,9 +952,8 @@ public class BuildPathsBlock {
 			return true;
 		}
 		if (resource instanceof IContainer) {
-			IResource[] members= ((IContainer) resource).members();
-			for (int i= 0; i < members.length; i++) {
-				if (hasClassfiles(members[i])) {
+			for (IResource member : ((IContainer) resource).members()) {
+				if (hasClassfiles(member)) {
 					return true;
 				}
 			}
@@ -957,9 +966,8 @@ public class BuildPathsBlock {
 		if (resource.isDerived()) {
 			resource.delete(false, null);
 		} else if (resource instanceof IContainer) {
-			IResource[] members= ((IContainer) resource).members();
-			for (int i= 0; i < members.length; i++) {
-				removeOldClassfiles(members[i]);
+			for (IResource member : ((IContainer) resource).members()) {
+				removeOldClassfiles(member);
 			}
 		}
 	}
@@ -1004,9 +1012,9 @@ public class BuildPathsBlock {
 		IProject[] allProjects= fWorkspaceRoot.getProjects();
 		ArrayList<IProject> rejectedElements= new ArrayList<>(allProjects.length);
 		IProject currProject= fCurrJProject.getProject();
-		for (int i= 0; i < allProjects.length; i++) {
-			if (!allProjects[i].equals(currProject)) {
-				rejectedElements.add(allProjects[i]);
+		for (IProject project : allProjects) {
+			if (!project.equals(currProject)) {
+				rejectedElements.add(project);
 			}
 		}
 		ViewerFilter filter= new TypedViewerFilter(acceptedClasses, rejectedElements.toArray());
@@ -1144,8 +1152,8 @@ public class BuildPathsBlock {
 	public void setFocus() {
 		fSourceContainerPage.setFocus();
     }
-	
+
 	public BuildPathBasePage getSourceContainerPage() {
 		return fSourceContainerPage;
-	}	
+	}
 }

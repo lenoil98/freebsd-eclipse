@@ -121,7 +121,7 @@ public class ProjectContentTypes {
 				return false;
 			node = node.node(CONTENT_TYPE_PREF_NODE);
 			return node.getBoolean(PREF_LOCAL_CONTENT_TYPE_SETTINGS, false);
-		} catch (BackingStoreException e) {
+		} catch (BackingStoreException | IllegalStateException | IllegalArgumentException e) {
 			// exception treated when retrieving the project preferences
 		}
 		return false;
@@ -147,9 +147,7 @@ public class ProjectContentTypes {
 				// no descriptor found for the nature, skip it
 				continue;
 			String[] natureContentTypes = descriptor.getContentTypeIds();
-			for (String natureContentType : natureContentTypes)
-				// collect associate content types
-				related.add(natureContentType);
+			related.addAll(Arrays.asList(natureContentTypes)); // collect associate content types
 		}
 		return related;
 	}

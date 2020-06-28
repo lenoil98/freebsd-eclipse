@@ -25,7 +25,6 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.ui.IAggregateWorkingSet;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IWorkingSet;
@@ -37,7 +36,12 @@ import org.eclipse.ui.internal.AggregateWorkingSet;
 import org.eclipse.ui.internal.IWorkbenchConstants;
 import org.eclipse.ui.tests.harness.util.ArrayUtil;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class IAggregateWorkingSetTest extends UITestCase {
 
 	static final String WORKING_SET_NAME = "testws";
@@ -49,8 +53,8 @@ public class IAggregateWorkingSetTest extends UITestCase {
 	List<IWorkingSet> backup;
 	IAggregateWorkingSet fWorkingSet;
 
-	public IAggregateWorkingSetTest(String testName) {
-		super(testName);
+	public IAggregateWorkingSetTest() {
+		super(IAggregateWorkingSetTest.class.getSimpleName());
 	}
 
 	@Override
@@ -89,6 +93,7 @@ public class IAggregateWorkingSetTest extends UITestCase {
 		super.doTearDown();
 	}
 
+	@Test
 	public void testSaveWSet() throws Throwable {
 		//<possible client code>
 		IWorkingSetManager workingSetManager = fWorkbench
@@ -105,6 +110,7 @@ public class IAggregateWorkingSetTest extends UITestCase {
 		IMemento memento=XMLMemento.createWriteRoot(IWorkbenchConstants.TAG_WORKING_SET);
 		set.saveState(memento);
 	}
+	@Test
 	public void testGetElemets() throws Throwable {
 		//<possible client code>
 		IWorkingSetManager workingSetManager = fWorkbench
@@ -142,14 +148,17 @@ public class IAggregateWorkingSetTest extends UITestCase {
 	 *
 	 * Now the IMememnto creates a self reference:
 	 *
-	 * <workingSet name="testCycle" label="testCycle" aggregate="true">
-	 * 	<workingSet IMemento.internal.id="testCycle" />
-	 * </workingSet>
+	 * <pre>
+	 * &lt;workingSet name="testCycle" label="testCycle" aggregate="true"&gt;
+	 * 	&lt;workingSet IMemento.internal.id="testCycle" /&gt;
+	 * &lt;/workingSet&gt;
+	 * </pre>
 	 *
 	 * All we have to do to emulate stack overflow is to create a working set based on this IMemento.
 	 *
 	 * @throws Throwable
 	 */
+	@Test
 	public void testWorkingSetCycle() throws Throwable {
 		IWorkingSetManager manager = fWorkbench.getWorkingSetManager();
 
@@ -183,6 +192,7 @@ public class IAggregateWorkingSetTest extends UITestCase {
 	 * Tests cleanup of the cycle from an aggregate working set.
 	 * @throws Throwable
 	 */
+	@Test
 	public void testCycleCleanup() throws Throwable {
 		IWorkingSetManager manager = fWorkbench.getWorkingSetManager();
 
@@ -242,6 +252,8 @@ public class IAggregateWorkingSetTest extends UITestCase {
 	 * memento of aggregates
 	 */
 	/* TODO test must be enabled after bug 479217 is fixed */
+	@Test
+	@Ignore("Bug 479217")
 	public void XXXtestWorkingSetSaveRestoreAggregates() throws Throwable {
 		IWorkingSetManager manager = fWorkbench.getWorkingSetManager();
 		String nameA = "A";
@@ -316,7 +328,7 @@ public class IAggregateWorkingSetTest extends UITestCase {
 								+ componenents2[i]);
 					}
 				}
-	        }
+			}
 
 		} finally {
 			// restore
@@ -336,6 +348,7 @@ public class IAggregateWorkingSetTest extends UITestCase {
 	}
 
 	/* test which passes as long as bug 479217 is not fixed */
+	@Test
 	public void testWorkingSetSaveNeverRestoresAggregate() throws Throwable {
 		IWorkingSetManager manager = fWorkbench.getWorkingSetManager();
 		String nameA = "A";
@@ -383,34 +396,30 @@ public class IAggregateWorkingSetTest extends UITestCase {
 			// every client which wants to see components of the working set
 			// *before* the restoreWorkingSetState() is done, can silently (!!!)
 			// damage the AggregateWorkingSet being restored
-			IPropertyChangeListener badListener = new IPropertyChangeListener() {
-
-				@Override
-				public void propertyChange(PropertyChangeEvent event) {
-					if (event.getProperty() != IWorkingSetManager.CHANGE_WORKING_SET_ADD) {
-						return;
+			IPropertyChangeListener badListener = event -> {
+				if (event.getProperty() != IWorkingSetManager.CHANGE_WORKING_SET_ADD) {
+					return;
+				}
+				// simply resolve the working set before the manager creates
+				// another one
+				Object ws = event.getNewValue();
+				if (!(ws instanceof AggregateWorkingSet)) {
+					return;
+				}
+				AggregateWorkingSet aws = (AggregateWorkingSet) ws;
+				IMemento m = readField(AbstractWorkingSet.class, "workingSetMemento", IMemento.class, aws);
+				IWorkingSet[] sets = aws.getComponents();
+				if (m != null) {
+					IMemento[] msets = m.getChildren(IWorkbenchConstants.TAG_WORKING_SET);
+					if (msets.length != sets.length) {
+						// KABOOM!
+						error.set("Working set lost due the bad listener! " + "restored: " + Arrays.toString(sets)
+								+ ", expected: " + Arrays.toString(msets));
 					}
-					// simply resolve the working set before the manager creates
-					// another one
-					Object ws = event.getNewValue();
-					if (!(ws instanceof AggregateWorkingSet)) {
-						return;
-					}
-					AggregateWorkingSet aws = (AggregateWorkingSet) ws;
-					IMemento m = readField(AbstractWorkingSet.class, "workingSetMemento", IMemento.class, aws);
-					IWorkingSet[] sets = aws.getComponents();
-					if (m != null) {
-						IMemento[] msets = m.getChildren(IWorkbenchConstants.TAG_WORKING_SET);
-						if (msets.length != sets.length) {
-							// KABOOM!
-							error.set("Working set lost due the bad listener! " + "restored: " + Arrays.toString(sets)
-									+ ", expected: " + Arrays.toString(msets));
-						}
-					} else {
-						if (nameB.equals(aws.getName()) && sets.length != 2) {
-							// someone was faster
-							error.set("Working set lost due the bad listener! " + "restored: " + Arrays.toString(sets));
-						}
+				} else {
+					if (nameB.equals(aws.getName()) && sets.length != 2) {
+						// someone was faster
+						error.set("Working set lost due the bad listener! " + "restored: " + Arrays.toString(sets));
 					}
 				}
 			};

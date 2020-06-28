@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2018 IBM Corporation and others.
+ * Copyright (c) 2005, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,7 @@
  *     		Bug 226342 - [KeyBindings] Keys preference page conflict table is hard to read
  *     Lars Vogel <Lars.Vogel@vogella.com> - Bug 440810, 491393
  *     Cornel Izbasa <cizbasa@info.uvt.ro> - Bug 442215
+ *     Christian Georgi (SAP SE) - Bug 540440
  *******************************************************************************/
 
 package org.eclipse.ui.internal.keys;
@@ -31,6 +32,7 @@ import org.eclipse.core.commands.ParameterizedCommand;
 import org.eclipse.core.commands.util.Tracing;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.action.LegacyActionTools;
 import org.eclipse.jface.bindings.Binding;
 import org.eclipse.jface.bindings.TriggerSequence;
 import org.eclipse.jface.bindings.keys.KeySequence;
@@ -39,6 +41,7 @@ import org.eclipse.jface.bindings.keys.KeyStroke;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.DeviceResourceException;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -66,6 +69,7 @@ import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -75,6 +79,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -90,6 +95,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandImageService;
 import org.eclipse.ui.commands.ICommandService;
 import org.eclipse.ui.dialogs.FilteredTree;
+import org.eclipse.ui.internal.IPreferenceConstants;
 import org.eclipse.ui.internal.IWorkbenchHelpContextIds;
 import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.internal.keys.model.BindingElement;
@@ -102,6 +108,8 @@ import org.eclipse.ui.internal.keys.model.KeyController;
 import org.eclipse.ui.internal.keys.model.ModelElement;
 import org.eclipse.ui.internal.keys.model.SchemeElement;
 import org.eclipse.ui.internal.keys.model.SchemeModel;
+import org.eclipse.ui.internal.keys.show.ShowKeysToggleHandler;
+import org.eclipse.ui.internal.keys.show.ShowKeysUI;
 import org.eclipse.ui.internal.misc.Policy;
 import org.eclipse.ui.internal.util.Util;
 import org.eclipse.ui.keys.IBindingService;
@@ -184,13 +192,18 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 
 	private TableViewer conflictViewer;
 
+	private Button fShowCommandKey;
+	private Button fShowCommandKeyForMouseEvents;
+
 	private ICommandImageService commandImageService;
 
 	private ICommandService commandService;
 
+	private IWorkbench fWorkbench;
+
 	/**
-	 * A FilteredTree that provides a combo which is used to organize and
-	 * display elements in the tree according to the selected criteria.
+	 * A FilteredTree that provides a combo which is used to organize and display
+	 * elements in the tree according to the selected criteria.
 	 *
 	 */
 	protected static class CategoryFilterTree extends FilteredTree {
@@ -251,16 +264,14 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 		}
 
 		/**
-		 * @param ascending
-		 *            The ascending to set.
+		 * @param ascending The ascending to set.
 		 */
 		public void setAscending(boolean ascending) {
 			this.ascending = ascending;
 		}
 
 		@Override
-		public int compare(final Viewer viewer, final Object a,
-				final Object b) {
+		public int compare(final Viewer viewer, final Object a, final Object b) {
 			int result = 0;
 			Iterator<Integer> i = sortColumns.iterator();
 			while (i.hasNext() && result == 0) {
@@ -270,8 +281,7 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 			return ascending ? result : (-1) * result;
 		}
 
-		private int compareColumn(final Viewer viewer, final Object a,
-				final Object b, final int columnNumber) {
+		private int compareColumn(final Viewer viewer, final Object a, final Object b, final int columnNumber) {
 			if (columnNumber == USER_DELTA_COLUMN) {
 				return sortUser(a, b);
 			}
@@ -290,8 +300,7 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 		private int sortUser(final Object a, final Object b) {
 			int typeA = ((BindingElement) a).getUserDelta().intValue();
 			int typeB = ((BindingElement) b).getUserDelta().intValue();
-			int result = typeA - typeB;
-			return result;
+			return typeA - typeB;
 		}
 
 	}
@@ -313,8 +322,7 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 		public void widgetSelected(SelectionEvent e) {
 			if (comparator.getSortColumn() == column) {
 				comparator.setAscending(!comparator.isAscending());
-				viewer.getTree().setSortDirection(
-						comparator.isAscending() ? SWT.UP : SWT.DOWN);
+				viewer.getTree().setSortDirection(comparator.isAscending() ? SWT.UP : SWT.DOWN);
 			} else {
 				viewer.getTree().setSortColumn(treeColumn);
 				comparator.setSortColumn(column);
@@ -370,14 +378,13 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 			BindingElement bindingElement = ((BindingElement) element);
 			switch (index) {
 			case COMMAND_NAME_COLUMN: // name
-				return bindingElement.getName();
+				return LegacyActionTools.removeMnemonics(bindingElement.getName());
 			case KEY_SEQUENCE_COLUMN: // keys
 				TriggerSequence seq = bindingElement.getTrigger();
 				return seq == null ? Util.ZERO_LENGTH_STRING : seq.format();
 			case CONTEXT_COLUMN: // when
 				ModelElement context = bindingElement.getContext();
-				return context == null ? Util.ZERO_LENGTH_STRING : context
-						.getName();
+				return context == null ? Util.ZERO_LENGTH_STRING : context.getName();
 			case CATEGORY_COLUMN: // category
 				return bindingElement.getCategory();
 			case USER_DELTA_COLUMN: // user
@@ -401,8 +408,7 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 			switch (index) {
 			case COMMAND_NAME_COLUMN:
 				final String commandId = be.getId();
-				final ImageDescriptor imageDescriptor = commandImageService
-						.getImageDescriptor(commandId);
+				final ImageDescriptor imageDescriptor = commandImageService.getImageDescriptor(commandId);
 				if (imageDescriptor == null) {
 					return null;
 				}
@@ -411,8 +417,7 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 				} catch (final DeviceResourceException e) {
 					final String message = "Problem retrieving image for a command '" //$NON-NLS-1$
 							+ commandId + '\'';
-					final IStatus status = new Status(IStatus.ERROR,
-							WorkbenchPlugin.PI_WORKBENCH, 0, message, e);
+					final IStatus status = new Status(IStatus.ERROR, WorkbenchPlugin.PI_WORKBENCH, 0, message, e);
 					WorkbenchPlugin.log(message, status);
 				}
 				return null;
@@ -475,6 +480,7 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 		createTree(page);
 		createTreeControls(page);
 		createDataControls(page);
+		createShowKeysControls(page);
 
 		fill();
 
@@ -502,9 +508,8 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 	/**
 	 * Creates the button bar with "Filters..." and "Export CVS..." buttons.
 	 *
-	 * @param parent
-	 *            The composite in which the button bar should be placed; never
-	 *            <code>null</code>.
+	 * @param parent The composite in which the button bar should be placed; never
+	 *               <code>null</code>.
 	 * @return The button bar composite; never <code>null</code>.
 	 */
 	private final Control createButtonBar(final Composite parent) {
@@ -527,8 +532,7 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 		gridData = new GridData();
 		widthHint = convertHorizontalDLUsToPixels(IDialogConstants.BUTTON_WIDTH);
 		filtersButton.setText(NewKeysPreferenceMessages.FiltersButton_Text);
-		gridData.widthHint = Math.max(widthHint, filtersButton.computeSize(
-				SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
+		gridData.widthHint = Math.max(widthHint, filtersButton.computeSize(SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
 		filtersButton.setLayoutData(gridData);
 		filtersButton.addSelectionListener(widgetSelectedAdapter(e -> {
 			KeysPreferenceFiltersDialog dialog = new KeysPreferenceFiltersDialog(getShell());
@@ -554,10 +558,10 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 		// gridData = new GridData();
 		widthHint = convertHorizontalDLUsToPixels(IDialogConstants.BUTTON_WIDTH);
 		exportButton.setText(NewKeysPreferenceMessages.ExportButton_Text);
-		gridData.widthHint = Math.max(widthHint, exportButton.computeSize(
-				SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
+		gridData.widthHint = Math.max(widthHint, exportButton.computeSize(SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
 		exportButton.setLayoutData(gridData);
-		exportButton.addSelectionListener(widgetSelectedAdapter(e -> keyController.exportCSV(((Button) e.getSource()).getShell())));
+		exportButton.addSelectionListener(
+				widgetSelectedAdapter(e -> keyController.exportCSV(((Button) e.getSource()).getShell())));
 
 		return buttonBar;
 	}
@@ -589,8 +593,7 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 
 		// The command name label.
 		final Label commandNameLabel = new Label(leftDataArea, SWT.NONE);
-		commandNameLabel
-				.setText(NewKeysPreferenceMessages.CommandNameLabel_Text);
+		commandNameLabel.setText(NewKeysPreferenceMessages.CommandNameLabel_Text);
 
 		// The current command name.
 		commandNameValueLabel = new Label(leftDataArea, SWT.NONE);
@@ -606,8 +609,7 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 		gridData.verticalAlignment = SWT.BEGINNING;
 		commandDescriptionlabel.setLayoutData(gridData);
 
-		fDescriptionText = new Text(leftDataArea, SWT.MULTI | SWT.WRAP
-				| SWT.BORDER | SWT.READ_ONLY);
+		fDescriptionText = new Text(leftDataArea, SWT.MULTI | SWT.WRAP | SWT.BORDER | SWT.READ_ONLY);
 
 		// The binding label.
 		final Label bindingLabel = new Label(leftDataArea, SWT.NONE);
@@ -640,27 +642,24 @@ public class NewKeysPreferencePage extends PreferencePage implements IWorkbenchP
 
 		fKeySequenceText = new KeySequenceText(fBindingText);
 		fKeySequenceText.setKeyStrokeLimit(4);
-		fKeySequenceText
-				.addPropertyChangeListener(event -> {
-if (!event.getOldValue().equals(event.getNewValue())) {
+		fKeySequenceText.addPropertyChangeListener(event -> {
+			if (!event.getOldValue().equals(event.getNewValue())) {
 				final KeySequence keySequence = fKeySequenceText.getKeySequence();
 				if (!keySequence.isComplete()) {
 					return;
 				}
 
-				BindingElement activeBinding = (BindingElement) keyController.getBindingModel()
-						.getSelectedElement();
+				BindingElement activeBinding = (BindingElement) keyController.getBindingModel().getSelectedElement();
 				if (activeBinding != null) {
 					activeBinding.setTrigger(keySequence);
 				}
 				fBindingText.setSelection(fBindingText.getTextLimit());
-}
-});
+			}
+		});
 
 		// Button for adding trapped key strokes
 		final Button addKeyButton = new Button(leftDataArea, SWT.LEFT | SWT.ARROW);
-		addKeyButton
-				.setToolTipText(NewKeysPreferenceMessages.AddKeyButton_ToolTipText);
+		addKeyButton.setToolTipText(NewKeysPreferenceMessages.AddKeyButton_ToolTipText);
 		gridData = new GridData();
 		gridData.heightHint = fSchemeCombo.getCombo().getTextHeight();
 		addKeyButton.setLayoutData(gridData);
@@ -674,15 +673,14 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 				newTabStops.add(addKeyButton);
 			}
 		}
-		final Control[] newTabStopArray = newTabStops
-				.toArray(new Control[newTabStops.size()]);
+		final Control[] newTabStopArray = newTabStops.toArray(new Control[newTabStops.size()]);
 		dataArea.setTabList(newTabStopArray);
 
 		// Construct the menu to attach to the above button.
 		final Menu addKeyMenu = new Menu(addKeyButton);
-		final Iterator trappedKeyItr = KeySequenceText.TRAPPED_KEYS.iterator();
+		final Iterator<KeyStroke> trappedKeyItr = KeySequenceText.TRAPPED_KEYS.iterator();
 		while (trappedKeyItr.hasNext()) {
-			final KeyStroke trappedKey = (KeyStroke) trappedKeyItr.next();
+			final KeyStroke trappedKey = trappedKeyItr.next();
 			final MenuItem menuItem = new MenuItem(addKeyMenu, SWT.PUSH);
 			menuItem.setText(trappedKey.format());
 			menuItem.addSelectionListener(widgetSelectedAdapter(e -> {
@@ -723,11 +721,9 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 		});
 		IPropertyChangeListener whenListener = event -> {
 			if (event.getSource() == keyController.getContextModel()
-					&& CommonModel.PROP_SELECTED_ELEMENT.equals(event
-							.getProperty())) {
+					&& CommonModel.PROP_SELECTED_ELEMENT.equals(event.getProperty())) {
 				Object newVal = event.getNewValue();
-				StructuredSelection structuredSelection = newVal == null ? null
-						: new StructuredSelection(newVal);
+				StructuredSelection structuredSelection = newVal == null ? null : new StructuredSelection(newVal);
 				fWhenCombo.setSelection(structuredSelection, true);
 			}
 		};
@@ -751,8 +747,7 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 		gridData.horizontalAlignment = SWT.FILL;
 		descriptionLabel.setLayoutData(gridData);
 
-		conflictViewer = new TableViewer(rightDataArea, SWT.SINGLE | SWT.V_SCROLL
-				| SWT.BORDER | SWT.FULL_SELECTION);
+		conflictViewer = new TableViewer(rightDataArea, SWT.SINGLE | SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
 		Table table = conflictViewer.getTable();
 		table.setHeaderVisible(true);
 		TableColumn bindingNameColumn = new TableColumn(table, SWT.LEAD);
@@ -762,15 +757,15 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 		bindingContextNameColumn.setText(NewKeysPreferenceMessages.WhenColumn_Text);
 		bindingContextNameColumn.setWidth(150);
 		gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		//gridData.horizontalIndent = 10;
+		// gridData.horizontalIndent = 10;
 		table.setLayoutData(gridData);
 		TableLayout tableLayout = new TableLayout();
 		tableLayout.addColumnData(new ColumnWeightData(60));
 		tableLayout.addColumnData(new ColumnWeightData(40));
 		table.setLayout(tableLayout);
 		conflictViewer.setContentProvider((IStructuredContentProvider) inputElement -> {
-			if (inputElement instanceof Collection) {
-				return ((Collection) inputElement).toArray();
+			if (inputElement instanceof Collection<?>) {
+				return ((Collection<?>) inputElement).toArray(new Object[0]);
 			}
 			return new Object[0];
 		});
@@ -813,22 +808,17 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 
 		IPropertyChangeListener conflictsListener = event -> {
 			if (event.getSource() == keyController.getConflictModel()
-					&& CommonModel.PROP_SELECTED_ELEMENT.equals(event
-							.getProperty())) {
+					&& CommonModel.PROP_SELECTED_ELEMENT.equals(event.getProperty())) {
 				if (keyController.getConflictModel().getConflicts() != null) {
 					Object newVal = event.getNewValue();
-					StructuredSelection structuredSelection = newVal == null ? null
-							: new StructuredSelection(newVal);
+					StructuredSelection structuredSelection = newVal == null ? null : new StructuredSelection(newVal);
 					conflictViewer.setSelection(structuredSelection, true);
 				}
-			} else if (ConflictModel.PROP_CONFLICTS.equals(event
-					.getProperty())) {
+			} else if (ConflictModel.PROP_CONFLICTS.equals(event.getProperty())) {
 				conflictViewer.setInput(event.getNewValue());
-			} else if (ConflictModel.PROP_CONFLICTS_ADD.equals(event
-					.getProperty())) {
+			} else if (ConflictModel.PROP_CONFLICTS_ADD.equals(event.getProperty())) {
 				conflictViewer.add(event.getNewValue());
-			} else if (ConflictModel.PROP_CONFLICTS_REMOVE.equals(event
-					.getProperty())) {
+			} else if (ConflictModel.PROP_CONFLICTS_REMOVE.equals(event.getProperty())) {
 				conflictViewer.remove(event.getNewValue());
 			}
 		};
@@ -838,14 +828,11 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 			BindingElement bindingElement = null;
 			boolean weCare = false;
 			if (event.getSource() == keyController.getBindingModel()
-					&& CommonModel.PROP_SELECTED_ELEMENT.equals(event
-							.getProperty())) {
+					&& CommonModel.PROP_SELECTED_ELEMENT.equals(event.getProperty())) {
 				bindingElement = (BindingElement) event.getNewValue();
 				weCare = true;
-			} else if (event.getSource() == keyController.getBindingModel()
-					.getSelectedElement()
-					&& ModelElement.PROP_MODEL_OBJECT.equals(event
-							.getProperty())) {
+			} else if (event.getSource() == keyController.getBindingModel().getSelectedElement()
+					&& ModelElement.PROP_MODEL_OBJECT.equals(event.getProperty())) {
 				bindingElement = (BindingElement) event.getSource();
 				weCare = true;
 			}
@@ -856,9 +843,8 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 			} else if (bindingElement != null) {
 				commandNameValueLabel.setText(bindingElement.getName());
 				String desc = bindingElement.getDescription();
-				fDescriptionText.setText(desc==null?"":desc); //$NON-NLS-1$
-				KeySequence trigger = (KeySequence) bindingElement
-						.getTrigger();
+				fDescriptionText.setText(desc == null ? "" : desc); //$NON-NLS-1$
+				KeySequence trigger = (KeySequence) bindingElement.getTrigger();
 				fKeySequenceText.setKeySequence(trigger);
 			}
 		};
@@ -907,22 +893,17 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 				.addSelectionListener(new ResortColumn(comparator, commandNameColumn, viewer, COMMAND_NAME_COLUMN));
 
 		final TreeColumn triggerSequenceColumn = new TreeColumn(tree, SWT.LEFT, KEY_SEQUENCE_COLUMN);
-		triggerSequenceColumn
-				.setText(NewKeysPreferenceMessages.TriggerSequenceColumn_Text);
+		triggerSequenceColumn.setText(NewKeysPreferenceMessages.TriggerSequenceColumn_Text);
 		triggerSequenceColumn
 				.addSelectionListener(new ResortColumn(comparator, triggerSequenceColumn, viewer, KEY_SEQUENCE_COLUMN));
 
-		final TreeColumn whenColumn = new TreeColumn(tree, SWT.LEFT,
-				CONTEXT_COLUMN);
+		final TreeColumn whenColumn = new TreeColumn(tree, SWT.LEFT, CONTEXT_COLUMN);
 		whenColumn.setText(NewKeysPreferenceMessages.WhenColumn_Text);
-		whenColumn.addSelectionListener(new ResortColumn(comparator,
-				whenColumn, viewer, CONTEXT_COLUMN));
+		whenColumn.addSelectionListener(new ResortColumn(comparator, whenColumn, viewer, CONTEXT_COLUMN));
 
-		final TreeColumn categoryColumn = new TreeColumn(tree, SWT.LEFT,
-				CATEGORY_COLUMN);
+		final TreeColumn categoryColumn = new TreeColumn(tree, SWT.LEFT, CATEGORY_COLUMN);
 		categoryColumn.setText(NewKeysPreferenceMessages.CategoryColumn_Text);
-		categoryColumn.addSelectionListener(new ResortColumn(comparator,
-				categoryColumn, viewer, CATEGORY_COLUMN));
+		categoryColumn.addSelectionListener(new ResortColumn(comparator, categoryColumn, viewer, CATEGORY_COLUMN));
 
 		final TreeColumn userMarker = new TreeColumn(tree, SWT.LEFT, USER_DELTA_COLUMN);
 		userMarker.setText(NewKeysPreferenceMessages.UserColumn_Text);
@@ -954,21 +935,15 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 			} else if (event.getSource() instanceof BindingElement
 					&& ModelElement.PROP_MODEL_OBJECT.equals(event.getProperty())) {
 				viewer.update(event.getSource(), null);
-			} else if (BindingElement.PROP_CONFLICT.equals(event
-					.getProperty())) {
+			} else if (BindingElement.PROP_CONFLICT.equals(event.getProperty())) {
 				viewer.update(event.getSource(), null);
-			} else if (BindingModel.PROP_BINDINGS.equals(event
-					.getProperty())) {
+			} else if (BindingModel.PROP_BINDINGS.equals(event.getProperty())) {
 				viewer.refresh();
-			} else if (BindingModel.PROP_BINDING_ADD.equals(event
-					.getProperty())) {
-				viewer.add(keyController.getBindingModel(), event
-						.getNewValue());
-			} else if (BindingModel.PROP_BINDING_REMOVE.equals(event
-					.getProperty())) {
+			} else if (BindingModel.PROP_BINDING_ADD.equals(event.getProperty())) {
+				viewer.add(keyController.getBindingModel(), event.getNewValue());
+			} else if (BindingModel.PROP_BINDING_REMOVE.equals(event.getProperty())) {
 				viewer.remove(event.getNewValue());
-			} else if (BindingModel.PROP_BINDING_FILTER.equals(event
-					.getProperty())) {
+			} else if (BindingModel.PROP_BINDING_FILTER.equals(event.getProperty())) {
 				viewer.refresh();
 			}
 		};
@@ -994,29 +969,25 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 		final Button addBindingButton = new Button(treeControls, SWT.PUSH);
 		gridData = new GridData();
 		widthHint = convertHorizontalDLUsToPixels(IDialogConstants.BUTTON_WIDTH);
-		addBindingButton
-				.setText(NewKeysPreferenceMessages.AddBindingButton_Text);
-		gridData.widthHint = Math.max(widthHint, addBindingButton.computeSize(
-				SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
+		addBindingButton.setText(NewKeysPreferenceMessages.AddBindingButton_Text);
+		gridData.widthHint = Math.max(widthHint, addBindingButton.computeSize(SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
 		addBindingButton.setLayoutData(gridData);
 		addBindingButton.addSelectionListener(widgetSelectedAdapter(event -> keyController.getBindingModel().copy()));
 
 		final Button removeBindingButton = new Button(treeControls, SWT.PUSH);
 		gridData = new GridData();
 		widthHint = convertHorizontalDLUsToPixels(IDialogConstants.BUTTON_WIDTH);
-		removeBindingButton
-				.setText(NewKeysPreferenceMessages.RemoveBindingButton_Text);
-		gridData.widthHint = Math.max(widthHint, removeBindingButton
-				.computeSize(SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
+		removeBindingButton.setText(NewKeysPreferenceMessages.RemoveBindingButton_Text);
+		gridData.widthHint = Math.max(widthHint, removeBindingButton.computeSize(SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
 		removeBindingButton.setLayoutData(gridData);
-		removeBindingButton.addSelectionListener(widgetSelectedAdapter(event -> keyController.getBindingModel().remove()));
+		removeBindingButton
+				.addSelectionListener(widgetSelectedAdapter(event -> keyController.getBindingModel().remove()));
 
 		final Button restore = new Button(treeControls, SWT.PUSH);
 		gridData = new GridData();
 		widthHint = convertHorizontalDLUsToPixels(IDialogConstants.BUTTON_WIDTH);
 		restore.setText(NewKeysPreferenceMessages.RestoreBindingButton_Text);
-		gridData.widthHint = Math.max(widthHint, restore.computeSize(
-				SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
+		gridData.widthHint = Math.max(widthHint, restore.computeSize(SWT.DEFAULT, SWT.DEFAULT, true).x) + 5;
 		restore.setLayoutData(gridData);
 		restore.addSelectionListener(widgetSelectedAdapter(event -> {
 			try {
@@ -1070,11 +1041,9 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 				}));
 		IPropertyChangeListener listener = event -> {
 			if (event.getSource() == keyController.getSchemeModel()
-					&& CommonModel.PROP_SELECTED_ELEMENT.equals(event
-							.getProperty())) {
+					&& CommonModel.PROP_SELECTED_ELEMENT.equals(event.getProperty())) {
 				Object newVal = event.getNewValue();
-				StructuredSelection structuredSelection = newVal == null ? null
-						: new StructuredSelection(newVal);
+				StructuredSelection structuredSelection = newVal == null ? null : new StructuredSelection(newVal);
 				fSchemeCombo.setSelection(structuredSelection, true);
 			}
 		};
@@ -1082,8 +1051,38 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 		keyController.addPropertyChangeListener(listener);
 	}
 
+	private void createShowKeysControls(Composite parent) {
+		ShowKeysUI showKeysUI = new ShowKeysUI(fWorkbench, getPreferenceStore());
+
+		final Group group = new Group(parent, SWT.NONE);
+		group.setText(NewKeysPreferenceMessages.ShowCommandKeysGroup_Title);
+		group.setLayout(new GridLayout(1, false));
+		group.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+
+		fShowCommandKey = new Button(group, SWT.CHECK);
+		fShowCommandKey.setText(NewKeysPreferenceMessages.ShowCommandKeysForKeyboard_Text);
+		fShowCommandKey.setSelection(getPreferenceStore().getBoolean(IPreferenceConstants.SHOW_KEYS_ENABLED_FOR_KEYBOARD));
+		fShowCommandKey.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
+			// show a preview of the shortcut popup
+			if (fShowCommandKey.getSelection()) {
+				showKeysUI.openForPreview(ShowKeysToggleHandler.COMMAND_ID, null);
+			}
+		}));
+		fShowCommandKeyForMouseEvents = new Button(group, SWT.CHECK);
+		fShowCommandKeyForMouseEvents.setText(NewKeysPreferenceMessages.ShowCommandKeysForMouse_Text);
+		fShowCommandKeyForMouseEvents
+				.setSelection(getPreferenceStore().getBoolean(IPreferenceConstants.SHOW_KEYS_ENABLED_FOR_MOUSE_EVENTS));
+		fShowCommandKeyForMouseEvents.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
+			// show a preview of the shortcut popup
+			if (fShowCommandKeyForMouseEvents.getSelection()) {
+				showKeysUI.openForPreview(ShowKeysToggleHandler.COMMAND_ID, null);
+			}
+		}));
+	}
+
 	@Override
 	public void init(IWorkbench workbench) {
+		fWorkbench = workbench;
 		keyController = new KeyController();
 		keyController.init(workbench);
 
@@ -1100,17 +1099,15 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 			keyController.getBindingModel().setSelectedElement((ModelElement) data);
 		}
 		if (data instanceof Binding && fFilteredTree != null) {
-			BindingElement be = (BindingElement) keyController
-					.getBindingModel().getBindingToElement().get(data);
+			BindingElement be = keyController.getBindingModel().getBindingToElement().get(data);
 			fFilteredTree.getViewer().setSelection(new StructuredSelection(be), true);
 		}
 		if (data instanceof ParameterizedCommand) {
-			Map commandToElement = keyController.getBindingModel().getCommandToElement();
+			Map<ParameterizedCommand, BindingElement> commandToElement = keyController.getBindingModel().getCommandToElement();
 
-			BindingElement be = (BindingElement)commandToElement.get(data);
-			if(be != null) {
-				fFilteredTree.getViewer().setSelection(new StructuredSelection(be),
-					true);
+			BindingElement be = commandToElement.get(data);
+			if (be != null) {
+				fFilteredTree.getViewer().setSelection(new StructuredSelection(be), true);
 			}
 		}
 	}
@@ -1118,8 +1115,18 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 	@Override
 	public boolean performOk() {
 		keyController.saveBindings(fBindingService);
+		IPreferenceStore preferenceStore = getPreferenceStore();
+		preferenceStore.setValue(IPreferenceConstants.SHOW_KEYS_ENABLED_FOR_KEYBOARD, fShowCommandKey.getSelection());
+		preferenceStore.setValue(IPreferenceConstants.SHOW_KEYS_ENABLED_FOR_MOUSE_EVENTS,
+				fShowCommandKeyForMouseEvents.getSelection());
+
 		saveState(getDialogSettings());
 		return super.performOk();
+	}
+
+	@Override
+	protected IPreferenceStore doGetPreferenceStore() {
+		return WorkbenchPlugin.getDefault().getPreferenceStore();
 	}
 
 	/**
@@ -1137,11 +1144,9 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 	}
 
 	protected IDialogSettings getDialogSettings() {
-		IDialogSettings workbenchSettings = WorkbenchPlugin.getDefault()
-				.getDialogSettings();
+		IDialogSettings workbenchSettings = WorkbenchPlugin.getDefault().getDialogSettings();
 
-		IDialogSettings settings = workbenchSettings
-				.getSection(TAG_DIALOG_SECTION);
+		IDialogSettings settings = workbenchSettings.getSection(TAG_DIALOG_SECTION);
 
 		if (settings == null) {
 			settings = workbenchSettings.addNewSection(TAG_DIALOG_SECTION);
@@ -1155,8 +1160,7 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 		// Ask the user to confirm
 		final String title = NewKeysPreferenceMessages.RestoreDefaultsMessageBoxText;
 		final String message = NewKeysPreferenceMessages.RestoreDefaultsMessageBoxMessage;
-		final boolean confirmed = MessageDialog.open(MessageDialog.CONFIRM,
-				getShell(), title, message, SWT.SHEET);
+		final boolean confirmed = MessageDialog.open(MessageDialog.CONFIRM, getShell(), title, message, SWT.SHEET);
 
 		if (confirmed) {
 			long startTime = 0L;
@@ -1165,14 +1169,19 @@ if (!event.getOldValue().equals(event.getNewValue())) {
 			}
 
 			fFilteredTree.setRedraw(false);
-			BusyIndicator.showWhile(fFilteredTree.getViewer().getTree().getDisplay(), () -> keyController.setDefaultBindings(fBindingService));
+			BusyIndicator.showWhile(fFilteredTree.getViewer().getTree().getDisplay(),
+					() -> keyController.setDefaultBindings(fBindingService));
 			fFilteredTree.setRedraw(true);
 			if (DEBUG) {
 				final long elapsedTime = System.currentTimeMillis() - startTime;
-				Tracing.printTrace(TRACING_COMPONENT,
-						"performDefaults:model in " + elapsedTime + "ms"); //$NON-NLS-1$ //$NON-NLS-2$
+				Tracing.printTrace(TRACING_COMPONENT, "performDefaults:model in " + elapsedTime + "ms"); //$NON-NLS-1$ //$NON-NLS-2$
 
 			}
+
+			fShowCommandKey
+					.setSelection(getPreferenceStore().getDefaultBoolean(IPreferenceConstants.SHOW_KEYS_ENABLED_FOR_KEYBOARD));
+			fShowCommandKeyForMouseEvents.setSelection(
+					getPreferenceStore().getDefaultBoolean(IPreferenceConstants.SHOW_KEYS_ENABLED_FOR_MOUSE_EVENTS));
 		}
 
 		super.performDefaults();

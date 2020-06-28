@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -51,7 +51,7 @@ public interface Declarations {
      *
      * @param sub the first member
      * @param sup the second member
-     * @return <tt>true</tt> if and only if the first member hides
+     * @return <code>true</code> if and only if the first member hides
      *		the second
      */
     boolean hides(MemberDeclaration sub, MemberDeclaration sup);
@@ -63,7 +63,7 @@ public interface Declarations {
      *
      * @param sub the first method
      * @param sup the second method
-     * @return <tt>true</tt> if and only if the first method overrides
+     * @return <code>true</code> if and only if the first method overrides
      *		the second
      */
     boolean overrides(MethodDeclaration sub, MethodDeclaration sup);

@@ -13,7 +13,7 @@
  *******************************************************************************/
 package org.eclipse.equinox.p2.tests.planner;
 
-import java.util.Iterator;
+import java.util.Arrays;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.equinox.p2.core.IProvisioningAgent;
 import org.eclipse.equinox.p2.core.IProvisioningAgentProvider;
@@ -42,7 +42,7 @@ public class Bug300572 extends AbstractProvisioningTest {
 		//The following repo contains the second patch to be installed
 		IMetadataRepository repo = repoMgr.loadRepository(getTestData("bug300572 data", "testData/bug300572/repo/").toURI(), new NullProgressMonitor());
 		IInstallableUnit[] ius = repo.query(QueryUtil.createIUQuery("hellopatch.feature.group"), null).toArray(IInstallableUnit.class);
-		System.out.println(ius);
+		System.out.println(Arrays.toString(ius));
 
 		IPlanner planner = agent.getService(IPlanner.class);
 		//The profile already contains a a feature (hellofeature) and a patch for it (hellopatch).
@@ -54,8 +54,7 @@ public class Bug300572 extends AbstractProvisioningTest {
 		IProfileChangeRequest request = planner.createChangeRequest(sdkProfile);
 		IQueryResult<IInstallableUnit> allIUs = repo.query(QueryUtil.ALL_UNITS, null);
 		request.addAll(allIUs.toUnmodifiableSet());
-		for (Iterator<IInstallableUnit> allIUsIterator = allIUs.iterator(); allIUsIterator.hasNext();) {
-			IInstallableUnit iu = allIUsIterator.next();
+		for (IInstallableUnit iu : allIUs) {
 			request.setInstallableUnitInclusionRules(iu, ProfileInclusionRules.createOptionalInclusionRule(iu));
 		}
 

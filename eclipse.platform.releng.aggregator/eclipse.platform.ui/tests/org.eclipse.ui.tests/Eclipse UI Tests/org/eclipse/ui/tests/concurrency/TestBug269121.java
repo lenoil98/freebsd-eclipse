@@ -13,6 +13,8 @@
  ******************************************************************************/
 package org.eclipse.ui.tests.concurrency;
 
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -26,11 +28,9 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.actions.WorkspaceModifyOperation;
 import org.eclipse.ui.progress.UIJob;
+import org.junit.Test;
 
 import junit.framework.AssertionFailedError;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  * Regression test for bug 269121. The test verifies that deadlock described in
@@ -42,7 +42,7 @@ import junit.framework.TestSuite;
  * with the rule used for the job.
  * <li>The job is scheduled.</li>
  * <li>The operation is run in the UI thread by ProgressMonitorDialog using
- * dialog.run(false, true, operation) call</li>.
+ * dialog.run(false, true, operation) call.</li>
  * </ol>
  * Deadlock occurred because the operation run in the UI thread was waiting for
  * the rule already acquired by the job and asyncExec registered by the job
@@ -53,11 +53,9 @@ import junit.framework.TestSuite;
  * the event loop to process pending asyncExecs.
  * </p>
  */
-public class TestBug269121 extends TestCase {
-	public static Test suite() {
-		return new TestSuite(TestBug269121.class);
-	}
+public class TestBug269121 {
 
+	@Test
 	public void testBug() throws InterruptedException,
 			InvocationTargetException {
 		Job job = new UIJob("UI job") {

@@ -14,13 +14,12 @@
  *******************************************************************************/
 package org.eclipse.pde.internal.junit.runtime;
 
-import java.io.*;
-import java.net.URI;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.internal.junit.runner.RemoteTestRunner;
-import org.eclipse.osgi.internal.framework.EquinoxBundle;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.wiring.BundleWiring;
@@ -80,131 +79,17 @@ public class RemotePluginTestRunner extends RemoteTestRunner {
 
 		@Override
 		public Enumeration<URL> getResources(String res) throws IOException {
-			List<URL> resources = new ArrayList<>(6);
-			String location = null;
-			URL url = null;
-			if (bundle instanceof EquinoxBundle) {
-				location = ((EquinoxBundle) bundle).getLocation();
-			}
-			if (location != null && location.startsWith("reference:")) { //$NON-NLS-1$
-				location = location.substring(10, location.length());
-				URI uri = URI.create(location);
-				String newPath = uri.getPath() + "bin" + '/' + res; //$NON-NLS-1$
-				URI newUri = uri.resolve(newPath);
-				url = newUri.normalize().toURL();
-			}
-			if (url != null) {
-				File f = new File(url.getFile());
-				if (f.exists()){
-					resources.add(url);
-				} else {
-					Set<String> outputPaths = getOutputPaths();
-					for (String string : outputPaths) {
-						URI uri = URI.create(location);
-						String newPath = uri.getPath() + string + '/' + res;
-						URI newUri = uri.resolve(newPath);
-						url = newUri.normalize().toURL();
-						if (url != null) {
-							File f2 = new File(url.getFile());
-							if (f2.exists()) {
-								resources.add(url);
-							}
-						}
-					}
-				}
-			}
-			else
+			Enumeration<URL> bundleResources = bundle.getResources(res);
+			if (bundleResources == null)
 				return Collections.emptyEnumeration();
 
-			return Collections.enumeration(resources);
-		}
-
-		private Set<String> getOutputPaths() {
-			String location = bundle.getLocation();
-			location = location.substring(16);
-			File cpFile = new File(location + ".classpath"); //$NON-NLS-1$
-			Set<String> paths = new HashSet<String>();
-			try (BufferedReader br = new BufferedReader(new FileReader(cpFile.getAbsoluteFile()))) {
-				String line;
-				while ((line = br.readLine()) != null) {
-					if (line.contains("kind=\"output\"")) { //$NON-NLS-1$
-						int index = line.indexOf(" path=\""); //$NON-NLS-1$
-						if (index >= 0) {
-							line = line.substring(index);
-							line = line.substring(line.indexOf("\"") + 1); //$NON-NLS-1$
-							line = line.substring(0, line.indexOf("\"")); //$NON-NLS-1$
-							paths.add(line);
-						}
-					}
-					if (line.contains("kind=\"src\"") && line.contains("path=\"")) { //$NON-NLS-1$ //$NON-NLS-2$
-						int index = line.indexOf(" output=\""); //$NON-NLS-1$
-						if (index >= 0) {
-							line = line.substring(index);
-							line = line.substring(line.indexOf("\"") + 1); //$NON-NLS-1$
-							line = line.substring(0, line.indexOf("\"")); //$NON-NLS-1$-2$
-							paths.add(line);
-						}
-					}
-				}
-			} catch (IOException e) {
-				// return set collected so far
+			List<URL> compatibleResources = new ArrayList<>();
+			while (bundleResources.hasMoreElements()) {
+				URL nativeUrl = FileLocator.resolve(bundleResources.nextElement());
+				compatibleResources.add(nativeUrl);
 			}
-			return paths;
 
-		}
-	}
-
-	class MultiBundleClassLoader extends ClassLoader {
-		private List<Bundle> bundleList;
-
-		public MultiBundleClassLoader(List<Bundle> platformEngineBundles) {
-			this.bundleList = platformEngineBundles;
-
-		}
-		@Override
-		protected Class<?> findClass(String name) throws ClassNotFoundException {
-			Class<?> c = null;
-			for (Bundle temp : bundleList) {
-				try {
-					c = temp.loadClass(name);
-					if (c != null)
-						return c;
-				} catch (ClassNotFoundException e) {
-				}
-			}
-			return c;
-		}
-
-		@Override
-		protected URL findResource(String name) {
-			URL url = null;
-			for (Bundle temp : bundleList) {
-				url = temp.getResource(name);
-				if (url != null)
-					return url;
-			}
-			return url;
-		}
-
-		@Override
-		protected Enumeration<URL> findResources(String name) throws IOException {
-			Enumeration<URL> enumFinal = null;
-			for (int i = 0; i < bundleList.size(); i++) {
-				if (i == 0) {
-					enumFinal = bundleList.get(i).getResources(name);
-					continue;
-				}
-				Enumeration<URL> e2 = bundleList.get(i).getResources(name);
-				Vector<URL> temp = new Vector<>();
-				while (enumFinal != null && enumFinal.hasMoreElements()) {
-					temp.add(enumFinal.nextElement());
-				}
-				while (e2 != null && e2.hasMoreElements()) {
-					temp.add(e2.nextElement());
-				}
-				enumFinal = temp.elements();
-			}
-			return enumFinal;
+			return Collections.enumeration(compatibleResources);
 		}
 	}
 
@@ -241,7 +126,7 @@ public class RemotePluginTestRunner extends RemoteTestRunner {
 			throw new IllegalArgumentException("Bundle \"" + getfTestPluginName + "\" not found. Possible causes include missing dependencies, too restrictive version ranges, or a non-matching required execution environment."); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		final String pluginId = getfTestPluginName;
-		List<String> engines = new ArrayList<String>();
+		List<String> engines = new ArrayList<>();
 		Bundle bund = FrameworkUtil.getBundle(RemotePluginTestRunner.class);
 		Bundle[] bundles = bund.getBundleContext().getBundles();
 		for (Bundle iBundle : bundles) {
@@ -255,14 +140,14 @@ public class RemotePluginTestRunner extends RemoteTestRunner {
 			}
 		}
 		engines.add(pluginId);
-		List<Bundle> platformEngineBundles = new ArrayList<Bundle>();
+		List<Bundle> platformEngineBundles = new ArrayList<>();
 		for (Iterator<String> iterator = engines.iterator(); iterator.hasNext();) {
 			String string = iterator.next();
 			Bundle bundle2 = Platform.getBundle(string);
 			platformEngineBundles.add(bundle2);
 		}
 
-		return new MultiBundleClassLoader2(platformEngineBundles);
+		return new MultiBundleClassLoader(platformEngineBundles);
 	}
 
 	private static ClassLoader getPluginClassLoader(String getfTestPluginName) {
@@ -301,7 +186,7 @@ public class RemotePluginTestRunner extends RemoteTestRunner {
 			ClassLoader currentTCCL = Thread.currentThread().getContextClassLoader();
 			try {
 				// Get all bundles with junit5 test engine
-				List<String> platformEngines = new ArrayList<String>();
+				List<String> platformEngines = new ArrayList<>();
 				Bundle bundle = FrameworkUtil.getBundle(getClass());
 				Bundle[] bundles = bundle.getBundleContext().getBundles();
 				for (Bundle iBundle : bundles) {
@@ -326,7 +211,7 @@ public class RemotePluginTestRunner extends RemoteTestRunner {
 	}
 
 	private ClassLoader getJUnit5Classloader(List<String> platformEngine) {
-		List<Bundle> platformEngineBundles = new ArrayList<Bundle>();
+		List<Bundle> platformEngineBundles = new ArrayList<>();
 		for (Iterator<String> iterator = platformEngine.iterator(); iterator.hasNext();) {
 			String string = iterator.next();
 			Bundle bundle = Platform.getBundle(string);
@@ -343,11 +228,11 @@ public class RemotePluginTestRunner extends RemoteTestRunner {
 		}
 		return false;
 	}
-	
+
 	private static boolean isJUnit5(String[] args) {
 		if (runAsJUnit5(args) == true)
 			return true;
-		
+
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("org.eclipse.jdt.internal.junit5.runner.JUnit5TestLoader")) //$NON-NLS-1$
 				return true;

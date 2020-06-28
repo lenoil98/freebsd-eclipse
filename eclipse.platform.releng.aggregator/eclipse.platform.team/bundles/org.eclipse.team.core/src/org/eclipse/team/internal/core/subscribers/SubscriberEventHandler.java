@@ -199,13 +199,10 @@ public abstract class SubscriberEventHandler extends BackgroundEventHandler {
 			try {
 				IResource[] members =
 					getSubscriber().members(resource);
-				for (int i = 0; i < members.length; i++) {
-					collect(
-						members[i],
-						depth == IResource.DEPTH_INFINITE
+				for (IResource member : members) {
+					collect(member, depth == IResource.DEPTH_INFINITE
 							? IResource.DEPTH_INFINITE
-							: IResource.DEPTH_ZERO,
-						monitor);
+							: IResource.DEPTH_ZERO, monitor);
 				}
 			} catch (TeamException e) {
 				// We only handle the exception if the resource's project is accessible.
@@ -286,11 +283,10 @@ public abstract class SubscriberEventHandler extends BackgroundEventHandler {
 	 *   optimized recalculation if supported by the subscriber.
 	 */
 	protected void reset(ResourceTraversal[] traversals, int type) {
-		for (int i = 0; i < traversals.length; i++) {
-			ResourceTraversal traversal = traversals[i];
+		for (ResourceTraversal traversal : traversals) {
 			IResource[] resources = traversal.getResources();
-			for (int j = 0; j < resources.length; j++) {
-				queueEvent(new SubscriberEvent(resources[j], type, traversal.getDepth()), false);
+			for (IResource resource : resources) {
+				queueEvent(new SubscriberEvent(resource, type, traversal.getDepth()), false);
 			}
 		}
 	}
@@ -310,15 +306,15 @@ public abstract class SubscriberEventHandler extends BackgroundEventHandler {
 					break;
 				case SubscriberEvent.CHANGE :
 					collect(
-					    event.getResource(),
-					    ((ResourceEvent)event).getDepth(),
+						event.getResource(),
+						((ResourceEvent)event).getDepth(),
 						monitor);
 					break;
 				case SubscriberEvent.INITIALIZE :
 					monitor.subTask(NLS.bind(Messages.SubscriberEventHandler_2, new String[] { event.getResource().getFullPath().toString() }));
 					collectAll(
-					        event.getResource(),
-					        ((ResourceEvent)event).getDepth(),
+							event.getResource(),
+							((ResourceEvent)event).getDepth(),
 							Policy.subMonitorFor(monitor, 64));
 					break;
 			}

@@ -17,7 +17,9 @@ package org.eclipse.jface.internal.databinding.util;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.eclipse.core.databinding.observable.IDiff;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
+import org.eclipse.core.databinding.observable.value.ValueDiff;
 import org.eclipse.core.databinding.property.INativePropertyListener;
 import org.eclipse.core.databinding.property.ISimplePropertyListener;
 import org.eclipse.core.databinding.property.NativePropertyListener;
@@ -29,10 +31,15 @@ import org.eclipse.jface.util.PropertyChangeEvent;
  * Class that supports the use of {@link IObservableValue} with objects that
  * follow standard bean method naming conventions but notify an
  * {@link IPropertyChangeListener} when the property changes.
+ *
+ * @param <S>
+ *            type of the source object
+ * @param <T>
+ *            type of the value of the property
  */
-public class JFaceProperty extends SimpleValueProperty {
+public class JFaceProperty<S, T> extends SimpleValueProperty<S, T> {
 
-	private Class returnType;
+	private Class<?> returnType;
 	private Method setterMethod;
 	private Method getterMethod;
 	private final String property;
@@ -59,16 +66,17 @@ public class JFaceProperty extends SimpleValueProperty {
 		return fieldName;
 	}
 
-	class Listener extends NativePropertyListener implements
-			IPropertyChangeListener {
-		public Listener(ISimplePropertyListener listener) {
+	class Listener<D extends IDiff> extends NativePropertyListener<S, D>
+			implements IPropertyChangeListener {
+		public Listener(ISimplePropertyListener<S, D> listener) {
 			super(JFaceProperty.this, listener);
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public void propertyChange(PropertyChangeEvent event) {
 			if (event.getProperty().equals(JFaceProperty.this.property)) {
-				fireChange(event.getSource(), null);
+				fireChange((S) event.getSource(), null);
 			}
 		}
 
@@ -113,26 +121,22 @@ public class JFaceProperty extends SimpleValueProperty {
 			addPropertyListenerMethod = clazz.getMethod("addPropertyChangeListener", IPropertyChangeListener.class); //$NON-NLS-1$
 			removePropertyListenerMethod = clazz.getMethod("removePropertyChangeListener", //$NON-NLS-1$
 					IPropertyChangeListener.class);
-		} catch (SecurityException e) {
-			throw new IllegalArgumentException();
-		} catch (NoSuchMethodException e) {
+		} catch (SecurityException | NoSuchMethodException e) {
 			throw new IllegalArgumentException();
 		}
 	}
 
 	@Override
-	public INativePropertyListener adaptListener(
-			ISimplePropertyListener listener) {
-		return new Listener(listener);
+	public INativePropertyListener<S> adaptListener(ISimplePropertyListener<S, ValueDiff<? extends T>> listener) {
+		return new Listener<>(listener);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	protected Object doGetValue(Object model) {
+	protected T doGetValue(Object model) {
 		try {
-			return getterMethod.invoke(model);
-		} catch (InvocationTargetException e) {
-			throw new IllegalStateException(e.getMessage());
-		} catch (IllegalAccessException e) {
+			return (T) getterMethod.invoke(model);
+		} catch (InvocationTargetException | IllegalAccessException e) {
 			throw new IllegalStateException(e.getMessage());
 		}
 	}
@@ -141,9 +145,7 @@ public class JFaceProperty extends SimpleValueProperty {
 	protected void doSetValue(Object model, Object value) {
 		try {
 			setterMethod.invoke(model, value);
-		} catch (IllegalAccessException e) {
-			throw new IllegalStateException(e.getMessage());
-		} catch (InvocationTargetException e) {
+		} catch (IllegalAccessException | InvocationTargetException e) {
 			throw new IllegalStateException(e.getMessage());
 		}
 	}

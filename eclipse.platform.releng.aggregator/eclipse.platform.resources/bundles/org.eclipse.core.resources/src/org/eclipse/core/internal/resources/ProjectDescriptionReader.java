@@ -95,7 +95,7 @@ public class ProjectDescriptionReader extends DefaultHandler implements IModelOb
 
 	protected final StringBuilder charBuffer = new StringBuilder();
 
-	protected Stack<Object> objectStack;
+	protected Deque<Object> objectStack;
 	protected MultiStatus problems;
 
 	/**
@@ -794,7 +794,7 @@ public class ProjectDescriptionReader extends DefaultHandler implements IModelOb
 			// Pop the array list of natures off the stack
 			ArrayList<String> natures = (ArrayList<String>) objectStack.pop();
 			state = S_PROJECT_DESC;
-			if (natures.size() == 0)
+			if (natures.isEmpty())
 				return;
 			String[] natureNames = natures.toArray(new String[natures.size()]);
 			projectDescription.setNatureIds(natureNames);
@@ -807,7 +807,7 @@ public class ProjectDescriptionReader extends DefaultHandler implements IModelOb
 	private void endProjectsElement(String elementName) {
 		// Pop the array list that contains all the referenced project names
 		ArrayList<String> referencedProjects = (ArrayList<String>) objectStack.pop();
-		if (referencedProjects.size() == 0)
+		if (referencedProjects.isEmpty())
 			// Don't bother adding an empty group of referenced projects to the
 			// project descriptor.
 			return;
@@ -924,7 +924,7 @@ public class ProjectDescriptionReader extends DefaultHandler implements IModelOb
 
 	public ProjectDescription read(InputSource input) {
 		problems = new MultiStatus(ResourcesPlugin.PI_RESOURCES, IResourceStatus.FAILED_READ_METADATA, Messages.projRead_failureReadingProjectDesc, null);
-		objectStack = new Stack<>();
+		objectStack = new ArrayDeque<>();
 		state = S_INITIAL;
 		try {
 			createParser().parse(input, this);

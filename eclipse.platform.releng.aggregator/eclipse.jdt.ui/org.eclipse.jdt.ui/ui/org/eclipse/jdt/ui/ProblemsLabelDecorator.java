@@ -248,7 +248,8 @@ public class ProblemsLabelDecorator implements ILabelDecorator, ILightweightLabe
 					return 0;
 				}
 			}
-			if (e.getStatus().getCode() == IResourceStatus.MARKER_NOT_FOUND) {
+			int errorCode = e.getStatus().getCode();
+			if (errorCode == IResourceStatus.MARKER_NOT_FOUND || errorCode == IResourceStatus.RESOURCE_NOT_FOUND) {
 				return 0;
 			}
 
@@ -259,9 +260,7 @@ public class ProblemsLabelDecorator implements ILabelDecorator, ILightweightLabe
 
 	private boolean isIgnoringOptionalProblems(IClasspathEntry entry) {
 		if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-			IClasspathAttribute[] extraAttributes= entry.getExtraAttributes();
-			for (int i= 0; i < extraAttributes.length; i++) {
-				IClasspathAttribute attrib= extraAttributes[i];
+			for (IClasspathAttribute attrib : entry.getExtraAttributes()) {
 				if (IClasspathAttribute.IGNORE_OPTIONAL_PROBLEMS.equals(attrib.getName())) {
 					return "true".equals(attrib.getValue()); //$NON-NLS-1$
 				}
@@ -269,7 +268,7 @@ public class ProblemsLabelDecorator implements ILabelDecorator, ILightweightLabe
 		}
 		return false;
 	}
-	
+
 	private boolean isIgnoringOptionalProblems(IJavaProject project) throws JavaModelException {
 		IPath projectPath= project.getPath();
 		IClasspathEntry[] rawClasspath= project.getRawClasspath();
@@ -311,36 +310,38 @@ public class ProblemsLabelDecorator implements ILabelDecorator, ILightweightLabe
 				}
 			}
 		}
-		if (severity == IMarker.SEVERITY_ERROR) {
+		switch (severity) {
+		case IMarker.SEVERITY_ERROR:
 			return ERRORTICK_ERROR;
-		} else if (severity == IMarker.SEVERITY_WARNING) {
+		case IMarker.SEVERITY_WARNING:
 			return ERRORTICK_WARNING;
-		} else if (severity == IMarker.SEVERITY_INFO) {
+		case IMarker.SEVERITY_INFO:
 			return ERRORTICK_INFO;
+		default:
+			return 0;
 		}
-		return 0;
 	}
 
 	private int getPackageErrorTicksFromMarkers(IPackageFragment pack) throws CoreException {
 		// Packages are special: They must not consider markers on subpackages.
-		
+
 		IResource res= pack.getResource();
 		if (res == null || !res.isAccessible()) {
 			return 0;
 		}
-		
+
 		// markers on package itself (e.g. missing @NonNullByDefault)
 		int severity= findMaxProblemSeverity(res, IMarker.PROBLEM, true, IResource.DEPTH_ZERO);
 		if (severity == IMarker.SEVERITY_ERROR)
 			return ERRORTICK_ERROR;
-		
+
 		// markers on CUs
 		for (ICompilationUnit cu : pack.getCompilationUnits()) {
 			severity= Math.max(severity, findMaxProblemSeverity(cu.getResource(), IMarker.PROBLEM, true, IResource.DEPTH_ZERO));
 			if (severity == IMarker.SEVERITY_ERROR)
 				return ERRORTICK_ERROR;
 		}
-		
+
 		// markers on files and folders
 		for (Object object : pack.getNonJavaResources()) {
 			if (object instanceof IResource) {
@@ -350,7 +351,7 @@ public class ProblemsLabelDecorator implements ILabelDecorator, ILightweightLabe
 					return ERRORTICK_ERROR;
 			}
 		}
-		
+
 		// SEVERITY_ERROR already handled above
 		if (severity == IMarker.SEVERITY_WARNING) {
 			return ERRORTICK_WARNING;
@@ -360,7 +361,7 @@ public class ProblemsLabelDecorator implements ILabelDecorator, ILightweightLabe
 		}
 		return 0;
 	}
-	
+
 	private int findMaxProblemSeverity (IResource res, String type, boolean includeSubtypes, int depth) throws CoreException {
 		try {
 			return res.findMaxProblemSeverity(type, includeSubtypes, depth);
@@ -399,12 +400,18 @@ public class ProblemsLabelDecorator implements ILabelDecorator, ILightweightLabe
 			IMarker marker= isAnnotationInRange(model, annot, sourceElement);
 			if (marker != null) {
 				priority= Math.max(priority, marker.getAttribute(IMarker.SEVERITY, -1));
-				if (priority == IMarker.SEVERITY_INFO) {
+				switch (priority) {
+				case IMarker.SEVERITY_INFO:
 					info= ERRORTICK_INFO;
-				} else if (priority == IMarker.SEVERITY_WARNING) {
+					break;
+				case IMarker.SEVERITY_WARNING:
 					info= ERRORTICK_WARNING;
-				} else if (priority == IMarker.SEVERITY_ERROR) {
+					break;
+				case IMarker.SEVERITY_ERROR:
 					info= ERRORTICK_ERROR;
+					break;
+				default:
+					break;
 				}
 			}
 		}
@@ -471,12 +478,7 @@ public class ProblemsLabelDecorator implements ILabelDecorator, ILightweightLabe
 		}
 		fListeners.add(listener);
 		if (fProblemChangedListener == null) {
-			fProblemChangedListener= new IProblemChangedListener() {
-				@Override
-				public void problemsChanged(IResource[] changedResources, boolean isMarkerChange) {
-					fireProblemsChanged(changedResources, isMarkerChange);
-				}
-			};
+			fProblemChangedListener= this::fireProblemsChanged;
 			JavaPlugin.getDefault().getProblemMarkerManager().addListener(fProblemChangedListener);
 		}
 	}
@@ -504,14 +506,21 @@ public class ProblemsLabelDecorator implements ILabelDecorator, ILightweightLabe
 	@Override
 	public void decorate(Object element, IDecoration decoration) {
 		int adornmentFlags= computeAdornmentFlags(element);
-		if (adornmentFlags == ERRORTICK_ERROR) {
+		switch (adornmentFlags) {
+		case ERRORTICK_ERROR:
 			decoration.addOverlay(JavaPluginImages.DESC_OVR_ERROR);
-		} else if (adornmentFlags == ERRORTICK_BUILDPATH_ERROR) {
+			break;
+		case ERRORTICK_BUILDPATH_ERROR:
 			decoration.addOverlay(JavaPluginImages.DESC_OVR_BUILDPATH_ERROR);
-		} else if (adornmentFlags == ERRORTICK_WARNING) {
+			break;
+		case ERRORTICK_WARNING:
 			decoration.addOverlay(JavaPluginImages.DESC_OVR_WARNING);
-		} else if (adornmentFlags == ERRORTICK_INFO) {
+			break;
+		case ERRORTICK_INFO:
 			decoration.addOverlay(JavaPluginImages.DESC_OVR_INFO);
+			break;
+		default:
+			break;
 		}
 	}
 

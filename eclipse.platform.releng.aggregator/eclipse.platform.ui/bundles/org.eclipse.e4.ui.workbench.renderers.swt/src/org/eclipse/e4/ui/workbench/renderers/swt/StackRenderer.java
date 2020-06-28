@@ -56,6 +56,7 @@ import org.eclipse.e4.ui.model.application.ui.basic.MStackElement;
 import org.eclipse.e4.ui.model.application.ui.basic.MWindow;
 import org.eclipse.e4.ui.model.application.ui.menu.MMenu;
 import org.eclipse.e4.ui.model.application.ui.menu.MMenuElement;
+import org.eclipse.e4.ui.model.application.ui.menu.MPopupMenu;
 import org.eclipse.e4.ui.model.application.ui.menu.MToolBar;
 import org.eclipse.e4.ui.workbench.IPresentationEngine;
 import org.eclipse.e4.ui.workbench.UIEvents;
@@ -81,11 +82,8 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.RowData;
@@ -118,8 +116,8 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	private static final String THE_PART_KEY = "thePart"; //$NON-NLS-1$
 
 	/**
-	 * Key to control the default default value of the "most recently used"
-	 * order enablement
+	 * Key to control the default default value of the "most recently used" order
+	 * enablement
 	 */
 	public static final String MRU_KEY_DEFAULT = "enableMRUDefault"; //$NON-NLS-1$
 
@@ -141,12 +139,12 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	public static final boolean MRU_DEFAULT = true;
 
 	/*
-	 * org.eclipse.ui.internal.dialogs.ViewsPreferencePage controls currently
-	 * the MRU behavior via IEclipsePreferences, so that CSS values from the
-	 * themes aren't used.
+	 * org.eclipse.ui.internal.dialogs.ViewsPreferencePage controls currently the
+	 * MRU behavior via IEclipsePreferences, so that CSS values from the themes
+	 * aren't used.
 	 *
-	 * TODO once we can use preferences from CSS (and update the value on the
-	 * fly) we can switch this default to true, see discussion on bug 388476.
+	 * TODO once we can use preferences from CSS (and update the value on the fly)
+	 * we can switch this default to true, see discussion on bug 388476.
 	 */
 	private static final boolean MRU_CONTROLLED_BY_CSS_DEFAULT = false;
 
@@ -168,9 +166,9 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	private static final String STACK_SELECTED_PART = "stack_selected_part"; //$NON-NLS-1$
 
 	/**
-	 * Add this tag to prevent the next tab's activation from granting focus
-	 * toac the part. This is used to keep the focus on the CTabFolder when
-	 * traversing the tabs using the keyboard.
+	 * Add this tag to prevent the next tab's activation from granting focus toac
+	 * the part. This is used to keep the focus on the CTabFolder when traversing
+	 * the tabs using the keyboard.
 	 */
 	private static final String INHIBIT_FOCUS = "InhibitFocus"; //$NON-NLS-1$
 
@@ -181,6 +179,7 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	private static int MIN_EDITOR_CHARS = 15;
 
 	private Image viewMenuImage;
+	private String viewMenuURI = "platform:/plugin/org.eclipse.e4.ui.workbench.renderers.swt/icons/full/elcl16/view_menu.png"; //$NON-NLS-1$
 
 	@Inject
 	private IEventBroker eventBroker;
@@ -191,6 +190,8 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	private boolean ignoreTabSelChanges;
 
 	private TabStateHandler tabStateHandler;
+
+	private boolean imageChanged;
 
 	List<CTabItem> getItemsToSet(MPart part) {
 		List<CTabItem> itemsToSet = new ArrayList<>();
@@ -250,7 +251,7 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 		List<CTabItem> itemsToSet = getItemsToSet(part);
 		for (CTabItem item : itemsToSet) {
 			if (key.equals(IPresentationEngine.OVERRIDE_ICON_IMAGE_KEY)) {
-				item.setImage(getImage(part));
+				changePartTabImage(part, item);
 			} else if (key.equals(IPresentationEngine.OVERRIDE_TITLE_TOOL_TIP_KEY)) {
 				String newTip = getToolTip(part);
 				item.setToolTipText(getToolTip(newTip));
@@ -298,8 +299,9 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	void subscribeTopicChildrenChanged(@UIEventTopic(UIEvents.ElementContainer.TOPIC_CHILDREN) Event event) {
 
 		Object changedObj = event.getProperty(UIEvents.EventTags.ELEMENT);
-		// only interested in changes to toolbars
-		if (!(changedObj instanceof MToolBar)) {
+		// only interested in changes to toolbars and view menu (not popup menus)
+		if (!(changedObj instanceof MToolBar)
+				&& !(changedObj instanceof MMenu && !(changedObj instanceof MPopupMenu))) {
 			return;
 		}
 
@@ -385,8 +387,7 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 
 	@Inject
 	@Optional
-	void subscribeTopicClosablePlaceholderChanged(
-			@UIEventTopic(UIEvents.Placeholder.TOPIC_CLOSEABLE) Event event) {
+	void subscribeTopicClosablePlaceholderChanged(@UIEventTopic(UIEvents.Placeholder.TOPIC_CLOSEABLE) Event event) {
 		updateClosableTab(event);
 	}
 
@@ -453,9 +454,9 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	}
 
 	/**
-	 * An event handler for listening to changes to the state of view menus and
-	 * its child menu items. Depending on what state these items are in, the
-	 * view menu should or should not be rendered in the tab folder.
+	 * An event handler for listening to changes to the state of view menus and its
+	 * child menu items. Depending on what state these items are in, the view menu
+	 * should or should not be rendered in the tab folder.
 	 */
 	private void shouldViewMenuBeRendered(Event event) {
 		Object objElement = event.getProperty(UIEvents.EventTags.ELEMENT);
@@ -577,7 +578,7 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 			cti.setText(getLabel(part, part.getLocalizedLabel()));
 			break;
 		case UIEvents.UILabel.ICONURI:
-			cti.setImage(getImage(part));
+			changePartTabImage(part, cti);
 			break;
 		case UIEvents.UILabel.TOOLTIP:
 		case UIEvents.UILabel.LOCALIZED_TOOLTIP:
@@ -591,6 +592,12 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 		default:
 			break;
 		}
+	}
+
+	private void changePartTabImage(MPart part, CTabItem item) {
+		this.imageChanged = true;
+		item.setImage(getImage(part));
+		this.imageChanged = false;
 	}
 
 	@PreDestroy
@@ -679,8 +686,7 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 
 	private boolean getMRUValueFromPreferences() {
 		boolean initialMRUValue = preferences.getBoolean(MRU_KEY_DEFAULT, MRU_DEFAULT);
-		boolean actualValue = preferences.getBoolean(MRU_KEY, initialMRUValue);
-		return actualValue;
+		return preferences.getBoolean(MRU_KEY, initialMRUValue);
 	}
 
 	private void updateMRUValue(CTabFolder tabFolder) {
@@ -699,7 +705,6 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	 */
 	private void addTopRight(CTabFolder tabFolder) {
 		Composite trComp = new Composite(tabFolder, SWT.NONE);
-		trComp.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_CYAN));
 		RowLayout rl = new RowLayout();
 		trComp.setLayout(rl);
 		rl.marginBottom = rl.marginTop = rl.marginRight = rl.marginLeft = 0;
@@ -1085,7 +1090,7 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 
 				// If the user middle clicks on a tab, close it
 				if (item != null && e.button == 2) {
-					closePart(item, false);
+					closePart(item);
 				}
 
 				// If the user clicks on the tab or empty stack space, call
@@ -1119,7 +1124,7 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 		CTabFolder2Adapter closeListener = new CTabFolder2Adapter() {
 			@Override
 			public void close(CTabFolderEvent event) {
-				event.doit = closePart(event.item, true);
+				event.doit = closePart(event.item);
 			}
 
 			@Override
@@ -1156,8 +1161,8 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 
 	/**
 	 * Shows a popup dialog with the list of editors availavle in a given
-	 * {@link CTabFolder}. By default the popup origin will be located close to
-	 * the chevron location.
+	 * {@link CTabFolder}. By default the popup origin will be located close to the
+	 * chevron location.
 	 *
 	 * @param stack
 	 * @param tabFolder
@@ -1169,18 +1174,17 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	/**
 	 * Shows a popup dialog with the list of editors available in the given
 	 * CTabFolder. If {@code forceCenter} enabled, the dialog is centered
-	 * horizontally; otherwise, the dialog origin is placed at chevron location.
-	 * he dialog is placed at
+	 * horizontally; otherwise, the dialog origin is placed at chevron location. he
+	 * dialog is placed at
 	 *
 	 * @param stack
 	 * @param tabFolder
-	 * @param forceCenter
-	 *            center the dialog if true
+	 * @param forceCenter center the dialog if true
 	 */
 	public void showAvailableItems(MElementContainer<?> stack, CTabFolder tabFolder, boolean forceCenter) {
 		IEclipseContext ctxt = getContext(stack);
-		final BasicPartList editorList = new BasicPartList(tabFolder.getShell(), SWT.ON_TOP, SWT.V_SCROLL | SWT.H_SCROLL,
-				ctxt.get(EPartService.class), stack, this, getMRUValueFromPreferences());
+		final BasicPartList editorList = new BasicPartList(tabFolder.getShell(), SWT.ON_TOP,
+				SWT.V_SCROLL | SWT.H_SCROLL, ctxt.get(EPartService.class), stack, this, getMRUValueFromPreferences());
 		editorList.setInput();
 
 		Point size = editorList.computeSizeHint();
@@ -1243,18 +1247,13 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	/**
 	 * Closes the part that's backed by the given widget.
 	 *
-	 * @param widget
-	 *            the part that owns this widget
-	 * @param check
-	 *            <tt>true</tt> if the part should be checked to see if it has
-	 *            been defined as being not closeable for users, <tt>false</tt>
-	 *            if this check should not be performed
+	 * @param widget the part that owns this widget
 	 * @return <tt>true</tt> if the part was closed, <tt>false</tt> otherwise
 	 */
-	private boolean closePart(Widget widget, boolean check) {
+	private boolean closePart(Widget widget) {
 		MUIElement uiElement = (MUIElement) widget.getData(AbstractPartRenderer.OWNING_ME);
 		MPart part = (MPart) ((uiElement instanceof MPart) ? uiElement : ((MPlaceholder) uiElement).getRef());
-		if (!check && !isClosable(part)) {
+		if (!isClosable(part)) {
 			return false;
 		}
 
@@ -1352,40 +1351,7 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 
 	private Image getViewMenuImage() {
 		if (viewMenuImage == null) {
-			Display d = Display.getCurrent();
-
-			Image viewMenu = new Image(d, 16, 16);
-			Image viewMenuMask = new Image(d, 16, 16);
-
-			Display display = Display.getCurrent();
-			GC gc = new GC(viewMenu);
-			GC maskgc = new GC(viewMenuMask);
-			gc.setForeground(display.getSystemColor(SWT.COLOR_WIDGET_DARK_SHADOW));
-			gc.setBackground(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND));
-
-			int[] shapeArray = new int[] { 6, 3, 15, 3, 11, 7, 10, 7 };
-			gc.fillPolygon(shapeArray);
-			gc.drawPolygon(shapeArray);
-
-			Color black = display.getSystemColor(SWT.COLOR_BLACK);
-			Color white = display.getSystemColor(SWT.COLOR_WHITE);
-
-			maskgc.setBackground(black);
-			maskgc.fillRectangle(0, 0, 16, 16);
-
-			maskgc.setBackground(white);
-			maskgc.setForeground(white);
-			maskgc.fillPolygon(shapeArray);
-			maskgc.drawPolygon(shapeArray);
-			gc.dispose();
-			maskgc.dispose();
-
-			ImageData data = viewMenu.getImageData();
-			data.transparentPixel = data.getPixel(0, 0);
-
-			viewMenuImage = new Image(d, viewMenu.getImageData(), viewMenuMask.getImageData());
-			viewMenu.dispose();
-			viewMenuMask.dispose();
+			viewMenuImage = getImageFromURI(viewMenuURI);
 		}
 		return viewMenuImage;
 	}
@@ -1460,11 +1426,22 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 			}
 		}
 
-		if (closeableElements > 0) {
-			new MenuItem(menu, SWT.SEPARATOR);
-		}
-		createMenuItem(menu, SWTRenderersMessages.menuDetach, e -> detachActivePart(menu));
+		if (isDetachable(part)) {
+			if (closeableElements > 0) {
+				new MenuItem(menu, SWT.SEPARATOR);
+			}
 
+			createMenuItem(menu, SWTRenderersMessages.menuDetach, e -> detachActivePart(menu));
+		}
+	}
+
+	protected boolean isDetachable(MPart part) {
+		// if it's a shared part check its current ref
+		if (part.getCurSharedRef() != null) {
+			return !part.getCurSharedRef().getTags().contains(IPresentationEngine.NO_DETACH);
+		}
+
+		return !part.getTags().contains(IPresentationEngine.NO_DETACH);
 	}
 
 	/**
@@ -1685,10 +1662,8 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	/**
 	 * Determine whether the given view menu has any visible menu items.
 	 *
-	 * @param viewMenu
-	 *            the view menu to check
-	 * @param part
-	 *            the view menu's parent part
+	 * @param viewMenu the view menu to check
+	 * @param part     the view menu's parent part
 	 * @return <tt>true</tt> if the specified view menu has visible children,
 	 *         <tt>false</tt> otherwise
 	 */
@@ -1741,8 +1716,8 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 
 	/**
 	 * An event handler for listening to changes to the children of an element
-	 * container. The tab folder may need to layout itself again if a part's
-	 * toolbar has been changed.
+	 * container. The tab folder may need to layout itself again if a part's toolbar
+	 * has been changed.
 	 */
 	@SuppressWarnings("javadoc")
 	public class TabStateHandler implements EventHandler {
@@ -1837,8 +1812,8 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 	}
 
 	/**
-	 * Updates the visual for busy state of the part tab in case CSS engine is
-	 * not active
+	 * Updates the visual for busy state of the part tab in case CSS engine is not
+	 * active
 	 */
 	static void updateBusyStateNoCss(CTabItem cti, Object newValue, Object oldValue) {
 		Font updatedFont = null;
@@ -1850,5 +1825,10 @@ public class StackRenderer extends LazyStackRenderer implements IPreferenceChang
 		if (updatedFont != null) {
 			cti.setFont(updatedFont);
 		}
+	}
+
+	@Override
+	protected boolean imageChanged() {
+		return this.imageChanged;
 	}
 }

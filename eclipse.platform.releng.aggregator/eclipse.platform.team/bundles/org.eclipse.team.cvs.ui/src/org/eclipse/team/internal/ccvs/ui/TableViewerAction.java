@@ -38,18 +38,14 @@ public class TableViewerAction extends Action {
 		this.viewer = viewer;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jface.action.Action#run()
-	 */
+	@Override
 	public void run() {
 		if (viewer.getSelection() instanceof StructuredSelection) {
 			StructuredSelection selection = (StructuredSelection) viewer.getSelection();
 			if (!selection.isEmpty()) {
 				Iterator selectionIter = selection.iterator();
 				
-				StringBuffer buf = new StringBuffer();
+				StringBuilder buf = new StringBuilder();
 				ITag firstTag = (ITag) selectionIter.next();
 				buf.append(firstTag.getName());
 				while (selectionIter.hasNext()) {

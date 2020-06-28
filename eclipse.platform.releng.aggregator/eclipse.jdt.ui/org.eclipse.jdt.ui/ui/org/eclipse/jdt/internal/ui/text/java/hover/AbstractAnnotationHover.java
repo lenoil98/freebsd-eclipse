@@ -225,9 +225,8 @@ public abstract class AbstractAnnotationHover extends AbstractJavaEditorTextHove
 		}
 
 		protected void disposeDeferredCreatedContent() {
-			Control[] children= fParent.getChildren();
-			for (int i= 0; i < children.length; i++) {
-				children[i].dispose();
+			for (Control child : fParent.getChildren()) {
+				child.dispose();
 			}
 			ToolBarManager toolBarManager= getToolBarManager();
 			if (toolBarManager != null)
@@ -261,7 +260,9 @@ public abstract class AbstractAnnotationHover extends AbstractJavaEditorTextHove
 			int trimWidth= getShell().computeTrim(0, 0, 0, 0).width;
 			Point constrainedSize= getShell().computeSize(constrains.x - trimWidth, SWT.DEFAULT, true);
 
-			int width= Math.min(preferedSize.x, constrainedSize.x);
+			// get minimum needed width within constrained size including the trim and add a little extra
+			// to ensure we don't get unnecessary wrapping of the text (4 is minimum for Windows)
+			int width= Math.min(preferedSize.x + trimWidth + 4, constrainedSize.x);
 			int height= Math.max(preferedSize.y, constrainedSize.y);
 
 			return new Point(width, height);
@@ -315,9 +316,8 @@ public abstract class AbstractAnnotationHover extends AbstractJavaEditorTextHove
 			control.setFont(font);
 
 			if (control instanceof Composite) {
-				Control[] children= ((Composite) control).getChildren();
-				for (int i= 0; i < children.length; i++) {
-					setColorAndFont(children[i], foreground, background, font);
+				for (Control child : ((Composite) control).getChildren()) {
+					setColorAndFont(child, foreground, background, font);
 				}
 			}
 		}
@@ -344,9 +344,10 @@ public abstract class AbstractAnnotationHover extends AbstractJavaEditorTextHove
 				}
 			});
 
-			StyledText text= new StyledText(composite, SWT.MULTI | SWT.WRAP | SWT.READ_ONLY);
+			StyledText text= new StyledText(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI | SWT.WRAP | SWT.READ_ONLY);
 			GridData data= new GridData(SWT.FILL, SWT.FILL, true, true);
 			text.setLayoutData(data);
+			text.setAlwaysShowScrollBars(false);
 			String annotationText= annotation.getText();
 			if (annotationText != null)
 				text.setText(annotationText);
@@ -394,16 +395,15 @@ public abstract class AbstractAnnotationHover extends AbstractJavaEditorTextHove
 			layout.marginLeft= 5;
 			layout.verticalSpacing= 2;
 			composite.setLayout(layout);
-			
-			List<Link> list= new ArrayList<>();
-			for (int i= 0; i < proposals.length; i++) {
-				list.add(createCompletionProposalLink(composite, proposals[i], 1));// Original link for single fix, hence pass 1 for count
 
-				if (proposals[i] instanceof FixCorrectionProposal) {
-					FixCorrectionProposal proposal= (FixCorrectionProposal)proposals[i];
+			List<Link> list= new ArrayList<>();
+			for (ICompletionProposal prop : proposals) {
+				list.add(createCompletionProposalLink(composite, prop, 1)); // Original link for single fix, hence pass 1 for count
+				if (prop instanceof FixCorrectionProposal) {
+					FixCorrectionProposal proposal= (FixCorrectionProposal) prop;
 					int count= proposal.computeNumberOfFixesForCleanUp(proposal.getCleanUp());
 					if (count > 1) {
-						list.add(createCompletionProposalLink(composite, proposals[i], count));
+						list.add(createCompletionProposalLink(composite, prop, count));
 					}
 				}
 			}
@@ -491,7 +491,7 @@ public abstract class AbstractAnnotationHover extends AbstractJavaEditorTextHove
 				layout.marginHeight= 0;
 				parent.setLayout(layout);
 			}
-			
+
 			Label proposalImage= new Label(parent, SWT.NONE);
 			proposalImage.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 			Image image= isMultiFix ? JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_MULTI_FIX) : proposal.getImage();
@@ -739,7 +739,8 @@ public abstract class AbstractAnnotationHover extends AbstractJavaEditorTextHove
 				Annotation a= e.next();
 
 				AnnotationPreference preference= getAnnotationPreference(a);
-				if (preference == null || !(preference.getTextPreferenceKey() != null && fStore.getBoolean(preference.getTextPreferenceKey()) || (preference.getHighlightPreferenceKey() != null && fStore.getBoolean(preference.getHighlightPreferenceKey()))))
+				if (preference == null
+						|| (((preference.getTextPreferenceKey() == null) || !fStore.getBoolean(preference.getTextPreferenceKey())) && ((preference.getHighlightPreferenceKey() == null) || !fStore.getBoolean(preference.getHighlightPreferenceKey()))))
 					continue;
 
 				Position p= model.getPosition(a);

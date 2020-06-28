@@ -43,18 +43,17 @@ public interface IUpdatableModule {
 		}
 		@Override
 		public void accept(IUpdatableModule t) {
-			// TODO Auto-generated method stub
 			t.addExports(this.name, this.targets);
 		}
-		
+
 		public char[] getName() {
 			return this.name;
 		}
-		
+
 		public char[][] getTargetModules() {
 			return this.targets;
 		}
-		
+
 		public UpdateKind getKind() {
 			return UpdateKind.PACKAGE;
 		}
@@ -63,7 +62,7 @@ public interface IUpdatableModule {
 			if (this == other) return true;
 			if (!(other instanceof AddExports)) return false;
 			AddExports pu = (AddExports) other;
-			
+
 			if (!CharOperation.equals(this.name, pu.name))
 				return false;
 			if (!CharOperation.equals(this.targets, pu.targets))
@@ -81,11 +80,11 @@ public interface IUpdatableModule {
 			return hash;
 		}
 	}
-	
+
 	class AddReads implements Consumer<IUpdatableModule> {
 
 		char[] targetModule;
-		
+
 		public AddReads(char[] target) {
 			this.targetModule = target;
 		}
@@ -94,11 +93,11 @@ public interface IUpdatableModule {
 			// TODO Auto-generated method stub
 			t.addReads(this.targetModule);
 		}
-		
+
 		public char[] getTarget() {
 			return this.targetModule;
 		}
-		
+
 		public UpdateKind getKind() {
 			return UpdateKind.MODULE;
 		}

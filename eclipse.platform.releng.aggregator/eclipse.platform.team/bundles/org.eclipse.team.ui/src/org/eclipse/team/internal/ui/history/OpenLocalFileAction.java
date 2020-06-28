@@ -27,6 +27,7 @@ import org.eclipse.ui.IEditorDescriptor;
 import org.eclipse.ui.IEditorRegistry;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.BaseSelectionListenerAction;
 
 public class OpenLocalFileAction extends BaseSelectionListenerAction {
@@ -42,8 +43,8 @@ public class OpenLocalFileAction extends BaseSelectionListenerAction {
 
 			Object[] objArray = structSel.toArray();
 
-			for (int i = 0; i < objArray.length; i++) {
-				IFileState state = (IFileState) objArray[i];
+			for (Object obj : objArray) {
+				IFileState state = (IFileState) obj;
 				if (!state.exists()) {
 					MessageDialog.openError(TeamUIPlugin.getActivePage().getActivePart().getSite().getShell(), TeamUIMessages.OpenRevisionAction_DeletedRevisionTitle, TeamUIMessages.OpenRevisionAction_DeletedRevisionMessage);
 				} else {
@@ -53,7 +54,6 @@ public class OpenLocalFileAction extends BaseSelectionListenerAction {
 						page.openEditor(new FileRevisionEditorInput(state), id);
 					}
 				}
-
 			}
 
 		} catch (Exception e) {
@@ -62,7 +62,7 @@ public class OpenLocalFileAction extends BaseSelectionListenerAction {
 	}
 
 	/* private */String getEditorID(String fileName, InputStream contents) {
-		IWorkbench workbench = TeamUIPlugin.getPlugin().getWorkbench();
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		IEditorRegistry registry = workbench.getEditorRegistry();
 
 		IContentType type = null;

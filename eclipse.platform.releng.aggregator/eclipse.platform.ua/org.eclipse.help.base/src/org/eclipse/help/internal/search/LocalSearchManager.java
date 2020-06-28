@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Holger Voormann - Fix for Bug 352434
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.search;
 
@@ -29,6 +30,7 @@ import java.util.StringTokenizer;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IConfigurationElement;
@@ -40,7 +42,6 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.help.IHelpResource;
 import org.eclipse.help.internal.HelpPlugin;
 import org.eclipse.help.internal.base.BaseHelpSystem;
-import org.eclipse.help.internal.base.HelpBasePlugin;
 import org.eclipse.help.internal.search.IndexingOperation.IndexingException;
 import org.eclipse.help.internal.util.URLCoder;
 import org.eclipse.help.search.SearchParticipant;
@@ -100,7 +101,8 @@ public class LocalSearchManager {
 						participant.init(getId());
 					}
 				} catch (Throwable t) {
-					HelpPlugin.logError("Exception occurred creating Lucene search participant.", t); //$NON-NLS-1$
+					Platform.getLog(getClass()).error("Exception occurred creating Lucene search participant.", //$NON-NLS-1$
+							t);
 				}
 			}
 			return participant;
@@ -137,7 +139,8 @@ public class LocalSearchManager {
 					participant.clear();
 				}
 				catch (Throwable t) {
-					HelpBasePlugin.logError("Error occured in search participant's clear() operation: " + participant.getClass().getName(), t); //$NON-NLS-1$
+					Platform.getLog(getClass()).error("Error occured in search participant's clear() operation: " //$NON-NLS-1$
+									+ participant.getClass().getName(), t);
 				}
 			}
 		}
@@ -156,10 +159,10 @@ public class LocalSearchManager {
 	public static List<SearchHit> asList(TopDocs topDocs, IndexSearcher searcher) {
 		List<SearchHit> list = new ArrayList<>(topDocs.scoreDocs.length);
 
-		for (int i=0; i<topDocs.scoreDocs.length; ++i) {
+		for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
 			try {
-				Document doc = searcher.doc(topDocs.scoreDocs[i].doc);
-				float score = topDocs.scoreDocs[i].score;
+				Document doc = searcher.doc(scoreDoc.doc);
+				float score = scoreDoc.score;
 				String href = doc.get("name"); //$NON-NLS-1$
 				String summary = doc.get("summary");			 //$NON-NLS-1$
 				String id = doc.get("id"); //$NON-NLS-1$
@@ -169,7 +172,7 @@ public class LocalSearchManager {
 				list.add(new SearchHit(href, label, summary, score, null, id, participantId, isPotentialHit));
 			}
 			catch (IOException e) {
-				HelpBasePlugin.logError("An error occured while reading search hits", e); //$NON-NLS-1$
+				Platform.getLog(LocalSearchManager.class).error("An error occured while reading search hits", e); //$NON-NLS-1$
 				continue;
 			}
 		}
@@ -229,8 +232,7 @@ public class LocalSearchManager {
 			return false;
 		int dotLoc = url.lastIndexOf('.');
 		String ext = url.substring(dotLoc + 1);
-		for (int i = 0; i < list.size(); i++) {
-			ParticipantDescriptor desc = list.get(i);
+		for (ParticipantDescriptor desc : list) {
 			if (desc.matches(ext))
 				return true;
 		}
@@ -288,8 +290,7 @@ public class LocalSearchManager {
 		if (globalSearchParticipants == null) {
 			createGlobalSearchParticipants();
 		}
-		for (int i = 0; i < globalSearchParticipants.size(); i++) {
-			ParticipantDescriptor desc = globalSearchParticipants.get(i);
+		for (ParticipantDescriptor desc : globalSearchParticipants) {
 			if (desc.getId().equals(participantId)) {
 				return desc;
 			}
@@ -325,8 +326,7 @@ public class LocalSearchManager {
 			return null;
 		int dotLoc = fileName.lastIndexOf('.');
 		String ext = fileName.substring(dotLoc + 1);
-		for (int i = 0; i < list.size(); i++) {
-			ParticipantDescriptor desc = list.get(i);
+		for (ParticipantDescriptor desc : list) {
 			if (desc.matches(ext))
 				return desc.getParticipant();
 		}
@@ -365,14 +365,16 @@ public class LocalSearchManager {
 		HashSet<String> set = new HashSet<>();
 		addSearchBindings(set);
 		// must ask global search participants directly
-	    SearchParticipant[] gps = getGlobalParticipants();
-		for (int i = 0; i < gps.length; i++) {
+		SearchParticipant[] gps = getGlobalParticipants();
+		for (SearchParticipant gp : gps) {
 			Set<String> ids;
 			try {
-				ids = gps[i].getContributingPlugins();
+				ids = gp.getContributingPlugins();
 			}
 			catch (Throwable t) {
-				HelpBasePlugin.logError("Error getting the contributing plugins from help search participant: " + gps[i].getClass().getName() + ". skipping this one.", t); //$NON-NLS-1$ //$NON-NLS-2$
+				Platform.getLog(getClass())
+						.error("Error getting the contributing plugins from help search participant: " //$NON-NLS-1$
+						+ gp.getClass().getName() + ". skipping this one.", t); //$NON-NLS-1$
 				continue;
 			}
 			set.addAll(ids);
@@ -384,8 +386,7 @@ public class LocalSearchManager {
 		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(
 				SEARCH_PARTICIPANT_XP_FULLNAME);
 
-		for (int i = 0; i < elements.length; i++) {
-			IConfigurationElement element = elements[i];
+		for (IConfigurationElement element : elements) {
 			if (element.getName().equals("binding") || element.getName().equals("searchParticipant"))  //$NON-NLS-1$//$NON-NLS-2$
 				set.add(element.getContributor().getName());
 		}
@@ -407,16 +408,14 @@ public class LocalSearchManager {
 		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(
 				extensionPointName);
 		ArrayList<IConfigurationElement> binding = null;
-		for (int i = 0; i < elements.length; i++) {
-			IConfigurationElement element = elements[i];
+		for (IConfigurationElement element : elements) {
 			if (!element.getContributor().getName().equals(pluginId)) {
 				continue;
 			}
 			if (BINDING_XP_NAME.equals(element.getName())) {
 				// binding - locate the referenced participant
 				String refId = element.getAttribute("participantId"); //$NON-NLS-1$
-				for (int j = 0; j < elements.length; j++) {
-					IConfigurationElement rel = elements[j];
+				for (IConfigurationElement rel : elements) {
 					if (!rel.getName().equals("searchParticipant")) //$NON-NLS-1$
 						continue;
 					String id = rel.getAttribute("id"); //$NON-NLS-1$
@@ -462,10 +461,9 @@ public class LocalSearchManager {
 			IConfigurationElement refEl = binding.get(i);
 			Collection<ArrayList<ParticipantDescriptor>> collection = searchParticipantsByPlugin.values();
 			boolean found = false;
-			for (Iterator<ArrayList<ParticipantDescriptor>> iter = collection.iterator(); iter.hasNext();) {
+			for (ArrayList<ParticipantDescriptor> participants : collection) {
 				if (found)
 					break;
-				ArrayList<ParticipantDescriptor> participants = iter.next();
 				if (participants == PARTICIPANTS_NOT_FOUND)
 					continue;
 				//ArrayList participants = (ArrayList) entry;
@@ -503,8 +501,7 @@ public class LocalSearchManager {
 			createGlobalSearchParticipants();
 		}
 		ArrayList<SearchParticipant> result = new ArrayList<>();
-		for (int i = 0; i < globalSearchParticipants.size(); i++) {
-			ParticipantDescriptor desc = globalSearchParticipants.get(i);
+		for (ParticipantDescriptor desc : globalSearchParticipants) {
 			SearchParticipant p = desc.getParticipant();
 			if (p != null)
 				result.add(p);
@@ -520,8 +517,7 @@ public class LocalSearchManager {
 	private void addSearchParticipants() {
 		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(
 				SEARCH_PARTICIPANT_XP_FULLNAME);
-		for (int i = 0; i < elements.length; i++) {
-			IConfigurationElement element = elements[i];
+		for (IConfigurationElement element : elements) {
 			if (!element.getName().equals(SEARCH_PARTICIPANT_XP_NAME))
 				continue;
 			if (element.getAttribute("extensions") != null) //$NON-NLS-1$
@@ -639,7 +635,7 @@ public class LocalSearchManager {
 		}
 		catch (IndexingException e) {
 			String msg = "Error indexing documents"; //$NON-NLS-1$
-			HelpBasePlugin.logError(msg, e);
+			Platform.getLog(getClass()).error(msg, e);
 		}
 	}
 

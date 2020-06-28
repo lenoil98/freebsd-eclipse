@@ -100,41 +100,37 @@ public class CVSTeamProvider extends RepositoryProvider {
 	 * @param project the project
 	 */
 	public static void markAsTempShare(IProject project) {
-    	if (RepositoryProvider.isShared(project))
-    		return;
-    	try {
-    		project.setSessionProperty(CVSTeamProvider.TEMP_SHARED, Boolean.TRUE);
+		if (RepositoryProvider.isShared(project))
+			return;
+		try {
+			project.setSessionProperty(CVSTeamProvider.TEMP_SHARED, Boolean.TRUE);
 		} catch (CoreException e) {
 			CVSProviderPlugin.log(e);
 		}
 	}
 	
-    /**
-     * Return the file modification validator used for all CVS repository providers.
-     * @return the file modification validator used for all CVS repository providers
-     */
-    protected static CVSCoreFileModificationValidator internalGetFileModificationValidator() {
-        if (CVSTeamProvider.fileModificationValidator == null) {
-            CVSTeamProvider.fileModificationValidator = new CVSCoreFileModificationValidator();
-        }
-        return CVSTeamProvider.fileModificationValidator;
-    }
-    
+	/**
+	 * Return the file modification validator used for all CVS repository providers.
+	 * @return the file modification validator used for all CVS repository providers
+	 */
+	protected static CVSCoreFileModificationValidator internalGetFileModificationValidator() {
+		if (CVSTeamProvider.fileModificationValidator == null) {
+			CVSTeamProvider.fileModificationValidator = new CVSCoreFileModificationValidator();
+		}
+		return CVSTeamProvider.fileModificationValidator;
+	}
+	
 	/**
 	 * No-arg Constructor for IProjectNature conformance
 	 */
 	public CVSTeamProvider() {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.IProjectNature#deconfigure()
-	 */
+	@Override
 	public void deconfigure() {
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.RepositoryProvider#deconfigured()
-	 */
+	@Override
 	public void deconfigured() {
 		// when a nature is removed from the project, notify the synchronizer that
 		// we no longer need the sync info cached. This does not affect the actual CVS
@@ -149,16 +145,12 @@ public class CVSTeamProvider extends RepositoryProvider {
 		}
 		ResourceStateChangeListeners.getListener().projectDeconfigured(getProject());
 	}
-	/**
-	 * @see IProjectNature#getProject()
-	 */
+	@Override
 	public IProject getProject() {
 		return project;
 	}
 
-	/**
-	 * @see IProjectNature#setProject(IProject)
-	 */
+	@Override
 	public void setProject(IProject project) {
 		this.project = project;
 		this.workspaceRoot = new CVSWorkspaceRoot(project);
@@ -192,28 +184,28 @@ public class CVSTeamProvider extends RepositoryProvider {
 	/*
 	 * Generate an exception if the resource is not a child of the project
 	 */
-	 private void checkIsChild(IResource resource) throws CVSException {
-	 	if (!isChildResource(resource))
-	 		throw new CVSException(new Status(IStatus.ERROR, CVSProviderPlugin.ID, TeamException.UNABLE, 
-	 			NLS.bind(CVSMessages.CVSTeamProvider_invalidResource, (new Object[] {resource.getFullPath().toString(), project.getName()})), 
-	 			null));
-	 }
-	 
+	private void checkIsChild(IResource resource) throws CVSException {
+		if (!isChildResource(resource))
+			throw new CVSException(new Status(IStatus.ERROR, CVSProviderPlugin.ID, TeamException.UNABLE, 
+				NLS.bind(CVSMessages.CVSTeamProvider_invalidResource, (new Object[] {resource.getFullPath().toString(), project.getName()})), 
+				null));
+	}
+	
 	/*
 	 * Get the arguments to be passed to a commit or update
 	 */
 	private String[] getValidArguments(IResource[] resources, LocalOption[] options) throws CVSException {
-		List arguments = new ArrayList(resources.length);
-		for (int i=0;i<resources.length;i++) {
-			checkIsChild(resources[i]);
-			IPath cvsPath = resources[i].getFullPath().removeFirstSegments(1);
+		List<String> arguments = new ArrayList<>(resources.length);
+		for (IResource resource : resources) {
+			checkIsChild(resource);
+			IPath cvsPath = resource.getFullPath().removeFirstSegments(1);
 			if (cvsPath.segmentCount() == 0) {
 				arguments.add(Session.CURRENT_LOCAL_FOLDER);
 			} else {
 				arguments.add(cvsPath.toString());
 			}
 		}
-		return (String[])arguments.toArray(new String[arguments.size()]);
+		return arguments.toArray(new String[arguments.size()]);
 	}
 	
 	private ICVSResource[] getCVSArguments(IResource[] resources) {
@@ -250,8 +242,8 @@ public class CVSTeamProvider extends RepositoryProvider {
 							FolderSyncInfo info = folder.getFolderSyncInfo();
 							if (info != null) {
 								monitor1.subTask(NLS.bind(CVSMessages.CVSTeamProvider_updatingFolder, new String[] { info.getRepository() })); 
-			                    MutableFolderSyncInfo newInfo = info.cloneMutable();
-			                    newInfo.setRoot(root);
+								MutableFolderSyncInfo newInfo = info.cloneMutable();
+								newInfo.setRoot(root);
 								folder.setFolderSyncInfo(newInfo);
 								folder.acceptChildren(this);
 							}
@@ -280,7 +272,8 @@ public class CVSTeamProvider extends RepositoryProvider {
 	/**
 	 * Sets the keyword substitution mode for the specified resources.
 	 * <p>
-	 * Applies the following rules in order:<br>
+	 * Applies the following rules in order:
+	 * </p>
 	 * <ul>
 	 *   <li>If a file is not managed, skips it.</li>
 	 *   <li>If a file is not changing modes, skips it.</li>
@@ -293,7 +286,6 @@ public class CVSTeamProvider extends RepositoryProvider {
 	 * casually trying to commit pending changes to the repository without first checking out
 	 * a new copy.  This is not a perfect solution, as they could just as easily do an UPDATE
 	 * and not obtain the new keyword sync info.
-	 * </p>
 	 * 
 	 * @param changeSet a map from IFile to KSubstOption
 	 * @param monitor the progress monitor
@@ -307,7 +299,7 @@ public class CVSTeamProvider extends RepositoryProvider {
 		final IStatus[] result = new IStatus[] { ICommandOutputListener.OK };
 		workspaceRoot.getLocalRoot().run(monitor1 -> {
 			final Map /* from KSubstOption to List of String */ filesToAdmin = new HashMap();
-			final Collection /* of ICVSFile */ filesToCommitAsText = new HashSet(); // need fast lookup
+			final Collection<ICVSFile> filesToCommitAsText = new HashSet<>(); // need fast lookup
 			final boolean useCRLF = IS_CRLF_PLATFORM && (CVSProviderPlugin.getPlugin().isUsePlatformLineend());
 
 			/*** determine the resources to be committed and/or admin'd ***/
@@ -365,7 +357,7 @@ public class CVSTeamProvider extends RepositoryProvider {
 					// commit files that changed from binary to text
 					// NOTE: The files are committed as text with conversions even if the
 					//       resource sync info still says "binary".
-					if (filesToCommitAsText.size() != 0) {
+					if (!filesToCommitAsText.isEmpty()) {
 						Session session1 = new Session(workspaceRoot.getRemoteLocation(), workspaceRoot.getLocalRoot(), true /* output to console */);
 						session1.open(Policy.subMonitorFor(monitor1, 1), true /* open for modification */);
 						try {
@@ -377,7 +369,7 @@ public class CVSTeamProvider extends RepositoryProvider {
 								Command.NO_GLOBAL_OPTIONS,
 								new LocalOption[] { Command.DO_NOT_RECURSE, Commit.FORCE,
 									Command.makeArgumentOption(Command.MESSAGE_OPTION, keywordChangeComment) },
-								(ICVSResource[]) filesToCommitAsText.toArray(new ICVSResource[filesToCommitAsText.size()]),
+								filesToCommitAsText.toArray(new ICVSResource[filesToCommitAsText.size()]),
 								filesToCommitAsText,
 								null, 
 								Policy.subMonitorFor(monitor1, filesToCommitAsText.size()));
@@ -427,7 +419,7 @@ public class CVSTeamProvider extends RepositoryProvider {
 	/**
 	 * This method translates the contents of a file from binary into text (ASCII).
 	 * Fixes the line delimiters in the local file to reflect the platform's
-	 * native encoding.  Performs CR/LF -> LF or LF -> CR/LF conversion
+	 * native encoding.  Performs CR/LF -&gt; LF or LF -&gt; CR/LF conversion
 	 * depending on the platform but does not affect delimiters that are
 	 * already correctly encoded.
 	 */
@@ -459,30 +451,22 @@ public class CVSTeamProvider extends RepositoryProvider {
 		}
 	}
 	
-	/*
-	 * @see RepositoryProvider#getID()
-	 */
+	@Override
 	public String getID() {
 		return CVSProviderPlugin.getTypeId();
 	}
 	
-	/*
-	 * @see RepositoryProvider#getMoveDeleteHook()
-	 */
+	@Override
 	public IMoveDeleteHook getMoveDeleteHook() {
 		return moveDeleteHook;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.RepositoryProvider#getFileModificationValidator()
-	 */
+	@Override
 	public IFileModificationValidator getFileModificationValidator() {
 		return getFileModificationValidator2();
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.RepositoryProvider#getFileModificationValidator2()
-	 */
+	@Override
 	public FileModificationValidator getFileModificationValidator2() {
 		return internalGetFileModificationValidator();
 	}
@@ -660,23 +644,17 @@ public class CVSTeamProvider extends RepositoryProvider {
 		}
 	}
 	
-	/**
-	 * @see org.eclipse.team.core.RepositoryProvider#canHandleLinkedResources()
-	 */
+	@Override
 	public boolean canHandleLinkedResources() {
 		return true;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.RepositoryProvider#canHandleLinkedResourceURI()
-	 */
+	@Override
 	public boolean canHandleLinkedResourceURI() {
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.RepositoryProvider#validateCreateLink(org.eclipse.core.resources.IResource, int, org.eclipse.core.runtime.IPath)
-	 */
+	@Override
 	public IStatus validateCreateLink(IResource resource, int updateFlags, IPath location) {
 		return internalValidateCreateLink(resource);
 	}
@@ -701,9 +679,7 @@ public class CVSTeamProvider extends RepositoryProvider {
 		return Status.OK_STATUS;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.RepositoryProvider#validateCreateLink(org.eclipse.core.resources.IResource, int, java.net.URI)
-	 */
+	@Override
 	public IStatus validateCreateLink(IResource resource, int updateFlags, URI location) {
 		return internalValidateCreateLink(resource);
 	}
@@ -850,20 +826,16 @@ public class CVSTeamProvider extends RepositoryProvider {
 		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.RepositoryProvider#getRuleFactory()
-	 */
+	@Override
 	public IResourceRuleFactory getRuleFactory() {
 		return RESOURCE_RULE_FACTORY;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.RepositoryProvider#getFileHistoryProvider()
-	 */
+	@Override
 	public IFileHistoryProvider getFileHistoryProvider() {
-		   if (CVSTeamProvider.fileHistoryProvider == null) {
-	            CVSTeamProvider.fileHistoryProvider = new CVSFileHistoryProvider();
-	        }
-	        return CVSTeamProvider.fileHistoryProvider;
+			if (CVSTeamProvider.fileHistoryProvider == null) {
+				CVSTeamProvider.fileHistoryProvider = new CVSFileHistoryProvider();
+			}
+			return CVSTeamProvider.fileHistoryProvider;
 	}
 }

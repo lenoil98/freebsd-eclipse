@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -43,7 +43,7 @@ public class GenericVisitor extends ASTVisitor {
 
 	/**
 	 * Visits the given type-specific AST node.
-	 * 
+	 *
 	 * @param node the AST note to visit
 	 * @return <code>true</code> if the children of this node should be visited, and
 	 *         <code>false</code> if the children of this node should be skipped
@@ -54,7 +54,7 @@ public class GenericVisitor extends ASTVisitor {
 
 	/**
 	 * Visits the given type-specific AST node.
-	 * 
+	 *
 	 * @param node the AST note to visit
 	 */
 	protected void endVisitNode(ASTNode node) {
@@ -334,6 +334,10 @@ public class GenericVisitor extends ASTVisitor {
 		endVisitNode(node);
 	}
 	@Override
+	public void endVisit(RecordDeclaration node) {
+		endVisitNode(node);
+	}
+	@Override
 	public void endVisit(RequiresDirective node) {
 		endVisitNode(node);
 	}
@@ -379,6 +383,10 @@ public class GenericVisitor extends ASTVisitor {
 	}
 	@Override
 	public void endVisit(SwitchCase node) {
+		endVisitNode(node);
+	}
+	@Override
+	public void endVisit(SwitchExpression node) {
 		endVisitNode(node);
 	}
 	@Override
@@ -430,6 +438,10 @@ public class GenericVisitor extends ASTVisitor {
 		endVisitNode(node);
 	}
 	@Override
+	public void endVisit(TextBlock node) {
+		endVisitNode(node);
+	}
+	@Override
 	public void endVisit(UnionType node) {
 		endVisitNode(node);
 	}
@@ -455,6 +467,11 @@ public class GenericVisitor extends ASTVisitor {
 	}
 	@Override
 	public void endVisit(WildcardType node) {
+		endVisitNode(node);
+	}
+
+	@Override
+	public void endVisit(YieldStatement node) {
 		endVisitNode(node);
 	}
 
@@ -734,6 +751,10 @@ public class GenericVisitor extends ASTVisitor {
 		return visitNode(node);
 	}
 	@Override
+	public boolean visit(RecordDeclaration node) {
+		return visitNode(node);
+	}
+	@Override
 	public boolean visit(RequiresDirective node) {
 		return visitNode(node);
 	}
@@ -779,6 +800,10 @@ public class GenericVisitor extends ASTVisitor {
 	}
 	@Override
 	public boolean visit(SwitchCase node) {
+		return visitNode(node);
+	}
+	@Override
+	public boolean visit(SwitchExpression node) {
 		return visitNode(node);
 	}
 	@Override
@@ -830,6 +855,10 @@ public class GenericVisitor extends ASTVisitor {
 		return visitNode(node);
 	}
 	@Override
+	public boolean visit(TextBlock node) {
+		return visitNode(node);
+	}
+	@Override
 	public boolean visit(UnionType node) {
 		return visitNode(node);
 	}
@@ -855,6 +884,10 @@ public class GenericVisitor extends ASTVisitor {
 	}
 	@Override
 	public boolean visit(WildcardType node) {
+		return visitNode(node);
+	}
+	@Override
+	public boolean visit(YieldStatement node) {
 		return visitNode(node);
 	}
 }

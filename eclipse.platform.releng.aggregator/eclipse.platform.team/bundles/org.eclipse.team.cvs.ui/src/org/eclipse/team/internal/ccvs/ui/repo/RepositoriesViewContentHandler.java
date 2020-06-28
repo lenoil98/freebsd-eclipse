@@ -13,17 +13,15 @@
  *******************************************************************************/
 package org.eclipse.team.internal.ccvs.ui.repo;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 import org.eclipse.core.runtime.Path;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.team.internal.ccvs.core.*;
 import org.eclipse.team.internal.ccvs.core.util.KnownRepositories;
 import org.eclipse.team.internal.ccvs.ui.CVSUIMessages;
-import org.xml.sax.*;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class RepositoriesViewContentHandler extends DefaultHandler {
@@ -62,22 +60,18 @@ public class RepositoriesViewContentHandler extends DefaultHandler {
 	private List autoRefreshFiles;
 	private boolean ignoreElements;
 
-    private long lastAccessTime;
+	private long lastAccessTime;
 
 	public RepositoriesViewContentHandler(RepositoryManager manager) {
 		this.manager = manager;
 	}
 	
-	/**
-	 * @see ContentHandler#characters(char[], int, int)
-	 */
+	@Override
 	public void characters(char[] chars, int startIndex, int length) throws SAXException {
 		buffer.append(chars, startIndex, length);
 	}
 
-	/**
-	 * @see ContentHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
-	 */
+	@Override
 	public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
 		
 		String elementName = getElementName(namespaceURI, localName, qName);
@@ -85,29 +79,35 @@ public class RepositoriesViewContentHandler extends DefaultHandler {
 			throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_unmatchedTag, new String[] { elementName })); 
 		}
 		
-		if (elementName.equals(REPOSITORIES_VIEW_TAG)) {
+		switch (elementName) {
+		case REPOSITORIES_VIEW_TAG:
 			// all done
-		} else if (elementName.equals(REPOSITORY_TAG)) {
+			break;
+		case REPOSITORY_TAG:
 			if (!ignoreElements) {
 				manager.add(currentRepositoryRoot);
 			}
 			currentRepositoryRoot = null;
-		} else if (elementName.equals(WORKING_SET_TAG)) {
+			break;
+		case WORKING_SET_TAG:
 			// This tag is no longer used
 			ignoreElements = false;
-		} else if (elementName.equals(CURRENT_WORKING_SET_TAG)) {
+			break;
+		case CURRENT_WORKING_SET_TAG:
 			// This tag is no longer used
 			ignoreElements = false;
-		} else if (elementName.equals(MODULE_TAG)) {
+			break;
+		case MODULE_TAG:
 			if (! ignoreElements && currentRepositoryRoot != null) {
-				currentRepositoryRoot.addTags(currentRemotePath, 
-					(CVSTag[]) tags.toArray(new CVSTag[tags.size()]));
+				currentRepositoryRoot.addTags(currentRemotePath,
+						(CVSTag[]) tags.toArray(new CVSTag[tags.size()]));
 				if (lastAccessTime > 0)
-				    currentRepositoryRoot.setLastAccessedTime(currentRemotePath, lastAccessTime);
+					currentRepositoryRoot.setLastAccessedTime(currentRemotePath, lastAccessTime);
 				currentRepositoryRoot.setAutoRefreshFiles(currentRemotePath,
-					(String[]) autoRefreshFiles.toArray(new String[autoRefreshFiles.size()]));
+						(String[]) autoRefreshFiles.toArray(new String[autoRefreshFiles.size()]));
 			}
-		}else if(elementName.equals(DATE_TAG_TAG)){
+			break;
+		case DATE_TAG_TAG:
 			if (! ignoreElements && currentRepositoryRoot != null) {
 				Iterator iter = dateTags.iterator();
 				while(iter.hasNext()){
@@ -115,13 +115,14 @@ public class RepositoriesViewContentHandler extends DefaultHandler {
 					currentRepositoryRoot.addDateTag(tag);
 				}
 			}
+			break;
+		default:
+			break;
 		}
 		tagStack.pop();
 	}
 		
-	/**
-	 * @see ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
-	 */
+	@Override
 	public void startElement(
 			String namespaceURI,
 			String localName,
@@ -130,12 +131,15 @@ public class RepositoriesViewContentHandler extends DefaultHandler {
 			throws SAXException {
 		
 		String elementName = getElementName(namespaceURI, localName, qName);
-		if (elementName.equals(REPOSITORIES_VIEW_TAG)) {
+		switch (elementName) {
+		case REPOSITORIES_VIEW_TAG:
 			// just started
-		} else if (elementName.equals(REPOSITORY_TAG)) {
+			break;
+		case REPOSITORY_TAG: {
 			String id = atts.getValue(ID_ATTRIBUTE);
 			if (id == null) {
-				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute, new String[] { REPOSITORY_TAG, ID_ATTRIBUTE })); 
+				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute,
+						new String[] { REPOSITORY_TAG, ID_ATTRIBUTE }));
 			}
 			ICVSRepositoryLocation root;
 			try {
@@ -144,33 +148,45 @@ public class RepositoriesViewContentHandler extends DefaultHandler {
 					KnownRepositories.getInstance().addRepository(root, false);
 				}
 			} catch (CVSException e) {
-				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_errorCreatingRoot, new String[] { id }), e); 
+				throw new SAXException(
+						NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_errorCreatingRoot, new String[] { id }),
+						e);
 			}
 			currentRepositoryRoot = new RepositoryRoot(root);
 			String name = atts.getValue(NAME_ATTRIBUTE);
 			if (name != null) {
 				currentRepositoryRoot.setName(name);
 			}
-		} else if(elementName.equals(DATE_TAGS_TAG)){
+			break;
+		}
+		case DATE_TAGS_TAG:
 			//prepare to collect date tag
 			dateTags = new ArrayList();
-		} else if (elementName.equals(DATE_TAG_TAG)){
+			break;
+		case DATE_TAG_TAG: {
 			String name = atts.getValue(NAME_ATTRIBUTE);
 			if (name == null) {
-				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute, new String[] { DATE_TAGS_TAG, NAME_ATTRIBUTE })); 
+				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute,
+						new String[] { DATE_TAGS_TAG, NAME_ATTRIBUTE }));
 			}
 			dateTags.add(new CVSTag(name, CVSTag.DATE));
-		}else if (elementName.equals(WORKING_SET_TAG)) {
+			break;
+		}
+		case WORKING_SET_TAG: {
 			String name = atts.getValue(NAME_ATTRIBUTE);
 			if (name == null) {
-				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute, new String[] { WORKING_SET_TAG, NAME_ATTRIBUTE })); 
+				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute,
+						new String[] { WORKING_SET_TAG, NAME_ATTRIBUTE }));
 			}
 			// Ignore any elements until the corresponding end tag is reached
 			ignoreElements = true;
-		}  else if (elementName.equals(MODULE_TAG)) {
+			break;
+		}
+		case MODULE_TAG: {
 			String path = atts.getValue(PATH_ATTRIBUTE);
 			if (path == null) {
-				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute, new String[] { MODULE_TAG, PATH_ATTRIBUTE })); 
+				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute,
+						new String[] { MODULE_TAG, PATH_ATTRIBUTE }));
 			}
 			String type = atts.getValue(TYPE_ATTRIBUTE);
 			if (type != null && type.equals(DEFINED_MODULE_TYPE)) {
@@ -179,31 +195,37 @@ public class RepositoriesViewContentHandler extends DefaultHandler {
 			long cachedTime = 0;
 			String cachedTimeString = atts.getValue(LAST_ACCESS_TIME_ATTRIBUTE);
 			if (cachedTimeString != null) {
-			    try {
-			        Long time = Long.valueOf(cachedTimeString);
-			        cachedTime = time.longValue();
-                } catch (NumberFormatException e) {
-                    // Ignore
-                }
+				try {
+					Long time = Long.valueOf(cachedTimeString);
+					cachedTime = time.longValue();
+				} catch (NumberFormatException e) {
+					// Ignore
+				}
 			}
 			startModule(path, cachedTime);
-		} else if (elementName.equals(TAG_TAG)) {
+			break;
+		}
+		case TAG_TAG: {
 			String type = atts.getValue(TYPE_ATTRIBUTE);
 			if (type == null) {
 				type = DEFAULT_TAG_TYPE;
 			}
 			String name = atts.getValue(NAME_ATTRIBUTE);
 			if (name == null) {
-				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute, new String[] { TAG_TAG, NAME_ATTRIBUTE })); 
+				throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute,
+						new String[] { TAG_TAG, NAME_ATTRIBUTE }));
 			}
 			tags.add(new CVSTag(name, getCVSTagType(type)));
-		} else if (elementName.equals(AUTO_REFRESH_FILE_TAG)) {
+			break;
+		}
+		case AUTO_REFRESH_FILE_TAG: {
 			String path = atts.getValue(FULL_PATH_ATTRIBUTE);
 			if (path == null) {
 				// get the old path attribute format which was relative to the module
 				path = atts.getValue(PATH_ATTRIBUTE);
 				if (path == null) {
-					throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute, new String[] { AUTO_REFRESH_FILE_TAG, FULL_PATH_ATTRIBUTE })); 
+					throw new SAXException(NLS.bind(CVSUIMessages.RepositoriesViewContentHandler_missingAttribute,
+							new String[] { AUTO_REFRESH_FILE_TAG, FULL_PATH_ATTRIBUTE }));
 				}
 				if (RepositoryRoot.isDefinedModuleName(currentRemotePath)) {
 					path = null;
@@ -211,10 +233,17 @@ public class RepositoriesViewContentHandler extends DefaultHandler {
 					path = new Path(null, currentRemotePath).append(path).toString();
 				}
 			}
-			if (path != null) autoRefreshFiles.add(path);
-		} else if (elementName.equals(CURRENT_WORKING_SET_TAG)) {
+			if (path != null) {
+				autoRefreshFiles.add(path);
+			}
+			break;
+		}
+		case CURRENT_WORKING_SET_TAG:
 			// Ignore any elements until the corresponding end tag is reached
 			ignoreElements = true;
+			break;
+		default:
+			break;
 		}
 		// empty buffer
 		buffer = new StringBuffer();

@@ -27,14 +27,25 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.Adapters;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.osgi.util.NLS;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.IAggregateWorkingSet;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IPageLayout;
+import org.eclipse.ui.ISaveablesSource;
+import org.eclipse.ui.ISecondarySaveableSource;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchCommandConstants;
@@ -43,12 +54,17 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.Saveable;
+import org.eclipse.ui.actions.ActionGroup;
+import org.eclipse.ui.actions.CloseResourceAction;
 import org.eclipse.ui.commands.ICommandService;
+import org.eclipse.ui.internal.DefaultSaveable;
 import org.eclipse.ui.internal.navigator.NavigatorPlugin;
 import org.eclipse.ui.internal.navigator.filters.UserFilter;
 import org.eclipse.ui.internal.navigator.framelist.Frame;
 import org.eclipse.ui.internal.navigator.framelist.FrameList;
 import org.eclipse.ui.internal.navigator.framelist.TreeFrame;
+import org.eclipse.ui.internal.navigator.resources.ProjectExplorerActionGroup;
 import org.eclipse.ui.internal.navigator.resources.ResourceToItemsMapper;
 import org.eclipse.ui.internal.navigator.resources.plugin.WorkbenchNavigatorMessages;
 import org.eclipse.ui.internal.navigator.resources.plugin.WorkbenchNavigatorPlugin;
@@ -58,7 +74,6 @@ import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
 import org.eclipse.ui.navigator.INavigatorContentService;
 
-
 /**
  *
  * @see CommonNavigator
@@ -66,7 +81,8 @@ import org.eclipse.ui.navigator.INavigatorContentService;
  * @since 3.2
  *
  */
-public final class ProjectExplorer extends CommonNavigator {
+@SuppressWarnings("restriction")
+public final class ProjectExplorer extends CommonNavigator implements ISecondarySaveableSource {
 
 	/**
 	 * Provides a constant for the standard instance of the Common Navigator.
@@ -97,8 +113,8 @@ public final class ProjectExplorer extends CommonNavigator {
 	private int rootMode;
 
 	/**
-	 * Used only in the case of top level = PROJECTS and only when some
-	 * working sets are selected.
+	 * Used only in the case of top level = PROJECTS and only when some working sets
+	 * are selected.
 	 */
 	private String workingSetLabel;
 
@@ -108,7 +124,7 @@ public final class ProjectExplorer extends CommonNavigator {
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
 		super.init(site, memento);
-		userFilters = new ArrayList<UserFilter>();
+		userFilters = new ArrayList<>();
 		if (memento != null) {
 			IMemento[] filters = memento.getChildren(MEMENTO_REGEXP_FILTER_ELEMENT);
 			for (IMemento filterMemento : filters) {
@@ -150,9 +166,13 @@ public final class ProjectExplorer extends CommonNavigator {
 		}
 	}
 
+	@Override
+	protected ActionGroup createCommonActionGroup() {
+		return new ProjectExplorerActionGroup(this, getCommonViewer(), getLinkHelperService());
+	}
+
 	/**
-	 * The superclass does not deal with the content description, handle it
-	 * here.
+	 * The superclass does not deal with the content description, handle it here.
 	 *
 	 * @noreference This method is not intended to be referenced by clients.
 	 */
@@ -188,8 +208,7 @@ public final class ProjectExplorer extends CommonNavigator {
 	/**
 	 * Returns the tool tip text for the given element.
 	 *
-	 * @param element
-	 *            the element
+	 * @param element the element
 	 * @return the tooltip
 	 * @noreference This method is not intended to be referenced by clients.
 	 */
@@ -217,16 +236,14 @@ public final class ProjectExplorer extends CommonNavigator {
 			if (workingSetLabel == null)
 				return result;
 			if (result.length() == 0)
-				return NLS.bind(WorkbenchNavigatorMessages.ProjectExplorer_toolTip,
-						new String[] { workingSetLabel });
-			return NLS.bind(WorkbenchNavigatorMessages.ProjectExplorer_toolTip2, new String[] {
-					result, workingSetLabel });
+				return NLS.bind(WorkbenchNavigatorMessages.ProjectExplorer_toolTip, new String[] { workingSetLabel });
+			return NLS.bind(WorkbenchNavigatorMessages.ProjectExplorer_toolTip2,
+					new String[] { result, workingSetLabel });
 		}
 
 		// Working set mode. During initialization element and viewer can
 		// be null.
-		if (element != null && !(element instanceof IWorkingSet)
-				&& getCommonViewer() != null) {
+		if (element != null && !(element instanceof IWorkingSet) && getCommonViewer() != null) {
 			FrameList frameList = getCommonViewer().getFrameList();
 			// Happens during initialization
 			if (frameList == null)
@@ -255,7 +272,7 @@ public final class ProjectExplorer extends CommonNavigator {
 	}
 
 	/**
-	 * @param mode
+	 * @param mode root mode to set
 	 * @noreference This method is not intended to be referenced by clients.
 	 * @since 3.4
 	 */
@@ -275,7 +292,7 @@ public final class ProjectExplorer extends CommonNavigator {
 	}
 
 	/**
-	 * @param label
+	 * @param label working set label
 	 * @noreference This method is not intended to be referenced by clients.
 	 * @since 3.4
 	 */
@@ -299,8 +316,7 @@ public final class ProjectExplorer extends CommonNavigator {
 		ICommandService commandService = getViewSite().getService(ICommandService.class);
 		Command openProjectCommand = commandService.getCommand(IWorkbenchCommandConstants.PROJECT_OPEN_PROJECT);
 		if (openProjectCommand != null && openProjectCommand.isHandled() && openProjectCommand.isEnabled()) {
-			IStructuredSelection selection = (IStructuredSelection) anEvent
-					.getSelection();
+			IStructuredSelection selection = (IStructuredSelection) anEvent.getSelection();
 			Object element = selection.getFirstElement();
 			if (element instanceof IProject && !((IProject) element).isOpen()) {
 				try {
@@ -322,4 +338,67 @@ public final class ProjectExplorer extends CommonNavigator {
 		return viewer;
 	}
 
+	@Override
+	public Saveable[] getSaveables() {
+		if (!hasSaveablesProvider()) {
+			IEditorPart saveablePart = getActiveEditor();
+			return saveablePart != null
+					? saveablePart instanceof ISaveablesSource ? ((ISaveablesSource) saveablePart).getSaveables()
+							: new Saveable[] { new DefaultSaveable(saveablePart) }
+					: new Saveable[] {};
+		}
+		return super.getSaveables();
+	}
+
+	@Override
+	public Saveable[] getActiveSaveables() {
+		if (!hasSaveablesProvider()) {
+			IEditorPart saveablePart = getActiveEditor();
+			return saveablePart != null
+					? saveablePart instanceof ISaveablesSource ? ((ISaveablesSource) saveablePart).getActiveSaveables()
+							: new Saveable[] { new DefaultSaveable(saveablePart) }
+					: new Saveable[] {};
+		}
+		return super.getActiveSaveables();
+	}
+
+	private IEditorPart getActiveEditor() {
+		IWorkbenchPage page = getSite().getPage();
+		return page != null ? page.getActiveEditor() : null;
+	}
+
+	@Override
+	public boolean isDirtyStateSupported() {
+		return hasSaveablesProvider();
+	}
+
+	@Override
+	protected void initListeners(TreeViewer viewer) {
+		super.initListeners(viewer);
+
+		viewer.getControl().addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseUp(MouseEvent event) {
+				SafeRunner.run(() -> {
+					handleMiddleClick(event);
+				});
+			}
+
+			private void handleMiddleClick(MouseEvent event) {
+				if (event.button == 2 && event.widget instanceof Tree) {
+					TreeItem item = ((Tree) event.widget).getItem(new Point(event.x, event.y));
+					if (item == null) {
+						return;
+					}
+					Object data = item.getData();
+					if (data instanceof IProject) {
+						IProject project = (IProject) data;
+						CloseResourceAction cra = new CloseResourceAction(() -> null);
+						cra.selectionChanged(new StructuredSelection(project));
+						cra.run();
+					}
+				}
+			}
+		});
+	}
 }

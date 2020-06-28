@@ -26,7 +26,7 @@ import org.eclipse.ui.services.IServiceLocator;
  * Example implementation that cleans up listeners when the IServiceLocator
  * (site, window, etc) is disposed. It delegates to its parent for the actual
  * behaviour.
- * 
+ *
  * @since 3.4
  */
 public class PersonServiceSlave implements IPersonService, IDisposable {
@@ -78,9 +78,8 @@ public class PersonServiceSlave implements IPersonService, IDisposable {
 	public void dispose() {
 		Object[] array = localListeners.getListeners();
 		localListeners.clear();
-		for (int i = 0; i < array.length; i++) {
-			parentService
-					.removePersonChangeListener((IPropertyChangeListener) array[i]);
+		for (Object a : array) {
+			parentService.removePersonChangeListener((IPropertyChangeListener) a);
 		}
 		serviceLocator = null;
 		parentService = null;

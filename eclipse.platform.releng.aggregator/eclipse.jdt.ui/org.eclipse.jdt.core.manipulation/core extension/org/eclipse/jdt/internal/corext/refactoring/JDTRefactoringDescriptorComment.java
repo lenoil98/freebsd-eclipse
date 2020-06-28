@@ -15,7 +15,6 @@ package org.eclipse.jdt.internal.corext.refactoring;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
@@ -64,11 +63,11 @@ public final class JDTRefactoringDescriptorComment {
 		Assert.isNotNull(caption);
 		Assert.isNotNull(settings);
 		final StringBuilder buffer= new StringBuilder(128);
-		for (int index= 0; index < settings.length; index++) {
-			if (settings[index] != null && !"".equals(settings[index])) { //$NON-NLS-1$
+		for (String setting : settings) {
+			if (setting != null && !"".equals(setting)) { //$NON-NLS-1$
 				buffer.append(LINE_DELIMITER);
 				buffer.append(ELEMENT_DELIMITER);
-				buffer.append(settings[index]);
+				buffer.append(setting);
 			} else {
 				buffer.append(LINE_DELIMITER);
 				buffer.append(ELEMENT_DELIMITER);
@@ -146,8 +145,7 @@ public final class JDTRefactoringDescriptorComment {
 			buffer.append(LINE_DELIMITER);
 			buffer.append(Messages.format(RefactoringCoreMessages.JavaRefactoringDescriptorComment_original_project, BasicElementLabels.getResourceName(fProject)));
 		}
-		for (final Iterator<String> iterator= fSettings.iterator(); iterator.hasNext();) {
-			final String setting= iterator.next();
+		for (String setting : fSettings) {
 			buffer.append(LINE_DELIMITER);
 			buffer.append(Messages.format(RefactoringCoreMessages.JavaRefactoringDescriptor_inferred_setting_pattern, setting));
 		}
@@ -193,11 +191,11 @@ public final class JDTRefactoringDescriptorComment {
 				else if (elements.length > 1) {
 					final StringBuilder buffer= new StringBuilder(128);
 					buffer.append(RefactoringCoreMessages.JavaRefactoringDescriptor_original_elements);
-					for (int index= 0; index < elements.length; index++) {
-						if (elements[index] != null) {
+					for (Object element : elements) {
+						if (element != null) {
 							buffer.append(LINE_DELIMITER);
 							buffer.append(ELEMENT_DELIMITER);
-							buffer.append(JavaElementLabelsCore.getTextLabel(elements[index], JavaElementLabelsCore.ALL_FULLY_QUALIFIED));
+							buffer.append(JavaElementLabelsCore.getTextLabel(element, JavaElementLabelsCore.ALL_FULLY_QUALIFIED));
 						} else {
 							buffer.append(LINE_DELIMITER);
 							buffer.append(ELEMENT_DELIMITER);
@@ -227,11 +225,11 @@ public final class JDTRefactoringDescriptorComment {
 				else if (elements.length > 1) {
 					final StringBuilder buffer= new StringBuilder(128);
 					buffer.append(RefactoringCoreMessages.JavaRefactoringDescriptor_original_elements);
-					for (int index= 0; index < elements.length; index++) {
-						if (elements[index] != null) {
+					for (Object element : elements) {
+						if (element != null) {
 							buffer.append(LINE_DELIMITER);
 							buffer.append(ELEMENT_DELIMITER);
-							buffer.append(JavaElementLabelsCore.getTextLabel(elements[index], JavaElementLabelsCore.ALL_FULLY_QUALIFIED));
+							buffer.append(JavaElementLabelsCore.getTextLabel(element, JavaElementLabelsCore.ALL_FULLY_QUALIFIED));
 						} else {
 							buffer.append(LINE_DELIMITER);
 							buffer.append(ELEMENT_DELIMITER);
@@ -256,12 +254,19 @@ public final class JDTRefactoringDescriptorComment {
 			final ISimilarDeclarationUpdating updating= (ISimilarDeclarationUpdating) object;
 			if (updating.canEnableSimilarDeclarationUpdating() && updating.getUpdateSimilarDeclarations()) {
 				final int strategy= updating.getMatchStrategy();
-				if (strategy == RenamingNameSuggestor.STRATEGY_EXACT)
+				switch (strategy) {
+				case RenamingNameSuggestor.STRATEGY_EXACT:
 					fSettings.add(RefactoringCoreMessages.JavaRefactoringDescriptor_rename_similar);
-				else if (strategy == RenamingNameSuggestor.STRATEGY_EMBEDDED)
+					break;
+				case RenamingNameSuggestor.STRATEGY_EMBEDDED:
 					fSettings.add(RefactoringCoreMessages.JavaRefactoringDescriptor_rename_similar_embedded);
-				else if (strategy == RenamingNameSuggestor.STRATEGY_SUFFIX)
+					break;
+				case RenamingNameSuggestor.STRATEGY_SUFFIX:
 					fSettings.add(RefactoringCoreMessages.JavaRefactoringDescriptor_rename_similar_suffix);
+					break;
+				default:
+					break;
+				}
 			}
 		}
 		if (object instanceof IQualifiedNameUpdating) {

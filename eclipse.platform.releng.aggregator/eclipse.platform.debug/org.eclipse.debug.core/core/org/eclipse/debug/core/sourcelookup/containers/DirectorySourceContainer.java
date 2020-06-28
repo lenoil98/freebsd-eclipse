@@ -15,6 +15,7 @@ package org.eclipse.debug.core.sourcelookup.containers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -104,15 +105,13 @@ public class DirectorySourceContainer extends CompositeSourceContainer {
 		//check sub-folders
 		if ((isFindDuplicates() && fSubfolders) || (sources.isEmpty() && fSubfolders)) {
 			ISourceContainer[] containers = getSourceContainers();
-			for (int i=0; i < containers.length; i++) {
-				Object[] objects = containers[i].findSourceElements(name);
+			for (ISourceContainer container : containers) {
+				Object[] objects = container.findSourceElements(name);
 				if (objects == null || objects.length == 0) {
 					continue;
 				}
 				if (isFindDuplicates()) {
-					for(int j=0; j < objects.length; j++) {
-						sources.add(objects[j]);
-					}
+					Collections.addAll(sources, objects);
 				} else {
 					sources.add(objects[0]);
 					break;
@@ -151,16 +150,14 @@ public class DirectorySourceContainer extends CompositeSourceContainer {
 			String[] files = fDirectory.list();
 			if (files != null) {
 				List<ISourceContainer> dirs = new ArrayList<>();
-				for (int i = 0; i < files.length; i++) {
-					String name = files[i];
+				for (String name : files) {
 					File file = new File(getDirectory(), name);
 					if (file.exists() && file.isDirectory()) {
 						dirs.add(new DirectorySourceContainer(file, true));
 					}
 				}
 				ISourceContainer[] containers = dirs.toArray(new ISourceContainer[dirs.size()]);
-				for (int i = 0; i < containers.length; i++) {
-					ISourceContainer container = containers[i];
+				for (ISourceContainer container : containers) {
 					container.init(getDirector());
 				}
 				return containers;

@@ -279,7 +279,7 @@ public class TipComposite extends Composite implements ProviderSelectionListener
 	}
 
 	private void startupMenuAboutToShow(final Menu menu) {
-		Arrays.asList(menu.getItems()).forEach(item -> item.dispose());
+		Arrays.asList(menu.getItems()).forEach(MenuItem::dispose);
 
 		MenuItem item0 = new MenuItem(menu, SWT.CHECK);
 		item0.setText(Messages.TipComposite_1);
@@ -458,11 +458,6 @@ public class TipComposite extends Composite implements ProviderSelectionListener
 	 */
 	private void loadTimeOutScript() {
 		fBrowser.setText(getLoadingScript(500));
-		while (!isDisposed()) {
-			if (!getDisplay().readAndDispatch()) {
-				break;
-			}
-		}
 	}
 
 	/**
@@ -471,11 +466,6 @@ public class TipComposite extends Composite implements ProviderSelectionListener
 	 */
 	private void loadWaitingScript() {
 		fBrowser.setText(getWaitingScript(1500));
-		while (!isDisposed()) {
-			if (!getDisplay().readAndDispatch()) {
-				break;
-			}
-		}
 	}
 
 	/**
@@ -517,7 +507,7 @@ public class TipComposite extends Composite implements ProviderSelectionListener
 	}
 
 	private void disposeActionImages() {
-		fActionImages.forEach(img -> img.dispose());
+		fActionImages.forEach(Image::dispose);
 	}
 
 	private void loadActionMenu(Tip pTip) {

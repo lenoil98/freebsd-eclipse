@@ -17,7 +17,6 @@ package org.eclipse.jdt.junit.tests;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.jdt.internal.junit.runner.FailuresFirstPrioritizer;
@@ -287,9 +286,9 @@ public class TestPriorization extends TestCase {
 		collectOrder(reordered, order);
 
 		// can't check for exact order, since order of Class.getDeclaredMethods() is unspecified (bug 144503)
-		List<String> suiteTests= new ArrayList<>(Arrays.asList(new String[] { "testX", "testY", "testZ" }));
-		List<String> suite1Tests= new ArrayList<>(Arrays.asList(new String[] { "testA", "testB", "testC" }));
-		List<String> suite2Tests= new ArrayList<>(Arrays.asList(new String[] { "testD", "testE", "testF" }));
+		List<String> suiteTests= new ArrayList<>(Arrays.asList("testX", "testY", "testZ"));
+		List<String> suite1Tests= new ArrayList<>(Arrays.asList("testA", "testB", "testC"));
+		List<String> suite2Tests= new ArrayList<>(Arrays.asList("testD", "testE", "testF"));
 
 		assertEquals("testF", order.get(0));
 		assertEquals("testZ", order.get(6));
@@ -351,9 +350,8 @@ public class TestPriorization extends TestCase {
 	}
 
 	private static String enumerate(List<String> list) {
-		StringBuffer buf= new StringBuffer();
-		for (Iterator<String> iter= list.iterator(); iter.hasNext();) {
-			String s= iter.next();
+		StringBuilder buf= new StringBuilder();
+		for (String s : list) {
 			buf.append(s).append('\n');
 		}
 		return buf.toString();

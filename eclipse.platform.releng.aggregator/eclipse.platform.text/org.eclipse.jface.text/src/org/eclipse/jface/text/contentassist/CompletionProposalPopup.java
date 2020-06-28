@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.osgi.util.TextProcessor;
 
@@ -30,8 +31,6 @@ import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.KeyAdapter;
@@ -41,7 +40,6 @@ import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.graphics.Color;
@@ -141,6 +139,9 @@ class CompletionProposalPopup implements IContentAssistListener {
 
 		@Override
 		public Object execute(ExecutionEvent event) throws ExecutionException {
+			if (fProposalTable.isDisposed()) {
+				return null;
+			}
 			int itemCount= fProposalTable.getItemCount();
 			int selectionIndex= fProposalTable.getSelectionIndex();
 			switch (fOperationCode) {
@@ -347,10 +348,8 @@ class CompletionProposalPopup implements IContentAssistListener {
 	private final Runnable fFilterRunnable= new Runnable() {
 		@Override
 		public void run() {
-			if (!fIsFilterPending)
+			if (!fIsFilterPending.compareAndSet(true, false))
 				return;
-
-			fIsFilterPending= false;
 
 			if (!Helper.okToUse(fContentAssistSubjectControlAdapter.getControl()))
 				return;
@@ -364,12 +363,11 @@ class CompletionProposalPopup implements IContentAssistListener {
 					proposals= computeFilteredProposals(offset, event);
 				}
 			} catch (BadLocationException x) {
-			} finally {
 				fDocumentEvents.clear();
 			}
 			fFilterOffset= offset;
 
-			if (proposals != null && proposals.size() > 0)
+			if (proposals != null && !proposals.isEmpty())
 				setProposals(proposals, fIsFilteredSubset);
 			else {
 				hide();
@@ -392,7 +390,7 @@ class CompletionProposalPopup implements IContentAssistListener {
 	 *
 	 * @since 3.1.1
 	 */
-	private boolean fIsFilterPending= false;
+	private final AtomicBoolean fIsFilterPending= new AtomicBoolean(false);
 	/**
 	 * The info message at the bottom of the popup, or <code>null</code> for no popup (if
 	 * ContentAssistant does not provide one).
@@ -606,12 +604,7 @@ class CompletionProposalPopup implements IContentAssistListener {
 		fProposalShell.setFont(JFaceResources.getDefaultFont());
 		fProposalTable= new Table(fProposalShell, SWT.H_SCROLL | SWT.V_SCROLL | SWT.VIRTUAL);
 
-		Listener listener= new Listener() {
-			@Override
-			public void handleEvent(Event event) {
-				handleSetData(event);
-			}
-		};
+		Listener listener= event -> handleSetData(event);
 		fProposalTable.addListener(SWT.SetData, listener);
 
 		fIsColoredLabelsSupportEnabled= fContentAssistant.isColoredLabelsSupportEnabled();
@@ -683,7 +676,7 @@ class CompletionProposalPopup implements IContentAssistListener {
 
 		Color foreground= getForegroundColor(control);
 		if (foreground == null) {
-			foreground= JFaceColors.getInformationViewerBackgroundColor(Display.getDefault());
+			foreground= JFaceColors.getInformationViewerForegroundColor(Display.getDefault());
 		}
 
 		fProposalShell.setBackground(background);
@@ -703,12 +696,7 @@ class CompletionProposalPopup implements IContentAssistListener {
 
 		fPopupCloser.install(fContentAssistant, fProposalTable, fAdditionalInfoController);
 
-		fProposalShell.addDisposeListener(new DisposeListener() {
-			@Override
-			public void widgetDisposed(DisposeEvent e) {
-				unregister(); // but don't dispose the shell, since we're being called from its disposal event!
-			}
-		});
+		fProposalShell.addDisposeListener(event -> unregister());
 
 		fProposalTable.setHeaderVisible(false);
 
@@ -740,62 +728,59 @@ class CompletionProposalPopup implements IContentAssistListener {
 	 * @param control the control to watch for focus
 	 * @since 3.2
 	 */
-    private void addCommandSupport(final Control control) {
-    	final KeySequence commandSequence= fContentAssistant.getRepeatedInvocationKeySequence();
-    	if (commandSequence != null && !commandSequence.isEmpty() && fContentAssistant.isRepeatedInvocationMode()) {
-    		control.addFocusListener(new FocusListener() {
-    			private CommandKeyListener fCommandKeyListener;
-    			@Override
+	private void addCommandSupport(final Control control) {
+		final KeySequence commandSequence= fContentAssistant.getRepeatedInvocationKeySequence();
+		if (commandSequence != null && !commandSequence.isEmpty() && fContentAssistant.isRepeatedInvocationMode()) {
+			control.addFocusListener(new FocusListener() {
+				private CommandKeyListener fCommandKeyListener;
+				@Override
 				public void focusGained(FocusEvent e) {
-    				if (Helper.okToUse(control)) {
-    					if (fCommandKeyListener == null) {
-    						fCommandKeyListener= new CommandKeyListener(commandSequence);
-    						fProposalTable.addKeyListener(fCommandKeyListener);
-    					}
-    				}
-    			}
-    			@Override
+					if (Helper.okToUse(control)) {
+						if (fCommandKeyListener == null) {
+							fCommandKeyListener= new CommandKeyListener(commandSequence);
+							fProposalTable.addKeyListener(fCommandKeyListener);
+						}
+					}
+				}
+				@Override
 				public void focusLost(FocusEvent e) {
-    				if (fCommandKeyListener != null) {
-    					control.removeKeyListener(fCommandKeyListener);
-    					fCommandKeyListener= null;
-    				}
-    			}
-    		});
-    	}
-    	if (fAdditionalInfoController != null) {
-	    	control.addFocusListener(new FocusListener() {
-	    		private TraverseListener fTraverseListener;
-	    		@Override
+					if (fCommandKeyListener != null) {
+						control.removeKeyListener(fCommandKeyListener);
+						fCommandKeyListener= null;
+					}
+				}
+			});
+		}
+		if (fAdditionalInfoController != null) {
+			control.addFocusListener(new FocusListener() {
+				private TraverseListener fTraverseListener;
+				@Override
 				public void focusGained(FocusEvent e) {
-	    			if (Helper.okToUse(control)) {
-	    				if (fTraverseListener == null) {
-							fTraverseListener= new TraverseListener() {
-								@Override
-								public void keyTraversed(TraverseEvent event) {
-									if (event.detail == SWT.TRAVERSE_TAB_NEXT) {
-										IInformationControl iControl= fAdditionalInfoController.getCurrentInformationControl2();
-										if (fAdditionalInfoController.getInternalAccessor().canReplace(iControl)) {
-											fAdditionalInfoController.getInternalAccessor().replaceInformationControl(true);
-											event.doit= false;
-										}
+					if (Helper.okToUse(control)) {
+						if (fTraverseListener == null) {
+							fTraverseListener= event -> {
+								if (event.detail == SWT.TRAVERSE_TAB_NEXT) {
+									IInformationControl iControl= fAdditionalInfoController.getCurrentInformationControl2();
+									if (fAdditionalInfoController.getInternalAccessor().canReplace(iControl)) {
+										fAdditionalInfoController.getInternalAccessor().replaceInformationControl(true);
+										event.doit= false;
 									}
 								}
 							};
-	    					fProposalTable.addTraverseListener(fTraverseListener);
-	    				}
-	    			}
-	    		}
-	    		@Override
+							fProposalTable.addTraverseListener(fTraverseListener);
+						}
+					}
+				}
+				@Override
 				public void focusLost(FocusEvent e) {
-	    			if (fTraverseListener != null) {
-	    				control.removeTraverseListener(fTraverseListener);
-	    				fTraverseListener= null;
-	    			}
-	    		}
-	    	});
-    	}
-    }
+					if (fTraverseListener != null) {
+						control.removeTraverseListener(fTraverseListener);
+						fTraverseListener= null;
+					}
+				}
+			});
+		}
+	}
 
 	/**
 	 * Returns the background color to use.
@@ -933,7 +918,7 @@ class CompletionProposalPopup implements IContentAssistListener {
 		/* Make sure that there is no filter runnable pending.
 		 * See https://bugs.eclipse.org/bugs/show_bug.cgi?id=31427
 		 */
-		if (fIsFilterPending)
+		if (fIsFilterPending.get())
 			fFilterRunnable.run();
 
 		// filter runnable may have hidden the proposals
@@ -1491,8 +1476,7 @@ class CompletionProposalPopup implements IContentAssistListener {
 	 * offset of the original invocation of the content assistant.
 	 */
 	void filterProposals() {
-		if (!fIsFilterPending) {
-			fIsFilterPending= true;
+		if (fIsFilterPending.compareAndSet(false, true)) {
 			Control control= fContentAssistSubjectControlAdapter.getControl();
 			control.getDisplay().asyncExec(fFilterRunnable);
 		}
@@ -1508,6 +1492,7 @@ class CompletionProposalPopup implements IContentAssistListener {
 	 * @since 3.0
 	 */
 	List<ICompletionProposal> computeFilteredProposals(int offset, DocumentEvent event) {
+		fDocumentEvents.clear();
 
 		if (offset == fInvocationOffset && event == null) {
 			fIsFilteredSubset= false;

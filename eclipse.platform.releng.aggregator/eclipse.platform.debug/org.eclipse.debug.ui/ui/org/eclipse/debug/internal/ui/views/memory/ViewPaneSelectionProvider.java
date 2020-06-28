@@ -31,47 +31,27 @@ public class ViewPaneSelectionProvider implements ISelectionProvider {
 	ArrayList<ISelectionChangedListener> fListeners = new ArrayList<>();
 	ISelection fSelection;
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.jface.viewers.ISelectionProvider#addSelectionChangedListener
-	 * (org.eclipse.jface.viewers.ISelectionChangedListener)
-	 */
 	@Override
 	public void addSelectionChangedListener(ISelectionChangedListener listener) {
-		if (!fListeners.contains(listener))
+		if (!fListeners.contains(listener)) {
 			fListeners.add(listener);
+		}
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ISelectionProvider#getSelection()
-	 */
 	@Override
 	public ISelection getSelection() {
 		return fSelection;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.jface.viewers.ISelectionProvider#removeSelectionChangedListener
-	 * (org.eclipse.jface.viewers.ISelectionChangedListener)
-	 */
 	@Override
 	public void removeSelectionChangedListener(ISelectionChangedListener listener) {
-		if (fListeners.contains(listener))
+		if (fListeners.contains(listener)) {
 			fListeners.remove(listener);
+		}
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.jface.viewers.ISelectionProvider#setSelection(org.eclipse
-	 * .jface.viewers.ISelection)
-	 */
 	@Override
 	public void setSelection(ISelection selection) {
 		fSelection = selection;
@@ -80,8 +60,8 @@ public class ViewPaneSelectionProvider implements ISelectionProvider {
 
 	public void fireChanged() {
 		SelectionChangedEvent evt = new SelectionChangedEvent(this, getSelection());
-		for (int i = 0; i < fListeners.size(); i++) {
-			fListeners.get(i).selectionChanged(evt);
+		for (ISelectionChangedListener listener : fListeners) {
+			listener.selectionChanged(evt);
 		}
 	}
 }

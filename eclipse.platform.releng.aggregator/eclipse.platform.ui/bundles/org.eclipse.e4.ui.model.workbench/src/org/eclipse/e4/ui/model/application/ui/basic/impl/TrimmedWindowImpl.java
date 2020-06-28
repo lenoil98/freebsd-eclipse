@@ -73,9 +73,11 @@ public class TrimmedWindowImpl extends WindowImpl implements MTrimmedWindow {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
 	public List<MTrimBar> getTrimBars() {
 		if (trimBars == null) {
-			trimBars = new EObjectContainmentEList<MTrimBar>(MTrimBar.class, this, BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS);
+			trimBars = new EObjectContainmentEList<MTrimBar>(MTrimBar.class, this,
+					BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS);
 		}
 		return trimBars;
 	}
@@ -88,10 +90,11 @@ public class TrimmedWindowImpl extends WindowImpl implements MTrimmedWindow {
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
-				return ((InternalEList<?>)getTrimBars()).basicRemove(otherEnd, msgs);
+		case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
+			return ((InternalEList<?>) getTrimBars()).basicRemove(otherEnd, msgs);
+		default:
+			return super.eInverseRemove(otherEnd, featureID, msgs);
 		}
-		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
 
 	/**
@@ -102,10 +105,11 @@ public class TrimmedWindowImpl extends WindowImpl implements MTrimmedWindow {
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
-				return getTrimBars();
+		case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
+			return getTrimBars();
+		default:
+			return super.eGet(featureID, resolve, coreType);
 		}
-		return super.eGet(featureID, resolve, coreType);
 	}
 
 	/**
@@ -117,12 +121,14 @@ public class TrimmedWindowImpl extends WindowImpl implements MTrimmedWindow {
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
-				getTrimBars().clear();
-				getTrimBars().addAll((Collection<? extends MTrimBar>)newValue);
-				return;
+		case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
+			getTrimBars().clear();
+			getTrimBars().addAll((Collection<? extends MTrimBar>) newValue);
+			return;
+		default:
+			super.eSet(featureID, newValue);
+			return;
 		}
-		super.eSet(featureID, newValue);
 	}
 
 	/**
@@ -133,11 +139,13 @@ public class TrimmedWindowImpl extends WindowImpl implements MTrimmedWindow {
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
-				getTrimBars().clear();
-				return;
+		case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
+			getTrimBars().clear();
+			return;
+		default:
+			super.eUnset(featureID);
+			return;
 		}
-		super.eUnset(featureID);
 	}
 
 	/**
@@ -148,10 +156,11 @@ public class TrimmedWindowImpl extends WindowImpl implements MTrimmedWindow {
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
-				return trimBars != null && !trimBars.isEmpty();
+		case BasicPackageImpl.TRIMMED_WINDOW__TRIM_BARS:
+			return trimBars != null && !trimBars.isEmpty();
+		default:
+			return super.eIsSet(featureID);
 		}
-		return super.eIsSet(featureID);
 	}
 
 } //TrimmedWindowImpl

@@ -14,8 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
-import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of this class are used to inform or warn the user.
@@ -186,7 +186,7 @@ public int open () {
 	* anyway and not rely on MB_MODAL to work by making the
 	* parent be temporarily modal.
 	*/
-	long /*int*/ hwndOwner = parent != null ? parent.handle : 0;
+	long hwndOwner = parent != null ? parent.handle : 0;
 	Display display = parent != null ? parent.getDisplay (): Display.getCurrent ();
 	Dialog oldModal = null;
 	if ((bits & OS.MB_TASKMODAL) != 0) {
@@ -196,24 +196,17 @@ public int open () {
 
 	/* Open the message box */
 	display.sendPreExternalEventDispatchEvent ();
-	/* Use the character encoding for the default locale */
 	TCHAR buffer1 = new TCHAR (0, message, true);
 	TCHAR buffer2 = new TCHAR (0, title, true);
+	display.externalEventLoop = true;
 	int code = OS.MessageBox (hwndOwner, buffer1, buffer2, bits);
+	display.externalEventLoop = false;
 	display.sendPostExternalEventDispatchEvent ();
 
 	/* Clear the temporarily dialog modal parent */
 	if ((bits & OS.MB_TASKMODAL) != 0) {
 		display.setModalDialog (oldModal);
 	}
-
-	/*
-	* This code is intentionally commented.  On some
-	* platforms, the owner window is repainted right
-	* away when a dialog window exits.  This behavior
-	* is currently unspecified.
-	*/
-//	if (hwndOwner != 0) OS.UpdateWindow (hwndOwner);
 
 	/* Compute and return the result */
 	if (code != 0) {

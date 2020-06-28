@@ -1,13 +1,13 @@
 /*******************************************************************************
  * Copyright (c) 2000, 2007 IBM Corporation and others.
  *
- * This program and the accompanying materials 
+ * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -18,6 +18,8 @@ import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
+
 import org.eclipse.ui.texteditor.ITextEditor;
 
 import org.eclipse.jdt.core.IJavaElement;
@@ -34,7 +36,7 @@ public class EditorUtility {
 	}
 
 	public static IEditorPart getActiveEditor() {
-		IWorkbenchWindow window= ASTViewPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow();
+		IWorkbenchWindow window= PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		if (window != null) {
 			IWorkbenchPage page= window.getActivePage();
 			if (page != null) {
@@ -43,7 +45,7 @@ public class EditorUtility {
 		}
 		return null;
 	}
-	
+
 	public static ITypeRoot getJavaInput(IEditorPart part) {
 		IEditorInput editorInput= part.getEditorInput();
 		if (editorInput != null) {
@@ -52,7 +54,7 @@ public class EditorUtility {
 				return (ITypeRoot) input;
 			}
 		}
-		return null;	
+		return null;
 	}
 
 	public static void selectInEditor(ITextEditor editor, int offset, int length) {

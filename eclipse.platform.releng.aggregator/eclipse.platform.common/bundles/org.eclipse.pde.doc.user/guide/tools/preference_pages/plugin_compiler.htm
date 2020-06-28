@@ -47,7 +47,7 @@
       The plug-in compiler preferences are set at a workspace level on the
       <a class="command-link" href=
       'javascript:executeCommand("org.eclipse.ui.window.preferences(preferencePageId=org.eclipse.pde.ui.CompilersPreferencePage)")'>
-      <img src="PLUGINS_ROOT/org.eclipse.help/command_link.png" alt=
+      <img src="PLUGINS_ROOT/org.eclipse.help/command_link.svg" alt=
       "Open the compilers preference page" /> <strong>Window &gt;
 
       Preferences... &gt; Plug-in Development &gt; Compilers</strong></a>
@@ -186,6 +186,11 @@
 		  <td rowspan="1" colspan="1" valign="top" align="left"><p>Missing versions on imported packages</p></td>
 		  <td rowspan="1" colspan="1" valign="top" align="left"><p>An imported package manifest entry does not have version restrictions</p></td>
 		  <td rowspan="1" colspan="1" valign="top" align="center"><p>Ignore</p></td>
+		</tr>
+		<tr>
+		  <td rowspan="1" colspan="1" valign="top" align="left"><p>Bundle BREE lower than its dependencies</p></td>
+		  <td rowspan="1" colspan="1" valign="top" align="left"><p>At least one of the bundle's dependencies requires an execution environment that is higher than the bundle's current execution environment</p></td>
+		  <td rowspan="1" colspan="1" valign="top" align="center"><p>Warning</p></td>
 		</tr>
 	  </tbody>
 	</table>
@@ -328,15 +333,9 @@
         contributing to such an extension point are flagged.
       </li>
     </ul>
-    <p>
-
-      <img src="../../../images/ngrelr.png" alt="Related reference" border=
-      "0" />
-    </p>
-    <p>
-      <a href="compilers.htm">PDE Compiler Preferences</a><br />
-      <a href="preferences.htm">PDE Preferences</a>
-    </p>
+    <h3 class="related">Related references</h3>
+    <a href="compilers.htm">PDE Compiler Preferences</a><br />
+    <a href="preferences.htm">PDE Preferences</a>
   </body>
 </html>
 

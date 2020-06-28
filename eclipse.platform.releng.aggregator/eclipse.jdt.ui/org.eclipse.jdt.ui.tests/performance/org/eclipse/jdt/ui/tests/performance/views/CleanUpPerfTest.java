@@ -15,11 +15,11 @@
 package org.eclipse.jdt.ui.tests.performance.views;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.Assert;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.JavaTestPlugin;
@@ -89,7 +89,7 @@ public class CleanUpPerfTest extends JdtPerformanceTestCase {
 		@Override
 		protected void setUp() throws Exception {
 			fJProject1= JavaProjectHelper.createJavaProject("TestProject1", "bin");
-			assertTrue("rt not found", JavaProjectHelper.addRTJar(fJProject1) != null);
+			Assert.assertNotNull("rt not found", JavaProjectHelper.addRTJar(fJProject1));
 			File junitSrcArchive= JavaTestPlugin.getDefault().getFileInPlugin(JavaProjectHelper.JUNIT_SRC_381);
 			JavaProjectHelper.addSourceContainerWithImport(fJProject1, SRC_CONTAINER, junitSrcArchive, JavaProjectHelper.JUNIT_SRC_ENCODING);
 		}
@@ -125,8 +125,7 @@ public class CleanUpPerfTest extends JdtPerformanceTestCase {
 	}
 
 	private void addAllCUs(CleanUpRefactoring cleanUp, IJavaElement[] children) throws JavaModelException {
-		for (int i= 0; i < children.length; i++) {
-			IJavaElement element= children[i];
+		for (IJavaElement element : children) {
 			if (element instanceof ICompilationUnit) {
 				cleanUp.addCompilationUnit((ICompilationUnit)element);
 			} else if (element instanceof IPackageFragmentRoot) {
@@ -142,9 +141,7 @@ public class CleanUpPerfTest extends JdtPerformanceTestCase {
 	private static Map<String, String> getNullSettings() {
 		Map<String, String> result= new HashMap<>();
 
-		Collection<String> keys= JavaPlugin.getDefault().getCleanUpRegistry().getDefaultOptions(CleanUpConstants.DEFAULT_CLEAN_UP_OPTIONS).getKeys();
-		for (Iterator<String> iterator= keys.iterator(); iterator.hasNext();) {
-			String key= iterator.next();
+		for (String key : JavaPlugin.getDefault().getCleanUpRegistry().getDefaultOptions(CleanUpConstants.DEFAULT_CLEAN_UP_OPTIONS).getKeys()) {
 			result.put(key, CleanUpOptions.FALSE);
 		}
 
@@ -231,9 +228,8 @@ public class CleanUpPerfTest extends JdtPerformanceTestCase {
 
 		storeSettings(node);
 
-		ICleanUp[] cleanUps= JavaPlugin.getDefault().getCleanUpRegistry().createCleanUps();
-		for (int i= 0; i < cleanUps.length; i++) {
-			cleanUpRefactoring.addCleanUp(cleanUps[i]);
+		for (ICleanUp cleanUp : JavaPlugin.getDefault().getCleanUpRegistry().createCleanUps()) {
+			cleanUpRefactoring.addCleanUp(cleanUp);
 		}
 
 		//See https://bugs.eclipse.org/bugs/show_bug.cgi?id=135219
@@ -476,10 +472,10 @@ public class CleanUpPerfTest extends JdtPerformanceTestCase {
 		ResourcesPlugin.getWorkspace().run(operation, null);
 		if (measure)
 			stopMeasuring();
-		assertEquals(true, operation.getConditionStatus().getSeverity() <= maxSeverity);
-		assertEquals(true, operation.getValidationStatus().isOK());
+		Assert.assertTrue(operation.getConditionStatus().getSeverity() <= maxSeverity);
+		Assert.assertTrue(operation.getValidationStatus().isOK());
 		if (checkUndo) {
-			assertNotNull(operation.getUndoChange());
+			Assert.assertNotNull(operation.getUndoChange());
 		}
 		//undo the change, to have same code for each run
 		RefactoringCore.getUndoManager().performUndo(null, null);
@@ -489,8 +485,7 @@ public class CleanUpPerfTest extends JdtPerformanceTestCase {
 	}
 
 	private void clearOptions(ICleanUp[] cleanUps) {
-		for (int i= 0; i < cleanUps.length; i++) {
-			ICleanUp cleanUp= cleanUps[i];
+		for (ICleanUp cleanUp : cleanUps) {
 			if (cleanUp instanceof AbstractCleanUp) {
 				Accessor<AbstractCleanUp> accessor= new Accessor<>(cleanUp, AbstractCleanUp.class);
 				accessor.set("fOptions", null);

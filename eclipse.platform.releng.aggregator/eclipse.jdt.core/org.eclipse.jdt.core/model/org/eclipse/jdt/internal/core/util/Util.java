@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -41,6 +41,7 @@ import org.eclipse.jdt.core.dom.WildcardType;
 import org.eclipse.jdt.core.util.IClassFileAttribute;
 import org.eclipse.jdt.core.util.IClassFileReader;
 import org.eclipse.jdt.core.util.ICodeAttribute;
+import org.eclipse.jdt.core.util.IComponentInfo;
 import org.eclipse.jdt.core.util.IFieldInfo;
 import org.eclipse.jdt.core.util.IMethodInfo;
 import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration;
@@ -61,6 +62,7 @@ import org.eclipse.jdt.internal.compiler.impl.Constant;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
+import org.eclipse.jdt.internal.compiler.lookup.RecordComponentBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeIds;
@@ -427,9 +429,7 @@ public class Util {
 		try {
 			edit.apply(document, TextEdit.NONE);
 			return document.get();
-		} catch (MalformedTreeException e) {
-			e.printStackTrace();
-		} catch (BadLocationException e) {
+		} catch (MalformedTreeException | BadLocationException e) {
 			e.printStackTrace();
 		}
 		return original;
@@ -744,6 +744,15 @@ public class Util {
 		}
 		return null;
 	}
+	public static IClassFileAttribute getAttribute(IComponentInfo componentInfo, char[] attributeName) {
+		IClassFileAttribute[] attributes = componentInfo.getAttributes();
+		for (int i = 0, max = attributes.length; i < max; i++) {
+			if (CharOperation.equals(attributes[i].getAttributeName(), attributeName)) {
+				return attributes[i];
+			}
+		}
+		return null;
+	}
 
 	public static IClassFileAttribute getAttribute(IMethodInfo methodInfo, char[] attributeName) {
 		IClassFileAttribute[] attributes = methodInfo.getAttributes();
@@ -881,11 +890,7 @@ public class Util {
 			if (reader != null) {
 				return reader.getVersion();
 			}
-		} catch (CoreException e) {
-			// ignore
-		} catch(ClassFormatException e) {
-			// ignore
-		} catch(IOException e) {
+		} catch(CoreException | ClassFormatException | IOException e) {
 			// ignore
 		}
 		return 0;
@@ -928,7 +933,7 @@ public class Util {
 				if (lineSeparator != null)
 					return lineSeparator;
 			}
-	
+
 			// line delimiter in workspace preference
 			scopeContext= new IScopeContext[] { InstanceScope.INSTANCE };
 			lineSeparator = Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null, scopeContext);
@@ -1044,7 +1049,7 @@ public class Util {
 
 	/**
 	 * Encode the argument by doubling the '#' if present into the argument value.
-	 * 
+	 *
 	 * <p>This stores the encoded argument into the given buffer.</p>
 	 *
 	 * @param argument the given argument
@@ -1353,6 +1358,18 @@ public class Util {
 	public static JavaElement getUnresolvedJavaElement(FieldBinding binding, WorkingCopyOwner workingCopyOwner, BindingsToNodesMap bindingsToNodes) {
 		if (binding.declaringClass == null) return null; // array length
 		JavaElement unresolvedJavaElement = getUnresolvedJavaElement(binding.declaringClass, workingCopyOwner, bindingsToNodes);
+		if (unresolvedJavaElement == null || unresolvedJavaElement.getElementType() != IJavaElement.TYPE) {
+			return null;
+		}
+		return (JavaElement) ((IType) unresolvedJavaElement).getField(String.valueOf(binding.name));
+	}
+
+	/**
+	 * Return the java element corresponding to the given compiler binding.
+	 */
+	public static JavaElement getUnresolvedJavaElement(RecordComponentBinding binding, WorkingCopyOwner workingCopyOwner, BindingsToNodesMap bindingsToNodes) {
+		if (binding.declaringRecord == null) return null; // array length
+		JavaElement unresolvedJavaElement = getUnresolvedJavaElement(binding.declaringRecord, workingCopyOwner, bindingsToNodes);
 		if (unresolvedJavaElement == null || unresolvedJavaElement.getElementType() != IJavaElement.TYPE) {
 			return null;
 		}
@@ -2521,11 +2538,11 @@ public class Util {
 		int length = string.length;
 		// need a minimum 2 char
 		if (start >= length - 1) {
-			throw raiseIllegalSignatureException(string, start);
+			throw newIllegalArgumentException(string, start);
 		}
 		char c = string[start];
 		if (c != Signature.C_ARRAY) {
-			throw raiseUnexpectedCharacterException(string, start, c);
+			throw newUnexpectedCharacterException(string, start, c);
 		}
 
 		int index = start;
@@ -2533,7 +2550,7 @@ public class Util {
 		while(c == Signature.C_ARRAY) {
 			// need a minimum 2 char
 			if (index >= length - 1) {
-				throw raiseIllegalSignatureException(string, start);
+				throw newIllegalArgumentException(string, start);
 			}
 			c = string[++index];
 		}
@@ -2723,7 +2740,7 @@ public class Util {
 		}
 		return signature;
 	}
-	
+
 	private static String[] typeSignatures(TypeReference[] types) {
 		int length = types.length;
 		String[] typeSignatures = new String[length];
@@ -2833,7 +2850,7 @@ public class Util {
 		char[] typeName = org.eclipse.jdt.core.Signature.toCharArray(CharOperation.replaceOnCopy(binaryAnnotation.getTypeName(), '/', '.'));
 		return new Annotation(parent, new String(typeName), memberValuePairName);
 	}
-	
+
 	public static Object getAnnotationMemberValue(JavaElement parent, MemberValuePair memberValuePair, Object binaryValue) {
 		if (binaryValue instanceof Constant) {
 			return getAnnotationMemberValue(memberValuePair, (Constant) binaryValue);
@@ -2922,7 +2939,7 @@ public class Util {
 				return null;
 		}
 	}
-	
+
 	/*
 	 * Creates a member value from the given constant in case of negative numerals,
 	 * and sets the valueKind on the given memberValuePair
@@ -3029,7 +3046,7 @@ public class Util {
 	public static char[] toAnchor(int startingIndex, char[] methodSignature, char[] methodName, boolean isVargArgs) {
 		int firstParen = CharOperation.indexOf(Signature.C_PARAM_START, methodSignature);
 		if (firstParen == -1) {
-			throw new IllegalArgumentException(new String(methodSignature));
+			throw new IllegalArgumentException(String.valueOf(methodSignature));
 		}
 
 		StringBuffer buffer = new StringBuffer(methodSignature.length + 10);
@@ -3062,7 +3079,7 @@ public class Util {
 	private static int appendTypeSignatureForAnchor(char[] string, int start, StringBuffer buffer, boolean isVarArgs) {
 		// need a minimum 1 char
 		if (start >= string.length) {
-			throw raiseIllegalSignatureException(string, start);
+			throw newIllegalArgumentException(string, start);
 		}
 		char c = string[start];
 		if (isVarArgs) {
@@ -3086,7 +3103,7 @@ public class Util {
 				case Signature.C_CAPTURE:
 				default:
 					// a var args is an array type
-					throw raiseUnexpectedCharacterException(string, start, c);
+					throw newUnexpectedCharacterException(string, start, c);
 			}
 		} else {
 			switch (c) {
@@ -3132,7 +3149,7 @@ public class Util {
 				case Signature.C_SUPER:
 					return appendTypeArgumentSignatureForAnchor(string, start, buffer);
 				default :
-					throw raiseIllegalSignatureException(string, start);
+					throw newIllegalArgumentException(string, start);
 			}
 		}
 	}
@@ -3140,7 +3157,7 @@ public class Util {
 	private static int appendTypeArgumentSignatureForAnchor(char[] string, int start, StringBuffer buffer) {
 		// need a minimum 1 char
 		if (start >= string.length) {
-			throw raiseIllegalSignatureException(string, start);
+			throw newIllegalArgumentException(string, start);
 		}
 		char c = string[start];
 		switch(c) {
@@ -3157,11 +3174,11 @@ public class Util {
 	private static int appendCaptureTypeSignatureForAnchor(char[] string, int start, StringBuffer buffer) {
 		// need a minimum 2 char
 		if (start >= string.length - 1) {
-			throw raiseIllegalSignatureException(string, start);
+			throw newIllegalArgumentException(string, start);
 		}
 		char c = string[start];
 		if (c != Signature.C_CAPTURE) {
-			throw raiseUnexpectedCharacterException(string, start, c);
+			throw newUnexpectedCharacterException(string, start, c);
 		}
 		return appendTypeArgumentSignatureForAnchor(string, start + 1, buffer);
 	}
@@ -3169,11 +3186,11 @@ public class Util {
 		int length = string.length;
 		// need a minimum 2 char
 		if (start >= length - 1) {
-			throw raiseIllegalSignatureException(string, start);
+			throw newIllegalArgumentException(string, start);
 		}
 		char c = string[start];
 		if (c != Signature.C_ARRAY) {
-			throw raiseUnexpectedCharacterException(string, start, c);
+			throw newUnexpectedCharacterException(string, start, c);
 		}
 
 		int index = start;
@@ -3181,7 +3198,7 @@ public class Util {
 		while(c == Signature.C_ARRAY) {
 			// need a minimum 2 char
 			if (index >= length - 1) {
-				throw raiseIllegalSignatureException(string, start);
+				throw newIllegalArgumentException(string, start);
 			}
 			c = string[++index];
 		}
@@ -3202,17 +3219,17 @@ public class Util {
 	private static int appendClassTypeSignatureForAnchor(char[] string, int start, StringBuffer buffer) {
 		// need a minimum 3 chars "Lx;"
 		if (start >= string.length - 2) {
-			throw raiseIllegalSignatureException(string, start);
+			throw newIllegalArgumentException(string, start);
 		}
 		// must start in "L" or "Q"
 		char c = string[start];
 		if (c != Signature.C_RESOLVED && c != Signature.C_UNRESOLVED) {
-			throw raiseUnexpectedCharacterException(string, start, c);
+			throw newUnexpectedCharacterException(string, start, c);
 		}
 		int p = start + 1;
 		while (true) {
 			if (p >= string.length) {
-				throw raiseIllegalSignatureException(string, start);
+				throw newIllegalArgumentException(string, start);
 			}
 			c = string[p];
 			switch(c) {
@@ -3247,12 +3264,12 @@ public class Util {
 		}
 	}
 
-	private static IllegalArgumentException raiseIllegalSignatureException(char[] string, int start) {
-		throw new IllegalArgumentException("\"" + new String(string) + "\" starting at " + start); //$NON-NLS-1$ //$NON-NLS-2$
+	private static IllegalArgumentException newIllegalArgumentException(char[] string, int index) {
+		return new IllegalArgumentException("\"" + String.valueOf(string) + "\" at " + index); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
-	private static IllegalArgumentException raiseUnexpectedCharacterException(char[] string, int start, char unexpected) {
-		throw new IllegalArgumentException("Unexpected '" + unexpected + "' in \"" + new String(string) + "\" starting at " + start); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+	private static IllegalArgumentException newUnexpectedCharacterException(char[] string, int start, char unexpected) {
+		return new IllegalArgumentException("Unexpected '" + unexpected + "' in \"" + String.valueOf(string) + "\" starting at " + start); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	}
 
 	private static int scanGenericEnd(char[] string, int start) {
@@ -3318,8 +3335,8 @@ public class Util {
 		}
 	}
 	/**
-	 * Finds the IMethod element corresponding to the given selector, 
-	 * without creating a new dummy instance of a binary method. 
+	 * Finds the IMethod element corresponding to the given selector,
+	 * without creating a new dummy instance of a binary method.
 	 * @param type the type in which the method is declared
 	 * @param selector the method name
 	 * @param paramTypeSignatures the type signatures of the method arguments
@@ -3332,7 +3349,7 @@ public class Util {
 		int startingIndex = 0;
 		String[] args;
 		IType enclosingType = type.getDeclaringType();
-		// If the method is a constructor of a non-static inner type, add the enclosing type as an 
+		// If the method is a constructor of a non-static inner type, add the enclosing type as an
 		// additional parameter to the constructor
 		if (enclosingType != null
 				&& isConstructor
@@ -3348,7 +3365,7 @@ public class Util {
 			args[i] = paramTypeSignatures[i-startingIndex];
 		}
 		method = type.getMethod(new String(selector), args);
-		
+
 		IMethod[] methods = type.findMethods(method);
 		if (methods != null && methods.length > 0) {
 			method = methods[0];

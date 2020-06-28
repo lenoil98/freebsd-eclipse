@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2018 IBM Corporation and others.
+ * Copyright (c) 2010, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,7 @@
  *     IBM Corporation - initial API and implementation
  *     Lars Vogel <Lars.Vogel@vogella.com> - Bug 434611, 472654
  *     Manumitting Technologies Inc - Bug 380609
+ *     Stefan Nöbauer - Bug 547997
  ******************************************************************************/
 
 package org.eclipse.e4.ui.internal.workbench;
@@ -94,19 +95,16 @@ public class ModelServiceImpl implements EModelService {
 	private ServiceRegistration<?> handlerRegistration;
 
 	/**
-	 * This is a singleton service. One instance is used throughout the running application
+	 * This is a singleton service. One instance is used throughout the running
+	 * application
 	 *
-	 * @param appContext
-	 *            The applicationContext to get the eventBroker from
+	 * @param appContext The applicationContext to get the eventBroker from
 	 *
-	 * @throws NullPointerException
-	 *             if the given appContext is <code>null</code>
+	 * @throws NullPointerException if the given appContext is <code>null</code>
 	 */
 	@Inject
 	public ModelServiceImpl(IEclipseContext appContext) {
-		if (appContext == null) {
-			throw new NullPointerException("No application context given!"); //$NON-NLS-1$
-		}
+		Objects.requireNonNull(appContext, "No application context given!"); //$NON-NLS-1$
 
 		this.appContext = appContext;
 
@@ -238,9 +236,18 @@ public class ModelServiceImpl implements EModelService {
 			 */
 			MElementContainer<?> searchContainer = (MElementContainer<?>) searchRoot;
 			MPerspectiveStack primaryStack = null;
-			if (searchRoot instanceof MWindow && (searchFlags & OUTSIDE_PERSPECTIVE) == 0
+			if (searchRoot instanceof MWindow ) {
+				if((searchFlags & IN_SHARED_ELEMENTS) != 0) {
+					List<MUIElement> sharedElements = ((MWindow) searchRoot).getSharedElements();
+					for (MUIElement muiElement : sharedElements) {
+						findElementsRecursive(muiElement, clazz, matcher, elements, searchFlags);
+					}
+				}
+
+				if( (searchFlags & OUTSIDE_PERSPECTIVE) == 0
 					&& (primaryStack = getPrimaryPerspectiveStack((MWindow) searchRoot)) != null) {
 				searchContainer = primaryStack;
+				}
 			}
 			if (searchContainer instanceof MPerspectiveStack) {
 				if ((searchFlags & IN_ANY_PERSPECTIVE) != 0) {
@@ -426,8 +433,7 @@ public class ModelServiceImpl implements EModelService {
 			int searchFlags, Selector matcher) {
 		LinkedHashSet<T> elements = new LinkedHashSet<>();
 		findElementsRecursive(searchRoot, clazz, matcher, elements, searchFlags);
-		ArrayList<T> elementsList = new ArrayList<>(elements);
-		return elementsList;
+		return new ArrayList<>(elements);
 	}
 
 	private <T> Iterable<T> findPerspectiveElements(MUIElement searchRoot, String id,
@@ -994,8 +1000,7 @@ public class ModelServiceImpl implements EModelService {
 	public MPerspective getActivePerspective(MWindow window) {
 		List<MPerspectiveStack> pStacks = findElements(window, null, MPerspectiveStack.class);
 		if (pStacks.size() == 1) {
-			MPerspective perspective = pStacks.get(0).getSelectedElement();
-			return perspective;
+			return pStacks.get(0).getSelectedElement();
 		}
 
 		return null;

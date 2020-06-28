@@ -21,7 +21,7 @@ import org.eclipse.osgi.service.debug.DebugOptions;
 import org.eclipse.osgi.service.debug.DebugOptionsListener;
 
 /**
- * This class has debug constants which can be used by the Framework implementation 
+ * This class has debug constants which can be used by the Framework implementation
  * and Adaptor implementations
  * @since 3.1
  */
@@ -38,6 +38,11 @@ public class Debug implements DebugOptionsListener {
 	 * Bundle time Debug option key.
 	 */
 	public static final String OPTION_DEBUG_BUNDLE_TIME = ECLIPSE_OSGI + "/debug/bundleTime"; //$NON-NLS-1$
+
+	/**
+	 * Bundle start time Debug option key.
+	 */
+	public static final String OPTION_DEBUG_BUNDLE_START_TIME = ECLIPSE_OSGI + "/debug/bundleStartTime"; //$NON-NLS-1$
 	/**
 	 * Loader Debug option key.
 	 */

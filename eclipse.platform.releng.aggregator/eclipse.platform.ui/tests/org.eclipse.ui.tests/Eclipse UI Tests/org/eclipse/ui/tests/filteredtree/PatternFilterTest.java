@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2017 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -23,10 +23,16 @@ import org.eclipse.jface.viewers.ContentViewer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.dialogs.PatternFilter;
+import org.eclipse.ui.internal.misc.StringMatcher;
+import org.eclipse.ui.tests.harness.util.TestRunLogUtil;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
 
 public class PatternFilterTest {
+	@Rule
+	public TestWatcher LOG_TESTRUN = TestRunLogUtil.LOG_TESTRUN;
 
 	private class MockViewer extends ContentViewer {
 
@@ -77,12 +83,12 @@ public class PatternFilterTest {
 	@Before
 	public void setup() {
 		viewer = new MockViewer();
+		viewer.setContentProvider(new ArrayContentProvider());
+		viewer.setInput(new String[] {});
 	}
 
 	@Test
 	public void testBasicFilter() {
-		viewer.setContentProvider(new ArrayContentProvider());
-		viewer.setInput(new String[] {});
 		PatternFilter filter = new PatternFilter();
 
 		filter.setPattern("b");
@@ -93,9 +99,14 @@ public class PatternFilterTest {
 	}
 
 	@Test
+	public void testStringMatcher() {
+		assertTrue(new StringMatcher("huhn h?hner", false, false).match("hahn henne hühner küken huhn"));
+		assertFalse(new StringMatcher("fo*ar", false, false).match("foobar_123"));
+		assertFalse(new StringMatcher("fo*ar", false, false).match("foobar_baz"));
+	}
+
+	@Test
 	public void testPatternFilterOrder() {
-		viewer.setContentProvider(new ArrayContentProvider());
-		viewer.setInput(new String[] {});
 		PatternFilter filter = new PatternFilter();
 		filter.setPattern("a b");
 		// simple match prefix
@@ -125,8 +136,6 @@ public class PatternFilterTest {
 
 	@Test
 	public void testEmptyItemNotMatched() {
-		viewer.setContentProvider(new ArrayContentProvider());
-		viewer.setInput(new String[] {});
 		PatternFilter filter = new PatternFilter();
 		filter.setPattern("a");
 		assertFalse(filter.select(viewer, null, ""));
@@ -134,8 +143,6 @@ public class PatternFilterTest {
 
 	@Test
 	public void testWildcardAndCaseInsensitive() {
-		viewer.setContentProvider(new ArrayContentProvider());
-		viewer.setInput(new String[] {});
 		PatternFilter filter = new PatternFilter();
 
 		filter.setPattern("a*b");

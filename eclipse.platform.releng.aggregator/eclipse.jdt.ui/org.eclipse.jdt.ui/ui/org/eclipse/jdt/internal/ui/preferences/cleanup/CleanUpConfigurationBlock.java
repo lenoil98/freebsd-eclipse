@@ -15,7 +15,6 @@
 package org.eclipse.jdt.internal.ui.preferences.cleanup;
 
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -106,8 +105,8 @@ public class CleanUpConfigurationBlock extends ProfileConfigurationBlock {
 
 		final ICleanUp[] cleanUps= JavaPlugin.getDefault().getCleanUpRegistry().createCleanUps();
 		CleanUpOptions options= new MapCleanUpOptions(sharedSettings);
-		for (int i= 0; i < cleanUps.length; i++) {
-			cleanUps[i].setOptions(options);
+		for (ICleanUp cleanUp : cleanUps) {
+			cleanUp.setOptions(options);
 		}
 
 		createLabel(composite, CleanUpMessages.CleanUpConfigurationBlock_SelectedCleanUps_label, numColumns);
@@ -143,29 +142,26 @@ public class CleanUpConfigurationBlock extends ProfileConfigurationBlock {
     	StringBuilder buf= new StringBuilder();
 
     	boolean first= true;
-    	for (int i= 0; i < cleanUps.length; i++) {
-	        String[] descriptions= cleanUps[i].getStepDescriptions();
-	        if (descriptions != null) {
-    	        for (int j= 0; j < descriptions.length; j++) {
-    	        	if (first) {
-    	        		first= false;
-    	        	} else {
-    	        		buf.append('\n');
-    	        	}
-    	            buf.append(descriptions[j]);
-                }
-	        }
-        }
+		for (ICleanUp cleanUp : cleanUps) {
+			String[] descriptions= cleanUp.getStepDescriptions();
+			if (descriptions != null) {
+				for (String description : descriptions) {
+					if (first) {
+						first= false;
+					} else {
+						buf.append('\n');
+					}
+					buf.append(description);
+				}
+			}
+		}
 
     	return buf.toString();
     }
 
 	private void fill(Map<String, String> settings, Map<String, String> sharedSettings) {
 		sharedSettings.clear();
-		for (Iterator<String> iterator= settings.keySet().iterator(); iterator.hasNext();) {
-	        String key= iterator.next();
-	        sharedSettings.put(key, settings.get(key));
-        }
+		sharedSettings.putAll(settings);
     }
 
 	@Override
@@ -241,15 +237,15 @@ public class CleanUpConfigurationBlock extends ProfileConfigurationBlock {
 
 				List<Profile> oldProfiles= fProfileManager.getSortedProfiles();
 				Profile[] oldProfilesArray= oldProfiles.toArray(new Profile[oldProfiles.size()]);
-				for (int i= 0; i < oldProfilesArray.length; i++) {
-					if (oldProfilesArray[i] instanceof CustomProfile) {
-						fProfileManager.deleteProfile((CustomProfile)oldProfilesArray[i]);
+				for (Profile oldProfile : oldProfilesArray) {
+					if (oldProfile instanceof CustomProfile) {
+						fProfileManager.deleteProfile((CustomProfile) oldProfile);
 					}
 				}
 
 				List<Profile> newProfiles= fProfileStore.readProfilesFromString((String)event.getNewValue());
-				for (Iterator<Profile> iterator= newProfiles.iterator(); iterator.hasNext();) {
-					CustomProfile profile= (CustomProfile)iterator.next();
+				for (Profile profile2 : newProfiles) {
+					CustomProfile profile= (CustomProfile)profile2;
 					fProfileManager.addProfile(profile);
 				}
 

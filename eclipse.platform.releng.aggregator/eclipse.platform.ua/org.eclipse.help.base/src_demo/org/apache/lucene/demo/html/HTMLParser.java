@@ -51,15 +51,16 @@ public class HTMLParser implements HTMLParserConstants {
   boolean inIgnoredTag = true;
   boolean afterTag = false;
   boolean afterSpace = false;
-  String eol = System.getProperty("line.separator"); //$NON-NLS-1$
+	String eol = System.lineSeparator();
   private LimitedSizeCharArrayWriter writer = new LimitedSizeCharArrayWriter(1000000);
   private Exception exception = null;
 
   /**
    * @deprecated Use HTMLParser(FileInputStream) instead
    */
+  @SuppressWarnings("resource")
   @Deprecated
-public HTMLParser(File file) throws FileNotFoundException {
+  public HTMLParser(File file) throws FileNotFoundException {
     this(new FileInputStream(file));
   }
 

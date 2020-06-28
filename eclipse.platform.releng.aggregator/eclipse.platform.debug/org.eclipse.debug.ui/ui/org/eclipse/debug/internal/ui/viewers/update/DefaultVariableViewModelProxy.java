@@ -51,22 +51,19 @@ public class DefaultVariableViewModelProxy extends EventHandlerModelProxy {
 		return new DebugEventHandler[] { new VariablesViewEventHandler(this, fFrame) };
 	}
 
-   /* (non-Javadoc)
-    * @see org.eclipse.debug.internal.ui.viewers.update.EventHandlerModelProxy#containsEvent(org.eclipse.debug.core.DebugEvent)
-    */
 	@Override
 	protected synchronized boolean containsEvent(DebugEvent event) {
 		if (!isDisposed()) {
-	        Object source = event.getSource();
-	        if (source instanceof IDebugElement) {
-	            IDebugTarget debugTarget = ((IDebugElement) source).getDebugTarget();
-	            if (debugTarget != null) {
-	            	// a debug target can be null for an IExpression
-	            	return debugTarget.equals(fFrame.getDebugTarget());
-	            }
-	        }
+			Object source = event.getSource();
+			if (source instanceof IDebugElement) {
+				IDebugTarget debugTarget = ((IDebugElement) source).getDebugTarget();
+				if (debugTarget != null) {
+					// a debug target can be null for an IExpression
+					return debugTarget.equals(fFrame.getDebugTarget());
+				}
+			}
 		}
-        return false;
-    }
+		return false;
+	}
 
 }

@@ -13,7 +13,7 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.texteditor;
 
-import com.ibm.icu.text.MessageFormat;
+import java.text.MessageFormat;
 
 /**
  * A number of routines used for string externalization.
@@ -30,7 +30,7 @@ public class NLSUtility {
 	 * @return the formatted string
 	 */
 	public static String format(String message, Object argument) {
-		return MessageFormat.format(message, new Object[] { argument });
+		return MessageFormat.format(message, argument);
 	}
 
 	/**

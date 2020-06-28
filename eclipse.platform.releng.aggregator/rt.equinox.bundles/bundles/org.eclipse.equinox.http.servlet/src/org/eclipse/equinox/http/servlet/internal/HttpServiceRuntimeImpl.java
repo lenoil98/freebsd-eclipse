@@ -18,6 +18,9 @@ import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SER
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.*;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
@@ -57,7 +60,6 @@ public class HttpServiceRuntimeImpl
 		HttpServiceRuntime,
 		ServiceTrackerCustomizer<ServletContextHelper, AtomicReference<ContextController>> {
 
-	@SuppressWarnings("unchecked")
 	public HttpServiceRuntimeImpl(
 		BundleContext trackingContext, BundleContext consumingContext,
 		ServletContext parentServletContext, Dictionary<String, Object> attributes) {
@@ -69,7 +71,7 @@ public class HttpServiceRuntimeImpl
 		this.servletServiceFilter = createServletFilter(consumingContext);
 		this.resourceServiceFilter = createResourceFilter(consumingContext);
 		this.filterServiceFilter = createFilterFilter(consumingContext);
-		this.listenerServiceFilter = createListenerFilter(consumingContext);
+		this.listenerServiceFilter = createListenerFilter(consumingContext, parentServletContext);
 
 		this.parentServletContext = parentServletContext;
 		this.attributes = new UMDictionaryMap<String, Object>(attributes);
@@ -110,9 +112,9 @@ public class HttpServiceRuntimeImpl
 		defaultContextProps.put(Constants.SERVICE_RANKING, Integer.MIN_VALUE);
 		defaultContextProps.put(HTTP_WHITEBOARD_CONTEXT_PATH, Const.SLASH);
 		defaultContextProps.put(HTTP_WHITEBOARD_TARGET, this.targetFilter);
-		defaultContextProps.put(HTTP_SERVICE_CONTEXT_PROPERTY, HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME);
-		defaultContextReg = (ServiceRegistration<DefaultServletContextHelper>) consumingContext.registerService(
-			new String [] {ServletContextHelper.class.getName(), DefaultServletContextHelper.class.getName()}, new DefaultServletContextHelperFactory(), defaultContextProps);
+		defaultContextProps.put(Const.EQUINOX_HTTP_WHITEBOARD_CONTEXT_HELPER_DEFAULT, Boolean.TRUE);
+		defaultContextReg = consumingContext.registerService(
+			ServletContextHelper.class, new DefaultServletContextHelperFactory(), defaultContextProps);
 	}
 
 	public synchronized void open() {
@@ -512,7 +514,7 @@ public class HttpServiceRuntimeImpl
 
 		int pos = requestURI.lastIndexOf('/');
 
-		String servletPath = requestURI;
+		String servletPath = decode(requestURI);
 		String pathInfo = null;
 
 		if (match == Match.CONTEXT_ROOT) {
@@ -538,8 +540,8 @@ public class HttpServiceRuntimeImpl
 
 			if (pos > -1) {
 				String newServletPath = requestURI.substring(0, pos);
-				pathInfo = requestURI.substring(pos);
-				servletPath = newServletPath;
+				pathInfo = decode(requestURI.substring(pos));
+				servletPath = decode(newServletPath);
 				pos = servletPath.lastIndexOf('/');
 
 				continue;
@@ -689,7 +691,8 @@ public class HttpServiceRuntimeImpl
 				props.put(HTTP_WHITEBOARD_TARGET, targetFilter);
 				props.put(HTTP_WHITEBOARD_FILTER_PATTERN, alias);
 				props.put(HTTP_WHITEBOARD_FILTER_NAME, filterName);
-				props.put(HTTP_WHITEBOARD_CONTEXT_SELECT, getFilter(httpContextHolder.getServiceReference()));
+				props.put(HTTP_WHITEBOARD_CONTEXT_SELECT, "(" + Const.EQUINOX_LEGACY_CONTEXT_HELPER + "=true)"); //$NON-NLS-1$ //$NON-NLS-2$
+				props.put(Const.EQUINOX_LEGACY_CONTEXT_SELECT, getFilter(httpContextHolder.getServiceReference()));
 				props.put(Const.EQUINOX_LEGACY_TCCL_PROP, Thread.currentThread().getContextClassLoader());
 				props.put(Constants.SERVICE_RANKING, findFilterPriority(initparams));
 				fillInitParams(props, initparams, HTTP_WHITEBOARD_FILTER_INIT_PARAM_PREFIX);
@@ -700,7 +703,6 @@ public class HttpServiceRuntimeImpl
 
 				// check that init got called and did not throw an exception
 				filterFactory.checkForError();
-				httpContextHolder.incrementUseCount();
 
 				objectRegistration = new HttpServiceObjectRegistration(filter, registration, httpContextHolder, bundle);
 				Set<HttpServiceObjectRegistration> objectRegistrations = bundleRegistrations.get(bundle);
@@ -802,7 +804,6 @@ public class HttpServiceRuntimeImpl
 				props.put(Constants.SERVICE_RANKING, Integer.MAX_VALUE);
 				props.put(Const.EQUINOX_LEGACY_TCCL_PROP, Thread.currentThread().getContextClassLoader());
 				registration = bundle.getBundleContext().registerService(String.class, "resource", props); //$NON-NLS-1$
-				httpContextHolder.incrementUseCount();
 
 				objectRegistration = new HttpServiceObjectRegistration(fullAlias, registration, httpContextHolder, bundle);
 
@@ -891,7 +892,6 @@ public class HttpServiceRuntimeImpl
 
 				// check that init got called and did not throw an exception
 				legacyServlet.checkForError();
-				httpContextHolder.incrementUseCount();
 
 				objectRegistration = new HttpServiceObjectRegistration(fullAlias, registration, httpContextHolder, bundle);
 
@@ -1082,7 +1082,7 @@ public class HttpServiceRuntimeImpl
 		}
 	}
 
-	private static org.osgi.framework.Filter createListenerFilter(BundleContext context) {
+	private static org.osgi.framework.Filter createListenerFilter(BundleContext context, ServletContext servletContext) {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("(&"); //$NON-NLS-1$
@@ -1094,7 +1094,9 @@ public class HttpServiceRuntimeImpl
 		sb.append("(objectClass=").append(ServletRequestAttributeListener.class.getName()).append(")"); //$NON-NLS-1$ //$NON-NLS-2$
 		sb.append("(objectClass=").append(HttpSessionListener.class.getName()).append(")"); //$NON-NLS-1$ //$NON-NLS-2$
 		sb.append("(objectClass=").append(HttpSessionAttributeListener.class.getName()).append(")"); //$NON-NLS-1$ //$NON-NLS-2$
-		sb.append("(objectClass=").append(HttpSessionIdListener.class.getName()).append(")"); //$NON-NLS-1$ //$NON-NLS-2$
+		if ((servletContext.getMajorVersion() >= 3) && (servletContext.getMinorVersion() > 0)) {
+			sb.append("(objectClass=").append(HttpSessionIdListener.class.getName()).append(")"); //$NON-NLS-1$ //$NON-NLS-2$
+		}
 		sb.append(")"); //$NON-NLS-1$
 		sb.append(")"); //$NON-NLS-1$
 
@@ -1282,9 +1284,18 @@ public class HttpServiceRuntimeImpl
 		return semaphore;
 	}
 
+	private String decode(String urlEncoded) {
+		try {
+			return URLDecoder.decode(urlEncoded, StandardCharsets.UTF_8.name());
+		}
+		catch (UnsupportedEncodingException e) {
+			return urlEncoded;
+		}
+	}
+
 	private final Map<String, Object> attributes;
 	private final String targetFilter;
-	final ServiceRegistration<DefaultServletContextHelper> defaultContextReg;
+	final ServiceRegistration<ServletContextHelper> defaultContextReg;
 	private final ServletContext parentServletContext;
 	private final BundleContext trackingContext;
 	private final BundleContext consumingContext;

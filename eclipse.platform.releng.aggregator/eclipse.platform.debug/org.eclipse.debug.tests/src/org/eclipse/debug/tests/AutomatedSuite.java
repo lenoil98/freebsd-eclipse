@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2017 IBM Corporation and others.
+ * Copyright (c) 2009, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,8 +16,16 @@
 package org.eclipse.debug.tests;
 
 import org.eclipse.debug.tests.breakpoint.BreakpointOrderingTests;
+import org.eclipse.debug.tests.console.ConsoleDocumentAdapterTests;
 import org.eclipse.debug.tests.console.ConsoleManagerTests;
 import org.eclipse.debug.tests.console.ConsoleTests;
+import org.eclipse.debug.tests.console.IOConsoleFixedWidthTests;
+import org.eclipse.debug.tests.console.IOConsoleTests;
+import org.eclipse.debug.tests.console.ProcessConsoleManagerTests;
+import org.eclipse.debug.tests.console.ProcessConsoleTests;
+import org.eclipse.debug.tests.console.RuntimeProcessTests;
+import org.eclipse.debug.tests.console.StreamsProxyTests;
+import org.eclipse.debug.tests.console.TextConsoleViewerTest;
 import org.eclipse.debug.tests.launching.AcceleratorSubstitutionTests;
 import org.eclipse.debug.tests.launching.ArgumentParsingTests;
 import org.eclipse.debug.tests.launching.LaunchConfigurationTests;
@@ -41,76 +49,33 @@ import org.eclipse.debug.tests.viewer.model.VirtualViewerLazyModeTests;
 import org.eclipse.debug.tests.viewer.model.VirtualViewerSelectionTests;
 import org.eclipse.debug.tests.viewer.model.VirtualViewerStateTests;
 import org.eclipse.debug.tests.viewer.model.VirtualViewerUpdateTests;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
 /**
-  * Tests for integration and nightly builds.
+ * Tests for integration and nightly builds.
  *
  * @since 3.6
  */
-public class AutomatedSuite extends TestSuite {
-
-	/**
-	 * Returns the suite.  This is required to use the JUnit Launcher.
-	 *
-	 * @return the test suite
-	 */
-	public static Test suite() {
-		return new AutomatedSuite();
-	}
-
-	/**
-	 * Constructs the automated test suite. Adds all tests.
-	 */
-	public AutomatedSuite() {
-		// Source lookup tests
-		addTest(new TestSuite(SourceLookupFacilityTests.class));
-		// BP tests
-		addTest(new TestSuite(BreakpointOrderingTests.class));
-	    // Note: jface viewer tests were moved out of nightly tests
-	    // due to frequent problems on nightly build machines.
-	    // (Bug 343308).
-
-		// Virtual viewer tests
-		addTest(new TestSuite(VirtualViewerDeltaTests.class));
-        addTest(new TestSuite(VirtualViewerContentTests.class));
-		addTest(new TestSuite(VirtualViewerLazyModeTests.class));
-		addTest(new TestSuite(VirtualViewerSelectionTests.class));
-		addTest(new TestSuite(VirtualViewerStateTests.class));
-		addTest(new TestSuite(VirtualViewerUpdateTests.class));
-        addTest(new TestSuite(VirtualViewerFilterTests.class));
-
-		// Viewer neutral tests
-		addTest(new TestSuite(FilterTransformTests.class));
-		addTest(new TestSuite(ChildrenUpdateTests.class));
-		addTest(new TestSuite(PresentationContextTests.class));
-
-		// Memory view
-		addTest(new TestSuite(MemoryRenderingTests.class));
-
-		// Launch framework
-		addTest(new TestSuite(LaunchConfigurationTests.class));
-		addTest(new TestSuite(AcceleratorSubstitutionTests.class));
-		addTest(new TestSuite(LaunchHistoryTests.class));
-		addTest(new TestSuite(LaunchFavoriteTests.class));
-		addTest(new TestSuite(LaunchManagerTests.class));
-		addTest(new TestSuite(RefreshTabTests.class));
-		addTest(new TestSuite(ArgumentParsingTests.class));
-		addTest(new TestSuite(LaunchTests.class));
-
-		// Status handlers
-		addTest(new TestSuite(StatusHandlerTests.class));
-
-		// Step filters
-		addTest(new TestSuite(StepFiltersTests.class));
-
-		// Console view
-		addTest(new TestSuite(ConsoleManagerTests.class));
-		addTest(new TestSuite(ConsoleTests.class));
-
-		// Launch Groups
-		addTest(new TestSuite(LaunchGroupTests.class));
-	}
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+		SourceLookupFacilityTests.class, BreakpointOrderingTests.class,
+		VirtualViewerDeltaTests.class, VirtualViewerContentTests.class,
+		VirtualViewerLazyModeTests.class, VirtualViewerSelectionTests.class,
+		VirtualViewerStateTests.class, VirtualViewerUpdateTests.class,
+		VirtualViewerFilterTests.class, FilterTransformTests.class,
+		ChildrenUpdateTests.class, PresentationContextTests.class,
+		MemoryRenderingTests.class, LaunchConfigurationTests.class,
+		AcceleratorSubstitutionTests.class, LaunchHistoryTests.class,
+		LaunchFavoriteTests.class, LaunchManagerTests.class,
+		RefreshTabTests.class, ArgumentParsingTests.class, LaunchTests.class,
+		StatusHandlerTests.class,
+		StepFiltersTests.class,
+		ConsoleDocumentAdapterTests.class, ConsoleManagerTests.class,
+		ConsoleTests.class, IOConsoleTests.class,
+		IOConsoleFixedWidthTests.class, ProcessConsoleManagerTests.class,
+		ProcessConsoleTests.class, StreamsProxyTests.class,
+		TextConsoleViewerTest.class, RuntimeProcessTests.class,
+		LaunchGroupTests.class })
+public class AutomatedSuite {
 }

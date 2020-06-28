@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,7 +19,7 @@ public NSCell() {
 	super();
 }
 
-public NSCell(long /*int*/ id) {
+public NSCell(long id) {
 	super(id);
 }
 
@@ -28,7 +28,7 @@ public NSCell(id id) {
 }
 
 public NSAttributedString attributedStringValue() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_attributedStringValue);
+	long result = OS.objc_msgSend(this.id, OS.sel_attributedStringValue);
 	return result != 0 ? new NSAttributedString(result) : null;
 }
 
@@ -44,7 +44,7 @@ public NSSize cellSizeForBounds(NSRect aRect) {
 	return result;
 }
 
-public long /*int*/ controlSize() {
+public long controlSize() {
 	return OS.objc_msgSend(this.id, OS.sel_controlSize);
 }
 
@@ -75,21 +75,16 @@ public NSRect focusRingMaskBoundsForFrame(NSRect cellFrame, NSView controlView) 
 }
 
 public NSFont font() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_font);
+	long result = OS.objc_msgSend(this.id, OS.sel_font);
 	return result != 0 ? new NSFont(result) : null;
 }
 
-public NSColor highlightColorWithFrame(NSRect cellFrame, NSView controlView) {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_highlightColorWithFrame_inView_, cellFrame, controlView != null ? controlView.id : 0);
-	return result != 0 ? new NSColor(result) : null;
-}
-
-public long /*int*/ hitTestForEvent(NSEvent event, NSRect cellFrame, NSView controlView) {
+public long hitTestForEvent(NSEvent event, NSRect cellFrame, NSView controlView) {
 	return OS.objc_msgSend(this.id, OS.sel_hitTestForEvent_inRect_ofView_, event != null ? event.id : 0, cellFrame, controlView != null ? controlView.id : 0);
 }
 
 public NSImage image() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_image);
+	long result = OS.objc_msgSend(this.id, OS.sel_image);
 	return result != 0 ? new NSImage(result) : null;
 }
 
@@ -107,11 +102,11 @@ public boolean isHighlighted() {
 	return OS.objc_msgSend_bool(this.id, OS.sel_isHighlighted);
 }
 
-public long /*int*/ nextState() {
+public long nextState() {
 	return OS.objc_msgSend(this.id, OS.sel_nextState);
 }
 
-public void setAlignment(long /*int*/ alignment) {
+public void setAlignment(long alignment) {
 	OS.objc_msgSend(this.id, OS.sel_setAlignment_, alignment);
 }
 
@@ -123,15 +118,15 @@ public void setAttributedStringValue(NSAttributedString attributedStringValue) {
 	OS.objc_msgSend(this.id, OS.sel_setAttributedStringValue_, attributedStringValue != null ? attributedStringValue.id : 0);
 }
 
-public void setBackgroundStyle(long /*int*/ backgroundStyle) {
+public void setBackgroundStyle(long backgroundStyle) {
 	OS.objc_msgSend(this.id, OS.sel_setBackgroundStyle_, backgroundStyle);
 }
 
-public void setBaseWritingDirection(long /*int*/ baseWritingDirection) {
+public void setBaseWritingDirection(long baseWritingDirection) {
 	OS.objc_msgSend(this.id, OS.sel_setBaseWritingDirection_, baseWritingDirection);
 }
 
-public void setControlSize(long /*int*/ controlSize) {
+public void setControlSize(long controlSize) {
 	OS.objc_msgSend(this.id, OS.sel_setControlSize_, controlSize);
 }
 
@@ -155,7 +150,7 @@ public void setImage(NSImage image) {
 	OS.objc_msgSend(this.id, OS.sel_setImage_, image != null ? image.id : 0);
 }
 
-public void setLineBreakMode(long /*int*/ lineBreakMode) {
+public void setLineBreakMode(long lineBreakMode) {
 	OS.objc_msgSend(this.id, OS.sel_setLineBreakMode_, lineBreakMode);
 }
 
@@ -180,7 +175,7 @@ public void setWraps(boolean wraps) {
 }
 
 public NSString title() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_title);
+	long result = OS.objc_msgSend(this.id, OS.sel_title);
 	return result != 0 ? new NSString(result) : null;
 }
 
@@ -188,10 +183,6 @@ public NSRect titleRectForBounds(NSRect theRect) {
 	NSRect result = new NSRect();
 	OS.objc_msgSend_stret(result, this.id, OS.sel_titleRectForBounds_, theRect);
 	return result;
-}
-
-public boolean wraps() {
-	return OS.objc_msgSend_bool(this.id, OS.sel_wraps);
 }
 
 }

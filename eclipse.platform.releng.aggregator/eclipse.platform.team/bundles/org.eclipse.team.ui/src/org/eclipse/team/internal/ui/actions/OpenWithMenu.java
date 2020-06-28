@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.team.internal.ui.actions;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,8 +53,6 @@ import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.statushandlers.IStatusAdapterConstants;
 import org.eclipse.ui.statushandlers.StatusAdapter;
 import org.eclipse.ui.statushandlers.StatusManager;
-
-import com.ibm.icu.text.Collator;
 
 /**
  * A menu for opening file revisions in the workbench.
@@ -236,8 +235,7 @@ public class OpenWithMenu extends ContributionItem {
 		// if the same editor goes to two mappings.
 		ArrayList<IEditorDescriptor> alreadyMapped = new ArrayList<>();
 
-		for (int i = 0; i < editors.length; i++) {
-			IEditorDescriptor editor = editors[i];
+		for (IEditorDescriptor editor : editors) {
 			if (!alreadyMapped.contains(editor)) {
 				createMenuItem(menu, editor, preferredEditor);
 				if (defaultTextEditor != null
@@ -325,8 +323,7 @@ public class OpenWithMenu extends ContributionItem {
 
 		Object[] objArray = structSel.toArray();
 
-		for (int i = 0; i < objArray.length; i++) {
-			Object tempRevision = objArray[i];
+		for (Object tempRevision : objArray) {
 			// If not a revision, don't try opening
 			if (tempRevision instanceof AbstractHistoryCategory)
 				continue;

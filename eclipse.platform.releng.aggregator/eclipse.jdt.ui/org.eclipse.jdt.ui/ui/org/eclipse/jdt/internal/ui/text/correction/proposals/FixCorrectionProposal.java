@@ -198,8 +198,8 @@ public class FixCorrectionProposal extends LinkedCorrectionProposal implements I
 		}
 
 		final CleanUpRefactoring refactoring= new CleanUpRefactoring(changeName);
-		for (int i= 0; i < targets.length; i++) {
-			refactoring.addCleanUpTarget(targets[i]);
+		for (MultiFixTarget target : targets) {
+			refactoring.addCleanUpTarget(target);
 		}
 
 		refactoring.addCleanUp(fCleanUp);
@@ -257,7 +257,7 @@ public class FixCorrectionProposal extends LinkedCorrectionProposal implements I
 
 	/**
 	 * Compute the number of problems that can be fixed by the clean up in a compilation unit.
-	 * 
+	 *
 	 * @param cleanUp the clean up
 	 * @return the maximum number of fixes or -1 if unknown
 	 * @since 3.6

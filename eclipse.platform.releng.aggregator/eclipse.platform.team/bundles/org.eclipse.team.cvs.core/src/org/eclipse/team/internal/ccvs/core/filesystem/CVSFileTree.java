@@ -50,7 +50,7 @@ public class CVSFileTree {
 		for (int i = 0; i < remoteResources.length; i++) {
 			IFileInfo fileInfo;
 			try {
-				fileInfo = getFileInfo((ICVSResource) remoteResources[i], new NullProgressMonitor());
+				fileInfo = getFileInfo(remoteResources[i], new NullProgressMonitor());
 				fileStore[i] = new CVSFileStore(baseURI.append(fileInfo.getName()), fileInfo);
 			} catch (TeamException e) {}
 		}
@@ -90,7 +90,7 @@ public class CVSFileTree {
 		for (int i = 0; i < remoteResources.length; i++) {
 			IFileInfo fileInfo;
 			try {
-				fileInfo = getFileInfo((ICVSResource) remoteResources[i], new NullProgressMonitor());
+				fileInfo = getFileInfo(remoteResources[i], new NullProgressMonitor());
 				fileInfos[i] = fileInfo;
 			} catch (TeamException e) {}
 		}
@@ -130,8 +130,7 @@ public class CVSFileTree {
 			
 			ICVSRemoteResource[] children =remoteFolder.getChildren();
 			ICVSResource resource = null;
-			for (int i = 0; i < children.length; i++) {
-				ICVSResource child = children[i];
+			for (ICVSRemoteResource child : children) {
 				if (child.getName().equals(resourceName)) {
 					resource = child;
 					break;

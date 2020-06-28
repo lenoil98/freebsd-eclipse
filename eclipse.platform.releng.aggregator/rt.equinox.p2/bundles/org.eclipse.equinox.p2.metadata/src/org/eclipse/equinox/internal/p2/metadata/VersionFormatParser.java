@@ -293,16 +293,20 @@ class VersionFormatParser {
 
 		void toString(StringBuffer sb) {
 			if (min == 0) {
-				if (max == 1)
-					sb.append('?');
-				else if (max == Integer.MAX_VALUE)
-					sb.append('*');
-				else {
-					sb.append('{');
-					sb.append(min);
-					sb.append(',');
-					sb.append(max);
-					sb.append('}');
+				switch (max) {
+					case 1:
+						sb.append('?');
+						break;
+					case Integer.MAX_VALUE:
+						sb.append('*');
+						break;
+					default:
+						sb.append('{');
+						sb.append(min);
+						sb.append(',');
+						sb.append(max);
+						sb.append('}');
+						break;
 				}
 			} else if (max == Integer.MAX_VALUE) {
 				if (min == 1)
@@ -442,8 +446,8 @@ class VersionFormatParser {
 		boolean isMatch(String version, int pos) {
 			char c = version.charAt(pos);
 			if (delimChars != null) {
-				for (int idx = 0; idx < delimChars.length; ++idx)
-					if (c == delimChars[idx])
+				for (char delimChar : delimChars)
+					if (c == delimChar)
 						return !inverted;
 				return inverted;
 			} else if (VersionParser.isLetterOrDigit(c))
@@ -668,8 +672,8 @@ class VersionFormatParser {
 				super.setDefaults(segments);
 			} else {
 				// Assign defaults for all fragments
-				for (int idx = 0; idx < fragments.length; ++idx)
-					fragments[idx].setDefaults(segments);
+				for (Fragment fragment : fragments)
+					fragment.setDefaults(segments);
 			}
 		}
 
@@ -677,19 +681,19 @@ class VersionFormatParser {
 		void toString(StringBuffer sb) {
 			if (array) {
 				sb.append('<');
-				for (int idx = 0; idx < fragments.length; ++idx)
-					fragments[idx].toString(sb);
+				for (Fragment fragment : fragments)
+					fragment.toString(sb);
 				sb.append('>');
 			} else {
 				if (getQualifier() == VersionFormatParser.ZERO_OR_ONE_QUALIFIER) {
 					sb.append('[');
-					for (int idx = 0; idx < fragments.length; ++idx)
-						fragments[idx].toString(sb);
+					for (Fragment fragment : fragments)
+						fragment.toString(sb);
 					sb.append(']');
 				} else {
 					sb.append('(');
-					for (int idx = 0; idx < fragments.length; ++idx)
-						fragments[idx].toString(sb);
+					for (Fragment fragment : fragments)
+						fragment.toString(sb);
 					sb.append(')');
 				}
 			}
@@ -1236,7 +1240,7 @@ class VersionFormatParser {
 	}
 
 	private String parseAndConsiderEscapeUntil(char endChar) throws VersionFormatException {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		while (current < eos) {
 			char c = format.charAt(current++);
 			if (c == endChar)
@@ -1284,7 +1288,7 @@ class VersionFormatParser {
 	private void parseCharacterGroup(VersionFormatParser.Instructions ep) throws VersionFormatException {
 		assertChar('[');
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		outer: for (; current < eos; ++current) {
 			char c = format.charAt(current);
 			switch (c) {
@@ -1351,7 +1355,7 @@ class VersionFormatParser {
 		++current;
 		ArrayList<List<String>> identifiers = new ArrayList<>();
 		ArrayList<String> idents = new ArrayList<>();
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (;;) {
 			if (current >= eos)
 				throw formatException(Messages.bad_enum_definition);
@@ -1384,20 +1388,26 @@ class VersionFormatParser {
 		boolean enumCaseSensitive = true;
 		boolean enumOptional = false;
 		boolean enumBegins = false;
-		while (current < eos) {
-			char c = format.charAt(current);
-			if (c == 'i') {
+	    OUTER:
+	    while (current < eos) {
+		char c = format.charAt(current);
+		switch (c) {
+			case 'i':
 				enumCaseSensitive = false;
 				current++;
-			} else if (c == 'b') {
+				break;
+			case 'b':
 				enumBegins = true;
 				current++;
-			} else if (c == '?') {
+				break;
+			case '?':
 				enumOptional = true;
 				current++;
-			} else
 				break;
+			default:
+				break OUTER;
 		}
+	    }
 
 		// Ensure that all identifiers are unique and make them
 		// lower case if necessary
@@ -1599,82 +1609,87 @@ class VersionFormatParser {
 			throw formatException(Messages.premature_end_of_format);
 
 		char c = format.charAt(current);
-		if (c == 'p') {
-			// =pad(<raw-element>);
-			//
-			if (processing.padValue != null)
-				throw formatException(Messages.pad_defined_more_then_once);
-			if (processing.ignore)
-				throw formatException(Messages.cannot_combine_ignore_with_other_instruction);
-			++current;
-			processing.padValue = parseRawElement();
-		} else if (c == '!') {
-			// =ignore;
-			//
-			if (processing.ignore)
-				throw formatException(Messages.ignore_defined_more_then_once);
-			if (processing.padValue != null || processing.characters != null || processing.rangeMin != 0 || processing.rangeMax != Integer.MAX_VALUE || processing.defaultValue != null)
-				throw formatException(Messages.cannot_combine_ignore_with_other_instruction);
-			++current;
-			processing.ignore = true;
-		} else if (c == '[') {
-			// =[<character group];
-			//
-			if (processing.characters != null)
-				throw formatException(Messages.character_group_defined_more_then_once);
-			if (processing.ignore)
-				throw formatException(Messages.cannot_combine_ignore_with_other_instruction);
-			parseCharacterGroup(processing);
-		} else if (c == '{') {
-			if (current + 1 == eos)
-				throw formatException(Messages.premature_end_of_format);
-
-			if (VersionParser.isDigit(format.charAt(current + 1))) {
-				// ={min,max};
+		switch (c) {
+			case 'p':
+				// =pad(<raw-element>);
 				//
-				if (processing.rangeMin != 0 || processing.rangeMax != Integer.MAX_VALUE)
-					throw formatException(Messages.range_defined_more_then_once);
+				if (processing.padValue != null)
+					throw formatException(Messages.pad_defined_more_then_once);
 				if (processing.ignore)
 					throw formatException(Messages.cannot_combine_ignore_with_other_instruction);
-				int[] minMax = parseMinMax();
-				processing.rangeMin = minMax[0];
-				processing.rangeMax = minMax[1];
-			} else {
-				// ={enum1,enum2,...};
+				++current;
+				processing.padValue = parseRawElement();
+				break;
+			case '!':
+				// =ignore;
 				//
-				if (processing.enumInstruction != null)
-					throw formatException(Messages.enum_defined_more_then_once);
-				parseEnum(processing);
-			}
-		} else {
-			// =<raw-element>;
-			if (processing.defaultValue != null)
-				throw formatException(Messages.default_defined_more_then_once);
-			if (processing.ignore)
-				throw formatException(Messages.cannot_combine_ignore_with_other_instruction);
-			Comparable<?> dflt = parseRawElement();
-			processing.defaultValue = dflt;
-			if (current < eos && format.charAt(current) == '{') {
-				// =m{<translated min char>}
-				// =''{<translated max char>,<max char repeat>}
-				if (++current == eos)
+				if (processing.ignore)
+					throw formatException(Messages.ignore_defined_more_then_once);
+				if (processing.padValue != null || processing.characters != null || processing.rangeMin != 0 || processing.rangeMax != Integer.MAX_VALUE || processing.defaultValue != null)
+					throw formatException(Messages.cannot_combine_ignore_with_other_instruction);
+				++current;
+				processing.ignore = true;
+				break;
+			case '[':
+				// =[<character group];
+				//
+				if (processing.characters != null)
+					throw formatException(Messages.character_group_defined_more_then_once);
+				if (processing.ignore)
+					throw formatException(Messages.cannot_combine_ignore_with_other_instruction);
+				parseCharacterGroup(processing);
+				break;
+			case '{':
+				if (current + 1 == eos)
 					throw formatException(Messages.premature_end_of_format);
-				processing.oppositeTranslationChar = format.charAt(current++);
-				if (current == eos)
-					throw formatException(Messages.premature_end_of_format);
-
-				if (dflt == VersionVector.MINS_VALUE) {
-					processing.oppositeTranslationRepeat = 3;
-					if (format.charAt(current) == ',') {
-						++current;
-						processing.oppositeTranslationRepeat = parseIntegerLiteral();
-					}
-				} else if (dflt != VersionVector.MAXS_VALUE) {
-					current -= 2;
-					throw formatException(Messages.only_max_and_empty_string_defaults_can_have_translations);
+				if (VersionParser.isDigit(format.charAt(current + 1))) {
+					// ={min,max};
+					//
+					if (processing.rangeMin != 0 || processing.rangeMax != Integer.MAX_VALUE)
+						throw formatException(Messages.range_defined_more_then_once);
+					if (processing.ignore)
+						throw formatException(Messages.cannot_combine_ignore_with_other_instruction);
+					int[] minMax = parseMinMax();
+					processing.rangeMin = minMax[0];
+					processing.rangeMax = minMax[1];
+				} else {
+					// ={enum1,enum2,...};
+					//
+					if (processing.enumInstruction != null)
+						throw formatException(Messages.enum_defined_more_then_once);
+					parseEnum(processing);
 				}
-				assertChar('}');
-			}
+				break;
+			default:
+				// =<raw-element>;
+				if (processing.defaultValue != null)
+					throw formatException(Messages.default_defined_more_then_once);
+				if (processing.ignore)
+					throw formatException(Messages.cannot_combine_ignore_with_other_instruction);
+				Comparable<?> dflt = parseRawElement();
+				processing.defaultValue = dflt;
+				if (current < eos && format.charAt(current) == '{') {
+					// =m{<translated min char>}
+					// =''{<translated max char>,<max char repeat>}
+					if (++current == eos)
+						throw formatException(Messages.premature_end_of_format);
+					processing.oppositeTranslationChar = format.charAt(current++);
+					if (current == eos)
+						throw formatException(Messages.premature_end_of_format);
+
+					if (dflt == VersionVector.MINS_VALUE) {
+						processing.oppositeTranslationRepeat = 3;
+						if (format.charAt(current) == ',') {
+							++current;
+							processing.oppositeTranslationRepeat = parseIntegerLiteral();
+						}
+					} else if (dflt != VersionVector.MAXS_VALUE) {
+						current -= 2;
+						throw formatException(Messages.only_max_and_empty_string_defaults_can_have_translations);
+					}
+					assertChar('}');
+				}
+				break;
 		}
 		assertChar(';');
 	}

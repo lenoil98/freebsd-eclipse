@@ -28,7 +28,7 @@ import org.eclipse.jface.text.rules.WordRule;
 
 /**
  * Performance tests for {@link WordRule}.
- * 
+ *
  * @since 3.6
  */
 public class WordRulePerformanceTest extends TextPerformanceTestCase2 {
@@ -64,7 +64,7 @@ public class WordRulePerformanceTest extends TextPerformanceTestCase2 {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		StringBuffer sb= new StringBuffer();
+		StringBuilder sb= new StringBuilder();
 		for (int i= 0; i < WORDS_IN_DOCUMENT; i++)
 			sb.append(WORD_IN_DOCUMENT).append("\n");
 

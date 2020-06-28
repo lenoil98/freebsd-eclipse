@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2014 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -96,10 +96,12 @@ public class WeavingHook extends AbstractWeavingHook {
         return adaptor;
     }
 
+    @Override
     public IWeavingAdaptor getAdaptor(final long bundleID) {
         return this.adaptors.get(bundleID);
     }
 
+    @Override
     public IWeavingAdaptor getHostBundleAdaptor(final long bundleID) {
         final Bundle bundle = this.bundleContext.getBundle(bundleID);
         if (bundle != null) {
@@ -132,15 +134,14 @@ public class WeavingHook extends AbstractWeavingHook {
 
         // re-build supplementer registry state for installed bundles
         final Bundle[] installedBundles = context.getBundles();
-        for (int i = 0; i < installedBundles.length; i++) {
-            if (installedBundles[i].getState() != Bundle.UNINSTALLED) {
-                supplementerRegistry
-                        .addSupplementer(installedBundles[i], false);
+        for (Bundle installedBundle : installedBundles) {
+            if (installedBundle.getState() != Bundle.UNINSTALLED) {
+                supplementerRegistry.addSupplementer(installedBundle, false);
             }
         }
-        for (int i = 0; i < installedBundles.length; i++) {
-            if (installedBundles[i].getState() != Bundle.UNINSTALLED) {
-                supplementerRegistry.addSupplementedBundle(installedBundles[i]);
+        for (Bundle installedBundle : installedBundles) {
+            if (installedBundle.getState() != Bundle.UNINSTALLED) {
+                supplementerRegistry.addSupplementedBundle(installedBundle);
             }
         }
 
@@ -197,6 +198,7 @@ public class WeavingHook extends AbstractWeavingHook {
         }
     }
 
+    @Override
     public void resetAdaptor(final long bundleID) {
         this.adaptors.remove(bundleID);
     }
@@ -221,6 +223,10 @@ public class WeavingHook extends AbstractWeavingHook {
      */
     public BundleFileWrapper wrapBundleFile(final BundleFile bundleFile,
             final Generation generation, final boolean base) {
+        if (bundleFile.getBaseFile() == null) {
+            // must have a base file to work
+            return null;
+        }
         BundleFileWrapper wrapped = null;
         if (Debug.DEBUG_BUNDLE)
             Debug.println("> WeavingHook.wrapBundleFile() bundle="

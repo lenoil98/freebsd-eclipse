@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -63,6 +63,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
 import org.eclipse.jdt.internal.corext.refactoring.JDTRefactoringDescriptorComment;
@@ -98,7 +99,6 @@ import org.eclipse.jdt.ui.refactoring.IRefactoringProcessorIds;
 import org.eclipse.jdt.ui.refactoring.RefactoringSaveHelper;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 public abstract class RenameMethodProcessor extends JavaRenameProcessor implements IReferenceUpdating, IDelegateUpdating {
 
@@ -145,7 +145,7 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 	}
 
 	protected void initialize(IMethod method) {
-		fMethod= method;
+		assignMethod(method);
 		if (!fInitialized) {
 			if (method != null)
 				setNewElementName(method.getElementName());
@@ -192,12 +192,13 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 	protected RenameModifications computeRenameModifications() throws CoreException {
 		RenameModifications result= new RenameModifications();
 		RenameArguments args= new RenameArguments(getNewElementName(), getUpdateReferences());
-		for (Iterator<IMethod> iter= fMethodsToRename.iterator(); iter.hasNext();) {
-			IMethod method= iter.next();
+		for (IMethod method : fMethodsToRename) {
 			result.rename(method, args);
 		}
 		return result;
 	}
+
+
 
 	@Override
 	protected IFile[] getChangedFiles() throws CoreException {
@@ -264,6 +265,10 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 
 	protected Set<IMethod> getMethodsToRename() {
 		return fMethodsToRename;
+	}
+
+	protected void assignMethod(IMethod method) {
+		fMethod= method;
 	}
 
 	//---- IReferenceUpdating -----------------------------------
@@ -403,7 +408,7 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 				return result;
 
 			createChanges(new SubProgressMonitor(pm, 1), result);
-			if (fUpdateReferences & mustAnalyzeShadowing)
+			if (fUpdateReferences && mustAnalyzeShadowing)
 				result.merge(analyzeRenameChanges(new SubProgressMonitor(pm, 1)));
 			else
 				pm.worked(1);
@@ -478,7 +483,7 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 		return RefactoringScopeFactory.create(method, true, false);
 	}
 
-	private SearchPattern createOccurrenceSearchPattern() {
+	protected SearchPattern createOccurrenceSearchPattern() {
 		HashSet<IMethod> methods= new HashSet<>(fMethodsToRename);
 		methods.add(fMethod);
 		IMethod[] ms= methods.toArray(new IMethod[methods.size()]);
@@ -497,9 +502,7 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 
 	private RefactoringStatus checkRelatedMethods() throws CoreException {
 		RefactoringStatus result= new RefactoringStatus();
-		for (Iterator<IMethod> iter= fMethodsToRename.iterator(); iter.hasNext(); ) {
-			IMethod method= iter.next();
-
+		for (IMethod method : fMethodsToRename) {
 			result.merge(Checks.checkIfConstructorName(method, getNewElementName(), method.getDeclaringType().getElementName()));
 
 			String[] msgData= new String[]{BasicElementLabels.getJavaElementName(method.getElementName()), BasicElementLabels.getJavaElementName(method.getDeclaringType().getFullyQualifiedName('.'))};
@@ -568,8 +571,8 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 		} finally{
 			pm.done();
 			if (newDeclarationWCs != null){
-				for (int i= 0; i < newDeclarationWCs.length; i++) {
-					newDeclarationWCs[i].discardWorkingCopy();
+				for (ICompilationUnit newDeclarationWC : newDeclarationWCs) {
+					newDeclarationWC.discardWorkingCopy();
 				}
 			}
 		}
@@ -624,9 +627,11 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 			requestor= new MethodOccurenceCollector(getNewElementName()) {
 				@Override
 				public void acceptSearchMatch(ICompilationUnit unit, SearchMatch match) throws CoreException {
-					for (int i= 0; i < wcOldMethods.length; i++)
-						if (wcOldMethods[i].equals(match.getElement()))
+					for (IMethod occurrence : wcOldMethods) {
+						if (occurrence.equals(match.getElement())) {
 							return;
+						}
+					}
 					super.acceptSearchMatch(unit, match);
 				}
 			};
@@ -637,10 +642,11 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 
 		ArrayList<ICompilationUnit> needWCs= new ArrayList<>();
 		HashSet<ICompilationUnit> declaringCUs= new HashSet<>(newDeclarationWCs.length);
-		for (int i= 0; i < newDeclarationWCs.length; i++)
-			declaringCUs.add(newDeclarationWCs[i].getPrimary());
-		for (int i= 0; i < fOccurrences.length; i++) {
-			ICompilationUnit cu= fOccurrences[i].getCompilationUnit();
+		for (ICompilationUnit newDeclarationWC : newDeclarationWCs) {
+			declaringCUs.add(newDeclarationWC.getPrimary());
+		}
+		for (SearchResultGroup occurrence : fOccurrences) {
+			ICompilationUnit cu= occurrence.getCompilationUnit();
 			if (! declaringCUs.contains(cu))
 				needWCs.add(cu);
 		}
@@ -653,8 +659,8 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 		} finally {
 			pm.done();
 			if (otherWCs != null) {
-				for (int i= 0; i < otherWCs.length; i++) {
-					otherWCs[i].discardWorkingCopy();
+				for (ICompilationUnit otherWC : otherWCs) {
+					otherWC.discardWorkingCopy();
 				}
 			}
 		}
@@ -664,8 +670,7 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 
 	private ICompilationUnit[] getDeclarationCUs() {
 		Set<ICompilationUnit> cus= new HashSet<>();
-		for (Iterator<IMethod> iter= fMethodsToRename.iterator(); iter.hasNext();) {
-			IMethod method= iter.next();
+		for (IMethod method : fMethodsToRename) {
 			cus.add(method.getCompilationUnit());
 		}
 		return cus.toArray(new ICompilationUnit[cus.size()]);
@@ -685,18 +690,17 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 		int parameterCount= method.getParameterTypes().length;
 		boolean isMethodPrivate= JdtFlags.isPrivate(method);
 
-		for (Iterator<IType> iter= classes.iterator(); iter.hasNext(); ){
-			IType clazz= iter.next();
-			IMethod[] methods= clazz.getMethods();
+		for (IType clazz : classes) {
 			boolean isSubclass= subtypes.contains(clazz);
-			for (int j= 0; j < methods.length; j++) {
-				IMethod foundMethod= Checks.findMethod(newName, parameterCount, false, new IMethod[] {methods[j]});
+			for (IMethod m : clazz.getMethods()) {
+				IMethod foundMethod= Checks.findMethod(newName, parameterCount, false, new IMethod[]{m});
 				if (foundMethod == null)
 					continue;
-				if (isSubclass || type.equals(clazz))
+				if (isSubclass || type.equals(clazz)) {
 					result.add(foundMethod);
-				else if ((! isMethodPrivate) && (! JdtFlags.isPrivate(methods[j])))
+				} else if ((! isMethodPrivate) && (!JdtFlags.isPrivate(m))) {
 					result.add(foundMethod);
+				}
 			}
 		}
 		return result.toArray(new IMethod[result.size()]);
@@ -767,7 +771,7 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 		}
 	}
 
-	private TextChangeManager createChanges(IProgressMonitor pm, RefactoringStatus status) throws CoreException {
+	protected TextChangeManager createChanges(IProgressMonitor pm, RefactoringStatus status) throws CoreException {
 		if (!fIsComposite)
 			fChangeManager.clear();
 		addOccurrences(fChangeManager, pm, status);
@@ -784,25 +788,21 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 	 */
 	protected void addOccurrences(TextChangeManager manager, IProgressMonitor pm, RefactoringStatus status) throws CoreException/*thrown in subtype*/{
 		pm.beginTask("", fOccurrences.length);				 //$NON-NLS-1$
-		for (int i= 0; i < fOccurrences.length; i++){
-			ICompilationUnit cu= fOccurrences[i].getCompilationUnit();
+		for (SearchResultGroup occurrence : fOccurrences) {
+			ICompilationUnit cu= occurrence.getCompilationUnit();
 			if (cu == null)
 				continue;
-
-			SearchMatch[] results= fOccurrences[i].getSearchResults();
-
 			// Split matches into declaration and non-declaration matches
 
 			List<SearchMatch> declarationsInThisCu= new ArrayList<>();
 			List<SearchMatch> referencesInThisCu= new ArrayList<>();
-
-			for (int j= 0; j < results.length; j++) {
-				if (results[j] instanceof MethodDeclarationMatch)
-					declarationsInThisCu.add(results[j]);
-				else
-					referencesInThisCu.add(results[j]);
+			for (SearchMatch result : occurrence.getSearchResults()) {
+				if (result instanceof MethodDeclarationMatch) {
+					declarationsInThisCu.add(result);
+				} else {
+					referencesInThisCu.add(result);
+				}
 			}
-
 			// First, handle the declarations
 			if (declarationsInThisCu.size() > 0) {
 
@@ -811,8 +811,7 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 					CompilationUnitRewrite rewrite= new CompilationUnitRewrite(cu);
 					rewrite.setResolveBindings(true);
 
-					for (Iterator<SearchMatch> iter= declarationsInThisCu.iterator(); iter.hasNext();) {
-						SearchMatch element= iter.next();
+					for (SearchMatch element : declarationsInThisCu) {
 						MethodDeclaration method= ASTNodeSearchUtil.getMethodDeclarationNode((IMethod) element.getElement(), rewrite.getRoot());
 						DelegateCreator creator= new DelegateMethodCreator();
 						creator.setDeclareDeprecated(fDelegateDeprecation);
@@ -830,16 +829,14 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 				}
 
 				// Update the normal methods
-				for (Iterator<SearchMatch> iter= declarationsInThisCu.iterator(); iter.hasNext();) {
-					SearchMatch element= iter.next();
+				for (SearchMatch element : declarationsInThisCu) {
 					simpleUpdate(element, cu, manager.get(cu));
 				}
 			}
 
 			// Second, handle references
 			if (fUpdateReferences) {
-				for (Iterator<SearchMatch> iter= referencesInThisCu.iterator(); iter.hasNext();) {
-					SearchMatch element= iter.next();
+				for (SearchMatch element : referencesInThisCu) {
 					simpleUpdate(element, cu, manager.get(cu));
 				}
 			}
@@ -892,7 +889,7 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 					if (methods != null && methods.length == 1 && methods[0] != null) {
 						if (!methods[0].exists())
 							return JavaRefactoringDescriptorUtil.createInputFatalStatus(methods[0], refactoring, IJavaRefactorings.RENAME_METHOD);
-						fMethod= methods[0];
+						assignMethod(methods[0]);
 						initializeWorkingCopyOwner();
 					} else
 						return JavaRefactoringDescriptorUtil.createInputFatalStatus(null, refactoring, IJavaRefactorings.RENAME_METHOD);
@@ -909,17 +906,17 @@ public abstract class RenameMethodProcessor extends JavaRenameProcessor implemen
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, JavaRefactoringDescriptorUtil.ATTRIBUTE_NAME));
 		final String references= extended.getAttribute(JavaRefactoringDescriptorUtil.ATTRIBUTE_REFERENCES);
 		if (references != null) {
-			fUpdateReferences= Boolean.valueOf(references).booleanValue();
+			fUpdateReferences= Boolean.parseBoolean(references);
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, JavaRefactoringDescriptorUtil.ATTRIBUTE_REFERENCES));
 		final String delegate= extended.getAttribute(ATTRIBUTE_DELEGATE);
 		if (delegate != null) {
-			fDelegateUpdating= Boolean.valueOf(delegate).booleanValue();
+			fDelegateUpdating= Boolean.parseBoolean(delegate);
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_DELEGATE));
 		final String deprecate= extended.getAttribute(ATTRIBUTE_DEPRECATE);
 		if (deprecate != null) {
-			fDelegateDeprecation= Boolean.valueOf(deprecate).booleanValue();
+			fDelegateDeprecation= Boolean.parseBoolean(deprecate);
 		} else
 			return RefactoringStatus.createFatalErrorStatus(Messages.format(RefactoringCoreMessages.InitializableRefactoring_argument_not_exist, ATTRIBUTE_DEPRECATE));
 		return new RefactoringStatus();

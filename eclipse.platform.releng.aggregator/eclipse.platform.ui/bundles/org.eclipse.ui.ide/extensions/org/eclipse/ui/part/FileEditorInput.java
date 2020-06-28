@@ -48,9 +48,10 @@ public class FileEditorInput extends PlatformObject implements IFileEditorInput,
 	private IFile file;
 
 	/**
-	 * Return whether or not file is local. Only {@link IFile}s with a local
-	 * value should call {@link IPathEditorInput#getPath()}
-	 * @param file
+	 * Return whether or not file is local. Only {@link IFile}s with a local value
+	 * should call {@link IPathEditorInput#getPath()}
+	 *
+	 * @param file the file to check; not <code>null</code>
 	 * @return boolean <code>true</code> if the file has a local implementation.
 	 * @since 3.4
 	 */
@@ -61,10 +62,10 @@ public class FileEditorInput extends PlatformObject implements IFileEditorInput,
 			return true;
 		//this is not a local file, so try to obtain a local file
 		try {
-	        final URI locationURI = file.getLocationURI();
-	        if (locationURI == null)
-	           return false;
-	        IFileStore store = EFS.getStore(locationURI);
+			final URI locationURI = file.getLocationURI();
+			if (locationURI == null)
+				return false;
+			IFileStore store = EFS.getStore(locationURI);
 			//first try to obtain a local file directly fo1r this store
 			java.io.File localFile = store.toLocalFile(EFS.NONE, null);
 			//if no local file is available, obtain a cached file
@@ -179,10 +180,10 @@ public class FileEditorInput extends PlatformObject implements IFileEditorInput,
 			return location;
 		//this is not a local file, so try to obtain a local file
 		try {
-	        final URI locationURI = file.getLocationURI();
-	        if (locationURI == null)
-	           throw new IllegalArgumentException();
-	        IFileStore store = EFS.getStore(locationURI);
+			final URI locationURI = file.getLocationURI();
+			if (locationURI == null)
+				throw new IllegalArgumentException();
+			IFileStore store = EFS.getStore(locationURI);
 			//first try to obtain a local file directly fo1r this store
 			java.io.File localFile = store.toLocalFile(EFS.NONE, null);
 			//if no local file is available, obtain a cached file

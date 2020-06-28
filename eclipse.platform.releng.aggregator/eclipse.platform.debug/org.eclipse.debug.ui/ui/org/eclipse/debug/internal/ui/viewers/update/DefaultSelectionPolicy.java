@@ -44,9 +44,6 @@ public class DefaultSelectionPolicy implements IModelSelectionPolicy {
 		fDebugElement = element;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.viewers.IModelSelectionPolicy#contains(org.eclipse.jface.viewers.ISelection, org.eclipse.debug.ui.viewers.IPresentationContext)
-	 */
 	@Override
 	public boolean contains(ISelection selection, IPresentationContext context) {
 		if (IDebugUIConstants.ID_DEBUG_VIEW.equals(context.getId())) {
@@ -62,9 +59,6 @@ public class DefaultSelectionPolicy implements IModelSelectionPolicy {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.viewers.IModelSelectionPolicy#overrides(org.eclipse.jface.viewers.ISelection, org.eclipse.jface.viewers.ISelection, org.eclipse.debug.ui.viewers.IPresentationContext)
-	 */
 	@Override
 	public boolean overrides(ISelection existing, ISelection candidate, IPresentationContext context) {
 		if (IDebugUIConstants.ID_DEBUG_VIEW.equals(context.getId())) {
@@ -92,9 +86,6 @@ public class DefaultSelectionPolicy implements IModelSelectionPolicy {
 		return !isSticky(existing);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.viewers.IModelSelectionPolicy#isSticky(org.eclipse.jface.viewers.ISelection, org.eclipse.debug.ui.viewers.IPresentationContext)
-	 */
 	@Override
 	public boolean isSticky(ISelection selection, IPresentationContext context) {
 		if (IDebugUIConstants.ID_DEBUG_VIEW.equals(context.getId())) {
@@ -118,25 +109,25 @@ public class DefaultSelectionPolicy implements IModelSelectionPolicy {
 		return false;
 	}
 
-    /**
-     * If an attempt is made to select an invalid element, it usually indicates that the
-     * currently selected element was removed from the model.  Instead of leaving the
-     * selection empty, attempt to select the parent element instead.
-     *
-     * @param selection the selection to replace
-     * @param newSelection the selection to use if the given selection is not an {@link ITreeSelection}
-     * @return the replaced selection or <code>newSelection</code> if the given selection is not an {@link ITreeSelection}
-     *
-     * @see org.eclipse.debug.internal.ui.viewers.model.provisional.IModelSelectionPolicy#replaceInvalidSelection(ISelection, ISelection)
-     */
-    @Override
+	/**
+	 * If an attempt is made to select an invalid element, it usually indicates that the
+	 * currently selected element was removed from the model.  Instead of leaving the
+	 * selection empty, attempt to select the parent element instead.
+	 *
+	 * @param selection the selection to replace
+	 * @param newSelection the selection to use if the given selection is not an {@link ITreeSelection}
+	 * @return the replaced selection or <code>newSelection</code> if the given selection is not an {@link ITreeSelection}
+	 *
+	 * @see org.eclipse.debug.internal.ui.viewers.model.provisional.IModelSelectionPolicy#replaceInvalidSelection(ISelection, ISelection)
+	 */
+	@Override
 	public ISelection replaceInvalidSelection(ISelection selection, ISelection newSelection) {
-        if (selection instanceof ITreeSelection) {
-            TreePath[] paths = ((ITreeSelection)selection).getPaths();
-            if (paths.length > 0 && paths[0].getSegmentCount() > 1) {
-                return new TreeSelection(paths[0].getParentPath());
-            }
-        }
-        return newSelection;
-    }
+		if (selection instanceof ITreeSelection) {
+			TreePath[] paths = ((ITreeSelection)selection).getPaths();
+			if (paths.length > 0 && paths[0].getSegmentCount() > 1) {
+				return new TreeSelection(paths[0].getParentPath());
+			}
+		}
+		return newSelection;
+	}
 }

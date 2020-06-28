@@ -14,6 +14,12 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.keys;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.HashMap;
 
 import org.eclipse.core.commands.ParameterizedCommand;
@@ -29,11 +35,15 @@ import org.eclipse.jface.util.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchCommandConstants;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
 import org.eclipse.ui.contexts.IContextService;
 import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.keys.IBindingService;
-import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Test cases covering the various interaction between bindings. Bindings that
@@ -42,30 +52,19 @@ import org.eclipse.ui.tests.harness.util.UITestCase;
  *
  * @since 3.1
  */
-public final class BindingPersistenceTest extends UITestCase {
+public final class BindingPersistenceTest {
 
 	private final String EMACS_SCHEME_ID = "org.eclipse.ui.emacsAcceleratorConfiguration";
 	private ICommandService commandService;
 	private IBindingService bindingService;
 
 	/**
-	 * Constructor for <code>BindingPersistenceTest</code>.
-	 *
-	 * @param name
-	 *            The name of the test
-	 */
-	public BindingPersistenceTest(final String name) {
-		super(name);
-	}
-
-	/**
 	 * Creates a new workbench and retrieves its context manager and a binding
 	 * manager for use in the test cases.
 	 */
-	@Override
-	protected void doSetUp() throws Exception {
-		super.doSetUp();
-		IWorkbench workbench = openTestWindow().getWorkbench();
+	@Before
+	public void doSetUp() throws Exception {
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		commandService = workbench.getAdapter(ICommandService.class);
 		bindingService = workbench.getAdapter(IBindingService.class);
 	}
@@ -79,6 +78,7 @@ public final class BindingPersistenceTest extends UITestCase {
 	 * @throws ParseException
 	 *             If "ALT+SHIFT+Q A" cannot be parsed by KeySequence.
 	 */
+	@Test
 	public final void testAutoLoad() throws ParseException {
 		bindingService.readRegistryAndPreferences(commandService);
 
@@ -142,6 +142,7 @@ public final class BindingPersistenceTest extends UITestCase {
 				(bindings.length == i));
 	}
 
+	@Test
 	public final void testSinglePlatform() throws Exception {
 		ParameterizedCommand about = new ParameterizedCommand(commandService
 				.getCommand("org.eclipse.ui.help.aboutAction"), null);
@@ -179,6 +180,8 @@ public final class BindingPersistenceTest extends UITestCase {
 		}
 	}
 
+	@Ignore
+	@Test
 	public final void TODOtestBindingTransform() throws Exception {
 		ParameterizedCommand addWS = new ParameterizedCommand(commandService
 				.getCommand("org.eclipse.ui.navigate.addToWorkingSet"), null);
@@ -218,7 +221,7 @@ public final class BindingPersistenceTest extends UITestCase {
 		assertTrue("Unable to find delete marker", foundDeleteMarker);
 
 		// make sure that the proper contexts are currently active
-		IContextService contextService = fWorkbench
+		IContextService contextService = PlatformUI.getWorkbench()
 				.getService(IContextService.class);
 		contextService
 				.activateContext(IContextService.CONTEXT_ID_DIALOG_AND_WINDOW);
@@ -228,6 +231,7 @@ public final class BindingPersistenceTest extends UITestCase {
 		assertEquals(1, activeBindingsFor.length);
 	}
 
+	@Test
 	public void testModifierWithPlatform() throws Exception {
 		ParameterizedCommand importCmd = new ParameterizedCommand(
 				commandService.getCommand("org.eclipse.ui.file.import"), null);
@@ -250,6 +254,7 @@ public final class BindingPersistenceTest extends UITestCase {
 		assertEquals(numOfMarkers, 1);
 	}
 
+	@Test
 	public void testModifierNotApplied() throws Exception {
 		ParameterizedCommand exportCmd = new ParameterizedCommand(
 				commandService.getCommand("org.eclipse.ui.file.export"), null);
@@ -268,6 +273,7 @@ public final class BindingPersistenceTest extends UITestCase {
 		}
 	}
 
+	@Test
 	public void testDifferentPlatform() throws Exception {
 		ParameterizedCommand backCmd = new ParameterizedCommand(
 				commandService.getCommand("org.eclipse.ui.navigate.back"), null);
@@ -289,6 +295,7 @@ public final class BindingPersistenceTest extends UITestCase {
 		}
 	}
 
+	@Test
 	public void testAboutBinding() throws Exception {
 		if (Util.isMac()) {
 			return;
@@ -312,7 +319,7 @@ public final class BindingPersistenceTest extends UITestCase {
 		assertNotNull(editorBinding);
 		assertEquals(activateEditorCmd, editorBinding.getParameterizedCommand());
 
-		EBindingService ebs = fWorkbench
+		EBindingService ebs = PlatformUI.getWorkbench()
 				.getService(EBindingService.class);
 		HashMap<String, String> attrs = new HashMap<>();
 		attrs.put(EBindingService.TYPE_ATTR_TAG, "user");
@@ -361,6 +368,7 @@ public final class BindingPersistenceTest extends UITestCase {
 		assertEquals(aboutCmd, fourthMatch.getParameterizedCommand());
 	}
 
+	@Test
 	public void testAboutBindingIn3x() throws Exception {
 		if (Util.isMac()) {
 			// TODO investigate on Mac
@@ -383,7 +391,7 @@ public final class BindingPersistenceTest extends UITestCase {
 		assertNotNull(editorBinding);
 		assertEquals(activateEditorCmd, editorBinding.getParameterizedCommand());
 
-		EBindingService ebs = fWorkbench.getService(EBindingService.class);
+		EBindingService ebs = PlatformUI.getWorkbench().getService(EBindingService.class);
 		HashMap<String, String> attrs = new HashMap<>();
 		attrs.put(EBindingService.TYPE_ATTR_TAG, "user");
 		final Binding localAboutBinding = ebs.createBinding(keyF12, aboutCmd,
@@ -403,6 +411,7 @@ public final class BindingPersistenceTest extends UITestCase {
 		assertEquals(aboutCmd, secondMatch.getParameterizedCommand());
 	}
 
+	@Test
 	public void testAboutBindingEmacs() throws Exception {
 		if (Util.isMac()) {
 			return;
@@ -433,7 +442,7 @@ public final class BindingPersistenceTest extends UITestCase {
 				findAndReplaceBinding.getParameterizedCommand());
 		assertEquals(EMACS_SCHEME_ID, findAndReplaceBinding.getSchemeId());
 
-		EBindingService ebs = fWorkbench.getService(EBindingService.class);
+		EBindingService ebs = PlatformUI.getWorkbench().getService(EBindingService.class);
 		HashMap<String, String> attrs = new HashMap<>();
 		attrs.put(EBindingService.TYPE_ATTR_TAG, "user");
 		attrs.put(EBindingService.SCHEME_ID_ATTR_TAG, EMACS_SCHEME_ID);
@@ -487,6 +496,7 @@ public final class BindingPersistenceTest extends UITestCase {
 
 	// the 'paste' key binding overrides the 'redo' key binding on Windows
 	// platforms
+	@Test
 	public void testPasteAndRedoBindingEmacs() throws Exception {
 		if (Util.isMac()) {
 			// TODO investigate on Mac
@@ -537,6 +547,7 @@ public final class BindingPersistenceTest extends UITestCase {
 
 	// the 'paste' key binding overrides the 'redo' key binding and can be
 	// put back
+	@Test
 	public void testPasteBindingEmacs() throws Exception {
 
 		final Scheme emacsScheme = bindingService.getScheme(EMACS_SCHEME_ID);
@@ -557,8 +568,8 @@ public final class BindingPersistenceTest extends UITestCase {
 		assertEquals(EMACS_SCHEME_ID, pasteBinding.getSchemeId());
 	}
 
-	@Override
-	protected void doTearDown() throws Exception {
+	@After
+	public void doTearDown() throws Exception {
 		WorkbenchPlugin.getDefault().getPreferenceStore().setValue(
 						"org.eclipse.ui.commands",
 						"<?xml version=\"1.0\" encoding=\"UTF-8\"?><org.eclipse.ui.commands><activeKeyConfiguration keyConfigurationId=\""
@@ -571,6 +582,5 @@ public final class BindingPersistenceTest extends UITestCase {
 		final Binding[] originalBindings = bindingService.getBindings();
 		bindingService.savePreferences(activeScheme, originalBindings);
 		bindingService = null;
-		super.doTearDown();
 	}
 }

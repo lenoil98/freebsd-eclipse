@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,6 +43,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.internal.launching.environments.EnvironmentsManager;
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMInstallChangedListener;
@@ -66,11 +68,10 @@ import org.eclipse.pde.api.tools.internal.provisional.model.IApiBaseline;
 import org.eclipse.pde.api.tools.internal.provisional.model.IApiComponent;
 import org.eclipse.pde.api.tools.internal.provisional.model.IApiElement;
 import org.eclipse.pde.api.tools.internal.util.Util;
+import org.eclipse.pde.internal.core.BuildDependencyCollector;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Implementation of an {@link IApiBaseline}
@@ -478,9 +479,7 @@ public class ApiBaseline extends ApiElement implements IApiBaseline, IVMInstallC
 						// if
 						// we fail to find a compatible EE, fall back to highest
 						// known.
-						// TODO this should be updated for each new EE that gets
-						// added
-						systemEE = "JavaSE-1.7"; //$NON-NLS-1$
+						systemEE = "JavaSE-" + JavaCore.latestSupportedJavaVersion(); //$NON-NLS-1$
 					}
 					// only update if different from current or missing VM
 					// binding
@@ -491,9 +490,7 @@ public class ApiBaseline extends ApiElement implements IApiBaseline, IVMInstallC
 							fVMBinding = iVMInstall;
 							ExecutionEnvironmentDescription ee = new ExecutionEnvironmentDescription(file);
 							initialize(ee);
-						} catch (CoreException e) {
-							error = new Status(IStatus.ERROR, ApiPlugin.PLUGIN_ID, CoreMessages.ApiBaseline_2, e);
-						} catch (IOException e) {
+						} catch (CoreException | IOException e) {
 							error = new Status(IStatus.ERROR, ApiPlugin.PLUGIN_ID, CoreMessages.ApiBaseline_2, e);
 						}
 					}
@@ -669,7 +666,7 @@ public class ApiBaseline extends ApiElement implements IApiBaseline, IVMInstallC
 				}
 			}
 		}
-		return getApiComponents(visible.toArray(new BundleDescription[visible.size()]));
+		return getApiComponents(visible);
 	}
 
 	/**
@@ -867,13 +864,6 @@ public class ApiBaseline extends ApiElement implements IApiBaseline, IVMInstallC
 		ApiModelCache.getCache().removeElementInfo(this);
 	}
 
-	@Override
-	public IApiComponent[] getDependentComponents(IApiComponent[] components) throws CoreException {
-		ArrayList<BundleDescription> bundles = getBundleDescriptions(components);
-		BundleDescription[] bundleDescriptions = getState().getStateHelper().getDependentBundles(bundles.toArray(new BundleDescription[bundles.size()]));
-		return getApiComponents(bundleDescriptions);
-	}
-
 	/**
 	 * Returns an array of API components corresponding to the given bundle
 	 * descriptions.
@@ -881,8 +871,8 @@ public class ApiBaseline extends ApiElement implements IApiBaseline, IVMInstallC
 	 * @param bundles bundle descriptions
 	 * @return corresponding API components
 	 */
-	private IApiComponent[] getApiComponents(BundleDescription[] bundles) {
-		ArrayList<IApiComponent> dependents = new ArrayList<>(bundles.length);
+	private IApiComponent[] getApiComponents(Collection<BundleDescription> bundles) {
+		ArrayList<IApiComponent> dependents = new ArrayList<>(bundles.size());
 		for (BundleDescription bundle : bundles) {
 			IApiComponent component = getApiComponent(bundle.getSymbolicName());
 			if (component != null) {
@@ -912,8 +902,7 @@ public class ApiBaseline extends ApiElement implements IApiBaseline, IVMInstallC
 	@Override
 	public IApiComponent[] getPrerequisiteComponents(IApiComponent[] components) throws CoreException {
 		ArrayList<BundleDescription> bundles = getBundleDescriptions(components);
-		BundleDescription[] bundlesDescriptions = getState().getStateHelper().getPrerequisites(bundles.toArray(new BundleDescription[bundles.size()]));
-		return getApiComponents(bundlesDescriptions);
+		return getApiComponents(BuildDependencyCollector.collectBuildRelevantDependencies(bundles));
 	}
 
 	/**

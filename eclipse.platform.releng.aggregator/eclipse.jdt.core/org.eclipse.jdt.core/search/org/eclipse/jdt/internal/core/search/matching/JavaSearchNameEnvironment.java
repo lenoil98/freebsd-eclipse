@@ -160,8 +160,8 @@ private ClasspathLocation mapToClassPathLocation(JavaModelManager manager, Packa
 			ClasspathEntry rawClasspathEntry = (ClasspathEntry) root.getRawClasspathEntry();
 			IJavaProject project = (IJavaProject) root.getParent();
 			String compliance = project.getOption(JavaCore.COMPILER_COMPLIANCE, true);
-			cp = (root instanceof JrtPackageFragmentRoot) ? 
-					ClasspathLocation.forJrtSystem(path.toOSString(), rawClasspathEntry.getAccessRuleSet(), 
+			cp = (root instanceof JrtPackageFragmentRoot) ?
+					ClasspathLocation.forJrtSystem(path.toOSString(), rawClasspathEntry.getAccessRuleSet(),
 							ClasspathEntry.getExternalAnnotationPath(rawClasspathEntry, project.getProject(), true), compliance) :
 									ClasspathLocation.forLibrary(manager.getZipFile(path), rawClasspathEntry.getAccessRuleSet(),
 												ClasspathEntry.getExternalAnnotationPath(rawClasspathEntry,
@@ -205,7 +205,7 @@ private void addModuleClassPathInfo(PackageFragmentRoot root, IModuleDescription
 private String addModuleClassPathInfo(ClasspathLocation cp, IModuleDescription imd) {
 	IModule mod = NameLookup.getModuleDescriptionInfo(imd);
 	String moduleName = null;
-	if (mod != null) {
+	if (mod != null && cp != null) {
 		char[] name = mod.name();
 		if (name != null) {
 			moduleName = new String(name);
@@ -328,8 +328,8 @@ public NameEnvironmentAnswer findType(char[][] compoundName, char[] moduleName) 
 }
 
 @Override
-public char[][] getModulesDeclaringPackage(char[][] parentPackageName, char[] packageName, char[] moduleName) {
-	String qualifiedPackageName = String.valueOf(CharOperation.concatWith(parentPackageName, packageName, '/'));
+public char[][] getModulesDeclaringPackage(char[][] packageName, char[] moduleName) {
+	String qualifiedPackageName = String.valueOf(CharOperation.concatWith(packageName, '/'));
 	LookupStrategy strategy = LookupStrategy.get(moduleName);
 	if (strategy == LookupStrategy.Named) {
 		if (this.moduleToClassPathLocations != null) {
@@ -356,6 +356,22 @@ public char[][] getModulesDeclaringPackage(char[][] parentPackageName, char[] pa
 		}
 	}
 	return moduleNames == CharOperation.NO_CHAR_CHAR ? null : moduleNames;
+}
+
+@Override
+public char[][] listPackages(char[] moduleName) { LookupStrategy strategy = LookupStrategy.get(moduleName);
+	switch (strategy) {
+		case Named:
+			if (this.moduleLocations != null) {
+				ClasspathLocation location = this.moduleLocations.get(String.valueOf(moduleName));
+				if (location == null)
+					return CharOperation.NO_CHAR_CHAR;
+				return location.listPackages();
+			}
+			return CharOperation.NO_CHAR_CHAR;
+		default:
+			throw new UnsupportedOperationException("can list packages only of a named module"); //$NON-NLS-1$
+	}
 }
 
 @Override

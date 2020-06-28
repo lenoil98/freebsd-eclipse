@@ -33,9 +33,6 @@ import org.eclipse.ui.model.WorkbenchLabelProvider;
  */
 public class FolderSourceContainerBrowser extends AbstractSourceContainerBrowser {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.sourcelookup.ISourceContainerBrowser#createSourceContainers(org.eclipse.swt.widgets.Shell, org.eclipse.debug.core.ILaunchConfiguration)
-	 */
 	@Override
 	public ISourceContainer[] addSourceContainers(Shell shell, ISourceLookupDirector director) {
 		FolderSourceContainerDialog dialog = new FolderSourceContainerDialog(shell,  new WorkbenchLabelProvider(), new WorkbenchContentProvider());
@@ -43,9 +40,9 @@ public class FolderSourceContainerBrowser extends AbstractSourceContainerBrowser
 		if (dialog.open() == Window.OK) {
 			Object[] selection= ((ElementTreeSelectionDialog)dialog).getResult();
 			ArrayList<ISourceContainer> containers = new ArrayList<>();
-			for (int i= 0; i < selection.length; i++) {
-				if(selection[i] instanceof IFolder) {
-					containers.add(new FolderSourceContainer((IFolder)selection[i], dialog.isSearchSubfolders()));
+			for (Object f : selection) {
+				if (f instanceof IFolder) {
+					containers.add(new FolderSourceContainer((IFolder) f, dialog.isSearchSubfolders()));
 				}
 			}
 			return containers.toArray(new ISourceContainer[containers.size()]);
@@ -53,17 +50,11 @@ public class FolderSourceContainerBrowser extends AbstractSourceContainerBrowser
 		return new ISourceContainer[0];
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.sourcelookup.AbstractSourceContainerBrowser#canEditSourceContainers(org.eclipse.debug.core.sourcelookup.ISourceLookupDirector, org.eclipse.debug.core.sourcelookup.ISourceContainer[])
-	 */
 	@Override
 	public boolean canEditSourceContainers(ISourceLookupDirector director, ISourceContainer[] containers) {
 		return containers.length == 1 && containers[0].getType().getId().equals(FolderSourceContainer.TYPE_ID);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.sourcelookup.AbstractSourceContainerBrowser#editSourceContainers(org.eclipse.swt.widgets.Shell, org.eclipse.debug.core.sourcelookup.ISourceLookupDirector, org.eclipse.debug.core.sourcelookup.ISourceContainer[])
-	 */
 	@Override
 	public ISourceContainer[] editSourceContainers(Shell shell, ISourceLookupDirector director, ISourceContainer[] containers) {
 		FolderSourceContainerDialog dialog = new FolderSourceContainerDialog(shell,  new WorkbenchLabelProvider(), new WorkbenchContentProvider());
@@ -74,9 +65,9 @@ public class FolderSourceContainerBrowser extends AbstractSourceContainerBrowser
 			container.dispose();
 			Object[] selection= ((ElementTreeSelectionDialog)dialog).getResult();
 			ArrayList<ISourceContainer> list = new ArrayList<>();
-			for (int i= 0; i < selection.length; i++) {
-				if(selection[i] instanceof IFolder) {
-					list.add(new FolderSourceContainer((IFolder)selection[i], dialog.isSearchSubfolders()));
+			for (Object f : selection) {
+				if (f instanceof IFolder) {
+					list.add(new FolderSourceContainer((IFolder) f, dialog.isSearchSubfolders()));
 				}
 			}
 			return list.toArray(new ISourceContainer[list.size()]);

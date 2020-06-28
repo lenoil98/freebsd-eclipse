@@ -43,8 +43,7 @@ public class ServletContextAdaptor {
 		Method[] handlerMethods =
 			ServletContextAdaptor.class.getDeclaredMethods();
 
-		for (int i = 0; i < handlerMethods.length; i++) {
-			Method handlerMethod = handlerMethods[i];
+		for (Method handlerMethod : handlerMethods) {
 			String name = handlerMethod.getName();
 			Class<?>[] parameterTypes = handlerMethod.getParameterTypes();
 
@@ -101,6 +100,7 @@ public class ServletContextAdaptor {
 			curClassLoader, interfaces, new AdaptorInvocationHandler());
 	}
 
+	@Override
 	public boolean equals (Object obj) {
 		if (!(obj instanceof ServletContext)) {
 			return false;
@@ -159,6 +159,7 @@ public class ServletContextAdaptor {
 		try {
 			mimeType = AccessController.doPrivileged(
 				new PrivilegedExceptionAction<String>() {
+					@Override
 					public String run() throws Exception {
 						return servletContextHelper.getMimeType(name);
 					}
@@ -187,6 +188,7 @@ public class ServletContextAdaptor {
 		try {
 			return AccessController.doPrivileged(
 				new PrivilegedExceptionAction<String>() {
+					@Override
 					public String run() throws Exception {
 						return servletContextHelper.getRealPath(path);
 					}
@@ -223,6 +225,7 @@ public class ServletContextAdaptor {
 		try {
 			return AccessController.doPrivileged(
 				new PrivilegedExceptionAction<URL>() {
+					@Override
 					public URL run() throws Exception {
 						return servletContextHelper.getResource(name);
 					}
@@ -261,6 +264,7 @@ public class ServletContextAdaptor {
 		try {
 			return AccessController.doPrivileged(
 				new PrivilegedExceptionAction<Set<String>>() {
+					@Override
 					public Set<String> run() throws Exception {
 						return servletContextHelper.getResourcePaths(name);
 					}
@@ -278,6 +282,7 @@ public class ServletContextAdaptor {
 		return contextController.getContextName();
 	}
 
+	@Override
 	public int hashCode() {
 		return contextController.hashCode();
 	}
@@ -381,6 +386,7 @@ public class ServletContextAdaptor {
 		}
 	}
 
+	@Override
 	public String toString() {
 		String value = string;
 
@@ -431,6 +437,7 @@ public class ServletContextAdaptor {
 			return contextController;
 		}
 
+		@Override
 		public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
 

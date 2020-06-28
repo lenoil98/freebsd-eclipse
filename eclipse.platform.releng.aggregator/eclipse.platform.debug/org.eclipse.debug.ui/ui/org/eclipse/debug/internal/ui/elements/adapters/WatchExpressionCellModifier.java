@@ -27,41 +27,32 @@ import org.eclipse.jface.viewers.ICellModifier;
 @SuppressWarnings("deprecation")
 public class WatchExpressionCellModifier implements ICellModifier {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ICellModifier#canModify(java.lang.Object, java.lang.String)
-	 */
 	@Override
 	public boolean canModify(Object element, String property) {
-        if (VariableColumnPresentation.COLUMN_VARIABLE_NAME.equals(property)) {
-            return element instanceof IWatchExpression;
-        }
+		if (VariableColumnPresentation.COLUMN_VARIABLE_NAME.equals(property)) {
+			return element instanceof IWatchExpression;
+		}
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ICellModifier#getValue(java.lang.Object, java.lang.String)
-	 */
 	@Override
 	public Object getValue(Object element, String property) {
-        if (VariableColumnPresentation.COLUMN_VARIABLE_NAME.equals(property)) {
-            return DefaultLabelProvider.escapeSpecialChars( ((IWatchExpression)element).getExpressionText() );
-        }
-        return null;
+		if (VariableColumnPresentation.COLUMN_VARIABLE_NAME.equals(property)) {
+			return DefaultLabelProvider.escapeSpecialChars( ((IWatchExpression)element).getExpressionText() );
+		}
+		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ICellModifier#modify(java.lang.Object, java.lang.String, java.lang.Object)
-	 */
 	@Override
 	public void modify(Object element, String property, Object value) {
 		Object oldValue = getValue(element, property);
-        if (!value.equals(oldValue)) {
-        	if (VariableColumnPresentation.COLUMN_VARIABLE_NAME.equals(property)) {
+		if (!value.equals(oldValue)) {
+			if (VariableColumnPresentation.COLUMN_VARIABLE_NAME.equals(property)) {
 				if (element instanceof IWatchExpression) {
 					if (value instanceof String) {
 						// The value column displays special characters
-					    // escaped, so encode the string with any special
-					    // characters escaped properly
+						// escaped, so encode the string with any special
+						// characters escaped properly
 						String expressionText = DefaultLabelProvider.encodeEsacpedChars((String)value);
 						IWatchExpression expression = (IWatchExpression) element;
 						// Bug 345974 see ExpressionManagerContentProvider.AddNewExpressionElement.modify does not allow an empty string
@@ -72,7 +63,7 @@ public class WatchExpressionCellModifier implements ICellModifier {
 						}
 					}
 				}
-	        }
+			}
 		}
 	}
 

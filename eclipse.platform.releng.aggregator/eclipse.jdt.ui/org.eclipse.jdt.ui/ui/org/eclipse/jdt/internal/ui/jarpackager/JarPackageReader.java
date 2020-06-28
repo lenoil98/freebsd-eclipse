@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -81,7 +82,7 @@ public class JarPackageReader extends Object implements IJarDescriptionReader {
 	/**
 	 * Reads a Jar Package from the underlying stream.
 	 * It is the client's responsibility to close the stream.
-	 * 
+	 *
 	 * @param inputStream the input stream
 	 */
 	public JarPackageReader(InputStream inputStream) {
@@ -94,10 +95,7 @@ public class JarPackageReader extends Object implements IJarDescriptionReader {
 	public void read(JarPackageData jarPackage) throws CoreException {
 		try {
 			readXML(jarPackage);
-		} catch (IOException ex) {
-			String message= (ex.getLocalizedMessage() != null ? ex.getLocalizedMessage() : ""); //$NON-NLS-1$
-			throw new CoreException(new Status(IStatus.ERROR, JavaPlugin.getPluginId(), IJavaStatusConstants.INTERNAL_ERROR, message, ex));
-		} catch (SAXException ex) {
+		} catch (IOException | SAXException ex) {
 			String message= (ex.getLocalizedMessage() != null ? ex.getLocalizedMessage() : ""); //$NON-NLS-1$
 			throw new CoreException(new Status(IStatus.ERROR, JavaPlugin.getPluginId(), IJavaStatusConstants.INTERNAL_ERROR, message, ex));
 		}
@@ -203,9 +201,7 @@ public class JarPackageReader extends Object implements IJarDescriptionReader {
 						if (history != null) {
 							final RefactoringDescriptorProxy[] descriptors= history.getDescriptors();
 							if (descriptors.length > 0) {
-								for (int index= 0; index < descriptors.length; index++) {
-									elements.add(descriptors[index]);
-								}
+								elements.addAll(Arrays.asList(descriptors));
 							}
 						}
 					} catch (CoreException exception) {
@@ -266,15 +262,23 @@ public class JarPackageReader extends Object implements IJarDescriptionReader {
 				if (selectedNode.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 				Element selectedElement= (Element)selectedNode;
-				if (selectedElement.getNodeName().equals("file")) //$NON-NLS-1$
+				switch (selectedElement.getNodeName()) {
+				case "file": //$NON-NLS-1$
 					addFile(elementsToExport, selectedElement);
-				else if (selectedElement.getNodeName().equals("folder")) //$NON-NLS-1$
+					break;
+				case "folder": //$NON-NLS-1$
 					addFolder(elementsToExport,selectedElement);
-				else if (selectedElement.getNodeName().equals("project")) //$NON-NLS-1$
+					break;
+				case "project": //$NON-NLS-1$
 					addProject(elementsToExport ,selectedElement);
-				else if (selectedElement.getNodeName().equals("javaElement")) //$NON-NLS-1$
+					break;
+				case "javaElement": //$NON-NLS-1$
 					addJavaElement(elementsToExport, selectedElement);
-				// Note: Other file types are not handled by this writer
+					// Note: Other file types are not handled by this writer
+					break;
+				default:
+					break;
+				}
 			}
 			jarPackage.setElements(elementsToExport.toArray());
 		}
@@ -368,7 +372,7 @@ public class JarPackageReader extends Object implements IJarDescriptionReader {
 			Node packageNode= packageNodes.item(i);
 			if (packageNode.getNodeType() == Node.ELEMENT_NODE && packageNode.getNodeName().equals("package")) { //$NON-NLS-1$
 				String handleId= ((Element)packageNode).getAttribute("handleIdentifier"); //$NON-NLS-1$
-				if (handleId.equals("")) //$NON-NLS-1$
+				if (handleId.isEmpty())
 					throw new IOException(JarPackagerMessages.JarPackageReader_error_tagHandleIdentifierNotFoundOrEmpty);
 				IJavaElement je= JavaCore.create(handleId);
 				if (je != null && je.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
@@ -382,7 +386,7 @@ public class JarPackageReader extends Object implements IJarDescriptionReader {
 
 	private IType getMainClass(Element element) {
 		String handleId= element.getAttribute("mainClassHandleIdentifier"); //$NON-NLS-1$
-		if (handleId.equals("")) //$NON-NLS-1$
+		if (handleId.isEmpty())
 			return null;	// Main-Class entry is optional or can be empty
 		IJavaElement je= JavaCore.create(handleId);
 		if (je != null && je.getElementType() == IJavaElement.TYPE)

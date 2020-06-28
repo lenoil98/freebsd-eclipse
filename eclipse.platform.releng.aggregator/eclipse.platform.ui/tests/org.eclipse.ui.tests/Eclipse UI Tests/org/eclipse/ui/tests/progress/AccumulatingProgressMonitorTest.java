@@ -13,6 +13,12 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.progress;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
@@ -21,8 +27,9 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.operation.ProgressMonitorUtil;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.tests.harness.util.UITestCase;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * Test the accumulating progress monitor wrapper api, which fires received
@@ -33,13 +40,8 @@ import org.junit.Test;
  * @since 3.5
  *
  */
-public class AccumulatingProgressMonitorTest extends UITestCase {
-	/**
-	 * @param testName
-	 */
-	public AccumulatingProgressMonitorTest(String testName) {
-		super(testName);
-	}
+@RunWith(JUnit4.class)
+public class AccumulatingProgressMonitorTest {
 
 	/*
 	 * A monitor to be wrapped. This monitor's methods assert that each method

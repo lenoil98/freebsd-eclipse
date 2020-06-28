@@ -17,7 +17,6 @@ package org.eclipse.team.internal.ccvs.ui;
 import java.util.*;
 
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.team.core.history.ITag;
 import org.eclipse.team.internal.ccvs.core.filehistory.CVSFileRevision;
 import org.eclipse.team.internal.ui.history.AbstractHistoryCategory;
@@ -32,9 +31,7 @@ public class CVSHistorySearchFilter extends org.eclipse.jface.viewers.ViewerFilt
 		this.searchString = searchStrings;
 	}
 
-	/**
-	 * @see ViewerFilter#select(Viewer, Object, Object)
-	 */
+	@Override
 	public boolean select(Viewer aviewer, Object parentElement, Object element) {
 		if (element instanceof AbstractHistoryCategory)
 			return true;
@@ -74,7 +71,7 @@ public class CVSHistorySearchFilter extends org.eclipse.jface.viewers.ViewerFilt
 		if (comment != null) {
 			Iterator iter = searchStrings.iterator();
 			while (iter.hasNext()) {
-				if (!(comment.indexOf(((String) iter.next()).toLowerCase()) == -1))
+				if (!!comment.contains(((String) iter.next()).toLowerCase()))
 					return true;
 			}
 		}
@@ -95,11 +92,11 @@ public class CVSHistorySearchFilter extends org.eclipse.jface.viewers.ViewerFilt
 	
 	protected boolean branchNameMatch(CVSFileRevision revision) {
 		ITag[] branches = revision.getBranches();
-		for (int i = 0; i < branches.length; i++) {
-			String tag = branches[i].getName().toLowerCase();
+		for (ITag branche : branches) {
+			String tag = branche.getName().toLowerCase();
 			Iterator iter = searchStrings.iterator();
 			while (iter.hasNext()) {
-				if (!(tag.indexOf(((String) iter.next()).toLowerCase()) == -1))
+				if (!!tag.contains(((String) iter.next()).toLowerCase()))
 					return true;
 			}
 		}
@@ -109,11 +106,11 @@ public class CVSHistorySearchFilter extends org.eclipse.jface.viewers.ViewerFilt
 
 	protected boolean tagMatch(CVSFileRevision revision) {
 		ITag[] tags = revision.getTags();
-		for (int i = 0; i < tags.length; i++) {
-			String tag = tags[i].getName().toLowerCase();
+		for (ITag t : tags) {
+			String tag = t.getName().toLowerCase();
 			Iterator iter = searchStrings.iterator();
 			while (iter.hasNext()) {
-				if (!(tag.indexOf(((String) iter.next()).toLowerCase()) == -1))
+				if (!!tag.contains(((String) iter.next()).toLowerCase()))
 					return true;
 			}
 		}
@@ -126,7 +123,7 @@ public class CVSHistorySearchFilter extends org.eclipse.jface.viewers.ViewerFilt
 		if (rev != null) {
 			Iterator iter = searchStrings.iterator();
 			while (iter.hasNext()) {
-				if (!(rev.indexOf(((String) iter.next()).toLowerCase()) == -1))
+				if (!!rev.contains(((String) iter.next()).toLowerCase()))
 					return true;
 			}
 		}

@@ -35,7 +35,7 @@ import org.osgi.util.tracker.ServiceTracker;
  * The ContentHandlerFactory is registered with the JVM to provide content handlers
  * to requestors.  The ContentHandlerFactory will first look for built-in content handlers.
  * If a built in handler exists, this factory will return null.  Otherwise, this ContentHandlerFactory
- * will search the service registry for a maching Content-Handler and, if found, return a 
+ * will search the service registry for a maching Content-Handler and, if found, return a
  * proxy for that content handler.
  */
 public class ContentHandlerFactoryImpl extends MultiplexingFactory implements java.net.ContentHandlerFactory {
@@ -64,6 +64,7 @@ public class ContentHandlerFactoryImpl extends MultiplexingFactory implements ja
 	 * @see java.net.ContentHandlerFactory#createContentHandler(String)
 	 */
 	//TODO method is too long... consider reducing indentation (returning quickly) and moving complex steps to private methods
+	@Override
 	public ContentHandler createContentHandler(String contentType) {
 		//first, we check to see if there exists a built in content handler for
 		//this content type.  we can not overwrite built in ContentHandlers
@@ -80,14 +81,14 @@ public class ContentHandlerFactoryImpl extends MultiplexingFactory implements ja
 			convertedContentType = convertedContentType.replace('-', '_');
 			StringTokenizer tok = new StringTokenizer(builtInHandlers, "|"); //$NON-NLS-1$
 			while (tok.hasMoreElements()) {
-				StringBuffer name = new StringBuffer();
+				StringBuilder name = new StringBuilder();
 				name.append(tok.nextToken());
 				name.append("."); //$NON-NLS-1$
 				name.append(convertedContentType);
 				try {
 					clazz = URLStreamHandlerFactoryImpl.secureAction.loadSystemClass(name.toString());
 					if (clazz != null) {
-						return (null); //this class exists, it is a built in handler, let the JVM handle it	
+						return (null); //this class exists, it is a built in handler, let the JVM handle it
 					}
 				} catch (ClassNotFoundException ex) {
 					//keep looking
@@ -109,19 +110,19 @@ public class ContentHandlerFactoryImpl extends MultiplexingFactory implements ja
 		}
 		ServiceReference<ContentHandler>[] serviceReferences = contentHandlerTracker.getServiceReferences();
 		if (serviceReferences != null) {
-			for (int i = 0; i < serviceReferences.length; i++) {
-				Object prop = serviceReferences[i].getProperty(URLConstants.URL_CONTENT_MIMETYPE);
+			for (ServiceReference<ContentHandler> serviceReference : serviceReferences) {
+				Object prop = serviceReference.getProperty(URLConstants.URL_CONTENT_MIMETYPE);
 				if (prop instanceof String)
 					prop = new String[] {(String) prop}; // TODO should this be a warning?
 				if (!(prop instanceof String[])) {
-					String message = NLS.bind(Msg.URL_HANDLER_INCORRECT_TYPE, new Object[] {URLConstants.URL_CONTENT_MIMETYPE, contentHandlerClazz, serviceReferences[i].getBundle()});
+					String message = NLS.bind(Msg.URL_HANDLER_INCORRECT_TYPE, new Object[]{URLConstants.URL_CONTENT_MIMETYPE, contentHandlerClazz, serviceReference.getBundle()});
 					container.getLogServices().log(EquinoxContainer.NAME, FrameworkLogEntry.WARNING, message, null);
 					continue;
 				}
 				String[] contentHandler = (String[]) prop;
-				for (int j = 0; j < contentHandler.length; j++) {
-					if (contentHandler[j].equals(contentType)) {
-						proxy = new ContentHandlerProxy(contentType, serviceReferences[i], context);
+				for (String typename : contentHandler) {
+					if (typename.equals(contentType)) {
+						proxy = new ContentHandlerProxy(contentType, serviceReference, context);
 						proxies.put(contentType, proxy);
 						return (proxy);
 					}
@@ -158,10 +159,12 @@ public class ContentHandlerFactoryImpl extends MultiplexingFactory implements ja
 		}
 	}
 
+	@Override
 	public Object getParentFactory() {
 		return parentFactory;
 	}
 
+	@Override
 	public void setParentFactory(Object parentFactory) {
 		if (this.parentFactory == null) // only allow it to be set once
 			this.parentFactory = (java.net.ContentHandlerFactory) parentFactory;

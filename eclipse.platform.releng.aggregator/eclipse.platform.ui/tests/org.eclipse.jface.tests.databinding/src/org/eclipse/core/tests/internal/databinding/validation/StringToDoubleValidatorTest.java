@@ -15,12 +15,11 @@
 package org.eclipse.core.tests.internal.databinding.validation;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 
-import org.eclipse.core.databinding.conversion.StringToNumberConverter;
+import org.eclipse.core.databinding.conversion.text.StringToNumberConverter;
 import org.eclipse.core.databinding.validation.IValidator;
 import org.eclipse.core.internal.databinding.validation.StringToDoubleValidator;
-
-import com.ibm.icu.text.NumberFormat;
 
 /**
  * @since 1.1
@@ -30,7 +29,7 @@ public class StringToDoubleValidatorTest extends
 
 	@Override
 	protected Number getInRangeNumber() {
-		return new Double(1);
+		return Double.valueOf(1);
 	}
 
 	@Override
@@ -40,8 +39,8 @@ public class StringToDoubleValidatorTest extends
 
 	@Override
 	protected Number getOutOfRangeNumber() {
-		BigDecimal decimal = new BigDecimal(Double.MAX_VALUE);
-		return decimal.add(new BigDecimal(Double.MAX_VALUE));
+		BigDecimal decimal = BigDecimal.valueOf(Double.MAX_VALUE);
+		return decimal.add(BigDecimal.valueOf(Double.MAX_VALUE));
 	}
 
 	@Override

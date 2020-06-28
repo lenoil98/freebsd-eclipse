@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2014 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rapicorp, Inc - prompt to install debian package
+ *     SAP SE - bug 465602
  *******************************************************************************/
 package org.eclipse.equinox.internal.p2.touchpoint.natives;
 
@@ -33,6 +34,7 @@ public class Messages extends NLS {
 	public static String BackupStore_can_not_delete_tmp_file;
 	public static String BackupStore_can_not_remove;
 	public static String BackupStore_can_not_remove_bu_directory;
+	public static String BackupStore_can_not_remove_bu_file;
 	public static String BackupStore_directory_file_mismatch;
 	public static String BackupStore_directory_not_empty;
 	public static String BackupStore_errors_while_restoring_see_log;
@@ -46,6 +48,8 @@ public class Messages extends NLS {
 	public static String BlockMacUpdate_0;
 	public static String BlockMacUpdate_1;
 
+	public static String action_0_status;
+	public static String action_0_failed_on_file_1_reason_2;
 	public static String action_0_failed_file_1_doesNotExist;
 	public static String artifact_not_available;
 	public static String artifact_repo_not_found;
@@ -67,6 +71,8 @@ public class Messages extends NLS {
 	public static String NativePackageExtractionApplication_MissingParameters;
 	public static String NativePackageExtractionApplication_PersistencePb;
 	public static String NativePackageExtractionApplication_MissingValue;
+	public static String NativeTouchpoint_PromptForNative_RequiredBy;
+	public static String NativeTouchpoint_PromptForNative_YouCanDownloadFrom;
 	public static String PromptForNative_InstallText;
 	public static String PromptForNative_IntroText;
 	public static String PromptForNative_DialogTitle;

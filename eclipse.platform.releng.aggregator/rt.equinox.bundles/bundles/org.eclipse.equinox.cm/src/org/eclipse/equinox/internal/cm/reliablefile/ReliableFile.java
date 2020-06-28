@@ -202,12 +202,12 @@ public class ReliableFile {
 			List<Integer> list = new ArrayList<>(defaultMaxGenerations);
 			if (file.exists())
 				list.add(Integer.valueOf(0)); //base file exists
-			for (int i = 0; i < files.length; i++) {
-				if (files[i].startsWith(prefix)) {
+			for (String n : files) {
+				if (n.startsWith(prefix)) {
 					try {
-						int id = Integer.parseInt(files[i].substring(prefixLen));
+						int id = Integer.parseInt(n.substring(prefixLen));
 						list.add(Integer.valueOf(id));
-					} catch (NumberFormatException e) {/*ignore*/
+					}catch (NumberFormatException e) {/*ignore*/
 					}
 				}
 			}
@@ -256,14 +256,14 @@ public class ReliableFile {
 
 		File textFile = null;
 		InputStream textIS = null;
-		for (int idx = 0; idx < generations.length; idx++) {
+		for (int generation2 : generations) {
 			if (generation != 0) {
-				if (generations[idx] > generation || (failOnPrimary && generations[idx] != generation))
+				if (generation2 > generation || (failOnPrimary && generation2 != generation))
 					continue;
 			}
 			File file;
-			if (generations[idx] != 0)
-				file = new File(parent, name + '.' + generations[idx]);
+			if (generation2 != 0)
+				file = new File(parent, name + '.' + generation2);
 			else
 				file = referenceFile;
 			InputStream is = null;
@@ -531,12 +531,12 @@ public class ReliableFile {
 		String[] files = parent.list();
 		if (files == null)
 			return false;
-		for (int i = 0; i < files.length; i++) {
-			if (files[i].startsWith(prefix)) {
+		for (String n : files) {
+			if (n.startsWith(prefix)) {
 				try {
-					Integer.parseInt(files[i].substring(prefixLen));
+					Integer.parseInt(n.substring(prefixLen));
 					return true;
-				} catch (NumberFormatException e) {/*ignore*/
+				}catch (NumberFormatException e) {/*ignore*/
 				}
 			}
 		}
@@ -604,11 +604,11 @@ public class ReliableFile {
 		String name = deleteFile.getName();
 		File parent = new File(deleteFile.getParent());
 		synchronized (cacheFiles) {
-			for (int idx = 0; idx < generations.length; idx++) {
+			for (int generation : generations) {
 				// base files (.0 in generations[]) will never be deleted
-				if (generations[idx] == 0)
+				if (generation == 0)
 					continue;
-				File file = new File(parent, name + '.' + generations[idx]);
+				File file = new File(parent, name + '.' + generation);
 				if (file.exists()) {
 					file.delete();
 				}
@@ -630,8 +630,7 @@ public class ReliableFile {
 			throw new IOException("Not a valid directory"); //$NON-NLS-1$
 		String files[] = directory.list();
 		Set<String> list = new HashSet<>(files.length / 2);
-		for (int idx = 0; idx < files.length; idx++) {
-			String file = files[idx];
+		for (String file : files) {
 			int pos = file.lastIndexOf('.');
 			if (pos == -1)
 				continue;
@@ -648,8 +647,8 @@ public class ReliableFile {
 		}
 		files = new String[list.size()];
 		int idx = 0;
-		for (Iterator<String> iter = list.iterator(); iter.hasNext();) {
-			files[idx++] = iter.next();
+		for (String string : list) {
+			files[idx++] = string;
 		}
 		return files;
 	}

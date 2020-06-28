@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *     IBM Corporation - Bits of importWizard from DeprecatedUIWizards
  *     Red Hat, Inc - initial API and implementation
+ *     Paul Pazderski - Bug 546546: migrate to JUnit4 test
  *******************************************************************************/
 
 package org.eclipse.ui.tests.datatransfer;
@@ -22,13 +23,10 @@ import static org.mockito.Mockito.verify;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.zip.ZipFile;
 
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
@@ -38,13 +36,11 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.tests.harness.FileSystemHelper;
 import org.eclipse.jface.dialogs.IDialogSettings;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.SWT;
@@ -58,17 +54,22 @@ import org.eclipse.ui.internal.wizards.datatransfer.DataTransferMessages;
 import org.eclipse.ui.internal.wizards.datatransfer.WizardProjectsImportPage;
 import org.eclipse.ui.internal.wizards.datatransfer.WizardProjectsImportPage.ProjectRecord;
 import org.eclipse.ui.tests.TestPlugin;
+import org.eclipse.ui.tests.datatransfer.ImportTestUtils.TestBuilder;
 import org.eclipse.ui.tests.harness.util.DialogCheck;
-import org.eclipse.ui.tests.harness.util.FileTool;
 import org.eclipse.ui.tests.harness.util.FileUtil;
 import org.eclipse.ui.tests.harness.util.UITestCase;
 import org.eclipse.ui.wizards.datatransfer.ExternalProjectImportWizard;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.junit.runners.MethodSorters;
 
-import junit.framework.TestSuite;
-
+@RunWith(JUnit4.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ImportExistingProjectsWizardTest extends UITestCase {
+
 	private static final String DATA_PATH_PREFIX = "data/org.eclipse.datatransferArchives/";
-	private static final String WS_DATA_PREFIX = "data/workspaces";
 	private static final String WS_DATA_LOCATION = "importExistingFromDirTest";
 	private static final String WS_NESTED_DATA_LOCATION = "importExistingNestedTest";
 	private static final String ARCHIVE_HELLOWORLD = "helloworld";
@@ -88,31 +89,8 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 
 	private boolean originalRefreshSetting;
 
-	public static TestSuite suite() {
-		TestSuite ts = new TestSuite();
-		ts.addTest(new ImportExistingProjectsWizardTest("testFindSingleZip"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testFindSingleTar"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testFindSingleDirectory"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testDoNotShowProjectWithSameName"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testImportSingleZip"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testImportZipWithEmptyFolder"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testImportSingleTar"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testImportTarWithEmptyFolder"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testImportSingleDirectory"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testImportSingleDirectoryWithCopy"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testImportSingleDirectoryWithCopyDeleteProjectKeepContents"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testImportZipDeleteContentsImportAgain"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testInitialValue"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testImportArchiveMultiProject"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testGetProjectRecords"));
-		ts.addTest(new ImportExistingProjectsWizardTest("testGetProjectRecordsShouldHandleCorruptProjects"));
-		ts.addTest(new ImportExistingProjectsWizardTest(
-				"testGetProjectRecordsShouldHandleCorruptAndConflictingProjects"));
-		return ts;
-	}
-
-	public ImportExistingProjectsWizardTest(String testName) {
-		super(testName);
+	public ImportExistingProjectsWizardTest() {
+		super(ImportExistingProjectsWizardTest.class.getName());
 	}
 
 	private Shell getShell() {
@@ -131,7 +109,6 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 
 	@Override
 	protected void doTearDown() throws Exception {
-		super.doTearDown();
 		IWorkspaceRoot wsRoot = ResourcesPlugin.getWorkspace().getRoot();
 		IProject[] projects = wsRoot.getProjects();
 		for (int i = projects.length - 1; i >= 0; i--) {
@@ -159,28 +136,27 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 
 		ResourcesPlugin.getPlugin().getPluginPreferences().setValue(
 				ResourcesPlugin.PREF_AUTO_REFRESH, originalRefreshSetting);
+		super.doTearDown();
 	}
 
 	private void waitForRefresh() {
 		try {
 			PlatformUI.getWorkbench().getProgressService().busyCursorWhile(
-					new IRunnableWithProgress() {
-						@Override
-						public void run(IProgressMonitor monitor)
-								throws InterruptedException {
-							Job.getJobManager().join(
-									ResourcesPlugin.FAMILY_AUTO_REFRESH,
-									new NullProgressMonitor());
-						}
-					});
-		} catch (InvocationTargetException e) {
-			fail(e.getLocalizedMessage());
-		} catch (InterruptedException e) {
+					monitor -> Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_REFRESH,
+							new NullProgressMonitor()));
+		} catch (InvocationTargetException | InterruptedException e) {
 			fail(e.getLocalizedMessage());
 		}
 	}
 
-	public void testFindSingleZip() {
+	// Note: this and all other tests are numbered because they must run in a
+	// specific order.
+	// See https://bugs.eclipse.org/bugs/show_bug.cgi?id=369660
+	// The old junit3 implementation used a custom suite(). Because junit4 provides
+	// less options on test run order the tests are now numbered and run in method
+	// name order.
+	@Test
+	public void test01FindSingleZip() {
 		try {
 			URL archiveFile = FileLocator.toFileURL(FileLocator.find(TestPlugin.getDefault().getBundle(),
 					new Path(DATA_PATH_PREFIX + ARCHIVE_HELLOWORLD + ".zip"), null));
@@ -210,7 +186,8 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 		}
 	}
 
-	public void testFindSingleTar() {
+	@Test
+	public void test02FindSingleTar() {
 		try {
 			URL archiveFile = FileLocator.toFileURL(FileLocator.find(TestPlugin.getDefault().getBundle(),
 					new Path(DATA_PATH_PREFIX + ARCHIVE_HELLOWORLD + ".tar"), null));
@@ -240,9 +217,10 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 		}
 	}
 
-	public void testFindSingleDirectory() {
+	@Test
+	public void test03FindSingleDirectory() {
 		try {
-			dataLocation = copyDataLocation(WS_DATA_LOCATION);
+			dataLocation = ImportTestUtils.copyDataLocation(WS_DATA_LOCATION);
 			IPath wsPath = new Path(dataLocation).append("HelloWorld");
 			WizardProjectsImportPage wpip = getNewWizard();
 			HashSet<String> projects = new HashSet<>();
@@ -265,9 +243,10 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 		}
 	}
 
-	public void testDoNotShowProjectWithSameName() {
+	@Test
+	public void test04DoNotShowProjectWithSameName() {
 		try {
-			dataLocation = copyDataLocation(WS_DATA_LOCATION);
+			dataLocation = ImportTestUtils.copyDataLocation(WS_DATA_LOCATION);
 			IPath wsPath = new Path(dataLocation);
 
 			FileUtil.createProject("HelloWorld");
@@ -289,7 +268,8 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 		}
 	}
 
-	public void testImportSingleZip() {
+	@Test
+	public void test05ImportSingleZip() {
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 
@@ -339,15 +319,14 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			verifyProjectInWorkspace(true, workspaceProjects[0], FILE_LIST,
 					true);
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 
 	}
 
-	public void testImportZipWithEmptyFolder() {
+	@Test
+	public void test06ImportZipWithEmptyFolder() {
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 
@@ -396,14 +375,13 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			verifyProjectInWorkspace(true, workspaceProjects[0],
 					ARCHIVE_FILE_EMPTY_FOLDER_LIST, false);
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 	}
 
-	public void testImportSingleTar() {
+	@Test
+	public void test07ImportSingleTar() {
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 
@@ -452,15 +430,14 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			verifyProjectInWorkspace(true, workspaceProjects[0], FILE_LIST,
 					true);
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 
 	}
 
-	public void testImportTarWithEmptyFolder() {
+	@Test
+	public void test08ImportTarWithEmptyFolder() {
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 
@@ -510,15 +487,14 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			verifyProjectInWorkspace(true, workspaceProjects[0],
 					ARCHIVE_FILE_EMPTY_FOLDER_LIST, false);
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 
 	}
 
-	public void testImportSingleDirectory() {
+	@Test
+	public void test09ImportSingleDirectory() {
 		IPath wsPath = null;
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -528,7 +504,7 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 				FileUtil.deleteProject(workspaceProject);
 			}
 
-			dataLocation = copyDataLocation(WS_DATA_LOCATION);
+			dataLocation = ImportTestUtils.copyDataLocation(WS_DATA_LOCATION);
 			wsPath = new Path(dataLocation).append("HelloWorld");
 			WizardProjectsImportPage wpip = getNewWizard();
 			HashSet<String> projects = new HashSet<>();
@@ -563,14 +539,13 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			verifyProjectInWorkspace(false, workspaceProjects[0], FILE_LIST,
 					true);
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 	}
 
-	public void testImportSingleDirectoryWithCopy() {
+	@Test
+	public void test10ImportSingleDirectoryWithCopy() {
 		IPath wsPath = null;
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -580,7 +555,7 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 				FileUtil.deleteProject(workspaceProject);
 			}
 
-			dataLocation = copyDataLocation(WS_DATA_LOCATION);
+			dataLocation = ImportTestUtils.copyDataLocation(WS_DATA_LOCATION);
 			wsPath = new Path(dataLocation).append("HelloWorld");
 			WizardProjectsImportPage wpip = getNewWizard();
 			HashSet<String> projects = new HashSet<>();
@@ -619,14 +594,13 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			verifyProjectInWorkspace(true, workspaceProjects[0], FILE_LIST,
 					true);
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 	}
 
-	public void testImportSingleDirectoryWithCopyDeleteProjectKeepContents() {
+	@Test
+	public void test11ImportSingleDirectoryWithCopyDeleteProjectKeepContents() {
 		IPath wsPath = null;
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -636,7 +610,7 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 				FileUtil.deleteProject(workspaceProject);
 			}
 
-			dataLocation = copyDataLocation(WS_DATA_LOCATION);
+			dataLocation = ImportTestUtils.copyDataLocation(WS_DATA_LOCATION);
 			wsPath = new Path(dataLocation).append("HelloWorld");
 			WizardProjectsImportPage wpip = getNewWizard();
 			HashSet<String> projects = new HashSet<>();
@@ -724,14 +698,13 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			verifyProjectInWorkspace(true, workspaceProjects[0], FILE_LIST,
 					true);
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 	}
 
-	public void testImportZipDeleteContentsImportAgain() {
+	@Test
+	public void test12ImportZipDeleteContentsImportAgain() {
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 
@@ -834,15 +807,14 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			verifyProjectInWorkspace(true, workspaceProjects2[0], FILE_LIST,
 					true);
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 
 	}
 
-	public void testImportDirectoryNested() {
+	@Test
+	public void test13ImportDirectoryNested() {
 		IPath wsPath = null;
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -852,7 +824,7 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 				FileUtil.deleteProject(workspaceProject);
 			}
 
-			dataLocation = copyDataLocation(WS_NESTED_DATA_LOCATION);
+			dataLocation = ImportTestUtils.copyDataLocation(WS_NESTED_DATA_LOCATION);
 			wsPath = new Path(dataLocation).append("A");
 			WizardProjectsImportPage wpip = getNewWizard();
 			HashSet<String> projects = new HashSet<>();
@@ -907,14 +879,13 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			verifyProjectInWorkspace(false, workspaceProjects[0], FILE_LIST, true);
 			verifyProjectInWorkspace(false, workspaceProjects[1], FILE_LIST, true);
 			verifyProjectInWorkspace(false, workspaceProjects[2], FILE_LIST, true);
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 	}
 
-	public void testInitialValue() {
+	@Test
+	public void test14InitialValue() {
 
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -943,14 +914,14 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			selectedProjects = wpip.getProjectRecords();
 			assertEquals(0, selectedProjects.length);
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 
 	}
-	public void testImportArchiveMultiProject() {
+
+	@Test
+	public void test15ImportArchiveMultiProject() {
 		try {
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 			zipLocation = copyZipLocation(WS_DATA_LOCATION);
@@ -1006,9 +977,7 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 						true);
 			}
 
-		} catch (IOException e) {
-			fail(e.toString());
-		} catch (CoreException e) {
+		} catch (IOException | CoreException e) {
 			fail(e.toString());
 		}
 	}
@@ -1052,70 +1021,15 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 			}
 		}
 		assertTrue("Files expected but not in workspace for project \"" + project.getName() + "\": "
-				+ filesNotImported.toString(), filesNotImported.length() == 0);
+				+ filesNotImported, filesNotImported.length() == 0);
 	}
 
-	/**
-	 * Copies the data to a temporary directory and returns the new location.
-	 *
-	 * @return the location
-	 */
-	private String copyDataLocation(String dataLocation) throws IOException {
-		TestPlugin plugin = TestPlugin.getDefault();
-		if (plugin == null) {
-			throw new IllegalStateException(
-					"TestPlugin default reference is null");
-		}
 
-		URL fullPathString = plugin.getBundle().getResource("/" + WS_DATA_PREFIX + "/" + dataLocation + ".zip");
-
-		URI fileURI = null;
-		try {
-			fileURI = FileLocator.resolve(fullPathString).toURI();
-		} catch (URISyntaxException e) {
-			throw new IllegalArgumentException();
-		}
-
-		File origin = new File(fileURI);
-		if (!origin.exists()) {
-			throw new IllegalArgumentException();
-		}
-
-		ZipFile zFile = new ZipFile(origin);
-
-		File destination = new File(FileSystemHelper.getRandomLocation(
-				FileSystemHelper.getTempDir()).toOSString());
-		FileTool.unzip(zFile, destination);
-		return destination.getAbsolutePath();
-	}
 
 	private String copyZipLocation(String zipLocation) throws IOException {
-		TestPlugin plugin = TestPlugin.getDefault();
-		if (plugin == null) {
-			throw new IllegalStateException(
-					"TestPlugin default reference is null");
-		}
-
-		URL fullPathString = plugin.getBundle().getResource(WS_DATA_PREFIX + "/" + zipLocation + ".zip");
-
-		URI fileURI = null;
-		try {
-			fileURI = FileLocator.resolve(fullPathString).toURI();
-		} catch (URISyntaxException e) {
-			throw new IllegalArgumentException();
-		}
-
-		File origin = new File(fileURI);
-		if (!origin.exists()) {
-			throw new IllegalArgumentException();
-		}
-
-		File destination = new File(FileSystemHelper.getRandomLocation(
-				FileSystemHelper.getTempDir()).toOSString()
-				+ File.separator + ARCHIVE_HELLOWORLD + ".zip");
-		FileTool.copy(origin, destination);
-		return destination.getAbsolutePath();
+		return ImportTestUtils.copyZipLocation(zipLocation, ARCHIVE_HELLOWORLD);
 	}
+
 
 	private WizardProjectsImportPage getNewWizard() {
 		ImportExportWizard wizard = new ImportExportWizard(
@@ -1148,7 +1062,8 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 		return wpip;
 	}
 
-	public void testGetProjectRecords() throws Exception {
+	@Test
+	public void test16GetProjectRecords() throws Exception {
 
 		HashSet<String> expectedNames = new HashSet<>();
 		expectedNames.add("Project1");
@@ -1179,15 +1094,16 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 		ProjectRecord[] projectRecords = newWizard.getProjectRecords();
 
 		List<String> projectNames = new ArrayList<>();
-		for (int i = 0; i < projectRecords.length; i++) {
-			if(!projectRecords[i].hasConflicts()) {
-				projectNames.add(projectRecords[i].getProjectName());
+		for (ProjectRecord projectRecord : projectRecords) {
+			if (!projectRecord.hasConflicts()) {
+				projectNames.add(projectRecord.getProjectName());
 			}
 		}
 		return projectNames;
 	}
 
-	public void testGetProjectRecordsShouldHandleCorruptProjects() throws Exception {
+	@Test
+	public void test17GetProjectRecordsShouldHandleCorruptProjects() throws Exception {
 
 		URL projectsArchive = FileLocator.toFileURL(FileLocator.find(TestPlugin.getDefault().getBundle(),
 				new Path(DATA_PATH_PREFIX + CORRUPT_PROJECTS_ARCHIVE + ".zip"), null));
@@ -1209,7 +1125,8 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 
 	}
 
-	public void testGetProjectRecordsShouldHandleCorruptAndConflictingProjects() throws Exception {
+	@Test
+	public void test18GetProjectRecordsShouldHandleCorruptAndConflictingProjects() throws Exception {
 
 		URL projectsArchive = FileLocator.toFileURL(FileLocator.find(TestPlugin.getDefault().getBundle(),
 				new Path(DATA_PATH_PREFIX + CORRUPT_PROJECTS_ARCHIVE + ".zip"), null));
@@ -1234,21 +1151,140 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 
 	}
 
+	@Test
+	public void test19CloseImportedProjectsZipFile() throws Exception {
+		ImportTestUtils.deleteWorkspaceProjects();
+		WizardProjectsImportPage wpip = getNewWizard();
+
+		try (AutoCloseable restore = setPageSetting(wpip, "WizardProjectsImportPage.STORE_CLOSE_CREATED_PROJECTS_ID", true)) {
+			useDataLocationProject(wpip, "ImportExistingProjectsWizardTestRebuildProject");
+			assertTrue("Failed to import project", wpip.createProjects());
+
+			IProject testProject = ResourcesPlugin.getWorkspace().getRoot()
+					.getProject("ImportExistingProjectsWizardTestRebuildProject");
+			assertTrue("Failed to import test project", testProject.exists());
+			assertFalse("Expected imported project to be closed due to setting dialog option checkbox",
+					testProject.isOpen());
+		}
+	}
+
+	@Test
+	public void test20FullBuildAfterImportedProjectsZipFile() throws Exception {
+		WizardProjectsImportPage wpip = createImportWizardWithZipLocation(
+				"ImportExistingProjectsWizardTestRebuildProject");
+
+		ImportTestUtils.TestBuilder.resetCallCount();
+		assertTrue("Failed to import project", wpip.createProjects());
+		processEvents();
+		ImportTestUtils.waitForBuild();
+
+		ImportTestUtils.TestBuilder.assertFullBuildWasDone();
+	}
+
+	@Test
+	public void test21FullBuildAfterImportedProjects() throws Exception {
+		WizardProjectsImportPage wpip = createImportWizardWithDataLocation(
+				"ImportExistingProjectsWizardTestRebuildProject"); // located in data/workspaces/
+
+		ImportTestUtils.TestBuilder.resetCallCount();
+		assertTrue("Failed to import project", wpip.createProjects());
+		processEvents();
+		ImportTestUtils.waitForBuild();
+
+		TestBuilder.assertFullBuildWasDone();
+	}
+
+	@Test
+	public void test22FullBuildAfterImportedProjectsWithCopy() throws Exception {
+		ImportTestUtils.deleteWorkspaceProjects();
+		WizardProjectsImportPage wpip = getNewWizard();
+
+		try (AutoCloseable restore = setPageSetting(wpip, "WizardProjectsImportPage.STORE_COPY_PROJECT_ID", true)) {
+			useDataLocationProject(wpip, "ImportExistingProjectsWizardTestRebuildProject");
+
+			ImportTestUtils.TestBuilder.resetCallCount();
+			assertTrue("Failed to import project", wpip.createProjects());
+			processEvents();
+			ImportTestUtils.waitForBuild();
+
+			TestBuilder.assertFullBuildWasDone();
+		}
+	}
+
+	private WizardProjectsImportPage createImportWizardWithZipLocation(String testProject) throws Exception {
+		ImportTestUtils.deleteWorkspaceProjects();
+
+		WizardProjectsImportPage wpip = getNewWizard();
+		useZipLocationProject(wpip, testProject);
+
+		return wpip;
+	}
+
+	private void useZipLocationProject(WizardProjectsImportPage wpip, String testProject) throws Exception {
+		zipLocation = ImportTestUtils.copyZipLocation(testProject, testProject); // located in data/workspaces/
+		wpip.getProjectFromDirectoryRadio().setSelection(false); // select the other option
+		wpip.updateProjectsList(zipLocation);
+		selectTestProject(wpip, testProject);
+	}
+
+	private WizardProjectsImportPage createImportWizardWithDataLocation(String testProject) throws Exception {
+		ImportTestUtils.deleteWorkspaceProjects();
+
+		WizardProjectsImportPage wpip = getNewWizard();
+		useDataLocationProject(wpip, testProject);
+
+		return wpip;
+	}
+
+	private void useDataLocationProject(WizardProjectsImportPage wpip, String testProject) throws Exception {
+		dataLocation = ImportTestUtils.copyDataLocation("ImportExistingProjectsWizardTestRebuildProject"); // located in
+		wpip.getProjectFromDirectoryRadio().setSelection(true);
+		wpip.updateProjectsList(dataLocation);
+		selectTestProject(wpip, testProject);
+	}
+
+	private void selectTestProject(WizardProjectsImportPage wpip, String testProject) {
+		HashSet<String> projects = new HashSet<>();
+		projects.add(testProject);
+		ProjectRecord[] selectedProjects = wpip.getProjectRecords();
+		ArrayList<String> projectNames = new ArrayList<>();
+		for (ProjectRecord selectedProject : selectedProjects) {
+			projectNames.add(selectedProject.getProjectName());
+		}
+
+		assertTrue("Expected import wizard to find projects: " + projects + ", instead it detects: " + projectNames,
+				projectNames.containsAll(projects));
+
+		CheckboxTreeViewer projectsList = wpip.getProjectsList();
+		projectsList.setCheckedElements(selectedProjects);
+	}
+
 	private ProjectRecord[] getProjectsFromArchive(WizardProjectsImportPage newWizard, URL projectsArchive) {
 		newWizard.getProjectFromDirectoryRadio().setSelection(false);
 		newWizard.updateProjectsList(projectsArchive.getPath());
-		ProjectRecord[] projectRecords = newWizard.getProjectRecords();
-		return projectRecords;
+		return newWizard.getProjectRecords();
 	}
 
 	private List<String> getValidProjects(ProjectRecord[] projectRecords) {
 		List<String> projectNames = new ArrayList<>();
-		for (int i = 0; i < projectRecords.length; i++) {
-			if (!projectRecords[i].isInvalidProject()) {
-				projectNames.add(projectRecords[i].getProjectName());
+		for (ProjectRecord projectRecord : projectRecords) {
+			if (!projectRecord.isInvalidProject()) {
+				projectNames.add(projectRecord.getProjectName());
 			}
 		}
 		return projectNames;
+	}
+
+	private AutoCloseable setPageSetting(WizardProjectsImportPage wpip, String settingName, boolean settingValue) {
+		IDialogSettings dialogSettings = wpip.getWizard().getDialogSettings();
+		wpip.saveWidgetValues();
+		boolean originalValue = dialogSettings.getBoolean(settingName);
+		dialogSettings.put(settingName, settingValue);
+		wpip.restoreWidgetValues();
+		return () -> {
+			dialogSettings.put(settingName, originalValue);
+			wpip.restoreWidgetValues();
+		};
 	}
 
 	private List<String> getInvalidProjects(ProjectRecord[] projectRecords) {
@@ -1281,8 +1317,10 @@ public class ImportExistingProjectsWizardTest extends UITestCase {
 
 		dialog.getShell().setSize(Math.max(100, dialog.getShell().getSize().x),
 				100);
-		WizardProjectsImportPage wpip = (WizardProjectsImportPage) wizard
+		return (WizardProjectsImportPage) wizard
 				.getPage("wizardExternalProjectsPage");
-		return wpip;
 	}
+
+
+
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2016 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -113,7 +113,8 @@ public class ExecuteCommandAction implements ILiveHelpAction {
 			ParameterizedCommand command = commandService.deserialize(serializedCommand);
 			handlerService.executeCommand(command, null);
 		} catch (CommandException ex) {
-			HelpUIPlugin.logError("There was an error executing the command: " + serializedCommand, ex); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("There was an error executing the command: " + serializedCommand, //$NON-NLS-1$
+					ex);
 		}
 	}
 
@@ -131,10 +132,10 @@ public class ExecuteCommandAction implements ILiveHelpAction {
 		IWorkbench wb =	PlatformUI.getWorkbench();
 		if (wb != null) {
 			Object serviceObject = wb.getAdapter(IHandlerService.class);
-		    if (serviceObject != null) {
-			    IHandlerService service = (IHandlerService)serviceObject;
-			    return service;
-		    }
+			if (serviceObject != null) {
+				IHandlerService service = (IHandlerService)serviceObject;
+				return service;
+			}
 		}
 		return null;
 	}

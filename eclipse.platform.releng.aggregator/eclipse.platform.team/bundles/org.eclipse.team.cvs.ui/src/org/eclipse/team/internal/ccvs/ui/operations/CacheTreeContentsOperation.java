@@ -49,9 +49,6 @@ public abstract class CacheTreeContentsOperation extends SingleCommandOperation 
 		this.tree = tree;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.SingleCommandOperation#execute(org.eclipse.team.internal.ccvs.core.CVSTeamProvider, org.eclipse.core.resources.IResource[], boolean, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected void execute(CVSTeamProvider provider, IResource[] resources, boolean recurse, IProgressMonitor monitor) throws CVSException, InterruptedException {
 		IResource[] files = getFilesWithUncachedContents(resources, recurse);
@@ -61,11 +58,9 @@ public abstract class CacheTreeContentsOperation extends SingleCommandOperation 
 	
 	private IResource[] getFilesWithUncachedContents(IResource[] resources, boolean recurse) {
 		ArrayList<IResource> result = new ArrayList<>();
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			IDiff[] nodes = tree.getDiffs(resource, recurse ? IResource.DEPTH_INFINITE: IResource.DEPTH_ONE);
-			for (int j = 0; j < nodes.length; j++) {
-				IDiff node = nodes[j];
+			for (IDiff node : nodes) {
 				if (needsContents(node)) {
 					result.add(tree.getResource(node));
 				}
@@ -108,12 +103,13 @@ public abstract class CacheTreeContentsOperation extends SingleCommandOperation 
 	 */
 	protected abstract boolean isEnabledForDirection(int direction);
 
-	/* (non-Javadoc)
+	/*
+	 * Use a local root that is really the base tree so we can cache the base
+	 * contents without affecting the local contents.
 	 * 
-	 * Use a local root that is really the base tree so we can cache
-	 * the base contents without affecting the local contents.
-	 * 
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.RepositoryProviderOperation#getLocalRoot(org.eclipse.team.internal.ccvs.core.CVSTeamProvider)
+	 * @see
+	 * org.eclipse.team.internal.ccvs.ui.operations.RepositoryProviderOperation#
+	 * getLocalRoot(org.eclipse.team.internal.ccvs.core.CVSTeamProvider)
 	 */
 	@Override
 	protected ICVSFolder getLocalRoot(CVSTeamProvider provider)
@@ -128,37 +124,30 @@ public abstract class CacheTreeContentsOperation extends SingleCommandOperation 
 
 	protected abstract ICVSRemoteResource buildTree(CVSTeamProvider provider) throws TeamException;
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.RepositoryProviderOperation#getCVSArguments(org.eclipse.core.resources.IResource[])
-	 */
 	@Override
 	protected ICVSResource[] getCVSArguments(Session session, IResource[] resources) {
 		List<ICVSResource> result = new ArrayList<>();
-        for (int i = 0; i < resources.length; i++) {
-            IResource resource = resources[i];
-            try {
+		for (IResource resource : resources) {
+			try {
 				ICVSResource file = session.getLocalRoot().getChild(resource.getProjectRelativePath().toString());
 				result.add(file);
 			} catch (CVSException e) {
 				// Log and continue
 				CVSUIPlugin.log(e);
 			}
-        }
+		}
 
-        return result.toArray(new ICVSResource[result.size()]);
+		return result.toArray(new ICVSResource[result.size()]);
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.SingleCommandOperation#executeCommand(org.eclipse.team.internal.ccvs.core.client.Session, org.eclipse.team.internal.ccvs.core.CVSTeamProvider, org.eclipse.team.internal.ccvs.core.ICVSResource[], boolean, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected IStatus executeCommand(Session session, CVSTeamProvider provider, ICVSResource[] resources, boolean recurse, IProgressMonitor monitor) throws CVSException, InterruptedException {
 		return Command.UPDATE.execute(
-                session,
-                Command.NO_GLOBAL_OPTIONS,
-                getLocalOptions(true),
-                resources,
-                new UpdateListener(new IUpdateMessageListener() {
+				session,
+				Command.NO_GLOBAL_OPTIONS,
+				getLocalOptions(true),
+				resources,
+				new UpdateListener(new IUpdateMessageListener() {
 					@Override
 					public void fileInformation(int type, ICVSFolder parent, String filename) {
 						// Do nothing
@@ -177,28 +166,19 @@ public abstract class CacheTreeContentsOperation extends SingleCommandOperation 
 						// Do nothing
 					}
 				}),
-                monitor);
+				monitor);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.SingleCommandOperation#getLocalOptions(boolean)
-	 */
 	@Override
 	protected LocalOption[] getLocalOptions(boolean recurse) {
 		return Update.IGNORE_LOCAL_CHANGES.addTo(super.getLocalOptions(recurse));
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.RepositoryProviderOperation#getTaskName(org.eclipse.team.internal.ccvs.core.CVSTeamProvider)
-	 */
 	@Override
 	protected String getTaskName(CVSTeamProvider provider) {
 		return NLS.bind(CVSUIMessages.CacheTreeContentsOperation_0, new String[] {provider.getProject().getName()});
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.CVSOperation#getTaskName()
-	 */
 	@Override
 	protected String getTaskName() {
 		return CVSUIMessages.CacheTreeContentsOperation_1;
@@ -212,17 +192,11 @@ public abstract class CacheTreeContentsOperation extends SingleCommandOperation 
 		return tree;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.RepositoryProviderOperation#consultModelsForMappings()
-	 */
 	@Override
 	public boolean consultModelsForMappings() {
 		return false;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.operations.CVSOperation#isReportableError(org.eclipse.core.runtime.IStatus)
-	 */
 	@Override
 	protected boolean isReportableError(IStatus status) {
 		return super.isReportableError(status) && status.getSeverity() == IStatus.ERROR;

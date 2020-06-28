@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,6 +14,7 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.debug.eval.ast.engine;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.Iterator;
@@ -22,11 +23,17 @@ import java.util.Stack;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.debug.core.DebugException;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.internal.debug.core.JDIDebugPlugin;
+import org.eclipse.jdt.internal.debug.eval.ExpressionBinder;
+import org.eclipse.jdt.internal.debug.eval.RemoteEvaluator;
+import org.eclipse.jdt.internal.debug.eval.RemoteEvaluatorBuilder;
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.AndAssignmentOperator;
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.AndOperator;
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.ArrayAllocation;
@@ -86,6 +93,7 @@ import org.eclipse.jdt.internal.debug.eval.ast.instructions.PushThis;
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.PushType;
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.RemainderAssignmentOperator;
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.RemainderOperator;
+import org.eclipse.jdt.internal.debug.eval.ast.instructions.RemoteOperator;
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.ReturnInstruction;
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.RightShiftAssignmentOperator;
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.RightShiftOperator;
@@ -102,7 +110,6 @@ import org.eclipse.jdt.internal.debug.eval.ast.instructions.XorAssignmentOperato
 import org.eclipse.jdt.internal.debug.eval.ast.instructions.XorOperator;
 import org.eclipse.osgi.util.NLS;
 
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * The AST instruction compiler generates a sequence of instructions
@@ -152,14 +159,17 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	// internal index used to create unique variable name
 	private int fUniqueIdIndex = 0;
 
+	private IJavaProject fJavaProject;
+
 	/**
 	 * Create a new AST instruction compiler
 	 */
-	public ASTInstructionCompiler(int startPosition, String snippet) {
+	public ASTInstructionCompiler(int startPosition, String snippet, IJavaProject javaProject) {
 		fStartPosition = startPosition;
 		fInstructions = new InstructionSequence(snippet);
 		fStack = new Stack<>();
 		fCompleteInstructions = new ArrayList<>();
+		fJavaProject = javaProject;
 	}
 
 	/**
@@ -222,6 +232,7 @@ public class ASTInstructionCompiler extends ASTVisitor {
 				((CompoundInstruction) instruction).setEnd(fCounter);
 			}
 			fInstructions.add(instruction);
+			//System.out.println("Added: " + instruction.toString()); //$NON-NLS-1$
 			verbose("Add " + instruction.toString()); //$NON-NLS-1$
 		}
 	}
@@ -537,8 +548,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ArrayAccess node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		ITypeBinding typeBinding = node.getIndex().resolveTypeBinding();
 		if (typeBinding != null && unBoxing(typeBinding)) {
 			// un-box the index, if required
@@ -552,8 +564,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ArrayCreation node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -562,8 +575,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ArrayInitializer node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -572,8 +586,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ArrayType node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -590,8 +605,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(Assignment node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -600,8 +616,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(Block node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -610,8 +627,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(BooleanLiteral node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -620,8 +638,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(BreakStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -630,8 +649,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(CastExpression node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -648,8 +668,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(CharacterLiteral node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -658,8 +679,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ClassInstanceCreation node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -678,8 +700,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ConditionalExpression node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 
 		// Get the instructions
 		int ifFalseAddress = fInstructions.getEnd();
@@ -719,8 +742,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ContinueStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -729,8 +753,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(DoStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 
 		/*
 		 * The structure of generated instructions is :
@@ -785,8 +810,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(EmptyStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -799,8 +825,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(EnhancedForStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 
 		/*
 		 * The structure of generated instructions is :
@@ -866,8 +893,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ExpressionStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 
 		addPopInstructionIfNeeded(node.getExpression());
 	}
@@ -877,8 +905,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(FieldAccess node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -895,8 +924,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ForStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 
 		/*
 		 * The structure of generated instructions is :
@@ -977,8 +1007,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(IfStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 
 		boolean hasElseStatement = node.getElseStatement() != null;
 
@@ -1051,8 +1082,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(InstanceofExpression node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1069,8 +1101,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(LabeledStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 
 		String label = node.getLabel().getIdentifier();
 
@@ -1104,8 +1137,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(MethodInvocation node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1114,8 +1148,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(NullLiteral node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1124,8 +1159,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(NumberLiteral node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1142,8 +1178,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ParameterizedType node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1160,8 +1197,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(PostfixExpression node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1170,8 +1208,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(PrefixExpression node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1180,8 +1219,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(PrimitiveType node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1197,8 +1237,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(QualifiedType node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1207,8 +1248,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ReturnStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1217,8 +1259,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(SimpleName node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1227,8 +1270,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(SimpleType node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1237,8 +1281,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(SingleVariableDeclaration node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1247,8 +1292,17 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(StringLiteral node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
+		storeInstruction();
+	}
+
+	@Override
+	public void endVisit(TextBlock node) {
+		if (!isActive() || hasErrors()) {
+			return;
+		}
 		storeInstruction();
 	}
 
@@ -1265,8 +1319,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(SuperFieldAccess node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1275,8 +1330,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(SuperMethodInvocation node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1309,8 +1365,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ThisExpression node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1319,8 +1376,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(ThrowStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1353,8 +1411,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(TypeLiteral node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1371,8 +1430,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(VariableDeclarationFragment node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 		storeInstruction();
 	}
 
@@ -1389,8 +1449,9 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	 */
 	@Override
 	public void endVisit(WhileStatement node) {
-		if (!isActive() || hasErrors())
+		if (!isActive() || hasErrors()) {
 			return;
+		}
 
 		/*
 		 * The structure of generated instructions is :
@@ -2100,8 +2161,16 @@ public class ASTInstructionCompiler extends ASTVisitor {
 		if (!isActive()) {
 			return true;
 		}
-		setHasError(true);
-		addErrorMessage(EvaluationEngineMessages.ASTInstructionCompiler_Reference_expressions_cannot_be_used_in_an_evaluation_expression);
+		try {
+			RemoteEvaluatorBuilder builder = makeBuilder(node);
+			builder.acceptMethodReference(node, node.resolveTypeBinding());
+			RemoteEvaluator remoteEvaluator = builder.build();
+			push(new RemoteOperator(builder.getSnippet(), node.getStartPosition(), remoteEvaluator));
+			storeInstruction();
+		} catch (JavaModelException | DebugException e) {
+			addErrorMessage(e.getMessage());
+			setHasError(true);
+		}
 		return false;
 	}
 
@@ -2300,8 +2369,62 @@ public class ASTInstructionCompiler extends ASTVisitor {
 		if (!isActive()) {
 			return true;
 		}
-		setHasError(true);
-		addErrorMessage(EvaluationEngineMessages.ASTInstructionCompiler_Reference_expressions_cannot_be_used_in_an_evaluation_expression);
+
+		try {
+			RemoteEvaluatorBuilder builder = makeBuilder(node);
+			builder.acceptMethodReference(node, node.resolveTypeBinding());
+			RemoteEvaluator remoteEvaluator = builder.build();
+			push(new RemoteOperator(builder.getSnippet(), node.getStartPosition(), remoteEvaluator));
+			storeInstruction();
+		} catch (JavaModelException | DebugException e) {
+			addErrorMessage(e.getMessage());
+			setHasError(true);
+		}
+
+		return false;
+	}
+
+	private RemoteEvaluatorBuilder makeBuilder(ASTNode node) throws DebugException {
+		RemoteEvaluatorBuilder builder = new RemoteEvaluatorBuilder(fJavaProject, new ExpressionBinder() {
+			@Override
+			public void bind(IVariableBinding variableBinding, String asVariableName) {
+				String variableId = variableBinding.getName();
+				push(new PushLocalVariable(variableId));
+				storeInstruction();
+			}
+
+			@Override
+			public void bindThis(ITypeBinding typeBinding, String asVariableName) {
+				push(new PushThis(getEnclosingLevel(node, typeBinding)));
+				storeInstruction();
+			}
+
+		}, getEnclosingClass(node), isStaticContext(node), false);
+		return builder;
+	}
+
+	private ITypeBinding getEnclosingClass(ASTNode node) {
+		while (node != null) {
+			if (node instanceof MethodDeclaration) {
+				return ((MethodDeclaration) node).resolveBinding().getDeclaringClass();
+			}
+			if (node instanceof TypeDeclaration) {
+				return ((TypeDeclaration) node).resolveBinding();
+			}
+			node = node.getParent();
+		}
+		return null;
+	}
+
+	private boolean isStaticContext(ASTNode node) {
+		while (node != null) {
+			if (node instanceof MethodDeclaration) {
+				return Modifier.isStatic(((MethodDeclaration) node).getModifiers());
+			} else if (node instanceof Initializer) {
+				return Modifier.isStatic(((Initializer) node).getModifiers());
+			}
+			node = node.getParent();
+		}
 		return false;
 	}
 
@@ -2811,10 +2934,20 @@ public class ASTInstructionCompiler extends ASTVisitor {
 		if (!isActive()) {
 			return true;
 		}
-		setHasError(true);
-		addErrorMessage(EvaluationEngineMessages.ASTInstructionCompiler_Lambda_expressions_cannot_be_used_in_an_evaluation_expression);
+
+		try {
+			RemoteEvaluatorBuilder builder = makeBuilder(node);
+			builder.acceptLambda(node, node.resolveTypeBinding());
+			RemoteEvaluator remoteEvaluator = builder.build();
+			push(new RemoteOperator(builder.getSnippet(), node.getStartPosition(), remoteEvaluator));
+			storeInstruction();
+		} catch (JavaModelException | DebugException e) {
+			addErrorMessage(e.getMessage());
+			setHasError(true);
+		}
 		return false;
 	}
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -3714,6 +3847,17 @@ public class ASTInstructionCompiler extends ASTVisitor {
 		return true;
 	}
 
+	@Override
+	public boolean visit(TextBlock node) {
+		if (!isActive()) {
+			return false;
+		}
+
+		push(new PushString(node.getLiteralValue()));
+
+		return true;
+	}
+
 	/**
 	 * @see ASTVisitor#visit(SuperConstructorInvocation)
 	 */
@@ -3893,6 +4037,16 @@ public class ASTInstructionCompiler extends ASTVisitor {
 		return false;
 	}
 
+	@Override
+	public boolean visit(SwitchExpression node) {
+		if (!isActive()) {
+			return true;
+		}
+		setHasError(true);
+		addErrorMessage(EvaluationEngineMessages.ASTInstructionCompiler_Switch_expressions_cannot_be_used_in_an_evaluation_expression);
+		return false;
+	}
+
 	/**
 	 * @see ASTVisitor#visit(SwitchCase)
 	 */
@@ -3910,6 +4064,7 @@ public class ASTInstructionCompiler extends ASTVisitor {
 	/**
 	 * @see ASTVisitor#visit(SwitchStatement)
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	public boolean visit(SwitchStatement node) {
 		if (!isActive()) {
@@ -3935,17 +4090,29 @@ public class ASTInstructionCompiler extends ASTVisitor {
 					storeInstruction(); // jump
 					statementsDefault = new ArrayList<>();
 				} else {
-					if (switchCase.getExpression() instanceof StringLiteral) {
-						push(new SendMessage(
-								"equals", "(Ljava/lang/Object;)Z", 1, null, fCounter)); //$NON-NLS-1$ //$NON-NLS-2$
+					if (node.getAST().apiLevel() >= AST.JLS14) {
+						for (Object expression : switchCase.expressions()) {
+							if (expression instanceof StringLiteral || expression instanceof TextBlock) {
+								push(new SendMessage("equals", "(Ljava/lang/Object;)Z", 1, null, fCounter)); //$NON-NLS-1$ //$NON-NLS-2$
+							} else {
+								push(new EqualEqualOperator(Instruction.T_int, Instruction.T_int, true, fCounter));
+							}
+							push(new Dup());
+							storeInstruction(); // dupe
+							((Expression) expression).accept(this);
+							storeInstruction(); // equal-equal
+						}
 					} else {
-						push(new EqualEqualOperator(Instruction.T_int,
-								Instruction.T_int, true, fCounter));
+						if (switchCase.getExpression() instanceof StringLiteral || switchCase.getExpression() instanceof TextBlock) {
+							push(new SendMessage("equals", "(Ljava/lang/Object;)Z", 1, null, fCounter)); //$NON-NLS-1$ //$NON-NLS-2$
+						} else {
+							push(new EqualEqualOperator(Instruction.T_int, Instruction.T_int, true, fCounter));
+						}
+						push(new Dup());
+						storeInstruction(); // dupe
+						switchCase.getExpression().accept(this);
+						storeInstruction(); // equal-equal
 					}
-					push(new Dup());
-					storeInstruction(); // dupe
-					switchCase.getExpression().accept(this);
-					storeInstruction(); // equal-equal
 					ConditionalJump condJump = new ConditionalJump(true);
 					push(condJump);
 					storeInstruction(); // conditional jump
@@ -3976,17 +4143,15 @@ public class ASTInstructionCompiler extends ASTVisitor {
 			storeInstruction(); // jump
 		}
 
-		for (Iterator<slot> iter = jumpsStatements.iterator(); iter.hasNext();) {
-			currentslot = iter.next();
-			for (Iterator<ConditionalJump> iterator = currentslot.jumps.iterator(); iterator.hasNext();) {
-				ConditionalJump condJump = iterator.next();
+		for (slot slot : jumpsStatements) {
+			for (ConditionalJump condJump : slot.jumps) {
 				condJump.setOffset((fCounter - fInstructions.indexOf(condJump)) - 1);
 			}
 			if (currentslot.stmts != null) {
 				push(new Pop(0));
 				storeInstruction(); // pop
-				for (Iterator<Statement> iterator = currentslot.stmts.iterator(); iterator.hasNext();) {
-					iterator.next().accept(this);
+				for (Statement statement : currentslot.stmts) {
+					statement.accept(this);
 				}
 			}
 		}
@@ -3996,8 +4161,8 @@ public class ASTInstructionCompiler extends ASTVisitor {
 			jumpDefault.setOffset((fCounter - fInstructions.indexOf(jumpDefault)) - 1);
 			push(new Pop(0));
 			storeInstruction(); // pop
-			for (Iterator<Statement> iterator = statementsDefault.iterator(); iterator.hasNext();) {
-				iterator.next().accept(this);
+			for (Statement statement : statementsDefault) {
+				statement.accept(this);
 			}
 		} else if(jumpEnd != null){
 			jumpEnd.setOffset((fCounter - fInstructions.indexOf(jumpEnd)) - 1);
@@ -4163,8 +4328,18 @@ public class ASTInstructionCompiler extends ASTVisitor {
 		if (!isActive()) {
 			return true;
 		}
-		setHasError(true);
-		addErrorMessage(EvaluationEngineMessages.ASTInstructionCompiler_Reference_expressions_cannot_be_used_in_an_evaluation_expression);
+
+		try {
+			RemoteEvaluatorBuilder builder = makeBuilder(node);
+			builder.acceptMethodReference(node, node.resolveTypeBinding());
+			RemoteEvaluator remoteEvaluator = builder.build();
+			push(new RemoteOperator(builder.getSnippet(), node.getStartPosition(), remoteEvaluator));
+			storeInstruction();
+		} catch (JavaModelException | DebugException e) {
+			addErrorMessage(e.getMessage());
+			setHasError(true);
+		}
+
 		return false;
 	}
 
@@ -4456,7 +4631,7 @@ public class ASTInstructionCompiler extends ASTVisitor {
 		return signature;
 	}
 
-	private int getPrimitiveTypeId(String typeName) {
+	public static int getPrimitiveTypeId(String typeName) {
 		switch (typeName.charAt(0)) {
 		case 'b': // byte or boolean
 			switch (typeName.charAt(1)) {

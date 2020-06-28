@@ -281,7 +281,7 @@ public abstract class RefactoringDescriptor implements Comparable<RefactoringDes
 			return null;
 		return new RefactoringContext(refactoring);
 	}
-	
+
 	@Override
 	public final boolean equals(final Object object) {
 		if (object instanceof RefactoringDescriptor) {
@@ -445,7 +445,7 @@ public abstract class RefactoringDescriptor implements Comparable<RefactoringDes
 	@Override
 	public String toString() {
 
-		final StringBuffer buffer= new StringBuffer(128);
+		final StringBuilder buffer= new StringBuilder(128);
 
 		buffer.append(getClass().getName());
 		if (fRefactoringId.equals(ID_UNKNOWN))

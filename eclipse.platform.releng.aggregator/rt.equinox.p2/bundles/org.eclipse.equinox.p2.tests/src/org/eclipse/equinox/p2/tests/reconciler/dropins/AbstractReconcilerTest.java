@@ -15,16 +15,45 @@
  *******************************************************************************/
 package org.eclipse.equinox.p2.tests.reconciler.dropins;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import org.eclipse.core.runtime.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.StringTokenizer;
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.equinox.frameworkadmin.BundleInfo;
-import org.eclipse.equinox.internal.p2.core.helpers.*;
+import org.eclipse.equinox.internal.p2.core.helpers.FileUtils;
+import org.eclipse.equinox.internal.p2.core.helpers.ServiceHelper;
+import org.eclipse.equinox.internal.p2.core.helpers.URLUtil;
 import org.eclipse.equinox.internal.p2.engine.SimpleProfileRegistry;
 import org.eclipse.equinox.internal.p2.engine.SurrogateProfileHandler;
 import org.eclipse.equinox.internal.p2.jarprocessor.StreamProcessor;
-import org.eclipse.equinox.internal.p2.update.*;
+import org.eclipse.equinox.internal.p2.update.Configuration;
+import org.eclipse.equinox.internal.p2.update.Feature;
+import org.eclipse.equinox.internal.p2.update.Site;
 import org.eclipse.equinox.internal.p2.updatesite.Activator;
 import org.eclipse.equinox.internal.simpleconfigurator.manipulator.SimpleConfiguratorManipulatorImpl;
 import org.eclipse.equinox.p2.core.ProvisionException;
@@ -276,8 +305,9 @@ public class AbstractReconcilerTest extends AbstractProvisioningTest {
 
 	public void add(String message, String target, File[] files) {
 		assertNotNull(files);
-		for (int i = 0; i < files.length; i++)
-			add(message, target, files[i]);
+		for (File file : files) {
+			add(message, target, file);
+		}
 	}
 
 	/*
@@ -298,8 +328,9 @@ public class AbstractReconcilerTest extends AbstractProvisioningTest {
 	 */
 	public void remove(String message, String target, String[] names) {
 		assertNotNull(names);
-		for (int i = 0; i < names.length; i++)
-			remove(message, target, names[i]);
+		for (String name : names) {
+			remove(message, target, name);
+		}
 	}
 
 	/*
@@ -427,8 +458,7 @@ public class AbstractReconcilerTest extends AbstractProvisioningTest {
 		boolean leaveDirty = Boolean.parseBoolean(TestActivator.getContext().getProperty("p2.tests.doNotClean"));
 		if (leaveDirty)
 			return;
-		for (Iterator<File> iter = toRemove.iterator(); iter.hasNext();) {
-			File next = iter.next();
+		for (File next : toRemove) {
 			delete(next);
 		}
 		output = null;
@@ -478,9 +508,7 @@ public class AbstractReconcilerTest extends AbstractProvisioningTest {
 	 */
 	public boolean removeSite(Configuration configuration, String location) throws IOException, URISyntaxException {
 		File left = new File(new URI(location)).getCanonicalFile();
-		List<Site> sites = configuration.getSites();
-		for (Iterator<Site> iter = sites.iterator(); iter.hasNext();) {
-			Site tempSite = iter.next();
+		for (Site tempSite : configuration.getSites()) {
 			String siteURL = tempSite.getUrl();
 			File right = new File(new URI(siteURL)).getCanonicalFile();
 			if (left.equals(right)) {
@@ -511,8 +539,9 @@ public class AbstractReconcilerTest extends AbstractProvisioningTest {
 		result.setUpdateable(updateable);
 		result.setUrl(uri);
 		if (plugins != null)
-			for (int i = 0; i < plugins.length; i++)
-				result.addPlugin(plugins[i]);
+			for (String plugin : plugins) {
+				result.addPlugin(plugin);
+			}
 		return result;
 	}
 
@@ -551,8 +580,7 @@ public class AbstractReconcilerTest extends AbstractProvisioningTest {
 		List<Site> sites = configuration.getSites();
 		assertNotNull(message, sites);
 		boolean found = false;
-		for (Iterator<Site> iter = sites.iterator(); iter.hasNext();) {
-			Site site = iter.next();
+		for (Site site : sites) {
 			Feature[] features = site.getFeatures();
 			for (int i = 0; features != null && i < features.length; i++) {
 				if (id.equals(features[i].getId())) {
@@ -654,7 +682,7 @@ public class AbstractReconcilerTest extends AbstractProvisioningTest {
 		File file = new File(path);
 		if (!file.exists())
 			return null;
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
 			for (String line = reader.readLine(); line != null; line = reader.readLine()) {
 				buffer.append(line);

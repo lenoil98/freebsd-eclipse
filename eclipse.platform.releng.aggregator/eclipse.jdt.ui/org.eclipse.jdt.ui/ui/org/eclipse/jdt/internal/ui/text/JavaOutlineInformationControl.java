@@ -40,9 +40,9 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.bindings.TriggerSequence;
 import org.eclipse.jface.bindings.keys.KeySequence;
 import org.eclipse.jface.bindings.keys.SWTKeySupport;
-import org.eclipse.jface.bindings.TriggerSequence;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.AbstractTreeViewer;
@@ -230,15 +230,15 @@ public class JavaOutlineInformationControl extends AbstractInformationControl {
 
 		@Override
 		protected Object[] getFilteredChildren(Object parent) {
-			Object[] result = getRawChildren(parent);
+			Object[] result= getRawChildren(parent);
 			int unfilteredChildren= result.length;
-			ViewerFilter[] filters = getFilters();
+			ViewerFilter[] filters= getFilters();
 			if (filters != null) {
-				for (int i= 0; i < filters.length; i++) {
+				for (ViewerFilter filter : filters) {
 					if (parent instanceof TreePath) {
-						result = filters[i].filter(this, (TreePath) parent, result);
+						result= filter.filter(this, (TreePath) parent, result);
 					} else {
-						result = filters[i].filter(this, parent, result);
+						result= filter.filter(this, parent, result);
 					}
 				}
 			}
@@ -356,10 +356,9 @@ public class JavaOutlineInformationControl extends AbstractInformationControl {
 					ITypeHierarchy th= getSuperTypeHierarchy(type);
 					if (th != null) {
 						List<Object> children= new ArrayList<>();
-						IType[] superClasses= th.getAllSupertypes(type);
 						children.addAll(Arrays.asList(super.getChildren(type)));
-						for (int i= 0, scLength= superClasses.length; i < scLength; i++)
-							children.addAll(Arrays.asList(super.getChildren(superClasses[i])));
+						for (IType superClass : th.getAllSupertypes(type))
+							children.addAll(Arrays.asList(super.getChildren(superClass)));
 						return children.toArray();
 					}
 				}
@@ -666,8 +665,8 @@ public class JavaOutlineInformationControl extends AbstractInformationControl {
 					TriggerSequence[] sequences= getInvokingCommandKeySequences();
 					if (sequences == null)
 						return;
-					for (int i= 0; i < sequences.length; i++) {
-						if (sequences[i].equals(keySequence)) {
+					for (TriggerSequence sequence : sequences) {
+						if (sequence.equals(keySequence)) {
 							e.doit= false;
 							toggleShowInheritedMembers();
 							return;

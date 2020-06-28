@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -81,7 +80,7 @@ public class TemplateSet {
 
 	/**
 	 * Convenience method for reading templates from a file.
-	 * 
+	 *
 	 * @param file the file
 	 * @param allowDuplicates <code>true</code> if duplicates are allowed
 	 * @throws CoreException if reading fails
@@ -114,7 +113,7 @@ public class TemplateSet {
 
 	/**
 	 * Reads templates from a XML stream and adds them to the templates
-	 * 
+	 *
 	 * @param stream the input stream
 	 * @param allowDuplicates <code>true</code> if duplicates are allowed
 	 * @throws CoreException if reading fails
@@ -160,9 +159,8 @@ public class TemplateSet {
 				String message= validateTemplate(template);
 				if (message == null) {
 					if (!allowDuplicates) {
-						Template[] templates= getTemplates(name);
-						for (int k= 0; k < templates.length; k++) {
-							remove(templates[k]);
+						for (Template t : getTemplates(name)) {
+							remove(t);
 						}
 					}
 					add(template);
@@ -170,11 +168,7 @@ public class TemplateSet {
 					throwReadException(null);
 				}
 			}
-		} catch (ParserConfigurationException e) {
-			throwReadException(e);
-		} catch (IOException e) {
-			throwReadException(e);
-		} catch (SAXException e) {
+		} catch (ParserConfigurationException | IOException | SAXException e) {
 			throwReadException(e);
 		}
 	}
@@ -275,9 +269,7 @@ public class TemplateSet {
 
 			transformer.transform(source, result);
 
-		} catch (ParserConfigurationException e) {
-			throwWriteException(e);
-		} catch (TransformerException e) {
+		} catch (ParserConfigurationException | TransformerException e) {
 			throwWriteException(e);
 		}
 	}
@@ -313,14 +305,7 @@ public class TemplateSet {
 	}
 
 	private boolean exists(Template template) {
-		for (Iterator<Template> iterator = fTemplates.iterator(); iterator.hasNext();) {
-			Template anotherTemplate = iterator.next();
-
-			if (template.equals(anotherTemplate))
-				return true;
-		}
-
-		return false;
+		return fTemplates.contains(template);
 	}
 
 	/**
@@ -356,8 +341,7 @@ public class TemplateSet {
 	 */
 	public Template[] getTemplates(String name) {
 		ArrayList<Template> res= new ArrayList<>();
-		for (Iterator<Template> iterator= fTemplates.iterator(); iterator.hasNext();) {
-			Template curr= iterator.next();
+		for (Template curr : fTemplates) {
 			if (curr.getName().equals(name)) {
 				res.add(curr);
 			}
@@ -372,8 +356,7 @@ public class TemplateSet {
 	 * @return the first template with the given name
 	 */
 	public Template getFirstTemplate(String name) {
-		for (Iterator<Template> iterator= fTemplates.iterator(); iterator.hasNext();) {
-			Template curr= iterator.next();
+		for (Template curr : fTemplates) {
 			if (curr.getName().equals(name)) {
 				return curr;
 			}

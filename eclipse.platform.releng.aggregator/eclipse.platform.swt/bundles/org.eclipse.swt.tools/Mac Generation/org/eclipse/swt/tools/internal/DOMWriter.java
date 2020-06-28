@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2018 IBM Corporation and others.
+ * Copyright (c) 2008, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -38,8 +38,8 @@ public class DOMWriter {
 	boolean filter(Attr attr) {
 		if (attributeFilter == null) return false;
 		String name = attr.getNodeName();
-		for (int i = 0; i < attributeFilter.length; i++) {
-			if (name.matches(attributeFilter[i])) return false;
+		for (String filteredName : attributeFilter) {
+			if (name.matches(filteredName)) return false;
 		}
 		return true;
 	}
@@ -47,9 +47,8 @@ public class DOMWriter {
 	Node getIDAttribute(Node node) {
 		NamedNodeMap attributes = node.getAttributes();
 		if (attributes == null) return null;
-		String[] names = idAttributes;
-		for (int i = 0; i < names.length; i++) {
-			Node nameAttrib = attributes.getNamedItem(names[i]);
+		for (String name : idAttributes) {
+			Node nameAttrib = attributes.getNamedItem(name);
 			if (nameAttrib != null) return nameAttrib;
 		}
 		return null;
@@ -92,8 +91,7 @@ public class DOMWriter {
 				for (int i = 0; i < level; i++) print("\t");
 				print("<");
 				print(name);
-				for (int i = 0; i < attrs.length; i++) {
-					Attr attr = attrs[i];
+				for (Attr attr : attrs) {
 					if (isArg && "name".equals(attr.getNodeName())) continue;
 					if (filter(attr)) continue;
 					print(" ");
@@ -112,17 +110,18 @@ public class DOMWriter {
 						if (child.getNodeType() == Node.ELEMENT_NODE) nodes.add(child);
 					}
 					int count = nodes.size();
-					Collections.sort(nodes, (a, b) -> {
+					nodes.sort((a, b) -> {
 						String nameA = a.getNodeName();
 						String nameB = b.getNodeName();
 						if ("arg".equals(nameA)) {
 							return 0;
-						} 
+						}
 						int result = nameA.compareTo(nameB);
 						if (result == 0) {
 							Node idA = getIDAttribute(a);
 							Node idB = getIDAttribute(b);
-							if (idA == null || idB == null) return 0;
+							if (idA == null || idB == null)
+								return 0;
 							return idA.getNodeValue().compareTo(idB.getNodeValue());
 						}
 						return result;

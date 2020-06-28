@@ -204,14 +204,16 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 	 */
 	@Override
 	public boolean canDoOperation(int operation) {
-		if (operation == SHOW_OUTLINE)
-			return fOutlinePresenter != null;
-		if (operation == OPEN_STRUCTURE)
-			return fStructurePresenter != null;
-		if (operation == SHOW_HIERARCHY)
-			return fHierarchyPresenter != null;
-
-		return super.canDoOperation(operation);
+		switch (operation) {
+			case SHOW_OUTLINE:
+				return fOutlinePresenter != null;
+			case OPEN_STRUCTURE:
+				return fStructurePresenter != null;
+			case SHOW_HIERARCHY:
+				return fHierarchyPresenter != null;
+			default:
+				return super.canDoOperation(operation);
+		}
 	}
 
 	/*
@@ -339,25 +341,25 @@ public class JavaSourceViewer extends ProjectionViewer implements IPropertyChang
 
         return null;
     }
-    
+
 	/**
 	 * Sets the viewer's background color to the given control's background color.
 	 * The background color is <em>only</em> set if it's visibly distinct from the
 	 * default Java source text color.
-	 * 
+	 *
 	 * @param control the control with the default background color
 	 * @since 3.7
 	 */
 	public void adaptBackgroundColor(Control control) {
 		// workaround for dark editor background color, see https://bugs.eclipse.org/330680
-		
+
 		Color defaultColor= control.getBackground();
 		float[] defaultBgHSB= defaultColor.getRGB().getHSB();
-		
+
 		Color javaDefaultColor= JavaUI.getColorManager().getColor(IJavaColorConstants.JAVA_DEFAULT);
 		RGB javaDefaultRGB= javaDefaultColor != null ? javaDefaultColor.getRGB() : new RGB(255, 255, 255);
 		float[] javaDefaultHSB= javaDefaultRGB.getHSB();
-		
+
 		if (Math.abs(defaultBgHSB[2] - javaDefaultHSB[2]) >= 0.5f) {
 			getTextWidget().setBackground(defaultColor);
 			if (fBackgroundColor != null) {

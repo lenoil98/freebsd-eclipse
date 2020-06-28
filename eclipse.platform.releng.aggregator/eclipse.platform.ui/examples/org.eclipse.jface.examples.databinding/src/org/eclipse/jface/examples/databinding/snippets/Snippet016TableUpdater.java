@@ -27,36 +27,31 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 
-/**
- * @since 3.2
- *
- */
 public class Snippet016TableUpdater {
 	public static void main(String[] args) {
 		final Display display = new Display();
 
 		Realm.runWithDefault(DisplayRealm.getRealm(display), () -> {
-			final Shell shell = createShell(display);
-			GridLayoutFactory.fillDefaults().generateLayout(shell);
-			shell.open();
-			// The SWT event loop
+			Shell shell = createShell();
+
 			while (!shell.isDisposed()) {
 				if (!display.readAndDispatch()) {
 					display.sleep();
 				}
 			}
 		});
+
+		display.dispose();
 	}
 
 	static class Stuff {
-		private WritableValue counter = new WritableValue(Integer.valueOf(1), Integer.class);
+		private WritableValue<Integer> counter = new WritableValue<>(1, Integer.class);
 
 		public Stuff(final Display display) {
 			display.timerExec(1000, new Runnable() {
 				@Override
 				public void run() {
-					counter.setValue(Integer.valueOf(1 + ((Integer) counter
-							.getValue()).intValue()));
+					counter.setValue(1 + counter.getValue());
 					display.timerExec(1000, this);
 				}
 			});
@@ -68,27 +63,30 @@ public class Snippet016TableUpdater {
 		}
 	}
 
-	protected static Shell createShell(final Display display) {
+	protected static Shell createShell() {
 		Shell shell = new Shell();
 		Table t = new Table(shell, SWT.BORDER | SWT.FULL_SELECTION | SWT.VIRTUAL);
 		t.setHeaderVisible(true);
 		createColumn(t, "Values");
 		t.setLinesVisible(true);
-		final WritableList list = new WritableList();
-		new TableUpdater(t, list) {
-
+		final WritableList<Stuff> list = new WritableList<>();
+		new TableUpdater<Stuff>(t, list) {
 			@Override
-			protected void updateItem(int index, TableItem item, Object element) {
+			protected void updateItem(int index, TableItem item, Stuff element) {
 				item.setText(element.toString());
 			}
 		};
-		display.timerExec(2000, new Runnable() {
+		shell.getDisplay().timerExec(2000, new Runnable() {
 			@Override
 			public void run() {
-				list.add(new Stuff(display));
-				display.timerExec(2000, this);
+				list.add(new Stuff(shell.getDisplay()));
+				shell.getDisplay().timerExec(2000, this);
 			}
 		});
+
+		GridLayoutFactory.fillDefaults().generateLayout(shell);
+		shell.open();
+
 		return shell;
 	}
 

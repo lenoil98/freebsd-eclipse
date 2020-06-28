@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -22,12 +22,14 @@ import org.osgi.framework.PackagePermission;
 public final class BundlePermissions extends PermissionCollection {
 	private static final long serialVersionUID = -5443618108312606612L;
 
-	// Note that this forces the Enumeration inner class to be loaded as soon as possible (see bug 119069)  
+	// Note that this forces the Enumeration inner class to be loaded as soon as possible (see bug 119069)
 	static final Enumeration<Permission> EMPTY_ENUMERATION = new Enumeration<Permission>() {
+		@Override
 		public boolean hasMoreElements() {
 			return false;
 		}
 
+		@Override
 		public Permission nextElement() {
 			throw new NoSuchElementException();
 		}
@@ -48,6 +50,7 @@ public final class BundlePermissions extends PermissionCollection {
 		setReadOnly(); // collections are managed with ConditionalPermissionAdmin
 	}
 
+	@Override
 	public void add(Permission permission) {
 		throw new SecurityException();
 	}
@@ -57,7 +60,7 @@ public final class BundlePermissions extends PermissionCollection {
 	 * <p/>
 	 * Bundles may require additional permissions in order to execute byte code
 	 * woven by weaving hooks.
-	 * 
+	 *
 	 * @param permission The package permission to add to this woven bundle.
 	 * @throws SecurityException If the <code>permission</code>
 	 *         does not have an action of {@link PackagePermission#IMPORT}.
@@ -68,13 +71,15 @@ public final class BundlePermissions extends PermissionCollection {
 		wovenPermissions.add(permission);
 	}
 
+	@Override
 	public Enumeration<Permission> elements() {
-		// TODO return an empty enumeration for now; 
+		// TODO return an empty enumeration for now;
 		// It does not seem possible to do this properly with multiple exports and conditional permissions.
 		// When looking to fix this be sure the Enumeration class is loaded as soon as possible (see bug 119069)
 		return EMPTY_ENUMERATION;
 	}
 
+	@Override
 	public boolean implies(Permission permission) {
 		// first check implied permissions
 		if ((impliedPermissions != null) && impliedPermissions.implies(permission))

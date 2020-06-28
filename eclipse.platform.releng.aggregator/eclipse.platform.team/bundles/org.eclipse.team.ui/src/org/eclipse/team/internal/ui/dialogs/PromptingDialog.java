@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IResource;
-import org.eclipse.jface.window.IShellProvider;
 import org.eclipse.swt.widgets.Shell;
 
 /**
@@ -41,12 +40,7 @@ public class PromptingDialog extends MultipleYesNoPrompter {
 	}
 
 	public PromptingDialog(final Shell shell, IResource[] resources, IPromptCondition condition, String title, boolean allOrNothing) {
-		super(new IShellProvider() {
-			@Override
-			public Shell getShell() {
-				return shell;
-			}
-		}, title, resources.length > 1, allOrNothing);
+		super(() -> shell, title, resources.length > 1, allOrNothing);
 		this.resources = resources;
 		this.condition = condition;
 	}
@@ -62,8 +56,7 @@ public class PromptingDialog extends MultipleYesNoPrompter {
 	 */
 	public IResource[] promptForMultiple() throws InterruptedException {
 		List<IResource> targetResources = new ArrayList<>();
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			if (!condition.needsPrompt(resource) || shouldInclude(condition.promptMessage(resource))) {
 				targetResources.add(resource);
 			}

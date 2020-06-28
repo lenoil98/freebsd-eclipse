@@ -13,9 +13,8 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.performance.layout;
 
-import junit.framework.Assert;
+import static org.junit.Assert.assertNotNull;
 
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.e4.ui.model.application.ui.basic.MPart;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
@@ -30,63 +29,63 @@ import org.eclipse.ui.tests.harness.util.EmptyPerspective;
 import org.eclipse.ui.tests.harness.util.UITestCase;
 import org.eclipse.ui.tests.performance.BasicPerformanceTest;
 
+
 /**
  * @since 3.1
  */
 public class ViewWidgetFactory extends TestWidgetFactory {
 
-    private String viewId;
-    private Control ctrl;
-    private IWorkbenchWindow window;
+	private String viewId;
+	private Control ctrl;
+	private IWorkbenchWindow window;
 
-    public ViewWidgetFactory(String viewId) {
-        this.viewId = viewId;
-        Assert.assertNotNull(viewId);
-    }
+	public ViewWidgetFactory(String viewId) {
+		this.viewId = viewId;
+		assertNotNull(viewId);
+	}
 
-    @Override
+	@Override
 	public Point getMaxSize() {
-        return new Point(1024, 768);
-    }
+		return new Point(1024, 768);
+	}
 
-    public static Composite getControl(IViewPart part) {
+	public static Composite getControl(IViewPart part) {
 		ViewSite site = (ViewSite)part.getSite();
 		MPart modelPart = site.getModel();
 		return (Composite) modelPart.getWidget();
-    }
+	}
 
-    @Override
-	public void init() throws CoreException, WorkbenchException {
-    	// open the view in a new window
-        window = PlatformUI.getWorkbench().openWorkbenchWindow(EmptyPerspective.PERSP_ID, UITestCase.getPageInput());
+	@Override
+	public void init() throws WorkbenchException {
+		// open the view in a new window
+		window = PlatformUI.getWorkbench().openWorkbenchWindow(EmptyPerspective.PERSP_ID, UITestCase.getPageInput());
 		IWorkbenchPage page = window.getActivePage();
-        Assert.assertNotNull(page);
+		assertNotNull(page);
 
 		IViewPart part = page.showView(viewId, null, IWorkbenchPage.VIEW_ACTIVATE);
 
-        BasicPerformanceTest.waitForBackgroundJobs();
+		BasicPerformanceTest.waitForBackgroundJobs();
 
 		ctrl = getControl(part);
 
-        Point size = getMaxSize();
-        ctrl.setBounds(0,0,size.x, size.y);
-        window.getShell().setSize(size);
-    }
+		Point size = getMaxSize();
+		ctrl.setBounds(0,0,size.x, size.y);
+		window.getShell().setSize(size);
+	}
 
-    @Override
+	@Override
 	public String getName() {
-        return "View " + viewId;
-    }
+		return "View " + viewId;
+	}
 
-    @Override
-	public Composite getControl() throws CoreException, WorkbenchException {
-        return (Composite)ctrl;
-    }
+	@Override
+	public Composite getControl() {
+		return (Composite)ctrl;
+	}
 
-    @Override
-	public void done() throws CoreException, WorkbenchException {
-    	window.close();
-    	super.done();
-    }
+	@Override
+	public void done() {
+		window.close();
+	}
 
 }

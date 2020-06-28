@@ -18,7 +18,7 @@ package org.eclipse.debug.internal.ui.elements.adapters;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.Collections;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugException;
@@ -322,9 +322,9 @@ public class MemoryBlockContentAdapter extends AsynchronousContentAdapter {
 
 				// fill buffer with memory returned by debug adapter
 				int j = prefillNumBytes; // counter for memoryBuffer
-				for (int i = 0; i < memory.length; i++) {
+				for (byte element : memory) {
 					MemoryByte tmp = new MemoryByte();
-					tmp.setValue(memory[i]);
+					tmp.setValue(element);
 					tmp.setReadable(true);
 					tmp.setWritable(true);
 					tmp.setEndianessKnown(false);
@@ -359,9 +359,7 @@ public class MemoryBlockContentAdapter extends AsynchronousContentAdapter {
 		if (memoryBuffer.length < reqNumBytes) {
 			ArrayList<MemoryByte> newBuffer = new ArrayList<>();
 
-			for (int i = 0; i < memoryBuffer.length; i++) {
-				newBuffer.add(memoryBuffer[i]);
-			}
+			Collections.addAll(newBuffer, memoryBuffer);
 
 			for (int i = memoryBuffer.length; i < reqNumBytes; i++) {
 				MemoryByte mb = new MemoryByte();
@@ -394,7 +392,7 @@ public class MemoryBlockContentAdapter extends AsynchronousContentAdapter {
 	}
 
 	private Object[] organizeLines(long numberOfLines, MemoryByte[] memoryBuffer, BigInteger address, boolean manageDelta, MemoryViewPresentationContext context) {
-		Vector<MemorySegment> lineCache = new Vector<>();
+		ArrayList<MemorySegment> lineCache = new ArrayList<>();
 		IMemoryRendering rendering = context.getRendering();
 		if (!(rendering instanceof AbstractAsyncTableRendering)) {
 			return lineCache.toArray();

@@ -25,12 +25,11 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.jdt.internal.corext.callhierarchy.MethodWrapper;
 
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
-import org.eclipse.jdt.internal.ui.JavaPlugin;
 
 
 /**
  * This action removes a single node from the Call Hierarchy view.
- * 
+ *
  * @since 3.6
  */
 class RemoveFromViewAction extends Action{
@@ -60,7 +59,7 @@ class RemoveFromViewAction extends Action{
 		setToolTipText(CallHierarchyMessages.RemoveFromViewAction_removeFromView_tooltip);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IJavaHelpContextIds.CALL_HIERARCHY_REMOVE_FROM_VIEW_ACTION);
 
-		ISharedImages workbenchImages= JavaPlugin.getDefault().getWorkbench().getSharedImages();
+		ISharedImages workbenchImages= PlatformUI.getWorkbench().getSharedImages();
 		setDisabledImageDescriptor(workbenchImages.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE_DISABLED));
 		setImageDescriptor(workbenchImages.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
 		setHoverImageDescriptor(workbenchImages.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
@@ -69,20 +68,20 @@ class RemoveFromViewAction extends Action{
 	/**
 	 * Removes the selected nodes from the view with out modifying the underlying view input. Thus
 	 * on refresh of the view the removed nodes are also brought back to the view.
-	 * 
+	 *
 	 * @see org.eclipse.jface.action.Action#run()
 	 * @since 3.9
 	 */
 	@Override
 	public void run() {
-		TreeItem[] items= fCallHierarchyViewer.getTree().getSelection();
-		for (int i= 0; i < items.length; i++)
-			items[i].dispose();
+		for (TreeItem item : fCallHierarchyViewer.getTree().getSelection()) {
+			item.dispose();
+		}
 	}
 
 	/**
 	 * Gets the selection from the call hierarchy view part.
-	 * 
+	 *
 	 * @return the current selection
 	 */
 	private ISelection getSelection() {
@@ -91,7 +90,7 @@ class RemoveFromViewAction extends Action{
 
 	/**
 	 * Checks whether this action can be added for the selected element in the call hierarchy.
-	 * 
+	 *
 	 * @return <code> true</code> if the action can be added, <code>false</code> otherwise
 	 */
 	protected boolean canActionBeAdded() {
@@ -106,17 +105,17 @@ class RemoveFromViewAction extends Action{
 				return false;
 		}
 
-		TreeItem[] items= fCallHierarchyViewer.getTree().getSelection();
-		for (int k= 0; k < items.length; k++) {
-			if (!checkForChildren(items[k]))
+		for (TreeItem item : fCallHierarchyViewer.getTree().getSelection()) {
+			if (!checkForChildren(item)) {
 				return false;
+			}
 		}
 		return true;
 	}
 
 	/**
 	 * Checks whether the children are being fetched for a node recursively.
-	 * 
+	 *
 	 * @param item the parent node
 	 * @return <code>false</code> when children are currently being fetched for a node,
 	 *         <code>true</code> otherwise
@@ -128,9 +127,10 @@ class RemoveFromViewAction extends Action{
 			if (!(data instanceof MethodWrapper) && data != null)
 				return false; // Do not add action if children are still being fetched for that node or if it's only JFace's dummy node.
 		}
-		for (int i= 0; i < children.length; i++) {
-			if (!checkForChildren(children[i]))
+		for (TreeItem child : children) {
+			if (!checkForChildren(child)) {
 				return false;
+			}
 		}
 		return true;
 	}

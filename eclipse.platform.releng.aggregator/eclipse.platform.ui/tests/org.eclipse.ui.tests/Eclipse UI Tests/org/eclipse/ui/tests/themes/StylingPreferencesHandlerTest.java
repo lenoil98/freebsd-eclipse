@@ -1,5 +1,19 @@
+/*******************************************************************************
+ * Copyright (c) 2014, 2019 Daniel Rolka and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Daniel Rolka - initial API and implementation
+ *******************************************************************************/
 package org.eclipse.ui.tests.themes;
 
+import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.Mockito.doReturn;
@@ -22,18 +36,18 @@ import org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine.StylingPrefe
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
+import org.junit.Test;
 import org.osgi.service.event.Event;
 
-import junit.framework.TestCase;
-
-public class StylingPreferencesHandlerTest extends TestCase {
+public class StylingPreferencesHandlerTest {
+	@Test
 	public void testHandleEvent() throws Exception {
 		//given
 		IEclipsePreferences pref1 = mock(IEclipsePreferences.class);
 		IEclipsePreferences pref2 = mock(IEclipsePreferences.class);
 
 		StylingPreferencesHandlerTestable handler = spy(new StylingPreferencesHandlerTestable(mock(Display.class)));
-		doReturn(new HashSet<>(Arrays.asList(pref1, pref2))).when(handler).getPreferences();
+		doReturn(new HashSet<>(Arrays.asList(pref1, pref2))).when(handler).getThemeRelatedPreferences();
 		doReturn(Arrays.asList("pref1.prop1", "pref1.prop2")).when(handler).getOverriddenPropertyNames(pref1);
 		doReturn(Arrays.asList("pref2.prop1")).when(handler).getOverriddenPropertyNames(pref2);
 
@@ -52,13 +66,14 @@ public class StylingPreferencesHandlerTest extends TestCase {
 		verify(themeEngine, times(1)).applyStyles(pref2, false);
 	}
 
+	@Test
 	public void testResetOverriddenPreferences() throws Exception {
 		//given
 		IEclipsePreferences pref1 = mock(IEclipsePreferences.class);
 		IEclipsePreferences pref2 = mock(IEclipsePreferences.class);
 
 		StylingPreferencesHandlerTestable handler = spy(new StylingPreferencesHandlerTestable(mock(Display.class)));
-		doReturn(new HashSet<>(Arrays.asList(pref1, pref2))).when(handler).getPreferences();
+		doReturn(new HashSet<>(Arrays.asList(pref1, pref2))).when(handler).getThemeRelatedPreferences();
 		doReturn(Arrays.asList("pref1.prop1", "pref1.prop2")).when(handler).getOverriddenPropertyNames(pref1);
 		doReturn(Arrays.asList("pref2.prop1", "pref2.prop2")).when(handler).getOverriddenPropertyNames(pref2);
 
@@ -77,17 +92,19 @@ public class StylingPreferencesHandlerTest extends TestCase {
 		verify(handler, times(1)).removeOverriddenPropertyNames(pref2);
 	}
 
+	@Test
 	public void testGetPreferences() {
 		Set<IEclipsePreferences> result = new StylingPreferencesHandler(mock(Display.class)) {
 			@Override
-			public Set<IEclipsePreferences> getPreferences() {
-				return super.getPreferences();
+			public Set<IEclipsePreferences> getThemeRelatedPreferences() {
+				return super.getThemeRelatedPreferences();
 			}
-		}.getPreferences();
+		}.getThemeRelatedPreferences();
 
 		assertFalse(result.isEmpty());
 	}
 
+	@Test
 	public void testAddOnDisplayDisposed() throws Exception {
 		//given
 		final Listener listener = mock(Listener.class);
@@ -106,6 +123,7 @@ public class StylingPreferencesHandlerTest extends TestCase {
 		verify(display, times(1)).addListener(SWT.Dispose, listener);
 	}
 
+	@Test
 	public void testOnDisplayDisposedListener() throws Exception {
 		//given
 		StylingPreferencesHandlerTestable handler = spy(new StylingPreferencesHandlerTestable(mock(Display.class)));
@@ -125,7 +143,7 @@ public class StylingPreferencesHandlerTest extends TestCase {
 		}
 
 		@Override
-		public Set<IEclipsePreferences> getPreferences() {
+		public Set<IEclipsePreferences> getThemeRelatedPreferences() {
 			return Collections.emptySet();
 		}
 

@@ -30,6 +30,7 @@ public class Snippet181 {
 	public static void main(String[] args) {
 		Display display = new Display();
 		Shell shell = new Shell(display);
+		shell.setText("Snippet 181");
 		shell.setLayout(new RowLayout(SWT.HORIZONTAL));
 		final Table table = new Table(shell, SWT.BORDER | SWT.CHECK);
 		table.setLayoutData(new RowData(-1, 300));
@@ -50,11 +51,10 @@ public class Snippet181 {
 			item.setText(text);
 		}
 		Listener listener = e -> System.out.println("Move "+e.widget);
-		TableColumn[] columns = table.getColumns();
-		for (int i = 0; i < columns.length; i++) {
-			columns[i].pack();
-			columns[i].setMoveable(true);
-			columns[i].addListener(SWT.Move, listener);
+		for (TableColumn col : table.getColumns()) {
+			col.pack();
+			col.setMoveable(true);
+			col.addListener(SWT.Move, listener);
 		}
 		Button b = new Button(shell, SWT.PUSH);
 		b.setText("invert column order");

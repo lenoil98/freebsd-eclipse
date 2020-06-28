@@ -127,16 +127,18 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 			super(change, group);
 
 			final TextEdit[] edits= group.getTextEdits();
-			for (int index= 0; index < edits.length; index++)
-				cacheEdit(edits[index]);
+			for (TextEdit edit : edits) {
+				cacheEdit(edit);
+			}
 		}
 
 		private final void cacheEdit(final TextEdit edit) {
 			fEdits.add(edit);
 
 			final TextEdit[] edits= edit.getChildren();
-			for (int index= 0; index < edits.length; index++)
-				cacheEdit(edits[index]);
+			for (TextEdit e : edits) {
+				cacheEdit(e);
+			}
 		}
 
 		private final boolean containsEdit(final TextEdit edit) {
@@ -311,11 +313,9 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 		final TextEditBasedChangeGroup[] groups= change.getChangeGroups();
 		final List<TextEditBasedChangeGroup> list= new ArrayList<>(groups.length);
 
-		for (int index= 0; index < groups.length; index++) {
-
-			final TextEditBasedChangeGroup group= new ComposableBufferChangeGroup(this, groups[index].getTextEditGroup());
+		for (TextEditBasedChangeGroup g : groups) {
+			final TextEditBasedChangeGroup group= new ComposableBufferChangeGroup(this, g.getTextEditGroup());
 			list.add(group);
-
 			addChangeGroup(group);
 		}
 		result.setGroups(list);
@@ -325,10 +325,10 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 	// Copied from TextChange
 	private TextEditProcessor createTextEditProcessor(ComposableBufferChange change, IDocument document, int flags, boolean preview) {
 		List<TextEdit> excludes= new ArrayList<>(0);
-		for (final Iterator<TextEditBasedChangeGroup> iterator= change.getGroups().iterator(); iterator.hasNext();) {
-			TextEditBasedChangeGroup group= iterator.next();
-			if (!group.isEnabled())
+		for (TextEditBasedChangeGroup group : change.getGroups()) {
+			if (!group.isEnabled()) {
 				excludes.addAll(Arrays.asList(group.getTextEdits()));
+			}
 		}
 
 		if (preview) {
@@ -459,28 +459,23 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 		final Position range= new Position(region.getOffset(), region.getLength());
 		try {
 
-			ComposableBufferChange change= null;
-
 			final TextEditBasedChangeGroup[] changedGroups= getChangeGroups();
 
 			LinkedList<LinkedList<ComposableUndoEdit>> compositeUndo= new LinkedList<>();
-			for (int index= 0; index < fChanges.size(); index++) {
-				change= fChanges.get(index);
+			for (ComposableBufferChange change : fChanges) {
 
-				TextEdit copy= null;
 				try {
 					// Have to use a copy
 					fCopier= new TextEditCopier(change.getEdit());
-					copy= fCopier.perform();
+					TextEdit copy= fCopier.perform();
 
 					// Create a mapping from the copied edits to its originals
 					final Map<TextEdit, TextEdit> originalMap= new HashMap<>();
-					for (final Iterator<TextEditBasedChangeGroup> outer= change.getGroups().iterator(); outer.hasNext();) {
+					for (TextEditBasedChangeGroup textEditBasedChangeGroup : change.getGroups()) {
 
-						final ComposableBufferChangeGroup group= (ComposableBufferChangeGroup) outer.next();
-						for (final Iterator<TextEdit> inner= group.getCachedEdits().iterator(); inner.hasNext();) {
+						final ComposableBufferChangeGroup group= (ComposableBufferChangeGroup) textEditBasedChangeGroup;
+						for (TextEdit originalEdit : group.getCachedEdits()) {
 
-							final TextEdit originalEdit= inner.next();
 							final TextEdit copiedEdit= fCopier.getCopy(originalEdit);
 
 							if (copiedEdit != null)
@@ -563,73 +558,67 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 				}
 			}
 
-			final IPositionUpdater positionUpdater= new IPositionUpdater() {
+			final IPositionUpdater positionUpdater= event -> {
 
-				@Override
-				public final void update(final DocumentEvent event) {
+				final int eventOffset= event.getOffset();
+				final int eventLength= event.getLength();
+				final int eventOldEndOffset= eventOffset + eventLength;
+				final String eventText= event.getText();
+				final int eventNewLength= eventText == null ? 0 : eventText.length();
+				final int eventNewEndOffset= eventOffset + eventNewLength;
+				final int deltaLength= eventNewLength - eventLength;
 
-					final int eventOffset= event.getOffset();
-					final int eventLength= event.getLength();
-					final int eventOldEndOffset= eventOffset + eventLength;
-					final String eventText= event.getText();
-					final int eventNewLength= eventText == null ? 0 : eventText.length();
-					final int eventNewEndOffset= eventOffset + eventNewLength;
-					final int deltaLength= eventNewLength - eventLength;
+				try {
 
-					try {
+					final Position[] positions= event.getDocument().getPositions(COMPOSABLE_POSITION_CATEGORY);
+					for (Position position : positions) {
+						if (position.isDeleted())
+							continue;
 
-						final Position[] positions= event.getDocument().getPositions(COMPOSABLE_POSITION_CATEGORY);
-						for (int index= 0; index < positions.length; index++) {
+						final int offset= position.getOffset();
+						final int length= position.getLength();
+						final int end= offset + length;
 
-							final Position position= positions[index];
-							if (position.isDeleted())
-								continue;
-
-							final int offset= position.getOffset();
-							final int length= position.getLength();
-							final int end= offset + length;
-
-							if (offset > eventOldEndOffset) {
-								// position comes way after change - shift
-								position.setOffset(offset + deltaLength);
-							} else if (end < eventOffset) {
-								// position comes way before change - leave
-								// alone
-							} else if (offset == eventOffset) {
-								// leave alone, since the edits are overlapping
-							} else if (offset <= eventOffset && end >= eventOldEndOffset) {
-								// event completely internal to the position
-								// -
-								// adjust length
-								position.setLength(length + deltaLength);
-							} else if (offset < eventOffset) {
-								// event extends over end of position - include
-								// the
-								// replacement text into the position
-								position.setLength(eventNewEndOffset - offset);
-							} else if (end > eventOldEndOffset) {
-								// event extends from before position into it -
-								// adjust
-								// offset and length, including the replacement
-								// text into
-								// the position
-								position.setOffset(eventOffset);
-								int deleted= eventOldEndOffset - offset;
-								position.setLength(length - deleted + eventNewLength);
-							} else {
-								// event comprises the position - keep it at the
-								// same
-								// position, but always inside the replacement
-								// text
-								int newOffset= Math.min(offset, eventNewEndOffset);
-								int newEndOffset= Math.min(end, eventNewEndOffset);
-								position.setOffset(newOffset);
-								position.setLength(newEndOffset - newOffset);
-							}
+						if (offset > eventOldEndOffset) {
+							// position comes way after change - shift
+							position.setOffset(offset + deltaLength);
+						} else if (end < eventOffset) {
+							// position comes way before change - leave
+							// alone
+						} else if (offset == eventOffset) {
+							// leave alone, since the edits are overlapping
+						} else if (offset <= eventOffset && end >= eventOldEndOffset) {
+							// event completely internal to the position
+							// -
+							// adjust length
+							position.setLength(length + deltaLength);
+						} else if (offset < eventOffset) {
+							// event extends over end of position - include
+							// the
+							// replacement text into the position
+							position.setLength(eventNewEndOffset - offset);
+						} else if (end > eventOldEndOffset) {
+							// event extends from before position into it -
+							// adjust
+							// offset and length, including the replacement
+							// text into
+							// the position
+							position.setOffset(eventOffset);
+							int deleted= eventOldEndOffset - offset;
+							position.setLength(length - deleted + eventNewLength);
+						} else {
+							// event comprises the position - keep it at the
+							// same
+							// position, but always inside the replacement
+							// text
+							int newOffset= Math.min(offset, eventNewEndOffset);
+							int newEndOffset= Math.min(end, eventNewEndOffset);
+							position.setOffset(newOffset);
+							position.setLength(newEndOffset - newOffset);
 						}
-					} catch (BadPositionCategoryException exception) {
-						// ignore and return
 					}
+				} catch (BadPositionCategoryException exception) {
+					// ignore and return
 				}
 			};
 
@@ -644,10 +633,9 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 				// Undo edits for them (corresponding to the linearized net
 				// effect on the original document)
 				final LinkedList<ComposableEditPosition> undoQueue= new LinkedList<>();
-				for (final Iterator<LinkedList<ComposableUndoEdit>> outer= compositeUndo.iterator(); outer.hasNext();) {
-					for (final Iterator<ComposableUndoEdit> inner= outer.next().iterator(); inner.hasNext();) {
+				for (LinkedList<ComposableUndoEdit> outer : compositeUndo) {
+					for (ComposableUndoEdit edit : outer) {
 
-						final ComposableUndoEdit edit= inner.next();
 						final ReplaceEdit undo= edit.getUndo();
 
 						final int offset= undo.getOffset();
@@ -657,7 +645,7 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 						ComposableEditPosition position= new ComposableEditPosition();
 						if (cachedGroups.contains(edit.getGroup())) {
 
-							if (text == null || text.equals("")) { //$NON-NLS-1$
+							if (text == null || text.isEmpty()) {
 								position.offset= offset;
 								if (length != 0) {
 									// Undo is a delete, create final insert
@@ -709,9 +697,8 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 					document.addPositionUpdater(markerUpdater);
 					document.addPosition(MARKER_POSITION_CATEGORY, range);
 
-					for (int index= 0; index < positions.length; index++) {
-						final ComposableEditPosition position= (ComposableEditPosition) positions[index];
-
+					for (Position p : positions) {
+						final ComposableEditPosition position= (ComposableEditPosition) p;
 						document.replace(position.offset, position.length, position.getText() != null ? position.getText() : ""); //$NON-NLS-1$
 					}
 
@@ -739,9 +726,7 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 
 			return getContent(document, new Region(range.offset, range.length), expand, surround);
 
-		} catch (MalformedTreeException exception) {
-			RefactoringCorePlugin.log(exception);
-		} catch (BadLocationException exception) {
+		} catch (MalformedTreeException | BadLocationException exception) {
 			RefactoringCorePlugin.log(exception);
 		}
 		return getPreviewDocument(monitor).get();
@@ -906,28 +891,25 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 			performChangesInSynchronizationContext(document, undoList, preview);
 			return;
 		}
-		
+
 		ITextFileBufferManager fileBufferManager= FileBuffers.getTextFileBufferManager();
-		
+
 		/** The lock for waiting for computation in the UI thread to complete. */
 		final Lock completionLock= new Lock();
 		final BadLocationException[] exception= new BadLocationException[1];
-		Runnable runnable= new Runnable() {
-			@Override
-			public void run() {
-				synchronized (completionLock) {
-					try {
-						performChangesInSynchronizationContext(document, undoList, preview);
-					} catch (BadLocationException e) {
-						exception[0]= e;
-					} finally {
-						completionLock.fDone= true;
-						completionLock.notifyAll();
-					}
+		Runnable runnable= () -> {
+			synchronized (completionLock) {
+				try {
+					performChangesInSynchronizationContext(document, undoList, preview);
+				} catch (BadLocationException e) {
+					exception[0]= e;
+				} finally {
+					completionLock.fDone= true;
+					completionLock.notifyAll();
 				}
 			}
 		};
-		
+
 		synchronized (completionLock) {
 			fileBufferManager.execute(runnable);
 			while (! completionLock.fDone) {
@@ -937,7 +919,7 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 				}
 			}
 		}
-		
+
 		if (exception[0] != null) {
 			throw exception[0];
 		}
@@ -948,15 +930,13 @@ public class MultiStateTextFileChange extends TextEditBasedChange {
 		try {
 			if (document instanceof IDocumentExtension4)
 				session= ((IDocumentExtension4) document).startRewriteSession(DocumentRewriteSessionType.UNRESTRICTED);
-	
-			for (final Iterator<ComposableBufferChange> iterator= fChanges.iterator(); iterator.hasNext();) {
-				final ComposableBufferChange change= iterator.next();
-	
+
+			for (ComposableBufferChange change : fChanges) {
 				final UndoEdit edit= createTextEditProcessor(change, document, undoList != null ? TextEdit.CREATE_UNDO : TextEdit.NONE, preview).performEdits();
 				if (undoList != null)
 					undoList.addFirst(edit);
 			}
-			
+
 		} finally {
 			if (session != null)
 				((IDocumentExtension4) document).stopRewriteSession(session);

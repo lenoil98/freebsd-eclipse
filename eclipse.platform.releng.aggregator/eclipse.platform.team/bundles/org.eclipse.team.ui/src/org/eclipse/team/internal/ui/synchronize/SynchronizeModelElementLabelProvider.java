@@ -83,8 +83,8 @@ public class SynchronizeModelElementLabelProvider extends LabelProvider implemen
 				if (busyFont == null) {
 					Font defaultFont = JFaceResources.getDefaultFont();
 					FontData[] data = defaultFont.getFontData();
-					for (int i = 0; i < data.length; i++) {
-						data[i].setStyle(SWT.ITALIC);
+					for (FontData d : data) {
+						d.setStyle(SWT.ITALIC);
 					}
 					busyFont = new Font(TeamUIPlugin.getStandardDisplay(), data);
 				}
@@ -210,7 +210,7 @@ public class SynchronizeModelElementLabelProvider extends LabelProvider implemen
 
 	@Override
 	public void dispose() {
-        workbenchLabelProvider.dispose();
+		workbenchLabelProvider.dispose();
 		if(busyFont != null) {
 			busyFont.dispose();
 		}

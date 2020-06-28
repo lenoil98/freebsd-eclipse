@@ -15,6 +15,7 @@
 package org.eclipse.search.ui.text;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -152,14 +153,14 @@ public abstract class AbstractTextSearchViewPage extends Page implements ISearch
 			} else {
 				fIsUIUpdateScheduled= false;
 				turnOnDecoration();
-                updateBusyLabel();
-                if (fScheduleEnsureSelection) {
-                    fScheduleEnsureSelection= false;
-                    AbstractTextSearchResult result = getInput();
-                    if (result != null && fViewer.getSelection().isEmpty()) {
-                        navigateNext(true);
-                    }
-                }
+				updateBusyLabel();
+				if (fScheduleEnsureSelection) {
+					fScheduleEnsureSelection= false;
+					AbstractTextSearchResult result = getInput();
+					if (result != null && fViewer.getSelection().isEmpty()) {
+						navigateNext(true);
+					}
+				}
 			}
 			fViewPart.updateLabel();
 			return Status.OK_STATUS;
@@ -210,7 +211,7 @@ public abstract class AbstractTextSearchViewPage extends Page implements ISearch
 	}
 
 	private volatile boolean fIsUIUpdateScheduled= false;
-    private volatile boolean fScheduleEnsureSelection= false;
+	private volatile boolean fScheduleEnsureSelection= false;
 	private static final String KEY_LAYOUT = "org.eclipse.search.resultpage.layout"; //$NON-NLS-1$
 
 	/**
@@ -300,7 +301,7 @@ public abstract class AbstractTextSearchViewPage extends Page implements ISearch
 		fBatchedUpdates = new HashSet<>();
 		fBatchedClearAll= false;
 
-		fListener = e -> handleSearchResultChanged(e);
+		fListener = this::handleSearchResultChanged;
 		fFilterActions= null;
 		fElementLimit= null;
 	}
@@ -606,9 +607,9 @@ public abstract class AbstractTextSearchViewPage extends Page implements ISearch
 
 			@Override
 			public void queryFinished(final ISearchQuery query) {
-                // handle the end of the query in the UIUpdateJob, as ui updates
-                // may not be finished here.
-                postEnsureSelection();
+				// handle the end of the query in the UIUpdateJob, as ui updates
+				// may not be finished here.
+				postEnsureSelection();
 			}
 		};
 	}
@@ -617,10 +618,10 @@ public abstract class AbstractTextSearchViewPage extends Page implements ISearch
 	 * Posts a  UI update to make sure an element is selected.
 	 * @since 3.2
 	 */
-    protected void postEnsureSelection() {
-        fScheduleEnsureSelection= true;
-        scheduleUIUpdate();
-    }
+	protected void postEnsureSelection() {
+		fScheduleEnsureSelection= true;
+		scheduleUIUpdate();
+	}
 
 
 	private void updateBusyLabel() {
@@ -1099,9 +1100,10 @@ public abstract class AbstractTextSearchViewPage extends Page implements ISearch
 
 		int count= 0;
 		Match[] matches= result.getMatches(element);
-		for (int i= 0; i < matches.length; i++) {
-			if (!matches[i].isFiltered())
+		for (Match match : matches) {
+			if (!match.isFiltered()) {
 				count++;
+			}
 		}
 		return count;
 	}
@@ -1244,7 +1246,7 @@ public abstract class AbstractTextSearchViewPage extends Page implements ISearch
 	}
 
 	private synchronized boolean hasMoreUpdates() {
-		return fBatchedClearAll || fBatchedUpdates.size() > 0;
+		return fBatchedClearAll || !fBatchedUpdates.isEmpty();
 	}
 
 	private boolean isQueryRunning() {
@@ -1351,18 +1353,14 @@ public abstract class AbstractTextSearchViewPage extends Page implements ISearch
 	private void collectAllMatches(HashSet<Match> set, Object[] elements) {
 		for (Object element : elements) {
 			Match[] matches = getDisplayedMatches(element);
-			for (Match match : matches) {
-				set.add(match);
-			}
+			Collections.addAll(set, matches);
 		}
 	}
 
 	private void collectAllMatchesBelow(AbstractTextSearchResult result, Set<Match> set, ITreeContentProvider cp, Object[] elements) {
 		for (Object element : elements) {
 			Match[] matches = getDisplayedMatches(element);
-			for (Match match : matches) {
-				set.add(match);
-			}
+			Collections.addAll(set, matches);
 			Object[] children = cp.getChildren(element);
 			collectAllMatchesBelow(result, set, cp, children);
 		}

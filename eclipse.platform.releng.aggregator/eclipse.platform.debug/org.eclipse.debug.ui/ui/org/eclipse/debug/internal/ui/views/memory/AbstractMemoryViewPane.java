@@ -261,9 +261,9 @@ public abstract class AbstractMemoryViewPane implements IMemoryBlockListener, IS
 
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
-		for (int i = 0; i < events.length; i++) {
-			Object source = events[i].getSource();
-			if (events[i].getKind() == DebugEvent.TERMINATE && source instanceof IMemoryBlockRetrieval) {
+		for (DebugEvent event : events) {
+			Object source = event.getSource();
+			if (event.getKind() == DebugEvent.TERMINATE && source instanceof IMemoryBlockRetrieval) {
 				if (isDisposed()) {
 					return;
 				}
@@ -333,8 +333,8 @@ public abstract class AbstractMemoryViewPane implements IMemoryBlockListener, IS
 			// if tab folder is not empty, dipose view tabs
 			CTabItem[] tabs = tabFolder.getItems();
 
-			for (int i = 0; i < tabs.length; i++) {
-				disposeTab(tabs[i]);
+			for (CTabItem tab : tabs) {
+				disposeTab(tab);
 			}
 
 			tabFolder.dispose();
@@ -366,11 +366,6 @@ public abstract class AbstractMemoryViewPane implements IMemoryBlockListener, IS
 		return fPaneId;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.internal.ui.views.memory.IMemoryViewPane#getControl()
-	 */
 	@Override
 	public Control getControl() {
 		return fCanvas;
@@ -389,28 +384,12 @@ public abstract class AbstractMemoryViewPane implements IMemoryBlockListener, IS
 		return fIsDisposed;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.internal.core.memory.IMemoryBlockListener#MemoryBlockAdded
-	 * (org.eclipse.debug.core.model.IMemoryBlock)
-	 */
 	@Override
 	abstract public void memoryBlocksAdded(IMemoryBlock[] memoryBlocks);
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.memory.IMemoryBlockListener#
-	 * MemoryBlockRemoved(org.eclipse.debug.core.model.IMemoryBlock)
-	 */
 	@Override
 	abstract public void memoryBlocksRemoved(final IMemoryBlock[] memoryBlocks);
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.ISelectionListener#selectionChanged(org.eclipse.ui.
-	 * IWorkbenchPart, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	abstract public void selectionChanged(IWorkbenchPart part, ISelection selection);
 
@@ -420,8 +399,8 @@ public abstract class AbstractMemoryViewPane implements IMemoryBlockListener, IS
 	abstract public Object getCurrentSelection();
 
 	/**
-	 * retore the view pane based on current selection from the debug view and
-	 * the memory blocks and renderings currently exist
+	 * restore the view pane based on current selection from the debug view and the
+	 * memory blocks and renderings currently exist
 	 */
 	@Override
 	abstract public void restoreViewPane();

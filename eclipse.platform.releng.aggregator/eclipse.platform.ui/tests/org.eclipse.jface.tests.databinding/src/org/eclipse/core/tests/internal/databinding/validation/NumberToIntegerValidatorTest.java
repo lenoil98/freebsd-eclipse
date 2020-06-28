@@ -18,7 +18,7 @@ import org.eclipse.core.internal.databinding.conversion.NumberToIntegerConverter
 import org.eclipse.core.internal.databinding.validation.NumberToIntegerValidator;
 import org.eclipse.core.internal.databinding.validation.NumberToNumberValidator;
 
-import com.ibm.icu.text.NumberFormat;
+import java.text.NumberFormat;
 
 /**
  * @since 1.1
@@ -28,7 +28,7 @@ public class NumberToIntegerValidatorTest extends
 
 	@Override
 	protected Number doGetOutOfRangeNumber() {
-		return new Long((long) Integer.MAX_VALUE + 1);
+		return Long.valueOf((long) Integer.MAX_VALUE + 1);
 	}
 
 	@Override

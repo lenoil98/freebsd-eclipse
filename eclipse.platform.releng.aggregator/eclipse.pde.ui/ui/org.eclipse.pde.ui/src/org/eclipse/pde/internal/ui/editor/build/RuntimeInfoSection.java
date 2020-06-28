@@ -118,7 +118,7 @@ public class RuntimeInfoSection extends PDESection implements IBuildPropertiesCo
 				if (jarOrderEntry == null)
 					return libraries;
 
-				Vector<IBuildEntry> libList = new Vector<>();
+				ArrayList<org.eclipse.pde.core.build.IBuildEntry> libList = new ArrayList<>();
 				String[] tokens = jarOrderEntry.getTokens();
 				for (String token : tokens) {
 					IBuildEntry entry = build.getEntry(IBuildEntry.JAR_PREFIX + token);
@@ -287,8 +287,6 @@ public class RuntimeInfoSection extends PDESection implements IBuildPropertiesCo
 					if (fragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE)
 						folders.add(fragmentRoot);
 			}
-		} catch (JavaModelException e) {
-			PDEPlugin.logException(e);
 		} catch (CoreException e) {
 			PDEPlugin.logException(e);
 		}
@@ -326,7 +324,7 @@ public class RuntimeInfoSection extends PDESection implements IBuildPropertiesCo
 
 		MenuManager menuMgr = new MenuManager("#PopupMenu"); //$NON-NLS-1$
 		menuMgr.setRemoveAllWhenShown(true);
-		menuMgr.addMenuListener(manager -> fillLibraryContextMenu(manager));
+		menuMgr.addMenuListener(this::fillLibraryContextMenu);
 		fLibraryViewer.getControl().setMenu(menuMgr.createContextMenu(fLibraryViewer.getControl()));
 	}
 
@@ -347,7 +345,7 @@ public class RuntimeInfoSection extends PDESection implements IBuildPropertiesCo
 
 		MenuManager menuMgr = new MenuManager("#PopupMenu"); //$NON-NLS-1$
 		menuMgr.setRemoveAllWhenShown(true);
-		menuMgr.addMenuListener(manager -> fillFolderViewerContextMenu(manager));
+		menuMgr.addMenuListener(this::fillFolderViewerContextMenu);
 		fFolderViewer.getControl().setMenu(menuMgr.createContextMenu(fFolderViewer.getControl()));
 	}
 

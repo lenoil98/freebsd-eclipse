@@ -101,8 +101,7 @@ public class PackagesViewFlatContentProvider extends LogicalPackagesProvider imp
 	 */
 	private IPackageFragment[] getPackageFragments(IPackageFragment[] iPackageFragments) {
 		List<IPackageFragment> list= new ArrayList<>();
-		for (int i= 0; i < iPackageFragments.length; i++) {
-			IPackageFragment fragment= iPackageFragments[i];
+		for (IPackageFragment fragment : iPackageFragments) {
 			IJavaElement el= fragment.getParent();
 			if (el instanceof IPackageFragmentRoot) {
 				IPackageFragmentRoot root= (IPackageFragmentRoot) el;
@@ -160,25 +159,27 @@ public class PackagesViewFlatContentProvider extends LogicalPackagesProvider imp
 		if (element instanceof IPackageFragment) {
 			final IPackageFragment frag= (IPackageFragment) element;
 
-			if (kind == IJavaElementDelta.REMOVED) {
-				removeElement(frag);
-
-			} else if (kind == IJavaElementDelta.ADDED) {
-				addElement(frag);
-
-			} else if (kind == IJavaElementDelta.CHANGED) {
-				//just refresh
-				Object toBeRefreshed= element;
-
-				IPackageFragment pkgFragment= (IPackageFragment) element;
-				LogicalPackage logicalPkg= findLogicalPackage(pkgFragment);
-				//deal with packages that have been filtered and are now visible
-				if (logicalPkg != null)
-					toBeRefreshed= findElementToRefresh(logicalPkg);
-				else
-					toBeRefreshed= findElementToRefresh(pkgFragment);
-
-				postRefresh(toBeRefreshed);
+			switch (kind) {
+				case IJavaElementDelta.REMOVED:
+					removeElement(frag);
+					break;
+				case IJavaElementDelta.ADDED:
+					addElement(frag);
+					break;
+				case IJavaElementDelta.CHANGED:
+					//just refresh
+					Object toBeRefreshed= element;
+					IPackageFragment pkgFragment= (IPackageFragment) element;
+					LogicalPackage logicalPkg= findLogicalPackage(pkgFragment);
+					//deal with packages that have been filtered and are now visible
+					if (logicalPkg != null)
+						toBeRefreshed= findElementToRefresh(logicalPkg);
+					else
+						toBeRefreshed= findElementToRefresh(pkgFragment);
+					postRefresh(toBeRefreshed);
+					break;
+				default:
+					break;
 			}
 			//in this view there will be no children of PackageFragment to refresh
 			return;
@@ -209,9 +210,7 @@ public class PackagesViewFlatContentProvider extends LogicalPackagesProvider imp
 
 
 	private void processAffectedChildren(IJavaElementDelta delta) throws JavaModelException {
-		IJavaElementDelta[] children= delta.getAffectedChildren();
-		for (int i= 0; i < children.length; i++) {
-			IJavaElementDelta elementDelta= children[i];
+		for (IJavaElementDelta elementDelta : delta.getAffectedChildren()) {
 			processDelta(elementDelta);
 		}
 	}

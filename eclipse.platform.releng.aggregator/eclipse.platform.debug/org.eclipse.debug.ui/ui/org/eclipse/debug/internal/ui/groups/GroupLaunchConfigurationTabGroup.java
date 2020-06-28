@@ -19,6 +19,7 @@ package org.eclipse.debug.internal.ui.groups;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,15 +50,11 @@ import org.eclipse.debug.ui.ILaunchConfigurationTab;
 import org.eclipse.debug.ui.ILaunchGroup;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.BaseLabelProvider;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
-import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ICheckStateProvider;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.window.Window;
@@ -134,12 +131,12 @@ public class GroupLaunchConfigurationTabGroup extends AbstractLaunchConfiguratio
 				}
 
 				try {
-	                String key = el.data.getType().getIdentifier();
-	                return DebugPluginImages.getImage(key);
-                } catch (CoreException e) {
-                	Image errorImage = PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJS_ERROR_TSK);
+					String key = el.data.getType().getIdentifier();
+					return DebugPluginImages.getImage(key);
+				} catch (CoreException e) {
+					Image errorImage = PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJS_ERROR_TSK);
 					return errorImage;
-                }
+				}
 			}
 			return null;
 		}
@@ -189,9 +186,6 @@ public class GroupLaunchConfigurationTabGroup extends AbstractLaunchConfiguratio
 
 	static class CheckStateProvider implements ICheckStateProvider {
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.ICheckStateProvider#isChecked(java.lang.Object)
-		 */
 		@Override
 		public boolean isChecked(Object element) {
 			if (element instanceof GroupLaunchElement) {
@@ -200,9 +194,6 @@ public class GroupLaunchConfigurationTabGroup extends AbstractLaunchConfiguratio
 			return false;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.ICheckStateProvider#isGrayed(java.lang.Object)
-		 */
 		@Override
 		public boolean isGrayed(Object element) {
 			return false;
@@ -404,7 +395,7 @@ public class GroupLaunchConfigurationTabGroup extends AbstractLaunchConfiguratio
 						return -1;
 					}
 					GroupLaunchElement el = ((GroupLaunchElement) sel
-					        .getFirstElement());
+							.getFirstElement());
 					return input.indexOf(el);
 				}
 
@@ -450,8 +441,8 @@ public class GroupLaunchConfigurationTabGroup extends AbstractLaunchConfiguratio
 
 				protected boolean isDownEnabled() {
 					final int index = getSingleSelectionIndex();
-	                return (index >= 0) && (index != input.size() - 1);
-                }
+					return (index >= 0) && (index != input.size() - 1);
+				}
 
 				protected boolean isUpEnabled(){
 					return getSingleSelectionIndex() > 0;
@@ -471,12 +462,7 @@ public class GroupLaunchConfigurationTabGroup extends AbstractLaunchConfiguratio
 					updateLaunchConfigurationDialog();
 				}
 			};
-			treeViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-				@Override
-				public void selectionChanged(SelectionChangedEvent event) {
-					buts.updateWidgetEnablement();
-				}
-			});
+			treeViewer.addSelectionChangedListener(event -> buts.updateWidgetEnablement());
 
 			treeViewer.getTree().addSelectionListener(new SelectionAdapter(){
 				@Override
@@ -485,12 +471,9 @@ public class GroupLaunchConfigurationTabGroup extends AbstractLaunchConfiguratio
 				}
 			});
 
-			treeViewer.addCheckStateListener(new ICheckStateListener(){
-				@Override
-				public void checkStateChanged(CheckStateChangedEvent event) {
-					((GroupLaunchElement)event.getElement()).enabled = event.getChecked();
-					updateLaunchConfigurationDialog();
-				}
+			treeViewer.addCheckStateListener(event -> {
+				((GroupLaunchElement)event.getElement()).enabled = event.getChecked();
+				updateLaunchConfigurationDialog();
 			});
 			buts.updateWidgetEnablement();
 			GridData layoutData = new GridData(GridData.GRAB_VERTICAL);
@@ -533,9 +516,6 @@ public class GroupLaunchConfigurationTabGroup extends AbstractLaunchConfiguratio
 			// defaults is empty list
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.ui.AbstractLaunchConfigurationTab#isValid(org.eclipse.debug.core.ILaunchConfiguration)
-		 */
 		@Override
 		public boolean isValid(ILaunchConfiguration launchConfig) {
 			setMessage(null);
@@ -651,9 +631,7 @@ public class GroupLaunchConfigurationTabGroup extends AbstractLaunchConfiguratio
 		}
 		modes = new LinkedHashMap<>();
 		modes.put(GroupLaunchElement.MODE_INHERIT, new InheritModeGroup());
-		Set<ILaunchGroup> sortedGroups = new TreeSet<>((a, b) -> {
-			return a.getLabel().compareTo(b.getLabel());
-		});
+		Set<ILaunchGroup> sortedGroups = new TreeSet<>(Comparator.comparing(ILaunchGroup::getLabel));
 		LaunchConfigurationManager mgr = DebugUIPlugin.getDefault().getLaunchConfigurationManager();
 		sortedGroups.addAll(Arrays.asList(mgr.getLaunchGroups()));
 		for (ILaunchGroup launchGroup : sortedGroups) {

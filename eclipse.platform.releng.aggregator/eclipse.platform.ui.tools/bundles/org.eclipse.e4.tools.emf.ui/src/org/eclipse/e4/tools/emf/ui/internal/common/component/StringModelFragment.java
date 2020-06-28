@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2017 BestSolution.at and others.
+ * Copyright (c) 2010, 2019 BestSolution.at and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -27,7 +27,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.eclipse.core.databinding.observable.list.IObservableList;
-import org.eclipse.core.databinding.property.list.IListProperty;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.emf.xpath.EcoreXPathContextFactory;
 import org.eclipse.e4.emf.xpath.XPathContext;
@@ -36,6 +35,7 @@ import org.eclipse.e4.tools.emf.ui.common.IEditorFeature.FeatureClass;
 import org.eclipse.e4.tools.emf.ui.common.Util;
 import org.eclipse.e4.tools.emf.ui.common.Util.InternalPackage;
 import org.eclipse.e4.tools.emf.ui.common.component.AbstractComponentEditor;
+import org.eclipse.e4.tools.emf.ui.internal.E4Properties;
 import org.eclipse.e4.tools.emf.ui.internal.ResourceProvider;
 import org.eclipse.e4.tools.emf.ui.internal.common.AbstractPickList.PickListFeatures;
 import org.eclipse.e4.tools.emf.ui.internal.common.E4PickList;
@@ -48,6 +48,7 @@ import org.eclipse.e4.ui.model.application.MApplication;
 import org.eclipse.e4.ui.model.application.MApplicationElement;
 import org.eclipse.e4.ui.model.application.impl.ApplicationElementImpl;
 import org.eclipse.e4.ui.model.application.impl.ApplicationPackageImpl;
+import org.eclipse.e4.ui.model.fragment.MModelFragment;
 import org.eclipse.e4.ui.model.fragment.MStringModelFragment;
 import org.eclipse.e4.ui.model.fragment.impl.FragmentPackageImpl;
 import org.eclipse.e4.ui.model.fragment.impl.StringModelFragmentImpl;
@@ -55,10 +56,7 @@ import org.eclipse.e4.ui.model.internal.ModelUtils;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.databinding.EMFDataBindingContext;
-import org.eclipse.emf.databinding.EMFProperties;
 import org.eclipse.emf.databinding.FeaturePath;
-import org.eclipse.emf.databinding.IEMFListProperty;
-import org.eclipse.emf.databinding.edit.EMFEditProperties;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EObject;
@@ -71,7 +69,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.bindings.keys.KeyStroke;
 import org.eclipse.jface.bindings.keys.ParseException;
 import org.eclipse.jface.databinding.swt.IWidgetValueProperty;
-import org.eclipse.jface.databinding.swt.WidgetProperties;
+import org.eclipse.jface.databinding.swt.typed.WidgetProperties;
 import org.eclipse.jface.fieldassist.ContentProposal;
 import org.eclipse.jface.fieldassist.ContentProposalAdapter;
 import org.eclipse.jface.fieldassist.ControlDecoration;
@@ -96,16 +94,13 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-public class StringModelFragment extends AbstractComponentEditor {
+public class StringModelFragment extends AbstractComponentEditor<MStringModelFragment> {
 	private Composite composite;
 	private EMFDataBindingContext context;
 
 	// The selected Container is the class that match the ID.
 	// It can be get from the FindParentReferenceDialog or computed from the ID.
 	private EClass selectedContainer;
-
-	private final IListProperty MODEL_FRAGMENT__ELEMENTS = EMFProperties
-			.list(FragmentPackageImpl.Literals.MODEL_FRAGMENT__ELEMENTS);
 
 	// This is the list of available 'add child' actions depending on selected
 	// values
@@ -135,11 +130,22 @@ public class StringModelFragment extends AbstractComponentEditor {
 	@Override
 	public String getLabel(Object element) {
 
-		if (selectedContainer == null) {
-			return Messages.StringModelFragment_Label;
+		MStringModelFragment modelFragment;
+		if (element instanceof MStringModelFragment) {
+			modelFragment = (MStringModelFragment) element;
 		} else {
-			return Messages.StringModelFragment_LabelFor + selectedContainer.getName();
+			modelFragment = getStringModelFragment();
 		}
+
+		EClass container = findContainerType(modelFragment);
+		String result;
+		if (container == null) {
+			result = Messages.StringModelFragment_Label;
+		} else {
+			result = Messages.StringModelFragment_LabelFor + container.getName();
+		}
+
+		return result;
 	}
 
 	@Override
@@ -177,7 +183,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 			composite = createForm(parent);
 		}
 		selectedContainer = null;
-		getMaster().setValue(object);
+		getMaster().setValue((MStringModelFragment) object);
 		updateChildrenChoice();
 		getEditor().setHeaderTitle(getLabel(null));
 		return composite;
@@ -209,7 +215,6 @@ public class StringModelFragment extends AbstractComponentEditor {
 	 * Element ID. It can be known thanks to the dialog or must be computed from the
 	 * ID value
 	 *
-	 * @return
 	 */
 	public static EClass findContainerType(MStringModelFragment modelFragment) {
 		// we get the StringModelFragment. If not initialized, no search...
@@ -224,7 +229,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 		}
 
 		// known ID for application are directly filtered.
-		if ("xpath:/".equals(parentElementId) || "org.eclipse.e4.legacy.ide.application".equals(parentElementId)) {
+		if ("xpath:/".equals(parentElementId) || "org.eclipse.e4.legacy.ide.application".equals(parentElementId)) { //$NON-NLS-1$//$NON-NLS-2$
 			return ApplicationPackageImpl.eINSTANCE.getApplication();
 		}
 
@@ -232,7 +237,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 		// set... this resource set is cached by Util...
 		ResourceSet resourceSet = Util.getModelElementResources();
 
-		String xpath = parentElementId.startsWith("xpath:") ? parentElementId.substring(6) : null;
+		String xpath = parentElementId.startsWith("xpath:") ? parentElementId.substring(6) : null; //$NON-NLS-1$
 
 		for (final Resource res : resourceSet.getResources()) {
 			final TreeIterator<EObject> it = EcoreUtil.getAllContents(res, true);
@@ -285,7 +290,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 			ControlFactory.createXMIId(parent, this);
 		}
 
-		final IWidgetValueProperty textProp = WidgetProperties.text(SWT.Modify);
+		final IWidgetValueProperty<Text, String> textProp = WidgetProperties.text(SWT.Modify);
 		{
 			final Label l = new Label(parent, SWT.NONE);
 			l.setText(Messages.StringModelFragment_ParentId);
@@ -308,10 +313,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 			gd = new GridData(GridData.FILL_HORIZONTAL);
 			t.setLayoutData(gd);
 			context.bindValue(textProp.observeDelayed(200, t),
-					EMFEditProperties
-					.value(getEditingDomain(),
-							FragmentPackageImpl.Literals.STRING_MODEL_FRAGMENT__PARENT_ELEMENT_ID)
-					.observeDetail(getMaster()));
+					E4Properties.parentElementId(getEditingDomain()).observeDetail(getMaster()));
 
 			// Add a modify listener to control the change of the ID -> Must
 			// force the computation of selectedContainer.
@@ -322,7 +324,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
 					final FindParentReferenceElementDialog dialog = new FindParentReferenceElementDialog(b.getShell(),
-							StringModelFragment.this, (MStringModelFragment) getMaster().getValue(), Messages,
+							StringModelFragment.this, getMaster().getValue(), Messages,
 							getSelectedContainer());
 					dialog.open();
 					selectedContainer = dialog.getSelectedContainer();
@@ -352,9 +354,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 			gd = new GridData(GridData.FILL_HORIZONTAL);
 			featureText.setLayoutData(gd);
 			context.bindValue(textProp.observeDelayed(200, featureText),
-					EMFEditProperties
-					.value(getEditingDomain(), FragmentPackageImpl.Literals.STRING_MODEL_FRAGMENT__FEATURENAME)
-					.observeDetail(getMaster()));
+					E4Properties.featureName(getEditingDomain()).observeDetail(getMaster()));
 
 			// create the decoration for the text component
 			final ControlDecoration deco = new ControlDecoration(featureText, SWT.TOP | SWT.LEFT);
@@ -382,8 +382,8 @@ public class StringModelFragment extends AbstractComponentEditor {
 
 			KeyStroke keyStroke;
 			try {
-				char[] autoactivationChar = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.".toCharArray();
-				keyStroke = KeyStroke.getInstance("Ctrl+Space");
+				char[] autoactivationChar = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.".toCharArray(); //$NON-NLS-1$
+				keyStroke = KeyStroke.getInstance("Ctrl+Space"); //$NON-NLS-1$
 				ContentProposalAdapter adapter = new ContentProposalAdapter(featureText, new TextContentAdapter(),
 						new StringModelFragmentProposalProvider(this, featureText), keyStroke, autoactivationChar);
 				adapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_REPLACE);
@@ -397,7 +397,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
 					final FeatureSelectionDialog dialog = new FeatureSelectionDialog(b.getShell(),
-							getEditingDomain(), (MStringModelFragment) getMaster().getValue(), Messages,
+							getEditingDomain(), getMaster().getValue(), Messages,
 							getSelectedContainer());
 					dialog.open();
 				}
@@ -406,8 +406,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 		}
 
 		ControlFactory.createTextField(parent, Messages.StringModelFragment_PositionInList, getMaster(), context,
-				textProp, EMFEditProperties.value(getEditingDomain(),
-						FragmentPackageImpl.Literals.STRING_MODEL_FRAGMENT__POSITION_IN_LIST));
+				textProp, E4Properties.positionInList(getEditingDomain()));
 
 		// ------------------------------------------------------------
 		{
@@ -480,12 +479,12 @@ public class StringModelFragment extends AbstractComponentEditor {
 					if (Util.referenceIsModelFragmentCompliant(r) && r.getName().startsWith(text.getText())) {
 						String content = r.getName();
 						sb.setLength(0);
-						sb.append(content).append(": ");
+						sb.append(content).append(": "); //$NON-NLS-1$
 						final EClassifier type = ModelUtils.getTypeArgument(this.fragment.getSelectedContainer(),
 								r.getEGenericType());
 						if (r.isMany()) {
 							// List<Container>
-							sb.append("List<").append(type.getName()).append(">");
+							sb.append("List<").append(type.getName()).append(">"); //$NON-NLS-1$ //$NON-NLS-2$
 						} else {
 							// TypeOfTheClass
 							sb.append(type.getName());
@@ -495,7 +494,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 				}
 			}
 
-			Collections.sort(contents, (o1, o2) -> o1[0].compareTo(o2[0]));
+			contents.sort((o1, o2) -> o1[0].compareTo(o2[0]));
 
 			IContentProposal[] contentProposals = new IContentProposal[contents.size()];
 			for (int i = 0; i < contents.size(); i++) {
@@ -506,6 +505,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 
 	}
 
+	@Override
 	public void dispose() {
 		if (composite != null) {
 			composite.dispose();
@@ -535,8 +535,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 
 		// pickList.getList().refresh();
 
-		final IEMFListProperty prop = EMFProperties.list(FragmentPackageImpl.Literals.MODEL_FRAGMENT__ELEMENTS);
-		pickList.getList().setInput(prop.observeDetail(getMaster()));
+		pickList.getList().setInput(E4Properties.elements().observeDetail(getMaster()));
 
 		// Update the possible actions
 		actions.clear();
@@ -551,8 +550,8 @@ public class StringModelFragment extends AbstractComponentEditor {
 	}
 
 	@Override
-	public IObservableList getChildList(Object element) {
-		return MODEL_FRAGMENT__ELEMENTS.observe(element);
+	public IObservableList<?> getChildList(Object element) {
+		return E4Properties.elements().observe((MModelFragment) element);
 	}
 
 	protected void handleAdd(EClass eClass, boolean separator) {
@@ -571,7 +570,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 	public List<Action> getActions(Object element) {
 		final ArrayList<Action> l = new ArrayList<>(super.getActions(element));
 		l.addAll(actions);
-		Collections.sort(l, (o1, o2) -> o1.getText().compareTo(o2.getText()));
+		l.sort((o1, o2) -> o1.getText().compareTo(o2.getText()));
 		return l;
 	}
 
@@ -644,7 +643,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 			// bound to feature name
 
 			// We must manage especially snippets (see bug 531219) No other solution ...
-			if ("snippets".equals(featurename)) {
+			if ("snippets".equals(featurename)) { //$NON-NLS-1$
 				result = new ArrayList<>();
 				for (EClass c : VSnippetsEditor.SNIPPET_CHILDREN) {
 					result.add(new FeatureClass(c.getName(), c));
@@ -690,7 +689,7 @@ public class StringModelFragment extends AbstractComponentEditor {
 
 	// Fix bug 531054 -> This code could be removed when Dialog and WizardDialog
 	// will disappear from model !
-	static private final List<String> excludeNames = Arrays.asList("Dialog", "WizardDialog");
+	static private final List<String> excludeNames = Arrays.asList("Dialog", "WizardDialog"); //$NON-NLS-1$ //$NON-NLS-2$
 
 	// Fix bug 531054 -> This code could be removed when DIalog and WizardDialog
 	// will be definitively removed from code (after 2020).

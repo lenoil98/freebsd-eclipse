@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.compare.internal.patch;
 
+import java.text.MessageFormat;
+
 import org.eclipse.compare.internal.ICompareContextIds;
 import org.eclipse.compare.internal.Utilities;
 import org.eclipse.core.resources.IFile;
@@ -38,8 +40,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.model.WorkbenchContentProvider;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.views.navigator.ResourceComparator;
-
-import com.ibm.icu.text.MessageFormat;
 
 /***
  * This page only shows up if the user is trying to apply
@@ -88,19 +88,21 @@ public class PatchTargetPage extends WizardPage {
 		updateWidgetEnablements();
 
 		Dialog.applyDialogFont(composite);
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, ICompareContextIds.PATCH_INPUT_WIZARD_PAGE);
+		if (PlatformUI.isWorkbenchRunning()) {
+			PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, ICompareContextIds.PATCH_INPUT_WIZARD_PAGE);
+		}
 
 		useWorkspaceAsTarget.addListener(SWT.Selection, event -> {
 			fShowError = true;
-		    if (useWorkspaceAsTarget.getSelection()) {
-		        fPatchTargets.getTree().setEnabled(false);
-		        fPatcher.setTarget(ResourcesPlugin.getWorkspace().getRoot());
-		    } else {
-		    	fPatchTargets.getTree().setEnabled(true);
-		    	fPatcher.setTarget(Utilities.getFirstResource(fPatchTargets.getSelection()));
-		    }
-		    markPreviewPageToRecalucateIfNonWorkspacePatch();
-		    updateWidgetEnablements();
+			if (useWorkspaceAsTarget.getSelection()) {
+				fPatchTargets.getTree().setEnabled(false);
+				fPatcher.setTarget(ResourcesPlugin.getWorkspace().getRoot());
+			} else {
+				fPatchTargets.getTree().setEnabled(true);
+				fPatcher.setTarget(Utilities.getFirstResource(fPatchTargets.getSelection()));
+			}
+			markPreviewPageToRecalucateIfNonWorkspacePatch();
+			updateWidgetEnablements();
 		});
 	}
 
@@ -121,9 +123,6 @@ public class PatchTargetPage extends WizardPage {
 		return button;
 	}
 
-	/* (non-JavaDoc)
-	 * Method declared in IWizardPage.
-	 */
 	@Override
 	public IWizardPage getNextPage() {
 
@@ -154,9 +153,6 @@ public class PatchTargetPage extends WizardPage {
 		return super.getNextPage();
 	}
 
-	/* (non-JavaDoc)
-	 * Method declared in IWizardPage.
-	 */
 	@Override
 	public boolean canFlipToNextPage() {
 		// we can't call getNextPage to determine if flipping is allowed since computing

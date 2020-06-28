@@ -14,8 +14,8 @@
  *******************************************************************************/
 package org.eclipse.ui.internal;
 
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import org.eclipse.core.runtime.Adapters;
 import org.eclipse.core.runtime.IAdaptable;
@@ -26,11 +26,12 @@ import org.eclipse.ui.IElementFactory;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IPersistableElement;
 import org.eclipse.ui.IWorkingSetManager;
+import org.eclipse.ui.IWorkingSetUpdater;
+import org.eclipse.ui.IWorkingSetUpdater2;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.misc.Policy;
 import org.eclipse.ui.internal.registry.WorkingSetDescriptor;
 import org.eclipse.ui.internal.registry.WorkingSetRegistry;
-import org.eclipse.ui.internal.util.Util;
 
 /**
  * A working set holds a number of IAdaptable elements. A working set is
@@ -48,14 +49,11 @@ public class WorkingSet extends AbstractWorkingSet {
 	/**
 	 * Creates a new working set.
 	 *
-	 * @param name
-	 *            the name of the new working set. Should not have leading or
-	 *            trailing whitespace.
-	 * @param label
-	 *            the label of the new working set
-	 * @param elements
-	 *            the content of the new working set. May be empty but not
-	 *            <code>null</code>.
+	 * @param name     the name of the new working set. Should not have leading or
+	 *                 trailing whitespace.
+	 * @param label    the label of the new working set
+	 * @param elements the content of the new working set. May be empty but not
+	 *                 <code>null</code>.
 	 */
 	public WorkingSet(String name, String label, IAdaptable[] elements) {
 		super(name, label);
@@ -65,19 +63,16 @@ public class WorkingSet extends AbstractWorkingSet {
 	/**
 	 * Creates a new working set from a memento.
 	 *
-	 * @param name
-	 *            the name of the new working set. Should not have leading or
-	 *            trailing whitespace.
-	 * @param memento
-	 *            persistence memento containing the elements of the working
-	 *            set.
+	 * @param name    the name of the new working set. Should not have leading or
+	 *                trailing whitespace.
+	 * @param memento persistence memento containing the elements of the working
+	 *                set.
 	 */
 	protected WorkingSet(String name, String label, IMemento memento) {
 		super(name, label);
 		workingSetMemento = memento;
 		if (workingSetMemento != null) {
-			String uniqueId = workingSetMemento
-					.getString(IWorkbenchConstants.TAG_ID);
+			String uniqueId = workingSetMemento.getString(IWorkbenchConstants.TAG_ID);
 			if (uniqueId != null) {
 				setUniqueId(uniqueId);
 			}
@@ -87,8 +82,7 @@ public class WorkingSet extends AbstractWorkingSet {
 	/**
 	 * Tests the receiver and the object for equality
 	 *
-	 * @param object
-	 *            object to compare the receiver to
+	 * @param object object to compare the receiver to
 	 * @return true=the object equals the receiver, the name is the same. false
 	 *         otherwise
 	 */
@@ -99,10 +93,9 @@ public class WorkingSet extends AbstractWorkingSet {
 		}
 		if (object instanceof WorkingSet) {
 			WorkingSet workingSet = (WorkingSet) object;
-			return Util.equals(workingSet.getName(), getName())
-					&& Util.equals(workingSet.getElementsArray(),
-							getElementsArray())
-					&& Util.equals(workingSet.getId(), getId());
+			return Objects.equals(workingSet.getName(), getName())
+					&& Objects.equals(workingSet.getId(), getId())
+					&& Objects.equals(workingSet.getElementsArray(), getElementsArray());
 		}
 		return false;
 	}
@@ -151,55 +144,59 @@ public class WorkingSet extends AbstractWorkingSet {
 	}
 
 	/**
-	 * Recreates the working set elements from the persistence memento.
+	 * Recreates the working set elements from the persistence memento on first working set access.
 	 */
 	@Override
 	void restoreWorkingSet() {
-		IMemento[] itemMementos = workingSetMemento
-				.getChildren(IWorkbenchConstants.TAG_ITEM);
-		final Set items = new HashSet();
+		IWorkingSetUpdater2 updater = getUpdater();
+		IAdaptable[] itemsArray;
+		if (updater != null && updater.isManagingPersistenceOf(this)) {
+			itemsArray = updater.restore(this);
+		} else {
+			itemsArray = restoreFromMemento();
+		}
+		internalSetElements(itemsArray);
+	}
+
+	private IAdaptable[] restoreFromMemento() {
+		IMemento[] itemMementos = workingSetMemento.getChildren(IWorkbenchConstants.TAG_ITEM);
+		Set<IAdaptable> items = new LinkedHashSet<>();
 		for (final IMemento itemMemento : itemMementos) {
-			final String factoryID = itemMemento
-					.getString(IWorkbenchConstants.TAG_FACTORY_ID);
+			final String factoryID = itemMemento.getString(IWorkbenchConstants.TAG_FACTORY_ID);
 
 			if (factoryID == null) {
-				WorkbenchPlugin
-						.log("Unable to restore working set item - no factory ID."); //$NON-NLS-1$
+				WorkbenchPlugin.log("Unable to restore working set item - no factory ID."); //$NON-NLS-1$
 				continue;
 			}
-			final IElementFactory factory = PlatformUI.getWorkbench()
-					.getElementFactory(factoryID);
+			final IElementFactory factory = PlatformUI.getWorkbench().getElementFactory(factoryID);
 			if (factory == null) {
-				WorkbenchPlugin
-						.log("Unable to restore working set item - cannot instantiate factory: " + factoryID); //$NON-NLS-1$
+				WorkbenchPlugin.log("Unable to restore working set item - cannot instantiate factory: " + factoryID); //$NON-NLS-1$
 				continue;
 			}
-			SafeRunner
-					.run(new SafeRunnable(
-							"Unable to restore working set item - exception while invoking factory: " + factoryID) { //$NON-NLS-1$
+			SafeRunner.run(new SafeRunnable(
+					"Unable to restore working set item - exception while invoking factory: " + factoryID) { //$NON-NLS-1$
 
-						@Override
-						public void run() throws Exception {
-							IAdaptable item = factory
-									.createElement(itemMemento);
-							if (item == null) {
-								if (Policy.DEBUG_WORKING_SETS)
-									WorkbenchPlugin
-											.log("Unable to restore working set item - cannot instantiate item: " + factoryID); //$NON-NLS-1$
-
-							} else
-								items.add(item);
+				@Override
+				public void run() throws Exception {
+					IAdaptable item = factory.createElement(itemMemento);
+					if (item == null) {
+						if (Policy.DEBUG_WORKING_SETS) {
+							WorkbenchPlugin
+									.log("Unable to restore working set item - cannot instantiate item: " + factoryID); //$NON-NLS-1$
 						}
-					});
+					} else {
+						items.add(item);
+					}
+				}
+			});
 		}
-		internalSetElements((IAdaptable[]) items.toArray(new IAdaptable[items
-				.size()]));
+		return items.toArray(new IAdaptable[items.size()]);
 	}
 
 	/**
-	 * Implements IPersistableElement. Persist the working set name and working
-	 * set contents. The contents has to be either IPersistableElements or
-	 * provide adapters for it to be persistent.
+	 * Implements IPersistableElement. Persist the working set name and working set
+	 * contents. The contents has to be either IPersistableElements or provide
+	 * adapters for it to be persistent.
 	 *
 	 * @see org.eclipse.ui.IPersistableElement#saveState(IMemento)
 	 */
@@ -214,25 +211,23 @@ public class WorkingSet extends AbstractWorkingSet {
 			memento.putString(IWorkbenchConstants.TAG_LABEL, getLabel());
 			memento.putString(IWorkbenchConstants.TAG_ID, getUniqueId());
 			memento.putString(IWorkbenchConstants.TAG_EDIT_PAGE_ID, editPageId);
-			Iterator iterator = elements.iterator();
-			while (iterator.hasNext()) {
-				IAdaptable adaptable = (IAdaptable) iterator.next();
+			IWorkingSetUpdater2 updater = getUpdater();
+			if (updater != null && updater.isManagingPersistenceOf(this)) {
+				return;
+			}
+			for (IAdaptable adaptable : elements) {
 				final IPersistableElement persistable = Adapters.adapt(adaptable, IPersistableElement.class);
 				if (persistable != null) {
-					final IMemento itemMemento = memento
-							.createChild(IWorkbenchConstants.TAG_ITEM);
+					final IMemento itemMemento = memento.createChild(IWorkbenchConstants.TAG_ITEM);
 
-					itemMemento.putString(IWorkbenchConstants.TAG_FACTORY_ID,
-							persistable.getFactoryId());
-					SafeRunner
-							.run(new SafeRunnable(
-									"Problems occurred while saving persistable item state") { //$NON-NLS-1$
+					itemMemento.putString(IWorkbenchConstants.TAG_FACTORY_ID, persistable.getFactoryId());
+					SafeRunner.run(new SafeRunnable("Problems occurred while saving persistable item state") { //$NON-NLS-1$
 
-								@Override
-								public void run() throws Exception {
-									persistable.saveState(itemMemento);
-								}
-							});
+						@Override
+						public void run() throws Exception {
+							persistable.saveState(itemMemento);
+						}
+					});
 				}
 			}
 		}
@@ -269,16 +264,14 @@ public class WorkingSet extends AbstractWorkingSet {
 	/**
 	 * Return the working set descriptor for this working set.
 	 *
-	 * @param defaultId
-	 *            the default working set type ID to use if this set has no
-	 *            defined type
-	 * @return the descriptor for this working set or <code>null</code> if it
-	 *         cannot be determined
+	 * @param defaultId the default working set type ID to use if this set has no
+	 *                  defined type
+	 * @return the descriptor for this working set or <code>null</code> if it cannot
+	 *         be determined
 	 * @since 3.3
 	 */
 	private WorkingSetDescriptor getDescriptor(String defaultId) {
-		WorkingSetRegistry registry = WorkbenchPlugin.getDefault()
-				.getWorkingSetRegistry();
+		WorkingSetRegistry registry = WorkbenchPlugin.getDefault().getWorkingSetRegistry();
 		String id = getId();
 		if (id == null)
 			id = defaultId;
@@ -290,14 +283,40 @@ public class WorkingSet extends AbstractWorkingSet {
 
 	@Override
 	public IAdaptable[] adaptElements(IAdaptable[] objects) {
-		IWorkingSetManager manager = getManager();
-		if (manager instanceof WorkingSetManager) {
-			WorkingSetDescriptor descriptor = getDescriptor(null);
-			if (descriptor == null || !descriptor.isElementAdapterClassLoaded())
+		WorkingSetManager manager = getWorkingSetManager();
+		if (manager != null) {
+			WorkingSetDescriptor descriptor = getDescriptor();
+			if (descriptor == null || !descriptor.isElementAdapterClassLoaded()) {
 				return objects;
-			return ((WorkingSetManager) manager).getElementAdapter(
-						descriptor).adaptElements(this, objects);
+			}
+			return manager.getElementAdapter(descriptor).adaptElements(this, objects);
 		}
 		return objects;
+	}
+
+	private WorkingSetManager getWorkingSetManager() {
+		IWorkingSetManager manager = getManager();
+		if (manager instanceof WorkingSetManager) {
+			return (WorkingSetManager) manager;
+		}
+		return null;
+	}
+
+	private WorkingSetDescriptor getDescriptor() {
+		return getDescriptor(null);
+	}
+
+	private IWorkingSetUpdater2 getUpdater() {
+		WorkingSetManager manager = getWorkingSetManager();
+		if (manager != null) {
+			WorkingSetDescriptor descriptor = getDescriptor();
+			if (descriptor != null) {
+				IWorkingSetUpdater updater = manager.getUpdater(descriptor);
+				if (updater instanceof IWorkingSetUpdater2) {
+					return (IWorkingSetUpdater2) updater;
+				}
+			}
+		}
+		return null;
 	}
 }

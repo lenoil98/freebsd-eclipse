@@ -208,7 +208,7 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 
 		/**
 		 * Initialize with the given offset, length and highlighting key.
-		 * 
+		 *
 		 * @param offset the offset
 		 * @param length the length
 		 * @param key the highlighting key as returned by
@@ -333,17 +333,16 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 	 */
 	private HighlightedPosition[] createHardcodedPositions() {
 		List<HighlightedPosition> positions= new ArrayList<>();
-		for (int i= 0; i < fHardcodedRanges.length; i++) {
+		for (HighlightedRange[] hardcodedRange : fHardcodedRanges) {
 			HighlightedRange range= null;
 			Highlighting hl= null;
-			for (int j= 0; j < fHardcodedRanges[i].length; j++ ) {
-				hl= getHighlighting(fHardcodedRanges[i][j].getKey());
+			for (HighlightedRange r : hardcodedRange) {
+				hl= getHighlighting(r.getKey());
 				if (hl.isEnabled()) {
-					range= fHardcodedRanges[i][j];
+					range= r;
 					break;
 				}
 			}
-
 			if (range != null)
 				positions.add(fPresenter.createHighlightedPosition(range.getOffset(), range.getLength(), hl));
 		}
@@ -446,8 +445,8 @@ public class SemanticHighlightingManager implements IPropertyChangeListener {
 	 * Dispose the semantic highlightings.
 	 */
 	private void disposeHighlightings() {
-		for (int i= 0, n= fSemanticHighlightings.length; i < n; i++)
-			removeColor(SemanticHighlightings.getColorPreferenceKey(fSemanticHighlightings[i]));
+		for (SemanticHighlighting fSemanticHighlighting : fSemanticHighlightings)
+			removeColor(SemanticHighlightings.getColorPreferenceKey(fSemanticHighlighting));
 
 		fSemanticHighlightings= null;
 		fHighlightings= null;

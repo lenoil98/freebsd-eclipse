@@ -25,7 +25,7 @@ public abstract class FocusCellHighlighter {
 	private SWTFocusCellManager mgr;
 
 	/**
-	 * @param viewer
+	 * @param viewer the attached viewer
 	 */
 	public FocusCellHighlighter(ColumnViewer viewer) {
 		this.viewer = viewer;
@@ -42,8 +42,8 @@ public abstract class FocusCellHighlighter {
 		// Mgr is normally not null because the highlighter is passed
 		// to the SWTFocusCellManager instance
 		if( mgr != null ) {
-		    // Use this method because it ensure that no
-		    // cell update (which might cause scrolling) happens
+			// Use this method because it ensure that no
+			// cell update (which might cause scrolling) happens
 			return mgr._getFocusCell();
 		}
 

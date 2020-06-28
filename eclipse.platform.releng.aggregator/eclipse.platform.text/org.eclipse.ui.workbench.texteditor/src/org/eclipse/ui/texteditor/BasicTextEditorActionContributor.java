@@ -54,7 +54,7 @@ import org.eclipse.ui.part.EditorActionBarContributor;
  * line</li>
  * <li><code>setActiveEditor</code> - extend to react to editor changes</li>
  * </ul>
- * 
+ *
  * @see org.eclipse.ui.texteditor.ITextEditorActionConstants
  */
 public class BasicTextEditorActionContributor extends EditorActionBarContributor {
@@ -292,12 +292,12 @@ public class BasicTextEditorActionContributor extends EditorActionBarContributor
 	 * @since 3.2
 	 */
 	private void addOrInsert(IContributionManager menu, IContributionItem item) {
-	    String id= item.getId();
+		String id= item.getId();
 		if (menu.find(id) == null)
-	    	menu.add(item);
-	    else
-	    	menu.insertAfter(id, item);
-    }
+			menu.add(item);
+		else
+			menu.insertAfter(id, item);
+	}
 
 	@Override
 	public void contributeToStatusLine(IStatusLineManager statusLineManager) {

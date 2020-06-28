@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2017 IBM Corporation and others.
+ * Copyright (c) 2012, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -101,10 +101,12 @@ public class EquinoxBundle implements Bundle, BundleReference {
 				this.headers = headers;
 			}
 
+			@Override
 			public Enumeration<String> elements() {
 				return headers.elements();
 			}
 
+			@Override
 			public String get(Object key) {
 				if (!(key instanceof String))
 					return null;
@@ -139,22 +141,27 @@ public class EquinoxBundle implements Bundle, BundleReference {
 				return result;
 			}
 
+			@Override
 			public boolean isEmpty() {
 				return headers.isEmpty();
 			}
 
+			@Override
 			public Enumeration<String> keys() {
 				return headers.keys();
 			}
 
+			@Override
 			public String put(String key, String value) {
 				return headers.put(key, value);
 			}
 
+			@Override
 			public String remove(Object key) {
 				return headers.remove(key);
 			}
 
+			@Override
 			public int size() {
 				return headers.size();
 			}
@@ -215,7 +222,7 @@ public class EquinoxBundle implements Bundle, BundleReference {
 									SystemBundle.this.getEquinoxContainer().getLogServices().log(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, "Error stopping the framework.", e); //$NON-NLS-1$
 								}
 							}
-						}, "Framework stop"); //$NON-NLS-1$
+						}, "Framework stop - " + getEquinoxContainer().toString()); //$NON-NLS-1$
 						t.start();
 					}
 				} finally {
@@ -239,7 +246,7 @@ public class EquinoxBundle implements Bundle, BundleReference {
 									SystemBundle.this.getEquinoxContainer().getLogServices().log(EquinoxContainer.NAME, FrameworkLogEntry.ERROR, "Error updating the framework.", e); //$NON-NLS-1$
 								}
 							}
-						}, "Framework update"); //$NON-NLS-1$
+						}, "Framework update - " + getEquinoxContainer().toString()); //$NON-NLS-1$
 						t.start();
 					}
 				} finally {
@@ -257,6 +264,7 @@ public class EquinoxBundle implements Bundle, BundleReference {
 			this.init((FrameworkListener[]) null);
 		}
 
+		@Override
 		public void init(FrameworkListener... listeners) throws BundleException {
 			if (listeners != null) {
 				if (getEquinoxContainer().getConfiguration().getDebug().DEBUG_SYSTEM_BUNDLE) {
@@ -279,14 +287,14 @@ public class EquinoxBundle implements Bundle, BundleReference {
 		}
 
 		void addInitFrameworkListeners() {
-			BundleContext context = createBundleContext(false);
+			BundleContext context = createBundleContext();
 			for (FrameworkListener initListener : initListeners) {
 				context.addFrameworkListener(initListener);
 			}
 		}
 
 		void removeInitListeners() {
-			BundleContext context = createBundleContext(false);
+			BundleContext context = createBundleContext();
 			for (FrameworkListener initListener : initListeners) {
 				context.removeFrameworkListener(initListener);
 			}
@@ -713,10 +721,10 @@ public class EquinoxBundle implements Bundle, BundleReference {
 	@Override
 	public BundleContext getBundleContext() {
 		equinoxContainer.checkAdminPermission(this, AdminPermission.CONTEXT);
-		return createBundleContext(true);
+		return createBundleContext();
 	}
 
-	BundleContextImpl createBundleContext(boolean checkPermission) {
+	BundleContextImpl createBundleContext() {
 		if (isFragment()) {
 			// fragments cannot have contexts
 			return null;
@@ -756,15 +764,17 @@ public class EquinoxBundle implements Bundle, BundleReference {
 			if (infos.length == 0)
 				return Collections.emptyMap();
 			Map<X509Certificate, List<X509Certificate>> results = new HashMap<>(infos.length);
-			for (int i = 0; i < infos.length; i++) {
-				if (signersType == SIGNERS_TRUSTED && !infos[i].isTrusted())
+			for (SignerInfo info : infos) {
+				if (signersType == SIGNERS_TRUSTED && !info.isTrusted()) {
 					continue;
-				Certificate[] certs = infos[i].getCertificateChain();
+				}
+				Certificate[] certs = info.getCertificateChain();
 				if (certs == null || certs.length == 0)
 					continue;
 				List<X509Certificate> certChain = new ArrayList<>();
-				for (int j = 0; j < certs.length; j++)
-					certChain.add((X509Certificate) certs[j]);
+				for (Certificate cert : certs) {
+					certChain.add((X509Certificate) cert);
+				}
 				results.put((X509Certificate) certs[0], certChain);
 			}
 			return results;
@@ -989,7 +999,7 @@ public class EquinoxBundle implements Bundle, BundleReference {
 
 	private final void checkValid() {
 		if (module.getState().equals(State.UNINSTALLED))
-			throw new IllegalStateException("Module has been uninstalled."); //$NON-NLS-1$
+			throw new IllegalStateException("Bundle has been uninstalled: " + this); //$NON-NLS-1$
 	}
 
 	public boolean isFragment() {
@@ -997,9 +1007,9 @@ public class EquinoxBundle implements Bundle, BundleReference {
 	}
 
 	void startWorker0() throws BundleException {
-		BundleContextImpl current = createBundleContext(false);
+		BundleContextImpl current = createBundleContext();
 		if (current == null) {
-			throw new BundleException("Unable to create bundle context!"); //$NON-NLS-1$
+			throw new BundleException("Unable to create bundle context! " + this); //$NON-NLS-1$
 		}
 		try {
 			current.start();
@@ -1053,6 +1063,7 @@ public class EquinoxBundle implements Bundle, BundleReference {
 		return equinoxContainer;
 	}
 
+	@Override
 	public String toString() {
 		String name = getSymbolicName();
 		if (name == null)

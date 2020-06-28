@@ -51,6 +51,14 @@ public class DebugUIMessages extends NLS {
 
 	public static String JavaDebugPreferencePage_27;
 
+	public static String JavaDebugPreferencePage_SuspendOnRecurrencePolicy;
+
+	public static String JavaDebugPreferencePage_SuspendOnRecurrencePolicy_Always;
+
+	public static String JavaDebugPreferencePage_SuspendOnRecurrencePolicy_Unconfigured;
+
+	public static String JavaDebugPreferencePage_SuspendOnRecurrencePolicy_OnlyOnce;
+
 	public static String JavaDebugPreferencePage_description;
 	public static String JavaDebugPreferencePage_Enable_hot_code_replace_1;
 	public static String JavaDebugPreferencePage_Alert_me_when_hot_code_replace_fails_1;
@@ -66,6 +74,8 @@ public class DebugUIMessages extends NLS {
 	public static String JavaDebugPreferencePage_Value_must_be_a_valid_integer_greater_than__0__ms_1;
 	public static String JavaDebugPreferencePage_Replace_classfiles_containing_compilation_errors_1;
 	public static String JavaDebugPreferencePage_ShowStepResult_1;
+	public static String JavaDebugPreferencePage_ShowStepResult_local;
+	public static String JavaDebugPreferencePage_ShowStepResult_remote;
 	public static String JavaDebugPreferencePage_ShowStepTimeout_ms_1;
 	public static String JavaDebugPreferencePage_Communication_1;
 	public static String JavaDebugPreferencePage_Debugger__timeout__2;
@@ -179,6 +189,7 @@ public class DebugUIMessages extends NLS {
 	public static String thread_suspended_linebreakpoint;
 	public static String thread_suspended_methodentry;
 	public static String thread_suspended_exception;
+	public static String thread_suspended_exception_uncaught;
 	public static String thread_suspended_methodexit;
 	public static String thread_suspended_fieldmodification;
 	public static String thread_suspended_runtoline;
@@ -194,6 +205,7 @@ public class DebugUIMessages extends NLS {
 	public static String thread_daemon_suspended_linebreakpoint;
 	public static String thread_daemon_suspended_methodentry;
 	public static String thread_daemon_suspended_exception;
+	public static String thread_daemon_suspended_exception_uncaught;
 	public static String thread_daemon_suspended_methodexit;
 	public static String thread_daemon_suspended_fieldmodification;
 	public static String thread_daemon_suspended_runtoline;
@@ -209,6 +221,7 @@ public class DebugUIMessages extends NLS {
 	public static String thread_system_suspended_linebreakpoint;
 	public static String thread_system_suspended_methodentry;
 	public static String thread_system_suspended_exception;
+	public static String thread_system_suspended_exception_uncaught;
 	public static String thread_system_suspended_methodexit;
 	public static String thread_system_suspended_fieldmodification;
 	public static String thread_system_suspended_runtoline;
@@ -224,6 +237,7 @@ public class DebugUIMessages extends NLS {
 	public static String thread_daemon_system_suspended_linebreakpoint;
 	public static String thread_daemon_system_suspended_methodentry;
 	public static String thread_daemon_system_suspended_exception;
+	public static String thread_daemon_system_suspended_exception_uncaught;
 	public static String thread_daemon_system_suspended_methodexit;
 	public static String thread_daemon_system_suspended_fieldmodification;
 	public static String thread_daemon_system_suspended_runtoline;
@@ -311,7 +325,15 @@ public class DebugUIMessages extends NLS {
 	public static String JavaDebugOptionsManager_Method_breakpoint___2;
 	public static String JavaDebugOptionsManager_Watchpoint___3;
 	public static String JavaDebugOptionsManager_0;
+
+	public static String JavaDebugOptionsManager_exceptionRecurrence_dialogTitle;
+	public static String JavaDebugOptionsManager_exceptionRecurrence_dialogMessage;
+	public static String JavaDebugOptionsManager_skip_buttonLabel;
+	public static String JavaDebugOptionsManager_suspend_buttonLabel;
+	public static String JavaDebugOptionsManager_exceptionRecurrence_remember_decision;
+
 	public static String JavaDebugOptionsManager_Line_breakpoint___4;
+
 	public static String JavaBreakpointWorkbenchAdapterFactory_1;
 
 	public static String HotCodeReplaceErrorDialog_0;
@@ -387,4 +409,6 @@ public class DebugUIMessages extends NLS {
 	public static String JavaStepFilterPreferencePage__Use_step_filters;
 
 	public static String JavaVariableLabelProvider_0;
+
+	public static String JavaVariableContentAssistDescription_Keystroke;
 }

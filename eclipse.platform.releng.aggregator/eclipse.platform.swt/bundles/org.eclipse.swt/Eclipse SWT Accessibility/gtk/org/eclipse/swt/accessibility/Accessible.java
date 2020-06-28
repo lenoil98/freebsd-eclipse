@@ -117,7 +117,7 @@ public class Accessible {
 	Accessible (Control control) {
 		super ();
 		this.control = control;
-		long /*int*/ type = OS.G_OBJECT_TYPE (getControlHandle());
+		long type = OS.G_OBJECT_TYPE (getControlHandle());
 		accessibleObject = new AccessibleObject (type, getControlHandle(), this, false);
 		addRelations();
 	}
@@ -264,10 +264,10 @@ public class Accessible {
 	 * @since 3.7
 	 */
 	public void addAccessibleEditableTextListener(AccessibleEditableTextListener listener) {
-	    checkWidget();
-	    if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		checkWidget();
+		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		if (accessibleEditableTextListeners == null) accessibleEditableTextListeners = new ArrayList<>();
-	    accessibleEditableTextListeners.add(listener);
+		accessibleEditableTextListeners.add(listener);
 	}
 
 	/**
@@ -479,8 +479,8 @@ public class Accessible {
 
 	AccessibleObject getAccessibleObject () {
 		if (accessibleObject == null) {
-			long /*int*/ widget = this.getControlHandle();
-			long /*int*/ type = OS.G_OBJECT_TYPE (widget);
+			long widget = this.getControlHandle();
+			long type = OS.G_OBJECT_TYPE (widget);
 			if (parent == null) {
 				accessibleObject = new AccessibleObject (type, widget, this, false);
 			} else {
@@ -491,14 +491,14 @@ public class Accessible {
 		return accessibleObject;
 	}
 
-	long /*int*/ getControlHandle () {
-		long /*int*/ result = control.handle;
+	long getControlHandle () {
+		long result = control.handle;
 		if (control instanceof Label) {
-			long /*int*/ list = GTK.gtk_container_get_children (result);
+			long list = GTK.gtk_container_get_children (result);
 			if (list != 0) {
-				long /*int*/ temp = list;
+				long temp = list;
 				while (temp != 0) {
-					long /*int*/ widget = OS.g_list_data( temp);
+					long widget = OS.g_list_data( temp);
 					if (GTK.gtk_widget_get_visible (widget)) {
 						result = widget;
 						break;
@@ -553,8 +553,9 @@ public class Accessible {
 
 	void release () {
 		if (children != null) {
-			for (int i = 0; i < children.size(); i++) {
-				Accessible child = children.get(i);
+			List<Accessible> temp = new ArrayList<>(children);
+			for (int i = 0; i < temp.size(); i++) {
+				Accessible child = temp.get(i);
 				child.dispose();
 			}
 		}
@@ -710,12 +711,12 @@ public class Accessible {
 	 * @since 3.7
 	 */
 	public void removeAccessibleEditableTextListener(AccessibleEditableTextListener listener) {
-	    checkWidget();
-	    if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	    if (accessibleEditableTextListeners != null) {
-	    	accessibleEditableTextListeners.remove(listener);
+		checkWidget();
+		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (accessibleEditableTextListeners != null) {
+			accessibleEditableTextListeners.remove(listener);
 			if (accessibleEditableTextListeners.isEmpty()) accessibleEditableTextListeners = null;
-	    }
+		}
 	}
 
 	/**

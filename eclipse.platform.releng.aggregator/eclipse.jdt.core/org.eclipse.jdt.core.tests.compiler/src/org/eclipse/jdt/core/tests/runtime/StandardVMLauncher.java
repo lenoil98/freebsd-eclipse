@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -91,6 +91,7 @@ public String getBatchFileName() {
 /**
  * @see LocalVMLauncher#getCommandLine
  */
+@Override
 public String[] getCommandLine() {
 	Vector commandLine= new Vector();
 
@@ -112,8 +113,10 @@ public String[] getCommandLine() {
 
 	long vmVersion = Util.getMajorMinorVMVersion();
 	if (vmVersion != -1) {
-		if (vmVersion >= ClassFileConstants.JDK1_6) {
+		if (vmVersion < ClassFileConstants.JDK13) { // FailOverToOldVerifier deprecated from 13
 			commandLine.addElement("-XX:-FailOverToOldVerifier");
+		}
+		if (vmVersion >= ClassFileConstants.JDK1_6) {
 			commandLine.addElement("-Xverify:all");
 		}
 		if (vmVersion >= ClassFileConstants.JDK1_7) {

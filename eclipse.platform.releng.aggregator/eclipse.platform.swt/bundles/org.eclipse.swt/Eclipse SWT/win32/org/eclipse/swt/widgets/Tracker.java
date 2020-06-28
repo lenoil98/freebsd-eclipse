@@ -48,12 +48,12 @@ public class Tracker extends Widget {
 	boolean tracking, cancelled, stippled;
 	Rectangle [] rectangles = new Rectangle [0], proportions = rectangles;
 	Rectangle bounds;
-	long /*int*/ resizeCursor;
+	long resizeCursor;
 	Cursor clientCursor;
 	int cursorOrientation = SWT.NONE;
 	boolean inEvent = false;
 	boolean drawn;
-	long /*int*/ hwndTransparent, hwndOpaque, oldTransparentProc, oldOpaqueProc;
+	long hwndTransparent, hwndOpaque, oldTransparentProc, oldOpaqueProc;
 	int oldX, oldY;
 
 	/*
@@ -207,7 +207,7 @@ Point adjustMoveCursor () {
 	pt.x = newX;  pt.y = newY;
 	/*
 	 * Convert to screen coordinates iff needed
- 	 */
+	 */
 	if (parent != null) {
 		OS.ClientToScreen (parent.handle, pt);
 	}
@@ -250,7 +250,7 @@ Point adjustResizeCursor () {
 	* the appropriate resize cursor.
 	*/
 	if (clientCursor == null) {
-		long /*int*/ newCursor = 0;
+		long newCursor = 0;
 		switch (cursorOrientation) {
 			case SWT.UP:
 				newCursor = OS.LoadCursor (0, OS.IDC_SIZENS);
@@ -361,8 +361,7 @@ void drawRectangles (Rectangle [] rects, boolean stippled) {
 	if (hwndOpaque != 0) {
 		RECT rect1 = new RECT();
 		int bandWidth = stippled ? 3 : 1;
-		for (int i = 0; i < rects.length; i++) {
-			Rectangle rect = rects[i];
+		for (Rectangle rect : rects) {
 			rect1.left = rect.x - bandWidth;
 			rect1.top = rect.y - bandWidth;
 			rect1.right = rect.x + rect.width + bandWidth * 2;
@@ -373,9 +372,9 @@ void drawRectangles (Rectangle [] rects, boolean stippled) {
 		return;
 	}
 	int bandWidth = 1;
-	long /*int*/ hwndTrack = parent == null ? OS.GetDesktopWindow () : parent.handle;
-	long /*int*/ hDC = OS.GetDCEx (hwndTrack, 0, OS.DCX_CACHE);
-	long /*int*/ hBitmap = 0, hBrush = 0, oldBrush = 0;
+	long hwndTrack = parent == null ? OS.GetDesktopWindow () : parent.handle;
+	long hDC = OS.GetDCEx (hwndTrack, 0, OS.DCX_CACHE);
+	long hBitmap = 0, hBrush = 0, oldBrush = 0;
 	if (stippled) {
 		bandWidth = 3;
 		byte [] bits = {-86, 0, 85, 0, -86, 0, 85, 0, -86, 0, 85, 0, -86, 0, 85, 0};
@@ -383,8 +382,7 @@ void drawRectangles (Rectangle [] rects, boolean stippled) {
 		hBrush = OS.CreatePatternBrush (hBitmap);
 		oldBrush = OS.SelectObject (hDC, hBrush);
 	}
-	for (int i=0; i<rects.length; i++) {
-		Rectangle rect = rects [i];
+	for (Rectangle rect : rects) {
 		OS.PatBlt (hDC, rect.x, rect.y, rect.width, bandWidth, OS.PATINVERT);
 		OS.PatBlt (hDC, rect.x, rect.y + bandWidth, bandWidth, rect.height - (bandWidth * 2), OS.PATINVERT);
 		OS.PatBlt (hDC, rect.x + rect.width - bandWidth, rect.y + bandWidth, bandWidth, rect.height - (bandWidth * 2), OS.PATINVERT);
@@ -524,8 +522,7 @@ public boolean open () {
 		OS.SetLayeredWindowAttributes (hwndOpaque, 0xFFFFFF, (byte)0, OS.LWA_COLORKEY | OS.LWA_ALPHA);
 		drawn = false;
 		newProc = new Callback (this, "transparentProc", 4); //$NON-NLS-1$
-		long /*int*/ newProcAddress = newProc.getAddress ();
-		if (newProcAddress == 0) error (SWT.ERROR_NO_MORE_CALLBACKS);
+		long newProcAddress = newProc.getAddress ();
 		oldTransparentProc = OS.GetWindowLongPtr (hwndTransparent, OS.GWLP_WNDPROC);
 		OS.SetWindowLongPtr (hwndTransparent, OS.GWLP_WNDPROC, newProcAddress);
 		oldOpaqueProc = OS.GetWindowLongPtr (hwndOpaque, OS.GWLP_WNDPROC);
@@ -553,8 +550,7 @@ public boolean open () {
 				OS.GetModuleHandle (null),
 				null);
 			newProc = new Callback (this, "transparentProc", 4); //$NON-NLS-1$
-			long /*int*/ newProcAddress = newProc.getAddress ();
-			if (newProcAddress == 0) error (SWT.ERROR_NO_MORE_CALLBACKS);
+			long newProcAddress = newProc.getAddress ();
 			oldTransparentProc = OS.GetWindowLongPtr (hwndTransparent, OS.GWLP_WNDPROC);
 			OS.SetWindowLongPtr (hwndTransparent, OS.GWLP_WNDPROC, newProcAddress);
 			OS.ShowWindow (hwndTransparent, OS.SW_SHOWNOACTIVATE);
@@ -745,8 +741,7 @@ void resizeRectangles (int xChange, int yChange) {
 			xChange -= bounds.width;
 			bounds.width = 0;
 			if (proportions.length > 1) {
-				for (int i = 0; i < proportions.length; i++) {
-					Rectangle proportion = proportions [i];
+				for (Rectangle proportion : proportions) {
 					proportion.x = 100 - proportion.x - proportion.width;
 				}
 			}
@@ -759,8 +754,7 @@ void resizeRectangles (int xChange, int yChange) {
 			xChange += bounds.width;
 			bounds.width = 0;
 			if (proportions.length > 1) {
-				for (int i = 0; i < proportions.length; i++) {
-					Rectangle proportion = proportions [i];
+				for (Rectangle proportion : proportions) {
 					proportion.x = 100 - proportion.x - proportion.width;
 				}
 			}
@@ -775,8 +769,7 @@ void resizeRectangles (int xChange, int yChange) {
 			yChange -= bounds.height;
 			bounds.height = 0;
 			if (proportions.length > 1) {
-				for (int i = 0; i < proportions.length; i++) {
-					Rectangle proportion = proportions [i];
+				for (Rectangle proportion : proportions) {
 					proportion.y = 100 - proportion.y - proportion.height;
 				}
 			}
@@ -789,8 +782,7 @@ void resizeRectangles (int xChange, int yChange) {
 			yChange += bounds.height;
 			bounds.height = 0;
 			if (proportions.length > 1) {
-				for (int i = 0; i < proportions.length; i++) {
-					Rectangle proportion = proportions [i];
+				for (Rectangle proportion : proportions) {
 					proportion.y = 100 - proportion.y - proportion.height;
 				}
 			}
@@ -891,8 +883,8 @@ public void setStippled (boolean stippled) {
 	this.stippled = stippled;
 }
 
-long /*int*/ transparentProc (long /*int*/ hwnd, long /*int*/ msg, long /*int*/ wParam, long /*int*/ lParam) {
-	switch ((int)/*64*/msg) {
+long transparentProc (long hwnd, long msg, long wParam, long lParam) {
+	switch ((int)msg) {
 		/*
 		* We typically do not want to answer that the transparent window is
 		* transparent to hits since doing so negates the effect of having it
@@ -918,9 +910,9 @@ long /*int*/ transparentProc (long /*int*/ hwnd, long /*int*/ msg, long /*int*/ 
 		case OS.WM_PAINT:
 			if (hwndOpaque == hwnd) {
 				PAINTSTRUCT ps = new PAINTSTRUCT();
-				long /*int*/ hDC = OS.BeginPaint (hwnd, ps);
-				long /*int*/ hBitmap = 0, hBrush = 0, oldBrush = 0;
-				long /*int*/ transparentBrush = OS.CreateSolidBrush(0xFFFFFF);
+				long hDC = OS.BeginPaint (hwnd, ps);
+				long hBitmap = 0, hBrush = 0, oldBrush = 0;
+				long transparentBrush = OS.CreateSolidBrush(0xFFFFFF);
 				oldBrush = OS.SelectObject (hDC, transparentBrush);
 				OS.PatBlt (hDC, ps.left, ps.top, ps.right - ps.left, ps.bottom - ps.top, OS.PATCOPY);
 				OS.SelectObject (hDC, oldBrush);
@@ -936,10 +928,8 @@ long /*int*/ transparentProc (long /*int*/ hwnd, long /*int*/ msg, long /*int*/ 
 				} else {
 					oldBrush = OS.SelectObject (hDC, OS.GetStockObject(OS.BLACK_BRUSH));
 				}
-				Rectangle[] rects = this.rectangles;
 				RECT rect1 = new RECT ();
-				for (int i=0; i<rects.length; i++) {
-					Rectangle rect = rects [i];
+				for (Rectangle rect : this.rectangles) {
 					rect1.left = rect.x;
 					rect1.top  = rect.y;
 					rect1.right = rect.x + rect.width;
@@ -965,7 +955,7 @@ long /*int*/ transparentProc (long /*int*/ hwnd, long /*int*/ msg, long /*int*/ 
 				return 0;
 			}
 	}
-	return OS.CallWindowProc (hwnd == hwndTransparent ? oldTransparentProc : oldOpaqueProc, hwnd, (int)/*64*/msg, wParam, lParam);
+	return OS.CallWindowProc (hwnd == hwndTransparent ? oldTransparentProc : oldOpaqueProc, hwnd, (int)msg, wParam, lParam);
 }
 
 void update () {
@@ -980,13 +970,13 @@ void update () {
 }
 
 @Override
-LRESULT wmKeyDown (long /*int*/ hwnd, long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmKeyDown (long hwnd, long wParam, long lParam) {
 	LRESULT result = super.wmKeyDown (hwnd, wParam, lParam);
 	if (result != null) return result;
 	boolean isMirrored = parent != null && (parent.style & SWT.MIRRORED) != 0;
 	int stepSize = OS.GetKeyState (OS.VK_CONTROL) < 0 ? STEPSIZE_SMALL : STEPSIZE_LARGE;
 	int xChange = 0, yChange = 0;
-	switch ((int)/*64*/wParam) {
+	switch ((int)wParam) {
 		case OS.VK_ESCAPE:
 			cancelled = true;
 			tracking = false;
@@ -1114,7 +1104,7 @@ LRESULT wmKeyDown (long /*int*/ hwnd, long /*int*/ wParam, long /*int*/ lParam) 
 }
 
 @Override
-LRESULT wmSysKeyDown (long /*int*/ hwnd, long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmSysKeyDown (long hwnd, long wParam, long lParam) {
 	LRESULT result = super.wmSysKeyDown (hwnd, wParam, lParam);
 	if (result != null) return result;
 	cancelled = true;
@@ -1122,7 +1112,7 @@ LRESULT wmSysKeyDown (long /*int*/ hwnd, long /*int*/ wParam, long /*int*/ lPara
 	return result;
 }
 
-LRESULT wmMouse (int message, long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmMouse (int message, long wParam, long lParam) {
 	boolean isMirrored = parent != null && (parent.style & SWT.MIRRORED) != 0;
 	int newPos = OS.GetMessagePos ();
 	int newX = OS.GET_X_LPARAM (newPos);
@@ -1139,9 +1129,9 @@ LRESULT wmMouse (int message, long /*int*/ wParam, long /*int*/ lParam) {
 		event.setLocationInPixels(newX, newY);
 		if ((style & SWT.RESIZE) != 0) {
 			if (isMirrored) {
-			   resizeRectangles (oldX - newX, newY - oldY);
+				resizeRectangles (oldX - newX, newY - oldY);
 			} else {
-			   resizeRectangles (newX - oldX, newY - oldY);
+				resizeRectangles (newX - oldX, newY - oldY);
 			}
 			inEvent = true;
 			sendEvent (SWT.Resize, event);

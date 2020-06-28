@@ -18,13 +18,11 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.examples.pessimistic.PessimisticFilesystemProvider;
 
 /**
- * Performs an uncheck out on the selected resources.  If a folder is 
+ * Performs an uncheck out on the selected resources.  If a folder is
  * selected all of its children are recursively unchecked out.
  */
 public class UncheckOutAction extends CheckInAction {
-	/**
-	 * @see org.eclipse.team.examples.pessimistic.ui.SourceManagementAction#manageResources(PessimisticFilesystemProvider, IResource[], IProgressMonitor)
-	 */
+	@Override
 	protected void manageResources(PessimisticFilesystemProvider provider, IResource[] resources, IProgressMonitor monitor) {
 		provider.uncheckout(resources, monitor);
 	}

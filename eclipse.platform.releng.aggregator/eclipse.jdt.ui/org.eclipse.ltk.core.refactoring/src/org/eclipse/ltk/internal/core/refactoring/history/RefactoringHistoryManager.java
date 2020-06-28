@@ -28,10 +28,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -115,16 +115,15 @@ public final class RefactoringHistoryManager {
 	 */
 	public static void checkArgumentMap(final Map<String, String> arguments) throws CoreException {
 		Assert.isNotNull(arguments);
-		for (final Iterator<? extends Entry<?, ?>> iterator= arguments.entrySet().iterator(); iterator.hasNext();) {
-			final Entry<?, ?> entry= iterator.next();
+		for (Entry<?, ?> entry : arguments.entrySet()) {
 			if (entry.getKey() instanceof String) {
 				final String string= (String) entry.getKey();
 				final char[] characters= string.toCharArray();
 				if (characters.length == 0) {
 					throw new CoreException(new Status(IStatus.ERROR, RefactoringCore.ID_PLUGIN, IRefactoringCoreStatusCodes.REFACTORING_HISTORY_FORMAT_ERROR, RefactoringCoreMessages.RefactoringHistoryManager_empty_argument, null));
 				}
-				for (int index= 0; index < characters.length; index++) {
-					if (Character.isWhitespace(characters[index]))
+				for (char character : characters) {
+					if (Character.isWhitespace(character))
 						throw new CoreException(new Status(IStatus.ERROR, RefactoringCore.ID_PLUGIN, IRefactoringCoreStatusCodes.REFACTORING_HISTORY_FORMAT_ERROR, RefactoringCoreMessages.RefactoringHistoryManager_whitespace_argument_key, null));
 				}
 			} else {
@@ -157,7 +156,7 @@ public final class RefactoringHistoryManager {
 	public static String escapeString(final String string) {
 		if (string.indexOf(DELIMITER_COMPONENT) < 0) {
 			final int length= string.length();
-			final StringBuffer buffer= new StringBuffer(length + 16);
+			final StringBuilder buffer= new StringBuilder(length + 16);
 			for (int index= 0; index < length; index++) {
 				final char character= string.charAt(index);
 				if (DELIMITER_COMPONENT == character)
@@ -214,8 +213,7 @@ public final class RefactoringHistoryManager {
 			if (!info.isDirectory() && info.exists() && store.getName().equalsIgnoreCase(RefactoringHistoryService.NAME_INDEX_FILE)) {
 				try (InputStream stream= store.openInputStream(EFS.NONE, new SubProgressMonitor(monitor, 1, SubProgressMonitor.SUPPRESS_SUBTASK_LABEL))) {
 					final RefactoringDescriptorProxy[] proxies= readRefactoringDescriptorProxies(stream, project, start, end);
-					for (int index= 0; index < proxies.length; index++)
-						collection.add(proxies[index]);
+					collection.addAll(Arrays.asList(proxies));
 					monitor.worked(1);
 				} catch (IOException exception) {
 					throw createCoreException(exception);
@@ -230,8 +228,9 @@ public final class RefactoringHistoryManager {
 			final IProgressMonitor subMonitor= new SubProgressMonitor(monitor, 12);
 			try {
 				subMonitor.beginTask(task, stores.length);
-				for (int index= 0; index < stores.length; index++)
-					readRefactoringDescriptorProxies(stores[index], project, collection, start, end, new SubProgressMonitor(subMonitor, 1), task);
+				for (IFileStore s : stores) {
+					readRefactoringDescriptorProxies(s, project, collection, start, end, new SubProgressMonitor(subMonitor, 1), task);
+				}
 			} finally {
 				subMonitor.done();
 			}
@@ -314,8 +313,7 @@ public final class RefactoringHistoryManager {
 		try {
 			monitor.beginTask(RefactoringCoreMessages.RefactoringHistoryService_retrieving_history, 1);
 			final RefactoringDescriptor[] results= new RefactoringSessionReader(true, null).readSession(new InputSource(new BufferedInputStream(stream))).getRefactorings();
-			for (int index= 0; index < results.length; index++)
-				collection.add(results[index]);
+			Collections.addAll(collection, results);
 		} finally {
 			monitor.done();
 		}
@@ -345,15 +343,12 @@ public final class RefactoringHistoryManager {
 				final IProgressMonitor subMonitor= new SubProgressMonitor(monitor, 1, SubProgressMonitor.SUPPRESS_SUBTASK_LABEL);
 				try {
 					subMonitor.beginTask(RefactoringCoreMessages.RefactoringHistoryService_updating_history, stores.length);
-					for (int index= 0; index < stores.length; index++) {
-						final IFileInfo current= stores[index].fetchInfo(EFS.NONE, new SubProgressMonitor(subMonitor, 1, SubProgressMonitor.SUPPRESS_SUBTASK_LABEL));
+					for (IFileStore s : stores) {
+						final IFileInfo current= s.fetchInfo(EFS.NONE, new SubProgressMonitor(subMonitor, 1, SubProgressMonitor.SUPPRESS_SUBTASK_LABEL));
 						if (current.isDirectory()) {
-							final char[] characters= stores[index].getName().toCharArray();
-							for (int offset= 0; offset < characters.length; offset++) {
-								if (Character.isDigit(characters[offset]))
+							for (char character : s.getName().toCharArray()) {
+								if (Character.isDigit(character))
 									return;
-								else
-									continue;
 							}
 						}
 					}
@@ -377,18 +372,7 @@ public final class RefactoringHistoryManager {
 	 *            the refactoring descriptors
 	 */
 	public static void sortRefactoringDescriptorsAscending(final RefactoringDescriptor[] descriptors) {
-		Arrays.sort(descriptors, new Comparator<RefactoringDescriptor>() {
-
-			@Override
-			public int compare(RefactoringDescriptor first, RefactoringDescriptor second) {
-				long delta= first.getTimeStamp() - second.getTimeStamp();
-				if (delta > 0)
-					return 1;
-				else if (delta < 0)
-					return -1;
-				return 0;
-			}
-		});
+		Arrays.sort(descriptors, Comparator.comparing(RefactoringDescriptor::getTimeStamp));
 	}
 
 	/**
@@ -399,18 +383,7 @@ public final class RefactoringHistoryManager {
 	 *            the refactoring descriptor proxies
 	 */
 	public static void sortRefactoringDescriptorsAscending(final RefactoringDescriptorProxy[] proxies) {
-		Arrays.sort(proxies, new Comparator<RefactoringDescriptorProxy>() {
-
-			@Override
-			public int compare(RefactoringDescriptorProxy first, RefactoringDescriptorProxy second) {
-				long delta= first.getTimeStamp() - second.getTimeStamp();
-				if (delta > 0)
-					return 1;
-				else if (delta < 0)
-					return -1;
-				return 0;
-			}
-		});
+		Arrays.sort(proxies, Comparator.comparing(RefactoringDescriptorProxy::getTimeStamp));
 	}
 
 	/**
@@ -421,18 +394,7 @@ public final class RefactoringHistoryManager {
 	 *            the refactoring descriptor proxies
 	 */
 	public static void sortRefactoringDescriptorsDescending(final RefactoringDescriptorProxy[] proxies) {
-		Arrays.sort(proxies, new Comparator<RefactoringDescriptorProxy>() {
-
-			@Override
-			public int compare(RefactoringDescriptorProxy first, RefactoringDescriptorProxy second) {
-				long delta= second.getTimeStamp() - first.getTimeStamp();
-				if (delta > 0)
-					return 1;
-				else if (delta < 0)
-					return -1;
-				return 0;
-			}
-		});
+		Arrays.sort(proxies, Comparator.comparing(RefactoringDescriptorProxy::getTimeStamp).reversed());
 	}
 
 	/**
@@ -445,7 +407,7 @@ public final class RefactoringHistoryManager {
 	 */
 	public static IPath stampToPath(final long stamp) {
 		fgCalendar.setTimeInMillis(stamp);
-		final StringBuffer buffer= new StringBuffer(256);
+		final StringBuilder buffer= new StringBuilder(256);
 		buffer.append(fgCalendar.get(Calendar.YEAR));
 		buffer.append(IPath.SEPARATOR);
 		buffer.append(fgCalendar.get(Calendar.MONTH) + 1);
@@ -476,8 +438,7 @@ public final class RefactoringHistoryManager {
 				final Map<String, String> arguments= getArgumentMap(descriptor);
 				if (arguments != null) {
 					checkArgumentMap(arguments);
-					for (final Iterator<Entry<String, String>> iterator= arguments.entrySet().iterator(); iterator.hasNext();) {
-						final Entry<String, String> entry= iterator.next();
+					for (Entry<String, String> entry : arguments.entrySet()) {
 						transformer.createArgument(entry.getKey(), entry.getValue());
 					}
 				}
@@ -500,7 +461,7 @@ public final class RefactoringHistoryManager {
 	public static String unescapeString(final String string) {
 		if (string.indexOf(DELIMITER_COMPONENT) < 0) {
 			final int length= string.length();
-			final StringBuffer buffer= new StringBuffer(length);
+			final StringBuilder buffer= new StringBuilder(length);
 			for (int index= 0; index < length; index++) {
 				final char character= string.charAt(index);
 				if (DELIMITER_COMPONENT == character) {
@@ -566,12 +527,12 @@ public final class RefactoringHistoryManager {
 	 *             if an input/output error occurs
 	 */
 	public static void writeRefactoringDescriptorProxies(final OutputStream stream, final RefactoringDescriptorProxy[] proxies) throws IOException {
-		final StringBuffer buffer= new StringBuffer(proxies.length * 64);
+		final StringBuilder buffer= new StringBuilder(proxies.length * 64);
 		sortRefactoringDescriptorsAscending(proxies);
-		for (int index= 0; index < proxies.length; index++) {
-			buffer.append(proxies[index].getTimeStamp());
+		for (RefactoringDescriptorProxy proxy : proxies) {
+			buffer.append(proxy.getTimeStamp());
 			buffer.append(DELIMITER_COMPONENT);
-			buffer.append(escapeString(proxies[index].getDescription()));
+			buffer.append(escapeString(proxy.getDescription()));
 			buffer.append(DELIMITER_ENTRY);
 		}
 		stream.write(buffer.toString().getBytes(IRefactoringSerializationConstants.OUTPUT_ENCODING));
@@ -635,7 +596,7 @@ public final class RefactoringHistoryManager {
 		}
 
 		private void startTag(Element element, boolean hasChildren) {
-			StringBuffer sb= new StringBuffer();
+			StringBuilder sb= new StringBuilder();
 			sb.append("<"); //$NON-NLS-1$
 			sb.append(element.getTagName());
 			NamedNodeMap attributes= element.getAttributes();
@@ -652,14 +613,14 @@ public final class RefactoringHistoryManager {
 		}
 
 		private void endTag(Element element) {
-			StringBuffer sb= new StringBuffer();
+			StringBuilder sb= new StringBuilder();
 			sb.append("</"); //$NON-NLS-1$
 			sb.append(element.getNodeName());
 			sb.append(">"); //$NON-NLS-1$
 			print(sb.toString());
 	}
 
-		private static void appendEscapedChar(StringBuffer buffer, char c) {
+		private static void appendEscapedChar(StringBuilder buffer, char c) {
 			String replacement= getReplacement(c);
 			if (replacement != null) {
 				buffer.append('&');
@@ -671,9 +632,9 @@ public final class RefactoringHistoryManager {
 		}
 
 		private static String getEscaped(String s) {
-			StringBuffer result= new StringBuffer(s.length() + 10);
-			for (int i= 0; i < s.length(); ++i) {
-				appendEscapedChar(result, s.charAt(i));
+			StringBuilder result= new StringBuilder(s.length() + 10);
+			for (char c : s.toCharArray()) {
+				appendEscapedChar(result, c);
 			}
 			return result.toString();
 		}
@@ -725,8 +686,7 @@ public final class RefactoringHistoryManager {
 		final RefactoringDescriptor[] descriptors= descriptor.getRefactorings();
 		try {
 			transformer.beginSession(descriptor.getComment(), descriptor.getVersion());
-			for (int index= 0; index < descriptors.length; index++) {
-				final RefactoringDescriptor current= descriptors[index];
+			for (RefactoringDescriptor current : descriptors) {
 				if (current != null) {
 					try {
 						long stamp= stamps ? current.getTimeStamp() : -1;
@@ -734,8 +694,7 @@ public final class RefactoringHistoryManager {
 						final Map<String, String> arguments= getArgumentMap(current);
 						if (arguments != null) {
 							checkArgumentMap(arguments);
-							for (final Iterator<Entry<String, String>> iterator= arguments.entrySet().iterator(); iterator.hasNext();) {
-								final Entry<String, String> entry= iterator.next();
+							for (Entry<String, String> entry : arguments.entrySet()) {
 								transformer.createArgument(entry.getKey(), entry.getValue());
 							}
 						}
@@ -862,11 +821,7 @@ public final class RefactoringHistoryManager {
 							} else
 								writeIndexEntry(index, proxies, EFS.APPEND, new SubProgressMonitor(monitor, 5, SubProgressMonitor.SUPPRESS_SUBTASK_LABEL), RefactoringCoreMessages.RefactoringHistoryService_updating_history);
 						}
-					} catch (ParserConfigurationException exception) {
-						throw createCoreException(exception);
-					} catch (IOException exception) {
-						throw createCoreException(exception);
-					} catch (SAXException exception) {
+					} catch (ParserConfigurationException | IOException | SAXException exception) {
 						throw createCoreException(exception);
 					} finally {
 						if (input != null) {
@@ -1018,11 +973,7 @@ public final class RefactoringHistoryManager {
 						try {
 							input= new BufferedInputStream(history.openInputStream(EFS.NONE, new SubProgressMonitor(monitor, 1, SubProgressMonitor.SUPPRESS_SUBTASK_LABEL)));
 							document= getCachedDocument(path, input);
-						} catch (ParserConfigurationException exception) {
-							throw createCoreException(exception);
-						} catch (IOException exception) {
-							throw createCoreException(exception);
-						} catch (SAXException exception) {
+						} catch (ParserConfigurationException | IOException | SAXException exception) {
 							throw createCoreException(exception);
 						} finally {
 							if (input != null) {
@@ -1044,8 +995,7 @@ public final class RefactoringHistoryManager {
 								if (item != null) {
 									final String value= item.getNodeValue();
 									if (value != null) {
-										for (int current= 0; current < proxies.length; current++) {
-											final RefactoringDescriptorProxy proxy= proxies[current];
+										for (RefactoringDescriptorProxy proxy : proxies) {
 											final long stamp= proxy.getTimeStamp();
 											if (value.equals(String.valueOf(stamp))) {
 												resultingProxies.remove(new DefaultRefactoringDescriptorProxy(proxy.getDescription(), proxy.getProject(), stamp));
@@ -1056,8 +1006,7 @@ public final class RefactoringHistoryManager {
 								}
 							}
 						}
-						for (final Iterator<Node> iterator= removedNodes.iterator(); iterator.hasNext();) {
-							final Node node= iterator.next();
+						for (Node node : removedNodes) {
 							node.getParentNode().removeChild(node);
 						}
 						try {
@@ -1090,21 +1039,20 @@ public final class RefactoringHistoryManager {
 		try {
 			final Map<IPath, Collection<RefactoringDescriptorProxy>> paths= new HashMap<>();
 			monitor.beginTask(task, proxies.length + 300);
-			for (int index= 0; index < proxies.length; index++) {
-				final IPath path= stampToPath(proxies[index].getTimeStamp());
+			for (RefactoringDescriptorProxy proxy : proxies) {
+				final IPath path= stampToPath(proxy.getTimeStamp());
 				Collection<RefactoringDescriptorProxy> collection= paths.get(path);
 				if (collection == null) {
 					collection= new ArrayList<>(64);
 					paths.put(path, collection);
 				}
-				collection.add(proxies[index]);
+				collection.add(proxy);
 			}
 			final IProgressMonitor subMonitor= new SubProgressMonitor(monitor, 300);
 			try {
 				final Set<Entry<IPath, Collection<RefactoringDescriptorProxy>>> entries= paths.entrySet();
 				subMonitor.beginTask(task, entries.size());
-				for (final Iterator<Entry<IPath, Collection<RefactoringDescriptorProxy>>> iterator= entries.iterator(); iterator.hasNext();) {
-					final Entry<IPath, Collection<RefactoringDescriptorProxy>> entry= iterator.next();
+				for (Entry<IPath, Collection<RefactoringDescriptorProxy>> entry : entries) {
 					final Collection<RefactoringDescriptorProxy> collection= entry.getValue();
 					removeRefactoringDescriptors(collection.toArray(new RefactoringDescriptorProxy[collection.size()]), entry.getKey(), new SubProgressMonitor(subMonitor, 1), task);
 				}
@@ -1140,8 +1088,7 @@ public final class RefactoringHistoryManager {
 						final RefactoringSessionDescriptor descriptor= getCachedSession(file, fProjectName, input);
 						if (descriptor != null) {
 							final RefactoringDescriptor[] descriptors= descriptor.getRefactorings();
-							for (int index= 0; index < descriptors.length; index++) {
-								final RefactoringDescriptor refactoringDescriptor= descriptors[index];
+							for (RefactoringDescriptor refactoringDescriptor : descriptors) {
 								if (refactoringDescriptor.getTimeStamp() == stamp) {
 									return refactoringDescriptor;
 								}
@@ -1206,11 +1153,7 @@ public final class RefactoringHistoryManager {
 							}
 						}
 						writeHistoryEntry(history, document, new SubProgressMonitor(monitor, 40, SubProgressMonitor.SUPPRESS_SUBTASK_LABEL), RefactoringCoreMessages.RefactoringHistoryService_updating_history);
-					} catch (ParserConfigurationException exception) {
-						throw createCoreException(exception);
-					} catch (IOException exception) {
-						throw createCoreException(exception);
-					} catch (SAXException exception) {
+					} catch (ParserConfigurationException | IOException | SAXException exception) {
 						throw createCoreException(exception);
 					} finally {
 						if (input != null) {

@@ -23,7 +23,6 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
-import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.mapping.IResourceChangeDescriptionFactory;
 import org.eclipse.core.resources.mapping.ResourceChangeValidator;
 
@@ -68,8 +67,8 @@ public class ResourceChangeChecker implements IConditionChecker {
 	 */
 	public static RefactoringStatus checkFilesToBeChanged(IFile[] files, IProgressMonitor monitor) throws CoreException {
 		ResourceChangeChecker checker= new ResourceChangeChecker();
-		for (int i= 0; i < files.length; i++) {
-			checker.getDeltaFactory().change(files[i]);
+		for (IFile file : files) {
+			checker.getDeltaFactory().change(file);
 		}
 		return checker.check(monitor);
 	}
@@ -93,21 +92,18 @@ public class ResourceChangeChecker implements IConditionChecker {
 	/* package */ IFile[] getChangedFiles() throws CoreException {
 		IResourceDelta root= fDeltaFactory.getDelta();
 		final List<IFile> result= new ArrayList<>();
-		root.accept(new IResourceDeltaVisitor() {
-			@Override
-			public boolean visit(IResourceDelta delta) throws CoreException {
-				final IResource resource= delta.getResource();
-				if (resource.getType() == IResource.FILE) {
-					final int kind= delta.getKind();
-					if (isSet(kind, IResourceDelta.CHANGED)) {
-						result.add((IFile) resource);
-					} else if (isSet(kind, IResourceDelta.ADDED) && isSet(delta.getFlags(), IResourceDelta.CONTENT | IResourceDelta.MOVED_FROM)) {
-						final IFile movedFrom= resource.getWorkspace().getRoot().getFile(delta.getMovedFromPath());
-						result.add(movedFrom);
-					}
+		root.accept(delta -> {
+			final IResource resource= delta.getResource();
+			if (resource.getType() == IResource.FILE) {
+				final int kind= delta.getKind();
+				if (isSet(kind, IResourceDelta.CHANGED)) {
+					result.add((IFile) resource);
+				} else if (isSet(kind, IResourceDelta.ADDED) && isSet(delta.getFlags(), IResourceDelta.CONTENT | IResourceDelta.MOVED_FROM)) {
+					final IFile movedFrom= resource.getWorkspace().getRoot().getFile(delta.getMovedFromPath());
+					result.add(movedFrom);
 				}
-				return true;
 			}
+			return true;
 		});
 		return result.toArray(new IFile[result.size()]);
 	}
@@ -138,8 +134,8 @@ public class ResourceChangeChecker implements IConditionChecker {
 		} else {
 			IStatus[] children= status.getChildren();
 			RefactoringStatus result= new RefactoringStatus();
-			for (int i= 0; i < children.length; i++) {
-				result.merge(createFrom(children[i]));
+			for (IStatus child : children) {
+				result.merge(createFrom(child));
 			}
 			return result;
 		}

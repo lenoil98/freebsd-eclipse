@@ -121,8 +121,8 @@ public class CompositeChange extends Change {
 	 * @param changes the changes to add
 	 */
 	public void addAll(Change[] changes) {
-		for (int i= 0; i < changes.length; i++) {
-			add(changes[i]);
+		for (Change change : changes) {
+			add(change);
 		}
 	}
 
@@ -135,8 +135,7 @@ public class CompositeChange extends Change {
 	 */
 	public void merge(CompositeChange change) {
 		Change[] others= change.getChildren();
-		for (int i= 0; i < others.length; i++) {
-			Change other= others[i];
+		for (Change other : others) {
 			change.remove(other);
 			add(other);
 		}
@@ -196,8 +195,8 @@ public class CompositeChange extends Change {
 	@Override
 	public void setEnabled(boolean enabled) {
 		super.setEnabled(enabled);
-		for (Iterator<Change> iter= fChanges.iterator(); iter.hasNext(); ) {
-			iter.next().setEnabled(enabled);
+		for (Change change : fChanges) {
+			change.setEnabled(enabled);
 		}
 	}
 
@@ -214,8 +213,7 @@ public class CompositeChange extends Change {
 	@Override
 	public void initializeValidationData(IProgressMonitor pm) {
 		pm.beginTask("", fChanges.size()); //$NON-NLS-1$
-		for (Iterator<Change> iter= fChanges.iterator(); iter.hasNext();) {
-			Change change= iter.next();
+		for (Change change : fChanges) {
 			change.initializeValidationData(new SubProgressMonitor(pm, 1));
 			pm.worked(1);
 		}
@@ -322,11 +320,7 @@ public class CompositeChange extends Change {
 			} else {
 				return null;
 			}
-		} catch (CoreException e) {
-			handleUndos(change, undos);
-			internalHandleException(change, e);
-			throw e;
-		} catch (RuntimeException e) {
+		} catch (CoreException | RuntimeException e) {
 			handleUndos(change, undos);
 			internalHandleException(change, e);
 			throw e;
@@ -344,7 +338,7 @@ public class CompositeChange extends Change {
 				undos.add(partUndoChange);
 			}
 		}
-		if (undos.size() == 0) {
+		if (undos.isEmpty()) {
 			fUndoUntilException= null;
 			return;
 		}
@@ -419,8 +413,7 @@ public class CompositeChange extends Change {
 	 */
 	@Override
 	public void dispose() {
-		for (Iterator<Change> iter= fChanges.iterator(); iter.hasNext(); ) {
-			final Change change= iter.next();
+		for (Change change : fChanges) {
 			SafeRunner.run(new ISafeRunnable() {
 				@Override
 				public void run() throws Exception {
@@ -441,7 +434,7 @@ public class CompositeChange extends Change {
 	 * <p>
 	 * This method is not intended to be overridden or extended.
 	 * </p>
-	 * 
+	 *
 	 * @return the undo object containing all undo changes of those children that got successfully
 	 *         executed while performing this change, or <code>null</code> if all changes were
 	 *         executed successfully or if there's nothing to undo.
@@ -468,11 +461,10 @@ public class CompositeChange extends Change {
 
 	@Override
 	public Object[] getAffectedObjects() {
-		if (fChanges.size() == 0)
+		if (fChanges.isEmpty())
 			return new Object[0];
 		List<Object> result= new ArrayList<>();
-		for (Iterator<Change> iter= fChanges.iterator(); iter.hasNext();) {
-			Change change= iter.next();
+		for (Change change : fChanges) {
 			Object[] affectedObjects= change.getAffectedObjects();
 			if (affectedObjects == null)
 				return null;
@@ -493,8 +485,7 @@ public class CompositeChange extends Change {
 	 */
 	@Override
 	public ChangeDescriptor getDescriptor() {
-		for (final Iterator<Change> iterator= fChanges.iterator(); iterator.hasNext();) {
-			final Change change= iterator.next();
+		for (Change change : fChanges) {
 			final ChangeDescriptor descriptor= change.getDescriptor();
 			if (descriptor != null)
 				return descriptor;
@@ -504,11 +495,11 @@ public class CompositeChange extends Change {
 
 	@Override
 	public String toString() {
-		StringBuffer buff= new StringBuffer();
+		StringBuilder buff= new StringBuilder();
 		buff.append(getName());
 		buff.append("\n"); //$NON-NLS-1$
-		for (Iterator<Change> iter= fChanges.iterator(); iter.hasNext();) {
-			buff.append("<").append(iter.next().toString()).append("/>\n"); //$NON-NLS-2$ //$NON-NLS-1$
+		for (Change change : fChanges) {
+			buff.append("<").append(change.toString()).append("/>\n"); //$NON-NLS-2$ //$NON-NLS-1$
 		}
 		return buff.toString();
 	}

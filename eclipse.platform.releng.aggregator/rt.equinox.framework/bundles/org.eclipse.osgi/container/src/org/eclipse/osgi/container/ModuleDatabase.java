@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2017 IBM Corporation and others.
+ * Copyright (c) 2012, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -16,6 +16,7 @@ package org.eclipse.osgi.container;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,7 +59,7 @@ import org.osgi.service.resolver.Resolver;
  * the wiring states.
  * <p>
  * <strong>Concurrent Semantics</strong><br />
- * 
+ *
  * Implementations must be thread safe.  The database allows for concurrent
  * read operations and all read operations are protected by the
  * {@link #readLock() read} lock.  All write operations are
@@ -71,7 +72,7 @@ import org.osgi.service.resolver.Resolver;
  * to upgrade from a read to a write lock.
  * <p>
  * A database is associated with a {@link ModuleContainer container}.  The container
- * associated with a database provides public API for manipulating the modules 
+ * associated with a database provides public API for manipulating the modules
  * and their wiring states.  For example, installing, updating, uninstalling,
  * resolving and unresolving modules.  Except for the {@link #load(DataInputStream)},
  * all other methods that perform write operations are intended to be used by
@@ -141,6 +142,7 @@ public class ModuleDatabase {
 
 	static enum Sort {
 		BY_DEPENDENCY, BY_START_LEVEL, BY_ID;
+
 		/**
 		 * Tests if this option is contained in the specified options
 		 */
@@ -479,13 +481,13 @@ public class ModuleDatabase {
 
 	/**
 	 * Returns a cloned snapshot of the wirings of all revisions.  This
-	 * performs a clone of each {@link ModuleWiring}.  The 
+	 * performs a clone of each {@link ModuleWiring}.  The
 	 * {@link ModuleWiring#getRevision() revision},
 	 * {@link ModuleWiring#getModuleCapabilities(String) capabilities},
 	 * {@link ModuleWiring#getModuleRequirements(String) requirements},
 	 * {@link ModuleWiring#getProvidedModuleWires(String) provided wires},
 	 * {@link ModuleWiring#getRequiredModuleWires(String) required wires}, and
-	 * {@link ModuleWiring#getSubstitutedNames()} of 
+	 * {@link ModuleWiring#getSubstitutedNames()} of
 	 * each wiring are copied into a cloned copy of the wiring.
 	 * <p>
 	 * The returned map of wirings may be safely read from while not holding
@@ -811,7 +813,7 @@ public class ModuleDatabase {
 
 	/**
 	 * Adds the {@link ModuleRevision#getModuleCapabilities(String) capabilities}
-	 * provided by the specified revision to this database.  These capabilities must 
+	 * provided by the specified revision to this database.  These capabilities must
 	 * become available for lookup with the {@link ModuleDatabase#findCapabilities(Requirement)}
 	 * method.
 	 * <p>
@@ -830,7 +832,7 @@ public class ModuleDatabase {
 	/**
 	 * Removes the {@link ModuleRevision#getModuleCapabilities(String) capabilities}
 	 * provided by the specified revision from this database.  These capabilities
-	 * must no longer be available for lookup with the 
+	 * must no longer be available for lookup with the
 	 * {@link ModuleDatabase#findCapabilities(Requirement)} method.
 	 * <p>
 	 * This method must be called while holding the {@link #writeLock() write} lock.
@@ -842,7 +844,7 @@ public class ModuleDatabase {
 	}
 
 	/**
-	 * Returns a mutable snapshot of capabilities that are candidates for 
+	 * Returns a mutable snapshot of capabilities that are candidates for
 	 * satisfying the specified requirement.
 	 * <p>
 	 * A read operation protected by the {@link #readLock() read} lock.
@@ -864,14 +866,14 @@ public class ModuleDatabase {
 	 * Writes this database in a format suitable for using the {@link #load(DataInputStream)}
 	 * method.  All modules are stored which have a current {@link ModuleRevision revision}.
 	 * Only the current revision of each module is stored (no removal pending revisions
-	 * are stored).  Optionally the {@link ModuleWiring wiring} of each current revision 
+	 * are stored).  Optionally the {@link ModuleWiring wiring} of each current revision
 	 * may be stored.  Wiring can only be stored if there are no {@link #getRemovalPending()
 	 * removal pending} revisions.
 	 * <p>
 	 * This method acquires the {@link #readLock() read} lock while writing this
 	 * database.
 	 * <p>
-	 * After this database have been written, the output stream is flushed.  
+	 * After this database have been written, the output stream is flushed.
 	 * The output stream remains open after this method returns.
 	 * @param out the data output steam.
 	 * @param persistWirings true if wirings should be persisted.  This option will be ignored
@@ -957,12 +959,11 @@ public class ModuleDatabase {
 	}
 
 	private static class Persistence {
-		private static final int VERSION = 2;
+		private static final int VERSION = 3;
 		private static final byte NULL = 0;
 		private static final byte OBJECT = 1;
 		private static final byte INDEX = 2;
 		private static final byte LONG_STRING = 3;
-		private static final String UTF_8 = "UTF-8"; //$NON-NLS-1$
 
 		private static final byte VALUE_STRING = 0;
 		// REMOVED treated as List<String> - private static final byte VALUE_STRING_ARRAY = 1;
@@ -985,8 +986,17 @@ public class ModuleDatabase {
 			return (objectTable.size() - 1);
 		}
 
-		private static void addToReadTable(Object object, int index, Map<Integer, Object> objectTable) {
-			objectTable.put(Integer.valueOf(index), object);
+		private static void addToReadTable(Object object, int index, List<Object> objectTable) {
+			if (index == objectTable.size()) {
+				objectTable.add(object);
+			} else if (index < objectTable.size()) {
+				objectTable.set(index, object);
+			} else {
+				while (objectTable.size() < index) {
+					objectTable.add(null);
+				}
+				objectTable.add(object);
+			}
 		}
 
 		public static void store(ModuleDatabase moduleDatabase, DataOutputStream out, boolean persistWirings) throws IOException {
@@ -1010,9 +1020,7 @@ public class ModuleDatabase {
 			Map<ModuleRevision, ModuleWiring> wirings = moduleDatabase.wirings;
 			for (ModuleWiring wiring : wirings.values()) {
 				Collection<String> substituted = wiring.getSubstitutedNames();
-				for (String pkgName : substituted) {
-					allStrings.add(pkgName);
-				}
+				allStrings.addAll(substituted);
 			}
 
 			// Now persist all the Strings
@@ -1139,7 +1147,8 @@ public class ModuleDatabase {
 			moduleDatabase.nextId.set(in.readLong());
 			moduleDatabase.setInitialModuleStartLevel(in.readInt());
 
-			Map<Integer, Object> objectTable = new HashMap<>();
+			List<Object> objectTable = new ArrayList<>();
+
 			if (version >= 2) {
 				int numStrings = in.readInt();
 				for (int i = 0; i < numStrings; i++) {
@@ -1155,8 +1164,9 @@ public class ModuleDatabase {
 				}
 			}
 			int numModules = in.readInt();
+			ModuleRevisionBuilder builder = new ModuleRevisionBuilder();
 			for (int i = 0; i < numModules; i++) {
-				readModule(moduleDatabase, in, objectTable, version);
+				readModule(builder, moduleDatabase, in, objectTable, version);
 			}
 
 			moduleDatabase.revisionsTimeStamp.set(revisionsTimeStamp);
@@ -1235,8 +1245,8 @@ public class ModuleDatabase {
 			out.writeLong(module.getLastModified());
 		}
 
-		private static void readModule(ModuleDatabase moduleDatabase, DataInputStream in, Map<Integer, Object> objectTable, int version) throws IOException {
-			ModuleRevisionBuilder builder = new ModuleRevisionBuilder();
+		private static void readModule(ModuleRevisionBuilder builder, ModuleDatabase moduleDatabase, DataInputStream in, List<Object> objectTable, int version) throws IOException {
+			builder.clear();
 			int moduleIndex = in.readInt();
 			String location = readString(in, objectTable);
 			long id = in.readLong();
@@ -1308,7 +1318,7 @@ public class ModuleDatabase {
 			out.writeInt(requirer);
 		}
 
-		private static void readWire(DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		private static void readWire(DataInputStream in, List<Object> objectTable) throws IOException {
 			int wireIndex = in.readInt();
 
 			ModuleCapability capability = (ModuleCapability) objectTable.get(in.readInt());
@@ -1373,7 +1383,7 @@ public class ModuleDatabase {
 			}
 		}
 
-		private static ModuleWiring readWiring(DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		private static ModuleWiring readWiring(DataInputStream in, List<Object> objectTable) throws IOException {
 			ModuleRevision revision = (ModuleRevision) objectTable.get(in.readInt());
 			if (revision == null)
 				throw new NullPointerException("Could not find revision for wiring."); //$NON-NLS-1$
@@ -1423,7 +1433,7 @@ public class ModuleDatabase {
 		}
 
 		@SuppressWarnings("unchecked")
-		private static void readGenericInfo(boolean isCapability, DataInputStream in, ModuleRevisionBuilder builder, Map<Integer, Object> objectTable, int version) throws IOException {
+		private static void readGenericInfo(boolean isCapability, DataInputStream in, ModuleRevisionBuilder builder, List<Object> objectTable, int version) throws IOException {
 			String namespace = readString(in, objectTable);
 			Map<String, Object> attributes = version >= 2 ? (Map<String, Object>) objectTable.get(in.readInt()) : readMap(in, objectTable);
 			Map<String, ?> directives = version >= 2 ? (Map<String, ?>) objectTable.get(in.readInt()) : readMap(in, objectTable);
@@ -1473,12 +1483,12 @@ public class ModuleDatabase {
 			}
 		}
 
-		private static void readIndexedMap(DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		private static void readIndexedMap(DataInputStream in, List<Object> objectTable) throws IOException {
 			Map<String, Object> result = readMap(in, objectTable);
 			addToReadTable(result, in.readInt(), objectTable);
 		}
 
-		private static Map<String, Object> readMap(DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		private static Map<String, Object> readMap(DataInputStream in, List<Object> objectTable) throws IOException {
 			int count = in.readInt();
 			Map<String, Object> result;
 			if (count == 0) {
@@ -1501,7 +1511,7 @@ public class ModuleDatabase {
 			return result;
 		}
 
-		private static Object readMapValue(DataInputStream in, int type, Map<Integer, Object> objectTable) throws IOException {
+		private static Object readMapValue(DataInputStream in, int type, List<Object> objectTable) throws IOException {
 			switch (type) {
 				case VALUE_STRING :
 					return readString(in, objectTable);
@@ -1569,7 +1579,7 @@ public class ModuleDatabase {
 			return -2;
 		}
 
-		private static List<?> readList(DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		private static List<?> readList(DataInputStream in, List<Object> objectTable) throws IOException {
 			int size = in.readInt();
 			if (size == 0)
 				return Collections.emptyList();
@@ -1584,7 +1594,7 @@ public class ModuleDatabase {
 			return Collections.unmodifiableList(list);
 		}
 
-		private static Object readListValue(byte listType, DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		private static Object readListValue(byte listType, DataInputStream in, List<Object> objectTable) throws IOException {
 			switch (listType) {
 				case VALUE_STRING :
 					return readString(in, objectTable);
@@ -1623,17 +1633,17 @@ public class ModuleDatabase {
 			writeString(string, out, objectTable);
 		}
 
-		private static Version readIndexedVersion(DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		private static Version readIndexedVersion(DataInputStream in, List<Object> objectTable) throws IOException {
 			Version version = readVersion0(in, objectTable, false);
 			addToReadTable(version, in.readInt(), objectTable);
 			return version;
 		}
 
-		private static Version readVersion(DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		private static Version readVersion(DataInputStream in, List<Object> objectTable) throws IOException {
 			return readVersion0(in, objectTable, true);
 		}
 
-		private static Version readVersion0(DataInputStream in, Map<Integer, Object> objectTable, boolean intern) throws IOException {
+		private static Version readVersion0(DataInputStream in, List<Object> objectTable, boolean intern) throws IOException {
 			byte type = in.readByte();
 			if (type == INDEX) {
 				int index = in.readInt();
@@ -1660,7 +1670,7 @@ public class ModuleDatabase {
 			if (string == null)
 				out.writeByte(NULL);
 			else {
-				byte[] data = string.getBytes(UTF_8);
+				byte[] data = string.getBytes(StandardCharsets.UTF_8);
 
 				if (data.length > 65535) {
 					out.writeByte(LONG_STRING);
@@ -1673,17 +1683,17 @@ public class ModuleDatabase {
 			}
 		}
 
-		static private String readIndexedString(DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		static private String readIndexedString(DataInputStream in, List<Object> objectTable) throws IOException {
 			String string = readString0(in, objectTable, false);
 			addToReadTable(string, in.readInt(), objectTable);
 			return string;
 		}
 
-		static private String readString(DataInputStream in, Map<Integer, Object> objectTable) throws IOException {
+		static private String readString(DataInputStream in, List<Object> objectTable) throws IOException {
 			return readString0(in, objectTable, true);
 		}
 
-		static private String readString0(DataInputStream in, Map<Integer, Object> objectTable, boolean intern) throws IOException {
+		static private String readString0(DataInputStream in, List<Object> objectTable, boolean intern) throws IOException {
 			byte type = in.readByte();
 			if (type == INDEX) {
 				int index = in.readInt();
@@ -1697,7 +1707,7 @@ public class ModuleDatabase {
 				int length = in.readInt();
 				byte[] data = new byte[length];
 				in.readFully(data);
-				string = new String(data, UTF_8);
+				string = new String(data, StandardCharsets.UTF_8);
 			} else {
 				string = in.readUTF();
 			}

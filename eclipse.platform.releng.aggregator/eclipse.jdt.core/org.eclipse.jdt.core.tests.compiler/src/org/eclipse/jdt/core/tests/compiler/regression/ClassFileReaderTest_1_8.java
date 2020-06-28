@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2016 GoPivotal, Inc.
+ * Copyright (c) 2013, 2019 GoPivotal, Inc.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,8 @@
 package org.eclipse.jdt.core.tests.compiler.regression;
 
 import junit.framework.Test;
+
+import java.io.File;
 
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
@@ -41,13 +43,14 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 	public ClassFileReaderTest_1_8(String name) {
 		super(name);
 	}
-	
+
 	// Needed to run tests individually from JUnit
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		this.complianceLevel = ClassFileConstants.JDK1_8;
 	}
-	
+
 	public void test001_classTypeParameter() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
@@ -63,14 +66,14 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 			"}";
 
 		org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader classFileReader = getInternalClassFile("", "X", "X", source);
-		
+
 		IBinaryTypeAnnotation[] typeAnnotations = classFileReader.getTypeAnnotations();
 		assertEquals(2,typeAnnotations.length);
-		
+
 		assertEquals("@LFoo; CLASS_TYPE_PARAMETER(type_parameter_index=0)", printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LBar;(iii=(int)99) CLASS_TYPE_PARAMETER(type_parameter_index=1)", printTypeAnnotation(typeAnnotations[1]));
 	}
-	
+
 	public void test001a_classTypeParameterDifferingRetentions() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
@@ -86,19 +89,19 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 			"}";
 
 		org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader classFileReader = getInternalClassFile("", "X", "X", source);
-		
+
 		IBinaryTypeAnnotation[] typeAnnotations = classFileReader.getTypeAnnotations();
 		assertEquals(2,typeAnnotations.length);
-		
+
 		assertEquals("@LBar;(iii=(int)99) CLASS_TYPE_PARAMETER(type_parameter_index=1)", printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LFoo; CLASS_TYPE_PARAMETER(type_parameter_index=0)", printTypeAnnotation(typeAnnotations[1]));
 	}
-	
+
 	public void test002_methodTypeParameter() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
 			"public class X {\n" +
-			"	<@Foo T1, @Bar(3) T2> void foo(T1 t1,T2 t2) {}\n" + 
+			"	<@Foo T1, @Bar(3) T2> void foo(T1 t1,T2 t2) {}\n" +
 			"}\n" +
 			"@Retention(RetentionPolicy.CLASS)\n" +
 			"@Target(ElementType.TYPE_USE)\n" +
@@ -111,7 +114,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 			"}";
 
 		org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader cfr = getInternalClassFile("", "X", "X", source);
-		
+
 		IBinaryMethod method = getMethod(cfr,"foo");
 		assertNotNull(method);
 		IBinaryTypeAnnotation[] typeAnnotations = method.getTypeAnnotations();
@@ -120,7 +123,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals("@LFoo; METHOD_TYPE_PARAMETER(type_parameter_index=0)",printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LBar;(value=(int)3) METHOD_TYPE_PARAMETER(type_parameter_index=1)",printTypeAnnotation(typeAnnotations[1]));
 	}
-	
+
 	public void test003_classExtends() throws Exception {
 		this.complianceLevel = ClassFileConstants.JDK1_8;
 		String source =
@@ -138,7 +141,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 			"}";
 
 		org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader classFileReader = getInternalClassFile("", "X", "X", source);
-		
+
 		IBinaryTypeAnnotation[] typeAnnotations = classFileReader.getTypeAnnotations();
 		assertEquals(3,typeAnnotations.length);
 		assertEquals("@LFoo; CLASS_EXTENDS(type_index=-1)", printTypeAnnotation(typeAnnotations[0]));
@@ -164,14 +167,14 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 			"}";
 
 		org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader classFileReader = getInternalClassFile("", "X", "X", source);
-		
+
 		IBinaryTypeAnnotation[] typeAnnotations = classFileReader.getTypeAnnotations();
 		assertEquals(3,typeAnnotations.length);
 		assertEquals("@LFoo; CLASS_EXTENDS(type_index=-1), location=[TYPE_ARGUMENT(0)]", printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LBar; CLASS_EXTENDS(type_index=-1), location=[TYPE_ARGUMENT(1)]", printTypeAnnotation(typeAnnotations[1]));
 		assertEquals("@LFoo; CLASS_EXTENDS(type_index=0), location=[TYPE_ARGUMENT(0)]", printTypeAnnotation(typeAnnotations[2]));
 	}
-	
+
 	public void test005_classTypeParameterBound() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
@@ -188,7 +191,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 			"}";
 
 		org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader classFileReader = getInternalClassFile("", "X", "X", source);
-		
+
 		IBinaryTypeAnnotation[] typeAnnotations = classFileReader.getTypeAnnotations();
 		assertEquals(4,typeAnnotations.length);
 		assertEquals("@LFoo; CLASS_TYPE_PARAMETER_BOUND(type_parameter_index=1, bound_index=0), location=[TYPE_ARGUMENT(0), ARRAY, ARRAY, ARRAY]", printTypeAnnotation(typeAnnotations[0]));
@@ -196,7 +199,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals("@LBar;(value=(int)2) CLASS_TYPE_PARAMETER_BOUND(type_parameter_index=1, bound_index=0), location=[TYPE_ARGUMENT(0), ARRAY, ARRAY]", printTypeAnnotation(typeAnnotations[2]));
 		assertEquals("@LBar;(value=(int)3) CLASS_TYPE_PARAMETER_BOUND(type_parameter_index=1, bound_index=1)", printTypeAnnotation(typeAnnotations[3]));
 	}
-	
+
 	public void test006_methodTypeParameterBound() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
@@ -227,7 +230,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals("@LBar;(value=(int)2) METHOD_TYPE_PARAMETER_BOUND(type_parameter_index=0, bound_index=0), location=[TYPE_ARGUMENT(0), ARRAY, ARRAY]", printTypeAnnotation(typeAnnotations[2]));
 		assertEquals("@LBar;(value=(int)3) METHOD_TYPE_PARAMETER_BOUND(type_parameter_index=0, bound_index=1)", printTypeAnnotation(typeAnnotations[3]));
 	}
-	
+
 	public void test007_field() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
@@ -261,7 +264,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals("@LBar;(value=(int)4) FIELD, location=[TYPE_ARGUMENT(1), ARRAY]", printTypeAnnotation(typeAnnotations[4]));
 		assertEquals("@LBar;(value=(int)5) FIELD, location=[TYPE_ARGUMENT(1), ARRAY, ARRAY]", printTypeAnnotation(typeAnnotations[5]));
 	}
-	
+
 	public void test008_methodReturn() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
@@ -269,10 +272,10 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 			"public class X{\n" +
 			"	@Bar(3) @Foo int foo() {\n" +
 			"		return 1;\n" +
-			"	}\n" + 
+			"	}\n" +
 			"	@Bar(3) int @Foo [] foo2() {\n" +
 			"		return null;\n" +
-			"	}\n" + 
+			"	}\n" +
 			"}\n" +
 			"@Retention(RetentionPolicy.CLASS)\n" +
 			"@Target(ElementType.TYPE_USE)\n" +
@@ -293,7 +296,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals(2,typeAnnotations.length);
 		assertEquals("@LBar;(value=(int)3) METHOD_RETURN",printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LFoo; METHOD_RETURN", printTypeAnnotation(typeAnnotations[1]));
-		
+
 		method = getMethod(cfr,"foo2");
 		assertNotNull(method);
 		typeAnnotations = method.getTypeAnnotations();
@@ -302,13 +305,13 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals("@LBar;(value=(int)3) METHOD_RETURN, location=[ARRAY]",printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LFoo; METHOD_RETURN", printTypeAnnotation(typeAnnotations[1]));
 	}
-	
+
 	public void test009_methodReceiver() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
 			"import java.util.Map;\n" +
 			"public class X{\n" +
-			"	void foo(@Bar(3) X this) {}\n" + 
+			"	void foo(@Bar(3) X this) {}\n" +
 			"}\n" +
 			"@Retention(RetentionPolicy.CLASS)\n" +
 			"@Target(ElementType.TYPE_USE)\n" +
@@ -329,13 +332,13 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals(1,typeAnnotations.length);
 		assertEquals("@LBar;(value=(int)3) METHOD_RECEIVER", printTypeAnnotation(typeAnnotations[0]));
 	}
-	
+
 	public void test010_methodFormalParameter() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
 			"import java.util.Map;\n" +
 			"public class X{\n" +
-			"	void foo(@Bar(3) String s, @Foo int i) {}\n" + 
+			"	void foo(@Bar(3) String s, @Foo int i) {}\n" +
 			"}\n" +
 			"@Retention(RetentionPolicy.CLASS)\n" +
 			"@Target(ElementType.TYPE_USE)\n" +
@@ -357,13 +360,13 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals("@LBar;(value=(int)3) METHOD_FORMAL_PARAMETER(method_formal_parameter_index=0)",printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LFoo; METHOD_FORMAL_PARAMETER(method_formal_parameter_index=1)",printTypeAnnotation(typeAnnotations[1]));
 	}
-	
+
 	public void test011_throws() throws Exception {
 		String source =
 			"import java.lang.annotation.*;\n" +
 			"import java.util.Map;\n" +
 			"public class X{\n" +
-			"	void foo() throws @Foo Exception, @Bar(1) Throwable {}\n" + 
+			"	void foo() throws @Foo Exception, @Bar(1) Throwable {}\n" +
 			"}\n" +
 			"@Retention(RetentionPolicy.CLASS)\n" +
 			"@Target(ElementType.TYPE_USE)\n" +
@@ -390,9 +393,9 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 			"import java.lang.annotation.*;\n" +
 			"import java.util.Map;\n" +
 			"public @interface X{\n" +
-			"	@Bar(3) @Foo int foo();\n" + 
-			"	@Bar(3) int @Foo [] foo2();\n" + 
-			"	@Bar(7) @Foo String value() default \"aaa\";\n" + 
+			"	@Bar(3) @Foo int foo();\n" +
+			"	@Bar(3) int @Foo [] foo2();\n" +
+			"	@Bar(7) @Foo String value() default \"aaa\";\n" +
 			"}\n" +
 			"@Retention(RetentionPolicy.CLASS)\n" +
 			"@Target(ElementType.TYPE_USE)\n" +
@@ -413,7 +416,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals(2,typeAnnotations.length);
 		assertEquals("@LBar;(value=(int)3) METHOD_RETURN",printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LFoo; METHOD_RETURN", printTypeAnnotation(typeAnnotations[1]));
-		
+
 		method = getMethod(cfr,"foo2");
 		assertNotNull(method);
 		typeAnnotations = method.getTypeAnnotations();
@@ -421,7 +424,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals(2,typeAnnotations.length);
 		assertEquals("@LBar;(value=(int)3) METHOD_RETURN, location=[ARRAY]",printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LFoo; METHOD_RETURN", printTypeAnnotation(typeAnnotations[1]));
-		
+
 		method = getMethod(cfr,"value");
 		assertNotNull(method);
 		typeAnnotations = method.getTypeAnnotations();
@@ -430,6 +433,41 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		assertEquals("@LBar;(value=(int)7) METHOD_RETURN",printTypeAnnotation(typeAnnotations[0]));
 		assertEquals("@LFoo; METHOD_RETURN", printTypeAnnotation(typeAnnotations[1]));
 		assertEquals(((org.eclipse.jdt.internal.compiler.impl.Constant)method.getDefaultValue()).stringValue(), "aaa");
+	}
+
+	public void testBug548596() {
+		/*-
+		 * Test548596.jar contains classes for the following kotlin code (compiled with kotlin 1.3.21):
+		 * package k;
+		 *	class A {
+		 *	    class B {
+		 *	        class C {
+		 *	            //
+		 *	        }
+		 *	    }
+		 *	}
+		 */
+		String[] libs = getDefaultClassPaths();
+		int len = libs.length;
+		System.arraycopy(libs, 0, libs = new String[len+1], 0, len);
+		libs[libs.length-1] = this.getCompilerTestsPluginDirectoryPath() + File.separator + "workspace" + File.separator + "Test548596.jar";
+
+		runConformTest(
+			new String[] {
+				"j/Usage.java",
+				"package j;\n" +
+				"\n" +
+				"import k.A.B.C;\n" +
+				"\n" +
+				"public class Usage {\n" +
+				"    C c;\n" +
+				"}"
+			},
+			"",
+			libs,
+			false,
+			null
+		);
 	}
 
 	/**
@@ -454,7 +492,7 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 			sb.append(')');
 		}
 		sb.append(' ');
-		
+
 		// target type
 		int targetType = typeAnnotation.getTargetType();
 		switch (targetType) {
@@ -498,10 +536,10 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 				break;
 			default: throw new IllegalStateException("nyi "+targetType);
 		}
-		
+
 		// location
 		int[] typepath = typeAnnotation.getTypePath();
-		
+
 		if (typepath != IBinaryTypeAnnotation.NO_TYPE_PATH) {
 			sb.append(", location=["); //$NON-NLS-1$
 			for (int i = 0, max = typepath.length; i < max; i += 2) {
@@ -555,5 +593,5 @@ public class ClassFileReaderTest_1_8 extends AbstractRegressionTest {
 		}
 		return null;
 	}
-	
+
 }

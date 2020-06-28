@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -32,7 +32,7 @@
 package com.sun.mirror.util;
 
 /**
- * Utilities to create specialized <tt>DeclarationVisitor</tt> instances.
+ * Utilities to create specialized <code>DeclarationVisitor</code> instances.
  *
  * @author Joseph D. Darcy
  * @author Scott Seligman
@@ -48,21 +48,21 @@ public class DeclarationVisitors {
     public static final DeclarationVisitor NO_OP = new SimpleDeclarationVisitor();
 
     /**
-     * Return a <tt>DeclarationVisitor</tt> that will scan the
+     * Return a <code>DeclarationVisitor</code> that will scan the
      * declaration structure, visiting declarations contained in
      * another declaration.  For example, when visiting a class, the
      * fields, methods, constructors, etc. of the class are also
      * visited.  The order in which the contained declarations are scanned is
      * not specified.
      *
-     * <p>The <tt>pre</tt> and <tt>post</tt>
-     * <tt>DeclarationVisitor</tt> parameters specify,
+     * <p>The <code>pre</code> and <code>post</code>
+     * <code>DeclarationVisitor</code> parameters specify,
      * respectively, the processing the scanner will do before or
      * after visiting the contained declarations.  If only one of pre
      * and post processing is needed, use {@link
      * DeclarationVisitors#NO_OP DeclarationVisitors.NO_OP} for the
      * other parameter.
-     * 
+     *
      * @param pre visitor representing processing to do before
      * visiting contained declarations.
      *
@@ -75,7 +75,7 @@ public class DeclarationVisitors {
     }
 
     /**
-     * Return a <tt>DeclarationVisitor</tt> that will scan the
+     * Return a <code>DeclarationVisitor</code> that will scan the
      * declaration structure, visiting declarations contained in
      * another declaration in source code order.  For example, when
      * visiting a class, the fields, methods, constructors, etc. of
@@ -84,13 +84,13 @@ public class DeclarationVisitors {
      * possible; declaration mirrors created from class files instead
      * of source code will not have source position information.
      *
-     * <p>The <tt>pre</tt> and <tt>post</tt>
-     * <tt>DeclarationVisitor</tt> parameters specify,
+     * <p>The <code>pre</code> and <code>post</code>
+     * <code>DeclarationVisitor</code> parameters specify,
      * respectively, the processing the scanner will do before or
      * after visiting the contained declarations.  If only one of pre
      * and post processing is needed, use {@link
      * DeclarationVisitors#NO_OP DeclarationVisitors.NO_OP} for the other parameter.
-     * 
+     *
      * @param pre visitor representing processing to do before
      * visiting contained declarations.
      *

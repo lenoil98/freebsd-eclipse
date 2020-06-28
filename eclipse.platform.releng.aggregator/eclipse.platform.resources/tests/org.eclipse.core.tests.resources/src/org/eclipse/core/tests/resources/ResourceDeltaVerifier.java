@@ -95,7 +95,7 @@ public class ResourceDeltaVerifier extends Assert implements IResourceChangeList
 	}
 
 	/**
-	 * Table of IPath -> ExpectedChange
+	 * Table of IPath -&gt; ExpectedChange
 	 */
 	private Hashtable<IPath, ExpectedChange> fExpectedChanges = new Hashtable<>();
 	boolean fIsDeltaValid = true;
@@ -809,7 +809,7 @@ public class ResourceDeltaVerifier extends Assert implements IResourceChangeList
 
 	/**
 	 * Appends additional information to the current validation error message.
-	 * 
+	 *
 	 * @param message
 	 *            the additional information to append
 	 */

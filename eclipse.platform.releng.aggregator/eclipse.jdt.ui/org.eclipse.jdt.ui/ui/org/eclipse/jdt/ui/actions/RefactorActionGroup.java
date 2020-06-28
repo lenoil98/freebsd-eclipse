@@ -14,7 +14,6 @@
 package org.eclipse.jdt.ui.actions;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.events.MenuAdapter;
@@ -450,11 +449,11 @@ public class RefactorActionGroup extends ActionGroup {
 	 * Sets actionDefinitionId, updates enablement, adds to fActions,
 	 * and adds selection changed listener if provider is not <code>null</code>.
 	 *
-	 * @param action the action 
+	 * @param action the action
 	 * @param provider can be <code>null</code>
 	 * @param specialProvider a special selection provider or <code>null</code>
 	 * @param selection the selection
-	 * @param actionDefinitionId the action definition id 
+	 * @param actionDefinitionId the action definition id
 	 */
 	private void initUpdatingAction(SelectionDispatchAction action, ISelectionProvider provider, ISelectionProvider specialProvider, ISelection selection, String actionDefinitionId) {
 		action.setActionDefinitionId(actionDefinitionId);
@@ -578,8 +577,8 @@ public class RefactorActionGroup extends ActionGroup {
 			}
 		} else {
 			ISelection selection= fSelectionProvider.getSelection();
-			for (Iterator<SelectionDispatchAction> iter= fActions.iterator(); iter.hasNext(); ) {
-				iter.next().update(selection);
+			for (SelectionDispatchAction selectionDispatchAction : fActions) {
+				selectionDispatchAction.update(selection);
 			}
 			if (fillRefactorMenu(refactorSubmenu) > 0)
 				menu.appendToGroup(fGroupName, refactorSubmenu);
@@ -646,8 +645,7 @@ public class RefactorActionGroup extends ActionGroup {
 		ITextSelection textSelection= (ITextSelection)fEditor.getSelectionProvider().getSelection();
 		JavaTextSelection javaSelection= new JavaTextSelection(getEditorInput(), getDocument(), textSelection.getOffset(), textSelection.getLength());
 
-		for (Iterator<SelectionDispatchAction> iter= fActions.iterator(); iter.hasNext(); ) {
-			SelectionDispatchAction action= iter.next();
+		for (SelectionDispatchAction action : fActions) {
 			action.update(javaSelection);
 		}
 		refactorSubmenu.removeAll();
@@ -657,8 +655,7 @@ public class RefactorActionGroup extends ActionGroup {
 
 	private void refactorMenuHidden() {
 		ITextSelection textSelection= (ITextSelection)fEditor.getSelectionProvider().getSelection();
-		for (Iterator<SelectionDispatchAction> iter= fActions.iterator(); iter.hasNext(); ) {
-			SelectionDispatchAction action= iter.next();
+		for (SelectionDispatchAction action : fActions) {
 			action.update(textSelection);
 		}
 	}
@@ -684,18 +681,18 @@ public class RefactorActionGroup extends ActionGroup {
 			ITextSelection textSelection= (ITextSelection)fEditor.getSelectionProvider().getSelection();
 			JavaTextSelection javaSelection= new JavaTextSelection(element, getDocument(), textSelection.getOffset(), textSelection.getLength());
 
-			for (Iterator<SelectionDispatchAction> iter= fActions.iterator(); iter.hasNext(); ) {
-				iter.next().update(javaSelection);
+			for (SelectionDispatchAction selectionDispatchAction : fActions) {
+				selectionDispatchAction.update(javaSelection);
 			}
 			fillRefactorMenu(menu);
-			for (Iterator<SelectionDispatchAction> iter= fActions.iterator(); iter.hasNext(); ) {
-				iter.next().update(textSelection);
+			for (SelectionDispatchAction selectionDispatchAction : fActions) {
+				selectionDispatchAction.update(textSelection);
 			}
 
 		} else {
 			ISelection selection= fSelectionProvider.getSelection();
-			for (Iterator<SelectionDispatchAction> iter= fActions.iterator(); iter.hasNext(); ) {
-				iter.next().update(selection);
+			for (SelectionDispatchAction selectionDispatchAction : fActions) {
+				selectionDispatchAction.update(selection);
 			}
 			fillRefactorMenu(menu);
 		}

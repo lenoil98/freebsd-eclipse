@@ -29,19 +29,14 @@ public final class StandardRegionFilterBuilder implements RegionFilterBuilder {
 	private final Map<String, Collection<Filter>> policy = new HashMap<String, Collection<Filter>>();
 
 	@SuppressWarnings("deprecation")
+	@Override
 	public RegionFilterBuilder allow(String namespace, String filter) throws InvalidSyntaxException {
 		if (namespace == null)
 			throw new IllegalArgumentException("The namespace must not be null."); //$NON-NLS-1$
 		if (filter == null)
 			throw new IllegalArgumentException("The filter must not be null."); //$NON-NLS-1$
 		synchronized (this.monitor) {
-			Collection<Filter> namespaceFilters = policy.get(namespace);
-			if (namespaceFilters == null) {
-				// use set to avoid duplicates
-				namespaceFilters = new LinkedHashSet<Filter>();
-				policy.put(namespace, namespaceFilters);
-			}
-
+			Collection<Filter> namespaceFilters = getNamespaceFilters(namespace);
 			namespaceFilters.add(createFilter(filter));
 		}
 		if (VISIBLE_SERVICE_NAMESPACE.equals(namespace)) {
@@ -51,23 +46,19 @@ public final class StandardRegionFilterBuilder implements RegionFilterBuilder {
 		return this;
 	}
 
-	public Filter createFilter(String spec) throws InvalidSyntaxException {
+	public static Filter createFilter(String spec) throws InvalidSyntaxException {
 		// TODO need to use BundleContext.createFilter here
 		Filter filter = FrameworkUtil.createFilter(spec);
 		return (StandardRegionFilter.ALL.equals(filter)) ? StandardRegionFilter.ALL : filter;
 	}
 
 	@SuppressWarnings("deprecation")
+	@Override
 	public RegionFilterBuilder allowAll(String namespace) {
 		if (namespace == null)
 			throw new IllegalArgumentException("The namespace must not be null."); //$NON-NLS-1$
 		synchronized (this.monitor) {
-			Collection<Filter> namespaceFilters = policy.get(namespace);
-			if (namespaceFilters == null) {
-				// use set to avoid duplicates
-				namespaceFilters = new LinkedHashSet<Filter>();
-				policy.put(namespace, namespaceFilters);
-			}
+			Collection<Filter> namespaceFilters = getNamespaceFilters(namespace);
 			// remove any other filters since this will override them all.
 			namespaceFilters.clear();
 			namespaceFilters.add(StandardRegionFilter.ALL);
@@ -79,6 +70,17 @@ public final class StandardRegionFilterBuilder implements RegionFilterBuilder {
 		return this;
 	}
 
+	private Collection<Filter> getNamespaceFilters(String namespace) {
+		Collection<Filter> namespaceFilters = policy.get(namespace);
+		if (namespaceFilters == null) {
+			// use set to avoid duplicates
+			namespaceFilters = new LinkedHashSet<Filter>();
+			policy.put(namespace, namespaceFilters);
+		}
+		return namespaceFilters;
+	}
+
+	@Override
 	public RegionFilter build() {
 		synchronized (this.monitor) {
 			return new StandardRegionFilter(policy);

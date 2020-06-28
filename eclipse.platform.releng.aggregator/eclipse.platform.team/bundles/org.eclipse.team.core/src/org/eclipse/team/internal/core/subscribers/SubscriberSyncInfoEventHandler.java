@@ -179,10 +179,9 @@ public class SubscriberSyncInfoEventHandler extends SubscriberEventHandler {
 	protected void dispatchEvents(SubscriberEvent[] events, IProgressMonitor monitor) {
 		// this will batch the following set changes until endInput is called.
 		SubscriberSyncInfoSet syncSet = syncSetInput.getSyncSet();
-        try {
+		try {
 			syncSet.beginInput();
-			for (int i = 0; i < events.length; i++) {
-				SubscriberEvent event = events[i];
+			for (SubscriberEvent event : events) {
 				switch (event.getType()) {
 					case SubscriberEvent.CHANGE :
 						if (event instanceof SubscriberSyncInfoEvent) {

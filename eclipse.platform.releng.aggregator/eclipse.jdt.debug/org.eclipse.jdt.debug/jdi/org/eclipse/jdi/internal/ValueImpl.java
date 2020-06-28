@@ -16,6 +16,7 @@ package org.eclipse.jdi.internal;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -23,7 +24,6 @@ import java.util.List;
 import org.eclipse.jdi.internal.jdwp.JdwpID;
 import org.eclipse.jdi.internal.jdwp.JdwpObjectID;
 
-import com.ibm.icu.text.MessageFormat;
 import com.sun.jdi.ArrayType;
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassType;
@@ -140,8 +140,9 @@ public abstract class ValueImpl extends MirrorImpl implements Value {
 			throws IOException {
 		JdwpObjectID nullID = new JdwpObjectID(target.virtualMachineImpl());
 		nullID.write(out);
-		if (target.fVerboseWriter != null)
+		if (target.fVerboseWriter != null) {
 			target.fVerboseWriter.println("objectReference", nullID.value()); //$NON-NLS-1$
+		}
 	}
 
 	/**
@@ -269,9 +270,8 @@ public abstract class ValueImpl extends MirrorImpl implements Value {
 						return;
 					}
 				} else {
-					List<InterfaceType> interfaces = ((ClassType) valueType).allInterfaces();
-					for (Iterator<InterfaceType> iter = interfaces.iterator(); iter.hasNext();) {
-						if (checkInterfaceType(iter.next(),
+					for (InterfaceType interfaceType : ((ClassType) valueType).allInterfaces()) {
+						if (checkInterfaceType(interfaceType,
 								(InterfaceType) type)) {
 							return;
 						}
@@ -291,9 +291,8 @@ public abstract class ValueImpl extends MirrorImpl implements Value {
 		if (valueType.equals(type)) {
 			return true;
 		}
-		List<InterfaceType> superInterfaces = valueType.superinterfaces();
-		for (Iterator<InterfaceType> iter = superInterfaces.iterator(); iter.hasNext();) {
-			if (checkInterfaceType(iter.next(), type)) {
+		for (InterfaceType interfaceType : valueType.superinterfaces()) {
+			if (checkInterfaceType(interfaceType, type)) {
 				return true;
 			}
 		}
@@ -321,29 +320,29 @@ public abstract class ValueImpl extends MirrorImpl implements Value {
 		switch (typeSignature) {
 		case 'D':
 			if (valueTypeSignature != 'Z') {
-				return new DoubleValueImpl(vm, new Double(value.doubleValue()));
+				return new DoubleValueImpl(vm, Double.valueOf(value.doubleValue()));
 			}
 			break;
 		case 'F':
 			if (valueTypeSignature != 'Z' && valueTypeSignature != 'D') {
-				return new FloatValueImpl(vm, new Float(value.floatValue()));
+				return new FloatValueImpl(vm, Float.valueOf(value.floatValue()));
 			}
 			break;
 		case 'J':
 			if (valueTypeSignature != 'Z' && valueTypeSignature != 'D'
 					&& valueTypeSignature != 'F') {
-				return new LongValueImpl(vm, new Long(value.longValue()));
+				return new LongValueImpl(vm, Long.valueOf(value.longValue()));
 			}
 			break;
 		case 'I':
 			if (valueTypeSignature == 'B' || valueTypeSignature == 'C'
 					|| valueTypeSignature == 'S') {
-				return new IntegerValueImpl(vm, new Integer(value.intValue()));
+				return new IntegerValueImpl(vm, Integer.valueOf(value.intValue()));
 			}
 			break;
 		case 'S':
 			if (valueTypeSignature == 'B') {
-				return new ShortValueImpl(vm, new Short(value.shortValue()));
+				return new ShortValueImpl(vm, Short.valueOf(value.shortValue()));
 			}
 			break;
 		}

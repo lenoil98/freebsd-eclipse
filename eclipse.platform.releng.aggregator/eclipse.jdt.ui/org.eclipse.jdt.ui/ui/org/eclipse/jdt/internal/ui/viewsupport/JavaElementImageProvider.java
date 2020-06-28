@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Matt Chapman, mpchapman@gmail.com - 89977 Make JDT .java agnostic
@@ -27,6 +27,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
 
 import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.model.IWorkbenchAdapter;
 
@@ -80,13 +81,13 @@ public class JavaElementImageProvider {
 	private static ImageDescriptor DESC_OBJ_PROJECT_CLOSED;
 	private static ImageDescriptor DESC_OBJ_PROJECT;
 	{
-		ISharedImages images= JavaPlugin.getDefault().getWorkbench().getSharedImages();
+		ISharedImages images= PlatformUI.getWorkbench().getSharedImages();
 		DESC_OBJ_PROJECT_CLOSED= images.getImageDescriptor(IDE.SharedImages.IMG_OBJ_PROJECT_CLOSED);
 		DESC_OBJ_PROJECT= 		 images.getImageDescriptor(IDE.SharedImages.IMG_OBJ_PROJECT);
 	}
 
 	private ImageDescriptorRegistry fRegistry;
-	
+
 	private boolean fDecorateTestCodeContainerIcons;
 
 	public JavaElementImageProvider() {
@@ -258,7 +259,7 @@ public class JavaElementImageProvider {
 									else
 										return JavaPluginImages.DESC_OBJS_EXTJAR;
 								} else {
-									if(isTest) 
+									if(isTest)
 										return JavaPluginImages.DESC_OBJS_EXTJAR_WSRC_TEST;
 									else
 										return JavaPluginImages.DESC_OBJS_EXTJAR_WSRC;
@@ -338,7 +339,7 @@ public class JavaElementImageProvider {
 
 				case IJavaElement.ANNOTATION:
 					return JavaPluginImages.DESC_OBJS_ANNOTATION;
-					
+
 				case IJavaElement.JAVA_MODULE:
 					return JavaPluginImages.DESC_OBJS_MODULE;
 
@@ -514,6 +515,14 @@ public class JavaElementImageProvider {
 				return getInnerInterfaceImageDescriptor(isInInterfaceOrAnnotation, flags);
 			}
 			return getInterfaceImageDescriptor(flags);
+		} else if (Flags.isRecord(flags)) {
+			if (useLightIcons) {
+				return JavaPluginImages.DESC_OBJS_RECORD_ALT;
+			}
+			if (isInner) {
+				return getInnerRecordImageDescriptor(isInInterfaceOrAnnotation, flags);
+			}
+			return getRecordImageDescriptor(flags);
 		} else {
 			if (useLightIcons) {
 				return JavaPluginImages.DESC_OBJS_CLASSALT;
@@ -574,6 +583,13 @@ public class JavaElementImageProvider {
 			return JavaPluginImages.DESC_OBJS_ANNOTATION_DEFAULT;
 	}
 
+	private static ImageDescriptor getRecordImageDescriptor(int flags) {
+		if (Flags.isPublic(flags) || Flags.isProtected(flags) || Flags.isPrivate(flags))
+			return JavaPluginImages.DESC_OBJS_RECORD;
+		else
+			return JavaPluginImages.DESC_OBJS_RECORD_DEFAULT;
+	}
+
 	private static ImageDescriptor getInnerAnnotationImageDescriptor(boolean isInInterfaceOrAnnotation, int flags) {
 		if (Flags.isPublic(flags) || isInInterfaceOrAnnotation)
 			return JavaPluginImages.DESC_OBJS_ANNOTATION;
@@ -583,6 +599,17 @@ public class JavaElementImageProvider {
 			return JavaPluginImages.DESC_OBJS_ANNOTATION_PROTECTED;
 		else
 			return JavaPluginImages.DESC_OBJS_ANNOTATION_DEFAULT;
+	}
+
+	private static ImageDescriptor getInnerRecordImageDescriptor(boolean isInInterfaceOrAnnotation, int flags) {
+		if (Flags.isPublic(flags) || isInInterfaceOrAnnotation)
+			return JavaPluginImages.DESC_OBJS_RECORD;
+		else if (Flags.isPrivate(flags))
+			return JavaPluginImages.DESC_OBJS_RECORD_PRIVATE;
+		else if (Flags.isProtected(flags))
+			return JavaPluginImages.DESC_OBJS_RECORD_PROTECTED;
+		else
+			return JavaPluginImages.DESC_OBJS_RECORD_DEFAULT;
 	}
 
 	private static ImageDescriptor getInterfaceImageDescriptor(int flags) {

@@ -21,87 +21,67 @@ import org.eclipse.debug.core.model.IStreamMonitor;
 import org.eclipse.debug.core.model.IStreamsProxy2;
 
 public class NullStreamsProxy implements IStreamsProxy2 {
-    private NullStreamMonitor outputStreamMonitor;
-    private NullStreamMonitor errorStreamMonitor;
+	private NullStreamMonitor outputStreamMonitor;
+	private NullStreamMonitor errorStreamMonitor;
 
-    public NullStreamsProxy(Process process) {
-        outputStreamMonitor = new NullStreamMonitor(process.getInputStream());
-        errorStreamMonitor = new NullStreamMonitor(process.getErrorStream());
-    }
+	@SuppressWarnings("resource")
+	public NullStreamsProxy(Process process) {
+		outputStreamMonitor = new NullStreamMonitor(process.getInputStream());
+		errorStreamMonitor = new NullStreamMonitor(process.getErrorStream());
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.core.model.IStreamsProxy2#closeInputStream()
-     */
-    @Override
+	@Override
 	public void closeInputStream() throws IOException {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.core.model.IStreamsProxy#getErrorStreamMonitor()
-     */
-    @Override
+	@Override
 	public IStreamMonitor getErrorStreamMonitor() {
-        return errorStreamMonitor;
-    }
+		return errorStreamMonitor;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.core.model.IStreamsProxy#getOutputStreamMonitor()
-     */
-    @Override
+	@Override
 	public IStreamMonitor getOutputStreamMonitor() {
-        return outputStreamMonitor;
-    }
+		return outputStreamMonitor;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.core.model.IStreamsProxy#write(java.lang.String)
-     */
-    @Override
+	@Override
 	public void write(String input) throws IOException {
-    }
+	}
 
-    private class NullStreamMonitor implements IStreamMonitor {
-        private InputStream fStream;
+	private class NullStreamMonitor implements IStreamMonitor {
+		private InputStream fStream;
 
-        public NullStreamMonitor(InputStream stream) {
-            fStream = stream;
-            startReaderThread();
-        }
+		public NullStreamMonitor(InputStream stream) {
+			fStream = stream;
+			startReaderThread();
+		}
 
-        private void startReaderThread() {
+		private void startReaderThread() {
 			Thread thread = new Thread((Runnable) () -> {
 				byte[] bytes = new byte[1024];
-				try {
-					while (fStream.read(bytes) >= 0) {
+				try (InputStream stream = fStream) {
+					while (stream.read(bytes) >= 0) {
 						// do nothing
 					}
 				} catch (IOException e) {
 				}
 			}, DebugCoreMessages.NullStreamsProxy_0);
-            thread.setDaemon(true);
-            thread.start();
+			thread.setDaemon(true);
+			thread.start();
 
-        }
+		}
 
-        /* (non-Javadoc)
-         * @see org.eclipse.debug.core.model.IStreamMonitor#addListener(org.eclipse.debug.core.IStreamListener)
-         */
-        @Override
+		@Override
 		public void addListener(IStreamListener listener) {
-        }
+		}
 
-        /* (non-Javadoc)
-         * @see org.eclipse.debug.core.model.IStreamMonitor#getContents()
-         */
-        @Override
+		@Override
 		public String getContents() {
-            return ""; //$NON-NLS-1$
-        }
+			return ""; //$NON-NLS-1$
+		}
 
-        /* (non-Javadoc)
-         * @see org.eclipse.debug.core.model.IStreamMonitor#removeListener(org.eclipse.debug.core.IStreamListener)
-         */
-        @Override
+		@Override
 		public void removeListener(IStreamListener listener) {
-        }
-    }
+		}
+	}
 }

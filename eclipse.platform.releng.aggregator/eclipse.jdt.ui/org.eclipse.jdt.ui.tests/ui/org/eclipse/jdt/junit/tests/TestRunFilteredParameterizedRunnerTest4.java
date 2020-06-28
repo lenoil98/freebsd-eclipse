@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2013 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,13 +14,14 @@
 
 package org.eclipse.jdt.junit.tests;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import org.eclipse.jdt.junit.JUnitCore;
 import org.eclipse.jdt.junit.TestRunListener;
 import org.eclipse.jdt.junit.model.ITestElement.ProgressState;
 import org.eclipse.jdt.junit.model.ITestElement.Result;
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
-
-import org.eclipse.core.runtime.Path;
 
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
@@ -41,11 +42,11 @@ public class TestRunFilteredParameterizedRunnerTest4 extends AbstractTestRunList
 			JUnitCore.removeTestRunListener(testRunListener);
 		}
 	}
-	
+
 	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		fProject= JavaProjectHelper.createJavaProject("TestRunListenerTest", "bin");
-		JavaProjectHelper.addVariableEntry(fProject, new Path("JUNIT_HOME/junit.jar"), null, null);
 		JavaProjectHelper.addToClasspath(fProject, JavaCore.newContainerEntry(JUnitCore.JUNIT4_CONTAINER_PATH));
 		JavaProjectHelper.addRTJar15(fProject);
 		String source=
@@ -84,6 +85,7 @@ public class TestRunFilteredParameterizedRunnerTest4 extends AbstractTestRunList
 		fATestCase= createType(source, "pack", "ATestCase.java");
 	}
 
+	@Test
 	public void testMatchRoot() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase pack.ATestCase", ProgressState.COMPLETED, Result.OK, 0),
@@ -98,7 +100,7 @@ public class TestRunFilteredParameterizedRunnerTest4 extends AbstractTestRunList
 		String[] actual= runTreeTest(fATestCase, "pack.ATestCase", 10);
 		assertEqualLog(expectedSequence, actual);
 	}
-	
+	@Test
 	public void testMatchSubtree1ByName() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase [0]", ProgressState.COMPLETED, Result.OK, 0),
@@ -109,7 +111,7 @@ public class TestRunFilteredParameterizedRunnerTest4 extends AbstractTestRunList
 		String[] actual= runTreeTest(fATestCase, "[0]", 6);
 		assertEqualLog(expectedSequence, actual);
 	}
-	
+	@Test
 	public void testMatchSubtree1Leaf1ByName() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase testDiv[0]", ProgressState.COMPLETED, Result.OK, 0),
@@ -118,7 +120,7 @@ public class TestRunFilteredParameterizedRunnerTest4 extends AbstractTestRunList
 		String[] actual= runTreeTest(fATestCase, "testDiv[0]", 4);
 		assertEqualLog(expectedSequence, actual);
 	}
-	
+	@Test
 	public void testMatchSubtree1Leaf1ByNameAndClass() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase testDiv[0]", ProgressState.COMPLETED, Result.OK, 0),
@@ -127,7 +129,7 @@ public class TestRunFilteredParameterizedRunnerTest4 extends AbstractTestRunList
 		String[] actual2= runTreeTest(fATestCase, "testDiv[0](pack.ATestCase)", 4);
 		assertEqualLog(expectedSequence, actual2);
 	}
-	
+	@Test
 	public void testMatchSubtree1Leaf2ByName() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase testDiv[1]", ProgressState.COMPLETED, Result.OK, 0),
@@ -136,7 +138,7 @@ public class TestRunFilteredParameterizedRunnerTest4 extends AbstractTestRunList
 		String[] actual= runTreeTest(fATestCase, "testDiv[1]", 4);
 		assertEqualLog(expectedSequence, actual);
 	}
-	
+	@Test
 	public void testMatchSubtree2ByName() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase [1]", ProgressState.COMPLETED, Result.OK, 0),
@@ -147,7 +149,7 @@ public class TestRunFilteredParameterizedRunnerTest4 extends AbstractTestRunList
 		String[] actual= runTreeTest(fATestCase, "[1]", 6);
 		assertEqualLog(expectedSequence, actual);
 	}
-	
+	@Test
 	public void testMatchAllFirstLeafs() throws Exception {
 		String[] expectedSequence= new String[] {
 				TestRunListeners.sessionAsString("ATestCase testDiv", ProgressState.COMPLETED, Result.OK, 0),
@@ -160,5 +162,5 @@ public class TestRunFilteredParameterizedRunnerTest4 extends AbstractTestRunList
 		String[] actual= runTreeTest(fATestCase, "testDiv", 6);
 		assertEqualLog(expectedSequence, actual);
 	}
-	
+
 }

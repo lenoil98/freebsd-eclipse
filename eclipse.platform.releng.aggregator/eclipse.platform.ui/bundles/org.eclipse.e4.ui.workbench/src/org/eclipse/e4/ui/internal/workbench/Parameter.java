@@ -14,7 +14,6 @@
 package org.eclipse.e4.ui.internal.workbench;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 import org.eclipse.core.commands.IParameter;
 import org.eclipse.core.commands.IParameterValues;
@@ -197,12 +196,7 @@ public final class Parameter implements IParameter, ITypedParameter {
 							"Parameter values were not an instance of IParameterValues", e); //$NON-NLS-1$
 				}
 			} else {
-				values = new IParameterValues() {
-					@Override
-					public Map getParameterValues() {
-						return Collections.EMPTY_MAP;
-					}
-				};
+				values = () -> Collections.EMPTY_MAP;
 			}
 		}
 
@@ -212,7 +206,7 @@ public final class Parameter implements IParameter, ITypedParameter {
 	@Override
 	public final int hashCode() {
 		if (hashCode == HASH_CODE_NOT_COMPUTED) {
-			hashCode = HASH_INITIAL * HASH_FACTOR + Util.hashCode(id);
+			hashCode = HASH_INITIAL * HASH_FACTOR + Objects.hashCode(id);
 			if (hashCode == HASH_CODE_NOT_COMPUTED) {
 				hashCode++;
 			}

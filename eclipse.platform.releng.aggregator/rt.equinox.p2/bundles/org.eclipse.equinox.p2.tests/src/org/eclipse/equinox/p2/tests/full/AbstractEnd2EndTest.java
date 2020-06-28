@@ -145,7 +145,7 @@ public abstract class AbstractEnd2EndTest extends AbstractProvisioningTest {
 	}
 
 	private void rollbackPlatformSource(IProfile profile2, File installFolder) {
-		IProfileRegistry profileRegistry = (IProfileRegistry) end2endAgent.getService(IProfileRegistry.SERVICE_NAME);
+		IProfileRegistry profileRegistry = end2endAgent.getService(IProfileRegistry.class);
 		long[] timestamps = profileRegistry.listProfileTimestamps(profile2.getProfileId());
 		assertEquals(3, timestamps.length);
 
@@ -242,9 +242,10 @@ public abstract class AbstractEnd2EndTest extends AbstractProvisioningTest {
 	abstract protected VersionedId getPlatformSource();
 
 	protected void assertContains(String message, String[] source, String searched) {
-		for (int i = 0; i < source.length; i++) {
-			if (source[i].equals(searched))
+		for (String element : source) {
+			if (element.equals(searched)) {
 				return;
+			}
 		}
 		fail(message + " " + searched);
 	}
@@ -295,7 +296,7 @@ public abstract class AbstractEnd2EndTest extends AbstractProvisioningTest {
 			IPath path = new Path(name);
 			if ("app".equals(path.getFileExtension())) //$NON-NLS-1$
 				return name;
-			StringBuffer buffer = new StringBuffer();
+			StringBuilder buffer = new StringBuilder();
 			buffer.append(name.substring(0, 1).toUpperCase());
 			buffer.append(name.substring(1));
 			buffer.append(".app/Contents/MacOS/"); //$NON-NLS-1$

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2016 IBM Corporation and others.
+ * Copyright (c) 2005, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -23,11 +23,6 @@ import org.apache.tools.ant.helper.SingleCheckExecutor;
 
 public class EclipseSingleCheckExecutor extends SingleCheckExecutor {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.tools.ant.Executor#executeTargets(org.apache.tools.ant.Project, java.lang.String[])
-	 */
 	@SuppressWarnings("unused")
 	@Override
 	public void executeTargets(Project project, String[] targetNames) throws BuildException {
@@ -37,11 +32,6 @@ public class EclipseSingleCheckExecutor extends SingleCheckExecutor {
 		super.executeTargets(project, targetNames);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.tools.ant.Executor#getSubProjectExecutor()
-	 */
 	@Override
 	public Executor getSubProjectExecutor() {
 		return this;

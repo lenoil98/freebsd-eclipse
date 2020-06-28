@@ -26,11 +26,11 @@ import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
-import org.eclipse.jface.text.contentassist.BoldStylerProvider;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.text.contentassist.IContextInformationValidator;
+import org.eclipse.jface.viewers.BoldStylerProvider;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.jface.viewers.StyledString.Styler;
 import org.eclipse.pde.internal.genericeditor.target.extension.autocomplete.processors.AttributeNameCompletionProcessor;
@@ -213,11 +213,11 @@ public class TargetDefinitionContentAssist implements IContentAssistProcessor {
 	/**
 	 * Uses a search term to determine if a string is a match. If it is a match,
 	 * then a StyledString is generated showing how it is matched.
-	 * 
+	 *
 	 * Matches if searchTerm is empty, string contains searchTerm, or if searchTerm
 	 * matches string using the camelCase technique where digits and symbols are
 	 * considered as upper case letters
-	 * 
+	 *
 	 * @param string
 	 *            The string in question
 	 * @param searchTerm

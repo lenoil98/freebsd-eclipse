@@ -88,8 +88,7 @@ class SaveParticipantConfigurationBlock implements IPreferenceAndPropertyConfigu
 		});
 
 		IPreferencePageContainer container= fPreferencePage.getContainer();
-		for (int i= 0; i < descriptors.length; i++) {
-			final SaveParticipantDescriptor descriptor= descriptors[i];
+		for (SaveParticipantDescriptor descriptor : descriptors) {
 			ISaveParticipantPreferenceConfiguration configuration= descriptor.createPreferenceConfiguration();
 			configuration.createControl(composite, container);
 			fConfigurations.add(configuration);
@@ -103,12 +102,7 @@ class SaveParticipantConfigurationBlock implements IPreferenceAndPropertyConfigu
 	 */
 	@Override
 	public void dispose() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.dispose();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::dispose);
 	}
 
 	/*
@@ -133,12 +127,7 @@ class SaveParticipantConfigurationBlock implements IPreferenceAndPropertyConfigu
 	 */
 	@Override
 	public void performDefaults() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.performDefaults();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::performDefaults);
 	}
 
 	/*
@@ -146,37 +135,21 @@ class SaveParticipantConfigurationBlock implements IPreferenceAndPropertyConfigu
 	 */
 	@Override
 	public void performOk() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.performOk();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::performOk);
 	}
 
 	@Override
 	public void enableProjectSettings() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.enableProjectSettings();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::enableProjectSettings);
 	}
 
 	@Override
 	public void disableProjectSettings() {
-		delegateToPreferenceConfiguration(new IDelegateOperation() {
-			@Override
-			public void run(ISaveParticipantPreferenceConfiguration block) {
-				block.disableProjectSettings();
-			}
-		});
+		delegateToPreferenceConfiguration(ISaveParticipantPreferenceConfiguration::disableProjectSettings);
 	}
 
 	private void delegateToPreferenceConfiguration(IDelegateOperation op) {
-		for (int i= 0; i < fConfigurations.size(); i++) {
-	        ISaveParticipantPreferenceConfiguration block= fConfigurations.get(i);
+		for (ISaveParticipantPreferenceConfiguration block : fConfigurations) {
 	        op.run(block);
         }
 	}

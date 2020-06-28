@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2015 IBM Corporation and others.
+ * Copyright (c) 2012, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -24,6 +24,7 @@ import org.eclipse.e4.ui.model.application.ui.menu.MMenuContribution;
 import org.eclipse.e4.ui.model.application.ui.menu.MToolBarContribution;
 import org.eclipse.e4.ui.model.application.ui.menu.MTrimContribution;
 import org.eclipse.e4.ui.model.application.ui.menu.impl.MenuFactoryImpl;
+import org.eclipse.e4.ui.workbench.IWorkbench;
 import org.eclipse.e4.ui.workbench.renderers.swt.ContributionRecord;
 import org.eclipse.e4.ui.workbench.renderers.swt.ToolBarContributionRecord;
 import org.eclipse.ui.internal.WorkbenchPlugin;
@@ -51,11 +52,9 @@ public class MenuFactoryGenerator {
 	}
 
 	public void mergeIntoModel(ArrayList<MMenuContribution> menuContributions,
-			ArrayList<MToolBarContribution> toolBarContributions,
-			ArrayList<MTrimContribution> trimContributions) {
+			ArrayList<MToolBarContribution> toolBarContributions, ArrayList<MTrimContribution> trimContributions) {
 		if (location.getPath() == null || location.getPath().length() == 0) {
-			WorkbenchPlugin
-					.log("MenuFactoryGenerator.mergeIntoModel: Invalid menu URI: " + location); //$NON-NLS-1$
+			WorkbenchPlugin.log("MenuFactoryGenerator.mergeIntoModel: Invalid menu URI: " + location); //$NON-NLS-1$
 			return;
 		}
 		if (inToolbar()) {
@@ -67,12 +66,12 @@ public class MenuFactoryGenerator {
 				if (query == null || query.length() == 0) {
 					query = "after=additions"; //$NON-NLS-1$
 				}
-				processToolbarChildren(toolBarContributions, configElement, location.getPath(),
-						query);
+				processToolbarChildren(toolBarContributions, configElement, location.getPath(), query);
 			}
 			return;
 		}
 		MMenuContribution menuContribution = MenuFactoryImpl.eINSTANCE.createMenuContribution();
+		menuContribution.getPersistedState().put(IWorkbench.PERSIST_STATE, Boolean.FALSE.toString());
 		String idContrib = MenuHelper.getId(configElement);
 		if (idContrib != null && idContrib.length() > 0) {
 			menuContribution.setElementId(idContrib);
@@ -99,10 +98,10 @@ public class MenuFactoryGenerator {
 		menuContributions.add(menuContribution);
 	}
 
-	private void processToolbarChildren(ArrayList<MToolBarContribution> contributions,
-			IConfigurationElement toolbar, String parentId, String position) {
-		MToolBarContribution toolBarContribution = MenuFactoryImpl.eINSTANCE
-				.createToolBarContribution();
+	private void processToolbarChildren(ArrayList<MToolBarContribution> contributions, IConfigurationElement toolbar,
+			String parentId, String position) {
+		MToolBarContribution toolBarContribution = MenuFactoryImpl.eINSTANCE.createToolBarContribution();
+		toolBarContribution.getPersistedState().put(IWorkbench.PERSIST_STATE, Boolean.FALSE.toString());
 		String idContrib = MenuHelper.getId(toolbar);
 		if (idContrib != null && idContrib.length() > 0) {
 			toolBarContribution.setElementId(idContrib);

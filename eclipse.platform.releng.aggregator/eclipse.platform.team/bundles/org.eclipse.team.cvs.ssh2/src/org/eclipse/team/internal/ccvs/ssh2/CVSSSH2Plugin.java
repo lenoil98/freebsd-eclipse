@@ -31,12 +31,13 @@ public class CVSSSH2Plugin extends Plugin {
 
 	private ServiceRegistration debugRegistration;
 	private ServiceTracker tracker;
-	
+
 	public CVSSSH2Plugin() {
 		super();
 		plugin = this;
 	}
 
+	@Override
 	public void stop(BundleContext context) throws Exception {
 		try {
 			// unregister debug options listener
@@ -53,7 +54,8 @@ public class CVSSSH2Plugin extends Plugin {
 	public static CVSSSH2Plugin getDefault() {
 		return plugin;
 	}
-	
+
+	@Override
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 
@@ -62,11 +64,11 @@ public class CVSSSH2Plugin extends Plugin {
 		properties.put(DebugOptions.LISTENER_SYMBOLICNAME, ID);
 		debugRegistration = context.registerService(DebugOptionsListener.class, Policy.DEBUG_OPTIONS_LISTENER, properties);
 
-	    tracker = new ServiceTracker(getBundle().getBundleContext(), IJSchService.class.getName(), null);
-	    tracker.open();
+		tracker = new ServiceTracker(getBundle().getBundleContext(), IJSchService.class.getName(), null);
+		tracker.open();
 	}
-	
-    public IJSchService getJSchService() {
-        return (IJSchService)tracker.getService();
-    }
+
+	public IJSchService getJSchService() {
+		return (IJSchService)tracker.getService();
+	}
 }

@@ -484,6 +484,14 @@ public class PluginImportOperation extends WorkspaceJob {
 
 		setProjectNatures(project, model);
 
+		if(importType == IMPORT_WITH_SOURCE) {
+			// if the project has .api_description, then API nature must be
+			// added
+			if (project.findMember(".api_description") != null) { //$NON-NLS-1$
+				CoreUtility.addNatureToProject(project, "org.eclipse.pde.api.tools.apiAnalysisNature", null); //$NON-NLS-1$
+			}
+		}
+
 		// Set the classpath
 		if (project.hasNature(JavaCore.NATURE_ID) && project.findMember(".classpath") == null) //$NON-NLS-1$
 			fProjectClasspaths.put(project, ClasspathComputer.getClasspath(project, model, sourceMap, true, false));
@@ -635,9 +643,6 @@ public class PluginImportOperation extends WorkspaceJob {
 			}
 			subMonitor.worked(1);
 
-		} catch (ZipException e) {
-			IStatus status = new Status(IStatus.ERROR, PDEPlugin.getPluginId(), IStatus.ERROR, e.getMessage(), e);
-			throw new CoreException(status);
 		} catch (IOException e) {
 			IStatus status = new Status(IStatus.ERROR, PDEPlugin.getPluginId(), IStatus.ERROR, e.getMessage(), e);
 			throw new CoreException(status);
@@ -1222,7 +1227,7 @@ public class PluginImportOperation extends WorkspaceJob {
 					for (ManifestElement element : elements) {
 						if (buffer.length() > 0) {
 							buffer.append(","); //$NON-NLS-1$
-							buffer.append(System.getProperty("line.separator")); //$NON-NLS-1$
+							buffer.append(System.lineSeparator());
 							buffer.append(" "); //$NON-NLS-1$
 						}
 						if (element.getValue().equals(".")) //$NON-NLS-1$
@@ -1277,6 +1282,7 @@ public class PluginImportOperation extends WorkspaceJob {
 		if (!desc.hasNature(JavaCore.NATURE_ID) && needsJavaNature(project, model)) {
 			CoreUtility.addNatureToProject(project, JavaCore.NATURE_ID, null);
 		}
+
 	}
 
 	/**

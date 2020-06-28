@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -43,22 +43,23 @@ public final class ManagedOutputStream extends FilterOutputStream {
 		this.state = ST_OPEN;
 	}
 
-	/** 
-	 * Instructs this output stream to be closed and storage manager to 
-	 * be updated as appropriate.  If this managed output stream is part of 
+	/**
+	 * Instructs this output stream to be closed and storage manager to
+	 * be updated as appropriate.  If this managed output stream is part of
 	 * a set returned by {@link StorageManager#getOutputStreamSet(String[])} then
-	 * the storage manager will only be updated with the new content after all 
+	 * the storage manager will only be updated with the new content after all
 	 * of the managed output streams in the set are closed successfully.
 	 * @see FilterOutputStream#close()
 	 */
+	@Override
 	public void close() throws IOException {
 		manager.closeOutputStream(this);
 	}
 
 	/**
 	 * Instructs this output stream to be closed and the contents discarded.
-	 * If this managed output stream is part of a set returned by 
-	 * {@link StorageManager#getOutputStreamSet(String[])} then the new 
+	 * If this managed output stream is part of a set returned by
+	 * {@link StorageManager#getOutputStreamSet(String[])} then the new
 	 * content of all managed output streams in the set will be discarded.
 	 */
 	public void abort() {
@@ -99,6 +100,7 @@ public final class ManagedOutputStream extends FilterOutputStream {
 	 * Override this method to prevent single byte writes to the output stream
 	 * which is done by the default implementation of FilteredOutputStream
 	 */
+	@Override
 	public void write(byte[] bytes, int off, int len) throws IOException {
 		out.write(bytes, off, len);
 	}

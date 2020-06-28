@@ -368,8 +368,8 @@ public class Util {
 			return tag;
 		}
 		
-		for (int i = 0; i < members.length; i++) {
-			if (members[i].getType() == IResource.FILE) {
+		for (IResource member : members) {
+			if (member.getType() == IResource.FILE) {
 				return tag;
 			}
 		}
@@ -536,7 +536,7 @@ public class Util {
 	 * Attic segment. This is because files added to a branch that are not in
 	 * the main trunk (HEAD) are added to the Attic but cvs does magic on
 	 * update to put them in the correct location.
-	 * (e.g. /project/Attic/file.txt -> /project/file.txt)
+	 * (e.g. /project/Attic/file.txt -&gt; /project/file.txt)
 	 */ 
 	public static String removeAtticSegment(String path) {
 		int lastSeparator = path.lastIndexOf(Session.SERVER_SEPARATOR);
@@ -554,7 +554,7 @@ public class Util {
 	 * Flatten the text in the multiline comment
 	 */
 	public static String flattenText(String string) {
-		StringBuffer buffer = new StringBuffer(string.length() + 20);
+		StringBuilder buffer = new StringBuilder(string.length() + 20);
 		boolean skipAdjacentLineSeparator = true;
 		for (int i = 0; i < string.length(); i++) {
 			char c = string.charAt(i);

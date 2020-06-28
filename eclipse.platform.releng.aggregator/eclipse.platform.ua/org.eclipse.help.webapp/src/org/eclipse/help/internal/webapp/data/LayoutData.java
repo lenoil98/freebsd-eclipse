@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.webapp.data;
 
@@ -144,21 +145,21 @@ public class LayoutData extends RequestData {
 
 		View tocview = new View("toc", //$NON-NLS-1$
 				"", //$NON-NLS-1$
-				preferences.getImagesDirectory() + "/contents_view.gif", 'C', !HelpPlugin.getTocManager().isTocLoaded(getLocale())); //$NON-NLS-1$
+				preferences.getImagesDirectory() + "/contents_view.svg", 'C', !HelpPlugin.getTocManager().isTocLoaded(getLocale())); //$NON-NLS-1$
 		View indexview = null;
 		View searchview = new View("search", //$NON-NLS-1$
 				"", //$NON-NLS-1$
-				preferences.getImagesDirectory() + "/search_results_view.gif", 'R', false); //$NON-NLS-1$
+				preferences.getImagesDirectory() + "/search_results_view.svg", 'R', false); //$NON-NLS-1$
 		View bookmarksview = null;
 
 		if (preferences.isIndexView())
 			indexview = new View("index", //$NON-NLS-1$
 					"", //$NON-NLS-1$
-					preferences.getImagesDirectory() + "/index_view.gif", 'I', false); //$NON-NLS-1$
+					preferences.getImagesDirectory() + "/index_view.svg", 'I', false); //$NON-NLS-1$
 		if (preferences.isBookmarksView())
 			bookmarksview = new View("bookmarks", //$NON-NLS-1$
 					"", //$NON-NLS-1$
-					preferences.getImagesDirectory() + "/bookmarks_view.gif", (char)0, false); //$NON-NLS-1$
+					preferences.getImagesDirectory() + "/bookmarks_view.svg", (char)0, false); //$NON-NLS-1$
 
 		ArrayList<AbstractView> viewList = new ArrayList<>();
 		viewList.add(tocview);
@@ -178,7 +179,7 @@ public class LayoutData extends RequestData {
 			try {
 				obj = element.createExecutableExtension("class"); //$NON-NLS-1$
 			} catch (CoreException e) {
-				HelpWebappPlugin.logError("Create extension failed:[" //$NON-NLS-1$
+				Platform.getLog(getClass()).error("Create extension failed:[" //$NON-NLS-1$
 						+ VIEW_EXTENSION_POINT + "].", e); //$NON-NLS-1$
 			}
 			if (obj instanceof AbstractView) {
@@ -221,7 +222,7 @@ public class LayoutData extends RequestData {
 				BundleContext bundleContext = HelpWebappPlugin.getContext();
 				ServiceReference<?> ref = bundleContext.getServiceReference(BundleLocalization.class.getName());
 				BundleLocalization localization = (BundleLocalization) bundleContext.getService(ref);
-                return localization.getLocalization(bundle, locale).getString(resource);
+				return localization.getLocalization(bundle, locale).getString(resource);
 			} catch (Exception e) {
 				// Fall through
 			}
@@ -239,13 +240,6 @@ public class LayoutData extends RequestData {
 	 */
 	public String getAdvancedURL(AbstractView view, String fileSuffix) {
 		return createURL(view.getURL(), view.getName(), fileSuffix);
-	}
-
-	/**
-	 * Returns the URL of a JSP file in the basic presentation
-	 */
-	public String getBasicURL(AbstractView view, String fileSuffix) {
-		return createURL(view.getBasicURL(), view.getName(), fileSuffix);
 	}
 
 	private String createURL(String path, String viewName, String fileSuffix) {

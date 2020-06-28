@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.ui.wizards.buildpaths;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.equinox.bidi.StructuredTextTypeHandlerFactory;
@@ -89,7 +88,7 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 		protected Shell getShell() {
 			return SourceContainerWorkbookPage.this.getShell();
 		}
-		
+
 		@Override
 		public void propertyChange(PropertyChangeEvent event) {
 			if (event.getProperty().equals(IAction.RESULT)) {
@@ -136,7 +135,6 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 	private final ListDialogField<CPListElement> fClassPathList;
 	private IJavaProject fCurrJProject;
 
-	private Control fSWTControl;
 	private final TreeListDialogField<CPListElement> fFoldersList;
 
 	private final StringDialogField fOutputLocationField;
@@ -204,8 +202,7 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 
 		boolean useFolderOutputs= false;
 		List<CPListElement> cpelements= fClassPathList.getElements();
-		for (int i= 0; i < cpelements.size(); i++) {
-			CPListElement cpe= cpelements.get(i);
+		for (CPListElement cpe : cpelements) {
 			if (cpe.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
 				folders.add(cpe);
 				boolean hasOutputFolder= (cpe.getAttribute(CPListElement.OUTPUT) != null);
@@ -218,8 +215,7 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 		fFoldersList.setElements(folders);
 		fUseFolderOutputs.setSelection(useFolderOutputs);
 
-		for (int i= 0; i < folders.size(); i++) {
-			CPListElement cpe= folders.get(i);
+		for (CPListElement cpe : folders) {
 			IPath[] ePatterns= (IPath[]) cpe.getAttribute(CPListElement.EXCLUSION);
 			IPath[] iPatterns= (IPath[])cpe.getAttribute(CPListElement.INCLUSION);
 			boolean hasOutputFolder= (cpe.getAttribute(CPListElement.OUTPUT) != null);
@@ -245,8 +241,7 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 
 		// expand
 		List<CPListElement> elements= fFoldersList.getElements();
-		for (int i= 0; i < elements.size(); i++) {
-			CPListElement elem= elements.get(i);
+		for (CPListElement elem : elements) {
 			IPath[] exclusionPatterns= (IPath[]) elem.getAttribute(CPListElement.EXCLUSION);
 			IPath[] inclusionPatterns= (IPath[]) elem.getAttribute(CPListElement.INCLUSION);
 			IPath output= (IPath) elem.getAttribute(CPListElement.OUTPUT);
@@ -341,7 +336,8 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 
 	protected void sourcePageCustomButtonPressed(DialogField field, int index) {
 		if (field == fFoldersList) {
-			if (index == IDX_ADD) {
+			switch (index) {
+			case IDX_ADD:
 				IProject project= fCurrJProject.getProject();
 				if (project.isAccessible() && hasFolders(project)) {
 					List<CPListElement> existingElements= fFoldersList.getElements();
@@ -356,15 +352,21 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 					OpenBuildPathWizardAction action= new OpenBuildPathWizardAction(wizard);
 					action.run();
 				}
-			} else if (index == IDX_ADD_LINK) {
+				break;
+			case IDX_ADD_LINK:
 				CPListElement newElement= new CPListElement(fCurrJProject, IClasspathEntry.CPE_SOURCE);
 				AddSourceFolderWizard wizard= newLinkedSourceFolderWizard(newElement, fFoldersList.getElements(), fOutputLocationField.getText(), true);
 				OpenBuildPathWizardAction action= new OpenBuildPathWizardAction(wizard);
 				action.run();
-			} else if (index == IDX_EDIT) {
+				break;
+			case IDX_EDIT:
 				editEntry();
-			} else if (index == IDX_REMOVE) {
+				break;
+			case IDX_REMOVE:
 				removeEntry();
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -372,9 +374,8 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 	private boolean hasFolders(IContainer container) {
 
 		try {
-			IResource[] members= container.members();
-			for (int i= 0; i < members.length; i++) {
-				if (members[i] instanceof IContainer) {
+			for (IResource member : container.members()) {
+				if (member instanceof IContainer) {
 					return true;
 				}
 			}
@@ -386,7 +387,7 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 		if (elements.size() > 1)
 			return true;
 
-		if (elements.size() == 0)
+		if (elements.isEmpty())
 			return false;
 
 		CPListElement single= elements.get(0);
@@ -502,12 +503,10 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 			fFoldersList.refresh();
 			fClassPathList.dialogFieldChanged(); // validate
 		} else {
-			for (Iterator<Object> iter= selElements.iterator(); iter.hasNext();) {
-				CPListElement element= (CPListElement)iter.next();
+			for (Object object : selElements) {
+				CPListElement element= (CPListElement)object;
 				if (element.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-					List<CPListElement> list= ClasspathModifier.removeFilters(element.getPath(), fCurrJProject, fFoldersList.getElements());
-					for (Iterator<CPListElement> iterator= list.iterator(); iterator.hasNext();) {
-						CPListElement modified= iterator.next();
+					for (CPListElement modified : ClasspathModifier.removeFilters(element.getPath(), fCurrJProject, fFoldersList.getElements())) {
 						fFoldersList.refresh(modified);
 						fFoldersList.expandElement(modified, 3);
 					}
@@ -518,11 +517,10 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 	}
 
 	private boolean canRemove(List<Object> selElements) {
-		if (selElements.size() == 0) {
+		if (selElements.isEmpty()) {
 			return false;
 		}
-		for (int i= 0; i < selElements.size(); i++) {
-			Object elem= selElements.get(i);
+		for (Object elem : selElements) {
 			if (elem instanceof CPListElementAttribute) {
 				CPListElementAttribute attrib= (CPListElementAttribute) elem;
 				String key= attrib.getKey();
@@ -660,15 +658,13 @@ public class SourceContainerWorkbookPage extends BuildPathBasePage {
 
 	private void refresh(List<CPListElement> insertedElements, List<?> removedElements, List<CPListElement> modifiedElements, IPath outputLocation) {
 		fFoldersList.addElements(insertedElements);
-		for (Iterator<CPListElement> iter= insertedElements.iterator(); iter.hasNext();) {
-			CPListElement element= iter.next();
+		for (CPListElement element : insertedElements) {
 			fFoldersList.expandElement(element, 3);
 		}
 
 		fFoldersList.removeElements(removedElements);
 
-		for (Iterator<CPListElement> iter= modifiedElements.iterator(); iter.hasNext();) {
-			CPListElement element= iter.next();
+		for (CPListElement element : modifiedElements) {
 			fFoldersList.refresh(element);
 			fFoldersList.expandElement(element, 3);
 		}

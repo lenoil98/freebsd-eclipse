@@ -35,13 +35,13 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 /**
  * This class is the plug-in runtime class for the 
  * <code>"org.eclipse.compare.xml"</code> plug-in.
- * </p>
  */
 public final class XMLPlugin extends AbstractUIPlugin {
 	
@@ -157,7 +157,7 @@ public final class XMLPlugin extends AbstractUIPlugin {
 				IdMapAttribute = CurrentIdMap.substring(end_of_signature+1,end_of_attribute);
 				String IdMapExtension= CurrentIdMap.substring(end_of_attribute+1,CurrentIdMap.length());
 				//if extension already associated, do not associate with this idmap
-				if (!IdMapExtension.equals("") && !fIdExtensionToName.containsKey(IdMapExtension)) { //$NON-NLS-1$
+				if (!IdMapExtension.isEmpty() && !fIdExtensionToName.containsKey(IdMapExtension)) {
 					fIdExtensionToName.put(IdMapExtension,IdMapName);
 					CompareUI.addStructureViewerAlias(DEFAULT_PREFIX, IdMapExtension);
 				}
@@ -291,8 +291,7 @@ public final class XMLPlugin extends AbstractUIPlugin {
 		IConfigurationElement[] idmaps= registry.getConfigurationElementsFor(PLUGIN_ID, ID_MAPPING_EXTENSION_POINT);
 		fIdMapsInternal = new HashMap();
 		fOrderedElementsInternal= new HashMap();
-		for (int i_idmap= 0; i_idmap < idmaps.length; i_idmap++) {
-			final IConfigurationElement idmap= idmaps[i_idmap];
+		for (IConfigurationElement idmap : idmaps) {
 			//handle IDMAP_NAME_ATTRIBUTE
 			String idmap_name= idmap.getAttribute(IDMAP_NAME_ATTRIBUTE);
 			//ignores idmap if its name equals the reserved name for unordered matching or the the name for ordered matching
@@ -301,16 +300,15 @@ public final class XMLPlugin extends AbstractUIPlugin {
 				HashMap idmapHM = new HashMap();
 				fIdMapsInternal.put(idmap_name, idmapHM);
 				IConfigurationElement[] mappings = idmap.getChildren(MAPPING_ELEMENT_NAME);
-				for (int i_mapping= 0; i_mapping < mappings.length; i_mapping++) {
-					IConfigurationElement mapping = mappings[i_mapping];
+				for (IConfigurationElement mapping : mappings) {
 					//add SIGN_SEPARATOR at the end because not contained in signatures of plugin.xml
 					//also add prefix at beginning
 					String signature= mapping.getAttribute(MAPPING_SIGNATURE_ATTRIBUTE);
 					String attribute= mapping.getAttribute(MAPPING_ID_ATTRIBUTE);
 					String idsource= mapping.getAttribute(MAPPING_ID_SOURCE);
 					String bodyid= ""; //$NON-NLS-1$
-					if (signature != null && !signature.equals("") //$NON-NLS-1$
-						&& attribute != null && !attribute.equals("")) { //$NON-NLS-1$
+					if (signature != null && !signature.isEmpty()
+						&& attribute != null && !attribute.isEmpty()) {
 						if (idsource != null && idsource.equals(MAPPING_ID_SOURCE_BODY))
 							bodyid= (Character.valueOf(XMLStructureCreator.ID_TYPE_BODY)).toString();
 						idmapHM.put(XMLStructureCreator.ROOT_ID	+ XMLStructureCreator.SIGN_SEPARATOR
@@ -321,12 +319,11 @@ public final class XMLPlugin extends AbstractUIPlugin {
 				IConfigurationElement[] orderedEntries= idmap.getChildren(ORDERED_ELEMENT_NAME);
 				if (orderedEntries.length > 0) {
 					ArrayList orderedAL= new ArrayList();
-					for (int i_ordered= 0; i_ordered < orderedEntries.length; i_ordered++) {
-						IConfigurationElement ordered= orderedEntries[i_ordered];
+					for (IConfigurationElement ordered : orderedEntries) {
 						//add SIGN_SEPARATOR at the end because not contained in signatures of plugin.xml
 						//also add prefix at beginning
 						String signature= ordered.getAttribute(ORDERED_SIGNATURE_ATTRIBUTE);
-						if (signature != null && !signature.equals("")) //$NON-NLS-1$
+						if (signature != null && !signature.isEmpty())
 							orderedAL.add(XMLStructureCreator.ROOT_ID + XMLStructureCreator.SIGN_SEPARATOR + signature + XMLStructureCreator.SIGN_SEPARATOR);
 					}
 					if (orderedAL.size() > 0)
@@ -355,7 +352,7 @@ public final class XMLPlugin extends AbstractUIPlugin {
 	}
 	
 	public static IWorkbenchWindow getActiveWorkbenchWindow() {
-		IWorkbenchWindow window= fgXMLPlugin.getWorkbench().getActiveWorkbenchWindow();
+		IWorkbenchWindow window= PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		if (window == null) {
 			final WindowRef windowRef= new WindowRef();
 			Display.getDefault().syncExec(() -> setActiveWorkbenchWindow(windowRef));
@@ -383,8 +380,8 @@ public final class XMLPlugin extends AbstractUIPlugin {
 			shell= shell.getParent();
 		}
 		Shell shells[]= display.getShells();
-		for (int i= 0; i < shells.length; i++) {
-			Object data= shells[i].getData();
+		for (Shell s : shells) {
+			Object data = s.getData();
 			if (data instanceof IWorkbenchWindow) {
 				windowRef.window= (IWorkbenchWindow)data;
 				return;

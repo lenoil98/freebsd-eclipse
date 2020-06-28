@@ -27,8 +27,8 @@ import org.eclipse.ui.internal.util.PrefUtil;
 import org.eclipse.ui.preferences.ViewSettingsDialog;
 
 /**
- * The JobsViewPreferenceDialog is the dialog that
- * allows the user to set the preferences.
+ * The JobsViewPreferenceDialog is the dialog that allows the user to set the
+ * preferences.
  */
 public class JobsViewPreferenceDialog extends ViewSettingsDialog {
 
@@ -36,7 +36,8 @@ public class JobsViewPreferenceDialog extends ViewSettingsDialog {
 
 	/**
 	 * Create a new instance of the receiver.
-	 * @param parentShell
+	 *
+	 * @param parentShell the shell the dialog is associated with
 	 */
 	public JobsViewPreferenceDialog(Shell parentShell) {
 		super(parentShell);

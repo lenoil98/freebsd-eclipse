@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2012 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,7 +19,7 @@ public NSResponder() {
 	super();
 }
 
-public NSResponder(long /*int*/ id) {
+public NSResponder(long id) {
 	super(id);
 }
 
@@ -35,10 +35,6 @@ public boolean becomeFirstResponder() {
 	return OS.objc_msgSend_bool(this.id, OS.sel_becomeFirstResponder);
 }
 
-public void beginGestureWithEvent(NSEvent event) {
-	OS.objc_msgSend(this.id, OS.sel_beginGestureWithEvent_, event != null ? event.id : 0);
-}
-
 public void cancelOperation(id sender) {
 	OS.objc_msgSend(this.id, OS.sel_cancelOperation_, sender != null ? sender.id : 0);
 }
@@ -47,12 +43,8 @@ public void cursorUpdate(NSEvent event) {
 	OS.objc_msgSend(this.id, OS.sel_cursorUpdate_, event != null ? event.id : 0);
 }
 
-public void doCommandBySelector(long /*int*/ aSelector) {
+public void doCommandBySelector(long aSelector) {
 	OS.objc_msgSend(this.id, OS.sel_doCommandBySelector_, aSelector);
-}
-
-public void endGestureWithEvent(NSEvent event) {
-	OS.objc_msgSend(this.id, OS.sel_endGestureWithEvent_, event != null ? event.id : 0);
 }
 
 public void flagsChanged(NSEvent theEvent) {
@@ -61,10 +53,6 @@ public void flagsChanged(NSEvent theEvent) {
 
 public void helpRequested(NSEvent eventPtr) {
 	OS.objc_msgSend(this.id, OS.sel_helpRequested_, eventPtr != null ? eventPtr.id : 0);
-}
-
-public void insertText(id insertString) {
-	OS.objc_msgSend(this.id, OS.sel_insertText_, insertString != null ? insertString.id : 0);
 }
 
 public void interpretKeyEvents(NSArray eventArray) {
@@ -107,19 +95,7 @@ public void mouseUp(NSEvent theEvent) {
 	OS.objc_msgSend(this.id, OS.sel_mouseUp_, theEvent != null ? theEvent.id : 0);
 }
 
-public void moveToBeginningOfParagraph(id sender) {
-	OS.objc_msgSend(this.id, OS.sel_moveToBeginningOfParagraph_, sender != null ? sender.id : 0);
-}
-
-public void moveToEndOfParagraph(id sender) {
-	OS.objc_msgSend(this.id, OS.sel_moveToEndOfParagraph_, sender != null ? sender.id : 0);
-}
-
-public void moveUp(id sender) {
-	OS.objc_msgSend(this.id, OS.sel_moveUp_, sender != null ? sender.id : 0);
-}
-
-public void noResponderFor(long /*int*/ eventSelector) {
+public void noResponderFor(long eventSelector) {
 	OS.objc_msgSend(this.id, OS.sel_noResponderFor_, eventSelector);
 }
 
@@ -192,12 +168,12 @@ public void touchesMovedWithEvent(NSEvent event) {
 }
 
 public NSUndoManager undoManager() {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_undoManager);
+	long result = OS.objc_msgSend(this.id, OS.sel_undoManager);
 	return result != 0 ? new NSUndoManager(result) : null;
 }
 
 public id validRequestorForSendType(NSString sendType, NSString returnType) {
-	long /*int*/ result = OS.objc_msgSend(this.id, OS.sel_validRequestorForSendType_returnType_, sendType != null ? sendType.id : 0, returnType != null ? returnType.id : 0);
+	long result = OS.objc_msgSend(this.id, OS.sel_validRequestorForSendType_returnType_, sendType != null ? sendType.id : 0, returnType != null ? returnType.id : 0);
 	return result != 0 ? new id(result) : null;
 }
 

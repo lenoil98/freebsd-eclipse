@@ -13,16 +13,14 @@
  *******************************************************************************/
 package org.eclipse.pde.launching;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.*;
+import java.util.*;
+import org.eclipse.core.resources.*;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.jdt.core.*;
 import org.eclipse.jdt.launching.*;
 import org.eclipse.pde.internal.core.util.PDEJavaHelper;
-import org.eclipse.pde.internal.launching.PDELaunchingPlugin;
 import org.eclipse.pde.internal.launching.launcher.LaunchPluginValidator;
 import org.eclipse.pde.internal.launching.launcher.VMHelper;
 
@@ -47,30 +45,12 @@ public class PDESourcePathProvider extends StandardSourcePathProvider {
 	@Override
 	public IRuntimeClasspathEntry[] computeUnresolvedClasspath(ILaunchConfiguration configuration) throws CoreException {
 		List<IRuntimeClasspathEntry> sourcePath = new ArrayList<>();
-		sourcePath.add(getJREEntry(configuration));
+		sourcePath.add(VMHelper.getJREEntry(configuration));
 		IProject[] projects = getJavaProjects(configuration);
 		for (IProject project : projects) {
 			sourcePath.add(JavaRuntime.newProjectRuntimeClasspathEntry(JavaCore.create(project)));
 		}
 		return sourcePath.toArray(new IRuntimeClasspathEntry[sourcePath.size()]);
-	}
-
-	/**
-	 * Returns a JRE runtime classpath entry
-	 *
-	 * @param configuration
-	 * 			the launch configuration
-	 * @return a JRE runtime classpath entry
-	 * @throws CoreException
-	 * 			if the JRE associated with the launch configuration cannot be found
-	 * 			or if unable to retrieve the launch configuration attributes
-	 */
-	private IRuntimeClasspathEntry getJREEntry(ILaunchConfiguration configuration) throws CoreException {
-		IVMInstall jre = VMHelper.createLauncher(configuration);
-		IPath containerPath = new Path(JavaRuntime.JRE_CONTAINER);
-		containerPath = containerPath.append(jre.getVMInstallType().getId());
-		containerPath = containerPath.append(jre.getName());
-		return JavaRuntime.newRuntimeContainerClasspathEntry(containerPath, IRuntimeClasspathEntry.BOOTSTRAP_CLASSES);
 	}
 
 	/**
@@ -87,7 +67,7 @@ public class PDESourcePathProvider extends StandardSourcePathProvider {
 	 */
 	private IProject[] getJavaProjects(ILaunchConfiguration configuration) throws CoreException {
 		IProject[] projects = LaunchPluginValidator.getAffectedProjects(configuration, false);
-		return PDELaunchingPlugin.getWorkspace().computeProjectOrder(projects).projects;
+		return ResourcesPlugin.getWorkspace().computeProjectOrder(projects).projects;
 	}
 
 	@Override
@@ -105,9 +85,7 @@ public class PDESourcePathProvider extends StandardSourcePathProvider {
 				}
 			} else {
 				IRuntimeClasspathEntry[] resolved = JavaRuntime.resolveRuntimeClasspathEntry(entrie, configuration);
-				for (IRuntimeClasspathEntry element : resolved) {
-					all.add(element);
-				}
+				Collections.addAll(all, resolved);
 			}
 		}
 		return all.toArray(new IRuntimeClasspathEntry[all.size()]);

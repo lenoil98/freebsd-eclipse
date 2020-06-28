@@ -34,6 +34,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.IOrdinaryClassFile;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
@@ -63,14 +64,16 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 	public ResolveTests9(String name) {
 		super(name);
 	}
+	@Override
 	public ICompilationUnit getWorkingCopy(String path, String source) throws JavaModelException {
 		return super.getWorkingCopy(path, source, this.wcOwner);
 	}
+	@Override
 	public void setUpSuite() throws Exception {
 		super.setUpSuite();
-	
+
 		IJavaProject project = setUpJavaProject("Resolve", "9", true);
-	
+
 		String bootModPath = System.getProperty("java.home") + File.separator +"jrt-fs.jar";
 		IClasspathEntry jrtEntry = JavaCore.newLibraryEntry(new Path(bootModPath), null, null, null, null, false);
 		IClasspathEntry[] old = project.getRawClasspath();
@@ -78,20 +81,23 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 		System.arraycopy(old, 0, newPath, 0, old.length);
 		newPath[old.length] = jrtEntry;
 		project.setRawClasspath(newPath, null);
-	
+
 		waitUntilIndexesReady();
 	}
-	
+
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		this.wcOwner = new WorkingCopyOwner(){};
 	}
+	@Override
 	public void tearDownSuite() throws Exception {
 		deleteProject("Resolve");
-	
+
 		super.tearDownSuite();
 	}
-	
+
+	@Override
 	protected void tearDown() throws Exception {
 		if (this.wc != null) {
 			this.wc.discardWorkingCopy();
@@ -115,7 +121,7 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 	}
 	void addTestSrc(IJavaProject prj) throws CoreException {
 		IPath path = prj.getProject().getFullPath();
-		IClasspathEntry testSrc = JavaCore.newSourceEntry(path.append(new Path("src-test")), 
+		IClasspathEntry testSrc = JavaCore.newSourceEntry(path.append(new Path("src-test")),
 				null, null, path.append(new Path("bin-test")),
 				new IClasspathAttribute[] {JavaCore.newClasspathAttribute(IClasspathAttribute.TEST, "true")});
 		addClasspathEntry(prj, testSrc);
@@ -131,18 +137,18 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 			getWorkingCopy(
 					"/Resolve/src/test/TestClass.java",
 					"public class TestClass implements ITest {}\n");
-		
+
 			this.wc = getWorkingCopy(
 					"/Resolve/src/module-info.java",
 					"module com.test {\n" +
 					"  provides p1.Y with ResolveInterface;\n" +
 					"}\n");
-		
+
 			String str = this.wc.getSource();
 			String selection = "ResolveInterface";
 			int start = str.indexOf(selection);
 			int length = selection.length();
-		
+
 			IJavaElement[] elements = this.wc.codeSelect(start, length);
 			assertElementsEqual(
 				"Unexpected elements",
@@ -166,18 +172,18 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 			createFile(
 					"/Resolve/src/test/TestClass.java",
 					"public class TestClass implements ITest {}\n");
-		
+
 			this.wc = getWorkingCopy(
 					"/Resolve/src/module-info.java",
 					"module com.test {\n" +
 					"  provides test.ITest with test.TestClass;\n" +
 					"}\n");
-		
+
 			String str = this.wc.getSource();
 			String selection = "ITest";
 			int start = str.indexOf(selection);
 			int length = selection.length();
-		
+
 			IJavaElement[] elements = this.wc.codeSelect(start, length);
 			assertElementsEqual(
 				"Unexpected elements",
@@ -225,7 +231,7 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 			String selection = "ITest";
 			int start = str.indexOf(selection);
 			int length = selection.length();
-		
+
 			// still, if we get here before indexes are ready,
 			// then OperationCanceledException will send us into SearchableEnvironment.findTypes(String, ISearchRequestor, int),
 			// which succeeds:
@@ -254,18 +260,18 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 			createFile(
 					"/Resolve/src/test/TestClass.java",
 					"public class TestClass implements ITest {}\n");
-		
+
 			this.wc = getWorkingCopy(
 					"/Resolve/src/module-info.java",
 					"module com.test {\n" +
 					"  provides test.ITest with test.TestClass;\n" +
 					"}\n");
-		
+
 			String str = this.wc.getSource();
 			String selection = "ITest";
 			int start = str.indexOf(selection);
 			int length = selection.length();
-			
+
 			waitUntilIndexesReady();
 			// even after indexes are built we meanwhile (after bug 540541) find the selected type
 			IJavaElement[] elements = this.wc.codeSelect(start, length);
@@ -291,18 +297,18 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 			getWorkingCopy(
 					"/Resolve/src/test/TestClass.java",
 					"public class TestClass implements ITest {}\n");
-		
+
 			this.wc = getWorkingCopy(
 					"/Resolve/src/module-info.java",
 					"module com.test {\n" +
 					"  provides p1.Y with ResolveInterface;\n" +
 					"}\n");
-		
+
 			String str = this.wc.getSource();
 			String selection = "provides";
 			int start = str.indexOf(selection);
 			int length = selection.length();
-		
+
 			IJavaElement[] elements = this.wc.codeSelect(start, length);
 			assertElementsEqual(
 				"Unexpected elements",
@@ -325,18 +331,18 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 			getWorkingCopy(
 					"/Resolve/src/test/TestClass.java",
 					"public class TestClass implements ITest {}\n");
-		
+
 			this.wc = getWorkingCopy(
 					"/Resolve/src/module-info.java",
-					"module com.test {\n" + 
-					"  provides p1.Y with provides;\n" + 
+					"module com.test {\n" +
+					"  provides p1.Y with provides;\n" +
 					"}\n");
-		
+
 			String str = this.wc.getSource();
 			String selection = "provides";
 			int start = str.lastIndexOf(selection);
 			int length = selection.length();
-		
+
 			IJavaElement[] elements = this.wc.codeSelect(start, length);
 			assertElementsEqual(
 				"Unexpected elements",
@@ -405,8 +411,8 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 			IMarker[] markers = test.getProject().findMarkers(IJavaModelMarker.JAVA_MODEL_PROBLEM_MARKER, true, IResource.DEPTH_INFINITE);
 			sortMarkers(markers);
 			assertMarkers("Unexpected markers",
-					"The package p1.p2 conflicts with a package accessible from another module: mod\n" + 
-					"The package p1.p2 is accessible from more than one module: <unnamed>, mod\n" + 
+					"The package p1.p2 conflicts with a package accessible from another module: mod\n" +
+					"The package p1.p2 is accessible from more than one module: <unnamed>, mod\n" +
 					"The package p1.p2 is accessible from more than one module: <unnamed>, mod",
 					markers);
 
@@ -517,7 +523,7 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 			gui = createJava9ProjectWithJREAttributes("com.igorion.gui", new String[] {"src"}, attributes(MODULE));
 			addTestSrc(gui);
 			createFolder("com.igorion.gui/src/com/igorion/gui");
-			String source = 
+			String source =
 					"package com.igorion.gui;\n" +
 					"import com.igorion.model.IModel;\n" +
 					"import com.igorion.model.define.Model;\n" +
@@ -556,6 +562,46 @@ public class ResolveTests9 extends AbstractJavaModelTests {
 			deleteProject(model);
 			deleteProject(type);
 			deleteProject(logg);
+		}
+	}
+	public void testModuleCaching() throws Exception {
+		if (!isJRE9 || isJRE11) {
+			System.err.println("Test "+getName()+" requires a JRE [9,11)");
+			return;
+		}
+		IJavaProject prj = createJava9Project("caching");
+		try {
+			IFile file = createFile("caching/src/module-info.java",
+					"module caching {\n" +
+					"	requires java.xml.bind;\n" +
+					"}\n");
+			createFolder("caching/src/p");
+			createFile("caching/src/p/X.java",
+					"package p;\n" +
+					"@javax.xml.bind.annotation.XmlRootElement\n" +
+					"public class X {}\n");
+			prj.getProject().build(IncrementalProjectBuilder.FULL_BUILD, null);
+			IMarker[] markers = prj.getProject().findMarkers(null, true, IResource.DEPTH_INFINITE);
+			assertMarkers("unexpected markers",
+					"The module java.xml.bind has been deprecated since version 9 and marked for removal",  markers);
+
+			IModuleDescription module = prj.getModuleDescription();
+			assertTrue("module exists", module.exists());
+			assertEquals("module name", "caching", module.getElementName());
+
+			// move module-info away ...
+			createFolder("caching/away");
+			file.move(new Path("/caching/away/module-info.java"), false, null);
+			IModuleDescription mod2 = prj.getModuleDescription();
+			assertNull("no longer a module", mod2);
+
+			// ... and observe javax.xml.bind unobservable:
+			prj.getProject().build(IncrementalProjectBuilder.FULL_BUILD, null);
+			markers = prj.getProject().findMarkers(null, true, IResource.DEPTH_INFINITE);
+			assertMarkers("unexpected markers",
+					"javax.xml.bind cannot be resolved to a type", markers);
+		} finally {
+			deleteProject(prj);
 		}
 	}
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2017 IBM Corporation and others.
+ * Copyright (c) 2003, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,7 @@
  *     IBM Corporation - initial API and implementation
  *     anton.leherbauer@windriver.com - bug 220599 make CommonNavigator a ShowInSource
  *     rob.stryker@jboss.com - bug 250198 Slight changes for easier subclassing
+ *     Stefan Winkler <stefan@winklerweb.net> - bug 178019 - CNF Tooltip support
  *******************************************************************************/
 package org.eclipse.ui.navigator;
 
@@ -19,13 +20,11 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.PerformanceStats;
 import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.DoubleClickEvent;
-import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.ViewerFilter;
@@ -190,7 +189,7 @@ public class CommonNavigator extends ViewPart implements ISetSelectionTarget, IS
 		try {
 			commonViewer.getControl().setRedraw(false);
 
-	        INavigatorFilterService filterService = commonViewer
+			INavigatorFilterService filterService = commonViewer
 					.getNavigatorContentService().getFilterService();
 			ViewerFilter[] visibleFilters = filterService.getVisibleFilters(true);
 			for (ViewerFilter visibleFilter : visibleFilters) {
@@ -212,9 +211,9 @@ public class CommonNavigator extends ViewPart implements ISetSelectionTarget, IS
 			commonViewer.getControl().setRedraw(true);
 		}
 
-        commonViewer.createFrameList();
+		commonViewer.createFrameList();
 
-        /*
+		/*
 		 * Create the CommonNavigatorManager last because information about the
 		 * state of the CommonNavigator is required for the initialization of
 		 * the CommonNavigatorManager
@@ -246,17 +245,18 @@ public class CommonNavigator extends ViewPart implements ISetSelectionTarget, IS
 				.getSaveablesService().init(this, getCommonViewer(),
 						saveablesLifecycleListener);
 
-		commonViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				firePropertyChange(PROP_DIRTY);
-			}});
+		commonViewer.addSelectionChangedListener(event -> firePropertyChange(PROP_DIRTY));
 
 		String helpContext = commonViewer.getNavigatorContentService().getViewerDescriptor().getHelpContext();
 		if (helpContext == null)
 			helpContext = HELP_CONTEXT;
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(commonViewer.getControl(), helpContext);
+
+		boolean enableToolTipSupport = commonViewer.getNavigatorContentService().getViewerDescriptor()
+				.getBooleanConfigProperty(INavigatorViewerDescriptor.PROP_ENABLE_TOOLTIP_SUPPORT);
+		if (enableToolTipSupport) {
+			ColumnViewerToolTipSupport.enableFor(commonViewer);
+		}
 
 		stats.endRun();
 	}
@@ -280,10 +280,11 @@ public class CommonNavigator extends ViewPart implements ISetSelectionTarget, IS
 
 	/**
 	 * <p>
-	 * Returns the tool tip text for the given element. Used as the tool tip
-	 * text for the current frame, and for the view title tooltip.
+	 * Returns the tool tip text for the given element. Used as the tool tip text
+	 * for the current frame, and for the view title tooltip.
 	 * </p>
-	 * @param anElement
+	 *
+	 * @param anElement element to get text for
 	 * @return the tool tip text
 	 * @since 3.4
 	 *
@@ -456,21 +457,16 @@ public class CommonNavigator extends ViewPart implements ISetSelectionTarget, IS
 			return adapter.cast(this);
 		} else if (adapter == IShowInSource.class) {
 			return adapter.cast(getShowInSource());
-        }
+		}
 		return super.getAdapter(adapter);
 	}
 
-    /**
-     * Returns the <code>IShowInSource</code> for this view.
-     */
-    private IShowInSource getShowInSource() {
-        return new IShowInSource() {
-            @Override
-			public ShowInContext getShowInContext() {
-                return new ShowInContext(getCommonViewer().getInput(), getCommonViewer().getSelection());
-            }
-        };
-    }
+	/**
+	 * Returns the <code>IShowInSource</code> for this view.
+	 */
+	private IShowInSource getShowInSource() {
+		return () -> new ShowInContext(getCommonViewer().getInput(), getCommonViewer().getSelection());
+	}
 
 	/**
 	 * @return The Navigator Action Service which populates this instance of Common
@@ -524,17 +520,12 @@ public class CommonNavigator extends ViewPart implements ISetSelectionTarget, IS
 	 */
 	protected void initListeners(TreeViewer viewer) {
 
-		viewer.addDoubleClickListener(new IDoubleClickListener() {
+		viewer.addDoubleClickListener(event -> SafeRunner.run(new NavigatorSafeRunnable() {
 			@Override
-			public void doubleClick(final DoubleClickEvent event) {
-				SafeRunner.run(new NavigatorSafeRunnable() {
-					@Override
-					public void run() throws Exception {
-						handleDoubleClick(event);
-					}
-				});
+			public void run() throws Exception {
+				handleDoubleClick(event);
 			}
-		});
+		}));
 	}
 
 	/**
@@ -627,12 +618,27 @@ public class CommonNavigator extends ViewPart implements ISetSelectionTarget, IS
 
 	@Override
 	public Saveable[] getSaveables() {
-		return getNavigatorContentService().getSaveablesService().getSaveables();
+		Saveable[] saveables = getNavigatorContentService().getSaveablesService().getSaveables();
+		if (saveables == null) {
+			saveables = new Saveable[0];
+		}
+		return saveables;
 	}
 
 	@Override
 	public Saveable[] getActiveSaveables() {
-		return getNavigatorContentService().getSaveablesService().getActiveSaveables();
+		Saveable[] activeSaveables = getNavigatorContentService().getSaveablesService().getActiveSaveables();
+		if (activeSaveables == null) {
+			activeSaveables = new Saveable[0];
+		}
+		return activeSaveables;
+	}
+
+	/**
+	 * @since 3.9
+	 */
+	protected boolean hasSaveablesProvider() {
+		return getNavigatorContentService().getSaveablesService().hasSaveablesProvider();
 	}
 
 	@Override
@@ -716,7 +722,7 @@ public class CommonNavigator extends ViewPart implements ISetSelectionTarget, IS
 
 
 	/**
-	 * @param mode
+	 * @param mode new root mode
 	 * @noreference This method is not intended to be referenced by clients.
 	 * @nooverride This method is not intended to be re-implemented or extended by clients.
 	 * @since 3.4
@@ -737,7 +743,7 @@ public class CommonNavigator extends ViewPart implements ISetSelectionTarget, IS
 	}
 
 	/**
-	 * @param label
+	 * @param label new working set label
 	 * @noreference This method is not intended to be referenced by clients.
 	 * @nooverride This method is not intended to be re-implemented or extended by clients.
 	 * @since 3.4

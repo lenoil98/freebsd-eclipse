@@ -167,18 +167,20 @@ public class ConsoleView extends PageBookView implements IConsoleView, IConsoleL
 		}
 
 		super.showPageRec(pageRec);
+
+		if (fActiveConsole != recConsole) {
+			if (fActive && fActiveConsole != null) {
+				deactivateParticipants(fActiveConsole);
+			}
+			if (recConsole != null) {
+				activateParticipants(recConsole);
+			}
+		}
 		fActiveConsole = recConsole;
-		IConsole tos = null;
-		if (!fStack.isEmpty()) {
-			tos = fStack.get(0);
-		}
-		if (tos != null && !tos.equals(fActiveConsole) && fActive) {
-			deactivateParticipants(tos);
-		}
-		if (fActiveConsole != null && !fActiveConsole.equals(tos)) {
+		// bring active console on top of stack
+		if (fActiveConsole != null && !fStack.isEmpty() && !fActiveConsole.equals(fStack.get(0))) {
 			fStack.remove(fActiveConsole);
-			fStack.add(0,fActiveConsole);
-			activateParticipants(fActiveConsole);
+			fStack.add(0, fActiveConsole);
 		}
 		updateTitle();
 		updateHelp();
@@ -329,8 +331,8 @@ public class ConsoleView extends PageBookView implements IConsoleView, IConsoleL
 		// initialize page participants
 		IConsolePageParticipant[] consoleParticipants = ((ConsoleManager)getConsoleManager()).getPageParticipants(console);
 		final ListenerList<IConsolePageParticipant> participants = new ListenerList<>();
-		for (int i = 0; i < consoleParticipants.length; i++) {
-			participants.add(consoleParticipants[i]);
+		for (IConsolePageParticipant consoleParticipant : consoleParticipants) {
+			participants.add(consoleParticipant);
 		}
 		fConsoleToPageParticipants.put(console, participants);
 		for (IConsolePageParticipant iConsolePageParticipant : participants) {
@@ -398,13 +400,11 @@ public class ConsoleView extends PageBookView implements IConsoleView, IConsoleL
 	public void consolesAdded(final IConsole[] consoles) {
 		if (isAvailable()) {
 			Runnable r = () -> {
-				for (int i = 0; i < consoles.length; i++) {
+				for (IConsole console : consoles) {
 					if (isAvailable()) {
-						IConsole console = consoles[i];
 						// ensure it's still registered since this is done asynchronously
 						IConsole[] allConsoles = getConsoleManager().getConsoles();
-						for (int j = 0; j < allConsoles.length; j++) {
-							IConsole registered = allConsoles[j];
+						for (IConsole registered : allConsoles) {
 							if (registered.equals(console)) {
 								ConsoleWorkbenchPart part = new ConsoleWorkbenchPart(console, getSite());
 								fConsoleToPart.put(console, part);
@@ -413,7 +413,6 @@ public class ConsoleView extends PageBookView implements IConsoleView, IConsoleL
 								break;
 							}
 						}
-
 					}
 				}
 			};
@@ -425,9 +424,8 @@ public class ConsoleView extends PageBookView implements IConsoleView, IConsoleL
 	public void consolesRemoved(final IConsole[] consoles) {
 		if (isAvailable()) {
 			Runnable r = () -> {
-				for (int i = 0; i < consoles.length; i++) {
+				for (IConsole console : consoles) {
 					if (isAvailable()) {
-						IConsole console = consoles[i];
 						fStack.remove(console);
 						ConsoleWorkbenchPart part = fConsoleToPart.get(console);
 						if (part != null) {
@@ -513,6 +511,11 @@ public class ConsoleView extends PageBookView implements IConsoleView, IConsoleL
 		ConsoleWorkbenchPart part = fConsoleToPart.get(console);
 		if (part != null) {
 			partActivated(part);
+			// Workaround for bug 345435: call activated for this to force PageBookView to
+			// activate the new pages context
+			if (fActive) {
+				partActivated(this);
+			}
 		}
 	}
 

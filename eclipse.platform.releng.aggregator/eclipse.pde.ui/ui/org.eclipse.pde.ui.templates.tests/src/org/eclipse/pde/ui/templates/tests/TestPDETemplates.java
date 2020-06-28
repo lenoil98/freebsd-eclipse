@@ -13,6 +13,10 @@
  *******************************************************************************/
 package org.eclipse.pde.ui.templates.tests;
 
+import static java.util.stream.Collectors.toSet;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -22,11 +26,19 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.osgi.internal.framework.EquinoxBundle;
 import org.eclipse.osgi.storage.BundleInfo.Generation;
+import org.eclipse.pde.core.plugin.IPluginModelBase;
+import org.eclipse.pde.core.plugin.PluginRegistry;
 import org.eclipse.pde.core.target.*;
+import org.eclipse.pde.ds.internal.annotations.Messages;
 import org.eclipse.pde.internal.core.ICoreConstants;
+import org.eclipse.pde.internal.core.TargetPlatformHelper;
 import org.eclipse.pde.internal.core.builders.CompilerFlags;
 import org.eclipse.pde.internal.core.builders.PDEMarkerFactory;
+import org.eclipse.pde.internal.core.iproduct.IProduct;
+import org.eclipse.pde.internal.core.iproduct.IProductPlugin;
+import org.eclipse.pde.internal.core.product.WorkspaceProductModel;
 import org.eclipse.pde.internal.core.target.TargetPlatformService;
+import org.eclipse.pde.internal.launching.launcher.ProductValidationOperation;
 import org.eclipse.pde.internal.ui.wizards.IProjectProvider;
 import org.eclipse.pde.internal.ui.wizards.WizardElement;
 import org.eclipse.pde.internal.ui.wizards.plugin.*;
@@ -37,20 +49,21 @@ import org.junit.*;
 import org.junit.Assert;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.*;
 import org.osgi.framework.Bundle;
 
 @RunWith(Parameterized.class)
 public class TestPDETemplates {
 
 	private static class NewProjectCreationOperationExtension extends NewProjectCreationOperation {
-		private NewProjectCreationOperationExtension(IFieldData data, IProjectProvider provider, IPluginContentWizard template) {
+		private NewProjectCreationOperationExtension(IFieldData data, IProjectProvider provider,
+				IPluginContentWizard template) {
 			super(data, provider, template);
 		}
 
 		@Override
-		public void execute(IProgressMonitor monitor) throws CoreException, InvocationTargetException, InterruptedException {
+		public void execute(IProgressMonitor monitor)
+				throws CoreException, InvocationTargetException, InterruptedException {
 			super.execute(monitor);
 		}
 	}
@@ -93,27 +106,30 @@ public class TestPDETemplates {
 	@Parameter
 	public static WizardElement template;
 
-	@Parameters
+	@Parameters(name = "{index}: {0}")
 	public static Collection<WizardElement> allTemplateWizards() {
-		return Arrays.asList(new NewPluginProjectWizard().getAvailableCodegenWizards().getChildren()).stream()
-				.filter(o -> (o instanceof WizardElement))
-				.map(o -> (WizardElement)o)
+		return Arrays.asList(new NewPluginProjectWizard().getAvailableCodegenWizards().getChildren()).stream() //
+				.filter(o -> (o instanceof WizardElement)) //
+				.map(o -> (WizardElement) o) //
 				.collect(Collectors.toList());
 	}
 
-	private IProject project;
+	private static IProject project;
 
 	@Before
-	public void createProject() throws CoreException {
+	public void createProject() throws Exception {
 		PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().closeAllEditors(false);
-		String id = getClass().getSimpleName() + '_' + template.getID() + '_' + System.currentTimeMillis();
-		this.project = ResourcesPlugin.getWorkspace().getRoot().getProject(id);
-		project.create(new NullProgressMonitor());
-		project.open(new NullProgressMonitor());
+		String id = TestPDETemplates.class.getSimpleName() + '_' + template.getID();
+		project = ResourcesPlugin.getWorkspace().getRoot().getProject(id);
+		if (!project.exists()) {
+			project.create(new NullProgressMonitor());
+			project.open(new NullProgressMonitor());
+			createProjectWithTemplate();
+		}
 	}
 
-	@Test
-	public void configureProjectAndCheckMarkers() throws CoreException, InvocationTargetException, InterruptedException {
+	private static void createProjectWithTemplate()
+			throws CoreException, InvocationTargetException, InterruptedException {
 		PluginFieldData data = new PluginFieldData();
 		data.setId(project.getName());
 		data.setVersion("0.0.1.qualifier");
@@ -124,7 +140,7 @@ public class TestPDETemplates {
 		String version = System.getProperty("java.specification.version"); //$NON-NLS-1$
 		int ver = -1;
 		try {
-			ver = Integer.valueOf(version);
+			ver = Integer.parseInt(version);
 		} catch (NumberFormatException e) {
 			// preJava9
 		}
@@ -141,7 +157,7 @@ public class TestPDETemplates {
 		IProjectProvider projectProvider = new IProjectProvider() {
 			@Override
 			public IProject getProject() {
-				return TestPDETemplates.this.project;
+				return project;
 			}
 
 			@Override
@@ -156,30 +172,69 @@ public class TestPDETemplates {
 		};
 		IPluginContentWizard pluginContentWizard = (IPluginContentWizard) template.createExecutableExtension();
 		pluginContentWizard.init(data);
-		NewProjectCreationOperationExtension op = new NewProjectCreationOperationExtension(data, projectProvider, pluginContentWizard);
+		NewProjectCreationOperationExtension op = new NewProjectCreationOperationExtension(data, projectProvider,
+				pluginContentWizard);
 		op.execute(new NullProgressMonitor());
-		this.project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
+	}
 
-		IMarker[] markers = this.project.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
+	@Test
+	public void configureProjectAndCheckMarkers() throws CoreException {
+		project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
+
+		IMarker[] markers = project.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
 
 		// ignore missing package export marker
 		if (markers.length == 1 && CompilerFlags.P_MISSING_EXPORT_PKGS
 				.equals(markers[0].getAttribute(PDEMarkerFactory.compilerKey, ""))) {
+			System.out.println("Template '" + template.getLabel() + "' ignored errors.");
+			System.out.println(markers[0]);
+			System.out.println("--------------------------------------------------------");
 			markers = new IMarker[0];
 		}
-		if (markers.length > 0) {
-			System.out.println("Template '" + template.getLabel() + "' generates errors.");
-			for (IMarker marker : markers) {
-				System.out.println(marker);
-			}
+		// ignore "DS Annotations missing from permanent build path"
+		if (markers.length == 1 && Messages.DSAnnotationCompilationParticipant_buildpathProblemMarker_message
+				.equals(markers[0].getAttribute(IMarker.MESSAGE, ""))) {
+			System.out.println("Template '" + template.getLabel() + "' ignored errors.");
+			System.out.println(markers[0]);
 			System.out.println("--------------------------------------------------------");
+			markers = new IMarker[0];
 		}
-		Assert.assertArrayEquals("Template '" + template.getLabel() + "' generates errors.", new IMarker[0], markers);
+
+		assertThat("Template '" + template.getLabel() + "' generates errors.", markers, equalTo(new IMarker[0]));
 	}
 
-	@After
-	public void deleteProject() throws CoreException {
+	@Test
+	public void validateProduct() throws CoreException {
+		IResource productFile = project.findMember(project.getName() + ".product");
+		Assume.assumeNotNull(productFile);
+
+		WorkspaceProductModel model = new WorkspaceProductModel((IFile) productFile, false);
+		model.load();
+		IProduct product = model.getProduct();
+
+		Set<IPluginModelBase> launchPlugins = new HashSet<>();
+		for (IProductPlugin plugin : product.getPlugins()) {
+			IPluginModelBase pluginModel = PluginRegistry.findModel(plugin.getId());
+			if (pluginModel != null && TargetPlatformHelper.matchesCurrentEnvironment(pluginModel))
+				launchPlugins.add(pluginModel);
+		}
+
+		ProductValidationOperation validationOperation = new ProductValidationOperation(
+				launchPlugins.toArray(new IPluginModelBase[0]));
+		validationOperation.run(new NullProgressMonitor());
+
+		if (validationOperation.hasErrors()) {
+			Object errors = validationOperation.getInput().values().stream() //
+					.flatMap(Arrays::stream) //
+					.map(Object::toString) //
+					.collect(toSet());
+			Assert.fail("Generated product fails validation: \n" + errors);
+		}
+	}
+
+	@AfterParam
+	public static void deleteProject() throws CoreException {
 		PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().closeAllEditors(false);
-		this.project.delete(true, new NullProgressMonitor());
+		project.delete(true, new NullProgressMonitor());
 	}
 }

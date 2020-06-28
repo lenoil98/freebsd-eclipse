@@ -54,7 +54,7 @@ import org.eclipse.jdt.internal.ui.search.SearchMessages;
  * fields, methods, types, and local variables) in a file.
  * <p>
  * Action is applicable to selections containing elements of type
- * <tt>IMember</tt>.
+ * <code>IMember</code>.
  *
  * <p>
  * This class may be instantiated; it is not intended to be subclassed.
@@ -194,7 +194,7 @@ public class FindOccurrencesInFileAction extends SelectionDispatchAction {
 
 	/**
 	 * Note: This method is for internal use only. Clients should not call this method.
-	 * 
+	 *
 	 * @param selection the Java text selection
 	 * @noreference This method is not intended to be referenced by clients.
 	 */

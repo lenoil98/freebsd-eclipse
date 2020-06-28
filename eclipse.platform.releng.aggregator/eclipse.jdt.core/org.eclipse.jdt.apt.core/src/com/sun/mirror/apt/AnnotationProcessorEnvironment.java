@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -46,7 +46,7 @@ import com.sun.mirror.util.*;
  *
  * <p> When an annotation processing tool is invoked, it is given a
  * set of type declarations on which to operate.  These
- * are refered to as the <i>specified</i> types.
+ * are referred to as the <i>specified</i> types.
  * The type declarations said to be <i>included</i> in this invocation
  * consist of the specified types and any types nested within them.
  *
@@ -65,11 +65,11 @@ public interface AnnotationProcessorEnvironment {
     /**
      * Returns the options passed to the annotation processing tool.
      * Options are returned in the form of a map from option name
-     * (such as <tt>"-encoding"</tt>) to option value.
-     * For an option with no value (such as <tt>"-help"</tt>), the
-     * corresponding value in the map is <tt>null</tt>.
+     * (such as <code>"-encoding"</code>) to option value.
+     * For an option with no value (such as <code>"-help"</code>), the
+     * corresponding value in the map is <code>null</code>.
      *
-     * <p> Options beginning with <tt>"-A"</tt> are <i>processor-specific.</i>
+     * <p> Options beginning with <code>"-A"</code> are <i>processor-specific.</i>
      * Such options are unrecognized by the tool, but intended to be used by
      * some annotation processor.
      *
@@ -171,8 +171,8 @@ public interface AnnotationProcessorEnvironment {
      * @throws NullPointerException if the listener is null
      */
     void addListener(AnnotationProcessorListener listener);
- 
- 
+
+
     /**
      * Remove a listener.  If the listener is not currently listening,
      * the method call does nothing.

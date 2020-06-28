@@ -215,7 +215,7 @@ public class NavigatorContentExtension implements IMementoAware,
 	}
 
 	@Override
-	public Object getAdapter(Class adapter) {
+	public <T> T getAdapter(Class<T> adapter) {
 		return null;
 	}
 
@@ -359,6 +359,6 @@ public class NavigatorContentExtension implements IMementoAware,
 
 	@Override
 	public String toString() {
-		return descriptor.toString() + " Instance"; //$NON-NLS-1$
+		return descriptor + " Instance"; //$NON-NLS-1$
 	}
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -77,16 +77,18 @@ public class IrritantSet {
 	public static final IrritantSet MODULE = new IrritantSet(CompilerOptions.UnstableAutoModuleName);
 
 	public static final IrritantSet JAVADOC = new IrritantSet(CompilerOptions.InvalidJavadoc);
-	public static final IrritantSet PREVIEW = new IrritantSet(0);
-	public static final IrritantSet COMPILER_DEFAULT_ERRORS = new IrritantSet(0); // no optional error by default	
+	public static final IrritantSet PREVIEW = new IrritantSet(CompilerOptions.PreviewFeatureUsed);
+	public static final IrritantSet COMPILER_DEFAULT_ERRORS = new IrritantSet(0); // no optional error by default
 	public static final IrritantSet COMPILER_DEFAULT_WARNINGS = new IrritantSet(0); // see static initializer below
-	public static final IrritantSet COMPILER_DEFAULT_INFOS = new IrritantSet(0); // As of now, no default values
+	public static final IrritantSet COMPILER_DEFAULT_INFOS = new IrritantSet(0); // see static initializer below
 	static {
 		COMPILER_DEFAULT_INFOS
 		// group-2 infos enabled by default
 		.set(
-			CompilerOptions.UnlikelyEqualsArgumentType);
-		
+			CompilerOptions.UnlikelyEqualsArgumentType
+			| CompilerOptions.SuppressWarningsNotAnalysed
+			| CompilerOptions.AnnotatedTypeArgumentToUnannotated);
+
 		COMPILER_DEFAULT_WARNINGS
 			// group-0 warnings enabled by default
 			.set(
@@ -135,7 +137,8 @@ public class IrritantSet {
 				|CompilerOptions.UnlikelyCollectionMethodArgumentType
 				|CompilerOptions.UsingTerminallyDeprecatedAPI
 				|CompilerOptions.APILeak
-				|CompilerOptions.UnstableAutoModuleName);
+				|CompilerOptions.UnstableAutoModuleName
+				|CompilerOptions.PreviewFeatureUsed);
 		// default errors IF AnnotationBasedNullAnalysis is enabled:
 		COMPILER_DEFAULT_ERRORS.set(
 				CompilerOptions.NullSpecViolation
@@ -156,7 +159,8 @@ public class IrritantSet {
 			.set(CompilerOptions.NonnullParameterAnnotationDropped)
 			.set(CompilerOptions.MissingNonNullByDefaultAnnotation)
 			.set(CompilerOptions.PessimisticNullAnalysisForFreeTypeVariables)
-			.set(CompilerOptions.NonNullTypeVariableFromLegacyInvocation);
+			.set(CompilerOptions.NonNullTypeVariableFromLegacyInvocation)
+			.set(CompilerOptions.AnnotatedTypeArgumentToUnannotated);
 
 		RESTRICTION.set(CompilerOptions.DiscouragedReference);
 		STATIC_ACCESS.set(CompilerOptions.NonStaticAccessToStatic);
@@ -183,14 +187,13 @@ public class IrritantSet {
 		if (suppressRawWhenUnchecked != null && "true".equalsIgnoreCase(suppressRawWhenUnchecked)) { //$NON-NLS-1$
 			UNCHECKED.set(CompilerOptions.RawTypeReference);
 		}
-		
+
 		JAVADOC
 			.set(CompilerOptions.MissingJavadocComments)
 			.set(CompilerOptions.MissingJavadocTags);
 
 		UNLIKELY_ARGUMENT_TYPE
 			.set(CompilerOptions.UnlikelyEqualsArgumentType);
-		//PREVIEW.set(CompilerOptions.DummyPreviewFeatureWarning);
 	}
 	// Internal state
 
@@ -233,7 +236,7 @@ public class IrritantSet {
 
 	/**
 	 * Initialize a set of irritants in one group
-	 * 
+	 *
 	 * @param singleGroupIrritants
 	 */
 	public void initialize(int singleGroupIrritants) {
@@ -292,7 +295,7 @@ public class IrritantSet {
 
 	/**
 	 * Return updated irritantSet or null if it was a no-op
-	 * 
+	 *
 	 * @param other
 	 */
 	public IrritantSet set(IrritantSet other) {
@@ -310,7 +313,7 @@ public class IrritantSet {
 		}
 		return wasNoOp ? null : this;
 	}
-	
+
 	public IrritantSet setAll() {
 		for (int i = 0; i < GROUP_MAX; i++) {
 			this.bits[i] |= 0xFFFFFFFF & ~GROUP_MASK; // erase the group

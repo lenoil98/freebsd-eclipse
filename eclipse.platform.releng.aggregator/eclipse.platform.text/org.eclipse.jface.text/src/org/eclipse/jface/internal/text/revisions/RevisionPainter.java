@@ -46,7 +46,10 @@ import org.eclipse.core.runtime.Platform;
 
 import org.eclipse.jface.internal.text.html.BrowserInformationControl;
 import org.eclipse.jface.internal.text.html.HTMLPrinter;
+import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.preference.JFacePreferences;
 import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.util.IPropertyChangeListener;
 
 import org.eclipse.jface.text.AbstractReusableInformationControlCreator;
 import org.eclipse.jface.text.BadLocationException;
@@ -148,6 +151,11 @@ public final class RevisionPainter {
 		 */
 		private final Map<Revision, RGB> fFocusColors= new HashMap<>();
 
+		/** Cached gradient start and stop values. */
+		private RGB fGradientStart;
+
+		private RGB fGradientStop;
+
 		/**
 		 * Sets the revision information, which is needed to compute the relative age of a revision.
 		 *
@@ -157,7 +165,8 @@ public final class RevisionPainter {
 			fRevisions= null;
 			fColors.clear();
 			fFocusColors.clear();
-
+			fGradientStart= null;
+			fGradientStop= null;
 			if (info == null)
 				return;
 			List<Long> revisions= new ArrayList<>();
@@ -168,16 +177,27 @@ public final class RevisionPainter {
 			fRevisions= revisions;
 		}
 
+		private RGB getRGB(String key, RGB defaultValue) {
+			RGB rgb= JFaceResources.getColorRegistry().getRGB(key);
+			return rgb != null ? rgb : defaultValue;
+		}
+
 		private RGB adaptColor(Revision revision, boolean focus) {
 			RGB rgb;
 			float scale;
 			if (fRenderingMode == IRevisionRulerColumnExtension.AGE) {
 				int index= computeAgeIndex(revision);
-				if (index == -1 || fRevisions.size() == 0) {
+				if (index == -1 || fRevisions.isEmpty()) {
 					rgb= getBackground().getRGB();
 				} else {
-					// gradient from intense red for most recent to faint yellow for oldest
-					RGB[] gradient= Colors.palette(BY_DATE_START_COLOR, BY_DATE_END_COLOR, fRevisions.size());
+					if (fGradientStart == null) {
+						fGradientStart= getRGB(JFacePreferences.REVISION_NEWEST_COLOR, BY_DATE_START_COLOR);
+					}
+					if (fGradientStop == null) {
+						fGradientStop= getRGB(JFacePreferences.REVISION_OLDEST_COLOR, BY_DATE_END_COLOR);
+					}
+					// gradient from most recent to oldest
+					RGB[] gradient= Colors.palette(fGradientStart, fGradientStop, fRevisions.size());
 					rgb= gradient[gradient.length - index - 1];
 				}
 				scale= 0.99f;
@@ -285,7 +305,7 @@ public final class RevisionPainter {
 				updateFocusRevision(null); // kill any focus as the ctx menu is going to show
 			if (e.button == 1) {
 				fMouseDownRegion= fFocusRange;
-		    	postRedraw();
+				postRedraw();
 			}
 		}
 
@@ -351,41 +371,41 @@ public final class RevisionPainter {
 		@Override
 		protected IInformationControl doCreateInformationControl(Shell parent) {
 			if (BrowserInformationControl.isAvailable(parent)) {
-	            return new BrowserInformationControl(parent, JFaceResources.DIALOG_FONT, fIsFocusable) {
-	            	/**
+				return new BrowserInformationControl(parent, JFaceResources.DIALOG_FONT, fIsFocusable) {
+					/**
 					 * {@inheritDoc}
 					 *
 					 * @deprecated use {@link #setInput(Object)}
 					 */
-	            	@Deprecated
+					@Deprecated
 					@Override
 					public void setInformation(String content) {
-        				content= addCSSToHTMLFragment(content);
-	            		super.setInformation(content);
-	            	}
+						content= addCSSToHTMLFragment(content);
+						super.setInformation(content);
+					}
 
-	        		/**
-	        		 * Adds a HTML header and CSS info if <code>html</code> is only an HTML fragment (has no
-	        		 * &lt;html&gt; section).
-	        		 *
-	        		 * @param html the html / text produced by a revision
-	        		 * @return modified html
-	        		 */
-	        		private String addCSSToHTMLFragment(String html) {
-	        			int max= Math.min(100, html.length());
-	        			if (html.substring(0, max).indexOf("<html>") != -1) //$NON-NLS-1$
-	        				// there is already a header
-	        				return html;
+					/**
+					 * Adds a HTML header and CSS info if <code>html</code> is only an HTML fragment (has no
+					 * &lt;html&gt; section).
+					 *
+					 * @param html the html / text produced by a revision
+					 * @return modified html
+					 */
+					private String addCSSToHTMLFragment(String html) {
+						int max= Math.min(100, html.length());
+						if (html.substring(0, max).contains("<html>")) //$NON-NLS-1$
+							// there is already a header
+							return html;
 
-	        			StringBuilder info= new StringBuilder(512 + html.length());
-	        			HTMLPrinter.insertPageProlog(info, 0, fgStyleSheet);
-	        			info.append(html);
-	        			HTMLPrinter.addPageEpilog(info);
-	        			return info.toString();
-	        		}
+						StringBuilder info= new StringBuilder(512 + html.length());
+						HTMLPrinter.insertPageProlog(info, 0, fgStyleSheet);
+						info.append(html);
+						HTMLPrinter.addPageEpilog(info);
+						return info.toString();
+					}
 
-	            };
-            }
+				};
+			}
 			return new DefaultInformationControl(parent, fIsFocusable);
 		}
 
@@ -473,7 +493,7 @@ public final class RevisionPainter {
 			return range == null ? null : new LineRange(lineNumber, 1);
 		}
 
-        @Override
+		@Override
 		public IInformationControlCreator getInformationPresenterControlCreator() {
 			RevisionInformation revisionInfo= fRevisionInfo;
 			if (revisionInfo != null) {
@@ -482,7 +502,7 @@ public final class RevisionPainter {
 					return creator;
 			}
 			return new HoverInformationControlCreator(true);
-        }
+		}
 	}
 
 	/* Listeners and helpers. */
@@ -589,11 +609,26 @@ public final class RevisionPainter {
 	 * @since 3.3
 	 */
 	private int fLastWidth= -1;
-	/**
-	 * The zoom level for the current painting operation. Workaround for bug 516293.
-	 * @since 3.12
-	 */
-	private int fZoom= 100;
+
+	/** The JFace preference store, or {@code null} if there is none. */
+	private IPreferenceStore fPreferences;
+
+	/** Listens on {@link #fPreferences} to update the ruler when colors change. */
+	private final IPropertyChangeListener fColorListener= event -> {
+		String property= event.getProperty();
+		if (property == null) {
+			return;
+		}
+		switch (property) {
+			case JFacePreferences.REVISION_NEWEST_COLOR:
+			case JFacePreferences.REVISION_OLDEST_COLOR:
+				fLastWidth= -1; // Recalculate colors
+				postRedraw();
+				break;
+			default:
+				break;
+		}
+	};
 
 	/**
 	 * Creates a new revision painter for a vertical ruler column.
@@ -661,20 +696,15 @@ public final class RevisionPainter {
 	 */
 	public void setParentRuler(CompositeRuler parentRuler) {
 		fParentRuler= parentRuler;
-	}
-
-	/**
-	 * Sets the zoom level for the current painting operation. Workaround for bug 516293.
-	 *
-	 * @param zoom the zoom to set
-	 * @since 3.12
-	 */
-	public void setZoom(int zoom) {
-		fZoom= zoom;
-	}
-
-	private int autoScaleUp(int value) {
-		return value * fZoom / 100;
+		if (parentRuler != null) {
+			fPreferences= JFacePreferences.getPreferenceStore();
+			if (fPreferences != null) {
+				fPreferences.addPropertyChangeListener(fColorListener);
+			}
+		} else if (fPreferences != null) {
+			fPreferences.removePropertyChangeListener(fColorListener);
+			fPreferences= null;
+		}
 	}
 
 	/**
@@ -1073,7 +1103,7 @@ public final class RevisionPainter {
 		int y1= fWidget.getLinePixel(range.getStartLine());
 		int y2= fWidget.getLinePixel(range.getStartLine() + range.getNumberOfLines());
 
-		return new Rectangle(0, autoScaleUp(y1), autoScaleUp(getWidth()), autoScaleUp(y2 - y1 - 1));
+		return new Rectangle(0, y1, getWidth(), y2 - y1 - 1);
 	}
 
 	/**
@@ -1156,8 +1186,8 @@ public final class RevisionPainter {
 	/**
 	 * Handles the selection of a revision id and informs listeners
 	 *
-     * @param id the selected revision id
-     */
+	 * @param id the selected revision id
+	 */
 	void handleRevisionSelected(String id) {
 		Assert.isLegal(id != null);
 		if (fRevisionInfo == null)
@@ -1174,14 +1204,14 @@ public final class RevisionPainter {
 		handleRevisionSelected((Revision) null);
 	}
 
-    /**
-     * Returns the selection provider.
-     *
-     * @return the selection provider
-     */
-    public RevisionSelectionProvider getRevisionSelectionProvider() {
+	/**
+	 * Returns the selection provider.
+	 *
+	 * @return the selection provider
+	 */
+	public RevisionSelectionProvider getRevisionSelectionProvider() {
 		return fRevisionSelectionProvider;
-    }
+	}
 
 	/**
 	 * Updates the focus line with a new line.
@@ -1232,9 +1262,9 @@ public final class RevisionPainter {
 	}
 
 	private void updateFocusRevision(Revision revision) {
-	    if (fFocusRevision != revision)
+		if (fFocusRevision != revision)
 			onFocusRevisionChanged(fFocusRevision, revision);
-    }
+	}
 
 	/**
 	 * Handles a changing focus revision.
@@ -1347,7 +1377,7 @@ public final class RevisionPainter {
 		if (isConnected() && !fControl.isDisposed()) {
 			Display d= fControl.getDisplay();
 			if (d != null) {
-				d.asyncExec(() -> redraw());
+				d.asyncExec(this::redraw);
 			}
 		}
 	}
@@ -1423,30 +1453,30 @@ public final class RevisionPainter {
 	 * @param offset the document offset
 	 * @return the revision at offset, or <code>null</code> for none
 	 */
-    Revision getRevision(int offset) {
-    	IDocument document= fViewer.getDocument();
-    	int line;
-        try {
-	        line= document.getLineOfOffset(offset);
-        } catch (BadLocationException x) {
-        	return null;
-        }
-    	if (line != -1) {
-    		RevisionRange range= getRange(line);
-    		if (range != null)
-    			return range.getRevision();
-    	}
-    	return null;
-    }
+	Revision getRevision(int offset) {
+		IDocument document= fViewer.getDocument();
+		int line;
+		try {
+			line= document.getLineOfOffset(offset);
+		} catch (BadLocationException x) {
+			return null;
+		}
+		if (line != -1) {
+			RevisionRange range= getRange(line);
+			if (range != null)
+				return range.getRevision();
+		}
+		return null;
+	}
 
 	/**
 	 * Returns <code>true</code> if a revision model has been set, <code>false</code> otherwise.
 	 *
-     * @return <code>true</code> if a revision model has been set, <code>false</code> otherwise
-     */
-    public boolean hasInformation() {
-	    return fRevisionInfo != null;
-    }
+	 * @return <code>true</code> if a revision model has been set, <code>false</code> otherwise
+	 */
+	public boolean hasInformation() {
+		return fRevisionInfo != null;
+	}
 
 	/**
 	 * Returns the width in chars required to display information.

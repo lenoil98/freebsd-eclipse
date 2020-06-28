@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.ui.internal.browser.embedded;
 import java.net.MalformedURLException;
@@ -130,8 +131,8 @@ public class EmbeddedBrowser {
 		h = Platform.getPreferencesService().getInt(HelpUIPlugin.PLUGIN_ID, BROWSER_HEIGTH, 0, null);
 		if (w == 0 || h == 0) {
 			// first launch, use default size
-			w = 1024;
-			h = 768;
+			w = 1600;
+			h = 900;
 			x = shell.getLocation().x;
 			y = shell.getLocation().y;
 		}
@@ -379,7 +380,7 @@ public class EmbeddedBrowser {
 				}
 				catch (Throwable t) {
 					String msg = "Error opening external Web browser"; //$NON-NLS-1$
-					HelpUIPlugin.logError(msg, t);
+					Platform.getLog(getClass()).error(msg, t);
 				}
 				externalShell.getDisplay().asyncExec(() -> externalShell.dispose());
 			}
@@ -392,7 +393,7 @@ public class EmbeddedBrowser {
 	private static String getWindowTitle() {
 		if (Platform.getPreferencesService().getBoolean(HelpUIPlugin.PLUGIN_ID, "windowTitlePrefix", false, null)) { //$NON-NLS-1$
 			return NLS.bind(Messages.browserTitle, BaseHelpSystem
-            .getProductName());
+			.getProductName());
 		}
 		return BaseHelpSystem.getProductName();
 	}

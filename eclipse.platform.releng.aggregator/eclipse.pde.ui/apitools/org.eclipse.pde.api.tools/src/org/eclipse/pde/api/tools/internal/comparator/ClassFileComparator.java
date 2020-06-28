@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2018 IBM Corporation and others.
+ * Copyright (c) 2008, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,7 +13,9 @@
  *******************************************************************************/
 package org.eclipse.pde.api.tools.internal.comparator;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -47,8 +49,6 @@ import org.eclipse.pde.api.tools.internal.provisional.model.IApiTypeRoot;
 import org.eclipse.pde.api.tools.internal.util.Signatures;
 import org.eclipse.pde.api.tools.internal.util.Util;
 import org.objectweb.asm.signature.SignatureReader;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Compares class files from the workspace to those in the default
@@ -348,7 +348,10 @@ public class ClassFileComparator {
 					}
 				}
 
-				this.addDelta(getElementType(this.type1), IDelta.CHANGED, IDelta.EXPANDED_SUPERINTERFACES_SET, this.currentDescriptorRestrictions, this.type1.getModifiers(), this.type2.getModifiers(), this.type1, this.type1.getName(), Util.getDescriptorName(type1));
+				this.addDelta(getElementType(this.type1), IDelta.CHANGED, IDelta.EXPANDED_SUPERINTERFACES_SET,
+						this.currentDescriptorRestrictions, this.type1.getModifiers(), this.type2.getModifiers(),
+						this.type1, this.type1.getName(), new String[] { Util.getDescriptorName(type1),
+								computeDiff(superinterfacesSet1, superinterfacesSet2, true) });
 				if (this.type1.isInterface()) {
 					for (Iterator<IApiType> iterator = superinterfacesSet2.iterator(); iterator.hasNext();) {
 						IApiType type = iterator.next();
@@ -391,7 +394,10 @@ public class ClassFileComparator {
 				}
 			}
 		} else if (superinterfacesSet2 == null) {
-			this.addDelta(getElementType(this.type1), IDelta.CHANGED, IDelta.CONTRACTED_SUPERINTERFACES_SET, this.currentDescriptorRestrictions, this.type1.getModifiers(), this.type2.getModifiers(), this.type1, this.type1.getName(), Util.getDescriptorName(type1));
+			this.addDelta(getElementType(this.type1), IDelta.CHANGED, IDelta.CONTRACTED_SUPERINTERFACES_SET,
+					this.currentDescriptorRestrictions, this.type1.getModifiers(), this.type2.getModifiers(),
+					this.type1, this.type1.getName(), new String[] { Util.getDescriptorName(type1),
+							computeDiff(superinterfacesSet1, superinterfacesSet2, false) });
 		} else {
 			Set<String> names2 = new HashSet<>();
 			for (Iterator<IApiType> iterator = superinterfacesSet2.iterator(); iterator.hasNext();) {
@@ -408,7 +414,10 @@ public class ClassFileComparator {
 				}
 			}
 			if (contracted) {
-				this.addDelta(getElementType(this.type1), IDelta.CHANGED, IDelta.CONTRACTED_SUPERINTERFACES_SET, this.currentDescriptorRestrictions, this.type1.getModifiers(), this.type2.getModifiers(), this.type1, this.type1.getName(), Util.getDescriptorName(type1));
+				this.addDelta(getElementType(this.type1), IDelta.CHANGED, IDelta.CONTRACTED_SUPERINTERFACES_SET,
+						this.currentDescriptorRestrictions, this.type1.getModifiers(), this.type2.getModifiers(),
+						this.type1, this.type1.getName(), new String[] { Util.getDescriptorName(type1),
+								computeDiff(superinterfacesSet1, superinterfacesSet2, false) });
 				return;
 			}
 			if (names2.size() > 0) {
@@ -455,7 +464,10 @@ public class ClassFileComparator {
 					}
 				}
 
-				this.addDelta(getElementType(this.type1), IDelta.CHANGED, IDelta.EXPANDED_SUPERINTERFACES_SET, this.currentDescriptorRestrictions, this.type1.getModifiers(), this.type2.getModifiers(), this.type1, this.type1.getName(), Util.getDescriptorName(type1));
+				this.addDelta(getElementType(this.type1), IDelta.CHANGED, IDelta.EXPANDED_SUPERINTERFACES_SET,
+						this.currentDescriptorRestrictions, this.type1.getModifiers(), this.type2.getModifiers(),
+						this.type1, this.type1.getName(), new String[] { Util.getDescriptorName(type1),
+								computeDiff(superinterfacesSet1, superinterfacesSet2, true) });
 				if (this.type1.isInterface()) {
 					for (Iterator<String> iterator = names2.iterator(); iterator.hasNext();) {
 						String interfaceName = iterator.next();
@@ -511,6 +523,49 @@ public class ClassFileComparator {
 				}
 			}
 		}
+	}
+
+	private String computeDiff(Set<IApiType> superinterfacesSet1, Set<IApiType> superinterfacesSet2, boolean expand) {
+		Set<String> namesToReturn = new HashSet<>();
+		if (superinterfacesSet1 == null) {
+			for (Iterator<IApiType> iterator = superinterfacesSet2.iterator(); iterator.hasNext();) {
+				namesToReturn.add(iterator.next().getName());
+			}
+			return processNames(namesToReturn);
+
+		}
+		if (superinterfacesSet2 == null) {
+			for (Iterator<IApiType> iterator = superinterfacesSet1.iterator(); iterator.hasNext();) {
+				namesToReturn.add(iterator.next().getName());
+			}
+			return processNames(namesToReturn);
+
+		}
+		for (Iterator<IApiType> iterator = expand ? superinterfacesSet2.iterator()
+				: superinterfacesSet1.iterator(); iterator.hasNext();) {
+			namesToReturn.add(iterator.next().getName());
+		}
+		Set<String> names1 = new HashSet<>();
+		for (Iterator<IApiType> iterator = expand ? superinterfacesSet1.iterator()
+				: superinterfacesSet2.iterator(); iterator.hasNext();) {
+			names1.add(iterator.next().getName());
+		}
+
+		for (String name : names1) {
+			namesToReturn.remove(name);
+
+		}
+		return processNames(namesToReturn);
+
+	}
+
+	private String processNames(Set<String> namesToReturn) {
+		StringBuilder str = new StringBuilder();
+		for (String string : namesToReturn) {
+			str.append(string);
+			str.append(',');
+		}
+		return str.substring(0, str.length() - 1);
 	}
 
 	private void checkTypeMembers() throws CoreException {
@@ -971,21 +1026,39 @@ public class ClassFileComparator {
 						// adding/removing no extend on a final class is ok
 						// adding/removing no instantiate on an abstract class
 						// is ok
+						String NO_EXTEND = "@noextend"; //$NON-NLS-1$
+						String NO_IMPLEMENT = "@noimplement"; //$NON-NLS-1$
+						String NO_INSTANSTIATE = "@noinstantiate"; //$NON-NLS-1$
 						if (this.type1.isInterface()) {
-							if ((RestrictionModifiers.isImplementRestriction(restrictions2) && !RestrictionModifiers.isImplementRestriction(restrictions)) || (RestrictionModifiers.isExtendRestriction(restrictions2) && !RestrictionModifiers.isExtendRestriction(restrictions))) {
-								this.addDelta(getElementType(this.type1), IDelta.ADDED, IDelta.RESTRICTIONS, restrictions2, typeAccess, typeAccess2, this.type2, this.type2.getName(), Util.getDescriptorName(type1));
+							boolean noImplementAdded = (RestrictionModifiers.isImplementRestriction(restrictions2) && !RestrictionModifiers.isImplementRestriction(restrictions));
+							if (noImplementAdded || (RestrictionModifiers.isExtendRestriction(restrictions2) && !RestrictionModifiers.isExtendRestriction(restrictions))) {
+								this.addDelta(getElementType(this.type1), IDelta.ADDED, IDelta.RESTRICTIONS, restrictions2, typeAccess, typeAccess2, this.type2, this.type2.getName(), new String[] {noImplementAdded? NO_IMPLEMENT:NO_EXTEND, Util.getDescriptorName(type1) });
+							}
+							boolean noImplementRemoved = (!RestrictionModifiers.isImplementRestriction(restrictions2) && RestrictionModifiers.isImplementRestriction(restrictions)) ;
+							if (noImplementRemoved || (!RestrictionModifiers.isExtendRestriction(restrictions2) && RestrictionModifiers.isExtendRestriction(restrictions))) {
+								this.addDelta(getElementType(this.type1), IDelta.REMOVED, IDelta.RESTRICTIONS, restrictions2, typeAccess, typeAccess2, this.type2, this.type2.getName(), new String[] {noImplementRemoved?  NO_IMPLEMENT:NO_EXTEND, Util.getDescriptorName(type1) });
 							}
 						} else {
 							boolean reportChangedRestrictions = false;
 							if (!Flags.isFinal(typeAccess2) && !Flags.isFinal(typeAccess)) {
 								if (RestrictionModifiers.isExtendRestriction(restrictions2) && !RestrictionModifiers.isExtendRestriction(restrictions)) {
 									reportChangedRestrictions = true;
-									this.addDelta(getElementType(this.type1), IDelta.ADDED, IDelta.RESTRICTIONS, restrictions2, typeAccess, typeAccess2, this.type2, this.type2.getName(), Util.getDescriptorName(type1));
+									this.addDelta(getElementType(this.type1), IDelta.ADDED, IDelta.RESTRICTIONS,restrictions2, typeAccess, typeAccess2, this.type2, this.type2.getName(), new String[] { NO_EXTEND, Util.getDescriptorName(type1) });
+								}
+								if (!RestrictionModifiers.isExtendRestriction(restrictions2) && RestrictionModifiers.isExtendRestriction(restrictions)) {
+									reportChangedRestrictions = true;
+									this.addDelta(getElementType(this.type1), IDelta.REMOVED, IDelta.RESTRICTIONS,restrictions2, typeAccess, typeAccess2, this.type2, this.type2.getName(),new String[] { NO_EXTEND, Util.getDescriptorName(type1) });
 								}
 							}
 							if (!reportChangedRestrictions && !Flags.isAbstract(typeAccess2) && !Flags.isAbstract(typeAccess)) {
 								if (RestrictionModifiers.isInstantiateRestriction(restrictions2) && !RestrictionModifiers.isInstantiateRestriction(restrictions)) {
-									this.addDelta(getElementType(this.type1), IDelta.ADDED, IDelta.RESTRICTIONS, restrictions2, typeAccess, typeAccess2, this.type2, this.type2.getName(), Util.getDescriptorName(type1));
+									this.addDelta(getElementType(this.type1), IDelta.ADDED, IDelta.RESTRICTIONS, restrictions2, typeAccess, typeAccess2, this.type2, this.type2.getName(), new String[] { NO_INSTANSTIATE, Util.getDescriptorName(type1) });
+								}
+							}
+							if (!reportChangedRestrictions && !Flags.isAbstract(typeAccess2)
+									&& !Flags.isAbstract(typeAccess)) {
+								if (!RestrictionModifiers.isInstantiateRestriction(restrictions2) && RestrictionModifiers.isInstantiateRestriction(restrictions)) {
+									this.addDelta(getElementType(this.type1), IDelta.REMOVED, IDelta.RESTRICTIONS,restrictions2, typeAccess, typeAccess2, this.type2, this.type2.getName(),new String[] {  NO_INSTANSTIATE, Util.getDescriptorName(type1) });
 								}
 							}
 						}
@@ -1755,17 +1828,13 @@ public class ClassFileComparator {
 		List<String> list1 = null;
 		if (names1 != null) {
 			list1 = new ArrayList<>(names1.length);
-			for (int i = 0; i < names1.length; i++) {
-				list1.add(names1[i]);
-			}
+			Collections.addAll(list1, names1);
 		}
 		String[] names2 = method2.getExceptionNames();
 		List<String> list2 = null;
 		if (names2 != null) {
 			list2 = new ArrayList<>(names2.length);
-			for (int i = 0; i < names2.length; i++) {
-				list2.add(names2[i]);
-			}
+			Collections.addAll(list2, names2);
 		}
 		if (names1 != null) {
 			if (names2 == null) {

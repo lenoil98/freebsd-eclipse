@@ -16,8 +16,6 @@ package org.eclipse.core.tests.internal.localstore;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.internal.localstore.*;
 import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.runtime.IPath;
@@ -29,14 +27,6 @@ public class SafeChunkyInputOutputStreamTest extends LocalStoreTest {
 
 	private File target;
 
-	public SafeChunkyInputOutputStreamTest() {
-		super();
-	}
-
-	public SafeChunkyInputOutputStreamTest(String name) {
-		super(name);
-	}
-
 	protected boolean compare(byte[] source, byte[] target1) {
 		assertEquals(source.length, target1.length);
 		for (int i = 0; i < target1.length; i++) {
@@ -47,12 +37,8 @@ public class SafeChunkyInputOutputStreamTest extends LocalStoreTest {
 
 	protected byte[] merge(byte[] b1, byte[] b2) {
 		byte[] result = new byte[b1.length + b2.length];
-		for (int i = 0; i < b1.length; i++) {
-			result[i] = b1[i];
-		}
-		for (int i = 0; i < b2.length; i++) {
-			result[b1.length + i] = b2[i];
-		}
+		System.arraycopy(b1, 0, result, 0, b1.length);
+		System.arraycopy(b2, 0, result, b1.length, b2.length);
 		return result;
 	}
 
@@ -66,10 +52,6 @@ public class SafeChunkyInputOutputStreamTest extends LocalStoreTest {
 		temp.mkdirs();
 		assertTrue("could not create temp directory", temp.isDirectory());
 		target = new File(temp, "target");
-	}
-
-	public static Test suite() {
-		return new TestSuite(SafeChunkyInputOutputStreamTest.class);
 	}
 
 	@Override

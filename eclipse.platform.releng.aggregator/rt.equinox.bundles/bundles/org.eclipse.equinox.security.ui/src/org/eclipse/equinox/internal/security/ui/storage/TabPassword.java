@@ -13,8 +13,8 @@
  *******************************************************************************/
 package org.eclipse.equinox.internal.security.ui.storage;
 
-import java.util.*;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.*;
 import org.eclipse.equinox.internal.security.storage.friends.*;
@@ -194,10 +194,8 @@ public class TabPassword {
 		TableColumn priorityColumn = new TableColumn(providerTable, SWT.CENTER);
 		priorityColumn.setText(SecUIMessages.priorityColumn);
 
-		List<PasswordProviderDescription> availableModules = InternalExchangeUtils.passwordProvidersFind();
 		HashSet<String> disabledModules = getDisabledModules();
-		for (Iterator<PasswordProviderDescription> i = availableModules.iterator(); i.hasNext();) {
-			PasswordProviderDescription module = i.next();
+		for (PasswordProviderDescription module : InternalExchangeUtils.passwordProvidersFind()) {
 			TableItem item = new TableItem(providerTable, SWT.NONE);
 			item.setText(new String[] {module.getName(), Integer.toString(module.getPriority())});
 			item.setData(module);
@@ -263,8 +261,7 @@ public class TabPassword {
 		Set<String> defaultDisabledModules = getDefaultDisabledModules();
 
 		TableItem[] items = providerTable.getItems();
-		for (int i = 0; i < items.length; i++) {
-			TableItem item = items[i];
+		for (TableItem item : items) {
 			String moduleId = getModuleId(item);
 			boolean enabled = defaultDisabledModules == null || moduleId == null || !defaultDisabledModules.contains(moduleId);
 			if (item.getChecked() != enabled) {
@@ -278,17 +275,18 @@ public class TabPassword {
 		if (!providerModified)
 			return;
 		// save current selection
-		StringBuffer tmp = new StringBuffer();
+		StringBuilder tmp = new StringBuilder();
 		boolean first = true;
 		TableItem[] items = providerTable.getItems();
-		for (int i = 0; i < items.length; i++) {
-			if (items[i].getChecked())
+		for (TableItem item : items) {
+			if (item.getChecked()) {
 				continue;
+			}
 			if (!first)
 				tmp.append(',');
 			else
 				first = false;
-			tmp.append(((PasswordProviderDescription) items[i].getData()).getId());
+			tmp.append(((PasswordProviderDescription) item.getData()).getId());
 		}
 
 		IEclipsePreferences node = ConfigurationScope.INSTANCE.getNode(PREFERENCES_PLUGIN);
@@ -370,8 +368,8 @@ public class TabPassword {
 			return null;
 		HashSet<String> modules = new HashSet<>();
 		String[] disabledProviders = joinedModuleIds.split(","); //$NON-NLS-1$
-		for (int i = 0; i < disabledProviders.length; i++) {
-			modules.add(disabledProviders[i]);
+		for (String disabledProvider : disabledProviders) {
+			modules.add(disabledProvider);
 		}
 		return modules;
 	}

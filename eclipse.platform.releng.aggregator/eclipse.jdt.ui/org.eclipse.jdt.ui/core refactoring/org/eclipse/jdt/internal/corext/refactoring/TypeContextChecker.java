@@ -17,7 +17,6 @@ package org.eclipse.jdt.internal.corext.refactoring;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -113,9 +112,11 @@ public class TypeContextChecker {
 
 		public RefactoringStatus[] checkAndResolveMethodTypes() throws CoreException {
 			RefactoringStatus[] results= new MethodTypesSyntaxChecker(fMethod, fParameterInfos, fReturnTypeInfo).checkSyntax();
-			for (int i= 0; i < results.length; i++)
-				if (results[i] != null && results[i].hasFatalError())
+			for (RefactoringStatus result : results) {
+				if (result != null && result.hasFatalError()) {
 					return results;
+				}
+			}
 
 			int parameterCount= fParameterInfos.size();
 			String[] types= new String[parameterCount + 1];
@@ -197,11 +198,10 @@ public class TypeContextChecker {
 						continue;
 					}
 					results[i]= new RefactoringStatus();
-					IProblem[] problems= ASTNodes.getProblems(type, ASTNodes.NODE_ONLY, ASTNodes.PROBLEMS);
-					if (problems.length > 0) {
-						for (int p= 0; p < problems.length; p++)
-							if (isError(problems[p], type))
-								results[i].addError(problems[p].getMessage());
+					for (IProblem problem : ASTNodes.getProblems(type, ASTNodes.NODE_ONLY, ASTNodes.PROBLEMS)) {
+						if (isError(problem, type)) {
+							results[i].addError(problem.getMessage());
+						}
 					}
 					ITypeBinding binding= handleBug84585(type.resolveBinding());
 					if (firstPass && (binding == null || binding.isRecovered())) {
@@ -318,7 +318,7 @@ public class TypeContextChecker {
 			}
 
 			List<TypeNameMatch> typeRefsFound= findTypeInfos(elementTypeName, declaringType, pm);
-			if (typeRefsFound.size() == 0){
+			if (typeRefsFound.isEmpty()){
 				String msg= Messages.format(RefactoringCoreMessages.TypeContextChecker_not_unique, BasicElementLabels.getJavaElementName(elementTypeName));
 				status.addError(msg);
 				return elementTypeName;
@@ -343,8 +343,7 @@ public class TypeContextChecker {
 			new SearchEngine().searchAllTypeNames(null, matchMode, typeName.toCharArray(), matchMode, IJavaSearchConstants.TYPE, scope, requestor, IJavaSearchConstants.WAIT_UNTIL_READY_TO_SEARCH, pm);
 
 			List<TypeNameMatch> result= new ArrayList<>();
-			for (Iterator<TypeNameMatch> iter= collectedInfos.iterator(); iter.hasNext();) {
-				TypeNameMatch curr= iter.next();
+			for (TypeNameMatch curr : collectedInfos) {
 				IType type= curr.getType();
 				if (type != null) {
 					boolean visible=true;
@@ -405,12 +404,12 @@ public class TypeContextChecker {
 				String msg= Messages.format(RefactoringCoreMessages.TypeContextChecker_invalid_return_type, BasicElementLabels.getJavaElementName(newTypeName));
 				return RefactoringStatus.createFatalErrorStatus(msg);
 			}
-			if (problemsCollector.size() == 0)
+			if (problemsCollector.isEmpty())
 				return null;
 
 			RefactoringStatus result= new RefactoringStatus();
-			for (Iterator<String> iter= problemsCollector.iterator(); iter.hasNext();) {
-				String[] keys= new String[]{ BasicElementLabels.getJavaElementName(newTypeName), BasicElementLabels.getJavaElementName(iter.next())};
+			for (String problem : problemsCollector) {
+				String[] keys= new String[]{ BasicElementLabels.getJavaElementName(newTypeName), BasicElementLabels.getJavaElementName(problem)};
 				String msg= Messages.format(RefactoringCoreMessages.TypeContextChecker_invalid_return_type_syntax, keys);
 				result.addError(msg);
 			}
@@ -454,12 +453,9 @@ public class TypeContextChecker {
 		Type type= (Type)selected;
 		if (MethodTypesSyntaxChecker.isVoidArrayType(type))
 			return null;
-		IProblem[] problems= ASTNodes.getProblems(type, ASTNodes.NODE_ONLY, ASTNodes.PROBLEMS);
-		if (problems.length > 0) {
-			for (int i= 0; i < problems.length; i++)
-				problemsCollector.add(problems[i].getMessage());
+		for (IProblem problem : ASTNodes.getProblems(type, ASTNodes.NODE_ONLY, ASTNodes.PROBLEMS)) {
+			problemsCollector.add(problem.getMessage());
 		}
-
 		String typeNodeRange= cuBuff.substring(type.getStartPosition(), ASTNodes.getExclusiveEnd(type));
 		if (typeString.equals(typeNodeRange))
 			return type;
@@ -509,13 +505,13 @@ public class TypeContextChecker {
 			String msg= Messages.format(RefactoringCoreMessages.TypeContextChecker_invalid_type_name, BasicElementLabels.getJavaElementName(newTypeName));
 			return RefactoringStatus.createFatalErrorStatus(msg);
 		}
-		if (problemsCollector.size() == 0)
+		if (problemsCollector.isEmpty())
 			return null;
 
 		RefactoringStatus result= new RefactoringStatus();
-		for (Iterator<String> iter= problemsCollector.iterator(); iter.hasNext();) {
+		for (String problem : problemsCollector) {
 			String msg= Messages.format(RefactoringCoreMessages.TypeContextChecker_invalid_type_syntax,
-					new String[]{BasicElementLabels.getJavaElementName(newTypeName), BasicElementLabels.getJavaElementName(iter.next())});
+					new String[]{BasicElementLabels.getJavaElementName(newTypeName), BasicElementLabels.getJavaElementName(problem)});
 			result.addError(msg);
 		}
 		return result;
@@ -544,15 +540,14 @@ public class TypeContextChecker {
 
 	private static void fillWithTypeStubs(final StringBuilder bufBefore, final StringBuilder bufAfter, final int focalPosition, List<? extends BodyDeclaration> types) {
 		StringBuilder buf;
-		for (Iterator<? extends BodyDeclaration> iter= types.iterator(); iter.hasNext();) {
-			BodyDeclaration bodyDeclaration= iter.next();
+		for (BodyDeclaration bodyDeclaration : types) {
 			if (! (bodyDeclaration instanceof AbstractTypeDeclaration)) {
 				//account for local classes:
 				if (! (bodyDeclaration instanceof MethodDeclaration))
 					continue;
 				int bodyStart= bodyDeclaration.getStartPosition();
 				int bodyEnd= bodyDeclaration.getStartPosition() + bodyDeclaration.getLength();
-				if (! (bodyStart < focalPosition && focalPosition < bodyEnd))
+				if ((bodyStart >= focalPosition) || (focalPosition >= bodyEnd))
 					continue;
 				MethodDeclaration methodDeclaration= (MethodDeclaration) bodyDeclaration;
 				buf= bufBefore;
@@ -575,7 +570,7 @@ public class TypeContextChecker {
 							return true; // could be in CIC parameter list
 						int anonStart= anonDecl.getStartPosition();
 						int anonEnd= anonDecl.getStartPosition() + anonDecl.getLength();
-						if (! (anonStart < focalPosition && focalPosition < anonEnd))
+						if ((anonStart >= focalPosition) || (focalPosition >= anonEnd))
 							return false;
 						bufBefore.append(" new "); //$NON-NLS-1$
 						bufBefore.append(node.getType().toString());
@@ -643,8 +638,7 @@ public class TypeContextChecker {
 	}
 
 	private static void appendModifiers(StringBuilder buf, List<IExtendedModifier> modifiers) {
-		for (Iterator<IExtendedModifier> iterator= modifiers.iterator(); iterator.hasNext();) {
-			IExtendedModifier extendedModifier= iterator.next();
+		for (IExtendedModifier extendedModifier : modifiers) {
 			if (extendedModifier.isModifier()) {
 				Modifier modifier= (Modifier) extendedModifier;
 				buf.append(modifier.getKeyword().toString()).append(' ');
@@ -839,5 +833,8 @@ public class TypeContextChecker {
 			// won't happen
 		}
 		return result;
+	}
+
+	private TypeContextChecker() {
 	}
 }

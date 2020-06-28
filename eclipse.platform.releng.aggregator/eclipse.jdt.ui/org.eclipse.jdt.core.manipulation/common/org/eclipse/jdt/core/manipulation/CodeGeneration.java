@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,6 +18,7 @@ import org.eclipse.core.runtime.CoreException;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
@@ -66,6 +67,14 @@ public class CodeGeneration {
 	 * @since 3.2
 	 */
 	public static final String ANNOTATION_BODY_TEMPLATE_ID= CodeTemplateContextType.ANNOTATIONBODY_ID;
+
+	/**
+	 * Constant ID for the type kind to be used in {@link #getTypeBody(String, ICompilationUnit, String, String)} to get the code template used
+	 * for a new record type body.
+	 * @noreference This field is not intended to be referenced by clients.
+	 * @since 1.14
+	 */
+	public static final String RECORD_BODY_TEMPLATE_ID= CodeTemplateContextType.RECORDBODY_ID;
 
 	private static final String[] EMPTY= new String[0];
 
@@ -125,7 +134,7 @@ public class CodeGeneration {
 	 * @throws CoreException Thrown when the evaluation of the code template fails.
 	 */
 	public static String getTypeComment(ICompilationUnit cu, String typeQualifiedName, String lineDelimiter) throws CoreException {
-		return StubUtility.getTypeComment(cu, typeQualifiedName, EMPTY, lineDelimiter);
+		return StubUtility.getTypeComment(cu, typeQualifiedName, EMPTY, EMPTY, lineDelimiter);
 	}
 
 	/**
@@ -140,7 +149,23 @@ public class CodeGeneration {
 	 * @since 3.1
 	 */
 	public static String getTypeComment(ICompilationUnit cu, String typeQualifiedName, String[] typeParameterNames, String lineDelimiter) throws CoreException {
-		return StubUtility.getTypeComment(cu, typeQualifiedName, typeParameterNames, lineDelimiter);
+		return StubUtility.getTypeComment(cu, typeQualifiedName, typeParameterNames, EMPTY, lineDelimiter);
+	}
+
+	/**
+	 * Returns the content for a new type comment using the 'type comment' code template. The returned content is unformatted and is not indented.
+	 * @param cu The compilation unit where the type is contained. The compilation unit does not need to exist.
+	 * @param typeQualifiedName The name of the type to which the comment is added. For inner types the name must be qualified and include the outer
+	 * types names (dot separated). See {@link org.eclipse.jdt.core.IType#getTypeQualifiedName(char)}.
+	 * @param typeParameterNames The type parameter names
+	 * @param params The parameter names - currently useful only for records
+	 * @param lineDelimiter The line delimiter to be used.
+	 * @return Returns the new content or <code>null</code> if the code template is undefined or empty. The returned content is unformatted and is not indented.
+	 * @throws CoreException Thrown when the evaluation of the code template fails.
+	 * @since 1.14
+	 */
+	public static String getTypeComment(ICompilationUnit cu, String typeQualifiedName, String[] typeParameterNames, String[] params, String lineDelimiter) throws CoreException {
+		return StubUtility.getTypeComment(cu, typeQualifiedName, typeParameterNames, params ,lineDelimiter);
 	}
 
 	/**
@@ -303,6 +328,36 @@ public class CodeGeneration {
 
 	public static String getMethodComment(ICompilationUnit cu, String declaringTypeName, MethodDeclaration decl, boolean isDeprecated, String overriddenMethodName, String overriddenMethodDeclaringTypeName, String[] overriddenMethodParameterTypeNames, String lineDelimiter) throws CoreException {
 		return StubUtility.getMethodComment(cu, declaringTypeName, decl, isDeprecated, overriddenMethodName, overriddenMethodDeclaringTypeName, overriddenMethodParameterTypeNames, false, lineDelimiter);
+	}
+
+	/**
+	 * Returns the comment for a module based on code templates
+	 *
+	 * @param cu The compilation unit for the module
+	 * @param moduleName The name of the module
+	 * @param providesNames Names of provided services
+	 * @param usesNames Names of used modules
+	 * @param lineDelimiter The line delimiter to use
+	 * @return Module comment
+	 * @throws CoreException Thrown when the evaluation of the code template fails
+	 * @since 1.12
+	 */
+	public static String getModuleComment(ICompilationUnit cu, String moduleName, String[] providesNames, String[] usesNames, String lineDelimiter) throws CoreException {
+		return StubUtility.getModuleComment(cu, moduleName, providesNames, usesNames, lineDelimiter);
+	}
+
+	/**
+	 * Returns the comment for a module based on code templates
+	 *
+	 * @param cu The compilation unit for the module
+	 * @param desc The module description
+	 * @param lineDelimiter The line delimiter to use
+	 * @return Module comment
+	 * @throws CoreException Thrown when the evaluation of the code template fails
+	 * @since 1.12
+	 */
+	public static String getModuleComment(ICompilationUnit cu, IModuleDescription desc, String lineDelimiter) throws CoreException {
+		return StubUtility.getModuleComment(cu, desc.getElementName(), desc.getProvidedServiceNames(), desc.getUsedServiceNames(), lineDelimiter);
 	}
 
 	/**

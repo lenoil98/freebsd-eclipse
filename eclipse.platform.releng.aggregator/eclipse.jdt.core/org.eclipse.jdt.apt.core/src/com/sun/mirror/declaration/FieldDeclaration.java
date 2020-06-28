@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -55,26 +55,26 @@ public interface FieldDeclaration extends MemberDeclaration {
 
     /**
      * Returns the value of this field if this field is a compile-time
-     * constant.  Returns <tt>null</tt> otherwise.
-     * The value will be of a primitive type or <tt>String</tt>.
+     * constant.  Returns <code>null</code> otherwise.
+     * The value will be of a primitive type or <code>String</code>.
      * If the value is of a primitive type, it is wrapped in the
      * appropriate wrapper class (such as {@link Integer}).
      *
      * @return the value of this field if this field is a compile-time
-     * constant, or <tt>null</tt> otherwise
+     * constant, or <code>null</code> otherwise
      */
     Object getConstantValue();
 
     /**
      * Returns the text of a <i>constant expression</i> representing the
      * value of this field if this field is a compile-time constant.
-     * Returns <tt>null</tt> otherwise.
-     * The value will be of a primitive type or <tt>String</tt>.
+     * Returns <code>null</code> otherwise.
+     * The value will be of a primitive type or <code>String</code>.
      * The text returned is in a form suitable for representing the value
      * in source code.
      *
      * @return the text of a constant expression if this field is a
-     *		compile-time constant, or <tt>null</tt> otherwise
+     *		compile-time constant, or <code>null</code> otherwise
      */
     String getConstantExpression();
 }

@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.zip.ZipFile;
 
@@ -44,19 +43,19 @@ import org.eclipse.jdt.internal.ui.jarpackager.JarPackagerUtil;
 
 /**
  * A jar builder which extracts the required libraries into a folder next to the generated jar.
- * 
+ *
  * @since 3.5
  */
 public class UnpackJarBuilder extends FatJarBuilder {
 
 	public static final String BUILDER_ID= "org.eclipse.jdt.ui.unpack_jar_builder"; //$NON-NLS-1$
 	private static final String SUBFOLDER_SUFFIX= "_lib"; //$NON-NLS-1$
-	
+
 	private final String fSubfolder;
 	private final IPath fSubfolderPath;
 
 	private JarPackageData fJarPackage;
-	
+
 	private Set<String> jarNames;
 
 	public UnpackJarBuilder(JarPackageData jarPackage) {
@@ -87,7 +86,7 @@ public class UnpackJarBuilder extends FatJarBuilder {
 	public boolean isRemoveSigners() {
 		return false;
 	}
-	
+
 	@Override
 	public IManifestProvider getManifestProvider() {
 		return new FatJarManifestProvider(this);
@@ -96,9 +95,7 @@ public class UnpackJarBuilder extends FatJarBuilder {
 	@Override
 	public String getManifestClasspath() {
 		ArrayList<String> renamedJarNames= new ArrayList<>();
-		Object[] elements= fJarPackage.getElements();
-		for (int i= 0; i < elements.length; i++) {
-			Object element= elements[i];
+		for (Object element : fJarPackage.getElements()) {
 			if (element instanceof IPackageFragmentRoot && ((IPackageFragmentRoot)element).isArchive()) {
 				String jarName= ((IPackageFragmentRoot)element).getPath().toFile().getName();
 				while (renamedJarNames.contains(jarName)) {
@@ -109,8 +106,7 @@ public class UnpackJarBuilder extends FatJarBuilder {
 		}
 		StringBuilder result= new StringBuilder();
 		result.append("."); //$NON-NLS-1$
-		for (Iterator<String> iterator= renamedJarNames.iterator(); iterator.hasNext();) {
-			String jarName= iterator.next();
+		for (String jarName : renamedJarNames) {
 			result.append(" ").append(fSubfolder).append("/").append(jarName); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		return result.toString();
@@ -126,7 +122,7 @@ public class UnpackJarBuilder extends FatJarBuilder {
 
 	/**
 	 * creates the subfolder or cleanup an existing subfolder. A dialog will ask the user.
-	 * 
+	 *
 	 * @param parent the parent for the dialog, or <code>null</code> if no dialog should be
 	 *            presented
 	 * @param allowOverwrite true if the packager is allowed to overwrite existing folders
@@ -145,12 +141,13 @@ public class UnpackJarBuilder extends FatJarBuilder {
 			if (!allowOverwrite)
 				if (parent == null || !JarPackagerUtil.askForOverwriteFolderPermission(parent, fSubfolderPath, true))
 					throw JarPackagerUtil.createCoreException("Folder '" + folder.getAbsolutePath() + "' exists and should not be overwritten", null); //$NON-NLS-1$ //$NON-NLS-2$
-			File[] jarFiles= folder.listFiles();
-			for (int i= 0; i < jarFiles.length; i++) {
-				if (!jarFiles[i].isFile())
-					throw JarPackagerUtil.createCoreException("Subfolder '" + jarFiles[i].getAbsolutePath() + "' exists", null); //$NON-NLS-1$ //$NON-NLS-2$
-				if (!jarFiles[i].delete())
-					throw JarPackagerUtil.createCoreException("Could not delete file '" + jarFiles[i].getAbsolutePath() + "'", null); //$NON-NLS-1$ //$NON-NLS-2$
+			for (File jarFile : folder.listFiles()) {
+				if (!jarFile.isFile()) {
+					throw JarPackagerUtil.createCoreException("Subfolder '" + jarFile.getAbsolutePath() + "' exists", null); //$NON-NLS-1$ //$NON-NLS-2$
+				}
+				if (!jarFile.delete()) {
+					throw JarPackagerUtil.createCoreException("Could not delete file '" + jarFile.getAbsolutePath() + "'", null); //$NON-NLS-1$ //$NON-NLS-2$
+				}
 			}
 		}
 	}
@@ -179,11 +176,9 @@ public class UnpackJarBuilder extends FatJarBuilder {
 				out.write(buf, 0, cnt);
 				cnt= in.read(buf);
 			}
-		} catch (RuntimeException e) {
-			throw new RuntimeException(e);
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
-		} catch (IOException e) {
+		} catch (RuntimeException | IOException e) {
 			throw new RuntimeException(e);
 		} finally {
 			try {
@@ -196,5 +191,5 @@ public class UnpackJarBuilder extends FatJarBuilder {
 			}
 		}
 	}
-	
+
 }

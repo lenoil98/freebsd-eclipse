@@ -16,6 +16,7 @@ package org.eclipse.pde.api.tools.ui.internal.wizards;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -76,8 +77,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.progress.UIJob;
 import org.eclipse.ui.progress.WorkbenchJob;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * The main page for the {@link ApiToolingSetupWizard}
@@ -372,9 +371,7 @@ public class ApiToolingSetupWizardPage extends UserInputWizardPage {
 				}
 				projectchange.add(change);
 			}
-		} catch (CoreException e) {
-			ApiUIPlugin.log(e);
-		} catch (IOException e) {
+		} catch (CoreException | IOException e) {
 			ApiUIPlugin.log(e);
 		}
 	}
@@ -413,9 +410,7 @@ public class ApiToolingSetupWizardPage extends UserInputWizardPage {
 		};
 		try {
 			getContainer().run(false, false, op);
-		} catch (InvocationTargetException e) {
-			ApiUIPlugin.log(e);
-		} catch (InterruptedException e) {
+		} catch (InvocationTargetException | InterruptedException e) {
 			ApiUIPlugin.log(e);
 		}
 	}

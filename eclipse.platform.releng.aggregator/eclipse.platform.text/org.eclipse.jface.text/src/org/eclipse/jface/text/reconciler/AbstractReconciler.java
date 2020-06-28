@@ -150,7 +150,7 @@ abstract public class AbstractReconciler implements IReconciler {
 				}
 			}
 
-            reconcilerReset();
+			reconcilerReset();
 		}
 
 		/**
@@ -482,12 +482,12 @@ abstract public class AbstractReconciler implements IReconciler {
 			}
 			fListener= null;
 
-            synchronized (this) {
-                // http://dev.eclipse.org/bugs/show_bug.cgi?id=19135
-    			BackgroundThread bt= fThread;
-    			fThread= null;
-    			bt.cancel();
-            }
+			synchronized (this) {
+				// http://dev.eclipse.org/bugs/show_bug.cgi?id=19135
+				BackgroundThread bt= fThread;
+				fThread= null;
+				bt.cancel();
+			}
 		}
 	}
 
@@ -502,7 +502,7 @@ abstract public class AbstractReconciler implements IReconciler {
 				// Insert
 				fDirtyRegionQueue.addDirtyRegion(new DirtyRegion(e.getOffset(), e.getText().length(), DirtyRegion.INSERT, e.getText()));
 
-			} else if (e.getText() == null || e.getText().length() == 0) {
+			} else if (e.getText() == null || e.getText().isEmpty()) {
 				// Remove
 				fDirtyRegionQueue.addDirtyRegion(new DirtyRegion(e.getOffset(), e.getLength(), DirtyRegion.REMOVE, null));
 
@@ -578,13 +578,13 @@ abstract public class AbstractReconciler implements IReconciler {
 		}
 	}
 
-    /**
-     * Hook that is called after the reconciler thread has been reset.
-     */
-    protected void reconcilerReset() {
-    }
+	/**
+	 * Hook that is called after the reconciler thread has been reset.
+	 */
+	protected void reconcilerReset() {
+	}
 
-    /**
+	/**
 	 * Tells whether the code is running in this reconciler's
 	 * background thread.
 	 *

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -289,7 +289,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 						if (document.getChar(offset - 1) == '{')
 							return new ExitFlags(ILinkedModeListener.EXIT_ALL, true);
 
-						// see bug 308217: while overriding a method and using '(' followed by parameter type to filter the content assist proposals, if ')' is added 
+						// see bug 308217: while overriding a method and using '(' followed by parameter type to filter the content assist proposals, if ')' is added
 						// automatically on typing '(', pressing return key should not result in jumping after ')' instead of applying the selected proposal.
 						if (document.getChar(offset) == ')' && sourceViewer instanceof AdaptedSourceViewer && ((AdaptedSourceViewer) sourceViewer).getContentAssistant() instanceof ContentAssistant) {
 							ContentAssistant contentAssistant= (ContentAssistant) ((AdaptedSourceViewer) sourceViewer).getContentAssistant();
@@ -426,7 +426,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 			return identifier.length() > 0
 					&& Character.isUpperCase(identifier.charAt(0));
 		}
-		
+
 		private boolean isAngularIntroducer(String identifier) {
 			return identifier.length() > 0
 					&& (Character.isUpperCase(identifier.charAt(0))
@@ -436,7 +436,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 							|| identifier.startsWith("protected") //$NON-NLS-1$
 							|| identifier.startsWith("private")); //$NON-NLS-1$
 		}
-		
+
 		private boolean isMultilineSelection() {
 			ISelection selection= getSelectionProvider().getSelection();
 			if (selection instanceof ITextSelection) {
@@ -494,7 +494,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 						break;
 
 					case '<':
-						if (!(fCloseAngularBrackets && fCloseBrackets)
+						if (!fCloseAngularBrackets || !fCloseBrackets
 								|| nextToken == Symbols.TokenLESSTHAN
 								|| nextToken == Symbols.TokenQUESTIONMARK
 								|| nextToken == Symbols.TokenIDENT && isTypeArgumentStart(next)
@@ -619,7 +619,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 							}
 						}
 
-						if (fBracketLevelStack.size() == 0) {
+						if (fBracketLevelStack.isEmpty()) {
 							document.removePositionUpdater(fUpdater);
 							try {
 								document.removePositionCategory(CATEGORY);
@@ -1179,7 +1179,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 
 	/**
 	 * Returns the refactor action group.
-	 * 
+	 *
 	 * @return the refactor action group, or <code>null</code> if there is none
 	 * @since 3.5
 	 */
@@ -1189,7 +1189,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 
 	/**
 	 * Returns the generate action group.
-	 * 
+	 *
 	 * @return the generate action group, or <code>null</code> if there is none
 	 * @since 3.5
 	 */
@@ -1477,6 +1477,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 			int tabWidth= config.getTabWidth(sourceViewer);
 			TabsToSpacesConverter tabToSpacesConverter= new TabsToSpacesConverter();
 			tabToSpacesConverter.setNumberOfSpacesPerTab(tabWidth);
+			tabToSpacesConverter.setDeleteSpacesAsTab(isSpacesAsTabsDeletionEnabled());
 			IDocumentProvider provider= getDocumentProvider();
 			if (provider instanceof ICompilationUnitDocumentProvider) {
 				ICompilationUnitDocumentProvider cup= (ICompilationUnitDocumentProvider) provider;
@@ -1580,8 +1581,6 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 				return '[';
 
 			case '"':
-				return character;
-
 			case '\'':
 				return character;
 
@@ -1603,34 +1602,33 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 
 				String p= event.getProperty();
 
-				if (CLOSE_BRACKETS.equals(p)) {
-					fBracketInserter.setCloseBracketsEnabled(getPreferenceStore().getBoolean(p));
-					return;
-				}
-
-				if (CLOSE_STRINGS.equals(p)) {
-					fBracketInserter.setCloseStringsEnabled(getPreferenceStore().getBoolean(p));
-					return;
-				}
-
-				if (JavaCore.COMPILER_SOURCE.equals(p)) {
-					boolean closeAngularBrackets= JavaCore.compareJavaVersions(JavaCore.VERSION_1_5, getPreferenceStore().getString(p)) <= 0;
-					fBracketInserter.setCloseAngularBracketsEnabled(closeAngularBrackets);
-				}
-
-				if (SPACES_FOR_TABS.equals(p)) {
-					if (isTabsToSpacesConversionEnabled())
-						installTabsToSpacesConverter();
-					else
-						uninstallTabsToSpacesConverter();
-					return;
-				}
-
-				if (PreferenceConstants.EDITOR_SMART_TAB.equals(p)) {
-					if (getPreferenceStore().getBoolean(PreferenceConstants.EDITOR_SMART_TAB)) {
-						setActionActivationCode("IndentOnTab", '\t', -1, SWT.NONE); //$NON-NLS-1$
-					} else {
-						removeActionActivationCode("IndentOnTab"); //$NON-NLS-1$
+				if (p != null) {
+					switch (p) {
+						case CLOSE_BRACKETS:
+							fBracketInserter.setCloseBracketsEnabled(getPreferenceStore().getBoolean(p));
+							return;
+						case CLOSE_STRINGS:
+							fBracketInserter.setCloseStringsEnabled(getPreferenceStore().getBoolean(p));
+							return;
+						case SPACES_FOR_TABS:
+							if (isTabsToSpacesConversionEnabled())
+								installTabsToSpacesConverter();
+							else
+								uninstallTabsToSpacesConverter();
+							return;
+						case JavaCore.COMPILER_SOURCE:
+							boolean closeAngularBrackets= JavaCore.compareJavaVersions(JavaCore.VERSION_1_5, getPreferenceStore().getString(p)) <= 0;
+							fBracketInserter.setCloseAngularBracketsEnabled(closeAngularBrackets);
+							break;
+						case PreferenceConstants.EDITOR_SMART_TAB:
+							if (getPreferenceStore().getBoolean(PreferenceConstants.EDITOR_SMART_TAB)) {
+								setActionActivationCode("IndentOnTab", '\t', -1, SWT.NONE); //$NON-NLS-1$
+							} else {
+								removeActionActivationCode("IndentOnTab"); //$NON-NLS-1$
+							}
+							break;
+						default:
+							break;
 					}
 				}
 
@@ -1855,7 +1853,7 @@ public class CompilationUnitEditor extends JavaEditor implements IJavaReconcilin
 
 	/**
 	 * Returns the correction command installer.
-	 * 
+	 *
 	 * @return the correction command installer, or <code>null</code> if there is none
 	 * @since 3.5
 	 */

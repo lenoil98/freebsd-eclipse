@@ -90,9 +90,9 @@ public final class ExternalToolsPlugin extends AbstractUIPlugin implements
 			ILaunch launches[] = manager.getLaunches();
 			ILaunchConfigurationType configType;
 			ILaunchConfiguration config;
-			for (int i = 0; i < launches.length; i++) {
+			for (ILaunch launch : launches) {
 				try {
-					config = launches[i].getLaunchConfiguration();
+					config = launch.getLaunchConfiguration();
 					if (config == null) {
 						continue;
 					}
@@ -101,7 +101,7 @@ public final class ExternalToolsPlugin extends AbstractUIPlugin implements
 					continue;
 				}
 				if (configType.equals(programType)) {
-					if (!launches[i].isTerminated()) {
+					if (!launch.isTerminated()) {
 						MessageDialog
 								.openWarning(
 										window.getShell(),
@@ -187,7 +187,7 @@ public final class ExternalToolsPlugin extends AbstractUIPlugin implements
 	 * Returns the active workbench window or <code>null</code> if none
 	 */
 	public static IWorkbenchWindow getActiveWorkbenchWindow() {
-		return getDefault().getWorkbench().getActiveWorkbenchWindow();
+		return PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 	}
 
 	/**
@@ -225,17 +225,11 @@ public final class ExternalToolsPlugin extends AbstractUIPlugin implements
 		return display;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#createImageRegistry()
-	 */
 	@Override
 	protected ImageRegistry createImageRegistry() {
 		return ExternalToolsImages.initializeImageRegistry();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
-	 */
 	@Override
 	public void stop(BundleContext context) throws Exception {
 		try {
@@ -262,9 +256,6 @@ public final class ExternalToolsPlugin extends AbstractUIPlugin implements
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchListener#launchAdded(org.eclipse.debug.core.ILaunch)
-	 */
 	@Override
 	public void launchAdded(ILaunch launch) {
 		ILaunchConfiguration launchConfiguration = launch.getLaunchConfiguration();
@@ -284,16 +275,10 @@ public final class ExternalToolsPlugin extends AbstractUIPlugin implements
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchListener#launchChanged(org.eclipse.debug.core.ILaunch)
-	 */
 	@Override
 	public void launchChanged(ILaunch launch) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.ILaunchListener#launchRemoved(org.eclipse.debug.core.ILaunch)
-	 */
 	@Override
 	public void launchRemoved(ILaunch launch) {
 	}

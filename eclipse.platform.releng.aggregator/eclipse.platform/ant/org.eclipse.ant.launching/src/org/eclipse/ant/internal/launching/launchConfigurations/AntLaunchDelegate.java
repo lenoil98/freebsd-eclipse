@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -20,11 +20,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.tools.ant.ProjectHelper;
 import org.eclipse.ant.core.AntCorePlugin;
@@ -76,8 +78,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.namespace.HostNamespace;
 import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Launch delegate for Ant builds
@@ -390,16 +390,13 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 
 		AntCorePreferences prefs = AntCorePlugin.getPlugin().getPreferences();
 		if (propertyFiles == null) { // global
-			String[] files = prefs.getCustomPropertyFiles();
-			for (int i = 0; i < files.length; i++) {
-				String path = files[i];
+			for (String path : prefs.getCustomPropertyFiles()) {
 				commandLine.append(" -propertyfile \""); //$NON-NLS-1$
 				commandLine.append(path);
 				commandLine.append('\"');
 			}
 		} else {// "local" configuration
-			for (int i = 0; i < propertyFiles.length; i++) {
-				String path = propertyFiles[i];
+			for (String path : propertyFiles) {
 				commandLine.append(" -propertyfile \""); //$NON-NLS-1$
 				commandLine.append(path);
 				commandLine.append('\"');
@@ -434,8 +431,7 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 		}
 		boolean useGlobalProperties = userProperties == null || (separateVM && userProperties.size() == numberOfEclipseProperties);
 		if (useGlobalProperties) {
-			for (Iterator<Property> iter = properties.iterator(); iter.hasNext();) {
-				Property property = iter.next();
+			for (Property property : properties) {
 				String key = property.getName();
 				String value = property.getValue(false);
 				if (value != null) {
@@ -496,9 +492,9 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 		commandLine.append('\"');
 
 		if (targets != null) {
-			for (int i = 0; i < targets.length; i++) {
+			for (String target : targets) {
 				commandLine.append(" \""); //$NON-NLS-1$
-				commandLine.append(targets[i]);
+				commandLine.append(target);
 				commandLine.append('\"');
 			}
 		}
@@ -572,7 +568,7 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 
 		// set the ANT_HOME environment variable
 		if (antHome != null) {
-			Map<String, String> vars = copy.getAttribute(ILaunchManager.ATTR_ENVIRONMENT_VARIABLES, new HashMap<String, String>(1));
+			Map<String, String> vars = copy.getAttribute(ILaunchManager.ATTR_ENVIRONMENT_VARIABLES, new HashMap<>(1));
 			vars.put("ANT_HOME", antHome); //$NON-NLS-1$
 			copy.setAttribute(ILaunchManager.ATTR_ENVIRONMENT_VARIABLES, vars);
 		}
@@ -583,8 +579,8 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 		delegate.preLaunchCheck(copy, ILaunchManager.RUN_MODE, subMonitor);
 		delegate.launch(copy, ILaunchManager.RUN_MODE, launch, subMonitor);
 		final IProcess[] processes = launch.getProcesses();
-		for (int i = 0; i < processes.length; i++) {
-			setProcessAttributes(processes[i], idStamp, null);
+		for (IProcess process : processes) {
+			setProcessAttributes(process, idStamp, null);
 		}
 
 		if (AntLaunchingUtil.isLaunchInBackground(copy)) {
@@ -594,25 +590,21 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 				refresher.startBackgroundRefresh();
 			}
 		} else {
-			final boolean[] terminated = new boolean[1];
-			terminated[0] = launch.isTerminated();
-			IDebugEventSetListener listener = new IDebugEventSetListener() {
-				@Override
-				public void handleDebugEvents(DebugEvent[] events) {
-					for (int i = 0; i < events.length; i++) {
-						DebugEvent event = events[i];
-						for (int j = 0, numProcesses = processes.length; j < numProcesses; j++) {
-							if (event.getSource() == processes[j] && event.getKind() == DebugEvent.TERMINATE) {
-								terminated[0] = true;
-								break;
-							}
+			final AtomicBoolean terminated = new AtomicBoolean(false);
+			IDebugEventSetListener listener = events -> {
+				for (DebugEvent event : events) {
+					for (IProcess process : processes) {
+						if (event.getSource() == process && event.getKind() == DebugEvent.TERMINATE) {
+							terminated.set(true);
+							break;
 						}
 					}
 				}
 			};
 			DebugPlugin.getDefault().addDebugEventListener(listener);
+			terminated.compareAndSet(false, launch.isTerminated());
 			monitor.subTask(AntLaunchConfigurationMessages.AntLaunchDelegate_28);
-			while (!monitor.isCanceled() && !terminated[0]) {
+			while (!monitor.isCanceled() && !terminated.get()) {
 				try {
 					Thread.sleep(50);
 				}
@@ -689,7 +681,7 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 	}
 
 	private String stripUnescapedQuotes(String javaLibPath) {
-		StringBuffer buf = new StringBuffer(javaLibPath.length());
+		StringBuilder buf = new StringBuilder(javaLibPath.length());
 		for (int i = 0; i < javaLibPath.length(); i++) {
 			char c = javaLibPath.charAt(i);
 			switch (c) {
@@ -706,11 +698,6 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 		return buf.toString();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.core.model.LaunchConfigurationDelegate#getBuildOrder (org.eclipse.debug.core.ILaunchConfiguration, java.lang.String)
-	 */
 	@Override
 	protected IProject[] getBuildOrder(ILaunchConfiguration configuration, String mode) throws CoreException {
 		String scopeKey = ATTR_BUILD_SCOPE;
@@ -760,11 +747,6 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 		return fgSWTLibraryLocation;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.core.model.LaunchConfigurationDelegate#getBreakpoints (org.eclipse.debug.core.ILaunchConfiguration)
-	 */
 	@Override
 	protected IBreakpoint[] getBreakpoints(ILaunchConfiguration configuration) {
 		IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
@@ -775,12 +757,6 @@ public class AntLaunchDelegate extends LaunchConfigurationDelegate {
 		return breakpointManager.getBreakpoints(IAntDebugConstants.ID_ANT_DEBUG_MODEL);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.core.model.LaunchConfigurationDelegate#saveBeforeLaunch (org.eclipse.debug.core.ILaunchConfiguration, java.lang.String,
-	 * org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected boolean saveBeforeLaunch(ILaunchConfiguration configuration, String mode, IProgressMonitor monitor) throws CoreException {
 		if (IExternalToolConstants.ID_EXTERNAL_TOOLS_BUILDER_LAUNCH_CATEGORY.equals(configuration.getType().getCategory())) {

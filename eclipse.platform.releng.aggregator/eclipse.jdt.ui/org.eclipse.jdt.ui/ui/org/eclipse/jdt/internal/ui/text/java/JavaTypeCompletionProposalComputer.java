@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.ui.text.java;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -82,8 +81,8 @@ public class JavaTypeCompletionProposalComputer extends JavaCompletionProposalCo
 					// compute minmimum relevance and already proposed list
 					int relevance= Integer.MAX_VALUE;
 					Set<String> proposed= new HashSet<>();
-					for (Iterator<ICompletionProposal> it= types.iterator(); it.hasNext();) {
-						AbstractJavaCompletionProposal p= (AbstractJavaCompletionProposal) it.next();
+					for (ICompletionProposal iCompletionProposal : types) {
+						AbstractJavaCompletionProposal p= (AbstractJavaCompletionProposal) iCompletionProposal;
 						IJavaElement element= p.getJavaElement();
 						if (element instanceof IType)
 							proposed.add(((IType) element).getFullyQualifiedName());
@@ -93,8 +92,7 @@ public class JavaTypeCompletionProposalComputer extends JavaCompletionProposalCo
 					// insert history types
 					List<String> history= JavaPlugin.getDefault().getContentAssistHistory().getHistory(expectedType.getFullyQualifiedName()).getTypes();
 					relevance-= history.size() + 1;
-					for (Iterator<String> it= history.iterator(); it.hasNext();) {
-						String type= it.next();
+					for (String type : history) {
 						if (proposed.contains(type))
 							continue;
 

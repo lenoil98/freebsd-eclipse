@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2008, 2016 IBM Corporation and others.
  *
- * This
- * program and the accompanying materials are made available under the terms of
- * the Eclipse Public License 2.0 which accompanies this distribution, and is
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
@@ -24,6 +24,8 @@ import org.eclipse.e4.ui.css.swt.helpers.CSSSWTFontHelperTest;
 import org.eclipse.e4.ui.css.swt.helpers.EclipsePreferencesHelperTest;
 import org.eclipse.e4.ui.css.swt.helpers.PreferenceOverriddenByCssChangeListenerTest;
 import org.eclipse.e4.ui.css.swt.properties.preference.EclipsePreferencesHandlerTest;
+import org.eclipse.e4.ui.tests.css.forms.ExpandableCompositeTest;
+import org.eclipse.e4.ui.tests.css.forms.SectionTest;
 import org.eclipse.e4.ui.tests.css.properties.tabbed.TabbedPropertiesListTest;
 import org.eclipse.e4.ui.tests.css.properties.tabbed.TabbedPropertiesTitleTest;
 import org.eclipse.e4.ui.tests.css.swt.Bug419482Test;
@@ -47,7 +49,6 @@ import org.eclipse.e4.ui.tests.css.swt.LinkTest;
 import org.eclipse.e4.ui.tests.css.swt.MarginTest;
 import org.eclipse.e4.ui.tests.css.swt.ShellActiveTest;
 import org.eclipse.e4.ui.tests.css.swt.ShellTest;
-import org.eclipse.e4.ui.tests.css.swt.StyledTextScrollbarTest;
 import org.eclipse.e4.ui.tests.css.swt.TableTest;
 import org.eclipse.e4.ui.tests.css.swt.TextTextTransformTest;
 import org.eclipse.e4.ui.tests.css.swt.ThemeTest;
@@ -91,11 +92,12 @@ import org.junit.runners.Suite;
 	Bug419482Test.class,
 	ShellActiveTest.class,
 	InheritTest.class,
-	StyledTextScrollbarTest.class,
 	TableTest.class,
 	TreeTest.class,
 	TabbedPropertiesListTest.class,
-	TabbedPropertiesTitleTest.class})
+	TabbedPropertiesTitleTest.class,
+	ExpandableCompositeTest.class,
+	SectionTest.class})
 public class CssSwtTestSuite {
 
 }

@@ -38,7 +38,7 @@ public class EditorsListener extends CommandOutputListener {
 	/**
 	 *  List to store the EditorsInfos
 	 */
-	private List infos = new LinkedList();
+	private List<EditorsInfo> infos = new LinkedList<>();
 	
 	/**
 	 *  Name of the current file 
@@ -51,9 +51,7 @@ public class EditorsListener extends CommandOutputListener {
 	public EditorsListener() {
 	}
 
-	/**
-	 * @see org.eclipse.team.internal.ccvs.core.client.listeners.ICommandOutputListener#messageLine(java.lang.String, org.eclipse.team.internal.ccvs.core.ICVSRepositoryLocation, org.eclipse.team.internal.ccvs.core.ICVSFolder, org.eclipse.core.runtime.IProgressMonitor)
-	 */
+	@Override
 	public IStatus messageLine(
 		String line,
 		ICVSRepositoryLocation location,
@@ -101,7 +99,7 @@ public class EditorsListener extends CommandOutputListener {
 	 * @return IEditorsInfo[]
 	 */
 	public EditorsInfo[] getEditorsInfos() {
-		return (EditorsInfo[]) infos.toArray(new EditorsInfo[infos.size()]);
+		return infos.toArray(new EditorsInfo[infos.size()]);
 	}
 
 }

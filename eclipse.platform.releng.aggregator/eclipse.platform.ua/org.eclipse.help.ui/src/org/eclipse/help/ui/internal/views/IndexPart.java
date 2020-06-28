@@ -103,7 +103,7 @@ public class IndexPart extends HyperlinkTreePart implements IHelpUIConstants {
 	public String getSeeString(IIndexSee see) {
 		String seeText = see.isSeeAlso() ? Messages.SeeAlso : Messages.See;
 		String message = NLS.bind(seeText, see.getKeyword());
-		String[] path = IndexUtils.getPath(see);;
+		String[] path = IndexUtils.getPath(see);
 		for (int i = 1; i < path.length; i++) {
 			message = NLS.bind(Messages.SeeList, message,path[i]);
 		}
@@ -228,7 +228,7 @@ public class IndexPart extends HyperlinkTreePart implements IHelpUIConstants {
 		IHelpResource[] topics = entry.getTopics();
 		IIndexEntry[] subentries = entry.getSubentries();
 		IIndexSee[] sees = entry instanceof IIndexEntry2 ? ((IIndexEntry2)entry).getSees() :
-			               new IIndexSee[0];
+						   new IIndexSee[0];
 
 		if (topics.length <= 1 && subentries.length == 0 && sees.length == 0) {
 			// Entries with only one topic do not show children

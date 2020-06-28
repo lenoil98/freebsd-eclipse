@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -432,7 +432,7 @@ public class JavaModelManager implements ISaveParticipant, IContentTypeChangeLis
 
 	public static class CompilationParticipants {
 
-		private final static int MAX_SOURCE_LEVEL = 11 ; // 1.1 to 1.8 and 9, 10
+		static final int MAX_SOURCE_LEVEL = JavaCore.getAllVersions().size() - 1; // All except VERSION_CLDC_1_1
 
 		/*
 		 * The registered compilation participants (a table from int (source level) to Object[])
@@ -2286,7 +2286,7 @@ public class JavaModelManager implements ISaveParticipant, IContentTypeChangeLis
 					monitor.subTask(Messages.bind(Messages.build_readStateProgress, project.getName()));
 				info.savedState = readState(project);
 			} catch (CoreException e) {
-				e.printStackTrace();
+				Util.log(e, "Exception while reading last build state for: " + project); //$NON-NLS-1$
 			}
 		}
 		return info.savedState;
@@ -2490,7 +2490,7 @@ public class JavaModelManager implements ISaveParticipant, IContentTypeChangeLis
 		defaultOptionsMap.put(JavaCore.CODEASSIST_FORBIDDEN_REFERENCE_CHECK, JavaCore.ENABLED);
 		defaultOptionsMap.put(JavaCore.CODEASSIST_DISCOURAGED_REFERENCE_CHECK, JavaCore.DISABLED);
 		defaultOptionsMap.put(JavaCore.CODEASSIST_CAMEL_CASE_MATCH, JavaCore.ENABLED);
-		defaultOptionsMap.put(JavaCore.CODEASSIST_SUBSTRING_MATCH, JavaCore.ENABLED);
+		defaultOptionsMap.put(JavaCore.CODEASSIST_SUBWORD_MATCH, JavaCore.ENABLED);
 		defaultOptionsMap.put(JavaCore.CODEASSIST_SUGGEST_STATIC_IMPORTS, JavaCore.ENABLED);
 
 		// Time out for parameter names
@@ -3218,11 +3218,7 @@ public class JavaModelManager implements ISaveParticipant, IContentTypeChangeLis
 				} else {
 					throw new JavaModelException(e);
 				}
-			} catch (RuntimeException e) {
-				if (JavaModelManager.CP_RESOLVE_VERBOSE || CP_RESOLVE_VERBOSE_FAILURE)
-					e.printStackTrace();
-				throw e;
-			} catch (Error e) {
+			} catch (RuntimeException | Error e) {
 				if (JavaModelManager.CP_RESOLVE_VERBOSE || CP_RESOLVE_VERBOSE_FAILURE)
 					e.printStackTrace();
 				throw e;
@@ -3617,9 +3613,7 @@ public class JavaModelManager implements ISaveParticipant, IContentTypeChangeLis
 				try {
 					DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 					cpElement = parser.parse(new InputSource(reader)).getDocumentElement();
-				} catch(SAXException e) {
-					return;
-				} catch(ParserConfigurationException e){
+				} catch(SAXException | ParserConfigurationException e){
 					return;
 				} finally {
 					reader.close();
@@ -4401,16 +4395,7 @@ public class JavaModelManager implements ISaveParticipant, IContentTypeChangeLis
 			} finally {
 				out.close();
 			}
-		} catch (RuntimeException e) {
-			try {
-				file.delete();
-			} catch(SecurityException se) {
-				// could not delete file: cannot do much more
-			}
-			throw new CoreException(
-				new Status(IStatus.ERROR, JavaCore.PLUGIN_ID, Platform.PLUGIN_ERROR,
-					Messages.bind(Messages.build_cannotSaveState, info.project.getName()), e));
-		} catch (IOException e) {
+		} catch (RuntimeException | IOException e) {
 			try {
 				file.delete();
 			} catch(SecurityException se) {
@@ -5415,7 +5400,8 @@ public class JavaModelManager implements ISaveParticipant, IContentTypeChangeLis
 					| IResourceChangeEvent.PRE_CLOSE
 					| IResourceChangeEvent.PRE_REFRESH);
 
-			Indexer.getInstance().addListener(this.deltaState);
+			// New index is disabled, see bug 544898
+			// Indexer.getInstance().addListener(this.deltaState);
 
 			// listen to resource changes affecting external annotations
 			ExternalAnnotationTracker.start(workspace);

@@ -14,10 +14,10 @@
 package org.eclipse.swt.widgets;
 
 
-import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of this class allow the user to select a color
@@ -38,8 +38,6 @@ import org.eclipse.swt.graphics.*;
  */
 public class ColorDialog extends Dialog {
 	static final int CUSTOM_COLOR_COUNT = 16; // from the MS spec for CHOOSECOLOR.lpCustColors
-	Display display;
-	int width, height;
 	RGB rgb;
 	RGB [] rgbs;
 	int [] colors = new int [CUSTOM_COLOR_COUNT];
@@ -98,31 +96,12 @@ public ColorDialog (Shell parent, int style) {
 	checkSubclass ();
 }
 
-long /*int*/ CCHookProc (long /*int*/ hdlg, long /*int*/ uiMsg, long /*int*/ lParam, long /*int*/ lpData) {
-	switch ((int)/*64*/uiMsg) {
+long CCHookProc (long hdlg, long uiMsg, long lParam, long lpData) {
+	switch ((int)uiMsg) {
 		case OS.WM_INITDIALOG: {
-			RECT rect = new RECT ();
-			OS.GetWindowRect (hdlg, rect);
-			width = rect.right - rect.left;
-			height = rect.bottom - rect.top;
 			if (title != null && title.length () != 0) {
-				/* Use the character encoding for the default locale */
 				TCHAR buffer = new TCHAR (0, title, true);
 				OS.SetWindowText (hdlg, buffer);
-			}
-			break;
-		}
-		case OS.WM_DESTROY: {
-			RECT rect = new RECT ();
-			OS.GetWindowRect (hdlg, rect);
-			int newWidth = rect.right - rect.left;
-			int newHeight = rect.bottom - rect.top;
-			if (newWidth < width || newHeight < height) {
-				//display.fullOpen = false;
-			} else {
-				if (newWidth > width || newHeight > height) {
-					//display.fullOpen = true;
-				}
 			}
 			break;
 		}
@@ -170,8 +149,8 @@ public RGB[] getRGBs() {
 public RGB open () {
 
 	/* Get the owner HWND for the dialog */
-	long /*int*/ hwndOwner = parent.handle;
-	long /*int*/ hwndParent = parent.handle;
+	long hwndOwner = parent.handle;
+	long hwndParent = parent.handle;
 
 	/*
 	* Feature in Windows.  There is no API to set the orientation of a
@@ -201,13 +180,12 @@ public RGB open () {
 
 	/* Create the CCHookProc */
 	Callback callback = new Callback (this, "CCHookProc", 4); //$NON-NLS-1$
-	long /*int*/ lpfnHook = callback.getAddress ();
-	if (lpfnHook == 0) error(SWT.ERROR_NO_MORE_CALLBACKS);
+	long lpfnHook = callback.getAddress ();
 
 	/* Allocate the Custom Colors and initialize to white */
-	display = parent.display;
+	Display display = parent.display;
 	if (display.lpCustColors == 0) {
-		long /*int*/ hHeap = OS.GetProcessHeap ();
+		long hHeap = OS.GetProcessHeap ();
 		display.lpCustColors = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, CUSTOM_COLOR_COUNT * 4);
 		for (int i=0; i < CUSTOM_COLOR_COUNT; i++) {
 			colors[i] = 0x00FFFFFF;
@@ -235,7 +213,6 @@ public RGB open () {
 	CHOOSECOLOR lpcc = new CHOOSECOLOR ();
 	lpcc.lStructSize = CHOOSECOLOR.sizeof;
 	lpcc.Flags = OS.CC_ANYCOLOR | OS.CC_ENABLEHOOK;
-	//if (display.fullOpen) lpcc.Flags |= OS.CC_FULLOPEN;
 	lpcc.lpfnHook = lpfnHook;
 	lpcc.hwndOwner = hwndOwner;
 	lpcc.lpCustColors = display.lpCustColors;
@@ -254,9 +231,11 @@ public RGB open () {
 		display.setModalDialog (this);
 	}
 
+	display.externalEventLoop = true;
 	display.sendPreExternalEventDispatchEvent ();
 	/* Open the dialog */
 	boolean success = OS.ChooseColor (lpcc);
+	display.externalEventLoop = false;
 	display.sendPostExternalEventDispatchEvent ();
 
 	/* Clear the temporary dialog modal parent */
@@ -267,8 +246,8 @@ public RGB open () {
 	/* Get the Custom Colors (if the user defined any) from the dialog */
 	boolean customColor = false;
 	OS.MoveMemory (colors, display.lpCustColors, colors.length * 4);
-	for (int i=0; i<colors.length; i++) {
-		if (colors[i] != 0x00FFFFFF) {
+	for (int color : colors) {
+		if (color != 0x00FFFFFF) {
 			customColor = true;
 			break;
 		}
@@ -294,15 +273,6 @@ public RGB open () {
 	/* Free the CCHookProc */
 	callback.dispose ();
 
-	/* Free the Custom Colors */
-	/*
-	* This code is intentionally commented.  Currently,
-	* there is exactly one set of custom colors per display.
-	* The memory associated with these colors is released
-	* when the display is disposed.
-	*/
-//	if (lpCustColors != 0) OS.HeapFree (hHeap, 0, lpCustColors);
-
 	/* Destroy the BIDI orientation window */
 	if (hwndParent != hwndOwner) {
 		if (enabled) OS.EnableWindow (hwndParent, true);
@@ -310,15 +280,6 @@ public RGB open () {
 		OS.DestroyWindow (hwndOwner);
 	}
 
-	/*
-	* This code is intentionally commented.  On some
-	* platforms, the owner window is repainted right
-	* away when a dialog window exits.  This behavior
-	* is currently unspecified.
-	*/
-//	if (hwndOwner != 0) OS.UpdateWindow (hwndOwner);
-
-	display = null;
 	if (!success) return null;
 	return rgb;
 }
@@ -350,8 +311,8 @@ public void setRGB (RGB rgb) {
  */
 public void setRGBs(RGB[] rgbs) {
 	if (rgbs != null) {
-		for (int i=0; i<rgbs.length; i++) {
-			if (rgbs [i] == null) error (SWT.ERROR_INVALID_ARGUMENT);
+		for (RGB rgb : rgbs) {
+			if (rgb == null) error (SWT.ERROR_INVALID_ARGUMENT);
 		}
 	}
 	this.rgbs = rgbs;

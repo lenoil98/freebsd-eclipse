@@ -30,9 +30,9 @@ import org.eclipse.swt.widgets.Label;
 
 public class ImageTooltip extends ToolTip {
 	private final Messages Messages;
-	private final AbstractComponentEditor editor;
+	private final AbstractComponentEditor<?> editor;
 
-	public ImageTooltip(Control control, Messages Messages, AbstractComponentEditor editor) {
+	public ImageTooltip(Control control, Messages Messages, AbstractComponentEditor<?> editor) {
 		super(control);
 		this.Messages = Messages;
 		this.editor = editor;
@@ -102,11 +102,6 @@ public class ImageTooltip extends ToolTip {
 
 
 		return parent;}
-
-	@Override
-	protected void afterHideToolTip(Event event) {
-		super.afterHideToolTip(event);
-	}
 
 	private String getImageURI() {
 		final MUILabel part = (MUILabel) editor.getMaster().getValue();

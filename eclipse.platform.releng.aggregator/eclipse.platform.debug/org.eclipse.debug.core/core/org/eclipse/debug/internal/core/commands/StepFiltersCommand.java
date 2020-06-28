@@ -48,10 +48,10 @@ public class StepFiltersCommand extends ForEachCommand implements IStepFiltersHa
 			}
 			return filters;
 		}
-        return null;
+		return null;
 	}
 
-   private IDebugTarget[] getDebugTargets(Object element) {
+	private IDebugTarget[] getDebugTargets(Object element) {
 		if (element instanceof IDebugElement) {
 			IDebugElement debugElement = (IDebugElement) element;
 			return new IDebugTarget[] { debugElement.getDebugTarget() };
@@ -66,29 +66,21 @@ public class StepFiltersCommand extends ForEachCommand implements IStepFiltersHa
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.commands.ForEachCommand#execute(java.lang.Object)
-	 */
 	@Override
 	protected void execute(Object target) throws CoreException {
 		if (target == null) {
 			return;
 		}
 		IStepFilters[] filters = (IStepFilters[]) target;
-		for (int i = 0; i < filters.length; i++) {
-			IStepFilters filter = filters[i];
+		for (IStepFilters filter : filters) {
 			filter.setStepFiltersEnabled(DebugPlugin.isUseStepFilters());
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.commands.ForEachCommand#isExecutable(java.lang.Object)
-	 */
 	@Override
 	protected boolean isExecutable(Object target) {
 		IStepFilters[] filters = (IStepFilters[]) target;
-		for (int i = 0; i < filters.length; i++) {
-			IStepFilters filter = filters[i];
+		for (IStepFilters filter : filters) {
 			if (filter == null || !filter.supportsStepFilters()) {
 				return false;
 			}
@@ -96,9 +88,6 @@ public class StepFiltersCommand extends ForEachCommand implements IStepFiltersHa
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.commands.AbstractDebugCommand#getEnabledStateJobFamily(org.eclipse.debug.core.commands.IDebugCommandRequest)
-	 */
 	@Override
 	protected Object getEnabledStateJobFamily(IDebugCommandRequest request) {
 		return IStepFiltersHandler.class;

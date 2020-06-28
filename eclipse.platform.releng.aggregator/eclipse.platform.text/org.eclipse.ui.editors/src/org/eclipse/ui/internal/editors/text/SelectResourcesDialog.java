@@ -63,11 +63,11 @@ class SelectResourcesDialog extends Dialog {
 	}
 
 	private SelectResourcesBlock fResourceGroup;
-    private List<Object> fAcceptedFileTypes = new ArrayList<>();
-    private IResource[] fInput;
-    private String fTitle;
-    private String fInstruction;
-    private Label fCountIndication;
+	private List<Object> fAcceptedFileTypes = new ArrayList<>();
+	private IResource[] fInput;
+	private String fTitle;
+	private String fInstruction;
+	private Label fCountIndication;
 	private IFilter fAcceptableLocationsFilter;
 
 
@@ -91,7 +91,7 @@ class SelectResourcesDialog extends Dialog {
 		fResourceGroup.refresh();
 		setSelection(fInput, fAcceptableLocationsFilter);
 	}
-	
+
 	public IResource[] getSelectedResources() {
 		List<Object> items= fResourceGroup.getAllCheckedListItems();
 		return items.toArray(new IResource[items.size()]);
@@ -130,50 +130,50 @@ class SelectResourcesDialog extends Dialog {
 		return (displayHeight / fontHeight) > 50;
 	}
 
-    private ITreeContentProvider getResourceProvider(final int resourceType) {
-        return new WorkbenchContentProvider() {
-            @Override
+	private ITreeContentProvider getResourceProvider(final int resourceType) {
+		return new WorkbenchContentProvider() {
+			@Override
 			public Object[] getChildren(Object o) {
-            	if (o instanceof IWorkspaceRoot) {
-            		HashSet<IResource> projects= new HashSet<>();
-            		for (int i= 0; i < fInput.length; i++) {
-            			IResource project= fInput[i].getProject();
-            			if ((project.getType() & resourceType) > 0)
-            				projects.add(project);
-            		}
-            		return projects.toArray();
-            	}
+				if (o instanceof IWorkspaceRoot) {
+					HashSet<IResource> projects= new HashSet<>();
+					for (IResource f : fInput) {
+						IResource project = f.getProject();
+						if ((project.getType() & resourceType) > 0)
+							projects.add(project);
+					}
+					return projects.toArray();
+				}
 
-                if (o instanceof IContainer) {
-                    IResource[] members = null;
-                    try {
-                        members = ((IContainer) o).members();
-                    } catch (CoreException e) {
-                        //just return an empty set of children
-                        return new Object[0];
-                    }
+				if (o instanceof IContainer) {
+					IResource[] members = null;
+					try {
+						members = ((IContainer) o).members();
+					} catch (CoreException e) {
+						//just return an empty set of children
+						return new Object[0];
+					}
 
-                    //filter out the desired resource types
-                    ArrayList<IResource> results = new ArrayList<>();
-                    for (int i = 0; i < members.length; i++) {
-                        //And the test bits with the resource types to see if they are what we want
-                        if ((members[i].getType() & resourceType) > 0 && (resourceType != IResource.FILE || fAcceptableLocationsFilter == null || fAcceptableLocationsFilter.accept(members[i]))) {
-                            results.add(members[i]);
-                        }
-                    }
-                    return results.toArray();
-                }
+					//filter out the desired resource types
+					ArrayList<IResource> results = new ArrayList<>();
+					for (IResource member : members) {
+						//And the test bits with the resource types to see if they are what we want
+						if ((member.getType() & resourceType) > 0 && (resourceType != IResource.FILE || fAcceptableLocationsFilter == null || fAcceptableLocationsFilter.accept(member))) {
+							results.add(member);
+						}
+					}
+					return results.toArray();
+				}
 
-                //input element case
-                if (o instanceof ArrayList)
-                	return ((ArrayList<?>) o).toArray();
+				//input element case
+				if (o instanceof ArrayList)
+					return ((ArrayList<?>) o).toArray();
 
-                return new Object[0];
-            }
-        };
-    }
+				return new Object[0];
+			}
+		};
+	}
 
-    protected Composite createSelectionButtonGroup(Composite parent) {
+	protected Composite createSelectionButtonGroup(Composite parent) {
 
 		Font font= parent.getFont();
 
@@ -221,11 +221,11 @@ class SelectResourcesDialog extends Dialog {
 		selectTypesButton.addSelectionListener(listener);
 		selectTypesButton.setFont(font);
 		setButtonLayoutData(selectTypesButton);
-		
+
 		return buttonComposite;
 	}
 
-    protected void handleSelectFileTypes() {
+	protected void handleSelectFileTypes() {
 		Object[] acceptedFileTypes= queryFileTypes();
 		if (acceptedFileTypes != null) {
 			fAcceptedFileTypes= Arrays.asList(acceptedFileTypes);
@@ -233,25 +233,25 @@ class SelectResourcesDialog extends Dialog {
 		}
 	}
 
-    protected Object[] queryFileTypes() {
+	protected Object[] queryFileTypes() {
 		TypeFilteringDialog dialog= new TypeFilteringDialog(getShell(), fAcceptedFileTypes);
 		dialog.open();
 		return dialog.getResult();
 	}
 
-    private void filterSelection() {
+	private void filterSelection() {
 
-		final IFilter filter= resource -> hasAcceptedFileType(resource);
+		final IFilter filter= this::hasAcceptedFileType;
 
 		List<Object> list= fResourceGroup.getAllWhiteCheckedItems();
 		final IResource[] resources= list.toArray(new IResource[list.size()]);
 
 		Runnable runnable= () -> setSelection(resources, filter);
 
-        BusyIndicator.showWhile(getShell().getDisplay(), runnable);
-    }
+		BusyIndicator.showWhile(getShell().getDisplay(), runnable);
+	}
 
-    protected boolean hasAcceptedFileType(IResource resource) {
+	protected boolean hasAcceptedFileType(IResource resource) {
 		if (fAcceptedFileTypes == null)
 			return true;
 
@@ -278,8 +278,7 @@ class SelectResourcesDialog extends Dialog {
 
 	protected void setSelection(IResource[] input, IFilter filter) {
 		Map<IContainer, List<Object>> selectionMap= new Hashtable<>();
-		for (int i= 0; i < input.length; i++) {
-			IResource resource= input[i];
+		for (IResource resource : input) {
 			if ((resource.getType() & IResource.FILE) > 0) {
 				if (filter.accept(resource)) {
 					List<Object> files= null;
@@ -305,8 +304,7 @@ class SelectResourcesDialog extends Dialog {
 			IResource[] resources= parent.members();
 			List<Object> selections= new ArrayList<>();
 
-			for (int i= 0; i < resources.length; i++) {
-				IResource resource= resources[i];
+			for (IResource resource : resources) {
 				if ((resource.getType() & IResource.FILE) > 0) {
 					if (filter.accept(resource))
 						selections.add(resource);

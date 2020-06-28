@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -23,6 +23,7 @@ import org.osgi.framework.launch.FrameworkFactory;
  */
 public class EquinoxFactory implements FrameworkFactory {
 
+	@Override
 	public Framework newFramework(Map<String, String> configuration) {
 		return new Equinox(configuration);
 	}

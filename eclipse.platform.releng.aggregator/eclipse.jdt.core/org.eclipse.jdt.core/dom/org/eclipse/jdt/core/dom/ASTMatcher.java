@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,8 @@ package org.eclipse.jdt.core.dom;
 
 import java.util.Iterator;
 import java.util.List;
+
+import org.eclipse.jdt.internal.core.dom.util.DOMASTUtil;
 
 /**
  * Concrete superclass and default implementation of an AST subtree matcher.
@@ -484,7 +486,7 @@ public class ASTMatcher {
 			return false;
 		}
 		BreakStatement o = (BreakStatement) other;
-		return safeSubtreeMatch(node.getLabel(), o.getLabel());
+		return (safeSubtreeMatch(node.getLabel(), o.getLabel()));
 	}
 
 	/**
@@ -1179,9 +1181,11 @@ public class ASTMatcher {
 			return false;
 		}
 		InstanceofExpression o = (InstanceofExpression) other;
-		return (
-				safeSubtreeMatch(node.getLeftOperand(), o.getLeftOperand())
-				&& safeSubtreeMatch(node.getRightOperand(), o.getRightOperand()));
+		return
+			safeSubtreeMatch(node.getLeftOperand(), o.getLeftOperand())
+			&& safeSubtreeMatch(node.getRightOperand(), o.getRightOperand())
+			&& ((DOMASTUtil.isInstanceofExpressionPatternSupported(node.getAST())) ? safeSubtreeMatch(node.getPatternVariable(), o.getPatternVariable())
+					: true);
 	}
 
 	/**
@@ -1290,7 +1294,7 @@ public class ASTMatcher {
 	 * other object is a node of the same type with structurally isomorphic
 	 * child subtrees. Subclasses may override this method as needed.
 	 * </p>
-	 * 
+	 *
 	 * @param node the node
 	 * @param other the other object, or <code>null</code>
 	 * @return <code>true</code> if the subtree matches, or
@@ -1513,7 +1517,10 @@ public class ASTMatcher {
 								&& safeSubtreeListMatch(node.thrownExceptionTypes(), o.thrownExceptionTypes())
 						: node.getExtraDimensions() == o.getExtraDimensions()
 								&& safeSubtreeListMatch(node.internalThrownExceptions(), o.internalThrownExceptions()))
-				&& safeSubtreeMatch(node.getBody(), o.getBody());
+				&& safeSubtreeMatch(node.getBody(), o.getBody())
+				&& (DOMASTUtil.isRecordDeclarationSupported(node.getAST())
+						? node.isCompactConstructor() == o.isCompactConstructor()
+						: true);
 	}
 
 	/**
@@ -1972,6 +1979,36 @@ public class ASTMatcher {
 	 * @return <code>true</code> if the subtree matches, or
 	 *   <code>false</code> if they do not match or the other object has a
 	 *   different node type or is <code>null</code>
+	 * @since 3.22
+	 */
+	public boolean match(RecordDeclaration node, Object other) {
+		if (!(other instanceof RecordDeclaration)) {
+			return false;
+		}
+		RecordDeclaration o = (RecordDeclaration) other;
+		return (
+			safeSubtreeMatch(node.getJavadoc(), o.getJavadoc())
+				&& safeSubtreeListMatch(node.modifiers(), o.modifiers())
+				&& safeSubtreeMatch(node.getName(), o.getName())
+				&& safeSubtreeListMatch(node.superInterfaceTypes(), o.superInterfaceTypes())
+				&& safeSubtreeMatch(node.typeParameters(), o.typeParameters())
+				&& safeSubtreeListMatch(node.bodyDeclarations(), o.bodyDeclarations())
+				&& safeSubtreeMatch(node.recordComponents(), o.recordComponents()));
+	}
+
+	/**
+	 * Returns whether the given node and the other object match.
+	 * <p>
+	 * The default implementation provided by this class tests whether the
+	 * other object is a node of the same type with structurally isomorphic
+	 * child subtrees. Subclasses may override this method as needed.
+	 * </p>
+	 *
+	 * @param node the node
+	 * @param other the other object, or <code>null</code>
+	 * @return <code>true</code> if the subtree matches, or
+	 *   <code>false</code> if they do not match or the other object has a
+	 *   different node type or is <code>null</code>
 	 *
 	 *   @since 3.14
 	 */
@@ -2235,7 +2272,7 @@ public class ASTMatcher {
 	 * @return <code>true</code> if the subtree matches, or
 	 *   <code>false</code> if they do not match or the other object has a
 	 *   different node type or is <code>null</code>
-	 *   
+	 *
 	 *   @since 3.10
 	 */
 	public boolean match(SuperMethodReference node, Object other) {
@@ -2267,7 +2304,43 @@ public class ASTMatcher {
 			return false;
 		}
 		SwitchCase o = (SwitchCase) other;
-		return safeSubtreeMatch(node.getExpression(), o.getExpression());
+		return ( node.getAST().apiLevel >= AST.JLS14
+				? safeSubtreeListMatch(node.expressions(), o.expressions())
+						: compareDeprecatedSwitchExpression(node, o));
+	}
+
+	/**
+	 * Return whether the deprecated comment strings of the given java doc are equals.
+	 * <p>
+	 * Note the only purpose of this method is to hide deprecated warnings.
+	 * @deprecated mark deprecated to hide deprecated usage
+	 */
+	private boolean compareDeprecatedSwitchExpression(SwitchCase first, SwitchCase second) {
+		return safeSubtreeMatch(first.getExpression(), second.getExpression());
+	}
+
+	/**
+	 * Returns whether the given node and the other object match.
+	 * <p>
+	 * The default implementation provided by this class tests whether the
+	 * other object is a node of the same type with structurally isomorphic
+	 * child subtrees. Subclasses may override this method as needed.
+	 * </p>
+	 *
+	 * @param node the node
+	 * @param other the other object, or <code>null</code>
+	 * @return <code>true</code> if the subtree matches, or
+	 *   <code>false</code> if they do not match or the other object has a
+	 *   different node type or is <code>null</code>
+	 * @since 3.18
+	 */
+	public boolean match(SwitchExpression node, Object other) {
+		if (!(other instanceof SwitchExpression)) {
+			return false;
+		}
+		SwitchExpression o = (SwitchExpression) other;
+		return	safeSubtreeMatch(node.getExpression(), o.getExpression())
+				&& safeSubtreeListMatch(node.statements(), o.statements());
 	}
 
 	/**
@@ -2341,6 +2414,31 @@ public class ASTMatcher {
 		return (
 				safeEquals(node.getTagName(), o.getTagName())
 				&& safeSubtreeListMatch(node.fragments(), o.fragments()));
+	}
+
+	/**
+	 * Returns whether the given node and the other object match.
+	 * <p>
+	 * The default implementation provided by this class tests whether the
+	 * other object is a node of the same type with structurally isomorphic
+	 * child subtrees. Subclasses may override this method as needed.
+	 * </p>
+	 *
+	 * @param node the node
+	 * @param other the other object, or <code>null</code>
+	 * @return <code>true</code> if the subtree matches, or
+	 *   <code>false</code> if they do not match or the other object has a
+	 *   different node type or is <code>null</code>
+	 * @noreference This method is not intended to be referenced by clients as it is a part of Java preview feature.
+	 * @nooverride This method is not intended to be re-implemented or extended by clients as it is a part of Java preview feature.
+	 * @since 3.20
+	 */
+	public boolean match(TextBlock node, Object other) {
+		if (!(other instanceof TextBlock)) {
+			return false;
+		}
+		TextBlock o = (TextBlock) other;
+		return safeEquals(node.getEscapedValue(), o.getEscapedValue());
 	}
 
 	/**
@@ -2777,6 +2875,31 @@ public class ASTMatcher {
 		return (level >= AST.JLS8_INTERNAL ? safeSubtreeListMatch(node.annotations(), o.annotations()) : true)
 				&& node.isUpperBound() == o.isUpperBound()
 				&& safeSubtreeMatch(node.getBound(), o.getBound());
+	}
+
+	/**
+	 * Returns whether the given node and the other object match.
+	 * <p>
+	 * The default implementation provided by this class tests whether the
+	 * other object is a node of the same type with structurally isomorphic
+	 * child subtrees. Subclasses may override this method as needed.
+	 * </p>
+	 *
+	 * @param node the node
+	 * @param other the other object, or <code>null</code>
+	 * @return <code>true</code> if the subtree matches, or
+	 *   <code>false</code> if they do not match or the other object has a
+	 *   different node type or is <code>null</code>
+	 * @noreference This method is not intended to be referenced by clients as it is a part of Java preview feature.
+	 * @nooverride This method is not intended to be re-implemented or extended by clients as it is a part of Java preview feature.
+	 * @since 3.20
+	 */
+	public boolean match(YieldStatement node, Object other) {
+		if (!(other instanceof YieldStatement)) {
+			return false;
+		}
+		YieldStatement o = (YieldStatement) other;
+		return	safeSubtreeMatch(node.getExpression(), o.getExpression());
 	}
 
 }

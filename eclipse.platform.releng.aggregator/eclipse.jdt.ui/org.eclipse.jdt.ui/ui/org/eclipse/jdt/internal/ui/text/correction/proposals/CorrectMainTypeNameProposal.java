@@ -13,7 +13,6 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.text.correction.proposals;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -73,17 +72,15 @@ public class CorrectMainTypeNameProposal extends ASTRewriteCorrectionProposal {
 
 		AbstractTypeDeclaration decl= findTypeDeclaration(astRoot.types(), fOldName);
 		if (decl != null) {
-			ASTNode[] sameNodes= LinkedNodeFinder.findByNode(astRoot, decl.getName());
-			for (int i= 0; i < sameNodes.length; i++) {
-				rewrite.replace(sameNodes[i], ast.newSimpleName(fNewName), null);
+			for (ASTNode sameNode : LinkedNodeFinder.findByNode(astRoot, decl.getName())) {
+				rewrite.replace(sameNode, ast.newSimpleName(fNewName), null);
 			}
 		}
 		return rewrite;
 	}
 
 	private AbstractTypeDeclaration findTypeDeclaration(List<AbstractTypeDeclaration> types, String name) {
-		for (Iterator<AbstractTypeDeclaration> iter= types.iterator(); iter.hasNext();) {
-			AbstractTypeDeclaration decl= iter.next();
+		for (AbstractTypeDeclaration decl : types) {
 			if (name.equals(decl.getName().getIdentifier())) {
 				return decl;
 			}

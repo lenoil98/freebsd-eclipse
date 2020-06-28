@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,12 +14,12 @@
  *     Holger Voormann - fix for bug 365549 (http://eclip.se/365549)
  *     Holger Voormann - fix for bug 364324 (http://eclip.se/364324)
  *     Alex Blewitt - Bug 474070
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.webapp.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +48,6 @@ import org.eclipse.help.internal.search.SearchProgressMonitor;
 import org.eclipse.help.internal.search.SearchQuery;
 import org.eclipse.help.internal.search.SearchResults;
 import org.eclipse.help.internal.util.ProductPreferences;
-import org.eclipse.help.internal.webapp.HelpWebappPlugin;
 import org.eclipse.help.internal.webapp.servlet.WebappWorkingSetManager;
 import org.eclipse.help.internal.workingset.AdaptableHelpResource;
 import org.eclipse.help.internal.workingset.AdaptableSelectedToc;
@@ -113,7 +112,7 @@ public class SearchData extends ActivitiesData {
 		if (isScopeRequest()) {
 			workingSetName = request.getParameter("workingSet"); //$NON-NLS-1$
 			if ( canSaveScope() ) {
-			    saveWorkingSet(workingSetName);
+				saveWorkingSet(workingSetName);
 			}
 		}
 
@@ -122,7 +121,7 @@ public class SearchData extends ActivitiesData {
 	}
 
 	protected boolean canSaveScope() {
-        // Scope is only saved from scopeState.jsp
+		// Scope is only saved from scopeState.jsp
 		// This prevents cookies from being saved with a /advanced path
 		return false;
 	}
@@ -168,7 +167,7 @@ public class SearchData extends ActivitiesData {
 						searchWord = query;
 				}
 			}
-			Collections.sort(altList);
+			altList.sort(null);
 
 			loadSearchResults();
 			if (queryException != null) {
@@ -329,15 +328,15 @@ public class SearchData extends ActivitiesData {
 	public boolean isShowDescriptions() {
 		Cookie[] cookies = request.getCookies();
 		if (cookies != null) {
-        		for (Cookie cookie : cookies) {
-        			if ("showDescriptions".equals(cookie.getName())) { //$NON-NLS-1$
-        				return String.valueOf(true).equals(cookie.getValue());
-        			}
-        		}
+				for (Cookie cookie : cookies) {
+					if ("showDescriptions".equals(cookie.getName())) { //$NON-NLS-1$
+						return String.valueOf(true).equals(cookie.getValue());
+					}
+				}
 		}
 		// get default from preferences
 		return Platform.getPreferencesService().getBoolean
-			    (HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_SHOW_SEARCH_DESCRIPTION, true, null);
+				(HelpBasePlugin.PLUGIN_ID, IHelpBaseConstants.P_KEY_SHOW_SEARCH_DESCRIPTION, true, null);
 	}
 
 	/**
@@ -398,7 +397,7 @@ public class SearchData extends ActivitiesData {
 		if (workingSetName != null && workingSetName.length() != 0)
 			return workingSetName;
 
-        if (isSearchRequest()) {
+		if (isSearchRequest()) {
 			workingSetName = request.getParameter("scope"); //$NON-NLS-1$
 			// if we have already set the working set, then use it.
 			if (workingSetName == null) {
@@ -439,8 +438,7 @@ public class SearchData extends ActivitiesData {
 						results, pm);
 				hits = results.getSearchHits();
 				if (hits == null) {
-					HelpWebappPlugin
-							.logWarning("No search results returned.  Help index is in use."); //$NON-NLS-1$
+					Platform.getLog(getClass()).warn("No search results returned.  Help index is in use."); //$NON-NLS-1$
 				}
 				return;
 			}
@@ -463,7 +461,7 @@ public class SearchData extends ActivitiesData {
 		String fieldSearchStr = request.getParameter("fieldSearch"); //$NON-NLS-1$
 		boolean fieldSearch = fieldSearchStr != null ? Boolean.parseBoolean(
 				fieldSearchStr) : false;
-		return new SearchQuery(searchWord == null ? "" : searchWord, fieldSearch, new ArrayList<String>(), //$NON-NLS-1$
+		return new SearchQuery(searchWord == null ? "" : searchWord, fieldSearch, new ArrayList<>(), //$NON-NLS-1$
 				getLocale());
 	}
 
@@ -517,7 +515,7 @@ public class SearchData extends ActivitiesData {
 				workingSetCol.add(ws);
 			}
 		}
-		if (workingSetCol.size() == 0) {
+		if (workingSetCol.isEmpty()) {
 			return null;
 		}
 		return workingSetCol
@@ -617,22 +615,22 @@ public class SearchData extends ActivitiesData {
 	}
 
 	public String getNotFoundMessage() {
-	    String scope = getScope();
-	    if (scope.equals(ServletResources.getString("All", request))) { //$NON-NLS-1$
-		    return ServletResources.getString("Nothing_found", request); //$NON-NLS-1$
+		String scope = getScope();
+		if (scope.equals(ServletResources.getString("All", request))) { //$NON-NLS-1$
+			return ServletResources.getString("Nothing_found", request); //$NON-NLS-1$
 		} else {
-		    return NLS.bind(ServletResources.getString("Nothing_found_in_scope", request), scope); //$NON-NLS-1$
+			return NLS.bind(ServletResources.getString("Nothing_found_in_scope", request), scope); //$NON-NLS-1$
 		}
 	}
 
 	public String getScopeActiveMessage() {
-	    String scope = getScope();
+		String scope = getScope();
 		return NLS.bind(ServletResources.getString("activeScope", request), scope); //$NON-NLS-1$
 	}
 
 	public String getMatchesInScopeMessage() {
-	    String scope = getScope();
-	    return NLS.bind(ServletResources.getString("matchesInScope", request), "" + getResultsCount(), scope); //$NON-NLS-1$ //$NON-NLS-2$
+		String scope = getScope();
+		return NLS.bind(ServletResources.getString("matchesInScope", request), "" + getResultsCount(), scope); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	public String getPreProcessorResults()

@@ -54,8 +54,8 @@ import org.eclipse.ui.internal.WorkbenchPlugin;
  * @since 3.3
  *
  */
-public class ModifyWorkingSetDelegate extends
-		AbstractWorkingSetPulldownDelegate implements IExecutableExtension, IActionDelegate2 {
+public class ModifyWorkingSetDelegate extends AbstractWorkingSetPulldownDelegate
+		implements IExecutableExtension, IActionDelegate2 {
 
 	public static class NewWorkingSetAction extends Action {
 
@@ -68,21 +68,19 @@ public class ModifyWorkingSetDelegate extends
 
 		@Override
 		public void run() {
-			IWorkingSetManager manager = WorkbenchPlugin.getDefault()
-			.getWorkingSetManager();
+			IWorkingSetManager manager = WorkbenchPlugin.getDefault().getWorkingSetManager();
 			IWorkingSetNewWizard wizard = manager.createWorkingSetNewWizard(null);
 			// the wizard can never be null since we have at least a resource
 			// working set
 			// creation page
-			WizardDialog dialog = new WizardDialog(PlatformUI.getWorkbench()
-								.getDisplay().getActiveShell(), wizard);
+			WizardDialog dialog = new WizardDialog(PlatformUI.getWorkbench().getDisplay().getActiveShell(), wizard);
 
 			dialog.create();
 			PlatformUI.getWorkbench().getHelpSystem().setHelp(dialog.getShell(),
 					IWorkbenchHelpContextIds.WORKING_SET_NEW_WIZARD);
 			if (dialog.open() == Window.OK) {
 				IWorkingSet workingSet = wizard.getSelection();
-				if(workingSet != null) {
+				if (workingSet != null) {
 					manager.addWorkingSet(workingSet);
 				}
 			}
@@ -94,14 +92,14 @@ public class ModifyWorkingSetDelegate extends
 
 		private IWorkingSet set;
 
-		private IAdaptable [] selectedElements;
+		private IAdaptable[] selectedElements;
 
 		/**
 		 * @param set
 		 * @param selectedElements
 		 * @param add
 		 */
-		private ModifyAction(IWorkingSet set, IAdaptable [] selectedElements) {
+		private ModifyAction(IWorkingSet set, IAdaptable[] selectedElements) {
 			super(set.getLabel(), IAction.AS_CHECK_BOX);
 			this.set = set;
 			this.selectedElements = selectedElements;
@@ -112,8 +110,7 @@ public class ModifyWorkingSetDelegate extends
 		public void run() {
 
 			Collection oldElements = Arrays.asList(set.getElements());
-			Set newElements = new HashSet(oldElements.size()
-					+ selectedElements.length);
+			Set newElements = new HashSet(oldElements.size() + selectedElements.length);
 			newElements.addAll(oldElements);
 			List selectedAsList = Arrays.asList(selectedElements);
 			if (add) {
@@ -121,8 +118,7 @@ public class ModifyWorkingSetDelegate extends
 			} else {
 				newElements.removeAll(selectedAsList);
 			}
-			set.setElements((IAdaptable[]) newElements
-					.toArray(new IAdaptable[newElements.size()]));
+			set.setElements((IAdaptable[]) newElements.toArray(new IAdaptable[newElements.size()]));
 		}
 	}
 
@@ -172,23 +168,19 @@ public class ModifyWorkingSetDelegate extends
 	@Override
 	public void init(IWorkbenchWindow window) {
 		super.init(window);
-		getWindow().getWorkbench().getWorkingSetManager()
-				.addPropertyChangeListener(listener);
+		getWindow().getWorkbench().getWorkingSetManager().addPropertyChangeListener(listener);
 	}
 
 	@Override
 	public void dispose() {
-		getWindow().getWorkbench().getWorkingSetManager()
-				.removePropertyChangeListener(listener);
+		getWindow().getWorkbench().getWorkingSetManager().removePropertyChangeListener(listener);
 		super.dispose();
 		contextMenuCreator.dispose();
 	}
 
 	@Override
 	public void fillMenu(Menu menu) {
-		List menuItems = getItems();
-		for (int i = 0; i < menuItems.size(); i++) {
-			Object object = menuItems.get(i);
+		for (Object object : getItems()) {
 			if (object instanceof IAction) {
 				ActionContributionItem item = new ActionContributionItem((IAction) object);
 				item.fill(menu, -1);
@@ -198,7 +190,7 @@ public class ModifyWorkingSetDelegate extends
 			}
 		}
 		// create working set action only for add menu
-		if(add) {
+		if (add) {
 			IContributionItem item = null;
 			if (menu.getItemCount() > 0) {
 				item = new Separator();
@@ -209,6 +201,7 @@ public class ModifyWorkingSetDelegate extends
 			item.fill(menu, -1);
 		}
 	}
+
 	/**
 	 * Return the list of items to show in the submenu.
 	 *
@@ -218,8 +211,9 @@ public class ModifyWorkingSetDelegate extends
 		List menuItems = new ArrayList();
 		ISelection selection = getSelection();
 		if (!(selection instanceof IStructuredSelection)) {
-			if(!add) {
-				IAction emptyAction = new Action(WorkbenchMessages.NoApplicableWorkingSets) {};
+			if (!add) {
+				IAction emptyAction = new Action(WorkbenchMessages.NoApplicableWorkingSets) {
+				};
 				emptyAction.setEnabled(false);
 				menuItems.add(emptyAction);
 			}
@@ -227,7 +221,7 @@ public class ModifyWorkingSetDelegate extends
 		}
 
 		IWorkingSet[][] typedSets = splitSets();
-		Object [] selectedElements = ((IStructuredSelection)selection).toArray();
+		Object[] selectedElements = ((IStructuredSelection) selection).toArray();
 
 		// keep a tab of whether or not we need a separator. If a given type
 		// of working set has contributed some items then this will be true
@@ -242,26 +236,24 @@ public class ModifyWorkingSetDelegate extends
 
 			for (IWorkingSet set : sets) {
 				Set existingElements = new HashSet();
-				existingElements.addAll(Arrays
-						.asList(set.getElements()));
+				existingElements.addAll(Arrays.asList(set.getElements()));
 
 				boolean visible = false;
-				IAdaptable [] adaptables = new IAdaptable[selectedElements.length];
+				IAdaptable[] adaptables = new IAdaptable[selectedElements.length];
 				System.arraycopy(selectedElements, 0, adaptables, 0, selectedElements.length);
 				adaptables = set.adaptElements(adaptables);
 				if (adaptables.length > 0 && add) {
-					for (int k = 0; k < adaptables.length; k++) {
-						if (!existingElements.contains(adaptables[k])) {
+					for (IAdaptable adaptable : adaptables) {
+						if (!existingElements.contains(adaptable)) {
 							// show if any element is not present in
 							// addition
 							visible = true;
 							break;
 						}
 					}
-				}
-				else if (adaptables.length > 0) {
+				} else if (adaptables.length > 0) {
 					for (IAdaptable adaptable : adaptables) {
-						if (existingElements.contains(adaptable)){
+						if (existingElements.contains(adaptable)) {
 							visible = true; // show if any element
 											// is present in removal
 							break;
@@ -274,8 +266,7 @@ public class ModifyWorkingSetDelegate extends
 						menuItems.add(new Separator());
 						needsSeparator = false;
 					}
-					ModifyAction action = new ModifyAction(set,
-							adaptables);
+					ModifyAction action = new ModifyAction(set, adaptables);
 					menuItems.add(action);
 				}
 			}
@@ -284,8 +275,7 @@ public class ModifyWorkingSetDelegate extends
 			needsSeparator |= menuItems.size() > oldCount;
 		}
 		if (menuItems.isEmpty() && !add) {
-			IAction emptyAction = new Action(
-					WorkbenchMessages.NoApplicableWorkingSets) {
+			IAction emptyAction = new Action(WorkbenchMessages.NoApplicableWorkingSets) {
 			};
 			emptyAction.setEnabled(false);
 			menuItems.add(emptyAction);
@@ -294,9 +284,7 @@ public class ModifyWorkingSetDelegate extends
 	}
 
 	private void fillMenu(IMenuManager menu) {
-		List menuItems = getItems();
-		for (int i = 0; i < menuItems.size(); i++) {
-			Object object = menuItems.get(i);
+		for (Object object : getItems()) {
 			if (object instanceof IAction) {
 				menu.add((IAction) object);
 			} else {
@@ -310,27 +298,23 @@ public class ModifyWorkingSetDelegate extends
 	public void selectionChanged(IAction actionProxy, ISelection selection) {
 		super.selectionChanged(actionProxy, selection);
 		if (selection instanceof IStructuredSelection) {
-			Object[] selectedElements = ((IStructuredSelection) getSelection())
-					.toArray();
-			// ensure every item is of type IAdaptable and is NOT an IWorkingSet (minimal fix for 157799)
+			// ensure every item is of type IAdaptable and is NOT an IWorkingSet (minimal
+			// fix for 157799)
 			boolean minimallyOkay = true;
-			for (Object selectedElement : selectedElements) {
-				Object object = selectedElement;
-				if (!(object instanceof IAdaptable) || object instanceof IWorkingSet) {
+			for (Object selectedElement : (IStructuredSelection) getSelection()) {
+				if (!(selectedElement instanceof IAdaptable) || selectedElement instanceof IWorkingSet) {
 					minimallyOkay = false;
 					break;
 				}
 			}
 			actionProxy.setEnabled(minimallyOkay);
 
-		}
-		else
+		} else
 			actionProxy.setEnabled(false);
 	}
 
 	@Override
-	public void setInitializationData(IConfigurationElement config,
-			String propertyName, Object data) {
+	public void setInitializationData(IConfigurationElement config, String propertyName, Object data) {
 		if (data instanceof String) {
 			add = Boolean.parseBoolean((String) data);
 		}

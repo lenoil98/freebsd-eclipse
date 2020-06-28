@@ -48,8 +48,8 @@ public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
 	}
 
 	int[] cases = {0, SWT.HORIZONTAL, SWT.VERTICAL};
-	for (int i = 0; i < cases.length; i++)
-		scale = new Scale(shell, cases[i]);
+	for (int style : cases)
+		scale = new Scale(shell, style);
 }
 
 @Override
@@ -62,8 +62,7 @@ public void test_setMaximumI() {
 
 	int [][] testValues = getSetMaximumValues();
 
-	for (int i = 0; i < testValues.length; i++) {
-		int[] intArray = testValues[i];
+	for (int[] intArray : testValues) {
 		setDefaults();
 		scale.setMaximum(intArray[0]);
 		report("setMaximum", intArray[0], intArray[1], intArray[2], intArray[3]);
@@ -76,8 +75,7 @@ public void test_setMinimumI() {
 
 	int [][] testValues = getSetMinimumValues();
 
-	for (int i = 0; i < testValues.length; i++) {
-		int[] intArray = testValues[i];
+	for (int[] intArray : testValues) {
 		setDefaults();
 		scale.setMinimum(intArray[0]);
 		report("setMinimum", intArray[0], intArray[1], intArray[2], intArray[3]);
@@ -87,8 +85,7 @@ public void test_setMinimumI() {
 @Test
 public void test_setSelectionI() {
 	int [][] testValues = getSetSelectionValues();
-	for (int i = 0; i < testValues.length; i++) {
-		int[] intArray = testValues[i];
+	for (int[] intArray : testValues) {
 		setDefaults();
 		scale.setSelection(intArray[0]);
 		report("setSelection", intArray[0], intArray[1], intArray[2], intArray[3]);
@@ -107,8 +104,8 @@ Scale scale;
 
 // this method must be private or protected so the auto-gen tool keeps it
 private void report(String call, int set, int minExpected, int maxExpected, int selectionExpected) {
-	 //Uncomment these lines and comment out call to check() if you want the test to report all errors without
-	 //stopping.
+	//Uncomment these lines and comment out call to check() if you want the test to report all errors without
+	//stopping.
 
 	//if (trackBar.getMinimum() != minExpected)
 		//System.out.println(call + "(" + set + "): Minimum Expected: " + minExpected + "  Actual: " + trackBar.getMinimum());
@@ -568,27 +565,27 @@ return new int[][] {
 
 @Test
 public void test_consistency_KeySelection () {
-    consistencyEvent(0, SWT.ARROW_RIGHT, 0, 0, ConsistencyUtility.KEY_PRESS);
+	consistencyEvent(0, SWT.ARROW_RIGHT, 0, 0, ConsistencyUtility.KEY_PRESS);
 }
 
 @Test
 public void test_consistency_ThumbSelection () {
-    consistencyEvent(9, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK);
+	consistencyEvent(9, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Test
 public void test_consistency_TroughSelection () {
-    consistencyEvent(27, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK);
+	consistencyEvent(27, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Test
 public void test_consistency_MenuDetect () {
-    consistencyEvent(27, 5, 3, 0, ConsistencyUtility.MOUSE_CLICK);
+	consistencyEvent(27, 5, 3, 0, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Test
 public void test_consistency_DragDetect () {
-    consistencyEvent(9, 5, 30, 10, ConsistencyUtility.MOUSE_DRAG);
+	consistencyEvent(9, 5, 30, 10, ConsistencyUtility.MOUSE_DRAG);
 }
 
 }

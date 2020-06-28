@@ -45,50 +45,47 @@ import org.eclipse.swt.graphics.FontData;
  */
 public class ExpressionContentProvider extends VariableContentProvider {
 
-    /**
-     * @since 3.6
-     * Element object used to wrap the expression error message.  It displays
-     * the error message only in the first column if columns are visible.
-     */
-    private static class ErrorMessageElement implements IElementLabelProvider {
-
-        public ErrorMessageElement(String message) {
-            fMessage = message;
-        }
-
-        private final String fMessage;
-
-        @Override
-		public void update(ILabelUpdate[] updates) {
-            for (int i = 0; i < updates.length; i++) {
-                String[] columnIds = updates[i].getColumnIds();
-                if (columnIds == null) {
-                    updateLabel(updates[i], 0);
-                } else {
-                    for (int j = 0; j < columnIds.length; j++) {
-                        if (IDebugUIConstants.COLUMN_ID_VARIABLE_NAME.equals(columnIds[j])) {
-                            updateLabel(updates[i], j);
-                        } else {
-                            updates[i].setLabel(IInternalDebugCoreConstants.EMPTY_STRING, j);
-                        }
-                    }
-                }
-
-                updates[i].done();
-            }
-        }
-
-        private void updateLabel(ILabelUpdate update, int columnIndex) {
-            update.setLabel(fMessage, columnIndex);
-            FontData fontData = JFaceResources.getFontDescriptor(IDebugUIConstants.PREF_VARIABLE_TEXT_FONT).getFontData()[0];
-            fontData.setStyle(SWT.ITALIC);
-
-        }
-    }
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.model.elements.ElementContentProvider#update(org.eclipse.debug.internal.ui.viewers.model.provisional.IChildrenCountUpdate[])
+	/**
+	 * @since 3.6
+	 * Element object used to wrap the expression error message.  It displays
+	 * the error message only in the first column if columns are visible.
 	 */
+	private static class ErrorMessageElement implements IElementLabelProvider {
+
+		public ErrorMessageElement(String message) {
+			fMessage = message;
+		}
+
+		private final String fMessage;
+
+		@Override
+		public void update(ILabelUpdate[] updates) {
+			for (ILabelUpdate update : updates) {
+				String[] columnIds = update.getColumnIds();
+				if (columnIds == null) {
+					updateLabel(update, 0);
+				} else {
+					for (int j = 0; j < columnIds.length; j++) {
+						if (IDebugUIConstants.COLUMN_ID_VARIABLE_NAME.equals(columnIds[j])) {
+							updateLabel(update, j);
+						} else {
+							update.setLabel(IInternalDebugCoreConstants.EMPTY_STRING, j);
+						}
+					}
+				}
+
+				update.done();
+			}
+		}
+
+		private void updateLabel(ILabelUpdate update, int columnIndex) {
+			update.setLabel(fMessage, columnIndex);
+			FontData fontData = JFaceResources.getFontDescriptor(IDebugUIConstants.PREF_VARIABLE_TEXT_FONT).getFontData()[0];
+			fontData.setStyle(SWT.ITALIC);
+
+		}
+	}
+
 	@Override
 	public void update(IChildrenCountUpdate[] updates) {
 		// See if we can delegate to a model specific content provider
@@ -97,8 +94,9 @@ public class ExpressionContentProvider extends VariableContentProvider {
 		findDelegates(delegateMap, notDelegated, updates);
 
 		// Batch the updates and send them to the delegates
-		for (IElementContentProvider delegate : delegateMap.keySet()) {
-			List<IViewerUpdate> updateList = delegateMap.get(delegate);
+		for (Map.Entry<IElementContentProvider, List<IViewerUpdate>> entry : delegateMap.entrySet()) {
+			IElementContentProvider delegate = entry.getKey();
+			List<IViewerUpdate> updateList = entry.getValue();
 			delegate.update(updateList.toArray(new IChildrenCountUpdate[updateList.size()]));
 		}
 		if (notDelegated.size() > 0){
@@ -106,9 +104,6 @@ public class ExpressionContentProvider extends VariableContentProvider {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.model.elements.ElementContentProvider#update(org.eclipse.debug.internal.ui.viewers.model.provisional.IHasChildrenUpdate[])
-	 */
 	@Override
 	public void update(IHasChildrenUpdate[] updates) {
 		// See if we can delegate to a model specific content provider
@@ -117,8 +112,9 @@ public class ExpressionContentProvider extends VariableContentProvider {
 		findDelegates(delegateMap, notDelegated, updates);
 
 		// Batch the updates and send them to the delegates
-		for (IElementContentProvider delegate : delegateMap.keySet()) {
-			List<IViewerUpdate> updateList = delegateMap.get(delegate);
+		for (Map.Entry<IElementContentProvider, List<IViewerUpdate>> entry : delegateMap.entrySet()) {
+			IElementContentProvider delegate = entry.getKey();
+			List<IViewerUpdate> updateList = entry.getValue();
 			delegate.update(updateList.toArray(new IHasChildrenUpdate[updateList.size()]));
 		}
 		if (notDelegated.size() > 0){
@@ -126,9 +122,6 @@ public class ExpressionContentProvider extends VariableContentProvider {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.model.elements.ElementContentProvider#update(org.eclipse.debug.internal.ui.viewers.model.provisional.IChildrenUpdate[])
-	 */
 	@Override
 	public void update(IChildrenUpdate[] updates) {
 		// See if we can delegate to a model specific content provider
@@ -137,8 +130,9 @@ public class ExpressionContentProvider extends VariableContentProvider {
 		findDelegates(delegateMap, notDelegated, updates);
 
 		// Batch the updates and send them to the delegates
-		for (IElementContentProvider delegate : delegateMap.keySet()) {
-			List<IViewerUpdate> updateList = delegateMap.get(delegate);
+		for (Map.Entry<IElementContentProvider, List<IViewerUpdate>> entry : delegateMap.entrySet()) {
+			IElementContentProvider delegate = entry.getKey();
+			List<IViewerUpdate> updateList = entry.getValue();
 			delegate.update(updateList.toArray(new IChildrenUpdate[updateList.size()]));
 		}
 		if (notDelegated.size() > 0){
@@ -157,46 +151,46 @@ public class ExpressionContentProvider extends VariableContentProvider {
 	 * @since 3.4
 	 */
 	private void findDelegates(Map<IElementContentProvider, List<IViewerUpdate>> delegateMap, List<IViewerUpdate> notDelegated, IViewerUpdate[] updates) {
-		for (int i = 0; i < updates.length; i++) {
-			if (updates[i] instanceof ViewerUpdateMonitor && !((ViewerUpdateMonitor)updates[i]).isDelegated() && updates[i].getElement() instanceof IExpression){
-				IElementContentProvider delegate = ViewerAdapterService.getContentProvider(((IExpression)updates[i].getElement()).getValue());
+		for (IViewerUpdate update : updates) {
+			if (update instanceof ViewerUpdateMonitor && !((ViewerUpdateMonitor)update).isDelegated() && update.getElement() instanceof IExpression){
+				IElementContentProvider delegate = ViewerAdapterService.getContentProvider(((IExpression)update.getElement()).getValue());
 				if (delegate != null){
 					List<IViewerUpdate> updateList = delegateMap.get(delegate);
 					if (updateList == null){
 						updateList = new ArrayList<>();
 						delegateMap.put(delegate, updateList);
 					}
-					((ViewerUpdateMonitor)updates[i]).setDelegated(true);
-					updateList.add(updates[i]);
+					((ViewerUpdateMonitor)update).setDelegated(true);
+					updateList.add(update);
 					continue;
 				}
 			}
-			notDelegated.add(updates[i]);
+			notDelegated.add(update);
 		}
 	}
 
 
 	@Override
 	protected Object[] getAllChildren(Object parent, IPresentationContext context) throws CoreException {
-       if (parent instanceof IErrorReportingExpression) {
-            IErrorReportingExpression expression = (IErrorReportingExpression) parent;
-            if (expression.hasErrors()) {
-                String[] messages = expression.getErrorMessages();
+		if (parent instanceof IErrorReportingExpression) {
+			IErrorReportingExpression expression = (IErrorReportingExpression) parent;
+			if (expression.hasErrors()) {
+				String[] messages = expression.getErrorMessages();
 				LinkedHashSet<ErrorMessageElement> set = new LinkedHashSet<>(messages.length);
-                for (int i = 0; i < messages.length; i++) {
-					set.add(new ErrorMessageElement(messages[i]));
+				for (String message : messages) {
+					set.add(new ErrorMessageElement(message));
 				}
-                return set.toArray();
-            }
-        }
-        if (parent instanceof IExpression) {
-            IExpression expression = (IExpression) parent;
-            IValue value = expression.getValue();
-            if (value != null) {
-                return getValueChildren(expression, value, context);
-            }
-        }
-        return EMPTY;
+				return set.toArray();
+			}
+		}
+		if (parent instanceof IExpression) {
+			IExpression expression = (IExpression) parent;
+			IValue value = expression.getValue();
+			if (value != null) {
+				return getValueChildren(expression, value, context);
+			}
+		}
+		return EMPTY;
 	}
 
 	@Override

@@ -91,16 +91,16 @@ public final class InputPageUtil {
 
 	private static List<Integer> convertToIntegerList(int[] array) {
 		List<Integer> result= new ArrayList<>(array.length);
-		for (int i= 0; i < array.length; i++) {
-			result.add(Integer.valueOf(array[i]));
+		for (int element : array) {
+			result.add(Integer.valueOf(element));
 		}
 		return result;
 	}
 
 	/**
 	 * Creates a signature preview viewer in a parent composite with a 1-column GridLayout.
-	 * 
-	 * @param parent the parent 
+	 *
+	 * @param parent the parent
 	 * @return the preview viewer
 	 * @since 3.9
 	 */
@@ -114,12 +114,12 @@ public final class InputPageUtil {
 		signaturePreview.adaptBackgroundColor(parent);
 		signaturePreview.setDocument(new Document());
 		signaturePreview.setEditable(false);
-	
+
 		GridData gdata= new GridData(GridData.FILL_BOTH);
 		gdata.widthHint= new PixelConverter(textWidget).convertWidthInCharsToPixels(50);
 		gdata.heightHint= textWidget.getLineHeight() * 2;
 		textWidget.setLayoutData(gdata);
-		
+
 		return signaturePreview;
 	}
 }

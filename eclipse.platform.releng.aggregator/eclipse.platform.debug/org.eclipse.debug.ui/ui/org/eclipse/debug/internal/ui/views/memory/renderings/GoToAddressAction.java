@@ -25,7 +25,6 @@ import org.eclipse.debug.core.model.IMemoryBlockExtension;
 import org.eclipse.debug.core.model.IMemoryBlockRetrieval;
 import org.eclipse.debug.core.model.IMemoryBlockRetrievalExtension;
 import org.eclipse.debug.internal.ui.DebugUIMessages;
-import org.eclipse.debug.internal.ui.DebugUIPlugin;
 import org.eclipse.debug.internal.ui.views.memory.MemoryViewUtil;
 import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.debug.ui.IDebugUIConstants;
@@ -47,7 +46,7 @@ import org.eclipse.ui.PlatformUI;
  */
 public class GoToAddressAction extends Action
 {
-    private IMemoryRenderingContainer fContainer;
+	private IMemoryRenderingContainer fContainer;
 	private IRepositionableMemoryRendering fRendering;
 
 	public GoToAddressAction(IMemoryRenderingContainer container, IRepositionableMemoryRendering rendering)
@@ -60,15 +59,12 @@ public class GoToAddressAction extends Action
 
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IDebugUIConstants.PLUGIN_ID + ".GoToAddressAction_context"); //$NON-NLS-1$
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run()
 	{
 		try
 		{
-			Shell shell= DebugUIPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow().getShell();
+			Shell shell= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 
 			// create dialog to ask for expression/address to block
 			GoToAddressDialog dialog = new GoToAddressDialog(shell);
@@ -175,8 +171,9 @@ public class GoToAddressAction extends Action
 	{
 		Object elem = DebugUITools.getPartDebugContext(fContainer.getMemoryRenderingSite().getSite());
 
-		if (!(elem instanceof IDebugElement))
+		if (!(elem instanceof IDebugElement)) {
 			return;
+		}
 
 		try {
 			if (retrieval != null)

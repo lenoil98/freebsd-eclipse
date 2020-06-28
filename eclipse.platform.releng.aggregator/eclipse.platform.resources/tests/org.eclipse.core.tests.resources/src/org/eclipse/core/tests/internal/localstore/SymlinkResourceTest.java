@@ -15,30 +15,13 @@
  *******************************************************************************/
 package org.eclipse.core.tests.internal.localstore;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Path;
 
-/**
- *
- */
 public class SymlinkResourceTest extends LocalStoreTest {
-
-	public SymlinkResourceTest() {
-		super();
-	}
-
-	public SymlinkResourceTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return new TestSuite(SymlinkResourceTest.class);
-	}
 
 	protected void mkLink(IFileStore dir, String src, String tgt, boolean isDir) {
 		try {
@@ -73,11 +56,11 @@ public class SymlinkResourceTest extends LocalStoreTest {
 
 	/**
 	 * Test a very specific case of mutually recursive symbolic links:
-	 * <pre>
+	 * <pre> {@code
 	 *   a/link  -> ../b
 	 *   b/link1 -> ../a, b/link2 -> ../c
 	 *   c/link  -> ../b
-	 * </pre>
+	 * }</pre>
 	 * In the specific bug, the two links in b were followed in an alternated
 	 * fashion while walking down the tree. A correct implementation should
 	 * stop following symbolic links as soon as a node is reached that has

@@ -62,7 +62,7 @@ public class CCPActionGroup extends ActionGroup {
 	 * Creates a new <code>CCPActionGroup</code>. The group requires that the selection provided by
 	 * the view part's selection provider is of type
 	 * <code>org.eclipse.jface.viewers.IStructuredSelection</code>.
-	 * 
+	 *
 	 * @param part the view part that owns this action group
 	 * @param includeOnlyCopyActions <code>true</code> if the group only includes the copy actions,
 	 *            <code>false</code> to include all actions
@@ -112,7 +112,7 @@ public class CCPActionGroup extends ActionGroup {
 	/**
 	 * Creates a new <code>CCPActionGroup</code>. The group requires that the selection provided by
 	 * the given selection provider is of type {@link IStructuredSelection}.
-	 * 
+	 *
 	 * @param site the site that will own the action group.
 	 * @param specialSelectionProvider the selection provider used instead of the sites selection
 	 *            provider.
@@ -146,8 +146,8 @@ public class CCPActionGroup extends ActionGroup {
 		}
 
 		if (specialSelectionProvider != null) {
-			for (int i= 0; i < fActions.length; i++) {
-				fActions[i].setSpecialSelectionProvider(specialSelectionProvider);
+			for (SelectionDispatchAction action : fActions) {
+				action.setSpecialSelectionProvider(specialSelectionProvider);
 			}
 		}
 
@@ -157,18 +157,17 @@ public class CCPActionGroup extends ActionGroup {
 	private void registerActionsAsSelectionChangeListeners() {
 		ISelectionProvider provider= fSelectionProvider;
 		ISelection selection= provider.getSelection();
-		for (int i= 0; i < fActions.length; i++) {
-			SelectionDispatchAction action= fActions[i];
-			action.update(selection);
-			provider.addSelectionChangedListener(action);
-		}
+		 for (SelectionDispatchAction action : fActions) {
+			 action.update(selection);
+			 provider.addSelectionChangedListener(action);
+		 }
 	}
 
 	private void deregisterActionsAsSelectionChangeListeners() {
 		ISelectionProvider provider= fSelectionProvider;
-		for (int i= 0; i < fActions.length; i++) {
-			provider.removeSelectionChangedListener(fActions[i]);
-		}
+		 for (SelectionDispatchAction fAction : fActions) {
+			 provider.removeSelectionChangedListener(fAction);
+		 }
 	}
 
 
@@ -198,12 +197,11 @@ public class CCPActionGroup extends ActionGroup {
 	@Override
 	public void fillContextMenu(IMenuManager menu) {
 		super.fillContextMenu(menu);
-		for (int i= 0; i < fActions.length; i++) {
-			SelectionDispatchAction action= fActions[i];
-			if (action == fCutAction && !fCutAction.isEnabled())
-				continue;
-			menu.appendToGroup(ICommonMenuConstants.GROUP_EDIT, action);
-		}
+		 for (SelectionDispatchAction action : fActions) {
+			 if (action == fCutAction && !fCutAction.isEnabled())
+				 continue;
+			 menu.appendToGroup(ICommonMenuConstants.GROUP_EDIT, action);
+		 }
 	}
 
 	/*

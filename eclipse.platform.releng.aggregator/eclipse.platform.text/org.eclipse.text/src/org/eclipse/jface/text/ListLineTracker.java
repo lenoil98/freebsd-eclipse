@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2008 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -23,12 +23,12 @@ import org.eclipse.jface.text.AbstractLineTracker.DelimiterInfo;
  * line delimiters to subclasses. Assuming that '\n' is the only line delimiter, this abstract
  * implementation defines the following line scheme:
  * <ul>
- * <li> "" -> [0,0]
- * <li> "a" -> [0,1]
- * <li> "\n" -> [0,1], [1,0]
- * <li> "a\n" -> [0,2], [2,0]
- * <li> "a\nb" -> [0,2], [2,1]
- * <li> "a\nbc\n" -> [0,2], [2,3], [5,0]
+ * <li> "" -&gt; [0,0]
+ * <li> "a" -&gt; [0,1]
+ * <li> "\n" -&gt; [0,1], [1,0]
+ * <li> "a\n" -&gt; [0,2], [2,0]
+ * <li> "a\nb" -&gt; [0,2], [2,1]
+ * <li> "a\nbc\n" -&gt; [0,2], [2,3], [5,0]
  * </ul>
  * This class must be subclassed.
  *
@@ -55,7 +55,7 @@ abstract class ListLineTracker implements ILineTracker {
 	 */
 	private int findLine(int offset) {
 
-		if (fLines.size() == 0)
+		if (fLines.isEmpty())
 			return -1;
 
 		int left= 0;
@@ -330,6 +330,8 @@ abstract class ListLineTracker implements ILineTracker {
 		if (text != null) {
 			fTextLength= text.length();
 			createLines(text, 0, 0);
+		} else {
+			fTextLength= 0;
 		}
 	}
 

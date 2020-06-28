@@ -14,6 +14,9 @@
 
 package org.eclipse.ui.tests.contexts;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,7 +26,6 @@ import org.eclipse.core.commands.ParameterizedCommand;
 import org.eclipse.core.commands.common.NotDefinedException;
 import org.eclipse.core.commands.contexts.Context;
 import org.eclipse.core.commands.contexts.ContextManager;
-import org.eclipse.core.commands.contexts.ContextManagerEvent;
 import org.eclipse.core.commands.contexts.IContextManagerListener;
 import org.eclipse.jface.bindings.Binding;
 import org.eclipse.jface.bindings.BindingManager;
@@ -32,7 +34,9 @@ import org.eclipse.jface.bindings.keys.KeyBinding;
 import org.eclipse.jface.bindings.keys.KeySequence;
 import org.eclipse.jface.bindings.keys.ParseException;
 import org.eclipse.jface.contexts.IContextIds;
-import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * A test case covering the scenario described in Bug 84763. The problem was
@@ -42,7 +46,7 @@ import org.eclipse.ui.tests.harness.util.UITestCase;
  *
  * @since 3.1
  */
-public final class Bug84763Test extends UITestCase {
+public final class Bug84763Test {
 
 	/**
 	 * The binding manager to use in each test case. A new binding manager is
@@ -71,45 +75,27 @@ public final class Bug84763Test extends UITestCase {
 	private Set<String> previousContextIds = null;
 
 	/**
-	 * Constructor for <code>Bug84763Test</code>.
-	 *
-	 * @param name
-	 *            The name of the test
-	 */
-	public Bug84763Test(final String name) {
-		super(name);
-	}
-
-	/**
 	 * Creates a new context manager and a binding manager for use in the test
 	 * cases.
 	 */
-	@Override
-	protected void doSetUp() {
+	@Before
+	public void doSetUp() {
 		contextManager = new ContextManager();
-		contextManagerListener = new IContextManagerListener() {
-
-			@Override
-			public void contextManagerChanged(
-					ContextManagerEvent contextManagerEvent) {
-				previousContextIds = contextManagerEvent
-						.getPreviouslyActiveContextIds();
-				if (previousContextIds != null) {
-					previousContextIds = new HashSet<>(previousContextIds);
-				}
+		contextManagerListener = contextManagerEvent -> {
+			previousContextIds = contextManagerEvent.getPreviouslyActiveContextIds();
+			if (previousContextIds != null) {
+				previousContextIds = new HashSet<>(previousContextIds);
 			}
-
 		};
 		contextManager.addContextManagerListener(contextManagerListener);
-		bindingManager = new BindingManager(contextManager,
-				new CommandManager());
+		bindingManager = new BindingManager(contextManager, new CommandManager());
 	}
 
 	/**
 	 * Releases the context manager and binding manager for garbage collection.
 	 */
-	@Override
-	protected void doTearDown() {
+	@After
+	public void doTearDown() {
 		contextManager = null;
 		contextManagerListener = null;
 		previousContextIds = null;
@@ -128,6 +114,7 @@ public final class Bug84763Test extends UITestCase {
 	 * @throws ParseException
 	 *             If "CTRL+F" cannot be parsed for some reason.
 	 */
+	@Test
 	public void testWindowChildWhenDialog() throws NotDefinedException,
 			ParseException {
 		// Define the contexts to use.

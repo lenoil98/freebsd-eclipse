@@ -49,24 +49,24 @@ import org.eclipse.jdt.internal.ui.preferences.PreferencesAccess;
  * formatters, nothing is shown.
  */
 public class CustomCodeFormatterBlock extends Observable {
-	
+
 	private static class FormatterContribution {
 		public String fId;
 		public String fName;
-		
+
 		public FormatterContribution(String id, String name) {
 			fId= id;
 			fName= name;
 		}
 	}
-	
+
 	private static final String ATTR_NAME = "name"; //$NON-NLS-1$
 	private static final String ATTR_ID = "id"; //$NON-NLS-1$
 
 	private IEclipsePreferences fPrefs;
 	private String fDefaultFormatterId;
 	private FormatterContribution[] fFormatters;
-	
+
 	private Combo fFormatterCombo;
 
 	public CustomCodeFormatterBlock(IProject project, PreferencesAccess access) {
@@ -189,19 +189,14 @@ public class CustomCodeFormatterBlock extends Observable {
 			IExtension[] exts= point.getExtensions();
 			for (IExtension ext : exts) {
 				IConfigurationElement[] elements= ext.getConfigurationElements();
-				for (int j = 0; j < elements.length; ++j) {
-					String name = elements[j].getAttribute(ATTR_NAME);
-					String id= elements[j].getAttribute(ATTR_ID);
+				for (IConfigurationElement element : elements) {
+					String name = element.getAttribute(ATTR_NAME);
+					String id= element.getAttribute(ATTR_ID);
 					formatters.add(new FormatterContribution(id, name));
 				}
 			}
 		}
-		Collections.sort(formatters, new Comparator<FormatterContribution>() {
-			@Override
-			public int compare(FormatterContribution o1, FormatterContribution o2) {
-				return o1.fName.compareTo(o2.fName);
-			}
-		});
+		Collections.sort(formatters, Comparator.comparing((FormatterContribution o1) -> o1.fName));
 		fFormatters= CollectionsUtil.toArray(formatters, FormatterContribution.class);
 	}
 }

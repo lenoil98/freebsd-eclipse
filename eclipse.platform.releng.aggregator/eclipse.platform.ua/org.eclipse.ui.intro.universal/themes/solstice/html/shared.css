@@ -47,6 +47,8 @@ H4 .div-label {
 	color:white; 
 	font-weight: normal; 
 	letter-spacing:-0.03em;
+	/* Bug 492993: use !important to prevent header text overflowing on zoom */ 
+	font-size: 31px !important;
 }
 
 /* For separators */
@@ -488,4 +490,37 @@ iframe {
 #page-content > iframe {
 	width: 98%;
 	padding-left: 2%;
+}
+
+
+@media (prefers-color-scheme: dark) {
+  .page { 
+    background-color:#3d3d3d;
+  }
+
+  body .importance-low {
+    background-color:#3d3d3d;
+  }
+
+  H1, H2, H3, H4, p, a {
+    color: #f0f0f0;
+  }
+
+  H4 .div-label {
+    color: #f0f0f0; 
+  }
+
+  .topicList {
+    color: #69c;
+  }
+
+  .rss-feed-link a {
+    color: #69c;
+  }
+
+  .section-title-link .section-title,
+  .section-title-link:focus .section-title {
+    color: #69c;
+  }
+
 }

@@ -40,7 +40,7 @@ public class TracingComponent extends AbstractTracingNode {
 		// set the label
 		setLabel(element.getAttribute(TracingConstants.TRACING_EXTENSION_LABEL_ATTRIBUTE));
 		// set the bundles
-		bundles = new ArrayList<Bundle>();
+		bundles = new ArrayList<>();
 		addBundles(element);
 	}
 
@@ -93,6 +93,7 @@ public class TracingComponent extends AbstractTracingNode {
 	 * (non-Javadoc)
 	 * @see org.eclipse.ui.trace.internal.datamodel.AbstractTracingNode#isEnabled()
 	 */
+	@Override
 	public boolean isEnabled() {
 
 		// a tracing component is enabled if all of its children are enabled

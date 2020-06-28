@@ -94,7 +94,7 @@ public class MemorySegmentLabelAdapter extends AsynchronousLabelAdapter {
 
 			int addressSize = descriptor.getAddressSize();
 			int prefillLength = addressSize * 2 - columnLabel.length();
-			StringBuffer buf = new StringBuffer();
+			StringBuilder buf = new StringBuilder();
 			if (prefillLength > 0)
 			{
 				for (int i=0; i<prefillLength; i++)
@@ -194,13 +194,13 @@ public class MemorySegmentLabelAdapter extends AsynchronousLabelAdapter {
 			MemoryByte[] bytes = ((MemorySegment)element).getBytes(start, tableRendering.getBytesPerColumn());
 			boolean allKnown = true;
 			boolean unchanged = true;
-			for (int i=0; i<bytes.length; i++)
-			{
-				if (!bytes[i].isHistoryKnown())
+			for (MemoryByte b : bytes) {
+				if (!b.isHistoryKnown()) {
 					allKnown = false;
-
-				if (bytes[i].isChanged())
+				}
+				if (b.isChanged()) {
 					unchanged = false;
+				}
 			}
 
 			if (allKnown)
@@ -339,13 +339,13 @@ public class MemorySegmentLabelAdapter extends AsynchronousLabelAdapter {
 			MemoryByte[] bytes = segment.getBytes(start, tableRendering.getBytesPerColumn());
 			boolean allKnown = true;
 			boolean unchanged = true;
-			for (int i=0; i<bytes.length; i++)
-			{
-				if (!bytes[i].isHistoryKnown())
+			for (MemoryByte b : bytes) {
+				if (!b.isHistoryKnown()) {
 					allKnown = false;
-
-				if (bytes[i].isChanged())
+				}
+				if (b.isChanged()) {
 					unchanged = false;
+				}
 			}
 
 			if (allKnown)

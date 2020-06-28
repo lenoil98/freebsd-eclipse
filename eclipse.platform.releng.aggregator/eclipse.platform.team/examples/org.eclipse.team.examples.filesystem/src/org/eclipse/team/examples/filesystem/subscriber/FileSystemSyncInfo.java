@@ -20,7 +20,7 @@ import org.eclipse.team.core.variants.IResourceVariant;
 import org.eclipse.team.core.variants.IResourceVariantComparator;
 
 /**
- * Provide a custom sync info that will report files that exist both 
+ * Provide a custom sync info that will report files that exist both
  * locally and remotely as in-sync and will return a null base if there
  * is an incoming change.
  */
@@ -30,9 +30,7 @@ public class FileSystemSyncInfo extends SyncInfo {
 		super(local, base, remote, comparator);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.subscribers.SyncInfo#calculateKind(org.eclipse.core.runtime.IProgressMonitor)
-	 */
+	@Override
 	protected int calculateKind() throws TeamException {
 		if (getLocal().getType() != IResource.FILE) {
 			if (getLocal().exists() && getRemote() != null) {
@@ -41,10 +39,8 @@ public class FileSystemSyncInfo extends SyncInfo {
 		}
 		return super.calculateKind();
 	}
-	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.synchronize.SyncInfo#getBase()
-	 */
+
+	@Override
 	public IResourceVariant getBase() {
 		// If the kind has been set and there is an incoming change
 		// return null as the base since the server does not keep the

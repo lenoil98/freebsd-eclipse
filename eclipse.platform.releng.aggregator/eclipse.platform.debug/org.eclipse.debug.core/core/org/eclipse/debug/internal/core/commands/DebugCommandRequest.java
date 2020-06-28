@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.core.commands;
 
+import java.util.Arrays;
+
 import org.eclipse.debug.core.commands.IDebugCommandRequest;
 
 /**
@@ -26,13 +28,14 @@ public class DebugCommandRequest extends Request implements IDebugCommandRequest
 		fElements = elements;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.commands.IDebugCommandRequest#getElements()
-	 */
 	@Override
 	public Object[] getElements() {
 		return fElements;
 	}
 
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + " on " + Arrays.toString(fElements); //$NON-NLS-1$
+	}
 
 }

@@ -22,53 +22,57 @@ import org.eclipse.ui.internal.views.navigator.ResourceNavigatorMessages;
 
 /**
  * This is the action group for the sort and filter actions.
+ *
+ * @noextend This class is not intended to be subclassed by clients.
+ * @noinstantiate This class is not intended to be instantiated by clients.
+ * @noreference This class is not intended to be referenced by clients.
+ *
+ *              Planned to be deleted, please see Bug
+ *              https://bugs.eclipse.org/bugs/show_bug.cgi?id=549953
  * @deprecated as of 3.5, use the Common Navigator Framework classes instead
  */
 @Deprecated
 public class SortAndFilterActionGroup extends ResourceNavigatorActionGroup {
 
-    private SortViewAction sortByTypeAction;
+	private SortViewAction sortByTypeAction;
 
-    private SortViewAction sortByNameAction;
+	private SortViewAction sortByNameAction;
 
-    private FilterSelectionAction filterAction;
+	private FilterSelectionAction filterAction;
 
-    /**
-     * Constructor.
-     *
-     * @param navigator
-     */
-    public SortAndFilterActionGroup(IResourceNavigator navigator) {
-        super(navigator);
-    }
+	/**
+	 * Constructor.
+	 *
+	 * @param navigator the resource navigator
+	 */
+	public SortAndFilterActionGroup(IResourceNavigator navigator) {
+		super(navigator);
+	}
 
-    @Override
+	@Override
 	protected void makeActions() {
-        sortByNameAction = new SortViewAction(navigator, false);
-        sortByTypeAction = new SortViewAction(navigator, true);
+		sortByNameAction = new SortViewAction(navigator, false);
+		sortByTypeAction = new SortViewAction(navigator, true);
 
-        filterAction = new FilterSelectionAction(navigator,
-                ResourceNavigatorMessages.ResourceNavigator_filterText);
-        filterAction
-                .setDisabledImageDescriptor(getImageDescriptor("dlcl16/filter_ps.png"));//$NON-NLS-1$
-        filterAction
-                .setImageDescriptor(getImageDescriptor("elcl16/filter_ps.png"));//$NON-NLS-1$
-    }
+		filterAction = new FilterSelectionAction(navigator, ResourceNavigatorMessages.ResourceNavigator_filterText);
+		filterAction.setDisabledImageDescriptor(getImageDescriptor("dlcl16/filter_ps.png"));//$NON-NLS-1$
+		filterAction.setImageDescriptor(getImageDescriptor("elcl16/filter_ps.png"));//$NON-NLS-1$
+	}
 
-    @Override
+	@Override
 	public void fillActionBars(IActionBars actionBars) {
-        IMenuManager menu = actionBars.getMenuManager();
-        IMenuManager submenu = new MenuManager(ResourceNavigatorMessages.ResourceNavigator_sort);
-        menu.add(submenu);
-        submenu.add(sortByNameAction);
-        submenu.add(sortByTypeAction);
-        menu.add(filterAction);
-    }
+		IMenuManager menu = actionBars.getMenuManager();
+		IMenuManager submenu = new MenuManager(ResourceNavigatorMessages.ResourceNavigator_sort);
+		menu.add(submenu);
+		submenu.add(sortByNameAction);
+		submenu.add(sortByTypeAction);
+		menu.add(filterAction);
+	}
 
-    @Override
+	@Override
 	public void updateActionBars() {
-        int criteria = navigator.getComparator().getCriteria();
-        sortByNameAction.setChecked(criteria == ResourceComparator.NAME);
-        sortByTypeAction.setChecked(criteria == ResourceComparator.TYPE);
-    }
+		int criteria = navigator.getComparator().getCriteria();
+		sortByNameAction.setChecked(criteria == ResourceComparator.NAME);
+		sortByTypeAction.setChecked(criteria == ResourceComparator.TYPE);
+	}
 }

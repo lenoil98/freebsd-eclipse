@@ -631,7 +631,7 @@ public class DocumentLineDiffer implements ILineDiffer, IDocumentListener, IAnno
 						synchronized (DocumentLineDiffer.this) {
 							if (isCanceled(monitor))
 								return Status.CANCEL_STATUS;
-							if (fStoredEvents.size() == 0 && actual != null)
+							if (fStoredEvents.isEmpty() && actual != null)
 								break;
 						}
 					} while (true);
@@ -880,16 +880,13 @@ public class DocumentLineDiffer implements ILineDiffer, IDocumentListener, IAnno
 		// inform listeners about change
 		if (fUpdateNeeded) {
 			AnnotationModelEvent ame= new AnnotationModelEvent(this, false);
-			for (Iterator<QuickDiffRangeDifference> it= fAdded.iterator(); it.hasNext(); ) {
-				QuickDiffRangeDifference rd= it.next();
+			for (QuickDiffRangeDifference rd : fAdded) {
 				ame.annotationAdded(rd.getDiffRegion(fDifferences, fLeftDocument));
 			}
-			for (Iterator<QuickDiffRangeDifference> it= fRemoved.iterator(); it.hasNext(); ) {
-				QuickDiffRangeDifference rd= it.next();
+			for (QuickDiffRangeDifference rd : fRemoved) {
 				ame.annotationRemoved(rd.getDiffRegion(fDifferences, fLeftDocument));
 			}
-			for (Iterator<QuickDiffRangeDifference> it= fChanged.iterator(); it.hasNext(); ) {
-				QuickDiffRangeDifference rd= it.next();
+			for (QuickDiffRangeDifference rd : fChanged) {
 				ame.annotationChanged(rd.getDiffRegion(fDifferences, fLeftDocument));
 			}
 			fireModelChanged(ame);
@@ -905,7 +902,7 @@ public class DocumentLineDiffer implements ILineDiffer, IDocumentListener, IAnno
 	 */
 	private void reinitOnError(Exception e) {
 		if (DEBUG)
-			System.err.println("reinitializing quickdiff:\n" + e.getLocalizedMessage() + "\n" + e.getStackTrace());  //$NON-NLS-1$//$NON-NLS-2$
+			System.err.println("reinitializing quickdiff:\n" + e.getLocalizedMessage() + "\n" + Arrays.toString(e.getStackTrace()));  //$NON-NLS-1$//$NON-NLS-2$
 		initialize();
 	}
 
@@ -1026,14 +1023,13 @@ public class DocumentLineDiffer implements ILineDiffer, IDocumentListener, IAnno
 
 		// compare
 		List<QuickDiffRangeDifference> diffs= asQuickDiffRangeDifference(RangeDifferencer.findRanges(fRangeDiffFactory, null, reference, change));
-		if (diffs.size() == 0) {
+		if (diffs.isEmpty()) {
 			diffs.add(new QuickDiffRangeDifference(RangeDifference.CHANGE, 0, 0, 0, 0));
 		}
 
 
 		// shift the partial diffs to the absolute document positions
-		for (Iterator<QuickDiffRangeDifference> it= diffs.iterator(); it.hasNext();) {
-			QuickDiffRangeDifference d= it.next();
+		for (QuickDiffRangeDifference d : diffs) {
 			d.shiftLeft(leftStartLine);
 			d.shiftRight(rightStartLine);
 		}
@@ -1369,8 +1365,7 @@ public class DocumentLineDiffer implements ILineDiffer, IDocumentListener, IAnno
 	 * @return the corresponding RangeDifference, or <code>null</code>
 	 */
 	private QuickDiffRangeDifference getRangeDifferenceForLeftLine(int leftLine) {
-		for (Iterator<QuickDiffRangeDifference> it= fDifferences.iterator(); it.hasNext();) {
-			QuickDiffRangeDifference d= it.next();
+		for (QuickDiffRangeDifference d : fDifferences) {
 			if (leftLine >= d.leftStart() && leftLine < d.leftEnd()) {
 				return d;
 			}
@@ -1387,8 +1382,7 @@ public class DocumentLineDiffer implements ILineDiffer, IDocumentListener, IAnno
 	private QuickDiffRangeDifference getRangeDifferenceForRightLine(int rightLine) {
 		final List<QuickDiffRangeDifference> differences= fDifferences;
 		synchronized (differences) {
-			for (Iterator<QuickDiffRangeDifference> it= differences.iterator(); it.hasNext();) {
-				QuickDiffRangeDifference d= it.next();
+			for (QuickDiffRangeDifference d : differences) {
 				if (rightLine >= d.rightStart() && rightLine < d.rightEnd()) {
 					return d;
 				}
@@ -1416,9 +1410,9 @@ public class DocumentLineDiffer implements ILineDiffer, IDocumentListener, IAnno
 			fRightDocument= document;
 			fRightDocument.addDocumentListener(this);
 			if (document instanceof IDocumentExtension4) {
-	            IDocumentExtension4 ext= (IDocumentExtension4) document;
-	            ext.addDocumentRewriteSessionListener(fSessionListener);
-            }
+				IDocumentExtension4 ext= (IDocumentExtension4) document;
+				ext.addDocumentRewriteSessionListener(fSessionListener);
+			}
 			initialize();
 		}
 	}
@@ -1454,9 +1448,9 @@ public class DocumentLineDiffer implements ILineDiffer, IDocumentListener, IAnno
 			if (fRightDocument != null) {
 				fRightDocument.removeDocumentListener(this);
 				if (fRightDocument instanceof IDocumentExtension4) {
-		            IDocumentExtension4 ext= (IDocumentExtension4) fRightDocument;
-		            ext.removeDocumentRewriteSessionListener(fSessionListener);
-	            }
+					IDocumentExtension4 ext= (IDocumentExtension4) fRightDocument;
+					ext.removeDocumentRewriteSessionListener(fSessionListener);
+				}
 			}
 			fRightDocument= null;
 			fRightEquivalent= null;
@@ -1486,7 +1480,7 @@ public class DocumentLineDiffer implements ILineDiffer, IDocumentListener, IAnno
 		List<QuickDiffRangeDifference> differences= fDifferences; // atomic
 		synchronized (differences) {
 			copy= new ArrayList<>(differences);
-        }
+		}
 		final Iterator<QuickDiffRangeDifference> iter= copy.iterator();
 		return new Iterator<Annotation>() {
 

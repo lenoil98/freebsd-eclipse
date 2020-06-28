@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 IBM Corporation and others.
+ * Copyright (c) 2015, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,8 +13,17 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.junit.After;
+import org.junit.Before;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
@@ -27,34 +36,29 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.IBinding;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 import org.eclipse.jdt.internal.ui.viewsupport.JavaElementLinks;
 
 public abstract class AbstractBindingLabelsTest extends CoreTests {
-
-	public AbstractBindingLabelsTest(String name) {
-		super(name);
-	}
-
 	protected IJavaProject fJProject1;
 	protected boolean fHaveSource= true;
 
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		fJProject1= ProjectTestSetup.getProject();
 
 		IPreferenceStore store= PreferenceConstants.getPreferenceStore();
 		store.setValue(PreferenceConstants.APPEARANCE_COMPRESS_PACKAGE_NAMES, false);
 	}
 
-
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
 	}
 
 	protected String getBindingLabel(IJavaElement elem, long flags) {
-		ASTParser parser= ASTParser.newParser(AST.JLS8);
+		ASTParser parser= ASTParser.newParser(AST.JLS14);
 		parser.setResolveBindings(true);
 		parser.setProject(fJProject1);
 		IBinding binding= parser.createBindings(new IJavaElement[]{elem}, null)[0];
@@ -108,13 +112,13 @@ public abstract class AbstractBindingLabelsTest extends CoreTests {
 				// matching plain text:
 				String expected= expectedMarkup.substring(patternPos, open);
 				int end= label.indexOf("<a class", labelPos);
-				assertTrue("next anchor not found ("+fragmentCount+")", end != -1);
+				assertNotEquals("next anchor not found ("+fragmentCount+")", -1, end);
 				assertEquals("plain text ("+fragmentCount+")", escape(expected), label.substring(labelPos, end));
 				fragmentCount++;
 
 				labelPos= end;
 			}
-			
+
 			if (close != -1) {
 				// matching a link "<a class='header' href='eclipse-javadoc:IGNORE' title='LINK_TITLE'>LINK_TEXT</a>"
 				assertTrue("link found ("+fragmentCount+")", label.substring(labelPos).startsWith( "<a class='header' href='eclipse-javadoc:"));
@@ -123,17 +127,17 @@ public abstract class AbstractBindingLabelsTest extends CoreTests {
 				if (linkTitle != null) {
 					// match linkTitle & linkText:
 					int start= label.indexOf("' title='", labelPos);
-					assertTrue("title start not found", start != -1);
+					assertNotEquals("title start not found", -1, start);
 					start += "' title='".length();
 					int end= label.indexOf('\'', start);
-					assertTrue("title end not found", end != -1);
+					assertNotEquals("title end not found", -1, end);
 					assertEquals("title ("+fragmentCount+")", linkTitle, label.substring(start, end));
 					fragmentCount++;
 
 					start= label.indexOf("'>", end) + 2;
-					assertTrue("link text start not found", start != -1);
+					assertNotEquals("link text start not found", -1, start);
 					end= label.indexOf("</a>", start);
-					assertTrue("link text end not found", end != -1);
+					assertNotEquals("link text end not found", -1, end);
 					assertEquals("link text ("+fragmentCount+")", escape(linkText), label.substring(start, end));
 					fragmentCount++;
 
@@ -141,9 +145,9 @@ public abstract class AbstractBindingLabelsTest extends CoreTests {
 				} else {
 					// match only linkText
 					int start= label.indexOf("'>", labelPos) + 2;
-					assertTrue("link text start not found", start != -1);
+					assertNotEquals("link text start not found", -1, start);
 					int end= label.indexOf("</a>", start+1);
-					assertTrue("link text end not found", end != -1);
+					assertNotEquals("link text end not found", -1, end);
 					assertEquals("link text ("+fragmentCount+")", escape(linkText), label.substring(start, end));
 					fragmentCount++;
 
@@ -163,4 +167,10 @@ public abstract class AbstractBindingLabelsTest extends CoreTests {
 		return element.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 
+	protected URI extractURI(String label) throws URISyntaxException {
+		String anchor= "href='";
+		int start= label.indexOf(anchor)+anchor.length();
+		int end= label.indexOf('\'', start+1);
+		return new URI(label.substring(start+1, end));
+	}
 }

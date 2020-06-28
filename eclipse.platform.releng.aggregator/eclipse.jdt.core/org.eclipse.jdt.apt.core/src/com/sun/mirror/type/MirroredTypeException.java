@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -65,7 +65,7 @@ public class MirroredTypeException extends RuntimeException {
      * The type mirror may be unavailable if this exception has been
      * serialized and then read back in.
      *
-     * @return the type mirror, or <tt>null</tt> if unavailable
+     * @return the type mirror, or <code>null</code> if unavailable
      */
     public TypeMirror getTypeMirror() {
 	return type;
@@ -74,8 +74,8 @@ public class MirroredTypeException extends RuntimeException {
     /**
      * Returns the fully qualified name of the type being accessed.
      * More precisely, returns the canonical name of a class,
-     * interface, array, or primitive, and returns <tt>"void"</tt> for
-     * the pseudo-type representing the type of <tt>void</tt>.
+     * interface, array, or primitive, and returns <code>"void"</code> for
+     * the pseudo-type representing the type of <code>void</code>.
      *
      * @return the fully qualified name of the type being accessed
      */

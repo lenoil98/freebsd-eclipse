@@ -60,14 +60,14 @@ public class DeleteAction extends SelectionDispatchAction {
 
 	/**
 	 * 'Hide' button index.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private static final int HIDE_BUTTON= 0;
 
 	/**
 	 * 'Remove' button index.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private static final int REMOVE_BUTTON= 1;
@@ -77,7 +77,7 @@ public class DeleteAction extends SelectionDispatchAction {
 		super(site);
 		setText(ReorgMessages.DeleteAction_3);
 		setDescription(ReorgMessages.DeleteAction_4);
-		ISharedImages workbenchImages= JavaPlugin.getDefault().getWorkbench().getSharedImages();
+		ISharedImages workbenchImages= PlatformUI.getWorkbench().getSharedImages();
 		setDisabledImageDescriptor(workbenchImages.getImageDescriptor(ISharedImages.IMG_TOOL_DELETE_DISABLED));
 		setImageDescriptor(workbenchImages.getImageDescriptor(ISharedImages.IMG_TOOL_DELETE));
 		setHoverImageDescriptor(workbenchImages.getImageDescriptor(ISharedImages.IMG_TOOL_DELETE));
@@ -105,7 +105,7 @@ public class DeleteAction extends SelectionDispatchAction {
 
 	/**
 	 * Removes or hides the selected working sets.
-	 * 
+	 *
 	 * @param selection the selected working sets
 	 * @since 3.5
 	 */
@@ -116,10 +116,10 @@ public class DeleteAction extends SelectionDispatchAction {
 			final String workingSetID= workingSet.getId();
 			String dialogMessage;
 			if (isDefaultWorkingSet(workingSetID))
-				dialogMessage= MessageFormat.format(ReorgMessages.DeleteWorkingSet_hideworkingset_single, new Object[] { workingSet.getLabel() });
+				dialogMessage= MessageFormat.format(ReorgMessages.DeleteWorkingSet_hideworkingset_single, workingSet.getLabel());
 			else
-				dialogMessage= MessageFormat.format(ReorgMessages.DeleteWorkingSet_removeorhideworkingset_single, new Object[] { workingSet.getLabel() });
-			
+				dialogMessage= MessageFormat.format(ReorgMessages.DeleteWorkingSet_removeorhideworkingset_single, workingSet.getLabel());
+
 			dialog= new MessageDialog(getShell(), ReorgMessages.DeleteWorkingSet_single, null, dialogMessage, MessageDialog.QUESTION, new String[] { ReorgMessages.DeleteWorkingSet_Hide,
 					ReorgMessages.DeleteWorkingSet_Remove,
 					IDialogConstants.CANCEL_LABEL }, 0) {
@@ -136,8 +136,7 @@ public class DeleteAction extends SelectionDispatchAction {
 				}
 			};
 		} else {
-			dialog= new MessageDialog(getShell(), ReorgMessages.DeleteWorkingSet_multiple, null, MessageFormat.format(ReorgMessages.DeleteWorkingSet_removeorhideworkingset_multiple,
-					new Object[] { Integer.valueOf(selection.size()) }),
+			dialog= new MessageDialog(getShell(), ReorgMessages.DeleteWorkingSet_multiple, null, MessageFormat.format(ReorgMessages.DeleteWorkingSet_removeorhideworkingset_multiple, Integer.valueOf(selection.size())),
 					MessageDialog.QUESTION, new String[] { ReorgMessages.DeleteWorkingSet_Hide, ReorgMessages.DeleteWorkingSet_Remove,
 							IDialogConstants.CANCEL_LABEL }, 0);
 		}
@@ -162,8 +161,8 @@ public class DeleteAction extends SelectionDispatchAction {
 
 	/**
 	 * Hides all the working sets in the list from the Package Explorer.
-	 * 
-	 * @param selection the selection of working sets 
+	 *
+	 * @param selection the selection of working sets
 	 * @since 3.8
 	 */
 	private void hideWorkingSets(List<IWorkingSet> selection) {
@@ -182,9 +181,9 @@ public class DeleteAction extends SelectionDispatchAction {
 
 	/**
 	 * Checks if the working set is the default working set.
-	 * 
+	 *
 	 * @param workingSetID the working set id, can be <code>null</code>
-	 * @return <code>true</code> if default working set, <code>false</code> otherwise 
+	 * @return <code>true</code> if default working set, <code>false</code> otherwise
 	 * @since 3.8
 	 */
 	private boolean isDefaultWorkingSet(String workingSetID) {

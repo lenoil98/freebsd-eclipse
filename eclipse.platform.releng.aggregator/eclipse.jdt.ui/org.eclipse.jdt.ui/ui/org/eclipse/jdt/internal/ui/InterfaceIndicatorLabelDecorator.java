@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -43,17 +43,17 @@ public class InterfaceIndicatorLabelDecorator extends AbstractJavaElementLabelDe
 
 	private static class TypeIndicatorOverlay extends CompositeImageDescriptor {
 		private static Point fgSize;
-		
+
 		private final ImageDescriptor fType;
 		private final boolean fDeprecated;
 		private final boolean fPackageDefault;
-	
+
 		public TypeIndicatorOverlay(ImageDescriptor type, boolean deprecated, boolean packageDefault) {
 			fType= type;
 			fDeprecated= deprecated;
 			fPackageDefault= packageDefault;
 		}
-		
+
 		/*
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 * @since 3.9
@@ -97,7 +97,7 @@ public class InterfaceIndicatorLabelDecorator extends AbstractJavaElementLabelDe
 				drawImage(provider, width - provider.getWidth(), height - provider.getHeight());
 			}
 		}
-		
+
 		/*
 		 * @see org.eclipse.jface.resource.CompositeImageDescriptor#getSize()
 		 */
@@ -146,7 +146,7 @@ public class InterfaceIndicatorLabelDecorator extends AbstractJavaElementLabelDe
 			}
 			String typeName= JavaCore.removeJavaLikeExtension(unit.getElementName());
 			addOverlaysWithSearchEngine(unit, typeName, decoration);
-			
+
 		} else if (element instanceof IOrdinaryClassFile) {
 			IOrdinaryClassFile classFile= (IOrdinaryClassFile) element;
 			if (classFile.isOpen()) {
@@ -190,13 +190,15 @@ public class InterfaceIndicatorLabelDecorator extends AbstractJavaElementLabelDe
 		}
 
 	}
-	
+
 	private void addOverlaysFromFlags(int flags, IDecoration decoration) {
 		ImageDescriptor type;
 		if (Flags.isAnnotation(flags)) {
 			type= JavaPluginImages.DESC_OVR_ANNOTATION;
 		} else if (Flags.isEnum(flags)) {
 			type= JavaPluginImages.DESC_OVR_ENUM;
+		} else if (Flags.isRecord(flags)) {
+			type= JavaPluginImages.DESC_OVR_RECORD;
 		} else if (Flags.isInterface(flags)) {
 			type= JavaPluginImages.DESC_OVR_INTERFACE;
 		} else if (/* is class */ Flags.isAbstract(flags)) {
@@ -204,19 +206,19 @@ public class InterfaceIndicatorLabelDecorator extends AbstractJavaElementLabelDe
 		} else {
 			type= null;
 		}
-		
+
 		boolean deprecated= Flags.isDeprecated(flags);
 		boolean packageDefault= Flags.isPackageDefault(flags);
-		
+
 		/* Each decoration position can only be used once. Since we don't want to take all positions
 		 * away from other decorators, we confine ourselves to only use the top right position. */
-		
+
 		if (type != null && !deprecated && !packageDefault) {
 			decoration.addOverlay(type, IDecoration.TOP_RIGHT);
-			
+
 		} else if (type == null && deprecated && !packageDefault) {
 			decoration.addOverlay(JavaPluginImages.DESC_OVR_DEPRECATED, IDecoration.TOP_RIGHT);
-			
+
 		} else if (type != null || deprecated || packageDefault) {
 			decoration.addOverlay(new TypeIndicatorOverlay(type, deprecated, packageDefault), IDecoration.TOP_RIGHT);
 		}
@@ -251,9 +253,6 @@ public class InterfaceIndicatorLabelDecorator extends AbstractJavaElementLabelDe
 					return;
 				processChildrenDelta(delta, result);
 				return;
-			case IJavaElement.TYPE:
-			case IJavaElement.CLASS_FILE:
-				return;
 			case IJavaElement.JAVA_MODEL:
 				processChildrenDelta(delta, result);
 				return;
@@ -270,8 +269,9 @@ public class InterfaceIndicatorLabelDecorator extends AbstractJavaElementLabelDe
 					result.add(elem);
 				}
 				return;
-			default:
-				// fields, methods, imports ect
+			case IJavaElement.TYPE:
+			case IJavaElement.CLASS_FILE:
+			default:// fields, methods, imports ect
 				return;
 		}
 	}

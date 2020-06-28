@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,6 +14,7 @@
  *******************************************************************************/
 package org.eclipse.pde.api.tools.internal.builder;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -78,8 +79,6 @@ import org.eclipse.pde.internal.core.PDECore;
 import org.eclipse.pde.internal.core.PDEPreferencesManager;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Builder for creating API Tools resource markers
@@ -178,6 +177,12 @@ public class ApiAnalysisBuilder extends IncrementalProjectBuilder {
 	 * Current build state
 	 */
 	private BuildState buildstate = null;
+
+	/**
+	 * Bug 549838:  In case auto-building on a API tools settings change  is not desired,
+	 * specify VM property: {@code -Dorg.eclipse.disableAutoBuildOnSettingsChange=true}
+	 */
+	private static final boolean DISABLE_AUTO_BUILDING_ON_SETTINGS_CHANGE = Boolean.getBoolean("org.eclipse.disableAutoBuildOnSettingsChange"); //$NON-NLS-1$
 
 	/**
 	 * Cleans up markers associated with API Tools on the given resource.
@@ -534,6 +539,12 @@ public class ApiAnalysisBuilder extends IncrementalProjectBuilder {
 				if (subdelta != null) {
 					IFile file = (IFile) subdelta.getResource();
 					return file.getProject().equals(currentproject) && compareBuildProperties(buildstate);
+				}
+				subdelta = delta.findMember(SETTINGS_PATH);
+				if (subdelta != null) {
+					if (!DISABLE_AUTO_BUILDING_ON_SETTINGS_CHANGE) {
+						return true;
+					}
 				}
 				break;
 			}

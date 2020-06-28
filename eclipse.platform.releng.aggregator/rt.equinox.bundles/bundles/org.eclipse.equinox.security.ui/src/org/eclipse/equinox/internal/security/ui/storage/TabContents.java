@@ -39,6 +39,7 @@ public class TabContents implements ISecurePreferencesSelection, IDeleteListener
 	protected ValuesView valuesView = null;
 	protected Button buttonSave = null;
 
+	@Override
 	public void setSelection(ISecurePreferences selectedNode) {
 		valuesView.setInput(selectedNode);
 	}
@@ -125,6 +126,7 @@ public class TabContents implements ISecurePreferencesSelection, IDeleteListener
 		validateSave();
 	}
 
+	@Override
 	public void modified() {
 		validateSave();
 	}
@@ -172,18 +174,18 @@ public class TabContents implements ISecurePreferencesSelection, IDeleteListener
 		if (keys.length > 0) {
 			String header = '[' + node.absolutePath() + ']';
 			stream.println(header);
-			for (int i = 0; i < keys.length; i++) {
+			for (String key : keys) {
 				try {
-					String data = keys[i] + " := " + node.get(keys[i], ""); //$NON-NLS-1$ //$NON-NLS-2$
+					String data = key + " := " + node.get(key, ""); //$NON-NLS-1$ //$NON-NLS-2$
 					stream.println(data);
-				} catch (StorageException e) {
+				}catch (StorageException e) {
 					Activator.log(IStatus.ERROR, SecUIMessages.failedDecrypt, null, e);
 				}
 			}
 		}
 		String[] children = node.childrenNames();
-		for (int i = 0; i < children.length; i++) {
-			export(node.node(children[i]), stream);
+		for (String child : children) {
+			export(node.node(child), stream);
 		}
 	}
 

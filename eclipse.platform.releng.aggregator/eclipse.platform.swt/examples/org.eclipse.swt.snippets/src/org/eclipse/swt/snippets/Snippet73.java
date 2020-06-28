@@ -28,6 +28,7 @@ public class Snippet73 {
 public static void main (String [] args) {
 	Display display = new Display ();
 	Shell shell = new Shell (display);
+	shell.setText("Snippet 73");
 	final Tree tree = new Tree (shell, SWT.BORDER | SWT.MULTI);
 	final Menu menu = new Menu (shell, SWT.POP_UP);
 	tree.setMenu (menu);
@@ -40,14 +41,14 @@ public static void main (String [] args) {
 	menu.addListener (SWT.Show, event -> {
 		MenuItem [] menuItems = menu.getItems ();
 		TreeItem [] treeItems = tree.getSelection ();
-		for (int i=0; i<menuItems.length; i++) {
-			String text = menuItems [i].getText ();
+		for (MenuItem menuItem : menuItems) {
+			String text = menuItem.getText ();
 			int index = 0;
 			while (index<treeItems.length) {
 				if (treeItems [index].getText ().equals (text)) break;
 				index++;
 			}
-			menuItems [i].setEnabled (index != treeItems.length);
+			menuItem.setEnabled (index != treeItems.length);
 		}
 	});
 	Rectangle clientArea = shell.getClientArea ();

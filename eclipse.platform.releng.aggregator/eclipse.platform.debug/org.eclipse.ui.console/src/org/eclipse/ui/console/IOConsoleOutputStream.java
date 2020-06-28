@@ -79,6 +79,7 @@ public class IOConsoleOutputStream extends OutputStream {
 	 * Constructs a new output stream on the given console.
 	 *
 	 * @param console I/O console
+	 * @param charset the encoding used to write to console
 	 */
 	IOConsoleOutputStream(IOConsole console, Charset charset) {
 		this.decoder = new StreamDecoder(charset);
@@ -162,10 +163,6 @@ public class IOConsoleOutputStream extends OutputStream {
 		return closed;
 	}
 
-	/*
-	 *  (non-Javadoc)
-	 * @see java.io.OutputStream#close()
-	 */
 	@Override
 	public synchronized void close() throws IOException {
 		if(closed) {
@@ -187,10 +184,6 @@ public class IOConsoleOutputStream extends OutputStream {
 		decoder = null;
 	}
 
-	/*
-	 *  (non-Javadoc)
-	 * @see java.io.OutputStream#flush()
-	 */
 	@Override
 	public void flush() throws IOException {
 		if(closed) {
@@ -198,10 +191,6 @@ public class IOConsoleOutputStream extends OutputStream {
 		}
 	}
 
-	/*
-	 *  (non-Javadoc)
-	 * @see java.io.OutputStream#write(byte[], int, int)
-	 */
 	@Override
 	public synchronized void write(byte[] b, int off, int len) throws IOException {
 		if (closed) {
@@ -211,18 +200,12 @@ public class IOConsoleOutputStream extends OutputStream {
 		this.decoder.decode(builder, b, off, len);
 		encodedWrite(builder.toString());
 	}
-	/*
-	 *  (non-Javadoc)
-	 * @see java.io.OutputStream#write(byte[])
-	 */
+
 	@Override
 	public void write(byte[] b) throws IOException {
 		write(b, 0, b.length);
 	}
-	/*
-	 *  (non-Javadoc)
-	 * @see java.io.OutputStream#write(int)
-	 */
+
 	@Override
 	public void write(int b) throws IOException {
 		write(new byte[] {(byte)b}, 0, 1);

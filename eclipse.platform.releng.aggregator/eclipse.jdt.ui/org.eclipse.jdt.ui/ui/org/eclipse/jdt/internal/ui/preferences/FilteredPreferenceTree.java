@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.preferences;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -75,7 +76,7 @@ public class FilteredPreferenceTree {
 
 	/**
 	 * A node in <code>FilteredPreferenceTree</code>.
-	 * 
+	 *
 	 * @param <T> type of the node's main control
 	 */
 	public static class PreferenceTreeNode<T extends Control> {
@@ -122,7 +123,7 @@ public class FilteredPreferenceTree {
 		 * The <code>label</code> and the <code>key</code> must not be <code>null</code> if the node
 		 * has a corresponding UI control.
 		 * </p>
-		 * 
+		 *
 		 * @param label the label text
 		 * @param control the control associated with this node,
 		 * @param showAllChildren tells whether all children should be shown even if just one child
@@ -287,13 +288,11 @@ public class FilteredPreferenceTree {
 	 */
 	private Label fDescription;
 
-	/**
-	 * The filter text control.
-	 */
-	private FilterTextControl fFilterTextControl;
 
 	private ToolItem fExpandAllItem;
 	private ToolItem fCollapseAllItem;
+
+	private Text fFilterBox;
 
 
 	public FilteredPreferenceTree(Composite parentComposite, String label, String hint) {
@@ -339,18 +338,16 @@ public class FilteredPreferenceTree {
 		composite.setLayout(layout);
 		composite.setFont(fParentComposite.getFont());
 
-		//TODO: Directly use the hint flags once Bug 293230 is fixed
-		fFilterTextControl= new FilterTextControl(composite);
+		fFilterBox = new Text(composite, SWT.SINGLE | SWT.BORDER | SWT.SEARCH | SWT.ICON_CANCEL);
 
-		Text filterBox= fFilterTextControl.getFilterControl();
-		filterBox.setMessage(hint);
+		fFilterBox.setMessage(hint);
 
-		filterBox.addModifyListener(new ModifyListener() {
+		fFilterBox.addModifyListener(new ModifyListener() {
 			private String fPrevFilterText;
 
 			@Override
 			public void modifyText(ModifyEvent e) {
-				String input= filterBox.getText();
+				String input= fFilterBox.getText();
 				fExpandAllItem.setEnabled(input.isEmpty());
 				fCollapseAllItem.setEnabled(input.isEmpty());
 				if (!input.equalsIgnoreCase(fPrevFilterText)) {
@@ -436,16 +433,15 @@ public class FilteredPreferenceTree {
 		fRefreshJob.cancel();
 		fRefreshJob.schedule(getRefreshJobDelay());
 		filterText= filterText.trim();
-		int index= filterText.indexOf("~"); //$NON-NLS-1$
+		int index= filterText.indexOf('~');
 		StringMatcher labelMatcher= null;
 		StringMatcher valueMatcher= null;
 		if (index == -1) {
 			labelMatcher= createStringMatcher(filterText);
 		} else {
 			if (index == 0 && !fExpectMultiWordValueMatch) {
-				int i= 0;
-				for (; i < filterText.length(); i++) {
-					char ch= filterText.charAt(i);
+				int i= filterText.length();
+				for (char ch : filterText.toCharArray()) {
 					if (ch == ' ' || ch == '\t') {
 						break;
 					}
@@ -470,7 +466,7 @@ public class FilteredPreferenceTree {
 
 	/**
 	 * Return the time delay that should be used when scheduling the filter refresh job.
-	 * 
+	 *
 	 * @return a time delay in milliseconds before the job should run
 	 */
 	private long getRefreshJobDelay() {
@@ -492,8 +488,8 @@ public class FilteredPreferenceTree {
 		//update children
 		List<PreferenceTreeNode<?>> children= node.getChildren();
 		if (children != null) {
-			for (int i= 0; i < children.size(); i++) {
-				updateUI(children.get(i));
+			for (PreferenceTreeNode<?> element : children) {
+				updateUI(element);
 			}
 		}
 	}
@@ -528,15 +524,15 @@ public class FilteredPreferenceTree {
 		fScrolledPageContent.setRedraw(false);
 		fScrolledPageContent.setReflow(false);
 
-		ArrayList<PreferenceTreeNode<?>> bfsNodes= new ArrayList<>();
+		ArrayDeque<PreferenceTreeNode<?>> bfsNodes= new ArrayDeque<>();
 		if (start != null) {
 			bfsNodes.add(start);
 		} else {
 			bfsNodes.addAll(fRoot.getChildren());
 		}
-		for (int i= 0; i < bfsNodes.size(); i++) {
-			PreferenceTreeNode<?> node= bfsNodes.get(i);
-			bfsNodes.addAll(bfsNodes.get(i).getChildren());
+		while (!bfsNodes.isEmpty()) {
+			PreferenceTreeNode<?> node= bfsNodes.remove();
+			bfsNodes.addAll(node.getChildren());
 			if (node.getControl() instanceof ExpandableComposite)
 				((ExpandableComposite) node.getControl()).setExpanded(expanded);
 		}
@@ -557,7 +553,7 @@ public class FilteredPreferenceTree {
 		if (fDescription != null) {
 			fDescription.setEnabled(enabled);
 		}
-		fFilterTextControl.setEnabled(enabled);
+		fFilterBox.setEnabled(enabled);
 		fCollapseAllItem.setEnabled(enabled);
 		fExpandAllItem.setEnabled(enabled);
 		fRoot.getChildren().forEach(node -> node.setEnabled(enabled));

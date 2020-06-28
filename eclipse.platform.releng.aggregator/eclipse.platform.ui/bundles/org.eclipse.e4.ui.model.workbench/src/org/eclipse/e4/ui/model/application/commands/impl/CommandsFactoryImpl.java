@@ -13,7 +13,15 @@
  */
 package org.eclipse.e4.ui.model.application.commands.impl;
 
-import org.eclipse.e4.ui.model.application.commands.*;
+import org.eclipse.e4.ui.model.application.commands.MBindingContext;
+import org.eclipse.e4.ui.model.application.commands.MBindingTable;
+import org.eclipse.e4.ui.model.application.commands.MCategory;
+import org.eclipse.e4.ui.model.application.commands.MCommand;
+import org.eclipse.e4.ui.model.application.commands.MCommandParameter;
+import org.eclipse.e4.ui.model.application.commands.MCommandsFactory;
+import org.eclipse.e4.ui.model.application.commands.MHandler;
+import org.eclipse.e4.ui.model.application.commands.MKeyBinding;
+import org.eclipse.e4.ui.model.application.commands.MParameter;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EObject;
@@ -44,12 +52,12 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 */
 	public static CommandsFactoryImpl init() {
 		try {
-			CommandsFactoryImpl theCommandsFactory = (CommandsFactoryImpl)EPackage.Registry.INSTANCE.getEFactory(CommandsPackageImpl.eNS_URI);
+			CommandsFactoryImpl theCommandsFactory = (CommandsFactoryImpl) EPackage.Registry.INSTANCE
+					.getEFactory(CommandsPackageImpl.eNS_URI);
 			if (theCommandsFactory != null) {
 				return theCommandsFactory;
 			}
-		}
-		catch (Exception exception) {
+		} catch (Exception exception) {
 			EcorePlugin.INSTANCE.log(exception);
 		}
 		return new CommandsFactoryImpl();
@@ -73,16 +81,24 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
-			case CommandsPackageImpl.BINDING_CONTEXT: return (EObject)createBindingContext();
-			case CommandsPackageImpl.BINDING_TABLE: return (EObject)createBindingTable();
-			case CommandsPackageImpl.COMMAND: return (EObject)createCommand();
-			case CommandsPackageImpl.COMMAND_PARAMETER: return (EObject)createCommandParameter();
-			case CommandsPackageImpl.HANDLER: return (EObject)createHandler();
-			case CommandsPackageImpl.KEY_BINDING: return (EObject)createKeyBinding();
-			case CommandsPackageImpl.PARAMETER: return (EObject)createParameter();
-			case CommandsPackageImpl.CATEGORY: return (EObject)createCategory();
-			default:
-				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier"); //$NON-NLS-1$ //$NON-NLS-2$
+		case CommandsPackageImpl.BINDING_CONTEXT:
+			return (EObject) createBindingContext();
+		case CommandsPackageImpl.BINDING_TABLE:
+			return (EObject) createBindingTable();
+		case CommandsPackageImpl.COMMAND:
+			return (EObject) createCommand();
+		case CommandsPackageImpl.COMMAND_PARAMETER:
+			return (EObject) createCommandParameter();
+		case CommandsPackageImpl.HANDLER:
+			return (EObject) createHandler();
+		case CommandsPackageImpl.KEY_BINDING:
+			return (EObject) createKeyBinding();
+		case CommandsPackageImpl.PARAMETER:
+			return (EObject) createParameter();
+		case CommandsPackageImpl.CATEGORY:
+			return (EObject) createCategory();
+		default:
+			throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 
@@ -94,8 +110,8 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	@Override
 	public Object createFromString(EDataType eDataType, String initialValue) {
 		switch (eDataType.getClassifierID()) {
-			default:
-				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier"); //$NON-NLS-1$ //$NON-NLS-2$
+		default:
+			throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 
@@ -107,8 +123,8 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	@Override
 	public String convertToString(EDataType eDataType, Object instanceValue) {
 		switch (eDataType.getClassifierID()) {
-			default:
-				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier"); //$NON-NLS-1$ //$NON-NLS-2$
+		default:
+			throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 
@@ -118,9 +134,9 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 * @since 1.0
 	 * @generated
 	 */
+	@Override
 	public MBindingContext createBindingContext() {
-		BindingContextImpl bindingContext = new BindingContextImpl();
-		return bindingContext;
+		return new BindingContextImpl();
 	}
 
 	/**
@@ -129,9 +145,9 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 * @since 1.0
 	 * @generated
 	 */
+	@Override
 	public MBindingTable createBindingTable() {
-		BindingTableImpl bindingTable = new BindingTableImpl();
-		return bindingTable;
+		return new BindingTableImpl();
 	}
 
 	/**
@@ -140,9 +156,9 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 * @since 1.0
 	 * @generated
 	 */
+	@Override
 	public MCommand createCommand() {
-		CommandImpl command = new CommandImpl();
-		return command;
+		return new CommandImpl();
 	}
 
 	/**
@@ -151,9 +167,9 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 * @since 1.0
 	 * @generated
 	 */
+	@Override
 	public MCommandParameter createCommandParameter() {
-		CommandParameterImpl commandParameter = new CommandParameterImpl();
-		return commandParameter;
+		return new CommandParameterImpl();
 	}
 
 	/**
@@ -162,9 +178,9 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 * @since 1.0
 	 * @generated
 	 */
+	@Override
 	public MHandler createHandler() {
-		HandlerImpl handler = new HandlerImpl();
-		return handler;
+		return new HandlerImpl();
 	}
 
 	/**
@@ -173,9 +189,9 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 * @since 1.0
 	 * @generated
 	 */
+	@Override
 	public MKeyBinding createKeyBinding() {
-		KeyBindingImpl keyBinding = new KeyBindingImpl();
-		return keyBinding;
+		return new KeyBindingImpl();
 	}
 
 	/**
@@ -184,9 +200,9 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 * @since 1.0
 	 * @generated
 	 */
+	@Override
 	public MParameter createParameter() {
-		ParameterImpl parameter = new ParameterImpl();
-		return parameter;
+		return new ParameterImpl();
 	}
 
 	/**
@@ -195,9 +211,9 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 * @since 1.0
 	 * @generated
 	 */
+	@Override
 	public MCategory createCategory() {
-		CategoryImpl category = new CategoryImpl();
-		return category;
+		return new CategoryImpl();
 	}
 
 	/**
@@ -206,18 +222,7 @@ public class CommandsFactoryImpl extends EFactoryImpl implements MCommandsFactor
 	 * @generated
 	 */
 	public CommandsPackageImpl getCommandsPackage() {
-		return (CommandsPackageImpl)getEPackage();
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @deprecated
-	 * @generated
-	 */
-	@Deprecated
-	public static CommandsPackageImpl getPackage() {
-		return CommandsPackageImpl.eINSTANCE;
+		return (CommandsPackageImpl) getEPackage();
 	}
 
 } //CommandsFactoryImpl

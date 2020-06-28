@@ -20,8 +20,8 @@ import java.util.Set;
 
 /**
  * A bean in which all property change events are fired according to an annoying
- * provision in the bean spec, where <code>(oldValue == null && newValue ==
- * null)</code> indicates that an unknown change occured.
+ * provision in the bean spec, where <code>(oldValue == null &amp;&amp; newValue ==
+ * null)</code> indicates that an unknown change occurred.
  *
  * @since 3.2
  */
@@ -39,19 +39,19 @@ public class AnnoyingBean extends Bean {
 	}
 
 	@Override
-	public void setList(List list) {
+	public void setList(List<Object> list) {
 		this.list = list;
 		changeSupport.firePropertyChange("list", null, null);
 	}
 
 	@Override
-	public void setSet(Set set) {
+	public void setSet(Set<Object> set) {
 		this.set = set;
 		changeSupport.firePropertyChange("set", null, null);
 	}
 
 	@Override
-	public void setMap(Map map) {
+	public void setMap(Map<Object, Object> map) {
 		this.map = map;
 		changeSupport.firePropertyChange("map", null, null);
 	}

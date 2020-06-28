@@ -14,6 +14,8 @@
  *******************************************************************************/
 package org.eclipse.debug.internal.ui.stringsubstitution;
 
+import java.text.MessageFormat;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -22,8 +24,6 @@ import org.eclipse.core.variables.IDynamicVariableResolver;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.internal.ui.DebugUIPlugin;
 import org.eclipse.swt.widgets.Shell;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Base implementation for variable resolvers that prompt the user
@@ -89,15 +89,12 @@ abstract class PromptingResolver implements IDynamicVariableResolver {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.core.stringsubstitution.IContextVariableResolver#resolveValue(org.eclipse.debug.internal.core.stringsubstitution.IContextVariable, java.lang.String)
-	 */
 	@Override
 	public String resolveValue(IDynamicVariable variable, String argument) throws CoreException {
 		String value = null;
 		setupDialog(argument);
 
-		DebugUIPlugin.getStandardDisplay().syncExec(() -> prompt());
+		DebugUIPlugin.getStandardDisplay().syncExec(this::prompt);
 		if (dialogResultString != null) {
 			value = dialogResultString;
 			lastValue = dialogResultString;

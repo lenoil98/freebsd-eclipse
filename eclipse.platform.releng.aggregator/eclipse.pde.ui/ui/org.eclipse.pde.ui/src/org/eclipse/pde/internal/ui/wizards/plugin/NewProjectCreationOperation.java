@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,6 +14,7 @@
  *     Gary Duprex <Gary.Duprex@aspectstools.com> - bug 179213
  *     Benjamin Cabe <benjamin.cabe@anyware-tech.com> - bug 247553
  *     Johannes Ahlers <Johannes.Ahlers@gmx.de> - bug 477677
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 489181
  *******************************************************************************/
 package org.eclipse.pde.internal.ui.wizards.plugin;
 
@@ -39,8 +40,10 @@ import org.eclipse.pde.internal.core.project.PDEProject;
 import org.eclipse.pde.internal.core.util.CoreUtility;
 import org.eclipse.pde.internal.ui.PDEPlugin;
 import org.eclipse.pde.internal.ui.PDEUIMessages;
+import org.eclipse.pde.internal.ui.util.TextUtil;
 import org.eclipse.pde.internal.ui.wizards.IProjectProvider;
 import org.eclipse.pde.ui.*;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.*;
 import org.eclipse.ui.actions.WorkspaceModifyOperation;
 import org.eclipse.ui.ide.IDE;
@@ -202,7 +205,8 @@ public class NewProjectCreationOperation extends WorkspaceModifyOperation {
 		// add Bundle Specific fields if applicable
 		if (pluginBase instanceof BundlePluginBase) {
 			IBundle bundle = ((BundlePluginBase) pluginBase).getBundle();
-			bundle.setHeader(ICoreConstants.AUTOMATIC_MODULE_NAME, bundle.getHeader(Constants.BUNDLE_SYMBOLICNAME));
+			String header = bundle.getHeader(Constants.BUNDLE_SYMBOLICNAME);
+			bundle.setHeader(ICoreConstants.AUTOMATIC_MODULE_NAME, determineAutomaticModuleNameFromBSN(header));
 
 			String value = getCommaValuesFromPackagesSet(getImportPackagesSet(), fData.getVersion());
 			if (value.length() > 0)
@@ -247,6 +251,65 @@ public class NewProjectCreationOperation extends WorkspaceModifyOperation {
 			}
 		}
 	}
+
+	/**
+	 * copied and edited from jdt.core
+	 *
+	 * @see org.eclipse.jdt.internal.compiler.env.AutomaticModuleNaming#determineAutomaticModuleNameFromFileName(String,
+	 *      boolean, boolean)
+	 * @param name
+	 *            bundle symbolic name
+	 * @return automatic module name corresponding to BSN
+	 */
+
+	public static String determineAutomaticModuleNameFromBSN(String name) {
+		int index;
+		int start = 0;
+		int end = name.length();
+
+		// "If the name matches the regular expression "-(\\d+(\\.|$))" then the
+		// module name will be derived from the
+		// subsequence preceding the hyphen of the first occurrence. [...]"
+		dashLoop: for (index = start; index < end - 1; index++) {
+			if (name.charAt(index) == '-' && name.charAt(index + 1) >= '0' && name.charAt(index + 1) <= '9') {
+				for (int index2 = index + 2; index2 < end; index2++) {
+					final char c = name.charAt(index2);
+					if (c == '.') {
+						break;
+					}
+					if (c < '0' || c > '9') {
+						continue dashLoop;
+					}
+				}
+				end = index;
+				break;
+			}
+		}
+
+		// "All non-alphanumeric characters ([^A-Za-z0-9]) in the module name
+		// are replaced with a dot ("."), all
+		// repeating dots are replaced with one dot, and all leading and
+		// trailing dots are removed."
+		StringBuilder sb = new StringBuilder(end - start);
+		boolean needDot = false;
+		for (int i = start; i < end; i++) {
+			char c = name.charAt(i);
+			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+				if (needDot) {
+					sb.append('.');
+					needDot = false;
+				}
+				sb.append(c);
+			} else {
+				if (sb.length() > 0) {
+					needDot = true;
+				}
+			}
+		}
+		return sb.toString();
+	}
+
+
 
 	private IProject createProject() throws CoreException {
 		IProject project = fProjectProvider.getProject();
@@ -349,15 +412,11 @@ public class NewProjectCreationOperation extends WorkspaceModifyOperation {
 		TreeSet<String> set = new TreeSet<>();
 		if (fGenerator != null) {
 			String[] packages = fGenerator.getImportPackages();
-			for (String pkg : packages) {
-				set.add(pkg);
-			}
+			Collections.addAll(set, packages);
 		}
 		if (fContentWizard instanceof IBundleContentWizard) {
 			String[] packages = ((IBundleContentWizard) fContentWizard).getImportPackages();
-			for (String pkg : packages) {
-				set.add(pkg);
-			}
+			Collections.addAll(set, packages);
 		}
 		return set;
 	}
@@ -407,9 +466,7 @@ public class NewProjectCreationOperation extends WorkspaceModifyOperation {
 		ArrayList<IPluginReference> result = new ArrayList<>();
 		if (fGenerator != null) {
 			IPluginReference[] refs = fGenerator.getDependencies();
-			for (IPluginReference ref : refs) {
-				result.add(ref);
-			}
+			Collections.addAll(result, refs);
 		}
 
 		if (fContentWizard != null) {
@@ -466,11 +523,12 @@ public class NewProjectCreationOperation extends WorkspaceModifyOperation {
 	 * @param file file to open the editor on
 	 */
 	private void openFile(final IFile file) {
-		PDEPlugin.getDefault().getWorkbench().getDisplay().asyncExec(() -> {
+		Display.getDefault().asyncExec(() -> {
 			final IWorkbenchWindow ww = PDEPlugin.getActiveWorkbenchWindow();
 			final IWorkbenchPage page = ww.getActivePage();
-			if (page == null)
+			if (page == null) {
 				return;
+			}
 			IWorkbenchPart focusPart = page.getActivePart();
 			if (focusPart instanceof ISetSelectionTarget) {
 				ISelection selection = new StructuredSelection(file);
@@ -518,12 +576,13 @@ public class NewProjectCreationOperation extends WorkspaceModifyOperation {
 		Iterator<String> iter = values.iterator();
 		while (iter.hasNext()) {
 			if (buffer.length() > 0) {
-				buffer.append(",\n "); //$NON-NLS-1$ // space required for multiline headers
+				// space required for multiline headers
+				buffer.append("," + TextUtil.getDefaultLineDelimiter() + " "); //$NON-NLS-1$ //$NON-NLS-2$
 			}
 			String value = iter.next().toString();
 			buffer.append(value);
 
-			if (value.indexOf(";version=") == -1 && (version != null) && (values.size() == 1)) { //$NON-NLS-1$
+			if (!value.contains(";version=") && (version != null) && (values.size() == 1)) { //$NON-NLS-1$
 				buffer.append(";version=\"").append(version).append("\""); //$NON-NLS-1$ //$NON-NLS-2$
 			}
 		}

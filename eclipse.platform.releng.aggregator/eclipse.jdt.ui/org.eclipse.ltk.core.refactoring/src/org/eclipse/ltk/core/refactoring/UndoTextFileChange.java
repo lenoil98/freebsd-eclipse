@@ -218,35 +218,32 @@ public class UndoTextFileChange extends Change {
 		if (! buffer.isSynchronizationContextRequested()) {
 			return doPerformEdits(document, setContentStampSuccess);
 		}
-		
+
 		ITextFileBufferManager fileBufferManager= FileBuffers.getTextFileBufferManager();
-		
+
 		/** The lock for waiting for computation in the UI thread to complete. */
 		final Lock completionLock= new Lock();
 		final UndoEdit[] result= new UndoEdit[1];
 		final BadLocationException[] badLocationException= new BadLocationException[1];
 		final MalformedTreeException[] malformedTreeException= new MalformedTreeException[1];
 		final CoreException[] coreException= new CoreException[1];
-		Runnable runnable= new Runnable() {
-			@Override
-			public void run() {
-				synchronized (completionLock) {
-					try {
-						result[0]= doPerformEdits(document, setContentStampSuccess);
-					} catch (BadLocationException e) {
-						badLocationException[0]= e;
-					} catch (MalformedTreeException e) {
-						malformedTreeException[0]= e;
-					} catch (CoreException e) {
-						coreException[0]= e;
-					} finally {
-						completionLock.fDone= true;
-						completionLock.notifyAll();
-					}
+		Runnable runnable= () -> {
+			synchronized (completionLock) {
+				try {
+					result[0]= doPerformEdits(document, setContentStampSuccess);
+				} catch (BadLocationException e) {
+					badLocationException[0]= e;
+				} catch (MalformedTreeException e) {
+					malformedTreeException[0]= e;
+				} catch (CoreException e) {
+					coreException[0]= e;
+				} finally {
+					completionLock.fDone= true;
+					completionLock.notifyAll();
 				}
 			}
 		};
-		
+
 		synchronized (completionLock) {
 			fileBufferManager.execute(runnable);
 			while (! completionLock.fDone) {
@@ -256,7 +253,7 @@ public class UndoTextFileChange extends Change {
 				}
 			}
 		}
-		
+
 		if (badLocationException[0] != null) {
 			throw badLocationException[0];
 		} else if (malformedTreeException[0] != null) {

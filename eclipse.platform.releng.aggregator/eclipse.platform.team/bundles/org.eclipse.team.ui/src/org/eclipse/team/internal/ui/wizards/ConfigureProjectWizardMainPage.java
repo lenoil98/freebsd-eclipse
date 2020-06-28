@@ -121,7 +121,7 @@ public class ConfigureProjectWizardMainPage extends WizardPage {
 		setControl(composite);
 
 		// set F1 help
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, IHelpContextIds.SHARE_PROJECT_PAGE);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, IHelpContextIds.SHARE_PROJECT_PAGE);
 
 		Label label = new Label(composite, SWT.LEFT);
 		label.setText(description);
@@ -201,13 +201,12 @@ public class ConfigureProjectWizardMainPage extends WizardPage {
 			viewer.setInput(wizards);
 		}
 		initializeWizardSelection();
-        Dialog.applyDialogFont(parent);
+		Dialog.applyDialogFont(parent);
 	}
 
 	/* package */ IProject[] getUnsharedProjects() {
 		java.util.List<IProject> unshared = new ArrayList<>();
-		for (int i = 0; i < projects.length; i++) {
-			IProject project = projects[i];
+		for (IProject project : projects) {
 			if (!RepositoryProvider.isShared(project))
 				unshared.add(project);
 		}
@@ -263,9 +262,9 @@ public class ConfigureProjectWizardMainPage extends WizardPage {
 		// TODO: any checks here?
 		Object[] children = ((AdaptableList) viewer.getInput()).getChildren();
 
-		for (int i = 0; i < children.length; i++) {
+		for (Object child : children) {
 			try {
-				ConfigurationWizardElement element = (ConfigurationWizardElement)children[i];
+				ConfigurationWizardElement element = (ConfigurationWizardElement) child;
 				if (element.getID().equals(selectedWizardId)) {
 					viewer.setSelection(new StructuredSelection(element));
 					return;

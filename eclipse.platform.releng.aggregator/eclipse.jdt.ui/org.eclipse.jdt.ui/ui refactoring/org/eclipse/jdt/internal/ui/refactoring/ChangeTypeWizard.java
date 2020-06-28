@@ -167,8 +167,7 @@ public class ChangeTypeWizard extends RefactoringWizard {
 
 		@Override
 		public void dispose() {
-			for (Iterator<Image> iter= fGrayImages.values().iterator(); iter.hasNext();) {
-				Image image= iter.next();
+			for (Image image : fGrayImages.values()) {
 				image.dispose();
 			}
 			fGrayImages.clear();
@@ -223,7 +222,7 @@ public class ChangeTypeWizard extends RefactoringWizard {
 
 				if (internalError) {
 					setPageComplete(false);
-				} else if (fValidTypes == null || fValidTypes.size() == 0){
+				} else if (fValidTypes == null || fValidTypes.isEmpty()){
 					ChangeTypeInputPage.this.setErrorMessage(RefactoringMessages.ChangeTypeWizard_declCannotBeChanged);
 					setPageComplete(false);
 				} else {
@@ -239,8 +238,7 @@ public class ChangeTypeWizard extends RefactoringWizard {
 
 			// first, find a most general valid type (there may be more than one)
 			ITypeBinding type= types.iterator().next();
-			for (Iterator<ITypeBinding> it= types.iterator(); it.hasNext(); ){
-				ITypeBinding other= it.next();
+			for (ITypeBinding other : types) {
 				if (getGeneralizeTypeRefactoring().isSubTypeOf(type, other)){
 					type= other;
 				}
@@ -251,11 +249,13 @@ public class ChangeTypeWizard extends RefactoringWizard {
 		}
 
 		private TreeItem findItem(TreeItem[] items, ITypeBinding type){
-			for (int i=0; i < items.length; i++){
-				if (items[i].getData().equals(type)) return items[i];
+			for (TreeItem item : items) {
+				if (item.getData().equals(type)) {
+					return item;
+				}
 			}
-			for (int i=0; i < items.length; i++){
-				TreeItem item= findItem(items[i].getItems(), type);
+			for (TreeItem ti : items) {
+				TreeItem item= findItem(ti.getItems(), type);
 				if (item != null) return item;
 			}
 			return null;
@@ -286,7 +286,7 @@ public class ChangeTypeWizard extends RefactoringWizard {
 		 */
 		private void addTreeComponent(Composite parent) {
 			fTreeViewer= new TreeViewer(parent, SWT.SINGLE | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-			
+
 			GridData gd= new GridData(GridData.FILL_BOTH);
 			gd.grabExcessHorizontalSpace= true;
 			gd.grabExcessVerticalSpace= true;

@@ -23,6 +23,7 @@ import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
+import org.eclipse.jface.widgets.WidgetFactory;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -45,8 +46,7 @@ public class SimpleWorkingSetSelectionDialog extends AbstractWorkingSetDialog {
 	private class Filter extends ViewerFilter {
 
 		@Override
-		public boolean select(Viewer viewer, Object parentElement,
-				Object element) {
+		public boolean select(Viewer viewer, Object parentElement, Object element) {
 			return isCompatible((IWorkingSet) element);
 		}
 
@@ -88,14 +88,12 @@ public class SimpleWorkingSetSelectionDialog extends AbstractWorkingSetDialog {
 	/**
 	 * Create a new instance of this class.
 	 *
-	 * @param shell
-	 *            the shell to parent this dialog on
-	 * @param workingSetTypeIds
-	 *            the types of working set IDs that will be shown in this dialog
-	 * @param selectedWorkingSets
-	 *            the currently selected working sets (if any)
-	 * @param canEdit
-	 *            whether or not this dialog will display edit controls
+	 * @param shell               the shell to parent this dialog on
+	 * @param workingSetTypeIds   the types of working set IDs that will be shown in
+	 *                            this dialog
+	 * @param selectedWorkingSets the currently selected working sets (if any)
+	 * @param canEdit             whether or not this dialog will display edit
+	 *                            controls
 	 */
 	public SimpleWorkingSetSelectionDialog(Shell shell, String[] workingSetTypeIds, IWorkingSet[] selectedWorkingSets,
 			boolean canEdit) {
@@ -111,21 +109,20 @@ public class SimpleWorkingSetSelectionDialog extends AbstractWorkingSetDialog {
 
 		Composite composite = (Composite) super.createDialogArea(parent);
 
-		Composite viewerComposite = new Composite(composite, SWT.NONE);
 		GridLayout layout = new GridLayout(2, false);
 		layout.marginHeight = layout.marginWidth = 0;
 		layout.horizontalSpacing = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_SPACING);
 		layout.verticalSpacing = convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_SPACING);
-		viewerComposite.setLayout(layout);
-		viewerComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		Composite viewerComposite = WidgetFactory.composite(SWT.NONE).layout(layout)
+				.layoutData(new GridData(GridData.FILL_BOTH)).create(composite);
 
 		viewer = CheckboxTableViewer.newCheckList(viewerComposite, SWT.BORDER);
 		viewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
 		viewer.setLabelProvider(new WorkingSetLabelProvider());
 		viewer.setContentProvider(new ArrayContentProvider());
 		viewer.addFilter(new WorkingSetFilter(null));
-		IWorkingSet[] workingSets = PlatformUI.getWorkbench().getWorkingSetManager()
-				.getWorkingSets();
+		IWorkingSet[] workingSets = PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets();
 		viewer.setInput(workingSets);
 		viewer.setFilters(new Filter());
 
@@ -144,8 +141,7 @@ public class SimpleWorkingSetSelectionDialog extends AbstractWorkingSetDialog {
 
 		Dialog.applyDialogFont(composite);
 
-		viewerData.heightHint = viewer.getTable().getItemHeight()
-				* Math.min(30, Math.max(10, workingSets.length));
+		viewerData.heightHint = viewer.getTable().getItemHeight() * Math.min(30, Math.max(10, workingSets.length));
 
 		return composite;
 	}
@@ -166,8 +162,7 @@ public class SimpleWorkingSetSelectionDialog extends AbstractWorkingSetDialog {
 
 	@Override
 	protected void availableWorkingSetsChanged() {
-		viewer.setInput(PlatformUI.getWorkbench().getWorkingSetManager()
-				.getWorkingSets());
+		viewer.setInput(PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets());
 		super.availableWorkingSetsChanged();
 	}
 
@@ -186,8 +181,7 @@ public class SimpleWorkingSetSelectionDialog extends AbstractWorkingSetDialog {
 
 	@Override
 	protected void selectAllSets() {
-		viewer.setCheckedElements(PlatformUI.getWorkbench()
-				.getWorkingSetManager().getWorkingSets());
+		viewer.setCheckedElements(PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets());
 		updateButtonAvailability();
 	}
 

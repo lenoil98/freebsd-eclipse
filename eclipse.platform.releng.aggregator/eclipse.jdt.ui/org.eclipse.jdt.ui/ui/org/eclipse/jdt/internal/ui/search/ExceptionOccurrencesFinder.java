@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.ui.search;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -85,9 +84,9 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 		fASTRoot= root;
 		if (node == null)
 			return SearchMessages.ExceptionOccurrencesFinder_no_exception;
-		
+
 		// The ExceptionOccurrencesFinder selects the whole type, no matter what part of it was selected. MethodExitsFinder behaves similar.
-		
+
 		if (node instanceof Name) {
 			node= ASTNodes.getTopMostName((Name) node);
 		}
@@ -105,13 +104,13 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 				fException= ((Name) node).resolveTypeBinding();
 				fStart= method;
 			}
-			
+
 		} else {
 			Type type= ASTNodes.getTopMostType(node);
 			if (type == null) {
 				return SearchMessages.ExceptionOccurrencesFinder_no_exception;
 			}
-			
+
 			// in method's "throws" list:
 			if (type.getLocationInParent() == MethodDeclaration.THROWN_EXCEPTION_TYPES_PROPERTY) {
 				MethodDeclaration method= ASTResolving.findParentMethodDeclaration(node);
@@ -121,7 +120,7 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 				fException= type.resolveBinding();
 				fStart= method;
 			}
-			
+
 			// in catch clause:
 			Type topType= type;
 			if (type.getLocationInParent() == UnionType.TYPES_PROPERTY) {
@@ -154,8 +153,8 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 
 	private void handleResourceDeclarations(TryStatement tryStatement) {
 		List<Expression> resources= tryStatement.resources();
-		for (Iterator<Expression> iterator= resources.iterator(); iterator.hasNext();) {
-			iterator.next().accept(this);
+		for (Expression expression : resources) {
+			expression.accept(this);
 		}
 
 		//check if the exception is thrown as a result of resource#close()
@@ -170,9 +169,9 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 			if (typeBinding != null) {
 				IMethodBinding methodBinding= Bindings.findMethodInHierarchy(typeBinding, "close", new ITypeBinding[0]); //$NON-NLS-1$
 				if (methodBinding != null) {
-					ITypeBinding[] exceptionTypes= methodBinding.getExceptionTypes();
-					for (int j= 0; j < exceptionTypes.length; j++) {
-						if (matches(exceptionTypes[j])) { // a close() throws the caught exception
+					for (ITypeBinding exceptionType : methodBinding.getExceptionTypes()) {
+						if (matches(exceptionType)) {
+							// a close() throws the caught exception
 							// mark name of resource
 							if (variable instanceof VariableDeclarationExpression) {
 								VariableDeclarationExpression varDeclExpr= (VariableDeclarationExpression) variable;
@@ -190,7 +189,7 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 								Block body= tryStatement.getBody();
 								int offset= body.getStartPosition() + body.getLength() - 1; // closing bracket of try block
 								fResult.add(new OccurrenceLocation(offset, 1, 0, Messages.format(SearchMessages.ExceptionOccurrencesFinder_occurrence_implicit_close_description,
-										BasicElementLabels.getJavaElementName(fException.getName()))));
+									BasicElementLabels.getJavaElementName(fException.getName()))));
 							}
 						}
 					}
@@ -297,8 +296,7 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 			}
 		}
 		List<Type> thrownExceptionTypes= node.thrownExceptionTypes();
-		for (Iterator<Type> iter= thrownExceptionTypes.iterator(); iter.hasNext(); ) {
-			Type type = iter.next();
+		for (Type type : thrownExceptionTypes) {
 			if (type != fSelectedNode && Bindings.equals(fException, type.resolveBinding())) {
 				fResult.add(new OccurrenceLocation(type.getStartPosition(), type.getLength(), 0, fDescription));
 			}
@@ -318,7 +316,7 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 		}
 		return super.visit(node);
 	}
-	
+
 	@Override
 	public boolean visit(SuperConstructorInvocation node) {
 		if (matches(node.resolveConstructorBinding())) {
@@ -350,12 +348,12 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 	public boolean visit(TryStatement node) {
 		int currentSize= fCaughtExceptions.size();
 		List<CatchClause> catchClauses= node.catchClauses();
-		for (Iterator<CatchClause> iter= catchClauses.iterator(); iter.hasNext();) {
-			Type type= iter.next().getException().getType();
+		for (CatchClause catchClause : catchClauses) {
+			Type type= catchClause.getException().getType();
 			if (type instanceof UnionType) {
 				List<Type> types= ((UnionType) type).types();
-				for (Iterator<Type> iterator= types.iterator(); iterator.hasNext();) {
-					addCaughtException(iterator.next());
+				for (Type type2 : types) {
+					addCaughtException(type2);
 				}
 			} else {
 				addCaughtException(type);
@@ -372,8 +370,8 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 		}
 
 		// visit catch and finally
-		for (Iterator<CatchClause> iter= catchClauses.iterator(); iter.hasNext();) {
-			iter.next().accept(this);
+		for (CatchClause catchClause : catchClauses) {
+			catchClause.accept(this);
 		}
 		if (node.getFinally() != null)
 			node.getFinally().accept(this);
@@ -398,9 +396,7 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 	private boolean matches(IMethodBinding binding) {
 		if (binding == null)
 			return false;
-		ITypeBinding[] exceptions= binding.getExceptionTypes();
-		for (int i = 0; i < exceptions.length; i++) {
-			ITypeBinding exception= exceptions[i];
+		for (ITypeBinding exception : binding.getExceptionTypes()) {
 			if(matches(exception))
 				return true;
 		}
@@ -421,8 +417,7 @@ public class ExceptionOccurrencesFinder extends ASTVisitor implements IOccurrenc
 	}
 
 	private boolean isCaught(ITypeBinding binding) {
-		for (Iterator<ITypeBinding> iter= fCaughtExceptions.iterator(); iter.hasNext();) {
-			ITypeBinding catchException= iter.next();
+		for (ITypeBinding catchException : fCaughtExceptions) {
 			if (catches(catchException, binding))
 				return true;
 		}

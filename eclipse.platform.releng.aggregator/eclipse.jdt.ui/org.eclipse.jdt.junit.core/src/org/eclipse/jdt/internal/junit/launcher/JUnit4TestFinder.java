@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2018 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.junit.launcher;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
@@ -75,8 +74,8 @@ public class JUnit4TestFinder implements ITestFinder {
 		}
 
 		private boolean annotates(IAnnotationBinding[] annotations) {
-			for (int i= 0; i < annotations.length; i++) {
-				ITypeBinding annotationType= annotations[i].getAnnotationType();
+			for (IAnnotationBinding annotation : annotations) {
+				ITypeBinding annotationType= annotation.getAnnotationType();
 				if (annotationType != null && (annotationType.getQualifiedName().equals(fName))) {
 					return true;
 				}
@@ -97,8 +96,7 @@ public class JUnit4TestFinder implements ITestFinder {
 		public boolean annotatesAtLeastOneMethod(ITypeBinding type) {
 			while (type != null) {
 				IMethodBinding[] declaredMethods= type.getDeclaredMethods();
-				for (int i= 0; i < declaredMethods.length; i++) {
-					IMethodBinding curr= declaredMethods[i];
+				for (IMethodBinding curr : declaredMethods) {
 					if (annotates(curr.getAnnotations())) {
 						return true;
 					}
@@ -146,8 +144,7 @@ public class JUnit4TestFinder implements ITestFinder {
 			new SearchEngine().search(annotationsPattern, searchParticipants, scope, requestor, new SubProgressMonitor(pm, 2));
 
 			// find all classes in the region
-			for (Iterator<IType> iterator= candidates.iterator(); iterator.hasNext();) {
-				IType curr= iterator.next();
+			for (IType curr : candidates) {
 				if (CoreTestSearchEngine.isAccessibleClass(curr) && !Flags.isAbstract(curr.getFlags()) && region.contains(curr)) {
 					result.add(curr);
 				}
@@ -191,8 +188,8 @@ public class JUnit4TestFinder implements ITestFinder {
 		private void addTypeAndSubtypes(IType type) {
 			if (fResult.add(type)) {
 				IType[] subclasses= fHierarchy.getSubclasses(type);
-				for (int i= 0; i < subclasses.length; i++) {
-					addTypeAndSubtypes(subclasses[i]);
+				for (IType subclasse : subclasses) {
+					addTypeAndSubtypes(subclasse);
 				}
 			}
 		}
@@ -208,7 +205,7 @@ public class JUnit4TestFinder implements ITestFinder {
 			if (CoreTestSearchEngine.hasSuiteMethod(type)) { // since JUnit 4.3.1
 				return true;
 			}
-			ASTParser parser= ASTParser.newParser(AST.JLS11);
+			ASTParser parser= ASTParser.newParser(AST.JLS14);
 			/* TODO: When bug 156352 is fixed:
 			parser.setProject(type.getJavaProject());
 			IBinding[] bindings= parser.createBindings(new IJavaElement[] { type }, monitor);

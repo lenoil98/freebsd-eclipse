@@ -308,7 +308,7 @@ public class OverviewRuler implements IOverviewRulerExtension, IOverviewRuler {
 	 *
 	 * @since 3.7
 	 */
-	static class WidgetInfos {
+	private static class WidgetInfos {
 		/**
 		 * the text widget line count
 		 */
@@ -329,8 +329,10 @@ public class OverviewRuler implements IOverviewRulerExtension, IOverviewRuler {
 		 * the bounds of {@link OverviewRuler#fCanvas}
 		 */
 		Rectangle bounds;
+
 		/**
-		 * the writable area in the text widget (height of all lines in pixels)
+		 * the writable area in the text widget (height of all lines in pixels), if smaller than
+		 * bounds.height; otherwise an unspecified value &gt;= bounds.height
 		 */
 		int writable;
 
@@ -343,7 +345,12 @@ public class OverviewRuler implements IOverviewRulerExtension, IOverviewRuler {
 		public WidgetInfos(StyledText textWidget, Canvas canvas) {
 			maxLines= textWidget.getLineCount();
 			bounds= canvas.getBounds();
-			writable= JFaceTextUtil.computeLineHeight(textWidget, 0, maxLines, maxLines);
+			// writeable is of interest only if it is smaller than bounds.height.
+			int w= 0;
+			for (int i= 0; i < maxLines && w < bounds.height; i++) {
+				w+= JFaceTextUtil.computeLineHeight(textWidget, i);
+			}
+			writable= w;
 
 			ScrollBar verticalBar= textWidget.getVerticalBar();
 			if (verticalBar != null && !verticalBar.getVisible()) {
@@ -364,18 +371,18 @@ public class OverviewRuler implements IOverviewRulerExtension, IOverviewRuler {
 				thumbHeight= verticalBar != null ? Math.max(Math.min(bounds.height, verticalBar.getThumbBounds().height), 0) : 0;
 			}
 
-	        int partialTopIndex= JFaceTextUtil.getPartialTopIndex(textWidget);
-	        int topLineHeight= textWidget.getLineHeight(textWidget.getOffsetAtLine(partialTopIndex));
-	        int topLinePixel= textWidget.getLinePixel(partialTopIndex);
-	        double topIndex= partialTopIndex - (double) topLinePixel / topLineHeight;
+			int partialTopIndex= JFaceTextUtil.getPartialTopIndex(textWidget);
+			int topLineHeight= textWidget.getLineHeight(textWidget.getOffsetAtLine(partialTopIndex));
+			int topLinePixel= textWidget.getLinePixel(partialTopIndex);
+			double topIndex= partialTopIndex - (double) topLinePixel / topLineHeight;
 
-	        int partialBottomIndex= JFaceTextUtil.getPartialBottomIndex(textWidget);
-	        int bottomLineHeight= textWidget.getLineHeight(textWidget.getOffsetAtLine(partialBottomIndex));
-	        int bottomLinePixel= textWidget.getLinePixel(partialBottomIndex);
-	        double bottomIndex= partialBottomIndex - ((double) bottomLinePixel - textWidget.getClientArea().height) / bottomLineHeight;
+			int partialBottomIndex= JFaceTextUtil.getPartialBottomIndex(textWidget);
+			int bottomLineHeight= textWidget.getLineHeight(textWidget.getOffsetAtLine(partialBottomIndex));
+			int bottomLinePixel= textWidget.getLinePixel(partialBottomIndex);
+			double bottomIndex= partialBottomIndex - ((double) bottomLinePixel - textWidget.getClientArea().height) / bottomLineHeight;
 
-	        visibleLines= bottomIndex - topIndex;
-	        invisibleLines= maxLines - visibleLines;
+			visibleLines= bottomIndex - topIndex;
+			invisibleLines= maxLines - visibleLines;
 		}
 	}
 
@@ -597,9 +604,9 @@ public class OverviewRuler implements IOverviewRulerExtension, IOverviewRuler {
 			}
 		});
 
-		fCanvas.addMouseMoveListener(event -> handleMouseMove(event));
+		fCanvas.addMouseMoveListener(this::handleMouseMove);
 
-		fCanvas.addMouseWheelListener(e -> handleMouseScrolled(e));
+		fCanvas.addMouseWheelListener(this::handleMouseScrolled);
 
 		if (fTextViewer != null) {
 			fTextViewer.addTextListener(fInternalListener);

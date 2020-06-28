@@ -14,6 +14,7 @@
  *******************************************************************************/
 package org.eclipse.ant.internal.ui.dtd.schema;
 
+import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.LinkedList;
 
@@ -21,8 +22,6 @@ import org.eclipse.ant.internal.ui.dtd.IModel;
 import org.eclipse.ant.internal.ui.dtd.ISchema;
 import org.xml.sax.SAXException;
 import org.xml.sax.ext.DeclHandler;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * SchemaFactory is a SAX DeclHandler that converts DTD ELEMENT and ATTLIST declarations to schema form on the fly. The only two methods available to
@@ -68,9 +67,6 @@ public class SchemaFactory implements DeclHandler {
 		return fSchema;
 	}
 
-	/**
-	 * @see org.xml.sax.ext.DeclHandler#attributeDecl(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-	 */
 	@Override
 	public void attributeDecl(String eName, String aName, String type, String valueDefault, String value) {
 		Element element = getElement(eName);
@@ -99,7 +95,7 @@ public class SchemaFactory implements DeclHandler {
 	/**
 	 * Strips the surrounding parentheses from <code>aString</code>.
 	 * <P>
-	 * i.e.: (true|false) -> true|false
+	 * i.e.: {@code (true|false) -> true|false }
 	 */
 	private String stripSurroundingParentheses(String aString) {
 		if (aString.startsWith("(")) { //$NON-NLS-1$
@@ -139,9 +135,6 @@ public class SchemaFactory implements DeclHandler {
 		return values.toArray(new String[values.size()]);
 	}
 
-	/**
-	 * @see org.xml.sax.ext.DeclHandler#elementDecl(java.lang.String, java.lang.String)
-	 */
 	@Override
 	public void elementDecl(String name, String model) throws SAXException {
 		Element element = getElement(name);
@@ -177,7 +170,8 @@ public class SchemaFactory implements DeclHandler {
 		fBuf = model.toCharArray();
 		fLen = fBuf.length;
 		if (fBuf[0] != '(') {
-			throw new SAXException(MessageFormat.format(AntDTDSchemaMessages.SchemaFactory_Start_with_left_parenthesis, new Object[] { fElement.getName() }));
+			throw new SAXException(MessageFormat.format(AntDTDSchemaMessages.SchemaFactory_Start_with_left_parenthesis, new Object[] {
+					fElement.getName() }));
 		}
 
 		boolean ortext = model.startsWith("(#PCDATA|"); //$NON-NLS-1$
@@ -246,7 +240,7 @@ public class SchemaFactory implements DeclHandler {
 		checkLen();
 		if (fBuf[fPos] == '(')
 			return scanExpr();
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		while (fBuf[fPos] != '|' && fBuf[fPos] != ',' && fBuf[fPos] != ')' && fBuf[fPos] != '*' && fBuf[fPos] != '+' && fBuf[fPos] != '?') {
 			sb.append(fBuf[fPos++]);
 			checkLen();
@@ -265,17 +259,11 @@ public class SchemaFactory implements DeclHandler {
 		}
 	}
 
-	/**
-	 * @see org.xml.sax.ext.DeclHandler#externalEntityDecl(java.lang.String, java.lang.String, java.lang.String)
-	 */
 	@Override
 	public void externalEntityDecl(String name, String publicId, String systemId) {
 		// do nothing
 	}
 
-	/**
-	 * @see org.xml.sax.ext.DeclHandler#internalEntityDecl(java.lang.String, java.lang.String)
-	 */
 	@Override
 	public void internalEntityDecl(String name, String value) {
 		// do nothing

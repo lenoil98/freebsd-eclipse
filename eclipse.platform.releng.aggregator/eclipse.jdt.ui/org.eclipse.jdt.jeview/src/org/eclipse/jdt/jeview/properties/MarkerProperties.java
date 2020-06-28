@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -32,7 +32,7 @@ import org.eclipse.jdt.core.compiler.IProblem;
 public class MarkerProperties implements IPropertySource {
 
 	private static final AttributeDescriptor[] NO_DESCRIPTORS= new AttributeDescriptor[0];
-	
+
 	private final IMarker fMarker;
 
 	private AttributeDescriptor[] fPropertyDescriptors;
@@ -45,7 +45,7 @@ public class MarkerProperties implements IPropertySource {
 	public AttributeDescriptor[] getPropertyDescriptors() {
 		if (fPropertyDescriptors != null)
 			return fPropertyDescriptors;
-		
+
 		Map<String, Object> attributes= null;
 		boolean isJavaMarker= false;
 		try {
@@ -73,11 +73,11 @@ public class MarkerProperties implements IPropertySource {
 				propertyDescriptor.setCategory("Attributes");
 				fPropertyDescriptors[i++]= propertyDescriptor;
 			}
-			
+
 			MarkerPropertyDescriptor propertyDescriptor= new MarkerPropertyDescriptor("exists", fMarker.exists());
 			propertyDescriptor.setAlwaysIncompatible(true);
 			fPropertyDescriptors[i++]= propertyDescriptor;
-			
+
 			String type;
 			try {
 				type= fMarker.getType();
@@ -87,7 +87,7 @@ public class MarkerProperties implements IPropertySource {
 			propertyDescriptor= new MarkerPropertyDescriptor("type", type);
 			propertyDescriptor.setAlwaysIncompatible(true);
 			fPropertyDescriptors[i++]= propertyDescriptor;
-			
+
 			String time;
 			try {
 				time= DateFormat.getDateTimeInstance().format(new Date(fMarker.getCreationTime()));
@@ -97,11 +97,11 @@ public class MarkerProperties implements IPropertySource {
 			propertyDescriptor= new MarkerPropertyDescriptor("creationTime", time);
 			propertyDescriptor.setAlwaysIncompatible(true);
 			fPropertyDescriptors[i++]= propertyDescriptor;
-			
+
 			propertyDescriptor= new MarkerPropertyDescriptor("markerId", fMarker.getId());
 			propertyDescriptor.setAlwaysIncompatible(true);
 			fPropertyDescriptors[i++]= propertyDescriptor;
-			
+
 		}
 		return fPropertyDescriptors;
 	}
@@ -109,67 +109,66 @@ public class MarkerProperties implements IPropertySource {
 	@Override
 	public Object getPropertyValue(Object id) {
 		AttributeDescriptor[] propertyDescriptors= getPropertyDescriptors();
-		for (int i= 0; i < propertyDescriptors.length; i++) {
-			AttributeDescriptor descriptor= propertyDescriptors[i];
+		for (AttributeDescriptor descriptor : propertyDescriptors) {
 			if (descriptor.getId().equals(id))
 				return descriptor.getValue();
 		}
 		return null;
 	}
 
-	
+
 	@Override
 	public void setPropertyValue(Object name, Object value) {
 		// do nothing
 	}
-	
+
 	@Override
 	public Object getEditableValue() {
 		return this;
 	}
-	
+
 	@Override
 	public boolean isPropertySet(Object property) {
 		return false;
 	}
-	
+
 	@Override
 	public void resetPropertyValue(Object property) {
 		// do nothing
 	}
-	
-	
+
+
 	private static class AttributeDescriptor extends PropertyDescriptor {
 		private final Object fValue;
 
 		public AttributeDescriptor(String name, Object value) {
 			this("org.eclipse.jdt.jeview.IMarker." + name, name, value);
 		}
-		
+
 		protected AttributeDescriptor(String key, String name, Object value) {
 			super(key, name);
 			fValue= value;
 		}
-		
+
 		public Object getValue() {
 			return fValue;
 		}
 	}
-	
+
 	private static class ProblemIdAttributeDescriptor extends AttributeDescriptor {
 		public ProblemIdAttributeDescriptor(String key, Object value) {
 			super(key, value);
 		}
-		
+
 		@Override
 		public Object getValue() {
 			return getErrorLabel();
 		}
-		
+
 		private String getErrorLabel() {
 			int id= (Integer) super.getValue();
 			StringBuffer buf= new StringBuffer(getConstantName(id)).append(" = ");
-				
+
 			if ((id & IProblem.TypeRelated) != 0) {
 				buf.append("TypeRelated + ");
 			}
@@ -195,35 +194,32 @@ public class MarkerProperties implements IPropertySource {
 				buf.append("Javadoc + ");
 			}
 			buf.append(id & IProblem.IgnoreCategoriesMask);
-			
+
 			buf.append(" = 0x").append(Integer.toHexString(id)).append(" = ").append(id);
-			
+
 			return buf.toString();
 		}
-		
+
 		private static String getConstantName(int id) {
 			Field[] fields= IProblem.class.getFields();
-			for (int i= 0; i < fields.length; i++) {
-				Field f= fields[i];
+			for (Field f : fields) {
 				try {
 					if (f.getType() == int.class && f.getInt(f) == id) {
 						return "IProblem." + f.getName();
 					}
-				} catch (IllegalArgumentException e) {
-					// does not happen
-				} catch (IllegalAccessException e) {
+				} catch (IllegalArgumentException | IllegalAccessException e) {
 					// does not happen
 				}
 			}
 			return "<UNKNOWN CONSTANT>";
 		}
-		
+
 	}
-	
+
 	private static class MarkerPropertyDescriptor extends AttributeDescriptor {
 		public MarkerPropertyDescriptor(String key, Object value) {
 			super("org.eclipse.jdt.jeview.IMarker.property." + key, key, value);
 		}
 	}
-	
+
 }

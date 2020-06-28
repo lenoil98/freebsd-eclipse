@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -81,6 +81,13 @@ public interface IJavaLaunchConfigurationConstants {
 	 * of a main type to launch.
 	 */
 	public static final String ATTR_MAIN_TYPE_NAME = LaunchingPlugin.getUniqueIdentifier() + ".MAIN_TYPE";	 //$NON-NLS-1$
+
+	/**
+	 * Launch configuration attribute key. The value is the module name for the main type to launch.
+	 *
+	 * @since 3.17
+	 */
+	public static final String ATTR_MODULE_NAME = LaunchingPlugin.getUniqueIdentifier() + ".MODULE_NAME"; //$NON-NLS-1$
 
 	/**
 	 * Launch configuration attribute key. The value is a boolean specifying
@@ -370,6 +377,15 @@ public interface IJavaLaunchConfigurationConstants {
 	 * @since 3.10
 	 */
 	public static final String ATTR_EXCLUDE_TEST_CODE = LaunchingPlugin.getUniqueIdentifier() + ".ATTR_EXCLUDE_TEST_CODE"; //$NON-NLS-1$
+
+	/**
+	 * Launch configuration attribute key. When set, the JPMS option {@code --add-modules} will be added to the command line with the provided string
+	 * value as the option's argument. This attribute is specifically designed to support the special arguments "ALL-DEFAULT", "ALL-SYSTEM", and
+	 * "ALL-MODULE-PATH".
+	 *
+	 * @since 3.16
+	 */
+	public static final String ATTR_SPECIAL_ADD_MODULES = LaunchingPlugin.getUniqueIdentifier() + ".ATTR_SPECIAL_ADD_MODULES"; //$NON-NLS-1$
 
 	/**
 	 * @since 3.11

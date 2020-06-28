@@ -14,7 +14,6 @@
 package org.eclipse.jdt.internal.ui.javaeditor;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -74,7 +73,7 @@ public class ClassFileDocumentProvider extends FileDocumentProvider {
 
 		/**
 		 * Default constructor.
-		 * 
+		 *
 		 * @param input the class file editor input
 		 */
 		public ClassFileSynchronizer(IClassFileEditorInput input) {
@@ -112,7 +111,7 @@ public class ClassFileDocumentProvider extends FileDocumentProvider {
 
 		/**
 		 * Recursively check whether the class file has been deleted.
-		 * 
+		 *
 		 * @param input the package fragment root
 		 * @param delta the Java element delta
 		 * @return <code>true</code> if delta processing can be stopped
@@ -138,10 +137,10 @@ public class ClassFileDocumentProvider extends FileDocumentProvider {
 				return true;
 			}
 
-			IJavaElementDelta[] subdeltas= delta.getAffectedChildren();
-			for (int i= 0; i < subdeltas.length; i++) {
-				if (check(input, subdeltas[i]))
+			for (IJavaElementDelta subdelta : delta.getAffectedChildren()) {
+				if (check(input, subdelta)) {
 					return true;
+				}
 			}
 
 			if ((delta.getFlags() & IJavaElementDelta.F_SOURCEDETACHED) != 0 ||
@@ -399,18 +398,18 @@ public class ClassFileDocumentProvider extends FileDocumentProvider {
 
 	/**
 	 * Fires input changes to input change listeners.
-	 * 
+	 *
 	 * @param input the class file editor input
 	 */
 	protected void fireInputChanged(IClassFileEditorInput input) {
 		List<InputChangeListener> list= new ArrayList<>(fInputListeners);
-		for (Iterator<InputChangeListener> i = list.iterator(); i.hasNext();)
-			i.next().inputChanged(input);
+		for (InputChangeListener inputChangeListener : list)
+			inputChangeListener.inputChanged(input);
 	}
 
 	/**
 	 * Adds an input change listener.
-	 * 
+	 *
 	 * @param listener the input change listener
 	 */
 	public void addInputChangeListener(InputChangeListener listener) {
@@ -419,7 +418,7 @@ public class ClassFileDocumentProvider extends FileDocumentProvider {
 
 	/**
 	 * Removes an input change listener.
-	 * 
+	 *
 	 * @param listener the input change listener
 	 */
 	public void removeInputChangeListener(InputChangeListener listener) {

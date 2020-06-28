@@ -30,6 +30,7 @@ import org.eclipse.core.databinding.observable.list.IObservableList;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.observable.value.IVetoableValue;
 import org.eclipse.core.databinding.observable.value.ValueChangingEvent;
+import org.eclipse.jface.databinding.swt.typed.WidgetProperties;
 import org.eclipse.jface.internal.databinding.swt.SWTDelayedObservableValueDecorator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Control;
@@ -43,12 +44,13 @@ import org.eclipse.swt.widgets.Widget;
  * @deprecated
  */
 @Deprecated
+@SuppressWarnings("rawtypes")
 public class SWTObservables {
 
 	/**
 	 * Returns the realm representing the UI thread for the given display.
 	 *
-	 * @param display
+	 * @param display the display to get realm for
 	 * @return the realm representing the UI thread for the given display
 	 * @deprecated please use {@link DisplayRealm#getRealm(Display)} instead.
 	 */
@@ -75,6 +77,10 @@ public class SWTObservables {
 	 * pending will fire the value change immediately, short-circuiting the
 	 * delay.
 	 * <p>
+	 * Only updates resulting from the observed widget are delayed. Calls directly
+	 * to {@link IObservableValue#setValue} are not, and they cancel pending delayed
+	 * values.
+	 * <p>
 	 * Note that this observable will not forward {@link ValueChangingEvent}
 	 * events from a wrapped {@link IVetoableValue}.
 	 *
@@ -89,9 +95,9 @@ public class SWTObservables {
 	 * @since 1.2
 	 * @deprecated use <code>WidgetProperties</code> instead
 	 */
+	@SuppressWarnings("unchecked")
 	@Deprecated
-	public static ISWTObservableValue observeDelayedValue(int delay,
-			ISWTObservableValue observable) {
+	public static ISWTObservableValue observeDelayedValue(int delay, ISWTObservableValue observable) {
 		return new SWTDelayedObservableValueDecorator(
 				Observables.observeDelayedValue(delay, observable),
 				observable.getWidget());
@@ -109,6 +115,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param widget
+	 *            the widget to observe
 	 * @return an observable value tracking the enabled state of the given
 	 *         widget.
 	 * @since 1.5
@@ -163,6 +170,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param widget
+	 *            the widget to observe
 	 * @return an observable value tracking the tooltip text of the given item
 	 *
 	 * @since 1.3
@@ -202,6 +210,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param widget
+	 *            the widget to observe
 	 * @return observable value
 	 * @throws IllegalArgumentException
 	 *             if <code>control</code> type is unsupported
@@ -210,7 +219,7 @@ public class SWTObservables {
 	 */
 	@Deprecated
 	public static ISWTObservableValue observeSelection(Widget widget) {
-		return WidgetProperties.selection().observe(widget);
+		return WidgetProperties.widgetSelection().observe(widget);
 	}
 
 	/**
@@ -227,6 +236,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param control
+	 *            the control to observe
 	 * @return observable value
 	 * @throws IllegalArgumentException
 	 *             if <code>control</code> type is unsupported
@@ -247,6 +257,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param control
+	 *            the control to observe
 	 * @return observable value
 	 * @throws IllegalArgumentException
 	 *             if <code>control</code> type is unsupported
@@ -267,6 +278,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param control
+	 *            the control to observe
 	 * @return observable value
 	 * @throws IllegalArgumentException
 	 *             if <code>control</code> type is unsupported
@@ -286,6 +298,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param control
+	 *            the control to observe
 	 * @param events
 	 *            array of SWT event types to register for change events. May
 	 *            include {@link SWT#None}, {@link SWT#Modify},
@@ -310,6 +323,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param control
+	 *            the control to observe
 	 * @param event
 	 *            event type to register for change events
 	 * @return observable value
@@ -340,6 +354,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param widget
+	 *            the widget to observe
 	 * @return observable value
 	 * @throws IllegalArgumentException
 	 *             if the type of <code>widget</code> is unsupported
@@ -369,6 +384,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param control
+	 *            the control to observe
 	 * @return observable value
 	 * @throws IllegalArgumentException
 	 *             if <code>control</code> type is unsupported
@@ -388,6 +404,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param widget
+	 *            the widget to observe
 	 * @return an observable observing the message attribute of the provided
 	 *         <code>widget</code>.
 	 * @since 1.3
@@ -409,6 +426,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param widget
+	 *            the widget to observe
 	 * @return observable value
 	 * @throws IllegalArgumentException
 	 *             if <code>widget</code> type is unsupported
@@ -430,6 +448,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param control
+	 *            the control to observe
 	 * @return observable list
 	 * @throws IllegalArgumentException
 	 *             if <code>control</code> type is unsupported
@@ -451,14 +470,14 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param control
+	 *            the control to observe
 	 * @return observable value
 	 * @throws IllegalArgumentException
 	 *             if <code>control</code> type is unsupported
 	 * @deprecated use <code>WidgetProperties</code> instead
 	 */
 	@Deprecated
-	public static ISWTObservableValue observeSingleSelectionIndex(
-			Control control) {
+	public static ISWTObservableValue observeSingleSelectionIndex(Control control) {
 		return WidgetProperties.singleSelectionIndex().observe(control);
 	}
 
@@ -569,6 +588,7 @@ public class SWTObservables {
 	 * </ul>
 	 *
 	 * @param control
+	 *            the control to observe
 	 * @return observable value
 	 * @throws IllegalArgumentException
 	 *             if <code>control</code> type is unsupported

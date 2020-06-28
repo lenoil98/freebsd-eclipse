@@ -137,8 +137,6 @@ public class IDEWorkbenchMessages extends NLS {
 	public static String Workbench_new;
 	public static String OpenWorkspaceAction_text;
 	public static String OpenWorkspaceAction_toolTip;
-	public static String OpenWorkspaceAction_errorTitle;
-	public static String OpenWorkspaceAction_errorMessage;
 	public static String OpenWorkspaceAction_other;
 	public static String NewProjectAction_text;
 	public static String NewProjectAction_toolTip;
@@ -527,20 +525,26 @@ public class IDEWorkbenchMessages extends NLS {
 	public static String WorkbenchPreference_encoding_encodingMessage;
 
 	public static String UriHandlerPreferencePage_Warning_OtherApp;
-
 	public static String UriHandlerPreferencePage_Warning_OtherApp_Description;
+
+	public static String UriHandlerPreferencePage_Warning_OtherApp_Confirmation;
+	public static String UriHandlerPreferencePage_Warning_OtherApp_Confirmation_Description;
 
 	// --- Link Handler Preference Page ---
 	public static String UrlHandlerPreferencePage_Handler_Label;
 	public static String UrlHandlerPreferencePage_Handler_Text_No_Application;
 	public static String UrlHandlerPreferencePage_Page_Description;
+	public static String UrlHandlerPreferencePage_LoadingText;
 	public static String UrlHandlerPreferencePage_ColumnName_SchemeName;
 	public static String UrlHandlerPreferencePage_ColumnName_SchemeDescription;
 	public static String UrlHandlerPreferencePage_ColumnName_Handler;
 	public static String UrlHandlerPreferencePage_Column_Handler_Text_Current_Application;
 	public static String UrlHandlerPreferencePage_Column_Handler_Text_Other_Application;
+	public static String UriHandlerPreferencePage_Confirm_Handle;
 	public static String UrlHandlerPreferencePage_Error_Reading_Scheme;
 	public static String UrlHandlerPreferencePage_Error_Writing_Scheme;
+	public static String UrlHandlerPreferencePage_UnsupportedOperatingSystem;
+	public static String UrlHandlerPreferencePage_LauncherCannotBeDetermined;
 
 	// ---workspace ---
 	public static String IDEWorkspacePreference_autobuild;
@@ -1039,6 +1043,8 @@ public class IDEWorkbenchMessages extends NLS {
 	public static String IDEApplication_versionMessage_olderWorkspace;
 	public static String IDEApplication_version_doNotWarnAgain;
 	public static String IDEApplication_version_continue;
+	public static String IDEApplication_version_switch;
+	public static String IDEApplication_version_exit;
 	public static String GlobalBuildAction_BuildRunningTitle;
 	public static String GlobalBuildAction_BuildRunningMessage;
 	public static String CleanDialog_buildCleanAuto;
@@ -1059,7 +1065,7 @@ public class IDEWorkbenchMessages extends NLS {
 	public static String IDEEncoding_EncodingJob;
 	public static String IDEEditorsPreferencePage_WorkbenchPreference_viewsRelatedLink;
 	public static String IDEEditorsPreferencePage_WorkbenchPreference_FileEditorsRelatedLink;
-    public static String IDEEditorsPreferencePage_WorkbenchPreference_contentTypesRelatedLink;
+	public static String IDEEditorsPreferencePage_WorkbenchPreference_contentTypesRelatedLink;
 	public static String WorkbenchEncoding_invalidCharset;
 	public static String CopyProjectAction_confirm;
 	public static String CopyProjectAction_warning;

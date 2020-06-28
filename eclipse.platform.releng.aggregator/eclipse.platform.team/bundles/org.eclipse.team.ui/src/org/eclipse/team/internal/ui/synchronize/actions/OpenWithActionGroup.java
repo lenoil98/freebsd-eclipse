@@ -89,11 +89,11 @@ public class OpenWithActionGroup extends ActionGroup {
 	 */
 	private void fillOpenWithMenu(IMenuManager menu, String groupId, IStructuredSelection selection) {
 
-        // Only supported if at least one file is selected.
-        if (selection == null || selection.size() < 1)
-            return;
-        Object[] elements = selection.toArray();
-        IResource resources[] = Utils.getResources(elements);
+		// Only supported if at least one file is selected.
+		if (selection == null || selection.size() < 1)
+			return;
+		Object[] elements = selection.toArray();
+		IResource resources[] = Utils.getResources(elements);
 		if (resources.length == 0) {
 			if (openInCompareAction != null) {
 				// We can still show the compare editor open if the element has
@@ -103,8 +103,8 @@ public class OpenWithActionGroup extends ActionGroup {
 					if (participant instanceof ModelSynchronizeParticipant) {
 						ModelSynchronizeParticipant msp = (ModelSynchronizeParticipant) participant;
 						boolean allElementsHaveCompareInput = true;
-						for (int i = 0; i < elements.length; i++) {
-							if (!msp.hasCompareInputFor(elements[i])) {
+						for (Object element : elements) {
+							if (!msp.hasCompareInputFor(element)) {
 								allElementsHaveCompareInput = false;
 								break;
 							}
@@ -118,14 +118,14 @@ public class OpenWithActionGroup extends ActionGroup {
 			return;
 		}
 
-        if (elements.length != resources.length){
-        	// Only supported if all the items are resources.
-        	return;
-        }
+		if (elements.length != resources.length){
+			// Only supported if all the items are resources.
+			return;
+		}
 
-        boolean allFiles = true;
-		for (int i = 0; i < resources.length; i++) {
-			if (resources[i].getType() != IResource.FILE) {
+		boolean allFiles = true;
+		for (IResource resource : resources) {
+			if (resource.getType() != IResource.FILE) {
 				// Open actions are only supported if all the items are files.
 				allFiles = false;
 				break;
@@ -138,8 +138,8 @@ public class OpenWithActionGroup extends ActionGroup {
 			}
 		}
 
-		for (int i = 0; i < resources.length; i++) {
-			if (!resources[i].exists()) {
+		for (IResource resource : resources) {
+			if (!resource.exists()) {
 				// Only support non-compare actions if all resources exist.
 				return;
 			}
@@ -173,7 +173,7 @@ public class OpenWithActionGroup extends ActionGroup {
 			showInSubmenu.add(showInMenu);
 			menu.appendToGroup(groupId, showInSubmenu);
 		}
-    }
+	}
 
 	/**
 	 * {@link SaveablesCompareEditorInput#getShowInMenuLabel}

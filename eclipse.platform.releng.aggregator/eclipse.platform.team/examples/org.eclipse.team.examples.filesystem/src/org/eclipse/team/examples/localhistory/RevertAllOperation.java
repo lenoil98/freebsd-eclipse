@@ -27,7 +27,7 @@ public class RevertAllOperation extends SynchronizeModelOperation {
 	protected RevertAllOperation(ISynchronizePageConfiguration configuration, IDiffElement[] elements) {
 		super(configuration, elements);
 	}
-	
+
 	protected boolean canRunAsJob() {
 		return true;
 	}
@@ -35,13 +35,12 @@ public class RevertAllOperation extends SynchronizeModelOperation {
 	public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 		final SyncInfo infos[] = getSyncInfoSet().getSyncInfos();
 		if(infos.length == 0) return;
-			
+
 		WorkspaceModifyOperation operation= new WorkspaceModifyOperation() {
 			public void execute(IProgressMonitor pm) throws InvocationTargetException {
 				try {
 					pm.beginTask("Reverting from local history", 100 * infos.length);	 //$NON-NLS-1$
-					for (int i = 0; i < infos.length; i++) {
-						SyncInfo info = infos[i];
+					for (SyncInfo info : infos) {
 						LocalHistoryVariant state = (LocalHistoryVariant)info.getRemote();
 						IFile file = (IFile)info.getLocal();
 						if(file.exists()) {

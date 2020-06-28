@@ -15,6 +15,8 @@
 
 package org.eclipse.ui.tests.performance;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
 import org.eclipse.core.commands.Command;
@@ -33,82 +35,88 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.commands.ICommandService;
 import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.internal.WorkbenchPlugin;
+import org.eclipse.ui.tests.harness.util.EmptyPerspective;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-/**
- * @since 3.1
- */
+@RunWith(Parameterized.class)
 public class OpenClosePerspectiveTest extends BasicPerformanceTest {
 
-    private String id;
+	private String id;
 
-    /**
-     * @param tagging
-     * @param testName
-     */
-    public OpenClosePerspectiveTest(String id, int tagging) {
-        super("testOpenClosePerspectives:" + id, tagging);
-        this.id = id;
-    }
+	@Parameters
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] { { EmptyPerspective.PERSP_ID2, BasicPerformanceTest.NONE }, {
+				UIPerformanceTestSetup.PERSPECTIVE1,
+				BasicPerformanceTest.LOCAL },
+				{ "org.eclipse.ui.resourcePerspective", BasicPerformanceTest.NONE },
+				{ "org.eclipse.jdt.ui.JavaPerspective", BasicPerformanceTest.NONE },
+				{ "org.eclipse.debug.ui.DebugPerspective", BasicPerformanceTest.NONE } });
+	}
 
-    @Override
-	protected void runTest() throws Throwable {
-        // Get the two perspectives to switch between.
-        final IPerspectiveRegistry registry = WorkbenchPlugin.getDefault()
-                .getPerspectiveRegistry();
-        final IPerspectiveDescriptor perspective1 = registry
-                .findPerspectiveWithId(id);
+	public OpenClosePerspectiveTest(String id, int tagging) {
+		super("testOpenClosePerspectives:" + id, tagging);
+		this.id = id;
+	}
 
-        // Don't fail if we reference an unknown perspective ID. This can be
-        // a normal occurrance since the test suites reference JDT perspectives, which
-        // might not exist.
-        if (perspective1 == null) {
-            System.out.println("Unknown perspective id: " + id);
-            return;
-        }
+	@Test
+	public void test() throws Throwable {
+		// Get the two perspectives to switch between.
+		final IPerspectiveRegistry registry = WorkbenchPlugin.getDefault()
+				.getPerspectiveRegistry();
+		final IPerspectiveDescriptor perspective1 = registry
+				.findPerspectiveWithId(id);
 
-        // create a nice clean window.
-        IWorkbenchWindow window = openTestWindow();
-        final IWorkbenchPage activePage = window.getActivePage();
+		// Don't fail if we reference an unknown perspective ID. This can be
+		// a normal occurrance since the test suites reference JDT perspectives, which
+		// might not exist.
+		if (perspective1 == null) {
+			System.out.println("Unknown perspective id: " + id);
+			return;
+		}
 
-        //causes creation of all views
-        activePage.setPerspective(perspective1);
-        IViewReference [] refs = activePage.getViewReferences();
-        //get the IDs now - after we close hte perspective the view refs will be partiall disposed and their IDs will be null
-        String [] ids = new String[refs.length];
-        for (int i = 0; i < refs.length; i++) {
-            ids[i] = refs[i].getId();
-        }
-        closePerspective(activePage);
-        //populate the empty perspective with all view that will be shown in the test view
-        for (int i = 0; i < ids.length; i++) {
-            activePage.showView(ids[i]);
-        }
+		// create a nice clean window.
+		IWorkbenchWindow window = openTestWindow();
+		final IWorkbenchPage activePage = window.getActivePage();
 
-        tagIfNecessary("UI - Open/Close " + perspective1.getLabel() + " Perspective", Dimension.ELAPSED_PROCESS);
+		//causes creation of all views
+		activePage.setPerspective(perspective1);
+		IViewReference [] refs = activePage.getViewReferences();
+		//get the IDs now - after we close hte perspective the view refs will be partiall disposed and their IDs will be null
+		String [] ids = new String[refs.length];
+		for (int i = 0; i < refs.length; i++) {
+			ids[i] = refs[i].getId();
+		}
+		closePerspective(activePage);
+		//populate the empty perspective with all view that will be shown in the test view
+		for (String i : ids) {
+			activePage.showView(i);
+		}
 
-        exercise(new TestRunnable() {
-            @Override
-			public void run() throws Exception {
-                processEvents();
-                EditorTestHelper.calmDown(500, 30000, 500);
+		tagIfNecessary("UI - Open/Close " + perspective1.getLabel() + " Perspective", Dimension.ELAPSED_PROCESS);
 
-                startMeasuring();
-                activePage.setPerspective(perspective1);
-                processEvents();
-                closePerspective(activePage);
-                processEvents();
-                stopMeasuring();
-            }
-        });
+		exercise(() -> {
+			processEvents();
+			EditorTestHelper.calmDown(500, 30000, 500);
 
-        commitMeasurements();
-        assertPerformance();
-    }
+			startMeasuring();
+			activePage.setPerspective(perspective1);
+			processEvents();
+			closePerspective(activePage);
+			processEvents();
+			stopMeasuring();
+		});
 
-    /**
-     * @param activePage
-     */
-    private void closePerspective(IWorkbenchPage activePage) {
+		commitMeasurements();
+		assertPerformance();
+	}
+
+	/**
+	 * @param activePage
+	 */
+	private void closePerspective(IWorkbenchPage activePage) {
 		IPerspectiveDescriptor persp = activePage.getPerspective();
 
 		ICommandService commandService = fWorkbench
@@ -116,7 +124,7 @@ public class OpenClosePerspectiveTest extends BasicPerformanceTest {
 		Command command = commandService
 				.getCommand("org.eclipse.ui.window.closePerspective");
 
-		HashMap<String, String> parameters = new HashMap<String, String>();
+		HashMap<String, String> parameters = new HashMap<>();
 		parameters.put(IWorkbenchCommandConstants.WINDOW_CLOSE_PERSPECTIVE_PARM_ID,
 				persp.getId());
 
@@ -127,10 +135,7 @@ public class OpenClosePerspectiveTest extends BasicPerformanceTest {
 				.getService(IHandlerService.class);
 		try {
 			handlerService.executeCommand(pCommand, null);
-		} catch (ExecutionException e1) {
-		} catch (NotDefinedException e1) {
-		} catch (NotEnabledException e1) {
-		} catch (NotHandledException e1) {
+		} catch (ExecutionException | NotDefinedException | NotEnabledException | NotHandledException e1) {
 		}
 
 	}

@@ -72,6 +72,7 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
+import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 
 
@@ -256,6 +257,25 @@ public class TrimStack {
 		}
 	}
 
+	@Inject
+	@Optional
+	private void subscribeTopicIconUriChanged(@UIEventTopic(UIEvents.UILabel.TOPIC_ICONURI) Event event) {
+		// Prevent exceptions on shutdown
+		if (trimStackTB == null || trimStackTB.isDisposed() || minimizedElement.getWidget() == null) {
+			return;
+		}
+
+		Object changedElement = event.getProperty(UIEvents.EventTags.ELEMENT);
+		if (!(changedElement instanceof MUIElement)) {
+			return;
+		}
+
+		ToolItem toolItem = getChangedToolItem((MUIElement) changedElement);
+		if (toolItem != null) {
+			toolItem.setImage(getImage((MUILabel) toolItem.getData()));
+		}
+	}
+
 	private ToolItem getChangedToolItem(MUIElement changedElement) {
 		ToolItem[] toolItems = trimStackTB.getItems();
 		for (ToolItem toolItem : toolItems) {
@@ -429,7 +449,7 @@ public class TrimStack {
 		// if one of the kids changes state, re-scrape the CTF
 		MUIElement parentElement = changedElement.getParent();
 		if (parentElement == minimizedElement) {
-			trimStackTB.getDisplay().asyncExec(() -> updateTrimStackItems());
+			trimStackTB.getDisplay().asyncExec(this::updateTrimStackItems);
 		}
 	};
 
@@ -447,7 +467,7 @@ public class TrimStack {
 
 		// if a child has been added or removed, re-scape the CTF
 		if (changedObj == minimizedElement) {
-			trimStackTB.getDisplay().asyncExec(() -> updateTrimStackItems());
+			trimStackTB.getDisplay().asyncExec(this::updateTrimStackItems);
 		}
 	};
 
@@ -463,7 +483,7 @@ public class TrimStack {
 		}
 
 		if (minimizedElement.getWidget() != null) {
-			trimStackTB.getDisplay().asyncExec(() -> updateTrimStackItems());
+			trimStackTB.getDisplay().asyncExec(this::updateTrimStackItems);
 		}
 	};
 
@@ -567,7 +587,7 @@ public class TrimStack {
 				orientation = SWT.VERTICAL;
 			}
 			// TrimStacks are draggable by default
-			 me.getTags().add(IPresentationEngine.DRAGGABLE);
+			me.getTags().add(IPresentationEngine.DRAGGABLE);
 		}
 		trimStackTB = new ToolBar(parent, orientation | SWT.FLAT | SWT.WRAP);
 		trimStackTB.addDisposeListener(e -> {

@@ -151,6 +151,7 @@ public class SignedBundleHook implements ActivatorHookFactory, BundleFileWrapper
 		}
 	}
 
+	@Override
 	public BundleFileWrapper wrapBundleFile(BundleFile bundleFile, Generation generation, boolean base) {
 		try {
 			if (bundleFile != null) {
@@ -173,27 +174,27 @@ public class SignedBundleHook implements ActivatorHookFactory, BundleFileWrapper
 					return new BundleFileWrapper(signedBaseFile);
 				}
 			}
-		} catch (IOException e) {
-			log("Bad bundle file: " + bundleFile.getBaseFile(), FrameworkLogEntry.WARNING, e); //$NON-NLS-1$
-		} catch (GeneralSecurityException e) {
+		} catch (IOException | GeneralSecurityException e) {
 			log("Bad bundle file: " + bundleFile.getBaseFile(), FrameworkLogEntry.WARNING, e); //$NON-NLS-1$
 		}
 		return null;
 	}
 
+	@Override
 	public void addHooks(HookRegistry hookRegistry) {
 		container = hookRegistry.getContainer();
 		hookRegistry.addActivatorHookFactory(this);
-		String[] support = ManifestElement.getArrayFromList(hookRegistry.getConfiguration().getConfiguration(SIGNED_CONTENT_SUPPORT, hookRegistry.getConfiguration().getConfiguration(SIGNED_BUNDLE_SUPPORT)), ","); //$NON-NLS-1$
-		for (int i = 0; i < support.length; i++) {
-			if (SUPPORT_CERTIFICATE.equals(support[i]))
+		String[] supportOptions = ManifestElement.getArrayFromList(hookRegistry.getConfiguration().getConfiguration(SIGNED_CONTENT_SUPPORT, hookRegistry.getConfiguration().getConfiguration(SIGNED_BUNDLE_SUPPORT)), ","); //$NON-NLS-1$
+		for (String supportOption : supportOptions) {
+			if (SUPPORT_CERTIFICATE.equals(supportOption)) {
 				supportSignedBundles |= VERIFY_CERTIFICATE;
-			else if (SUPPORT_TRUST.equals(support[i]))
+			} else if (SUPPORT_TRUST.equals(supportOption)) {
 				supportSignedBundles |= VERIFY_CERTIFICATE | VERIFY_TRUST;
-			else if (SUPPORT_RUNTIME.equals(support[i]))
+			} else if (SUPPORT_RUNTIME.equals(supportOption)) {
 				supportSignedBundles |= VERIFY_CERTIFICATE | VERIFY_RUNTIME;
-			else if (SUPPORT_TRUE.equals(support[i]) || SUPPORT_ALL.equals(support[i]))
+			} else if (SUPPORT_TRUE.equals(supportOption) || SUPPORT_ALL.equals(supportOption)) {
 				supportSignedBundles |= VERIFY_ALL;
+			}
 		}
 		trustEngineNameProp = hookRegistry.getConfiguration().getConfiguration(SignedContentConstants.TRUST_ENGINE);
 
@@ -203,6 +204,7 @@ public class SignedBundleHook implements ActivatorHookFactory, BundleFileWrapper
 		}
 	}
 
+	@Override
 	public SignedContent getSignedContent(File content) throws IOException, InvalidKeyException, SignatureException, CertificateException, NoSuchAlgorithmException, NoSuchProviderException {
 		if (content == null)
 			throw new IllegalArgumentException("null content"); //$NON-NLS-1$
@@ -233,6 +235,7 @@ public class SignedBundleHook implements ActivatorHookFactory, BundleFileWrapper
 		return new SignedContentFile(result.getSignedContent());
 	}
 
+	@Override
 	public SignedContent getSignedContent(Bundle bundle) throws IOException, InvalidKeyException, SignatureException, CertificateException, NoSuchAlgorithmException, NoSuchProviderException, IllegalArgumentException {
 		final Generation generation = (Generation) ((EquinoxBundle) bundle).getModule().getCurrentRevision().getRevisionInfo();
 		StorageHookImpl hook = generation.getStorageHook(SignedStorageHook.class);
@@ -244,6 +247,7 @@ public class SignedBundleHook implements ActivatorHookFactory, BundleFileWrapper
 			return getSignedContent(generation.getBundleFile().getBaseFile());
 		try {
 			return AccessController.doPrivileged(new PrivilegedExceptionAction<SignedContent>() {
+		    @Override
 				public SignedContent run() throws Exception {
 					return getSignedContent(generation.getBundleFile().getBaseFile());
 				}
@@ -330,17 +334,17 @@ public class SignedBundleHook implements ActivatorHookFactory, BundleFileWrapper
 	void determineTrust(SignedContentImpl trustedContent, int supportFlags) {
 		TrustEngine[] engines = null;
 		SignerInfo[] signers = trustedContent.getSignerInfos();
-		for (int i = 0; i < signers.length; i++) {
+		for (SignerInfo signer : signers) {
 			// first check if we need to find an anchor
-			if (signers[i].getTrustAnchor() == null) {
+			if (signer.getTrustAnchor() == null) {
 				// no anchor set ask the trust engines
 				if (engines == null)
 					engines = getTrustEngines();
 				// check trust of singer certs
-				Certificate[] signerCerts = signers[i].getCertificateChain();
-				((SignerInfoImpl) signers[i]).setTrustAnchor(findTrustAnchor(signerCerts, engines, supportFlags));
+				Certificate[] signerCerts = signer.getCertificateChain();
+				((SignerInfoImpl) signer).setTrustAnchor(findTrustAnchor(signerCerts, engines, supportFlags));
 				// if signer has a tsa check trust of tsa certs
-				SignerInfo tsaSignerInfo = trustedContent.getTSASignerInfo(signers[i]);
+				SignerInfo tsaSignerInfo = trustedContent.getTSASignerInfo(signer);
 				if (tsaSignerInfo != null) {
 					Certificate[] tsaCerts = tsaSignerInfo.getCertificateChain();
 					((SignerInfoImpl) tsaSignerInfo).setTrustAnchor(findTrustAnchor(tsaCerts, engines, supportFlags));
@@ -353,17 +357,17 @@ public class SignedBundleHook implements ActivatorHookFactory, BundleFileWrapper
 		if ((supportFlags & SignedBundleHook.VERIFY_TRUST) == 0)
 			// we are not searching the engines; in this case we just assume the root cert is trusted
 			return certs != null && certs.length > 0 ? certs[certs.length - 1] : null;
-		for (int i = 0; i < engines.length; i++) {
-			try {
-				Certificate anchor = engines[i].findTrustAnchor(certs);
-				if (anchor != null)
-					// found an anchor
-					return anchor;
-			} catch (IOException e) {
-				// log the exception and continue
-				log("TrustEngine failure: " + engines[i].getName(), FrameworkLogEntry.WARNING, e); //$NON-NLS-1$
+			for (TrustEngine engine : engines) {
+				try {
+					Certificate anchor = engine.findTrustAnchor(certs);
+					if (anchor != null)
+						// found an anchor
+						return anchor;
+				} catch (IOException e) {
+					// log the exception and continue
+					log("TrustEngine failure: " + engine.getName(), FrameworkLogEntry.WARNING, e); //$NON-NLS-1$
+				}
 			}
-		}
-		return null;
+			return null;
 	}
 }

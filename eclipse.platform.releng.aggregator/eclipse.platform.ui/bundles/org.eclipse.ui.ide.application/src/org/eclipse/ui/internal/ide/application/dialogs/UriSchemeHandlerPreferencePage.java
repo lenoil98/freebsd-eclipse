@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2018 SAP SE and others.
+* Copyright (c) 2018, 2019 SAP SE and others.
 * All rights reserved. This program and the accompanying materials
 * are made available under the terms of the Eclipse Public License v1.0
 * which accompanies this distribution, and is available at
@@ -10,13 +10,36 @@
 *******************************************************************************/
 package org.eclipse.ui.internal.ide.application.dialogs;
 
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UriHandlerPreferencePage_Confirm_Handle;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp_Confirmation;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp_Confirmation_Description;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp_Description;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_ColumnName_Handler;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_ColumnName_SchemeDescription;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_ColumnName_SchemeName;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_Column_Handler_Text_Current_Application;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_Column_Handler_Text_Other_Application;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_Error_Reading_Scheme;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_Error_Writing_Scheme;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_Handler_Label;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_Handler_Text_No_Application;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_LauncherCannotBeDetermined;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_LoadingText;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_Page_Description;
+import static org.eclipse.ui.internal.ide.IDEWorkbenchMessages.UrlHandlerPreferencePage_UnsupportedOperatingSystem;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
@@ -33,13 +56,15 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.widgets.TableColumnFactory;
+import org.eclipse.jface.widgets.WidgetFactory;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -48,7 +73,6 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.IWorkbenchHelpContextIds;
-import org.eclipse.ui.internal.ide.IDEWorkbenchMessages;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.statushandlers.StatusManager;
 import org.eclipse.urischeme.IOperatingSystemRegistration;
@@ -71,13 +95,16 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 	IMessageDialogWrapper messageDialogWrapper = new IMessageDialogWrapper() {
 	};
 
+	OsRegistrationReadingJob osRegistrationReadingJob = new OsRegistrationReadingJob();
+
 	IOperatingSystemRegistration operatingSystemRegistration = null;
 	IUriSchemeExtensionReader extensionReader = null;
 	private Composite handlerComposite;
+	private volatile boolean isLoading = false;
 
 	@SuppressWarnings("javadoc")
 	public UriSchemeHandlerPreferencePage() {
-		super.setDescription(IDEWorkbenchMessages.UrlHandlerPreferencePage_Page_Description);
+		super.setDescription(UrlHandlerPreferencePage_Page_Description);
 	}
 
 	@Override
@@ -104,46 +131,63 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 		addFiller(parent);
 		createTableViewerForSchemes(parent);
 		createHandlerLocationControls(parent);
+
+		if (operatingSystemRegistration == null) {
+			setErrorMessage(NLS.bind(UrlHandlerPreferencePage_UnsupportedOperatingSystem,
+					Platform.isRunning() ? Platform.getOS() : null)); // running check for plain JUnit tests
+			setDataOnTableViewer(Collections.emptyList());
+
+		} else if (currentLocation == null) {
+			setErrorMessage(UrlHandlerPreferencePage_LauncherCannotBeDetermined);
+			setDataOnTableViewer(Collections.emptyList());
+
+		} else {
+			setDataOnTableViewer(getLoadingSchemeInformationList());
+			startRegistrationReadingJob();
+		}
+		tableViewer.getControl().setEnabled(false);
+
 		return parent;
+	}
+
+	private void startRegistrationReadingJob() {
+		isLoading = true;
+		osRegistrationReadingJob.setSystem(true);
+		osRegistrationReadingJob.schedule();
 	}
 
 	private void addFiller(Composite composite) {
 		PixelConverter pixelConverter = new PixelConverter(composite);
-		Label filler = new Label(composite, SWT.LEFT);
 		GridData gd = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
 		gd.horizontalSpan = 2;
 		gd.heightHint = pixelConverter.convertHeightInCharsToPixels(1) / 2;
-		filler.setLayoutData(gd);
+
+		WidgetFactory.label(SWT.LEFT).layoutData(gd).create(composite);
 	}
 
 	private void createTableViewerForSchemes(Composite parent) {
-		Composite tableComposite = new Composite(parent, SWT.NONE);
-		GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		gridData.horizontalSpan = 2;
-		gridData.horizontalIndent = 0;
-		tableComposite.setLayoutData(gridData);
-		Table schemeTable = new Table(tableComposite,
-				SWT.H_SCROLL | SWT.V_SCROLL | SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION | SWT.CHECK);
-		schemeTable.setHeaderVisible(true);
-		schemeTable.setLinesVisible(true);
-		schemeTable.setFont(parent.getFont());
+		GridDataFactory gridDataFactory = GridDataFactory.fillDefaults().grab(true, true);
+		gridDataFactory.span(2, 1).indent(0, SWT.DEFAULT);
 
-		// Table columns, Scheme name and Scheme Descriptions
-		TableColumnLayout tableColumnlayout = new TableColumnLayout();
-		tableComposite.setLayout(tableColumnlayout);
+		TableColumnLayout tableColumnLayout = new TableColumnLayout();
 
-		TableColumn nameColumn = new TableColumn(schemeTable, SWT.NONE, 0);
-		nameColumn.setText(IDEWorkbenchMessages.UrlHandlerPreferencePage_ColumnName_SchemeName);
+		Composite tableComposite = WidgetFactory.composite(SWT.NONE).layoutData(gridDataFactory.create())
+				.layout(tableColumnLayout).create(parent);
 
-		TableColumn descriptionColumn = new TableColumn(schemeTable, SWT.NONE, 1);
-		descriptionColumn.setText(IDEWorkbenchMessages.UrlHandlerPreferencePage_ColumnName_SchemeDescription);
+		Table schemeTable = WidgetFactory
+				.table(SWT.H_SCROLL | SWT.V_SCROLL | SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION | SWT.CHECK)
+				.headerVisible(true).linesVisible(true).font(parent.getFont()).create(tableComposite);
 
-		TableColumn appColumn = new TableColumn(schemeTable, SWT.NONE, 2);
-		appColumn.setText(IDEWorkbenchMessages.UrlHandlerPreferencePage_ColumnName_Handler);
+		TableColumnFactory columnFactory = WidgetFactory.tableColumn(SWT.NONE);
 
-		tableColumnlayout.setColumnData(nameColumn, new ColumnWeightData(20));
-		tableColumnlayout.setColumnData(descriptionColumn, new ColumnWeightData(60));
-		tableColumnlayout.setColumnData(appColumn, new ColumnWeightData(20));
+		TableColumn nameColumn = columnFactory.text(UrlHandlerPreferencePage_ColumnName_SchemeName).create(schemeTable);
+		TableColumn descriptionColumn = columnFactory.text(UrlHandlerPreferencePage_ColumnName_SchemeDescription)
+				.create(schemeTable);
+		TableColumn appColumn = columnFactory.text(UrlHandlerPreferencePage_ColumnName_Handler).create(schemeTable);
+
+		tableColumnLayout.setColumnData(nameColumn, new ColumnWeightData(20));
+		tableColumnLayout.setColumnData(descriptionColumn, new ColumnWeightData(60));
+		tableColumnLayout.setColumnData(appColumn, new ColumnWeightData(20));
 
 		tableViewer = new CheckboxTableViewer(schemeTable);
 		tableViewer.setContentProvider(ArrayContentProvider.getInstance());
@@ -152,16 +196,10 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 		TableSchemeSelectionListener listener = new TableSchemeSelectionListener();
 		tableViewer.addSelectionChangedListener(listener);
 		tableViewer.addCheckStateListener(listener);
+	}
 
-		Collection<UiSchemeInformation> schemeInformationList = Collections.emptyList();
+	private void setDataOnTableViewer(Collection<UiSchemeInformation> schemeInformationList) {
 		// Gets the schemes from extension points for URI schemes
-		try {
-			schemeInformationList = retrieveSchemeInformationList();
-		} catch (Exception e) {
-			IStatus status = new Status(IStatus.ERROR, IDEWorkbenchPlugin.IDE_WORKBENCH, 1,
-					IDEWorkbenchMessages.UrlHandlerPreferencePage_Error_Reading_Scheme, e);
-			statusManagerWrapper.handle(status, StatusManager.BLOCK | StatusManager.LOG);
-		}
 		tableViewer.setInput(schemeInformationList);
 
 		for (UiSchemeInformation schemeInformation : schemeInformationList) {
@@ -174,10 +212,10 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 		GridLayoutFactory.fillDefaults().numColumns(2).applyTo(handlerComposite);
 		GridDataFactory.fillDefaults().grab(true, false).applyTo(handlerComposite);
 
-		new Label(handlerComposite, SWT.NONE).setText(IDEWorkbenchMessages.UrlHandlerPreferencePage_Handler_Label);
+		WidgetFactory.label(SWT.NONE).text(UrlHandlerPreferencePage_Handler_Label).create(handlerComposite);
 
-		handlerLocation = new Text(handlerComposite, SWT.READ_ONLY | SWT.BORDER);
-		handlerLocation.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		handlerLocation = WidgetFactory.text(SWT.READ_ONLY | SWT.BORDER)
+				.layoutData(new GridData(SWT.FILL, SWT.CENTER, true, false)).create(handlerComposite);
 
 		handlerComposite.setVisible(false); // set visible on table selection
 	}
@@ -189,26 +227,34 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 	 * @return the supported and registered URI schemes of this instance of eclipse
 	 * @throws Exception
 	 */
-	private Collection<UiSchemeInformation> retrieveSchemeInformationList() throws Exception {
+	private Collection<UiSchemeInformation> retrieveSchemeInformationList() {
 		Collection<UiSchemeInformation> returnList = new ArrayList<>();
 		Collection<IScheme> schemes = extensionReader.getSchemes();
-		if (operatingSystemRegistration != null) {
+		try {
 			for (ISchemeInformation info : operatingSystemRegistration.getSchemesInformation(schemes)) {
 				returnList.add(new UiSchemeInformation(info.isHandled(), info));
 			}
+		} catch (Exception e) {
+			IStatus status = new Status(IStatus.ERROR, IDEWorkbenchPlugin.IDE_WORKBENCH, 1,
+					UrlHandlerPreferencePage_Error_Reading_Scheme, e);
+			statusManagerWrapper.handle(status, StatusManager.BLOCK | StatusManager.LOG);
 		}
 		return returnList;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.jface.preference.PreferencePage#performOk()
-	 */
+	private Collection<UiSchemeInformation> getLoadingSchemeInformationList() {
+		Collection<UiSchemeInformation> returnList = new ArrayList<>();
+		Collection<IScheme> schemes = extensionReader.getSchemes();
+		for (IScheme scheme : schemes) {
+			returnList.add(new LoadingSchemeInformation(scheme));
+		}
+		return returnList;
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public boolean performOk() {
-		if (operatingSystemRegistration == null) {
+		if (operatingSystemRegistration == null || currentLocation == null || isLoading) {
 			return true;
 		}
 
@@ -227,33 +273,19 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 			operatingSystemRegistration.handleSchemes(toAdd, toRemove);
 		} catch (Exception e) {
 			IStatus status = new Status(IStatus.ERROR, IDEWorkbenchPlugin.IDE_WORKBENCH, 1,
-					IDEWorkbenchMessages.UrlHandlerPreferencePage_Error_Writing_Scheme, e);
+					UrlHandlerPreferencePage_Error_Writing_Scheme, e);
 			statusManagerWrapper.handle(status, StatusManager.BLOCK | StatusManager.LOG);
 		}
 		return true;
 	}
 
 	private class TableSchemeSelectionListener implements ICheckStateListener, ISelectionChangedListener {
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * org.eclipse.jface.viewers.ISelectionChangedListener#selectionChanged(org.
-		 * eclipse.jface.viewers.SelectionChangedEvent)
-		 */
 		@Override
 		public void selectionChanged(SelectionChangedEvent event) {
 			handleSelection();
 
 		}
 
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * org.eclipse.jface.viewers.ICheckStateListener#checkStateChanged(org.eclipse.
-		 * jface.viewers.CheckStateChangedEvent)
-		 */
 		@Override
 		public void checkStateChanged(CheckStateChangedEvent event) {
 			handleCheckbox(event);
@@ -280,28 +312,36 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 				// - no other handler handles it
 				// - or this eclipse handled it before (checkbox was unchecked but not yet
 				// applied)
-				handlerLocation.setText(IDEWorkbenchMessages.UrlHandlerPreferencePage_Handler_Text_No_Application);
+				handlerLocation.setText(UrlHandlerPreferencePage_Handler_Text_No_Application);
 			}
 		}
 
 		private void handleCheckbox(CheckStateChangedEvent event) {
 			UiSchemeInformation schemeInformation = (UiSchemeInformation) event.getElement();
-
 			if (event.getChecked() && schemeIsHandledByOther(schemeInformation.information)) {
-				// macOS: As lsregister always registers all plist files we cannot set a handler
-				// for a scheme that is already handled by another application.
-				// For Windows and Linux this might work - needs to be tested.
-				// As we think this is a edge case we start with a restrictive implementation.
-				schemeInformation.checked = false;
-				tableViewer.setChecked(schemeInformation, schemeInformation.checked);
+				if (operatingSystemRegistration.canOverwriteOtherApplicationsRegistration()) {
+					boolean answer = messageDialogWrapper.openQuestion(getShell(),
+							UriHandlerPreferencePage_Warning_OtherApp_Confirmation,
+							NLS.bind(UriHandlerPreferencePage_Warning_OtherApp_Confirmation_Description,
+									schemeInformation.information.getHandlerInstanceLocation(),
+									schemeInformation.information.getName()));
+					if (answer == false) {
+						schemeInformation.checked = false;
+						tableViewer.setChecked(schemeInformation, schemeInformation.checked);
+						return;
+					}
+				} else {
+					schemeInformation.checked = false;
+					tableViewer.setChecked(schemeInformation, schemeInformation.checked);
 
-				messageDialogWrapper.openWarning(getShell(),
-						IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp,
-						NLS.bind(IDEWorkbenchMessages.UriHandlerPreferencePage_Warning_OtherApp_Description,
-								schemeInformation.information.getHandlerInstanceLocation(),
-								schemeInformation.information.getName()));
+					messageDialogWrapper.openWarning(getShell(), UriHandlerPreferencePage_Warning_OtherApp,
+							NLS.bind(UriHandlerPreferencePage_Warning_OtherApp_Description,
+									schemeInformation.information.getHandlerInstanceLocation(),
+									schemeInformation.information.getName()));
 
-				return;
+					return;
+				}
+
 			}
 			schemeInformation.checked = event.getChecked();
 			setSchemeDetails(schemeInformation);
@@ -329,16 +369,18 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 				UiSchemeInformation schemeInfo = (UiSchemeInformation) element;
 				switch (columnIndex) {
 				case 0:
-					return schemeInfo.information.getName();
+					return schemeInfo.getName();
+
 				case 1:
-					return schemeInfo.information.getDescription();
+					return schemeInfo.getDescription();
 				case 2:
 					String text = ""; //$NON-NLS-1$
-					if (schemeInfo.checked) {
-						text = IDEWorkbenchMessages.UrlHandlerPreferencePage_Column_Handler_Text_Current_Application;
-
+					if (UrlHandlerPreferencePage_LoadingText.equals(schemeInfo.getHandlerInstanceLocation()))
+						text = schemeInfo.getHandlerInstanceLocation();
+					else if (schemeInfo.isChecked()) {
+						text = UrlHandlerPreferencePage_Column_Handler_Text_Current_Application;
 					} else if (schemeIsHandledByOther(schemeInfo.information)) {
-						text = IDEWorkbenchMessages.UrlHandlerPreferencePage_Column_Handler_Text_Other_Application;
+						text = UrlHandlerPreferencePage_Column_Handler_Text_Other_Application;
 					}
 					return text;
 				default:
@@ -354,7 +396,7 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 		}
 	}
 
-	final static class UiSchemeInformation {
+	static class UiSchemeInformation {
 		public boolean checked;
 		public ISchemeInformation information;
 
@@ -362,6 +404,53 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 			this.checked = checked;
 			this.information = information;
 		}
+
+		public String getHandlerInstanceLocation() {
+			return information.getHandlerInstanceLocation();
+		}
+
+		public String getName() {
+			return information.getName();
+		}
+
+		public String getDescription() {
+			return information.getDescription();
+		}
+
+		public boolean isChecked() {
+			return checked;
+		}
+	}
+
+	final static class LoadingSchemeInformation extends UiSchemeInformation {
+
+		private IScheme scheme;
+
+		public LoadingSchemeInformation(IScheme scheme) {
+			super(false, null);
+			this.scheme = scheme;
+		}
+
+		@Override
+		public String getName() {
+			return scheme.getName();
+		}
+
+		@Override
+		public String getDescription() {
+			return scheme.getDescription();
+		}
+
+		@Override
+		public String getHandlerInstanceLocation() {
+			return UrlHandlerPreferencePage_LoadingText;
+		}
+
+		@Override
+		public boolean isChecked() {
+			return false;
+		}
+
 	}
 
 	interface IStatusManagerWrapper {
@@ -374,5 +463,40 @@ public class UriSchemeHandlerPreferencePage extends PreferencePage implements IW
 		default void openWarning(Shell shell, String title, String message) {
 			MessageDialog.openWarning(shell, title, message);
 		}
+
+		default boolean openQuestion(Shell parent, String title, String message) {
+			MessageDialog dlg = new MessageDialog(parent, title, null, message, MessageDialog.CONFIRM, 0,
+					UriHandlerPreferencePage_Confirm_Handle, IDialogConstants.CANCEL_LABEL);
+			dlg.open();
+			if (dlg.getReturnCode() != IDialogConstants.OK_ID) {
+				return false;
+			}
+			return true;
+		}
 	}
+
+	class OsRegistrationReadingJob extends Job {
+		private OsRegistrationReadingJob() {
+			super("Retrieving Link Handlers registration status from Operating System"); //$NON-NLS-1$
+		}
+
+		@Override
+		protected IStatus run(IProgressMonitor monitor) {
+			try {
+				Collection<UiSchemeInformation> schemeInformationList = retrieveSchemeInformationList();
+				if (!schemeInformationList.isEmpty()) {
+					Display.getDefault().asyncExec(() -> {
+						if (!UriSchemeHandlerPreferencePage.this.tableViewer.getControl().isDisposed()) {
+							setDataOnTableViewer(schemeInformationList);
+							UriSchemeHandlerPreferencePage.this.tableViewer.getControl().setEnabled(true);
+						}
+					});
+				}
+			} finally {
+				UriSchemeHandlerPreferencePage.this.isLoading = false;
+			}
+			return Status.OK_STATUS;
+		}
+	}
+
 }

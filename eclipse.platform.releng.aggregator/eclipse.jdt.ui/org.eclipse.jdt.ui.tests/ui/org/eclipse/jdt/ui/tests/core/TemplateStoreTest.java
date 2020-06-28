@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,14 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Rule;
+import org.junit.Test;
+
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
 import org.eclipse.text.templates.TemplatePersistenceData;
@@ -24,36 +32,14 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.internal.core.manipulation.CodeTemplateContextType;
 import org.eclipse.jdt.internal.core.manipulation.ProjectTemplateStore;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 public class TemplateStoreTest extends CoreTests {
 
-	private static final Class<TemplateStoreTest> THIS= TemplateStoreTest.class;
+	@Rule
+	public ProjectTestSetup pts= new ProjectTestSetup();
 
 	private IJavaProject fJProject1;
-
-	public TemplateStoreTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-
-	@Override
-	protected void setUp() throws Exception {
-	}
-
-
-	@Override
-	protected void tearDown() throws Exception {
-	}
 
 	private static final String[] ALL_CODE_TEMPLATES= new String[] {
 		CodeTemplateContextType.CATCHBLOCK_ID,
@@ -67,6 +53,7 @@ public class TemplateStoreTest extends CoreTests {
 		CodeTemplateContextType.CLASSBODY_ID,
 		CodeTemplateContextType.INTERFACEBODY_ID,
 		CodeTemplateContextType.ENUMBODY_ID,
+		CodeTemplateContextType.RECORDBODY_ID,
 		CodeTemplateContextType.ANNOTATIONBODY_ID,
 		CodeTemplateContextType.FIELDCOMMENT_ID,
 		CodeTemplateContextType.METHODCOMMENT_ID,
@@ -75,29 +62,30 @@ public class TemplateStoreTest extends CoreTests {
 		CodeTemplateContextType.DELEGATECOMMENT_ID,
 		CodeTemplateContextType.GETTERCOMMENT_ID,
 		CodeTemplateContextType.SETTERCOMMENT_ID,
+		CodeTemplateContextType.MODULECOMMENT_ID,
 	};
 
 	private TemplatePersistenceData find(String id, TemplatePersistenceData[] templateData) {
-		for (int i= 0; i < templateData.length; i++) {
-			if (templateData[i].getId().equals(id)) {
-				return templateData[i];
+		for (TemplatePersistenceData t : templateData) {
+			if (t.getId().equals(id)) {
+				return t;
 			}
 		}
 		return null;
 	}
 
+	@Test
 	public void testInstanceCodeTemplates() throws Exception {
 		ProjectTemplateStore store= new ProjectTemplateStore(null);
 		store.load();
 		TemplatePersistenceData[] allTemplateDatas= store.getTemplateData();
 		assertEquals(ALL_CODE_TEMPLATES.length, allTemplateDatas.length);
-		for (int i= 0; i < ALL_CODE_TEMPLATES.length; i++) {
+		for (String t : ALL_CODE_TEMPLATES) {
 			// get it from the array
-			TemplatePersistenceData fromArray=  find(ALL_CODE_TEMPLATES[i], allTemplateDatas);
+			TemplatePersistenceData fromArray= find(t, allTemplateDatas);
 			assertNotNull(fromArray);
-
 			// get it from the store by id
-			Template fromStore=  store.findTemplateById(ALL_CODE_TEMPLATES[i]);
+			Template fromStore= store.findTemplateById(t);
 			assertNotNull(fromStore);
 			assertEquals(fromArray.getTemplate().getPattern(), fromStore.getPattern());
 		}
@@ -117,6 +105,7 @@ public class TemplateStoreTest extends CoreTests {
 	}
 
 
+	@Test
 	public void testProjectCodeTemplates1() throws Exception {
 		fJProject1= JavaProjectHelper.createJavaProject("TestProject1", "bin");
 		try {
@@ -128,17 +117,16 @@ public class TemplateStoreTest extends CoreTests {
 
 			TemplatePersistenceData[] allTemplateDatas= projectStore.getTemplateData();
 			assertEquals(ALL_CODE_TEMPLATES.length, allTemplateDatas.length);
-			for (int i= 0; i < ALL_CODE_TEMPLATES.length; i++) {
+			for (String t : ALL_CODE_TEMPLATES) {
 				// get it from the array
-				TemplatePersistenceData fromArray=  find(ALL_CODE_TEMPLATES[i], allTemplateDatas);
+				TemplatePersistenceData fromArray= find(t, allTemplateDatas);
 				assertNotNull(fromArray);
 				// get it from the store by id
-				Template fromStore=  projectStore.findTemplateById(ALL_CODE_TEMPLATES[i]);
+				Template fromStore= projectStore.findTemplateById(t);
 				assertNotNull(fromStore);
 				assertEquals(fromArray.getTemplate().getPattern(), fromStore.getPattern());
-
 				// equal to instance
-				Template fromInstance=  instanceStore.findTemplateById(ALL_CODE_TEMPLATES[i]);
+				Template fromInstance= instanceStore.findTemplateById(t);
 				assertNotNull(fromInstance);
 				assertEquals(fromInstance.getPattern(), fromStore.getPattern());
 			}
@@ -185,6 +173,7 @@ public class TemplateStoreTest extends CoreTests {
 	}
 
 
+	@Test
 	public void testProjectCodeTemplates2() throws Exception {
 		fJProject1= JavaProjectHelper.createJavaProject("TestProject1", "bin");
 		try {
@@ -225,6 +214,5 @@ public class TemplateStoreTest extends CoreTests {
 			JavaProjectHelper.delete(fJProject1);
 		}
 	}
-
 
 }

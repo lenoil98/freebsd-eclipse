@@ -136,13 +136,13 @@ public class FileSystemTableProvider {
 		private boolean reversed = false;
 		private int columnNumber;
 
-		// column headings:	"Type" "Date" 
+		// column headings:	"Type" "Date"
 		private int[][] SORT_ORDERS_BY_COLUMN = { {COL_DATE, COL_TYPE} /* date */, {COL_TYPE, COL_DATE} /* type */
 		};
 
 		/**
 		 * The constructor.
-		 * @param columnNumber 
+		 * @param columnNumber
 		 */
 		public HistorySorter(int columnNumber) {
 			this.columnNumber = columnNumber;
@@ -154,7 +154,7 @@ public class FileSystemTableProvider {
 		 */
 		public int compare(Viewer compareViewer, Object o1, Object o2) {
 			/*if (o1 instanceof AbstractCVSHistoryCategory || o2 instanceof AbstractCVSHistoryCategory)
-			 return 0;*/
+			return 0;*/
 
 			IFileRevision e1 = adaptToFileRevision(o1);
 			IFileRevision e2 = adaptToFileRevision(o2);
@@ -211,7 +211,7 @@ public class FileSystemTableProvider {
 
 		/**
 		 * Sets the sorting order.
-		 * @param newReversed 
+		 * @param newReversed
 		 */
 		public void setReversed(boolean newReversed) {
 			reversed = newReversed;

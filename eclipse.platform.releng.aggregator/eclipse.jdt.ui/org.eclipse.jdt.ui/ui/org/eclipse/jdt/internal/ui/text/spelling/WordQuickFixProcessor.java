@@ -77,19 +77,19 @@ public class WordQuickFixProcessor implements IQuickFixProcessor {
 
 			for (int index= 0; index < locations.length; index++) {
 				location= locations[index];
-				
+
 				ISourceViewer sourceViewer= null;
 				if (invocationContext instanceof IQuickAssistInvocationContext)
 					sourceViewer= ((IQuickAssistInvocationContext)invocationContext).getSourceViewer();
 				IQuickAssistInvocationContext context= new TextInvocationContext(sourceViewer, location.getOffset(), location.getLength());
-				
+
 				if (location.getProblemId() == JavaSpellingReconcileStrategy.SPELLING_PROBLEM_ID) {
 
 					arguments= location.getProblemArguments();
 					if (arguments != null && arguments.length > 4) {
 
-						sentence= Boolean.valueOf(arguments[3]).booleanValue();
-						match= Boolean.valueOf(arguments[4]).booleanValue();
+						sentence= Boolean.parseBoolean(arguments[3]);
+						match= Boolean.parseBoolean(arguments[4]);
 						fixed= arguments[0].charAt(0) == IHtmlTagConstants.HTML_TAG_PREFIX || arguments[0].charAt(0) == IJavaDocTagConstants.JAVADOC_TAG_PREFIX;
 
 						if ((sentence && match) && !fixed)

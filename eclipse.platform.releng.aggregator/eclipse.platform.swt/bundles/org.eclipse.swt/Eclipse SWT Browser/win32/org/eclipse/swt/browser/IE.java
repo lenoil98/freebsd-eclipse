@@ -38,7 +38,7 @@ class IE extends WebBrowser {
 	Point location;
 	Point size;
 	boolean addressBar = true, menuBar = true, statusBar = true, toolBar = true;
-	long /*int*/ globalDispatch;
+	long globalDispatch;
 	String html, lastNavigateURL, uncRedirect;
 	Object[] pendingText, pendingUrl;
 	int style, lastKeyCode, lastCharCode;
@@ -192,7 +192,7 @@ class IE extends WebBrowser {
 		* version-specific features that can be enabled.
 		*/
 		TCHAR key = new TCHAR (0, "Software\\Microsoft\\Internet Explorer", true);	//$NON-NLS-1$
-		long /*int*/ [] phkResult = new long /*int*/ [1];
+		long [] phkResult = new long [1];
 		if (OS.RegOpenKeyEx (OS.HKEY_LOCAL_MACHINE, key, 0, OS.KEY_READ, phkResult) == 0) {
 			int [] lpcbData = new int [1];
 			TCHAR buffer = new TCHAR (0, "svcVersion", true); //$NON-NLS-1$
@@ -232,7 +232,7 @@ class IE extends WebBrowser {
 		* will be embedded to explicitly specify Shell.Explorer.2.
 		*/
 		key = new TCHAR (0, "Shell.Explorer\\CLSID", true);	//$NON-NLS-1$
-		phkResult = new long /*int*/ [1];
+		phkResult = new long [1];
 		if (OS.RegOpenKeyEx (OS.HKEY_CLASSES_ROOT, key, 0, OS.KEY_READ, phkResult) == 0) {
 			int [] lpcbData = new int [1];
 			int result = OS.RegQueryValueEx (phkResult [0], null, 0, null, (TCHAR) null, lpcbData);
@@ -244,7 +244,7 @@ class IE extends WebBrowser {
 					if (clsid.equals (CLSID_SHELLEXPLORER1)) {
 						/* Shell.Explorer.1 is the default, ensure that Shell.Explorer.2 is available */
 						key = new TCHAR (0, "Shell.Explorer.2", true);	//$NON-NLS-1$
-						long /*int*/ [] phkResult2 = new long /*int*/ [1];
+						long [] phkResult2 = new long [1];
 						if (OS.RegOpenKeyEx (OS.HKEY_CLASSES_ROOT, key, 0, OS.KEY_READ, phkResult2) == 0) {
 							/* specify that Shell.Explorer.2 is to be used */
 							OS.RegCloseKey (phkResult2 [0]);
@@ -321,7 +321,7 @@ public void create(Composite parent, int style) {
 		}
 
 		if (version != -1) {
-			long /*int*/[] key = new long /*int*/[1];
+			long[] key = new long[1];
 			final TCHAR subkey = new TCHAR(0, "Software\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION", true);	//$NON-NLS-1$
 			if (OS.RegCreateKeyEx(OS.HKEY_CURRENT_USER, subkey, 0, null, OS.REG_OPTION_VOLATILE, OS.KEY_WRITE | OS.KEY_QUERY_VALUE, 0, key, null) == 0) {
 				TCHAR lpszFile = new TCHAR(0, OS.MAX_PATH);
@@ -342,7 +342,7 @@ public void create(Composite parent, int style) {
 				if (result == 0 || result == OS.ERROR_FILE_NOT_FOUND) {
 					if (OS.RegSetValueEx(key[0], lpValueName, 0, OS.REG_DWORD, new int[] {version}, 4) == 0) {
 						parent.getDisplay().addListener(SWT.Dispose, event -> {
-							long /*int*/[] key1 = new long /*int*/[1];
+							long[] key1 = new long[1];
 							if (OS.RegOpenKeyEx(OS.HKEY_CURRENT_USER, subkey, 0, OS.KEY_WRITE, key1) == 0) {
 								OS.RegDeleteValue(key1[0], lpValueName);
 							}
@@ -388,8 +388,8 @@ public void create(Composite parent, int style) {
 				*/
 				if (!frame.isDisposed ()) unhookDOMListeners(documents);
 
-				for (int i = 0; i < documents.length; i++) {
-					documents[i].dispose();
+				for (OleAutomation document : documents) {
+					document.dispose();
 				}
 				documents = null;
 
@@ -475,10 +475,10 @@ public void create(Composite parent, int style) {
 						if (uncRedirect.equals(url1) || (uncRedirect.startsWith(url1) && uncRedirect.indexOf('\\', 2) == url1.length())) {
 							Variant cancel1 = event.arguments[6];
 							if (cancel1 != null) {
-								long /*int*/ pCancel1 = cancel1.getByRef();
+								long pCancel1 = cancel1.getByRef();
 								OS.MoveMemory(pCancel1, new short[] {OS.VARIANT_FALSE}, 2);
 							}
-							isAboutBlank = false;
+							setAboutBlank(false);
 							break;
 						} else {
 							/*
@@ -510,7 +510,7 @@ public void create(Composite parent, int style) {
 					if (url1.startsWith(PROTOCOL_FILE) && _getUrl().startsWith(ABOUT_BLANK) && untrustedText) {
 						Variant cancel2 = event.arguments[6];
 						if (cancel2 != null) {
-							long /*int*/ pCancel2 = cancel2.getByRef();
+							long pCancel2 = cancel2.getByRef();
 							OS.MoveMemory(pCancel2, new short[] {OS.VARIANT_TRUE}, 2);
 						}
 						break;
@@ -521,13 +521,13 @@ public void create(Composite parent, int style) {
 					newEvent1.widget = browser;
 					newEvent1.location = url1;
 					newEvent1.doit = true;
-					for (int i1 = 0; i1 < locationListeners.length; i1++) {
-						locationListeners[i1].changing(newEvent1);
+					for (LocationListener locationListener : locationListeners) {
+						locationListener.changing(newEvent1);
 					}
 					boolean doit1 = newEvent1.doit && !browser.isDisposed();
 					Variant cancel3 = event.arguments[6];
 					if (cancel3 != null) {
-						long /*int*/ pCancel3 = cancel3.getByRef();
+						long pCancel3 = cancel3.getByRef();
 						OS.MoveMemory(pCancel3, new short[] {doit1 ? OS.VARIANT_FALSE : OS.VARIANT_TRUE}, 2);
 					}
 					if (doit1) {
@@ -536,7 +536,7 @@ public void create(Composite parent, int style) {
 						Variant variant1 = new Variant(auto); /* does not need to be disposed */
 						IDispatch top1 = variant1.getDispatch();
 						if (top1.getAddress() == dispatch1.getAddress()) {
-							isAboutBlank = url1.startsWith(ABOUT_BLANK);
+							setAboutBlank(url1.startsWith(ABOUT_BLANK));
 						}
 					}
 					break;
@@ -609,8 +609,8 @@ public void create(Composite parent, int style) {
 						locationEvent.widget = browser;
 						locationEvent.location = url2;
 						locationEvent.top = top2.getAddress() == dispatch2.getAddress();
-						for (int i2 = 0; i2 < locationListeners.length; i2++) {
-							locationListeners[i2].changed(locationEvent);
+						for (LocationListener locationListener : locationListeners) {
+							locationListener.changed(locationEvent);
 						}
 						if (browser.isDisposed()) return;
 
@@ -652,8 +652,8 @@ public void create(Composite parent, int style) {
 							ProgressEvent progressEvent1 = new ProgressEvent(browser);
 							progressEvent1.display = browser.getDisplay();
 							progressEvent1.widget = browser;
-							for (int i3 = 0; i3 < progressListeners.length; i3++) {
-								progressListeners[i3].completed(progressEvent1);
+							for (ProgressListener progressListener : progressListeners) {
+								progressListener.completed(progressEvent1);
 							}
 						}
 					}
@@ -684,8 +684,8 @@ public void create(Composite parent, int style) {
 					ProgressEvent progressEvent2 = new ProgressEvent(browser);
 					progressEvent2.display = browser.getDisplay();
 					progressEvent2.widget = browser;
-					for (int i4 = 0; i4 < progressListeners.length; i4++) {
-						progressListeners[i4].completed(progressEvent2);
+					for (ProgressListener progressListener : progressListeners) {
+						progressListener.completed(progressEvent2);
 					}
 
 					break;
@@ -701,7 +701,7 @@ public void create(Composite parent, int style) {
 						Variant variant3 = new Variant(auto); /* does not need to be disposed */
 						IDispatch top3 = variant3.getDispatch();
 						if (top3.getAddress() == dispatch3.getAddress()) {
-							isAboutBlank = url3.startsWith(ABOUT_BLANK);
+							setAboutBlank(url3.startsWith(ABOUT_BLANK));
 							lastNavigateURL = url3;
 						}
 					}
@@ -762,8 +762,8 @@ public void create(Composite parent, int style) {
 					if (isTop) {
 						/* unhook DOM listeners and unref the last document(s) */
 						unhookDOMListeners(documents);
-						for (int i5 = 0; i5 < documents.length; i5++) {
-							documents[i5].dispose();
+						for (OleAutomation document : documents) {
+							document.dispose();
 						}
 						documents = new OleAutomation[0];
 
@@ -800,7 +800,7 @@ public void create(Composite parent, int style) {
 								final String host = url4.substring(0, index);
 								Variant cancel4 = event.arguments[4];
 								if (cancel4 != null) {
-									long /*int*/ pCancel4 = cancel4.getByRef();
+									long pCancel4 = cancel4.getByRef();
 									OS.MoveMemory(pCancel4, new short[] {OS.VARIANT_TRUE}, 2);
 								}
 								browser.getDisplay().asyncExec(() -> {
@@ -825,13 +825,13 @@ public void create(Composite parent, int style) {
 				}
 				case NewWindow2: {
 					Variant cancel5 = event.arguments[1];
-					long /*int*/ pCancel5 = cancel5.getByRef();
+					long pCancel5 = cancel5.getByRef();
 					WindowEvent newEvent2 = new WindowEvent(browser);
 					newEvent2.display = browser.getDisplay();
 					newEvent2.widget = browser;
 					newEvent2.required = false;
-					for (int i6 = 0; i6 < openWindowListeners.length; i6++) {
-						openWindowListeners[i6].open(newEvent2);
+					for (OpenWindowListener openWindowListener : openWindowListeners) {
+						openWindowListener.open(newEvent2);
 					}
 					IE browser = null;
 					if (newEvent2.browser != null && newEvent2.browser.webBrowser instanceof IE) {
@@ -850,8 +850,8 @@ public void create(Composite parent, int style) {
 						Variant variant5 = new Variant(browser.auto); /* does not need to be disposed */
 						IDispatch iDispatch = variant5.getDispatch();
 						Variant ppDisp = event.arguments[0];
-						long /*int*/ byref = ppDisp.getByRef();
-						if (byref != 0) OS.MoveMemory(byref, new long /*int*/[] {iDispatch.getAddress()}, C.PTR_SIZEOF);
+						long byref = ppDisp.getByRef();
+						if (byref != 0) OS.MoveMemory(byref, new long[] {iDispatch.getAddress()}, C.PTR_SIZEOF);
 					}
 					if (newEvent2.required) {
 						OS.MoveMemory(pCancel5, new short[]{doit2 ? OS.VARIANT_FALSE : OS.VARIANT_TRUE}, 2);
@@ -914,14 +914,14 @@ public void create(Composite parent, int style) {
 						newEvent3.toolBar = toolBar;
 						newEvent3.location = location;
 						newEvent3.size = size;
-						for (int i7 = 0; i7 < visibilityWindowListeners.length; i7++) {
-							visibilityWindowListeners[i7].show(newEvent3);
+						for (VisibilityWindowListener visibilityWindowListener : visibilityWindowListeners) {
+							visibilityWindowListener.show(newEvent3);
 						}
 						location = null;
 						size = null;
 					} else {
-						for (int i8 = 0; i8 < visibilityWindowListeners.length; i8++) {
-							visibilityWindowListeners[i8].hide(newEvent3);
+						for (VisibilityWindowListener visibilityWindowListener : visibilityWindowListeners) {
+							visibilityWindowListener.hide(newEvent3);
 						}
 					}
 					break;
@@ -940,8 +940,8 @@ public void create(Composite parent, int style) {
 					newEvent4.current = nProgress;
 					newEvent4.total = nProgressMax;
 					if (nProgress != -1) {
-						for (int i9 = 0; i9 < progressListeners.length; i9++) {
-							progressListeners[i9].changed(newEvent4);
+						for (ProgressListener progressListener : progressListeners) {
+							progressListener.changed(newEvent4);
 						}
 					}
 					break;
@@ -957,8 +957,8 @@ public void create(Composite parent, int style) {
 						newEvent5.display = browser.getDisplay();
 						newEvent5.widget = browser;
 						newEvent5.text = text;
-						for (int i10 = 0; i10 < statusTextListeners.length; i10++) {
-							statusTextListeners[i10].changed(newEvent5);
+						for (StatusTextListener statusTextListener : statusTextListeners) {
+							statusTextListener.changed(newEvent5);
 						}
 					}
 					break;
@@ -974,8 +974,8 @@ public void create(Composite parent, int style) {
 						newEvent6.display = browser.getDisplay();
 						newEvent6.widget = browser;
 						newEvent6.title = title;
-						for (int i11 = 0; i11 < titleListeners.length; i11++) {
-							titleListeners[i11].changed(newEvent6);
+						for (TitleListener titleListener : titleListeners) {
+							titleListener.changed(newEvent6);
 						}
 					}
 					break;
@@ -991,13 +991,13 @@ public void create(Composite parent, int style) {
 						WindowEvent newEvent = new WindowEvent(browser);
 						newEvent.display = browser.getDisplay();
 						newEvent.widget = browser;
-						for (int i = 0; i < closeWindowListeners.length; i++) {
-							closeWindowListeners[i].close(newEvent);
+						for (CloseWindowListener closeWindowListener : closeWindowListeners) {
+							closeWindowListener.close(newEvent);
 						}
 						browser.dispose();
 					});
 					Variant cancel6 = event.arguments[1];
-					long /*int*/ pCancel6 = cancel6.getByRef();
+					long pCancel6 = cancel6.getByRef();
 					Variant arg15 = event.arguments[0];
 					boolean isChildWindow = arg15.getBoolean();
 					OS.MoveMemory(pCancel6, new short[]{isChildWindow ? OS.VARIANT_FALSE : OS.VARIANT_TRUE}, 2);
@@ -1125,12 +1125,12 @@ static Variant createSafeArray(String string) {
 	/* Create a pointer and copy the data into it */
 	byte[] bytes = string.getBytes();
 	int length = bytes.length;
-	long /*int*/ pvData = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, length);
+	long pvData = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, length);
 	C.memmove(pvData, bytes, length);
 	int cElements1 = length;
 
 	/* Create a SAFEARRAY in memory */
-	long /*int*/ pSafeArray = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, SAFEARRAY.sizeof);
+	long pSafeArray = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, SAFEARRAY.sizeof);
 	SAFEARRAY safeArray = new SAFEARRAY();
 	safeArray.cDims = 1;
 	safeArray.fFeatures = OS.FADF_FIXEDSIZE;
@@ -1142,10 +1142,10 @@ static Variant createSafeArray(String string) {
 	OS.MoveMemory (pSafeArray, safeArray, SAFEARRAY.sizeof);
 
 	/* Return a Variant that holds the SAFEARRAY */
-	long /*int*/ pVariant = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, Variant.sizeof);
+	long pVariant = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, Variant.sizeof);
 	short vt = (short)(OLE.VT_ARRAY | OLE.VT_UI1);
 	OS.MoveMemory(pVariant, new short[] {vt}, 2);
-	OS.MoveMemory(pVariant + 8, new long /*int*/[] {pSafeArray}, C.PTR_SIZEOF);
+	OS.MoveMemory(pVariant + 8, new long[] {pSafeArray}, C.PTR_SIZEOF);
 	return new Variant(pVariant, (short)(OLE.VT_BYREF | OLE.VT_VARIANT));
 }
 
@@ -1317,9 +1317,8 @@ boolean navigate(String url, String postData, String headers[], boolean silent) 
 		rgdispidNamedArgs[index++] = rgdispid[2];
 	}
 	if (headers != null) {
-		StringBuffer buffer = new StringBuffer();
-		for (int i = 0; i < headers.length; i++) {
-			String current = headers[i];
+		StringBuilder buffer = new StringBuilder();
+		for (String current : headers) {
 			if (current != null) {
 				int sep = current.indexOf(':');
 				if (sep != -1) {
@@ -1398,11 +1397,11 @@ void setHTML (String string) {
 	* prepend the UTF-8 Byte Order Mark signature to the data.
 	*/
 	byte[] UTF8BOM = {(byte)0xEF, (byte)0xBB, (byte)0xBF};
-	long /*int*/ hGlobal = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, UTF8BOM.length + byteCount);
+	long hGlobal = OS.GlobalAlloc(OS.GMEM_FIXED | OS.GMEM_ZEROINIT, UTF8BOM.length + byteCount);
 	if (hGlobal != 0) {
 		OS.MoveMemory(hGlobal, UTF8BOM, UTF8BOM.length);
 		OS.WideCharToMultiByte(OS.CP_UTF8, 0, chars, charCount, hGlobal + UTF8BOM.length, byteCount, null, null);
-		long /*int*/ [] ppstm = new long /*int*/ [1];
+		long [] ppstm = new long [1];
 		/*
 		* CreateStreamOnHGlobal is called with the flag fDeleteOnRelease.
 		* If the call succeeds the buffer hGlobal is freed automatically
@@ -1413,7 +1412,7 @@ void setHTML (String string) {
 			int[] rgdispid = auto.getIDsOfNames(new String[] {PROPERTY_DOCUMENT});
 			Variant pVarResult = auto.getProperty(rgdispid[0]);
 			IDispatch dispatchDocument = pVarResult.getDispatch();
-			long /*int*/ [] ppvObject = new long /*int*/ [1];
+			long [] ppvObject = new long [1];
 			int result = dispatchDocument.QueryInterface(COM.IIDIPersistStreamInit, ppvObject);
 			if (result == OS.S_OK) {
 				IPersistStreamInit persistStreamInit = new IPersistStreamInit(ppvObject[0]);
@@ -1431,6 +1430,20 @@ void setHTML (String string) {
 	}
 }
 
+private void setAboutBlank(boolean value) {
+	isAboutBlank = value;
+	updateForceTrusted();
+}
+
+private void setUntrustedText(boolean value) {
+	untrustedText = value;
+	updateForceTrusted();
+}
+
+private void updateForceTrusted() {
+	site.isForceTrusted = isAboutBlank && !untrustedText;
+}
+
 @Override
 public boolean setText(final String html, boolean trusted) {
 	/*
@@ -1440,7 +1453,7 @@ public boolean setText(final String html, boolean trusted) {
 	* to ensure that all expected client events are sent.
 	*/
 	if (performingInitialNavigate) {
-		pendingText = new Object[] {html, new Boolean (trusted)};
+		pendingText = new Object[] {html, trusted};
 		pendingUrl = null;
 		return true;
 	}
@@ -1452,7 +1465,7 @@ public boolean setText(final String html, boolean trusted) {
 	*/
 	boolean blankLoading = this.html != null;
 	this.html = html;
-	untrustedText = !trusted;
+	setUntrustedText(!trusted);
 	if (blankLoading) return true;
 
 	/*
@@ -1567,7 +1580,7 @@ public void stop() {
 	* Ensure that isAboutBlank is set accurately since Stop can be issued at
 	* any stage in the page load cycle.
 	*/
-	isAboutBlank = getUrl().startsWith(ABOUT_BLANK);
+	setAboutBlank(getUrl().startsWith(ABOUT_BLANK));
 
 	uncRedirect = null;
 	int[] rgdispid = auto.getIDsOfNames(new String[] { "Stop" }); //$NON-NLS-1$
@@ -2008,8 +2021,7 @@ void unhookDOMListeners(OleAutomation[] documents) {
 	char[] buffer = (COM.IIDIHTMLDocumentEvents2 + '\0').toCharArray();
 	GUID guid = new GUID();
 	if (COM.IIDFromString(buffer, guid) == COM.S_OK) {
-		for (int i = 0; i < documents.length; i++) {
-			OleAutomation document = documents[i];
+		for (OleAutomation document : documents) {
 			site.removeEventListener(document, guid, COM.DISPID_HTMLDOCUMENTEVENTS_ONKEYDOWN, domListener);
 			site.removeEventListener(document, guid, COM.DISPID_HTMLDOCUMENTEVENTS_ONKEYPRESS, domListener);
 			site.removeEventListener(document, guid, COM.DISPID_HTMLDOCUMENTEVENTS_ONKEYUP, domListener);

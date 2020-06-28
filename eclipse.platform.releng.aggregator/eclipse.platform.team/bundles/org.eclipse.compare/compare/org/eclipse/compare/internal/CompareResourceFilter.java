@@ -13,15 +13,13 @@
  *******************************************************************************/
 package org.eclipse.compare.internal;
 
+import java.text.MessageFormat;
 import java.util.StringTokenizer;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
-
-import com.ibm.icu.text.MessageFormat;
-
 
 public class CompareResourceFilter {
 	private static final char[][] NO_CHAR_CHAR= new char[0][];
@@ -40,13 +38,13 @@ public class CompareResourceFilter {
 	public boolean filter(String path0, boolean folder, boolean isArchive) {
 		if (!folder && fExtraResourceFileFilters != null) {
 			char[] name= path0.toCharArray();
-			for (int i= 0, l= fExtraResourceFileFilters.length; i < l; i++)
-				if (match(fExtraResourceFileFilters[i], name, true))
+			for (char[] filter : fExtraResourceFileFilters)
+				if (match(filter, name, true))
 					return true;
 		}
 		if (folder && fExtraResourceFolderFilters != null) {
-			for (int i= 0, l= fExtraResourceFolderFilters.length; i < l; i++)
-				if (fExtraResourceFolderFilters[i].equals(path0))
+			for (String filter : fExtraResourceFolderFilters)
+				if (filter.equals(path0))
 					return true;
 		}
 		return false;
@@ -55,8 +53,8 @@ public class CompareResourceFilter {
 	public static String validateResourceFilters(String text) {
 		IWorkspace workspace= ResourcesPlugin.getWorkspace();
 		String[] filters= getTokens(text, ","); //$NON-NLS-1$
-		for (int i= 0; i < filters.length; i++) {
-			String fileName= filters[i].replace('*', 'x');
+		for (String filter : filters) {
+			String fileName = filter.replace('*', 'x');
 			int resourceType= IResource.FILE;
 			int lastCharacter= fileName.length() - 1;
 			if (lastCharacter >= 0 && fileName.charAt(lastCharacter) == '/') {
@@ -81,25 +79,23 @@ public class CompareResourceFilter {
 			fExtraResourceFolderFilters= null;
 		} else {
 			int fileCount= 0, folderCount= 0;
-			for (int i= 0, l= filters.length; i < l; i++) {
-				char[] f= filters[i];
-				if (f.length == 0)
+			for (char[] filter : filters) {
+				if (filter.length == 0)
 					continue;
-				if (f[f.length - 1] == '/')
+				if (filter[filter.length - 1] == '/')
 					folderCount++;
 				else
 					fileCount++;
 			}
 			fExtraResourceFileFilters= new char[fileCount][];
 			fExtraResourceFolderFilters= new String[folderCount];
-			for (int i= 0, l= filters.length; i < l; i++) {
-				char[] f= filters[i];
-				if (f.length == 0)
+			for (char[] filter : filters) {
+				if (filter.length == 0)
 					continue;
-				if (f[f.length - 1] == '/')
-					fExtraResourceFolderFilters[--folderCount]= new String(subarray(f, 0, f.length - 1));
+				if (filter[filter.length - 1] == '/')
+					fExtraResourceFolderFilters[--folderCount]= new String(subarray(filter, 0, filter.length - 1));
 				else
-					fExtraResourceFileFilters[--fileCount]= f;
+					fExtraResourceFileFilters[--fileCount]= filter;
 			}
 		}
 	}
@@ -127,7 +123,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  pattern = { '?', 'b', '*' } name = { 'a', 'b', 'c' , 'd' } isCaseSensitive = true result => true
+	 *  pattern = { '?', 'b', '*' } name = { 'a', 'b', 'c' , 'd' } isCaseSensitive = true result =&gt; true
 	 * </pre>
 	 *
 	 *
@@ -135,7 +131,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  pattern = { '?', 'b', '?' } name = { 'a', 'b', 'c' , 'd' } isCaseSensitive = true result => false
+	 *  pattern = { '?', 'b', '?' } name = { 'a', 'b', 'c' , 'd' } isCaseSensitive = true result =&gt; false
 	 * </pre>
 	 *
 	 *
@@ -143,7 +139,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  pattern = { 'b', '*' } name = { 'a', 'b', 'c' , 'd' } isCaseSensitive = true result => false
+	 *  pattern = { 'b', '*' } name = { 'a', 'b', 'c' , 'd' } isCaseSensitive = true result =&gt; false
 	 * </pre>
 	 *
 	 *
@@ -179,7 +175,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  pattern = { '?', 'b', '*' } patternStart = 1 patternEnd = 3 name = { 'a', 'b', 'c' , 'd' } nameStart = 1 nameEnd = 4 isCaseSensitive = true result => true
+	 *  pattern = { '?', 'b', '*' } patternStart = 1 patternEnd = 3 name = { 'a', 'b', 'c' , 'd' } nameStart = 1 nameEnd = 4 isCaseSensitive = true result =&gt; true
 	 * </pre>
 	 *
 	 *
@@ -187,7 +183,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  pattern = { '?', 'b', '*' } patternStart = 1 patternEnd = 2 name = { 'a', 'b', 'c' , 'd' } nameStart = 1 nameEnd = 2 isCaseSensitive = true result => false
+	 *  pattern = { '?', 'b', '*' } patternStart = 1 patternEnd = 2 name = { 'a', 'b', 'c' , 'd' } nameStart = 1 nameEnd = 2 isCaseSensitive = true result =&gt; false
 	 * </pre>
 	 *
 	 *
@@ -278,7 +274,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  divider = 'b' array = { 'a' , 'b', 'b', 'a', 'b', 'a' } result => { { 'a' }, { }, { 'a' }, { 'a' } }
+	 *  divider = 'b' array = { 'a' , 'b', 'b', 'a', 'b', 'a' } result =&gt; { { 'a' }, { }, { 'a' }, { 'a' } }
 	 * </pre>
 	 *
 	 *
@@ -286,7 +282,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  divider = 'c' array = { 'a' , 'b', 'b', 'a', 'b', 'a' } result => { { 'a', 'b', 'b', 'a', 'b', 'a' } }
+	 *  divider = 'c' array = { 'a' , 'b', 'b', 'a', 'b', 'a' } result =&gt; { { 'a', 'b', 'b', 'a', 'b', 'a' } }
 	 * </pre>
 	 *
 	 *
@@ -294,7 +290,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  divider = 'b' array = { 'a' , ' ', 'b', 'b', 'a', 'b', 'a' } result => { { 'a' }, { }, { 'a' }, { 'a' } }
+	 *  divider = 'b' array = { 'a' , ' ', 'b', 'b', 'a', 'b', 'a' } result =&gt; { { 'a' }, { }, { 'a' }, { 'a' } }
 	 * </pre>
 	 *
 	 *
@@ -302,7 +298,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  divider = 'c' array = { ' ', ' ', 'a' , 'b', 'b', 'a', 'b', 'a', ' ' } result => { { 'a', 'b', 'b', 'a', 'b', 'a' } }
+	 *  divider = 'c' array = { ' ', ' ', 'a' , 'b', 'b', 'a', 'b', 'a', ' ' } result =&gt; { { 'a', 'b', 'b', 'a', 'b', 'a' } }
 	 * </pre>
 	 *
 	 *
@@ -360,7 +356,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  array = { 'a' , 'b' } start = 0 end = 1 result => { 'a' }
+	 *  array = { 'a' , 'b' } start = 0 end = 1 result =&gt; { 'a' }
 	 * </pre>
 	 *
 	 *
@@ -368,7 +364,7 @@ public class CompareResourceFilter {
 	 * <li>
 	 *
 	 * <pre>
-	 *  array = { 'a', 'b' } start = 0 end = -1 result => { 'a' , 'b' }
+	 *  array = { 'a', 'b' } start = 0 end = -1 result =&gt; { 'a' , 'b' }
 	 * </pre>
 	 *
 	 *

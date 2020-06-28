@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2017 IBM Corporation and others.
+ * Copyright (c) 2012, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,23 +7,34 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.osgi.container;
 
 import java.security.AllPermission;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import org.eclipse.osgi.internal.framework.FilterImpl;
-import org.osgi.framework.*;
+import org.osgi.framework.AdminPermission;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.Version;
 import org.osgi.framework.namespace.HostNamespace;
+import org.osgi.framework.wiring.BundleRevision;
 import org.osgi.resource.Namespace;
 
 /**
- * A builder for creating module {@link ModuleRevision} objects.  A builder can only be used by 
- * the module {@link ModuleContainer container} to build revisions when 
- * {@link ModuleContainer#install(Module, String, ModuleRevisionBuilder, Object) 
+ * A builder for creating module {@link ModuleRevision} objects.  A builder can only be used by
+ * the module {@link ModuleContainer container} to build revisions when
+ * {@link ModuleContainer#install(Module, String, ModuleRevisionBuilder, Object)
  * installing} or {@link ModuleContainer#update(Module, ModuleRevisionBuilder, Object) updating} a module.
  * <p>
  * The builder provides the instructions to the container for creating a {@link ModuleRevision}.
@@ -41,11 +52,13 @@ public final class ModuleRevisionBuilder {
 		final String namespace;
 		final Map<String, String> directives;
 		final Map<String, Object> attributes;
+		final boolean mutable;
 
-		GenericInfo(String namespace, Map<String, String> directives, Map<String, Object> attributes) {
+		GenericInfo(String namespace, Map<String, String> directives, Map<String, Object> attributes, boolean mutable) {
 			this.namespace = namespace;
 			this.directives = directives;
 			this.attributes = attributes;
+			this.mutable = mutable;
 		}
 
 		/**
@@ -219,26 +232,41 @@ public final class ModuleRevisionBuilder {
 	 * @return the new new {@link Module#getCurrentRevision() current} revision.
 	 */
 	ModuleRevision addRevision(Module module, Object revisionInfo) {
-		Collection<?> systemNames = Collections.emptyList();
-		Module systemModule = module.getContainer().getModule(0);
-		if (systemModule != null) {
-			ModuleRevision systemRevision = systemModule.getCurrentRevision();
-			List<ModuleCapability> hostCapabilities = systemRevision.getModuleCapabilities(HostNamespace.HOST_NAMESPACE);
-			for (ModuleCapability hostCapability : hostCapabilities) {
-				Object hostNames = hostCapability.getAttributes().get(HostNamespace.HOST_NAMESPACE);
-				if (hostNames instanceof Collection) {
-					systemNames = (Collection<?>) hostNames;
-				} else if (hostNames instanceof String) {
-					systemNames = Arrays.asList(hostNames);
-				}
-			}
-		}
 		ModuleRevisions revisions = module.getRevisions();
 		ModuleRevision revision = new ModuleRevision(symbolicName, version, types, capabilityInfos, requirementInfos, revisions, revisionInfo);
+
 		revisions.addRevision(revision);
 		module.getContainer().getAdaptor().associateRevision(revision, revisionInfo);
 
 		try {
+			checkFrameworkExtensionPermission(module, revision);
+			module.getContainer().checkAdminPermission(module.getBundle(), AdminPermission.LIFECYCLE);
+		} catch (SecurityException e) {
+			revisions.removeRevision(revision);
+			throw e;
+		}
+		return revision;
+	}
+
+	private void checkFrameworkExtensionPermission(Module module, ModuleRevision revision) {
+		if (System.getSecurityManager() == null) {
+			return;
+		}
+		if ((revision.getTypes() & BundleRevision.TYPE_FRAGMENT) != 0) {
+			Collection<?> systemNames = Collections.emptyList();
+			Module systemModule = module.getContainer().getModule(0);
+			if (systemModule != null) {
+				ModuleRevision systemRevision = systemModule.getCurrentRevision();
+				List<ModuleCapability> hostCapabilities = systemRevision.getModuleCapabilities(HostNamespace.HOST_NAMESPACE);
+				for (ModuleCapability hostCapability : hostCapabilities) {
+					Object hostNames = hostCapability.getAttributes().get(HostNamespace.HOST_NAMESPACE);
+					if (hostNames instanceof Collection) {
+						systemNames = (Collection<?>) hostNames;
+					} else if (hostNames instanceof String) {
+						systemNames = Arrays.asList(hostNames);
+					}
+				}
+			}
 			List<ModuleRequirement> hostRequirements = revision.getModuleRequirements(HostNamespace.HOST_NAMESPACE);
 			for (ModuleRequirement hostRequirement : hostRequirements) {
 				FilterImpl f = null;
@@ -251,7 +279,8 @@ public final class ModuleRevisionBuilder {
 							if (systemNames.contains(hostName)) {
 								Bundle b = module.getBundle();
 								if (b != null && !b.hasPermission(new AllPermission())) {
-									SecurityException se = new SecurityException("Must have AllPermission granted to install an extension bundle"); //$NON-NLS-1$
+									SecurityException se = new SecurityException(
+											"Must have AllPermission granted to install an extension bundle: " + b); //$NON-NLS-1$
 									// TODO this is such a hack: making the cause a bundle exception so we can throw the right one later
 									BundleException be = new BundleException(se.getMessage(), BundleException.SECURITY_ERROR, se);
 									se.initCause(be);
@@ -265,31 +294,14 @@ public final class ModuleRevisionBuilder {
 					}
 				}
 			}
-			module.getContainer().checkAdminPermission(module.getBundle(), AdminPermission.LIFECYCLE);
-		} catch (SecurityException e) {
-			revisions.removeRevision(revision);
-			throw e;
 		}
-		return revision;
 	}
 
-	private static void addGenericInfo(List<GenericInfo> infos, String namespace, Map<String, String> directives, Map<String, Object> attributes) {
+	private void addGenericInfo(List<GenericInfo> infos, String namespace, Map<String, String> directives, Map<String, Object> attributes) {
 		if (infos == null) {
 			infos = new ArrayList<>();
 		}
-		infos.add(new GenericInfo(namespace, copyUnmodifiableMap(directives), copyUnmodifiableMap(attributes)));
-	}
-
-	private static <K, V> Map<K, V> copyUnmodifiableMap(Map<K, V> map) {
-		int size = map.size();
-		if (size == 0) {
-			return Collections.emptyMap();
-		}
-		if (size == 1) {
-			Map.Entry<K, V> entry = map.entrySet().iterator().next();
-			return Collections.singletonMap(entry.getKey(), entry.getValue());
-		}
-		return Collections.unmodifiableMap(new HashMap<>(map));
+		infos.add(new GenericInfo(namespace, directives, attributes, true));
 	}
 
 	void basicAddCapability(String namespace, Map<String, String> directives, Map<String, Object> attributes) {
@@ -301,10 +313,7 @@ public final class ModuleRevisionBuilder {
 	}
 
 	private static void basicAddGenericInfo(List<GenericInfo> infos, String namespace, Map<String, String> directives, Map<String, Object> attributes) {
-		if (infos == null) {
-			infos = new ArrayList<>();
-		}
-		infos.add(new GenericInfo(namespace, unmodifiableMap(directives), unmodifiableMap(attributes)));
+		infos.add(new GenericInfo(namespace, unmodifiableMap(directives), unmodifiableMap(attributes), false));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -324,5 +333,14 @@ public final class ModuleRevisionBuilder {
 			}
 		}
 		return (Map<K, V>) map;
+	}
+
+	void clear() {
+		capabilityInfos.clear();
+		requirementInfos.clear();
+		id = -1;
+		symbolicName = null;
+		version = Version.emptyVersion;
+		types = 0;
 	}
 }

@@ -18,15 +18,24 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.Command;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.common.NotDefinedException;
+import org.eclipse.core.expressions.EvaluationResult;
+import org.eclipse.core.expressions.Expression;
+import org.eclipse.core.expressions.ExpressionInfo;
+import org.eclipse.core.expressions.IEvaluationContext;
+import org.eclipse.ui.ISources;
 import org.eclipse.ui.commands.ICommandService;
 import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * Tests the new help context identifier support on commands and handlers.
  *
  * @since 3.2
  */
+@RunWith(JUnit4.class)
 public final class HelpContextIdTest extends UITestCase {
 
 	private static final String COMMAND_HELP_ID = "org.eclipse.ui.tests.commandHelp";
@@ -39,12 +48,9 @@ public final class HelpContextIdTest extends UITestCase {
 
 	/**
 	 * Constructs a new instance of <code>HelpContextIdTest</code>
-	 *
-	 * @param testName
-	 *            The name of the test; may be <code>null</code>.
 	 */
-	public HelpContextIdTest(final String testName) {
-		super(testName);
+	public HelpContextIdTest() {
+		super(HelpContextIdTest.class.getSimpleName());
 	}
 
 	/**
@@ -55,6 +61,7 @@ public final class HelpContextIdTest extends UITestCase {
 	 *             If the command defined in the registry is somehow not
 	 *             defined.
 	 */
+	@Test
 	public final void testHelpContextId() throws NotDefinedException {
 		final ICommandService commandService = fWorkbench
 				.getService(ICommandService.class);
@@ -68,11 +75,22 @@ public final class HelpContextIdTest extends UITestCase {
 				"The initial help context id should be that of the handler",
 				HANDLER_HELP_ID, helpContextId);
 
-		// Retract the handler help context id by creating a handler conflict.
+		// Retract the handler help context id by creating a more specific handler
 		handlerService.activateHandler(COMMAND_ID, new AbstractHandler() {
 			@Override
 			public final Object execute(final ExecutionEvent event) {
 				return null;
+			}
+		}, new Expression() {
+
+			@Override
+			public void collectExpressionInfo(ExpressionInfo info) {
+				info.addVariableNameAccess(ISources.ACTIVE_CURRENT_SELECTION_NAME);
+			}
+
+			@Override
+			public EvaluationResult evaluate(IEvaluationContext context) {
+				return EvaluationResult.TRUE;
 			}
 		});
 		helpContextId = commandService.getHelpContextId(COMMAND_ID);

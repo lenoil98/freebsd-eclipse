@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2020 IBM Corporation and others.
  *
  * This
  * program and the accompanying materials are made available under the terms of
@@ -9,7 +9,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *
- * Contributors: 
+ * Contributors:
  *   IBM Corporation - initial API and implementation
  *   Daniel Le Berre - Fix in the encoding and the optimization function
  *   Alban Browaeys - Optimized string concatenation in bug 251357
@@ -82,7 +82,7 @@ public class Projector {
 	//Non greedy things
 	private Set<IInstallableUnit> nonGreedyIUs; //All the IUs that would satisfy non greedy dependencies
 	private Map<IInstallableUnit, AbstractVariable> nonGreedyVariables = new HashMap<>();
-	private Map<AbstractVariable, List<Object>> nonGreedyProvider = new HashMap<>(); //Keeps track of all the "object" that provide an IU that is non greedly requested  
+	private Map<AbstractVariable, List<Object>> nonGreedyProvider = new HashMap<>(); //Keeps track of all the "object" that provide an IU that is non greedly requested
 
 	private boolean emptyBecauseFiltered;
 	private boolean userDefinedFunction;
@@ -204,7 +204,7 @@ public class Projector {
 			int timeout = DEFAULT_SOLVER_TIMEOUT;
 			String timeoutString = null;
 			try {
-				// allow the user to specify a longer timeout. 
+				// allow the user to specify a longer timeout.
 				// only set the value if it is a positive integer larger than the default.
 				// see https://bugs.eclipse.org/336967
 				timeoutString = DirectorActivator.context.getProperty(PROP_PROJECTOR_TIMEOUT);
@@ -232,15 +232,14 @@ public class Projector {
 					dependencyHelper = new DependencyHelper<>(solver);
 			}
 			List<IInstallableUnit> iusToOrder = new ArrayList<>(queryResult.toSet());
-			Collections.sort(iusToOrder);
-			for (Iterator<IInstallableUnit> iusToEncode = iusToOrder.iterator(); iusToEncode.hasNext();) {
+			iusToOrder.sort(null);
+			for (IInstallableUnit iu : iusToOrder) {
 				if (monitor.isCanceled()) {
 					result.merge(Status.CANCEL_STATUS);
 					throw new OperationCanceledException();
 				}
-				IInstallableUnit iuToEncode = iusToEncode.next();
-				if (iuToEncode != entryPointIU) {
-					processIU(iuToEncode, false);
+				if (iu != entryPointIU) {
+					processIU(iu, false);
 				}
 			}
 			createMustHave(entryPointIU, alreadyExistingRoots);
@@ -369,7 +368,7 @@ public class Projector {
 			return;
 
 		IInstallableUnitFragment fragment = (IInstallableUnitFragment) iu;
-		// for each host requirement, find matches and remember them 
+		// for each host requirement, find matches and remember them
 		for (IRequirement req : fragment.getHost()) {
 			List<IInstallableUnit> matches = getApplicableMatches(req);
 			rememberHostMatches((IInstallableUnitFragment) iu, matches);
@@ -488,7 +487,7 @@ public class Projector {
 
 	private Collection<IRequirement> getRequiredCapabilities(IInstallableUnit iu) {
 		boolean isFragment = iu instanceof IInstallableUnitFragment;
-		//Short-circuit for the case of an IInstallableUnit 
+		//Short-circuit for the case of an IInstallableUnit
 		if ((!isFragment) && iu.getMetaRequirements().size() == 0)
 			return iu.getRequirements();
 
@@ -515,8 +514,8 @@ public class Projector {
 		Collection<IRequirement> iuRequirements = getRequiredCapabilities(iu);
 		Map<IRequirement, List<IInstallableUnitPatch>> unchangedRequirements = new HashMap<>(iuRequirements.size());
 		Map<IRequirement, Pending> nonPatchedRequirements = new HashMap<>(iuRequirements.size());
-		for (Iterator<IInstallableUnit> iterator = applicablePatches.iterator(); iterator.hasNext();) {
-			IInstallableUnitPatch patch = (IInstallableUnitPatch) iterator.next();
+		for (IInstallableUnit iup : applicablePatches) {
+			IInstallableUnitPatch patch = (IInstallableUnitPatch) iup;
 			IRequirement[][] reqs = mergeRequirements(iu, patch);
 			if (reqs.length == 0)
 				return;
@@ -526,29 +525,28 @@ public class Projector {
 			// noop(IU)-> ~ABS
 			// IU -> (noop(IU) or ABS)
 			// Therefore we only need one optional requirement statement per IU
-			for (int i = 0; i < reqs.length; i++) {
+			for (IRequirement[] requirement : reqs) {
 				//The requirement is unchanged
-				if (reqs[i][0] == reqs[i][1]) {
-					if (reqs[i][0].getMax() == 0) {
-						expandNegatedRequirement(reqs[i][0], iu, optionalAbstractRequirements, isRootIu);
+				if (requirement[0] == requirement[1]) {
+					if (requirement[0].getMax() == 0) {
+						expandNegatedRequirement(requirement[0], iu, optionalAbstractRequirements, isRootIu);
 						return;
 					}
-					if (!isApplicable(reqs[i][0]))
+					if (!isApplicable(requirement[0])) {
 						continue;
-
-					List<IInstallableUnitPatch> patchesAppliedElseWhere = unchangedRequirements.get(reqs[i][0]);
+					}
+					List<IInstallableUnitPatch> patchesAppliedElseWhere = unchangedRequirements.get(requirement[0]);
 					if (patchesAppliedElseWhere == null) {
 						patchesAppliedElseWhere = new ArrayList<>();
-						unchangedRequirements.put(reqs[i][0], patchesAppliedElseWhere);
+						unchangedRequirements.put(requirement[0], patchesAppliedElseWhere);
 					}
 					patchesAppliedElseWhere.add(patch);
 					continue;
 				}
-
 				//Generate dependency when the patch is applied
 				//P1 -> (A -> D) equiv. (P1 & A) -> D
-				if (isApplicable(reqs[i][1])) {
-					IRequirement req = reqs[i][1];
+				if (isApplicable(requirement[1])) {
+					IRequirement req = requirement[1];
 					List<IInstallableUnit> matches = getApplicableMatches(req);
 					determinePotentialHostsForFragment(iu);
 					if (req.getMin() > 0) {
@@ -606,9 +604,8 @@ public class Projector {
 				}
 				//Generate dependency when the patch is not applied
 				//-P1 -> (A -> B) ( equiv. A -> (P1 or B) )
-				if (isApplicable(reqs[i][0])) {
-					IRequirement req = reqs[i][0];
-
+				if (isApplicable(requirement[0])) {
+					IRequirement req = requirement[0];
 					// Fix: if multiple patches apply to the same IU-req, we need to make sure we list each
 					// patch as an optional match
 					Pending pending = nonPatchedRequirements.get(req);
@@ -828,8 +825,7 @@ public class Projector {
 		IRequirement[] originalRequirements = iuRequirements.toArray(new IRequirement[iuRequirements.size()]);
 		List<IRequirement[]> rrr = new ArrayList<>();
 		boolean found = false;
-		for (int i = 0; i < changes.size(); i++) {
-			IRequirementChange change = changes.get(i);
+		for (IRequirementChange change : changes) {
 			for (int j = 0; j < originalRequirements.length; j++) {
 				if (originalRequirements[j] != null && safeMatch(originalRequirements, change, j)) {
 					found = true;
@@ -1013,7 +1009,7 @@ public class Projector {
 
 	private void printSolution(Collection<IInstallableUnit> state) {
 		ArrayList<IInstallableUnit> l = new ArrayList<>(state);
-		Collections.sort(l);
+		l.sort(null);
 		Tracing.debug("Solution:"); //$NON-NLS-1$
 		Tracing.debug("Numbers of IUs selected: " + l.size()); //$NON-NLS-1$
 		for (IInstallableUnit s : l) {

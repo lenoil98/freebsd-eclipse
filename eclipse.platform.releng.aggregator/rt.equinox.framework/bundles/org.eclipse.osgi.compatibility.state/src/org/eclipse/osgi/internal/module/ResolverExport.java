@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -32,6 +32,7 @@ public class ResolverExport extends VersionSupplier {
 		return (ExportPackageDescription) base;
 	}
 
+	@Override
 	public BundleDescription getBundleDescription() {
 		return getExportPackageDescription().getExporter();
 	}
@@ -40,6 +41,7 @@ public class ResolverExport extends VersionSupplier {
 		return resolverBundle;
 	}
 
+	@Override
 	ResolverBundle getResolverBundle() {
 		return getExporter();
 	}

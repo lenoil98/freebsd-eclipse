@@ -14,7 +14,6 @@
 package org.eclipse.compare.internal;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -62,10 +61,6 @@ public class ShowWhitespaceAction extends TextEditorPropertyAction {
 		synchronizeWithPreference();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.compare.internal.TextEditorPropertyAction#synchronizeWithPreference()
-	 */
 	@Override
 	protected void synchronizeWithPreference() {
 		boolean checked = false;
@@ -93,10 +88,6 @@ public class ShowWhitespaceAction extends TextEditorPropertyAction {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.compare.internal.TextEditorPropertyAction#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
-	 */
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		String property = event.getProperty();
@@ -156,8 +147,7 @@ public class ShowWhitespaceAction extends TextEditorPropertyAction {
 
 	private void hideWhitespace() {
 		Map<MergeSourceViewer, WhitespaceCharacterPainter> painters = getPainters();
-		for (Iterator<MergeSourceViewer> iterator = painters.keySet().iterator(); iterator.hasNext();) {
-			MergeSourceViewer viewer = iterator.next();
+		for (MergeSourceViewer viewer : painters.keySet()) {
 			WhitespaceCharacterPainter painter = painters.get(viewer);
 			if (painter != null) {
 				viewer.getSourceViewer().removePainter(painter);

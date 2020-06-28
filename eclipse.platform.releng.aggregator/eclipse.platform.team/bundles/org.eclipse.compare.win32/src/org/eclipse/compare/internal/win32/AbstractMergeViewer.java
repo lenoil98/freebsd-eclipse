@@ -59,18 +59,22 @@ public abstract class AbstractMergeViewer extends Viewer {
 		this.configuration = configuration;
 	}
 
+	@Override
 	public Object getInput() {
 		return input;
 	}
 
+	@Override
 	public ISelection getSelection() {
 		return StructuredSelection.EMPTY;
 	}
 
+	@Override
 	public void refresh() {
 		// Nothing to do
 	}
 
+	@Override
 	public void setInput(Object input) {
 		this.input = input;
 		reset();
@@ -91,6 +95,7 @@ public abstract class AbstractMergeViewer extends Viewer {
 		resultFile = null;
 	}
 
+	@Override
 	public void setSelection(ISelection selection, boolean reveal) {
 		// Nothing to do
 	}
@@ -181,16 +186,13 @@ public abstract class AbstractMergeViewer extends Viewer {
 	private File createTempFile(InputStream contents) throws IOException {
 		File file = File.createTempFile("compare", ".doc"); //$NON-NLS-1$ //$NON-NLS-2$
 		file.deleteOnExit();
-		OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-		try {
+		try (OutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
 			byte[] buffer = new byte[1024];
 			int length;
 			while ((length = contents.read(buffer)) != -1) {
 				out.write(buffer, 0, length);
 			}
 			return file;
-		} finally {
-			out.close();
 		}
 	}
 
@@ -270,8 +272,7 @@ public abstract class AbstractMergeViewer extends Viewer {
 	}
 	
 	protected byte[] asBytes(File file) throws IOException {
-		InputStream in = new BufferedInputStream(new FileInputStream(file));
-		try {
+		try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			byte[] buffer = new byte[1024];
 			int length;
@@ -280,8 +281,6 @@ public abstract class AbstractMergeViewer extends Viewer {
 			}
 			out.close();
 			return out.toByteArray();
-		} finally {
-			in.close();
 		}
 	}
 

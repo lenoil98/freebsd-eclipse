@@ -23,41 +23,27 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPreferenceConstants;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * @since 3.6
  */
+@RunWith(JUnit4.class)
+@Ignore
 public class StickyViewManagerTest extends UITestCase {
 
-	/**
-	 * The original behaviour of sticky views.
-	 */
-	private boolean originalPreference;
-
-	public StickyViewManagerTest(String testName) {
-		super(testName);
+	public StickyViewManagerTest() {
+		super(StickyViewManagerTest.class.getSimpleName());
 	}
 
 	@Override
 	protected void doSetUp() throws Exception {
-		// preserve the original behaviour
-		originalPreference = PlatformUI.getPreferenceStore().getBoolean(
-				IWorkbenchPreferenceConstants.ENABLE_32_STICKY_CLOSE_BEHAVIOR);
-		// this test tests the new behaviour
-		PlatformUI.getPreferenceStore().setValue(
-				IWorkbenchPreferenceConstants.ENABLE_32_STICKY_CLOSE_BEHAVIOR,
+		setPreference(PlatformUI.getPreferenceStore(), IWorkbenchPreferenceConstants.ENABLE_32_STICKY_CLOSE_BEHAVIOR,
 				false);
 		super.doSetUp();
-	}
-
-	@Override
-	protected void doTearDown() throws Exception {
-		super.doTearDown();
-		// revert to the original behaviour to ensure future tests are not
-		// indirectly tampered by our settings
-		PlatformUI.getPreferenceStore().setValue(
-				IWorkbenchPreferenceConstants.ENABLE_32_STICKY_CLOSE_BEHAVIOR,
-				originalPreference);
 	}
 
 	/**
@@ -65,6 +51,7 @@ public class StickyViewManagerTest extends UITestCase {
 	 * sticky behaviour across all their instances (regardless of whether the
 	 * instance has a secondary id or not).
 	 */
+	@Test
 	public void testMultipleStickyViewAcrossPerspectivesBug280656()
 			throws Exception {
 		IWorkbenchPage page = fWorkbench.getActiveWorkbenchWindow()
@@ -95,6 +82,7 @@ public class StickyViewManagerTest extends UITestCase {
 	 * Tests that hiding multi-instance sticky views from one perspective
 	 * subsequently causes them to be hidden in all other perspectives.
 	 */
+	@Test
 	public void testRemovedMultipleStickyViewAcrossPerspectives()
 			throws Exception {
 		// first we show the special test views
@@ -130,6 +118,7 @@ public class StickyViewManagerTest extends UITestCase {
 	 * Ensures that views that are not defined to be sticky are not indirectly
 	 * affected as a side-effect of the sticky view management code.
 	 */
+	@Test
 	public void testRemovedMultipleStickyViewAcrossPerspectives2()
 			throws Exception {
 		IPerspectiveRegistry registry = fWorkbench.getPerspectiveRegistry();

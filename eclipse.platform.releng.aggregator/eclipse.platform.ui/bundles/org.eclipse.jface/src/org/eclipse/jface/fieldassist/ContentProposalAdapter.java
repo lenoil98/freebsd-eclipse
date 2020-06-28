@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2016 IBM Corporation and others.
+ * Copyright (c) 2005, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -390,7 +390,7 @@ public class ContentProposalAdapter {
 					// and filter the proposals.
 					if (Character.isDefined(key)) {
 						if (filterStyle == FILTER_CUMULATIVE) {
-							filterText = filterText + String.valueOf(key);
+							filterText = filterText + key;
 						} else if (filterStyle == FILTER_CHARACTER) {
 							filterText = String.valueOf(key);
 						}
@@ -620,6 +620,7 @@ public class ContentProposalAdapter {
 			proposalTable.addListener(SWT.SetData, listener);
 			// set the proposals to force population of the table.
 			setProposals(filterProposals(proposals, filterText));
+			proposalTable.setTextDirection(SWT.AUTO_TEXT_DIRECTION);
 
 			proposalTable.setHeaderVisible(false);
 			proposalTable.addSelectionListener(new SelectionListener() {
@@ -675,6 +676,11 @@ public class ContentProposalAdapter {
 				popupSize = getShell().getSize();
 			}
 
+			int dir = proposalTable.getTextDirection();
+			if (dir == SWT.RIGHT_TO_LEFT) {
+				initialX = initialX - popupSize.x;
+			}
+
 			// Constrain to the display
 			Rectangle constrainedBounds = getConstrainedShellBounds(new Rectangle(initialX, initialY, popupSize.x, popupSize.y));
 
@@ -707,8 +713,6 @@ public class ContentProposalAdapter {
 				item.setText(getString(current));
 				item.setImage(getImage(current));
 				item.setData(current);
-			} else {
-				// this should not happen, but does on win32
 			}
 		}
 
@@ -1992,9 +1996,8 @@ public class ContentProposalAdapter {
 		}
 		String contents = getControlContentAdapter().getControlContents(
 				getControl());
-		IContentProposal[] proposals = proposalProvider.getProposals(contents,
+		return proposalProvider.getProposals(contents,
 				position);
-		return proposals;
 	}
 
 	/**
@@ -2124,7 +2127,7 @@ public class ContentProposalAdapter {
 	 */
 	private boolean allowsAutoActivate() {
 		return (autoActivateString != null && autoActivateString.length() > 0) // there are specific autoactivation chars supplied
-		  || (autoActivateString == null && triggerKeyStroke == null);    // we autoactivate on everything
+			|| (autoActivateString == null && triggerKeyStroke == null);    // we autoactivate on everything
 	}
 
 	/**

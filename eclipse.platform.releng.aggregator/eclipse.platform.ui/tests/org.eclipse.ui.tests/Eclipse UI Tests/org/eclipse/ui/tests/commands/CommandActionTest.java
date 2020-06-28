@@ -15,6 +15,10 @@
 
 package org.eclipse.ui.tests.commands;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,13 +28,15 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.IHandlerActivation;
 import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.internal.actions.CommandAction;
-import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @since 3.3
  *
  */
-public class CommandActionTest extends UITestCase {
+public class CommandActionTest {
 	// you can find these commands in org.eclipse.ui.tests/plugin.xml
 	private static final String PREFIX = "tests.commands.CCT.";
 	private static final String CMD1_ID = PREFIX + "cmd1";
@@ -42,11 +48,9 @@ public class CommandActionTest extends UITestCase {
 	private VerifyHandler2 cmd2Handler;
 	private IHandlerActivation cmd2Activation;
 
-	@Override
-	protected void doSetUp() throws Exception {
-		super.doSetUp();
-		handlerService = fWorkbench
-				.getService(IHandlerService.class);
+	@Before
+	public void doSetUp() throws Exception {
+		handlerService = PlatformUI.getWorkbench().getService(IHandlerService.class);
 
 		cmd1Handler = new VerifyHandler();
 		cmd1Activation = handlerService.activateHandler(CMD1_ID, cmd1Handler);
@@ -54,8 +58,8 @@ public class CommandActionTest extends UITestCase {
 		cmd2Activation = handlerService.activateHandler(CMD2_ID, cmd2Handler);
 	}
 
-	@Override
-	protected void doTearDown() throws Exception {
+	@After
+	public void doTearDown() throws Exception {
 		if (cmd1Activation != null) {
 			handlerService.deactivateHandler(cmd1Activation);
 			cmd1Activation = null;
@@ -64,7 +68,6 @@ public class CommandActionTest extends UITestCase {
 			handlerService.deactivateHandler(cmd2Activation);
 			cmd2Activation = null;
 		}
-		super.doTearDown();
 	}
 
 	private static class VerifyHandler2 extends AbstractHandler {
@@ -92,23 +95,17 @@ public class CommandActionTest extends UITestCase {
 		}
 	}
 
-	/**
-	 * @param testName
-	 */
-	public CommandActionTest(String testName) {
-		super(testName);
-	}
-
+	@Test
 	public void testCommandId() throws Exception {
 
 		// create a command action for CMD1_ID, which takes no parameters.
-		CommandAction action1 = new CommandAction(PlatformUI.getWorkbench(),
-				CMD1_ID);
+		CommandAction action1 = new CommandAction(PlatformUI.getWorkbench(), CMD1_ID);
 		assertEquals(0, cmd1Handler.count);
 		action1.run();
 		assertEquals(1, cmd1Handler.count);
 	}
 
+	@Test
 	public void testParameterizedCommand() throws Exception {
 
 		// create a command action for CMD2_id which takes parameters.
@@ -121,8 +118,7 @@ public class CommandActionTest extends UITestCase {
 		map.put("protocol", "true"); //$NON-NLS-1$ //$NON-NLS-2$
 		map.put("host", "true");
 
-		CommandAction action2 = new CommandAction(PlatformUI.getWorkbench(),
-				CMD2_ID, map);//$NON-NLS-1$
+		CommandAction action2 = new CommandAction(PlatformUI.getWorkbench(), CMD2_ID, map);
 		action2.run();
 		assertEquals(1, cmd2Handler.count);
 		assertNotNull(cmd2Handler.paramValue1);
@@ -134,7 +130,7 @@ public class CommandActionTest extends UITestCase {
 		map.put("protocol", "false"); //$NON-NLS-1$ //$NON-NLS-2$
 		map.put("host", "false");
 
-		action2 = new CommandAction(PlatformUI.getWorkbench(), CMD2_ID, map);//$NON-NLS-1$
+		action2 = new CommandAction(PlatformUI.getWorkbench(), CMD2_ID, map);
 		action2.run();
 		assertEquals(2, cmd2Handler.count);
 		assertNotNull(cmd2Handler.paramValue1);

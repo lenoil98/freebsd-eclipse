@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2017 IBM Corporation and others.
+ * Copyright (c) 2005, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,9 +14,16 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.refactoring;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Map;
+
+import org.junit.Rule;
+import org.junit.Test;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 
@@ -39,32 +46,19 @@ import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatur
 import org.eclipse.jdt.internal.corext.refactoring.base.RefactoringStatusCodes;
 
 import org.eclipse.jdt.ui.PreferenceConstants;
+import org.eclipse.jdt.ui.tests.refactoring.rules.RefactoringTestSetup;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
-public class IntroduceParameterObjectTests extends RefactoringTest {
-
-	private static final Class<IntroduceParameterObjectTests> CLAZZ= IntroduceParameterObjectTests.class;
+public class IntroduceParameterObjectTests extends GenericRefactoringTest {
 	private static final String DEFAULT_SUB_DIR= "sub";
 	private static final String REFACTORING_PATH= "IntroduceParameterObject/";
 
-	public static Test setUpTest(Test someTest) {
-		return new RefactoringTestSetup(someTest);
-	}
-
-	public static Test suite() {
-		return new RefactoringTestSetup(new TestSuite(CLAZZ));
-	}
+	@Rule
+	public RefactoringTestSetup rts= new RefactoringTestSetup();
 
 	private IPackageFragment fPack;
 	protected IntroduceParameterObjectDescriptor fDescriptor;
-
-	public IntroduceParameterObjectTests(String name) {
-		super(name);
-	}
 
 	private void checkAdditionalFile(String subdir, String fileName) throws Exception, JavaModelException, IOException {
 		IPackageFragment pack= getSubPackage(subdir);
@@ -92,14 +86,14 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 	}
 
 	private String getCUFileName(boolean caller) {
-		StringBuffer sb= new StringBuffer();
+		StringBuilder sb= new StringBuilder();
 		sb.append(getCUName(caller));
 		sb.append(".java");
 		return sb.toString();
 	}
 
 	private String getCUName(boolean caller) {
-		StringBuffer sb= new StringBuffer();
+		StringBuilder sb= new StringBuilder();
 		sb.append(Character.toUpperCase(getName().charAt(0)) + getName().substring(1));
 		if (caller)
 			sb.append("Caller");
@@ -173,8 +167,8 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 	}
 
 	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	public void genericbefore() throws Exception {
+		super.genericbefore();
 		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
 		store.setValue(PreferenceConstants.CODEGEN_ADD_COMMENTS, false);
 		fDescriptor= RefactoringSignatureDescriptorFactory.createIntroduceParameterObjectDescriptor();
@@ -187,9 +181,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		assertNotNull(type);
 		assertTrue(type.exists());
 		IMethod fooMethod= null;
-		IMethod[] methods= type.getMethods();
-		for (int i= 0; i < methods.length; i++) {
-			IMethod method= methods[i];
+		for (IMethod method : type.getMethods()) {
 			if ("foo".equals(method.getElementName())) {
 				fooMethod= method;
 			}
@@ -204,20 +196,22 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 	}
 
 	@Override
-	protected void tearDown() throws Exception {
-		super.tearDown();
+	public void genericafter() throws Exception {
+		super.genericafter();
 		fDescriptor=null;
 		fPack=null;
 		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
 		store.setToDefault(PreferenceConstants.CODEGEN_ADD_COMMENTS);
 	}
 
+	@Test
 	public void testBodyUpdate() throws Exception {
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(false);
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testDefaultPackagePoint() throws Exception {
 		setupPackage("");
 		fDescriptor.setMethod(setupMethod());
@@ -226,6 +220,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testDefaultPackagePointTopLevel() throws Exception {
 		setupPackage("");
 		fDescriptor.setMethod(setupMethod());
@@ -234,6 +229,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testDelegateCreation() throws Exception {
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setGetters(true);
@@ -249,6 +245,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testDelegateCreationCodeStyle() throws Exception {
 		IJavaProject javaProject= getRoot().getJavaProject();
 		Map<String, String> originalOptions= javaProject.getOptions(false);
@@ -273,6 +270,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		}
 	}
 
+	@Test
 	public void testImportAddEnclosing() throws Exception {
 		createCaller(null);
 		fDescriptor.setMethod(setupMethod());
@@ -285,6 +283,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		checkCaller(null);
 	}
 
+	@Test
 	public void testImportAddTopLevel() throws Exception {
 		createCaller(DEFAULT_SUB_DIR);
 		fDescriptor.setMethod(setupMethod());
@@ -295,6 +294,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		checkCaller(DEFAULT_SUB_DIR);
 	}
 
+	@Test
 	public void testImportNameSimple() throws Exception {
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setClassName("ArrayList");
@@ -303,6 +303,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testInlineRename() throws Exception {
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(false);
@@ -312,16 +313,18 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		fDescriptor.setParameters(parameters);
 		runRefactoring(false, true);
 	}
-	
+
+	@Test
 	public void testSubclassInCU() throws Exception {
 		// test for https://bugs.eclipse.org/bugs/show_bug.cgi?id=259095
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(true);
 		fDescriptor.setClassName("FooParameter");
-		
+
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testInterfaceMethod() throws Exception {
 		createAdditionalFile(null, "TestInterfaceMethod2Impl");
 		createAdditionalFile(null, "ITestInterfaceMethod");
@@ -334,6 +337,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		checkAdditionalFile(null, "TestInterfaceMethod2Impl");
 	}
 
+	@Test
 	public void testRecursiveReordered() throws Exception {
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(false);
@@ -346,12 +350,14 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testRecursiveSimple() throws Exception {
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(false);
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testRecursiveSimpleReordered() throws Exception {
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(false);
@@ -359,6 +365,7 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 	}
 
 
+	@Test
 	public void testReorderGetter() throws Exception{
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setGetters(true);
@@ -372,12 +379,14 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testSimpleEnclosing() throws Exception{
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(false);
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testSimpleEnclosingCodeStyle() throws Exception {
 		IJavaProject javaProject= getRoot().getJavaProject();
 		Map<String, String> originalOptions= javaProject.getOptions(false);
@@ -397,12 +406,14 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		}
 	}
 
+	@Test
 	public void testVarArgsNotReordered() throws Exception{
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(false);
 		runRefactoring(false, true);
 	}
 
+	@Test
 	public void testVarArgsReordered() throws Exception{
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(false);
@@ -414,14 +425,16 @@ public class IntroduceParameterObjectTests extends RefactoringTest {
 		fDescriptor.setParameters(parameters);
 		runRefactoring(false, true);
 	}
-	
+
+	@Test
 	public void testMethodTypeParamArgs() throws Exception {
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(false);
 		fDescriptor.setClassName("FooParameter");
 		runRefactoring(false, true);
 	}
-	
+
+	@Test
 	public void testMethodTypeParamArgsTopLevel() throws Exception {
 		fDescriptor.setMethod(setupMethod());
 		fDescriptor.setTopLevel(true);

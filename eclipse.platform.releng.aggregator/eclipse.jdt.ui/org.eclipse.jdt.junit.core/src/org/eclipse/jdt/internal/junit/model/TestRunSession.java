@@ -731,7 +731,7 @@ public class TestRunSession implements ITestRunSession {
 		@Override
 		public void testEnded(String testId, String testName) {
 			boolean isIgnored= testName.startsWith(MessageIds.IGNORED_TEST_PREFIX);
-			
+
 			TestElement testElement= getTestElement(testId);
 			if (testElement == null) {
 				testElement= createUnrootedTestElement(testId, testName);
@@ -866,8 +866,8 @@ public class TestRunSession implements ITestRunSession {
 		if (testElement instanceof TestSuiteElement) {
 			TestSuiteElement testSuiteElement= (TestSuiteElement) testElement;
 			ITestElement[] children= testSuiteElement.getChildren();
-			for (int i= 0; i < children.length; i++) {
-				addFailures(failures, children[i]);
+			for (ITestElement child : children) {
+				addFailures(failures, child);
 			}
 		}
 	}

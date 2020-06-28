@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -179,8 +178,8 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 	 * Preference key to save
 	 */
 	private static final String KEY_LAST_ACTIVE_PARTICIPANT_ID = "lastactiveparticipant_id"; //$NON-NLS-1$
-    private static final String KEY_LAST_ACTIVE_PARTICIPANT_SECONDARY_ID = "lastactiveparticipant_sec_id"; //$NON-NLS-1$
-    private static final String KEY_LINK_WITH_EDITOR = "linkWithEditor"; //$NON-NLS-1$
+	private static final String KEY_LAST_ACTIVE_PARTICIPANT_SECONDARY_ID = "lastactiveparticipant_sec_id"; //$NON-NLS-1$
+	private static final String KEY_LINK_WITH_EDITOR = "linkWithEditor"; //$NON-NLS-1$
 	private static final String KEY_SETTINGS_SECTION= "SynchronizeViewSettings"; //$NON-NLS-1$
 
 
@@ -338,14 +337,14 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 		getSite().getPage().removePartListener(fLinkWithEditorListener);
 	}
 
-    /**
-     *
-     */
-    private void rememberCurrentParticipant() {
-        IDialogSettings section = getDialogSettings();
-        section.put(KEY_LAST_ACTIVE_PARTICIPANT_ID, activeParticipantRef.getId());
-        section.put(KEY_LAST_ACTIVE_PARTICIPANT_SECONDARY_ID, activeParticipantRef.getSecondaryId());
-    }
+	/**
+	 *
+	 */
+	private void rememberCurrentParticipant() {
+		IDialogSettings section = getDialogSettings();
+		section.put(KEY_LAST_ACTIVE_PARTICIPANT_ID, activeParticipantRef.getId());
+		section.put(KEY_LAST_ACTIVE_PARTICIPANT_SECONDARY_ID, activeParticipantRef.getSecondaryId());
+	}
 
 	@Override
 	protected IPage createDefaultPage(PageBook book) {
@@ -357,8 +356,7 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 
 	@Override
 	public void participantsAdded(final ISynchronizeParticipant[] participants) {
-		for (int i = 0; i < participants.length; i++) {
-			ISynchronizeParticipant participant = participants[i];
+		for (ISynchronizeParticipant participant : participants) {
 			if (isAvailable() && select(TeamUI.getSynchronizeManager().get(participant.getId(), participant.getSecondaryId()))) {
 				SynchronizeViewWorkbenchPart part = new SynchronizeViewWorkbenchPart(participant, getSite());
 				fParticipantToPart.put(participant, part);
@@ -372,8 +370,7 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 	public void participantsRemoved(final ISynchronizeParticipant[] participants) {
 		if (isAvailable()) {
 			Runnable r = () -> {
-				for (int i = 0; i < participants.length; i++) {
-					ISynchronizeParticipant participant = participants[i];
+				for (ISynchronizeParticipant participant : participants) {
 					if (isAvailable()) {
 						SynchronizeViewWorkbenchPart part = (SynchronizeViewWorkbenchPart)fParticipantToPart.get(participant);
 						if (part != null) {
@@ -571,9 +568,9 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 		ISynchronizeManager manager = TeamUI.getSynchronizeManager();
 		List participants = Arrays.asList(getParticipants());
 		boolean errorOccurred = false;
-		for (int i = 0; i < participants.size(); i++) {
+		for (Object participant : participants) {
 			try {
-				ISynchronizeParticipantReference ref = (ISynchronizeParticipantReference)participants.get(i);
+				ISynchronizeParticipantReference ref = (ISynchronizeParticipantReference)participant;
 				participantsAdded(new ISynchronizeParticipant[] {ref.getParticipant()});
 			} catch (TeamException e) {
 				errorOccurred = true;
@@ -612,8 +609,7 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 		// create pages
 		List<ISynchronizeParticipantReference> participants = new ArrayList<>();
 		ISynchronizeParticipantReference[] refs = manager.getSynchronizeParticipants();
-		for (int i = 0; i < refs.length; i++) {
-			ISynchronizeParticipantReference ref =refs[i];
+		for (ISynchronizeParticipantReference ref : refs) {
 			if(select(ref)) {
 				participants.add(ref);
 			}
@@ -659,7 +655,7 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 	private String getSettingsKey(ISynchronizeParticipant participant) {
 		String id = participant.getId();
 		String secondaryId = participant.getSecondaryId();
-	    return secondaryId == null ? id : id + '.' + secondaryId;
+		return secondaryId == null ? id : id + '.' + secondaryId;
 	}
 
 	private IDialogSettings getDialogSettings(ISynchronizeParticipant participant) {
@@ -685,8 +681,8 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 	@Override
 	public Saveable[] getSaveables() {
 		Set<Saveable> result = new HashSet<>();
-		for (Iterator iter = fPartToParticipant.keySet().iterator(); iter.hasNext();) {
-			SynchronizeViewWorkbenchPart part = (SynchronizeViewWorkbenchPart) iter.next();
+		for (Object element : fPartToParticipant.keySet()) {
+			SynchronizeViewWorkbenchPart part = (SynchronizeViewWorkbenchPart) element;
 			Saveable saveable = getSaveable(part.getParticipant());
 			if (saveable != null) {
 				result.add(saveable);
@@ -718,8 +714,7 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 		if (saveables.length == 0)
 			return;
 		monitor.beginTask(null, 100* saveables.length);
-		for (int i = 0; i < saveables.length; i++) {
-			Saveable saveable = saveables[i];
+		for (Saveable saveable : saveables) {
 			try {
 				saveable.doSave(Policy.subMonitorFor(monitor, 100));
 			} catch (CoreException e) {
@@ -739,8 +734,7 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 	@Override
 	public boolean isDirty() {
 		Saveable[] saveables = getSaveables();
-		for (int i = 0; i < saveables.length; i++) {
-			Saveable saveable = saveables[i];
+		for (Saveable saveable : saveables) {
 			if (saveable.isDirty())
 				return true;
 		}
@@ -1014,10 +1008,11 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 				IEditorPart editor = p.findEditor(input);
 				if (editor == null) {
 					IEditorReference[] er = p.getEditorReferences();
-					for (int i = 0; i < er.length; i++)
-						if (er[i].getId().equals(
-								"org.eclipse.compare.CompareEditor") && matches(er[i], input)) //$NON-NLS-1$
-							editor = er[i].getEditor(false);
+					for (IEditorReference e : er) {
+						if (e.getId().equals("org.eclipse.compare.CompareEditor") && matches(e, input)) { //$NON-NLS-1$
+							editor = e.getEditor(false);
+						}
+					}
 				}
 				return editor;
 			}
@@ -1104,7 +1099,7 @@ public class SynchronizeView extends PageBookView implements ISynchronizeView, I
 			if (input instanceof IEditorInput) {
 				return showInput(getInputFromEditor((IEditorInput) input));
 			}
-			 return showInput(input);
+			return showInput(input);
 		}
 		return false;
 	}

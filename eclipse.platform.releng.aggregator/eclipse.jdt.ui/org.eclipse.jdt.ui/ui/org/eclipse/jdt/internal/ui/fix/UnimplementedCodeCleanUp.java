@@ -73,7 +73,7 @@ public class UnimplementedCodeCleanUp extends AbstractMultiFix {
 			buf.append("public class Face implements IFace {\n"); //$NON-NLS-1$
 		}
 		if (isEnabled(CleanUpConstants.ADD_MISSING_METHODES)) {
-			boolean createComments= Boolean.valueOf(PreferenceConstants.getPreference(PreferenceConstants.CODEGEN_ADD_COMMENTS, null)).booleanValue();
+			boolean createComments= Boolean.parseBoolean(PreferenceConstants.getPreference(PreferenceConstants.CODEGEN_ADD_COMMENTS, null));
 			if (createComments)
 				buf.append(indent(getOverridingMethodComment(), "    ")); //$NON-NLS-1$
 
@@ -126,8 +126,8 @@ public class UnimplementedCodeCleanUp extends AbstractMultiFix {
 		IProblemLocation[] locations= filter(convertProblems(compilationUnit.getProblems()), new int[] { IProblem.AbstractMethodMustBeImplemented, IProblem.EnumConstantMustImplementAbstractMethod });
 
 		HashSet<ASTNode> types= new HashSet<>();
-		for (int i= 0; i < locations.length; i++) {
-			ASTNode type= UnimplementedCodeFix.getSelectedTypeNode(compilationUnit, locations[i]);
+		for (IProblemLocation location : locations) {
+			ASTNode type= UnimplementedCodeFix.getSelectedTypeNode(compilationUnit, location);
 			if (type != null) {
 				types.add(type);
 			}
@@ -197,9 +197,9 @@ public class UnimplementedCodeCleanUp extends AbstractMultiFix {
 		StringBuilder buf= new StringBuilder();
 		buf.append(indent);
 		char[] codeArray= code.toCharArray();
-		for (int i= 0; i < codeArray.length; i++) {
-			buf.append(codeArray[i]);
-			if (codeArray[i] == '\n')
+		for (char element : codeArray) {
+			buf.append(element);
+			if (element == '\n')
 				buf.append(indent);
 		}
 		buf.append("\n"); //$NON-NLS-1$

@@ -84,9 +84,6 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 	private DelegatingModelPresentation fOwner = null;
 
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IDebugEditorPresentation#removeAnntations(org.eclipse.ui.IEditorPart, org.eclipse.debug.core.model.IThread)
-	 */
 	@Override
 	public void removeAnnotations(IEditorPart editorPart, IThread thread) {
 		IDebugModelPresentation presentation = getPresentation();
@@ -95,9 +92,6 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IDebugEditorPresentation#addAnnotations(org.eclipse.ui.IEditorPart, org.eclipse.debug.core.model.IStackFrame)
-	 */
 	@Override
 	public boolean addAnnotations(IEditorPart editorPart, IStackFrame frame) {
 		IDebugModelPresentation presentation = getPresentation();
@@ -133,17 +127,17 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 	public Image getImage(Object element) {
 		initImageRegistry();
 		Image image = getPresentation().getImage(element);
-        if (image == null) {
-            image = getDefaultImage(element);
-        }
-        if (image != null) {
-            int flags= computeAdornmentFlags(element);
-            if (flags > 0) {
-                CompositeDebugImageDescriptor descriptor= new CompositeDebugImageDescriptor(image, flags);
-                return DebugUIPlugin.getImageDescriptorRegistry().get(descriptor);
-            }
-        }
-        return image;
+		if (image == null) {
+			image = getDefaultImage(element);
+		}
+		if (image != null) {
+			int flags= computeAdornmentFlags(element);
+			if (flags > 0) {
+				CompositeDebugImageDescriptor descriptor= new CompositeDebugImageDescriptor(image, flags);
+				return DebugUIPlugin.getImageDescriptorRegistry().get(descriptor);
+			}
+		}
+		return image;
 	}
 
 	/**
@@ -156,81 +150,81 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 	}
 
 	/**
-     * Computes and return common adornment flags for the given element.
-     *
-     * @param element
-     * @return adornment flags defined in CompositeDebugImageDescriptor
-     */
-    private int computeAdornmentFlags(Object element) {
-        if (element instanceof IBreakpoint) {
-            if (!DebugPlugin.getDefault().getBreakpointManager().isEnabled()) {
-                return CompositeDebugImageDescriptor.SKIP_BREAKPOINT;
-            }
-        }
-        return 0;
-    }
+	 * Computes and return common adornment flags for the given element.
+	 *
+	 * @param element
+	 * @return adornment flags defined in CompositeDebugImageDescriptor
+	 */
+	private int computeAdornmentFlags(Object element) {
+		if (element instanceof IBreakpoint) {
+			if (!DebugPlugin.getDefault().getBreakpointManager().isEnabled()) {
+				return CompositeDebugImageDescriptor.SKIP_BREAKPOINT;
+			}
+		}
+		return 0;
+	}
 
-    /**
-     * Returns a default text label for the debug element
-     */
-    protected String getDefaultText(Object element) {
-        return DebugUIPlugin.getDefaultLabelProvider().getText(element);
-    }
+	/**
+	 * Returns a default text label for the debug element
+	 */
+	protected String getDefaultText(Object element) {
+		return DebugUIPlugin.getDefaultLabelProvider().getText(element);
+	}
 
-    /**
-     * Returns a default image for the debug element
-     */
-    protected Image getDefaultImage(Object element) {
-        return DebugUIPlugin.getDefaultLabelProvider().getImage(element);
-    }
+	/**
+	 * Returns a default image for the debug element
+	 */
+	protected Image getDefaultImage(Object element) {
+		return DebugUIPlugin.getDefaultLabelProvider().getImage(element);
+	}
 
-    /**
+	/**
 	 * @see IDebugModelPresentation#getText(Object)
 	 */
 	@Override
 	public String getText(Object element) {
-        if (!(element instanceof IndexedVariablePartition)) {
-            // Attempt to delegate
-            String text = getPresentation().getText(element);
-            if (text != null) {
-                return text;
-            }
-        }
-        // If no delegate returned a text label, use the default
-        if (showVariableTypeNames()) {
-            try {
-                if (element instanceof IExpression) {
-                    StringBuffer buf = new StringBuffer();
-                    IValue value = ((IExpression)element).getValue();
-                    if (value != null) {
-                        String type = value.getReferenceTypeName();
-                        if (type != null && type.length() > 0) {
-                        	buf.append(type);
-                        	buf.append(' ');
-                        }
-                    }
-                    buf.append(getDefaultText(element));
-                    return buf.toString();
-                } else if (element instanceof IVariable) {
-                    return new StringBuffer(((IVariable)element).getValue().getReferenceTypeName()).append(' ').append(getDefaultText(element)).toString();
-                }
-            } catch (DebugException de) {
-                DebugUIPlugin.log(de);
-            }
-        }
-        return getDefaultText(element);
+		if (!(element instanceof IndexedVariablePartition)) {
+			// Attempt to delegate
+			String text = getPresentation().getText(element);
+			if (text != null) {
+				return text;
+			}
+		}
+		// If no delegate returned a text label, use the default
+		if (showVariableTypeNames()) {
+			try {
+				if (element instanceof IExpression) {
+					StringBuilder buf = new StringBuilder();
+					IValue value = ((IExpression)element).getValue();
+					if (value != null) {
+						String type = value.getReferenceTypeName();
+						if (type != null && type.length() > 0) {
+							buf.append(type);
+							buf.append(' ');
+						}
+					}
+					buf.append(getDefaultText(element));
+					return buf.toString();
+				} else if (element instanceof IVariable) {
+					return new StringBuilder(((IVariable)element).getValue().getReferenceTypeName()).append(' ').append(getDefaultText(element)).toString();
+				}
+			} catch (DebugException de) {
+				DebugUIPlugin.log(de);
+			}
+		}
+		return getDefaultText(element);
 	}
 
-    /**
-     * Whether or not to show variable type names.
-     * This option is configured per model presentation.
-     * This allows this option to be set per view, for example.
-     */
-    protected boolean showVariableTypeNames() {
+	/**
+	 * Whether or not to show variable type names.
+	 * This option is configured per model presentation.
+	 * This allows this option to be set per view, for example.
+	 */
+	protected boolean showVariableTypeNames() {
 		Boolean show = (Boolean) fAttributes.get(DISPLAY_VARIABLE_TYPE_NAMES);
 		show = show == null ? Boolean.FALSE : show;
-        return show.booleanValue();
-    }
+		return show.booleanValue();
+	}
 
 	/**
 	 * @see IDebugModelPresentation#computeDetail(IValue, IValueDetailListener)
@@ -299,7 +293,7 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 		}
 		ListenerList<ILabelProviderListener> listeners = fListeners;
 		if (listeners != null) {
-		    listeners.remove(listener);
+			listeners.remove(listener);
 		}
 	}
 
@@ -308,12 +302,12 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 	 */
 	protected IDebugModelPresentation getPresentation() {
 		if (fPresentation == null) {
-		    synchronized (this) {
-		        if (fPresentation != null) {
-		            // In the case that the synchronization is enforced, the "blocked" thread
-		            // should return the presentation configured by the "owning" thread.
-		            return fPresentation;
-		        }
+			synchronized (this) {
+				if (fPresentation != null) {
+					// In the case that the synchronization is enforced, the "blocked" thread
+					// should return the presentation configured by the "owning" thread.
+					return fPresentation;
+				}
 				try {
 					IDebugModelPresentation tempPresentation= (IDebugModelPresentation) DebugUIPlugin.createExtension(fConfig, "class"); //$NON-NLS-1$
 					// configure it
@@ -332,7 +326,7 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 				} catch (CoreException e) {
 					DebugUIPlugin.log(e);
 				}
-		    }
+			}
 		}
 		return fPresentation;
 	}
@@ -400,48 +394,36 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 		return fAttributes;
 	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IColorProvider#getForeground(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Color getForeground(Object element) {
-        IDebugModelPresentation presentation = getPresentation();
-        if (presentation instanceof IColorProvider) {
-            IColorProvider colorProvider = (IColorProvider) presentation;
-            return colorProvider.getForeground(element);
-        }
-        return null;
-    }
+		IDebugModelPresentation presentation = getPresentation();
+		if (presentation instanceof IColorProvider) {
+			IColorProvider colorProvider = (IColorProvider) presentation;
+			return colorProvider.getForeground(element);
+		}
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IColorProvider#getBackground(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Color getBackground(Object element) {
-        IDebugModelPresentation presentation = getPresentation();
-        if (presentation instanceof IColorProvider) {
-            IColorProvider colorProvider = (IColorProvider) presentation;
-            return colorProvider.getBackground(element);
-        }
-        return null;
-    }
+		IDebugModelPresentation presentation = getPresentation();
+		if (presentation instanceof IColorProvider) {
+			IColorProvider colorProvider = (IColorProvider) presentation;
+			return colorProvider.getBackground(element);
+		}
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IFontProvider#getFont(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Font getFont(Object element) {
-        IDebugModelPresentation presentation = getPresentation();
-        if (presentation instanceof IFontProvider) {
-            IFontProvider fontProvider = (IFontProvider) presentation;
-            return fontProvider.getFont(element);
-        }
-        return null;
-    }
+		IDebugModelPresentation presentation = getPresentation();
+		if (presentation instanceof IFontProvider) {
+			IFontProvider fontProvider = (IFontProvider) presentation;
+			return fontProvider.getFont(element);
+		}
+		return null;
+	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IInstructionPointerPresentation#getInstructionPointerAnnotation(org.eclipse.ui.IEditorPart, org.eclipse.debug.core.model.IStackFrame)
-	 */
 	@Override
 	public Annotation getInstructionPointerAnnotation(IEditorPart editorPart, IStackFrame frame) {
 		IDebugModelPresentation presentation = getPresentation();
@@ -452,9 +434,6 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IInstructionPointerPresentation#getMarkerAnnotationSpecificationId(org.eclipse.ui.IEditorPart, org.eclipse.debug.core.model.IStackFrame)
-	 */
 	@Override
 	public String getInstructionPointerAnnotationType(IEditorPart editorPart, IStackFrame frame) {
 		IDebugModelPresentation presentation = getPresentation();
@@ -465,9 +444,6 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IInstructionPointerPresentation#getInstructionPointerImage(org.eclipse.ui.IEditorPart, org.eclipse.debug.core.model.IStackFrame)
-	 */
 	@Override
 	public Image getInstructionPointerImage(IEditorPart editorPart, IStackFrame frame) {
 		IDebugModelPresentation presentation = getPresentation();
@@ -478,9 +454,6 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IInstructionPointerPresentation#getInstructionPointerText(org.eclipse.ui.IEditorPart, org.eclipse.debug.core.model.IStackFrame)
-	 */
 	@Override
 	public String getInstructionPointerText(IEditorPart editorPart, IStackFrame frame) {
 		IDebugModelPresentation presentation = getPresentation();
@@ -491,9 +464,6 @@ public class LazyModelPresentation implements IDebugModelPresentation, IDebugEdi
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IDebugModelPresentationExtension#requiresUIThread(java.lang.Object)
-	 */
 	@Override
 	public boolean requiresUIThread(Object element) {
 		if (!DebugPluginImages.isInitialized()) {

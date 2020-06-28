@@ -13,6 +13,9 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.api.workbenchpart;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IStorage;
 import org.eclipse.core.runtime.CoreException;
@@ -25,12 +28,16 @@ import org.eclipse.ui.IPersistableElement;
 import org.eclipse.ui.IViewReference;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.tests.harness.util.CloseTestWindowsRule;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  * @since 3.0
  */
-public class ArbitraryPropertyTest extends UITestCase {
+public class ArbitraryPropertyTest {
 	/**
 	 *
 	 */
@@ -43,27 +50,17 @@ public class ArbitraryPropertyTest extends UITestCase {
 
 	static final String VIEW_ID = "org.eclipse.ui.tests.workbenchpart.OverriddenTitleView";
 
-	/**
-	 * @param testName
-	 */
-	public ArbitraryPropertyTest(String testName) {
-		super(testName);
-	}
-
 	IWorkbenchWindow window;
 
 	IWorkbenchPage page;
 
-	@Override
-	protected void doSetUp() throws Exception {
-		super.doSetUp();
-		window = openTestWindow();
-		page = window.getActivePage();
-	}
+	@Rule
+	public CloseTestWindowsRule closeTestWindows = new CloseTestWindowsRule();
 
-	@Override
-	protected void doTearDown() throws Exception {
-		super.doTearDown();
+	@Before
+	public void doSetUp() throws Exception {
+		window = UITestCase.openTestWindow();
+		page = window.getActivePage();
 	}
 
 	static class PropListener implements IPropertyChangeListener {
@@ -81,6 +78,7 @@ public class ArbitraryPropertyTest extends UITestCase {
 		}
 	}
 
+	@Test
 	public void testViewProperties() throws Exception {
 		OverriddenTitleView view = (OverriddenTitleView) page.showView(VIEW_ID);
 		IViewReference ref = (IViewReference) page.getReference(view);
@@ -108,6 +106,7 @@ public class ArbitraryPropertyTest extends UITestCase {
 		}
 	}
 
+	@Test
 	public void testEditorProperties() throws Exception {
 		IFileEditorInput input = new IFileEditorInput() {
 			@Override

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -78,14 +78,24 @@ public class ExceptionAnalyzer extends AbstractExceptionAnalyzer {
 	}
 
 	public static ITypeBinding[] perform(ASTNode enclosingNode, Selection selection) {
+		return perform(enclosingNode, selection, true);
+	}
+
+	/**
+	 * @param enclosingNode The ASTNode to analyze
+	 * @param selection Selection within ASTNode
+	 * @param forceRemove <code>true</code> to remove exception if enclosed method throws same exception
+	 * @return Array of ITypeBinding representing the uncaught exceptions
+	 */
+	public static ITypeBinding[] perform(ASTNode enclosingNode, Selection selection, boolean forceRemove) {
 		ExceptionAnalyzer analyzer= new ExceptionAnalyzer(enclosingNode, selection);
 		enclosingNode.accept(analyzer);
 		List<ITypeBinding> exceptions= analyzer.getCurrentExceptions();
 		if (enclosingNode.getNodeType() == ASTNode.METHOD_DECLARATION) {
 			List<Type> thrownExceptions= ((MethodDeclaration) enclosingNode).thrownExceptionTypes();
-			for (Iterator<Type> thrown= thrownExceptions.iterator(); thrown.hasNext();) {
-				ITypeBinding thrownException= thrown.next().resolveBinding();
-				if (thrownException != null) {
+			for (Type type : thrownExceptions) {
+				ITypeBinding thrownException= type.resolveBinding();
+				if (thrownException != null && forceRemove) {
 					updateExceptionsList(exceptions, thrownException);
 				}
 			}
@@ -207,9 +217,8 @@ public class ExceptionAnalyzer extends AbstractExceptionAnalyzer {
 	private boolean handleExceptions(IMethodBinding binding, ASTNode node) {
 		if (binding == null)
 			return true;
-		ITypeBinding[] exceptions= binding.getExceptionTypes();
-		for (int i= 0; i < exceptions.length; i++) {
-			addException(exceptions[i], node.getAST());
+		for (ITypeBinding exception : binding.getExceptionTypes()) {
+			addException(exception, node.getAST());
 		}
 		return true;
 	}

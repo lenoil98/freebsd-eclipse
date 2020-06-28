@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2018 IBM Corporation and others.
+ * Copyright (c) 2005, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,12 +13,18 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.quickfix;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.TestOptions;
@@ -58,7 +64,7 @@ import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.cleanup.CleanUpOptions;
 import org.eclipse.jdt.ui.cleanup.ICleanUp;
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.dialogs.StatusInfo;
@@ -68,11 +74,20 @@ import org.eclipse.jdt.internal.ui.preferences.formatter.ProfileManager.CustomPr
 import org.eclipse.jdt.internal.ui.preferences.formatter.ProfileManager.Profile;
 import org.eclipse.jdt.internal.ui.preferences.formatter.ProfileStore;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+	CleanUpStressTest.class,
+	CleanUpTest.class,
+	CleanUpTest1d5.class,
+	CleanUpTest1d7.class,
+	CleanUpTest1d8.class,
+	CleanUpTest1d10.class,
+	CleanUpAnnotationTest.class,
+	SaveParticipantTest.class,
+	CleanUpActionTest.class,
+	NullAnnotationsCleanUpTest1d8.class
+})
 public class CleanUpTestCase extends QuickFixTest {
-
 	protected static final String FIELD_COMMENT= "/* Test */";
 
 	protected IPackageFragmentRoot fSourceFolder;
@@ -80,30 +95,8 @@ public class CleanUpTestCase extends QuickFixTest {
 
 	private CustomProfile fProfile;
 
-	public static Test suite() {
-		TestSuite suite= new TestSuite(CleanUpTestCase.class.getName());
-
-		suite.addTest(CleanUpStressTest.suite());
-		suite.addTest(CleanUpTest.suite());
-		suite.addTest(CleanUpTest18.suite());
-		suite.addTest(CleanUpAnnotationTest.suite());
-		suite.addTest(SaveParticipantTest.suite());
-		suite.addTest(CleanUpActionTest.suite());
-		suite.addTest(NullAnnotationsCleanUpTest18.suite());
-
-		return suite;
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	public CleanUpTestCase(String name) {
-		super(name);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.SPACE);
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE, "4");
@@ -136,8 +129,8 @@ public class CleanUpTestCase extends QuickFixTest {
 		disableAll();
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		JavaProjectHelper.clear(fJProject1, getDefaultClasspath());
 		disableAll();
 		fJProject1= null;
@@ -156,9 +149,7 @@ public class CleanUpTestCase extends QuickFixTest {
 	private void disableAll() throws CoreException {
 		Map<String, String> settings= fProfile.getSettings();
 		CleanUpOptions options= JavaPlugin.getDefault().getCleanUpRegistry().getDefaultOptions(CleanUpConstants.DEFAULT_CLEAN_UP_OPTIONS);
-		Set<String> keys= options.getKeys();
-		for (Iterator<String> iterator= keys.iterator(); iterator.hasNext();) {
-			String key= iterator.next();
+		for (String key : options.getKeys()) {
 			settings.put(key, CleanUpOptions.FALSE);
 		}
 		commitProfile();
@@ -230,12 +221,11 @@ public class CleanUpTestCase extends QuickFixTest {
 	}
 
 	protected RefactoringStatus performRefactoring(final CleanUpRefactoring ref, ICompilationUnit[] cus, ICleanUp[] cleanUps) throws CoreException {
-		for (int i= 0; i < cus.length; i++) {
-			ref.addCompilationUnit(cus[i]);
+		for (ICompilationUnit cu : cus) {
+			ref.addCompilationUnit(cu);
 		}
-
-		for (int i= 0; i < cleanUps.length; i++) {
-			ref.addCleanUp(cleanUps[i]);
+		for (ICleanUp cleanUp : cleanUps) {
+			ref.addCleanUp(cleanUp);
 		}
 
 		IUndoManager undoManager= getUndoManager();
@@ -272,5 +262,4 @@ public class CleanUpTestCase extends QuickFixTest {
 	private void executePerformOperation(final PerformChangeOperation perform, IWorkspace workspace) throws CoreException {
 		workspace.run(perform, new NullProgressMonitor());
 	}
-
 }

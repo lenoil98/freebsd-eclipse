@@ -21,6 +21,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.Map.Entry;
 
 import org.eclipse.core.resources.IMarker;
@@ -40,8 +41,6 @@ import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.IWorkingSetManager;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.XMLMemento;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Exports breakpoints to a file or string buffer.
@@ -85,19 +84,15 @@ public class ExportBreakpointsOperation implements IRunnableWithProgress {
 		fWriter = new StringWriter();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.operation.IRunnableWithProgress#run(org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	public void run(IProgressMonitor monitor) throws InvocationTargetException {
 		SubMonitor localmonitor = SubMonitor.convert(monitor, ImportExportMessages.ExportOperation_0, fBreakpoints.length);
 		XMLMemento memento = XMLMemento.createWriteRoot(IImportExportConstants.IE_NODE_BREAKPOINTS);
-		try (Writer writer = fWriter;) {
-			for (int i = 0; i < fBreakpoints.length; i++) {
+		try (Writer writer = fWriter) {
+			for (IBreakpoint breakpoint : fBreakpoints) {
 				if (localmonitor.isCanceled()) {
 					return;
 				}
-				IBreakpoint breakpoint = fBreakpoints[i];
 				//in the event we are in working set view, we can have multiple selection of the same breakpoint
 				//so do a simple check for it
 				IMarker marker = breakpoint.getMarker();
@@ -171,12 +166,11 @@ public class ExportBreakpointsOperation implements IRunnableWithProgress {
 	 */
 	private String getWorkingSetsAttribute(IBreakpoint breakpoint) {
 		IWorkingSetManager mgr = PlatformUI.getWorkbench().getWorkingSetManager();
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		IWorkingSet[] sets = mgr.getWorkingSets();
-		for (int i = 0; i < sets.length; i++) {
-			if(IDebugUIConstants.BREAKPOINT_WORKINGSET_ID.equals(sets[i].getId()) &&
-					containsBreakpoint(sets[i], breakpoint)) {
-				buffer.append(IImportExportConstants.DELIMITER).append(sets[i].getName());
+		for (IWorkingSet set : sets) {
+			if (IDebugUIConstants.BREAKPOINT_WORKINGSET_ID.equals(set.getId()) && containsBreakpoint(set, breakpoint)) {
+				buffer.append(IImportExportConstants.DELIMITER).append(set.getName());
 			}
 		}
 		return buffer.toString();
@@ -191,8 +185,8 @@ public class ExportBreakpointsOperation implements IRunnableWithProgress {
 	 */
 	private boolean containsBreakpoint(IWorkingSet set, IBreakpoint breakpoint) {
 		IAdaptable[] elements = set.getElements();
-		for (int i = 0; i < elements.length; i++) {
-			if (elements[i].equals(breakpoint)) {
+		for (IAdaptable element : elements) {
+			if (element.equals(breakpoint)) {
 				return true;
 			}
 		}

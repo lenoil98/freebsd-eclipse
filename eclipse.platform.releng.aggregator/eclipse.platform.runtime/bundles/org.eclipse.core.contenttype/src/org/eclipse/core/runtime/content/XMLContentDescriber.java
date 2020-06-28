@@ -48,7 +48,7 @@ import org.eclipse.core.runtime.QualifiedName;
  * @see "http://www.w3.org/TR/REC-xml *"
  * @since org.eclipse.core.contenttype 3.4
  */
-public class XMLContentDescriber extends TextContentDescriber implements ITextContentDescriber {
+public class XMLContentDescriber extends TextContentDescriber {
 	private static final QualifiedName[] SUPPORTED_OPTIONS = new QualifiedName[] {IContentDescription.CHARSET, IContentDescription.BYTE_ORDER_MARK};
 	private static final String XML_PREFIX = "<?xml "; //$NON-NLS-1$
 	private static final String XML_DECL_END = "?>"; //$NON-NLS-1$
@@ -59,7 +59,7 @@ public class XMLContentDescriber extends TextContentDescriber implements ITextCo
 
 	@Override
 	public int describe(InputStream input, IContentDescription description) throws IOException {
-		return describe2(input, description, new HashMap<String, Object>());
+		return describe2(input, description, new HashMap<>());
 	}
 
 	int describe2(InputStream input, IContentDescription description, Map<String, Object> properties) throws IOException {
@@ -70,7 +70,7 @@ public class XMLContentDescriber extends TextContentDescriber implements ITextCo
 
 	@Override
 	public int describe(Reader input, IContentDescription description) throws IOException {
-		return describe2(input, description, new HashMap<String, Object>());
+		return describe2(input, description, new HashMap<>());
 	}
 
 	int describe2(Reader input, IContentDescription description, Map<String, Object> properties) throws IOException {
@@ -136,7 +136,7 @@ public class XMLContentDescriber extends TextContentDescriber implements ITextCo
 	private boolean isNonDefaultCharset(String charset) {
 		if (charset == null)
 			return false;
-		if (charset.equalsIgnoreCase("utf8") || charset.equalsIgnoreCase("utf-8")) //$NON-NLS-1$ //$NON-NLS-2$
+		if ("utf8".equalsIgnoreCase(charset) || "utf-8".equalsIgnoreCase(charset)) //$NON-NLS-1$ //$NON-NLS-2$
 			return false;
 		return true;
 	}
@@ -179,7 +179,7 @@ public class XMLContentDescriber extends TextContentDescriber implements ITextCo
 		StringBuilder stringBuilder = new StringBuilder(100);
 		while (stringBuilder.length() < 100 && ((line = reader.readLine()) != null)) {
 			stringBuilder.append(line);
-			if (line.indexOf(XML_DECL_END) != -1) {
+			if (line.contains(XML_DECL_END)) {
 				String resultString = stringBuilder.toString();
 				return resultString.substring(0, resultString.indexOf(XML_DECL_END) + XML_DECL_END.length());
 			}
@@ -231,7 +231,7 @@ public class XMLContentDescriber extends TextContentDescriber implements ITextCo
 	}
 
 	private boolean isCharsetValid(String charset) {
-		if (charset.length() == 0)
+		if (charset.isEmpty())
 			return false;
 
 		char c = charset.charAt(0);

@@ -124,8 +124,8 @@ public class BenchmarkUtils {
 	public static IStatus findStatusByCode(IStatus status, int code) {
 		if (status.getCode() == code) return status;
 		IStatus[] children = status.getChildren();
-		for (int i = 0; i < children.length; i++) {
-			IStatus found = findStatusByCode(children[i], code);
+		for (IStatus child : children) {
+			IStatus found = findStatusByCode(child, code);
 			if (found != null) return found;
 		}
 		return null;
@@ -156,18 +156,19 @@ public class BenchmarkUtils {
 			fileSize = (int) Math.abs(gen.nextGaussian() * variance + meanSize);
 		} while (fileSize > meanSize + variance * 4); // avoid huge files
 		
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		String fileName;
-		if (gen.nextInt(100) < probBinary) {
-			fileName = makeUniqueName(gen, "file", "class"); // binary
-			writeRandomBytes(gen, os, fileSize);
-		} else {
-			fileName = makeUniqueName(gen, "file", "txt"); // text
-			writeRandomText(gen, os, fileSize);
+		IFile file;
+		try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+			String fileName;
+			if (gen.nextInt(100) < probBinary) {
+				fileName = makeUniqueName(gen, "file", "class"); // binary
+				writeRandomBytes(gen, os, fileSize);
+			} else {
+				fileName = makeUniqueName(gen, "file", "txt"); // text
+				writeRandomText(gen, os, fileSize);
+			}	
+			file = parent.getFile(new Path(fileName));
+			file.create(new ByteArrayInputStream(os.toByteArray()), true, new NullProgressMonitor());
 		}
-		IFile file = parent.getFile(new Path(fileName));
-		file.create(new ByteArrayInputStream(os.toByteArray()), true, new NullProgressMonitor());
-		os.close();
 		return file;
 	}
 
@@ -221,10 +222,7 @@ public class BenchmarkUtils {
 	 */
 	public static void modifyFile(SequenceGenerator gen, IFile file)
 		throws IOException, CoreException {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try {
-			InputStream is = file.getContents(true);
-			try {
+		try (ByteArrayOutputStream os = new ByteArrayOutputStream(); InputStream is = file.getContents(true)) {
 				byte[] buffer = new byte[8192];
 				int rsize;
 				boolean changed = false;
@@ -240,11 +238,6 @@ public class BenchmarkUtils {
 				}
 				if (! changed) os.write('!'); // make sure we actually did change the file
 				file.setContents(new ByteArrayInputStream(os.toByteArray()), false /*force*/, true /*keepHistory*/, null);
-			} finally {
-				is.close();
-			}
-		} finally {
-			os.close();
 		}
 	}
 	
@@ -259,7 +252,7 @@ public class BenchmarkUtils {
 	 * @return the new name
 	 */
 	public static String makeUniqueName(SequenceGenerator gen, String prefix, String extension) {
-		StringBuffer name = new StringBuffer(prefix);
+		StringBuilder name = new StringBuilder(prefix);
 		name.append('-');
 		if (gen == null) {
 			name.append(SequenceGenerator.nextGloballyUniqueLong());
@@ -485,8 +478,8 @@ public class BenchmarkUtils {
 	 */
 	public static boolean isFolderEmpty(IFolder folder) throws CoreException {
 		IResource[] members = folder.members();
-		for (int i = 0; i < members.length; ++i) {
-			if (isValidFile(members[i]) || isValidFolder(members[i])) return false;
+		for (IResource member : members) {
+			if (isValidFile(member) || isValidFolder(member)) return false;
 		}
 		return true;
 	}
@@ -536,8 +529,8 @@ public class BenchmarkUtils {
 	 */
 	public static IResource[] filterResources(IResource[] resources) {
 		List<IResource> list = new ArrayList<>(resources.length);
-		for (int i = 0; i < resources.length; ++i) {
-			if (isValidResource(resources[i])) list.add(resources[i]);
+		for (IResource resource : resources) {
+			if (isValidResource(resource)) list.add(resource);
 		}
 		if (list.size() != resources.length) {
 			resources = list.toArray(new IResource[list.size()]);
@@ -552,8 +545,10 @@ public class BenchmarkUtils {
 		if (node == null) return true;
 		if (node.getKind() != 0) return false;
 		IDiffElement[] children = node.getChildren();
-		for (int i = 0; i < children.length; i++) {
-			if (!isEmpty(children[i])) return false;
+		for (IDiffElement child : children) {
+			if (!isEmpty(child)) {
+				return false;
+			}
 		}
 		return true;
 	}
@@ -562,8 +557,10 @@ public class BenchmarkUtils {
 		if (element.getKind() != 0) return false;
 		if (element instanceof IDiffContainer) {
 			IDiffElement[] children = ((DiffNode)element).getChildren();
-			for (int i = 0; i < children.length; i++) {
-				if (!isEmpty(children[i])) return false;
+			for (IDiffElement child : children) {
+				if (!isEmpty(child)) {
+					return false;
+				}
 			}
 		}
 		return true;

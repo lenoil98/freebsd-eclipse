@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,14 +13,15 @@
  *******************************************************************************/
 package org.eclipse.jdt.text.tests;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -35,18 +36,13 @@ import org.eclipse.jdt.internal.ui.text.JavaPartitionScanner;
 /**
  * Compares two <code>IParitionTokenScanner</code>s for conformance and performance.
  */
-public class PartitionTokenScannerTest extends TestCase {
-
+public class PartitionTokenScannerTest {
 	private static final boolean DEBUG= false;
 	private IPartitionTokenScanner fReference;
 	private IPartitionTokenScanner fTestee;
 
-	public PartitionTokenScannerTest(String name) {
-		super(name);
-	}
-
-	@Override
-	protected void setUp() {
+	@Before
+	public void setUp() {
 		fReference= new JavaPartitionScanner();
 		fTestee= new FastJavaPartitionScanner(true);
 	}
@@ -55,19 +51,20 @@ public class PartitionTokenScannerTest extends TestCase {
 	private IDocument getDocument(String name, String lineDelimiter) {
 		try {
 			InputStream stream= getClass().getResourceAsStream(name);
-			BufferedReader reader= new BufferedReader(new InputStreamReader(stream));
+			try (BufferedReader reader= new BufferedReader(new InputStreamReader(stream))) {
 
-			StringBuffer buffer= new StringBuffer();
-			String line= reader.readLine();
-			while (line != null) {
-				buffer.append(line);
-				buffer.append(lineDelimiter);
-				line= reader.readLine();
+				StringBuilder buffer= new StringBuilder();
+				String line= reader.readLine();
+				while (line != null) {
+					buffer.append(line);
+					buffer.append(lineDelimiter);
+					line= reader.readLine();
+				}
+				return new Document(buffer.toString());
 			}
 
-			return new Document(buffer.toString());
-
 		} catch (IOException e) {
+			// ignore
 		}
 
 		return null;
@@ -85,30 +82,32 @@ public class PartitionTokenScannerTest extends TestCase {
 		return new Document(buffer.toString());
 	}
 
-	public static Test suite() {
-		return new TestSuite(PartitionTokenScannerTest.class);
-	}
-
+	@Test
 	public void testTestCaseLF() {
 		testConformance(getDocument("TestCase.txt", "\n"));
 	}
 
+	@Test
 	public void testTestCaseCRLF() {
 		testConformance(getDocument("TestCase.txt", "\r\n"));
 	}
 
+	@Test
 	public void testTestCaseCR() {
 		testConformance(getDocument("TestCase.txt", "\r"));
 	}
 
+	@Test
 	public void testTestCase2LF() {
 		testConformance(getDocument("TestCase2.txt", "\n"));
 	}
 
+	@Test
 	public void testTestCase2CRLF() {
 		testConformance(getDocument("TestCase2.txt", "\r\n"));
 	}
 
+	@Test
 	public void testTestCase2CR() {
 		testConformance(getDocument("TestCase2.txt", "\r"));
 	}
@@ -121,6 +120,7 @@ public class PartitionTokenScannerTest extends TestCase {
 	/**
 	 * Tests performance of the testee against the reference IPartitionTokenScanner.
 	 */
+	@Test
 	public void testPerformance() {
 		final int COUNT= 5000;
 		final IDocument document= getDocument("TestCase.txt", "\n");
@@ -138,6 +138,7 @@ public class PartitionTokenScannerTest extends TestCase {
 		// assertTrue(testeeTime <= referenceTime);
 	}
 
+	@Test
 	public void test_bug57903() {
 		final Document document= new Document("<%/**f%>");
 		fReference.setRange(document, 2, 4);
@@ -271,5 +272,4 @@ public class PartitionTokenScannerTest extends TestCase {
 
 		return buffer.toString();
 	}
-
 }

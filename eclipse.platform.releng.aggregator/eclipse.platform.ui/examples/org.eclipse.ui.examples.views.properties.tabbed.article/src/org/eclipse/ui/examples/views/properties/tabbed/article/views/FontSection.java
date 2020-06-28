@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006 IBM Corporation and others.
+ * Copyright (c) 2006, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -41,62 +41,61 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 /**
  * The font section on the button tab.
- * 
+ *
  * @author Anthony Hunter
  */
 public class FontSection
-    extends AbstractPropertySection {
+	extends AbstractPropertySection {
 
-    Text fontText;
+	Text fontText;
 
-    private ButtonElement buttonElement;
+	private ButtonElement buttonElement;
 
-    public void setInput(IWorkbenchPart part, ISelection selection) {
-        super.setInput(part, selection);
-        Assert.isTrue(selection instanceof IStructuredSelection);
-        Object input = ((IStructuredSelection) selection).getFirstElement();
-        Assert.isTrue(input instanceof ButtonElement);
-        this.buttonElement = (ButtonElement) input;
-    }
+	@Override
+	public void setInput(IWorkbenchPart part, ISelection selection) {
+		super.setInput(part, selection);
+		Assert.isTrue(selection instanceof IStructuredSelection);
+		Object input = ((IStructuredSelection) selection).getFirstElement();
+		Assert.isTrue(input instanceof ButtonElement);
+		this.buttonElement = (ButtonElement) input;
+	}
 
-    /**
-     * @see org.eclipse.ui.views.properties.tabbed.ITabbedPropertySection#createControls(org.eclipse.swt.widgets.Composite,
-     *      org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage)
-     */
-    public void createControls(Composite parent,
-            TabbedPropertySheetPage tabbedPropertySheetPage) {
-        super.createControls(parent, tabbedPropertySheetPage);
-        Composite composite = getWidgetFactory()
-            .createFlatFormComposite(parent);
-        FormData data;
+	@Override
+	public void createControls(Composite parent,
+			TabbedPropertySheetPage tabbedPropertySheetPage) {
+		super.createControls(parent, tabbedPropertySheetPage);
+		Composite composite = getWidgetFactory()
+			.createFlatFormComposite(parent);
+		FormData data;
 
-        Shell shell = new Shell();
-        GC gc = new GC(shell);
-        gc.setFont(shell.getFont());
-        Point point = gc.textExtent("");//$NON-NLS-1$
-        int buttonHeight = point.y + 5;
-        gc.dispose();
-        shell.dispose();
+		Shell shell = new Shell();
+		GC gc = new GC(shell);
+		gc.setFont(shell.getFont());
+		Point point = gc.textExtent("");//$NON-NLS-1$
+		int buttonHeight = point.y + 5;
+		gc.dispose();
+		shell.dispose();
 
-        CLabel fontLabel = getWidgetFactory().createCLabel(composite, "Font:"); //$NON-NLS-1$
-        fontText = getWidgetFactory().createText(composite, ""); //$NON-NLS-1$
-        fontText.setEditable(false);
-        Button fontButton = getWidgetFactory().createButton(composite,
-            "Change...", SWT.PUSH); //$NON-NLS-1$
-        fontButton.addSelectionListener(new SelectionAdapter() {
+		CLabel fontLabel = getWidgetFactory().createCLabel(composite, "Font:"); //$NON-NLS-1$
+		fontText = getWidgetFactory().createText(composite, ""); //$NON-NLS-1$
+		fontText.setEditable(false);
+		Button fontButton = getWidgetFactory().createButton(composite,
+			"Change...", SWT.PUSH); //$NON-NLS-1$
+		fontButton.addSelectionListener(new SelectionAdapter() {
 
-            public void widgetSelected(SelectionEvent event) {
-                FontDialog ftDialog = new FontDialog(PlatformUI.getWorkbench()
-                    .getActiveWorkbenchWindow().getShell());
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				FontDialog ftDialog = new FontDialog(PlatformUI.getWorkbench()
+					.getActiveWorkbenchWindow().getShell());
 
-                FontData fontdata = buttonElement.getControl().getFont()
-                    .getFontData()[0];
-                String value = fontdata.toString();
+				FontData fontdata = buttonElement.getControl().getFont()
+					.getFontData()[0];
+				String value = fontdata.toString();
 
-                if ((value != null) && (value.length() > 0)) {
-                    ftDialog.setFontList(new FontData[] {new FontData(value)});
-                }
-                FontData fData = ftDialog.open();
+				if ((value != null) && (value.length() > 0)) {
+					ftDialog.setFontList(new FontData[] {new FontData(value)});
+				}
+				FontData fData = ftDialog.open();
 
 				if (fData != null) {
 					value = fData.toString();
@@ -105,35 +104,33 @@ public class FontSection
 					properties.setPropertyValue(ButtonElementProperties.PROPERTY_FONT, value);
 					fontText.setText(StringConverter.asString(fData));
 				}
-            }
-        });
+			}
+		});
 
-        data = new FormData();
-        data.left = new FormAttachment(0, 0);
-        data.right = new FormAttachment(fontText,
-            -ITabbedPropertyConstants.HSPACE);
-        data.top = new FormAttachment(0, 0);
-        fontLabel.setLayoutData(data);
+		data = new FormData();
+		data.left = new FormAttachment(0, 0);
+		data.right = new FormAttachment(fontText,
+			-ITabbedPropertyConstants.HSPACE);
+		data.top = new FormAttachment(0, 0);
+		fontLabel.setLayoutData(data);
 
-        data = new FormData();
-        data.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
-        data.right = new FormAttachment(fontButton,
-            -ITabbedPropertyConstants.HSPACE);
-        data.top = new FormAttachment(0, 0);
-        fontText.setLayoutData(data);
+		data = new FormData();
+		data.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
+		data.right = new FormAttachment(fontButton,
+			-ITabbedPropertyConstants.HSPACE);
+		data.top = new FormAttachment(0, 0);
+		fontText.setLayoutData(data);
 
-        data = new FormData();
-        data.right = new FormAttachment(100, 0);
-        data.top = new FormAttachment(0, 0);
-        data.height = buttonHeight;
-        fontButton.setLayoutData(data);
-    }
+		data = new FormData();
+		data.right = new FormAttachment(100, 0);
+		data.top = new FormAttachment(0, 0);
+		data.height = buttonHeight;
+		fontButton.setLayoutData(data);
+	}
 
-    /*
-     * @see org.eclipse.ui.views.properties.tabbed.view.ITabbedPropertySection#refresh()
-     */
-    public void refresh() {
-        FontData fontdata = buttonElement.getControl().getFont().getFontData()[0];
-        fontText.setText(StringConverter.asString(fontdata));
-    }
+	@Override
+	public void refresh() {
+		FontData fontdata = buttonElement.getControl().getFont().getFontData()[0];
+		fontText.setText(StringConverter.asString(fontdata));
+	}
 }

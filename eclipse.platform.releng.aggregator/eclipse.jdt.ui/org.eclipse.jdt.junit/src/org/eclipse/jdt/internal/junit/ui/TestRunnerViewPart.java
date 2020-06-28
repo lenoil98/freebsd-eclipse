@@ -53,7 +53,6 @@ import org.eclipse.swt.dnd.DropTarget;
 import org.eclipse.swt.dnd.DropTargetAdapter;
 import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.dnd.URLTransfer;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
@@ -422,8 +421,7 @@ public class TestRunnerViewPart extends ViewPart {
 			for (TestRunSession testRunSession : testRunSessions) {
 				JUnitCorePlugin.getModel().removeTestRunSession(testRunSession);
 			}
-			for (Iterator<TestRunSession> iter= remainingEntries.iterator(); iter.hasNext();) {
-				TestRunSession remaining= iter.next();
+			for (TestRunSession remaining : remainingEntries) {
 				remaining.swapOut();
 			}
 		}
@@ -972,15 +970,21 @@ public class TestRunnerViewPart extends ViewPart {
 
 		public ToggleOrientationAction(int orientation) {
 			super("", AS_RADIO_BUTTON); //$NON-NLS-1$
-			if (orientation == TestRunnerViewPart.VIEW_ORIENTATION_HORIZONTAL) {
+			switch (orientation) {
+			case TestRunnerViewPart.VIEW_ORIENTATION_HORIZONTAL:
 				setText(JUnitMessages.TestRunnerViewPart_toggle_horizontal_label);
 				setImageDescriptor(JUnitPlugin.getImageDescriptor("elcl16/th_horizontal.png")); //$NON-NLS-1$
-			} else if (orientation == TestRunnerViewPart.VIEW_ORIENTATION_VERTICAL) {
+				break;
+			case TestRunnerViewPart.VIEW_ORIENTATION_VERTICAL:
 				setText(JUnitMessages.TestRunnerViewPart_toggle_vertical_label);
 				setImageDescriptor(JUnitPlugin.getImageDescriptor("elcl16/th_vertical.png")); //$NON-NLS-1$
-			} else if (orientation == TestRunnerViewPart.VIEW_ORIENTATION_AUTOMATIC) {
+				break;
+			case TestRunnerViewPart.VIEW_ORIENTATION_AUTOMATIC:
 				setText(JUnitMessages.TestRunnerViewPart_toggle_automatic_label);
 				setImageDescriptor(JUnitPlugin.getImageDescriptor("elcl16/th_automatic.png")); //$NON-NLS-1$
+				break;
+			default:
+				break;
 			}
 			fActionOrientation= orientation;
 			PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IJUnitHelpContextIds.RESULTS_VIEW_TOGGLE_ORIENTATION_ACTION);
@@ -1045,9 +1049,10 @@ public class TestRunnerViewPart extends ViewPart {
 			if (affectedChildren == null)
 				return true;
 
-			for (int i= 0; i < affectedChildren.length; i++) {
-				if (!processDelta(affectedChildren[i]))
+			for (IJavaElementDelta affectedChild : affectedChildren) {
+				if (!processDelta(affectedChild)) {
 					return false;
+				}
 			}
 			return true;
 		}
@@ -1623,7 +1628,7 @@ action enablement
 
 		String testRunLabel= BasicElementLabels.getJavaElementName(fTestRunSession.getTestRunName());
 		if (testKindDisplayStr != null)
-			setTitleToolTip(MessageFormat.format(JUnitMessages.TestRunnerViewPart_titleToolTip, new Object[] {testRunLabel, testKindDisplayStr}));
+			setTitleToolTip(MessageFormat.format(JUnitMessages.TestRunnerViewPart_titleToolTip, testRunLabel, testKindDisplayStr));
 		else
 			setTitleToolTip(testRunLabel);
 	}
@@ -1659,8 +1664,8 @@ action enablement
 	}
 
 	private void disposeImages() {
-		for (int i= 0; i < fImagesToDispose.size(); i++) {
-			fImagesToDispose.get(i).dispose();
+		for (Image imageToDispose : fImagesToDispose) {
+			imageToDispose.dispose();
 		}
 	}
 
@@ -1865,7 +1870,7 @@ action enablement
 
 	private void addDropAdapter(Composite parent) {
 		DropTarget dropTarget = new DropTarget(parent, DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK | DND.DROP_DEFAULT);
-		dropTarget.setTransfer(new Transfer[] { TextTransfer.getInstance() });
+		dropTarget.setTransfer(TextTransfer.getInstance());
 		class DropAdapter extends DropTargetAdapter {
 		    @Override
 			public void dragEnter(DropTargetEvent event) {
@@ -2028,8 +2033,8 @@ action enablement
 		viewMenu.add(new Separator());
 
 		MenuManager layoutSubMenu= new MenuManager(JUnitMessages.TestRunnerViewPart_layout_menu);
-		for (int i = 0; i < fToggleOrientationActions.length; ++i) {
-			layoutSubMenu.add(fToggleOrientationActions[i]);
+		for (ToggleOrientationAction toggleOrientationAction : fToggleOrientationActions) {
+			layoutSubMenu.add(toggleOrientationAction);
 		}
 		viewMenu.add(layoutSubMenu);
 		viewMenu.add(new Separator());
@@ -2206,12 +2211,7 @@ action enablement
 	}
 
 	private void postSyncProcessChanges() {
-		postSyncRunnable(new Runnable() {
-			@Override
-			public void run() {
-				processChangesInUI();
-			}
-		});
+		postSyncRunnable(this::processChangesInUI);
 	}
 
 	public void warnOfContentChange() {
@@ -2229,8 +2229,8 @@ action enablement
 			return;
 		boolean horizontal = orientation == VIEW_ORIENTATION_HORIZONTAL;
 		fSashForm.setOrientation(horizontal ? SWT.HORIZONTAL : SWT.VERTICAL);
-		for (int i = 0; i < fToggleOrientationActions.length; ++i)
-			fToggleOrientationActions[i].setChecked(fOrientation == fToggleOrientationActions[i].getOrientation());
+		for (ToggleOrientationAction toggleOrientationAction : fToggleOrientationActions)
+			toggleOrientationAction.setChecked(fOrientation == toggleOrientationAction.getOrientation());
 		fCurrentOrientation = orientation;
 		GridLayout layout= (GridLayout) fCounterComposite.getLayout();
 		setCounterColumns(layout);

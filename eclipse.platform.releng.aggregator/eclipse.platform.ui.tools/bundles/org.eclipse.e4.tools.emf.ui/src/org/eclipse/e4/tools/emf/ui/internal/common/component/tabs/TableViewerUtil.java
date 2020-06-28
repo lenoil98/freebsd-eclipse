@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2017 TwelveTone LLC and others.
+ * Copyright (c) 2014, 2019 TwelveTone LLC and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,14 +16,13 @@ package org.eclipse.e4.tools.emf.ui.internal.common.component.tabs;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
-import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionEvent;
@@ -50,7 +49,7 @@ public class TableViewerUtil {
 		}
 	}
 
-	static abstract class InvertableSorter extends ViewerSorter {
+	static abstract class InvertableSorter extends ViewerComparator {
 		@Override
 		public abstract int compare(Viewer viewer, Object e1, Object e2);
 
@@ -99,20 +98,16 @@ public class TableViewerUtil {
 		/**
 		 * The constructor of this listener.
 		 *
-		 * @param viewer
-		 *            the tableviewer this listener belongs to
-		 * @param column
-		 *            the column this listener is responsible for
-		 * @param sorter
-		 *            the sorter this listener uses
-		 * @param defaultDirection
-		 *            the default sorting direction of this Listener. Possible
-		 *            values are {@link SWT.UP} and {@link SWT.DOWN}
-		 * @param keepDirection
-		 *            if true, the listener will remember the last sorting
-		 *            direction of the associated column and restore it when the
-		 *            column is reselected. If false, the listener will use the
-		 *            default sorting direction
+		 * @param viewer           the tableviewer this listener belongs to
+		 * @param column           the column this listener is responsible for
+		 * @param sorter           the sorter this listener uses
+		 * @param defaultDirection the default sorting direction of this Listener.
+		 *                         Possible values are {@link SWT#UP} and
+		 *                         {@link SWT#DOWN}
+		 * @param keepDirection    if true, the listener will remember the last sorting
+		 *                         direction of the associated column and restore it
+		 *                         when the column is reselected. If false, the listener
+		 *                         will use the default sorting direction
 		 */
 		public TableSortSelectionListener(TableViewer viewer, TableColumn column, AbstractInvertableTableSorter sorter,
 				int defaultDirection, boolean keepDirection) {
@@ -132,14 +127,14 @@ public class TableViewerUtil {
 		public void chooseColumnForSorting() {
 			viewer.getTable().setSortColumn(column);
 			viewer.getTable().setSortDirection(currentSorter.getSortDirection());
-			viewer.setSorter(currentSorter);
+			viewer.setComparator(currentSorter);
 		}
 
 		@Override
 		public void widgetSelected(SelectionEvent e) {
 			InvertableSorter newSorter;
 			if (viewer.getTable().getSortColumn() == column) {
-				newSorter = ((InvertableSorter) viewer.getSorter()).getInverseSorter();
+				newSorter = ((InvertableSorter) viewer.getComparator()).getInverseSorter();
 			} else {
 				if (keepDirection) {
 					newSorter = currentSorter;
@@ -209,7 +204,7 @@ public class TableViewerUtil {
 	static public ArrayList<TableColumn> getColumnsInDisplayOrder(TableViewer viewer) {
 		final ArrayList<TableColumn> allCols = new ArrayList<>(Arrays.asList(viewer.getTable().getColumns()));
 		final int[] order = viewer.getTable().getColumnOrder();
-		Collections.sort(allCols, (o1, o2) -> order[allCols.indexOf(o1)] - order[allCols.indexOf(o2)]);
+		allCols.sort((o1, o2) -> order[allCols.indexOf(o1)] - order[allCols.indexOf(o2)]);
 		return allCols;
 	}
 

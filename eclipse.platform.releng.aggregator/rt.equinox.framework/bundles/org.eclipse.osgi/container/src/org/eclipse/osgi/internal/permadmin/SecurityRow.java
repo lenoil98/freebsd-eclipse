@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2016 IBM Corporation and others.
+ * Copyright (c) 2008, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Connexta, LLC - performance improvements
@@ -162,7 +162,7 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 		return result;
 	}
 
-	private static void escapeString(String str, StringBuffer output) {
+	private static void escapeString(String str, StringBuilder output) {
 		int len = str.length();
 		for (int i = 0; i < len; i++) {
 			char c = str.charAt(i);
@@ -186,7 +186,7 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 	}
 
 	private static String unescapeString(String str) {
-		StringBuffer output = new StringBuffer(str.length());
+		StringBuilder output = new StringBuilder(str.length());
 		int end = str.length();
 		for (int i = 0; i < end; i++) {
 			char c = str.charAt(i);
@@ -217,10 +217,12 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 		return output.toString();
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
 
+	@Override
 	public ConditionInfo[] getConditionInfos() {
 		// must make a copy for the public API method to prevent modification
 		return (ConditionInfo[]) cloneArray(conditionInfos);
@@ -230,10 +232,12 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 		return conditionInfos;
 	}
 
+	@Override
 	public String getAccessDecision() {
 		return deny ? ConditionalPermissionInfo.DENY : ConditionalPermissionInfo.ALLOW;
 	}
 
+	@Override
 	public PermissionInfo[] getPermissionInfos() {
 		// must make a copy for the public API method to prevent modification
 		return (PermissionInfo[]) cloneArray(permissionInfoCollection.getPermissionInfos());
@@ -246,6 +250,7 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 	/**
 	 * @deprecated
 	 */
+	@Override
 	public void delete() {
 		securityAdmin.delete(this, true);
 	}
@@ -334,12 +339,12 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 
 	Decision evaluate(BundlePermissions bundlePermissions, Permission permission) {
 		if (bundleConditions == null || bundlePermissions == null)
-			return evaluatePermission(permission);
+			return evaluatePermission(bundlePermissions, permission);
 		Condition[] conditions = getConditions(bundlePermissions);
 		if (conditions == ABSTAIN_LIST)
 			return DECISION_ABSTAIN;
 		if (conditions == SATISFIED_LIST)
-			return evaluatePermission(permission);
+			return evaluatePermission(bundlePermissions, permission);
 
 		boolean empty = true;
 		List<Condition> postponedConditions = null;
@@ -365,7 +370,7 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 			} else { // postponed case
 				if (postponedPermCheck == null)
 					// perform a permission check now
-					postponedPermCheck = evaluatePermission(permission);
+					postponedPermCheck = evaluatePermission(bundlePermissions, permission);
 				if (postponedPermCheck == DECISION_ABSTAIN)
 					return postponedPermCheck; // no need to postpone the condition if the row abstains
 				// this row will deny or allow the permission; must queue the postponed condition
@@ -382,7 +387,7 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 		}
 		if (postponedPermCheck != null)
 			return new Decision(postponedPermCheck.decision | SecurityTable.POSTPONED, postponedConditions.toArray(new Condition[postponedConditions.size()]), this, bundlePermissions);
-		return evaluatePermission(permission);
+		return evaluatePermission(bundlePermissions, permission);
 	}
 
 	private boolean isPostponed(Condition condition) {
@@ -390,18 +395,21 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 		return condition.isPostponed() && securityAdmin.getSupportedSecurityManager() != null;
 	}
 
-	private Decision evaluatePermission(Permission permission) {
-		return permissionInfoCollection.implies(permission) ? (deny ? DECISION_DENIED : DECISION_GRANTED) : DECISION_ABSTAIN;
+	private Decision evaluatePermission(BundlePermissions bundlePermissions, Permission permission) {
+		return permissionInfoCollection.implies(bundlePermissions, permission) ? (deny ? DECISION_DENIED : DECISION_GRANTED) : DECISION_ABSTAIN;
 	}
 
+	@Override
 	public String toString() {
 		return getEncoded();
 	}
 
+	@Override
 	public String getEncoded() {
 		return getEncoded(name, conditionInfos, internalGetPermissionInfos(), deny);
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		// doing the simple (slow) thing for now
 		if (obj == this)
@@ -412,34 +420,39 @@ public final class SecurityRow implements ConditionalPermissionInfo {
 		return getEncoded().equals(((ConditionalPermissionInfo) obj).getEncoded());
 	}
 
+	@Override
 	public int hashCode() {
 		return getHashCode(name, internalGetConditionInfos(), internalGetPermissionInfos(), getAccessDecision());
 	}
 
 	static int getHashCode(String name, ConditionInfo[] conds, PermissionInfo[] perms, String decision) {
 		int h = 31 * 17 + decision.hashCode();
-		for (int i = 0; i < conds.length; i++)
-			h = 31 * h + conds[i].hashCode();
-		for (int i = 0; i < perms.length; i++)
-			h = 31 * h + perms[i].hashCode();
+		for (ConditionInfo cond : conds) {
+			h = 31 * h + cond.hashCode();
+		}
+		for (PermissionInfo perm : perms) {
+			h = 31 * h + perm.hashCode();
+		}
 		if (name != null)
 			h = 31 * h + name.hashCode();
 		return h;
 	}
 
 	static String getEncoded(String name, ConditionInfo[] conditionInfos, PermissionInfo[] permissionInfos, boolean deny) {
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 		if (deny)
 			result.append(ConditionalPermissionInfo.DENY);
 		else
 			result.append(ConditionalPermissionInfo.ALLOW);
 		result.append(" { "); //$NON-NLS-1$
 		if (conditionInfos != null)
-			for (int i = 0; i < conditionInfos.length; i++)
-				result.append(conditionInfos[i].getEncoded()).append(' ');
+			for (ConditionInfo conditionInfo : conditionInfos) {
+				result.append(conditionInfo.getEncoded()).append(' ');
+			}
 		if (permissionInfos != null)
-			for (int i = 0; i < permissionInfos.length; i++)
-				result.append(permissionInfos[i].getEncoded()).append(' ');
+			for (PermissionInfo permissionInfo : permissionInfos) {
+				result.append(permissionInfo.getEncoded()).append(' ');
+			}
 		result.append('}');
 		if (name != null) {
 			result.append(" \""); //$NON-NLS-1$

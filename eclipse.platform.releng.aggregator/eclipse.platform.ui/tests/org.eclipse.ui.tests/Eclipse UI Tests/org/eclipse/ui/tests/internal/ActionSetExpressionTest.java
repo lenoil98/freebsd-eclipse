@@ -19,42 +19,45 @@ import org.eclipse.jface.action.SubContributionItem;
 import org.eclipse.ui.internal.WorkbenchWindow;
 import org.eclipse.ui.tests.api.ListView;
 import org.eclipse.ui.tests.harness.util.ActionUtil;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * This class contains tests for action set enablement
  */
+@RunWith(JUnit4.class)
 public class ActionSetExpressionTest extends ActionExpressionTest {
 
-    public ActionSetExpressionTest(String testName) {
-        super(testName);
-    }
+	public ActionSetExpressionTest() {
+		super(ActionSetExpressionTest.class.getSimpleName());
+	}
 
-    /**
-     * Opens the action set.  Returns the menu manager containing it.
-     */
-    @Override
+	/**
+	 * Opens the action set.  Returns the menu manager containing it.
+	 */
+	@Override
 	protected MenuManager getActionMenuManager(ListView view) throws Throwable {
-        fPage.showActionSet("org.eclipse.ui.tests.internal.ListElementActions");
-        WorkbenchWindow win = (WorkbenchWindow) fWindow;
-        IContributionItem item = win.getMenuBarManager().find(
-                "org.eclipse.ui.tests.internal.ListElementMenu");
-        while (item instanceof SubContributionItem) {
-            item = ((SubContributionItem) item).getInnerItem();
-            if (item instanceof MenuManager) {
+		fPage.showActionSet("org.eclipse.ui.tests.internal.ListElementActions");
+		WorkbenchWindow win = (WorkbenchWindow) fWindow;
+		IContributionItem item = win.getMenuBarManager().find(
+				"org.eclipse.ui.tests.internal.ListElementMenu");
+		while (item instanceof SubContributionItem) {
+			item = ((SubContributionItem) item).getInnerItem();
+			if (item instanceof MenuManager) {
 				return (MenuManager) item;
 			}
-        }
-        fail("Unable to find menu manager");
-        return null;
-    }
+		}
+		fail("Unable to find menu manager");
+		return null;
+	}
 
-    /**
-     * Tests the enablement of an action.
-     */
-    @Override
+	/**
+	 * Tests the enablement of an action.
+	 */
+	@Override
 	protected void testAction(MenuManager mgr, String action, boolean expected)
-            throws Throwable {
-        assertEquals(action, expected, ActionUtil.getActionWithLabel(mgr,
-                action).isEnabled());
-    }
+			throws Throwable {
+		assertEquals(action, expected, ActionUtil.getActionWithLabel(mgr,
+				action).isEnabled());
+	}
 }

@@ -111,7 +111,7 @@ public abstract class ThreeWaySubscriber extends ResourceVariantTreeSubscriber i
 	 * @param resource the local resource
 	 * @param bytes the bytes that identify a variant of the resource
 	 * @return the resource variant handle recreated from the bytes
-	 * @throws TeamException
+	 * @throws TeamException if an error occurs
 	 */
 	public abstract IResourceVariant getResourceVariant(IResource resource, byte[] bytes) throws TeamException;
 
@@ -159,8 +159,7 @@ public abstract class ThreeWaySubscriber extends ResourceVariantTreeSubscriber i
 	private boolean isChildOfRoot(IResource resource) {
 		IResource[] roots = roots();
 		IPath fullPath = resource.getFullPath();
-		for (int i = 0; i < roots.length; i++) {
-			IResource root = roots[i];
+		for (IResource root : roots) {
 			if (root.getFullPath().isPrefixOf(fullPath)) {
 				return true;
 			}

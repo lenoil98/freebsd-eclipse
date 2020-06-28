@@ -22,14 +22,6 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
 /**
- * <p>
- * <strong>EXPERIMENTAL</strong>. This class has been added as part of a work in
- * progress. There is no guarantee that this API will work or that it will
- * remain the same. Feel free to use it and give feedback via
- * https://bugs.eclipse.org/bugs/buglist.cgi?component=UI&product=Platform, but
- * be aware that it might change.
- * </p>
- *
  * This class provides a convenient shorthand for creating and initializing
  * {@link Button}. This offers several benefits over creating Button normal way:
  *
@@ -47,18 +39,18 @@ import org.eclipse.swt.widgets.Composite;
  * <pre>
  * Button button = ButtonFactory.newButton(SWT.PUSH) //
  * 		.text("Click me!") //
- * 		.onSelect(event -> buttonClicked(event)) //
+ * 		.onSelect(event -&gt; buttonClicked(event)) //
  * 		.layoutData(gridData) //
  * 		.create(parent);
  * </pre>
  * <p>
  * The above example creates a push button with a text, registers a
  * SelectionListener and finally creates the button in "parent".
- * <p>
+ * </p>
  *
  * <pre>
  * GridDataFactory gridDataFactory = GridDataFactory.swtDefaults();
- * ButtonFactory buttonFactory = ButtonFactory.newButton(SWT.PUSH).onSelect(event -> buttonClicked(event))
+ * ButtonFactory buttonFactory = ButtonFactory.newButton(SWT.PUSH).onSelect(event -&gt; buttonClicked(event))
  * 		.layout(gridDataFactory::create);
  * buttonFactory.text("Button 1").create(parent);
  * buttonFactory.text("Button 2").create(parent);
@@ -68,7 +60,10 @@ import org.eclipse.swt.widgets.Composite;
  * The above example creates three buttons using the same instance of
  * ButtonFactory. Note the layout method. A Supplier is used to create unique
  * GridData for every single button.
- * <p>
+ * </p>
+ *
+ * @since 3.18
+ *
  */
 public final class ButtonFactory extends AbstractControlFactory<ButtonFactory, Button> {
 
@@ -88,10 +83,24 @@ public final class ButtonFactory extends AbstractControlFactory<ButtonFactory, B
 	}
 
 	/**
-	 * Sets the Button text.
+	 * Sets the receiver's text.
+	 * <p>
+	 * This method sets the button label. The label may include the mnemonic
+	 * character but must not contain line delimiters.
+	 * </p>
+	 * <p>
+	 * Mnemonics are indicated by an '&amp;' that causes the next character to be
+	 * the mnemonic. When the user presses a key sequence that matches the mnemonic,
+	 * a selection event occurs. On most platforms, the mnemonic appears underlined
+	 * but may be emphasized in a platform specific manner. The mnemonic indicator
+	 * character '&amp;' can be escaped by doubling it in the string, causing a
+	 * single '&amp;' to be displayed.
+	 * </p>
 	 *
-	 * @param text
+	 * @param text the text
 	 * @return this
+	 *
+	 * @see Button#setText(String)
 	 */
 	public ButtonFactory text(String text) {
 		addProperty(b -> b.setText(text));
@@ -99,10 +108,13 @@ public final class ButtonFactory extends AbstractControlFactory<ButtonFactory, B
 	}
 
 	/**
-	 * Sets the Button image.
+	 * Sets the receiver's image to the argument, which may be <code>null</code>
+	 * indicating that no image should be displayed.
 	 *
-	 * @param image
+	 * @param image the image to display on the receiver (may be <code>null</code>)
 	 * @return this
+	 *
+	 * @see Button#setImage(Image)
 	 */
 	public ButtonFactory image(Image image) {
 		addProperty(b -> b.setImage(image));
@@ -111,14 +123,32 @@ public final class ButtonFactory extends AbstractControlFactory<ButtonFactory, B
 
 	/**
 	 * Creates a {@link SelectionListener} and registers it for the widgetSelected
-	 * event. If event is raised it calls the given consumer. The
-	 * {@link SelectionEvent} is passed to the consumer.
+	 * event. If the receiver is selected by the user the given consumer is invoked.
+	 * The {@link SelectionEvent} is passed to the consumer.
 	 *
-	 * @param consumer
+	 * @param consumer the consumer whose accept method is called
 	 * @return this
+	 *
+	 * @see Button#addSelectionListener(SelectionListener)
+	 * @see SelectionListener#widgetSelectedAdapter(Consumer)
 	 */
 	public ButtonFactory onSelect(Consumer<SelectionEvent> consumer) {
 		addProperty(c -> c.addSelectionListener(SelectionListener.widgetSelectedAdapter(consumer)));
+		return this;
+	}
+
+	/**
+	 * Sets the application defined widget data associated with the receiver to be
+	 * the argument. The <em>widget data</em> is a single, unnamed field that is
+	 * stored with every widget.
+	 *
+	 * @param data the widget data
+	 * @return this
+	 *
+	 * @see Button#setData(Object)
+	 */
+	public ButtonFactory data(Object data) {
+		addProperty(b -> b.setData(data));
 		return this;
 	}
 }

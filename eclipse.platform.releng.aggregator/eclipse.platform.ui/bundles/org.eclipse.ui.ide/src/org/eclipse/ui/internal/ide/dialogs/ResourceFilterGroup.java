@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2017 Freescale Semiconductor and others.
+ * Copyright (c) 2008, 2019 Freescale Semiconductor and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,6 +14,7 @@
  *     Lars Vogel <Lars.Vogel@gmail.com> - Bug 430694
  *     Mickael Istria (Red Hat Inc.) - Bug 486901
  *                                   - [Cleanup] Avoid useless string instances
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 548799
  *******************************************************************************/
 package org.eclipse.ui.internal.ide.dialogs;
 
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.TreeMap;
@@ -57,8 +59,8 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.TrayDialog;
 import org.eclipse.jface.fieldassist.TextContentAdapter;
 import org.eclipse.jface.layout.TreeColumnLayout;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.jface.text.FindReplaceDocumentAdapterContentProposalProvider;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.CheckboxCellEditor;
@@ -123,7 +125,6 @@ import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.ide.IIDEHelpContextIds;
 import org.eclipse.ui.internal.ide.misc.FileInfoAttributesMatcher;
 import org.eclipse.ui.internal.ide.misc.StringFileInfoMatcher;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 /**
  * A widget group that displays resource filters. Includes buttons to edit,
@@ -160,41 +161,20 @@ public class ResourceFilterGroup {
 	 *
 	 */
 	public ResourceFilterGroup() {
-		ImageDescriptor fileIconDescriptor = AbstractUIPlugin
-		.imageDescriptorFromPlugin(IDEWorkbenchPlugin.IDE_WORKBENCH,
-				"$nl$/icons/full/obj16/fileType_filter.png"); //$NON-NLS-1$
-		if (fileIconDescriptor != null)
-			fileIcon = fileIconDescriptor.createImage();
-
-		ImageDescriptor folderIconDescriptor = AbstractUIPlugin.imageDescriptorFromPlugin(
-				IDEWorkbenchPlugin.IDE_WORKBENCH,
-				"$nl$/icons/full/obj16/folderType_filter.png"); //$NON-NLS-1$
-		if (folderIconDescriptor != null)
-			folderIcon = folderIconDescriptor.createImage();
-
-		ImageDescriptor fileFolderIconDescriptor = AbstractUIPlugin.imageDescriptorFromPlugin(
-				IDEWorkbenchPlugin.IDE_WORKBENCH,
-				"$nl$/icons/full/obj16/fileFolderType_filter.png"); //$NON-NLS-1$
-		if (fileFolderIconDescriptor != null)
-			fileFolderIcon = fileFolderIconDescriptor.createImage();
-
-		ImageDescriptor descriptor = AbstractUIPlugin.imageDescriptorFromPlugin(
-				IDEWorkbenchPlugin.IDE_WORKBENCH,
-				"$nl$/icons/full/obj16/includeMode_filter.png"); //$NON-NLS-1$
-		if (descriptor != null)
-			includeIcon = descriptor.createImage();
-
-		descriptor = AbstractUIPlugin.imageDescriptorFromPlugin(
-				IDEWorkbenchPlugin.IDE_WORKBENCH,
-				"$nl$/icons/full/obj16/excludeMode_filter.png"); //$NON-NLS-1$
-		if (descriptor != null)
-			excludeIcon = descriptor.createImage();
-
-		ImageDescriptor inheritableIconDescriptor = AbstractUIPlugin.imageDescriptorFromPlugin(
-				IDEWorkbenchPlugin.IDE_WORKBENCH,
-				"$nl$/icons/full/obj16/inheritable_filter.png"); //$NON-NLS-1$
-		if (inheritableIconDescriptor != null)
-			inheritableIcon = inheritableIconDescriptor.createImage();
+		ResourceLocator.imageDescriptorFromBundle(IDEWorkbenchPlugin.IDE_WORKBENCH,
+				"$nl$/icons/full/obj16/fileType_filter.png").ifPresent(d -> fileIcon = d.createImage()); //$NON-NLS-1$
+		ResourceLocator.imageDescriptorFromBundle(IDEWorkbenchPlugin.IDE_WORKBENCH,
+				"$nl$/icons/full/obj16/folderType_filter.png").ifPresent(d -> folderIcon = d.createImage()); //$NON-NLS-1$
+		ResourceLocator
+				.imageDescriptorFromBundle(IDEWorkbenchPlugin.IDE_WORKBENCH,
+						"$nl$/icons/full/obj16/fileFolderType_filter.png") //$NON-NLS-1$
+				.ifPresent(d -> fileFolderIcon = d.createImage());
+		ResourceLocator.imageDescriptorFromBundle(IDEWorkbenchPlugin.IDE_WORKBENCH,
+				"$nl$/icons/full/obj16/includeMode_filter.png").ifPresent(d -> includeIcon = d.createImage()); //$NON-NLS-1$
+		ResourceLocator.imageDescriptorFromBundle(IDEWorkbenchPlugin.IDE_WORKBENCH,
+				"$nl$/icons/full/obj16/excludeMode_filter.png").ifPresent(d -> excludeIcon = d.createImage()); //$NON-NLS-1$
+		ResourceLocator.imageDescriptorFromBundle(IDEWorkbenchPlugin.IDE_WORKBENCH,
+				"$nl$/icons/full/obj16/inheritable_filter.png").ifPresent(d -> inheritableIcon = d.createImage()); //$NON-NLS-1$
 	}
 
 	Image getImage(String string, int i) {
@@ -582,14 +562,14 @@ public class ResourceFilterGroup {
 	 */
 	public Control createContents(Composite parent) {
 
-        Font font = parent.getFont();
+		Font font = parent.getFont();
 		shell = parent.getShell();
 
 		if (resource == null) {
 			Label label = new Label(parent, SWT.NONE);
 			label.setText(NLS.bind(
 					IDEWorkbenchMessages.ResourceFilterPage_noResource, null));
-	        label.setFont(font);
+			label.setFont(font);
 			return label;
 		}
 
@@ -734,8 +714,8 @@ public class ResourceFilterGroup {
 			FontData base = originalData[i];
 			styleData[i] = new FontData(base.getName(), base.getHeight(), base.getStyle() | additionalStyle);
 		}
-       	return styleData;
-    }
+		return styleData;
+	}
 
 	class EditFilterAction extends Action {
 
@@ -1113,12 +1093,8 @@ public class ResourceFilterGroup {
 
 	private void handleRemove() {
 		ISelection selection = filterView.getSelection();
-		IStructuredSelection structuredSelection = null;
 		if (selection instanceof IStructuredSelection) {
-			structuredSelection = ((IStructuredSelection) selection);
-			Iterator it = structuredSelection.iterator();
-			while (it.hasNext()) {
-				Object element = it.next();
+			for (Object element : (IStructuredSelection) selection) {
 				if (element instanceof FilterCopy) {
 					FilterCopy filter = (FilterCopy) element;
 					filter.getParent().removeChild(filter);
@@ -1179,9 +1155,7 @@ public class ResourceFilterGroup {
 	public UIResourceFilterDescription[] getFilters() {
 		FilterCopy[] newFilters = filters.getChildren();
 		UIResourceFilterDescription[] result = new UIResourceFilterDescription[newFilters.length];
-		for (int i = 0; i < newFilters.length; i++) {
-			result[i] = newFilters[i];
-		}
+		System.arraycopy(newFilters, 0, result, 0, newFilters.length);
 		return result;
 	}
 
@@ -1277,12 +1251,13 @@ public class ResourceFilterGroup {
 				FilterCopy[] myTypes = (FilterCopy[]) object;
 				try {
 					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					DataOutputStream writeOut = new DataOutputStream(out);
-					writeOut.writeInt(myTypes.length);
-					for (FilterCopy myType : myTypes)
-						writeOut.writeInt(myType.getSerialNumber());
-					byte[] buffer = out.toByteArray();
-					writeOut.close();
+					byte[] buffer;
+					try (DataOutputStream writeOut = new DataOutputStream(out)) {
+						writeOut.writeInt(myTypes.length);
+						for (FilterCopy myType : myTypes)
+							writeOut.writeInt(myType.getSerialNumber());
+						buffer = out.toByteArray();
+					}
 					super.javaToNative(buffer, transferData);
 				} catch (IOException e) {
 				}
@@ -1298,20 +1273,20 @@ public class ResourceFilterGroup {
 				FilterCopy[] myData;
 				try {
 					ByteArrayInputStream in = new ByteArrayInputStream(buffer);
-					DataInputStream readIn = new DataInputStream(in);
+					try (DataInputStream readIn = new DataInputStream(in)) {
 					int size = readIn.readInt();
 
 					LinkedList<FilterCopy> droppedFilters = new LinkedList<>();
 					for (int i = 0; i < size; i++) {
 						int serialNumber = readIn.readInt();
 						FilterCopy tmp = filters
-								.findBySerialNumber(serialNumber);
+							.findBySerialNumber(serialNumber);
 						if (tmp != null)
-							droppedFilters.add(tmp);
+						droppedFilters.add(tmp);
 					}
 					myData = droppedFilters
-							.toArray(new FilterCopy[0]);
-					readIn.close();
+						.toArray(new FilterCopy[0]);
+					}
 				} catch (IOException ex) {
 					return null;
 				}
@@ -1420,8 +1395,7 @@ class FilterTypeUtil {
 	static Object getValue(UIResourceFilterDescription filter, String property) {
 		if (property.equals(ID)) {
 			String id = filter.getFileInfoMatcherDescription().getId();
-			int index = getDescriptorIndex(id);
-			return index;
+			return getDescriptorIndex(id);
 		}
 		if (property.equals(MODE)) {
 			if ((filter.getType() & IResourceFilterDescription.INCLUDE_ONLY) != 0)
@@ -1833,8 +1807,7 @@ class FilterCopy extends UIResourceFilterDescription {
 			arg = descriptions;
 		}
 
-		FileInfoMatcherDescription desc = new FileInfoMatcherDescription(getId(), arg);
-		return desc;
+		return new FileInfoMatcherDescription(getId(), arg);
 	}
 }
 
@@ -1952,23 +1925,23 @@ class FilterEditDialog extends TrayDialog {
 		label.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
 		Composite composite = new Composite(parent, SWT.NONE);
-    	GridLayout layout = new GridLayout();
-    	layout.marginWidth = 0;
-    	layout.marginHeight = 0;
-    	layout.horizontalSpacing = 0;
-    	composite.setLayout(layout);
-    	composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-    	composite.setFont(parent.getFont());
+		GridLayout layout = new GridLayout();
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
+		layout.horizontalSpacing = 0;
+		composite.setLayout(layout);
+		composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+		composite.setFont(parent.getFont());
 
 		// create help control if needed
-        if (isHelpAvailable()) {
-        	Control helpControl = createHelpControl(composite);
-        	((GridData) helpControl.getLayoutData()).horizontalIndent = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
+		if (isHelpAvailable()) {
+			Control helpControl = createHelpControl(composite);
+			((GridData) helpControl.getLayoutData()).horizontalIndent = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
 		}
 
-        Control buttonSection = dialogCreateButtonBar(composite);
-        ((GridData) buttonSection.getLayoutData()).grabExcessHorizontalSpace = true;
-        return composite;
+		Control buttonSection = dialogCreateButtonBar(composite);
+		((GridData) buttonSection.getLayoutData()).grabExcessHorizontalSpace = true;
+		return composite;
 	}
 
 	private Control dialogCreateButtonBar(Composite parent) {
@@ -2382,6 +2355,11 @@ interface ICustomFilterArgumentUI {
 
 class MultiMatcherCustomFilterArgumentUI implements ICustomFilterArgumentUI {
 
+	/**
+	 * This is the minimum year that is accepted by {@link DateTime#setYear}.
+	 */
+	private static final int DateTime_MIN_YEAR = 1752;
+
 	Shell shell;
 	FilterCopy filter;
 	protected Button argumentsCaseSensitive;
@@ -2406,6 +2384,7 @@ class MultiMatcherCustomFilterArgumentUI implements ICustomFilterArgumentUI {
 	protected FilterEditDialog dialog;
 	protected Label dummyLabel1;
 	protected Label dummyLabel2;
+	protected static GregorianCalendar gregorianCalendar = new GregorianCalendar();
 
 	/**
 	 * @param dialog
@@ -2804,7 +2783,7 @@ class MultiMatcherCustomFilterArgumentUI implements ICustomFilterArgumentUI {
 				}
 				argumentsDate.setDay(calendar.get(Calendar.DAY_OF_MONTH));
 				argumentsDate.setMonth(calendar.get(Calendar.MONTH));
-				argumentsDate.setYear(calendar.get(Calendar.YEAR));
+				argumentsDate.setYear(getDateYear(calendar));
 			}
 		}
 		if (selectedKeyOperatorType.equals(Boolean.class)) {
@@ -2813,7 +2792,8 @@ class MultiMatcherCustomFilterArgumentUI implements ICustomFilterArgumentUI {
 			data = new GridData(SWT.FILL, SWT.TOP, true, false);
 			argumentsBoolean.setLayoutData(data);
 			argumentsBoolean.setFont(multiArgumentComposite.getFont());
-			argumentsBoolean.setItems(new String[] {MultiMatcherLocalization.getLocalMultiMatcherKey(Boolean.TRUE.toString()), MultiMatcherLocalization.getLocalMultiMatcherKey(Boolean.FALSE.toString())});
+			argumentsBoolean.setItems(MultiMatcherLocalization.getLocalMultiMatcherKey(Boolean.TRUE.toString()),
+					MultiMatcherLocalization.getLocalMultiMatcherKey(Boolean.FALSE.toString()));
 			argumentsBoolean.addSelectionListener(new SelectionAdapter() {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
@@ -2922,6 +2902,29 @@ class MultiMatcherCustomFilterArgumentUI implements ICustomFilterArgumentUI {
 		return Long.toString(Long.parseLong(string));
 	}
 
+	private int getDateYear(Calendar calendar) {
+		Date calendarDate = calendar.getTime();
+		int calendarYear = calendar.get(Calendar.YEAR);
+		if (calendarYear >= DateTime_MIN_YEAR) {
+			return calendarYear;
+		}
+		gregorianCalendar.setTime(calendarDate);
+		return gregorianCalendar.get(Calendar.YEAR);
+	}
+
+	private int getCalendarYear() {
+		Calendar calendar = Calendar.getInstance();
+		int calendarYear = calendar.get(Calendar.YEAR);
+		int dateYear = argumentsDate.getYear();
+		if (calendarYear >= DateTime_MIN_YEAR) {
+			return dateYear;
+		}
+
+		gregorianCalendar.setTime(new Date());
+		int currentYear = gregorianCalendar.get(Calendar.YEAR);
+		return dateYear = calendarYear + (dateYear - currentYear);
+	}
+
 	private void storeMultiSelection() {
 		if (intiantiatedKeyOperatorType != null) {
 			String selectedKey = MultiMatcherLocalization.getMultiMatcherKey(multiKey.getText());
@@ -2933,7 +2936,7 @@ class MultiMatcherCustomFilterArgumentUI implements ICustomFilterArgumentUI {
 
 			if (intiantiatedKeyOperatorType.equals(Date.class) && argumentsDate != null) {
 				Calendar calendar = Calendar.getInstance();
-				calendar.set(argumentsDate.getYear(), argumentsDate.getMonth(), argumentsDate.getDay());
+				calendar.set(getCalendarYear(), argumentsDate.getMonth(), argumentsDate.getDay());
 				argument.pattern = Long.toString(calendar.getTimeInMillis());
 			}
 			if (intiantiatedKeyOperatorType.equals(String.class) && arguments != null) {

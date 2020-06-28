@@ -87,7 +87,7 @@ public class WorkspaceTest extends ResourceTest {
 	/**
 	 * Creates filesystem 'resources' with the given names and fills them with random text.
 	 * @param container An object that can hold the newly created resources.
-	 * @param hierarchy A list of files & folder names to use as resources
+	 * @param hierarchy A list of files &amp; folder names to use as resources
 	 * @param includeContainer A flag that controls whether the container is included in the list of resources.
 	 * @return IResource[] An array of resources filled with variable amounts of random text
 	 * @throws CoreException
@@ -99,9 +99,10 @@ public class WorkspaceTest extends ResourceTest {
 		resources.addAll(Arrays.asList(buildResources(container, hierarchy)));
 		IResource[] result = resources.toArray(new IResource[resources.size()]);
 		ensureExistsInWorkspace(result, true);
-		for (int i = 0; i < result.length; i++) {
-			if (result[i].getType() == IResource.FILE) // 3786 bytes is the average size of Eclipse Java files!
-				 ((IFile) result[i]).setContents(getRandomContents(100), true, false, null);
+		for (IResource r : result) {
+			if (r.getType() == IResource.FILE) {
+				((IFile) r).setContents(getRandomContents(100), true, false, null);
+			}
 		}
 		return result;
 	}
@@ -120,7 +121,7 @@ public class WorkspaceTest extends ResourceTest {
 	 * @return InputStream The input stream containing random text.
 	 */
 	protected static InputStream getRandomContents(int sizeAtLeast) {
-		StringBuffer randomStuff = new StringBuffer(sizeAtLeast + 100);
+		StringBuilder randomStuff = new StringBuilder(sizeAtLeast + 100);
 		while (randomStuff.length() < sizeAtLeast) {
 			randomStuff.append(getRandomSnippet());
 		}

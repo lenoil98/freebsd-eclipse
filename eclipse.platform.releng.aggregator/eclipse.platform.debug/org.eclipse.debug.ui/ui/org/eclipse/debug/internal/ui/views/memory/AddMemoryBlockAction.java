@@ -115,10 +115,6 @@ public class AddMemoryBlockAction extends Action implements IDebugContextListene
 		DebugPlugin.getDefault().addDebugEventListener(this);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run() {
 		boolean exit = false;
@@ -135,7 +131,7 @@ public class AddMemoryBlockAction extends Action implements IDebugContextListene
 				return;
 			}
 
-			Shell shell = DebugUIPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow().getShell();
+			Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 			// create dialog to ask for expression/address to block
 			MonitorMemoryBlockDialog dialog = new MonitorMemoryBlockDialog(shell, retrieval, prefillExp, prefillLength);
 			dialog.open();
@@ -188,8 +184,8 @@ public class AddMemoryBlockAction extends Action implements IDebugContextListene
 	 * @return if we should exit
 	 */
 	private boolean addMemoryBlocks(boolean exit, Object elem, IMemoryBlockRetrieval standardMemRetrieval, MonitorMemoryBlockDialog dialog, final String[] expressionsArray) {
-		for (int i = 0; i < expressionsArray.length; i++) {
-			String expression = expressionsArray[i].trim();
+		for (String e : expressionsArray) {
+			String expression = e.trim();
 			try {
 				if (standardMemRetrieval instanceof IMemoryBlockRetrievalExtension) {
 					// if the debug session supports
@@ -278,16 +274,10 @@ public class AddMemoryBlockAction extends Action implements IDebugContextListene
 		return exit;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.core.IDebugEventSetListener#handleDebugEvents(org.eclipse
-	 * .debug.core.DebugEvent[])
-	 */
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
-		for (int i = 0; i < events.length; i++) {
-			handleDebugEvent(events[i]);
+		for (DebugEvent event : events) {
+			handleDebugEvent(event);
 		}
 	}
 
@@ -354,18 +344,18 @@ public class AddMemoryBlockAction extends Action implements IDebugContextListene
 			DebugUIPlugin.log(e1);
 		}
 
-		for (int i = 0; i < renderingTypes.length; i++) {
+		for (IMemoryRenderingType renderingType : renderingTypes) {
 			try {
 				boolean create = true;
 				if (primaryType != null) {
-					if (primaryType.getId().equals(renderingTypes[i].getId())) {
+					if (primaryType.getId().equals(renderingType.getId())) {
 						create = false;
 					}
 				}
 				if (create) {
-					createRenderingInContainer(memoryBlock, renderingTypes[i], IDebugUIConstants.ID_RENDERING_VIEW_PANE_2);
+					createRenderingInContainer(memoryBlock, renderingType, IDebugUIConstants.ID_RENDERING_VIEW_PANE_2);
 				}
-			} catch (CoreException e) {
+			}catch (CoreException e) {
 				DebugUIPlugin.log(e);
 			}
 		}
@@ -403,13 +393,6 @@ public class AddMemoryBlockAction extends Action implements IDebugContextListene
 		job.schedule();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.internal.ui.contexts.provisional.IDebugContextListener
-	 * #contextEvent
-	 * (org.eclipse.debug.internal.ui.contexts.provisional.DebugContextEvent)
-	 */
 	@Override
 	public void debugContextChanged(DebugContextEvent event) {
 		if ((event.getFlags() & DebugContextEvent.ACTIVATED) > 0) {

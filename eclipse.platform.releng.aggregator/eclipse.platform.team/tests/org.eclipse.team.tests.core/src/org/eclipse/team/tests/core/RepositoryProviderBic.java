@@ -25,34 +25,24 @@ public class RepositoryProviderBic extends RepositoryProvider {
 	private IMoveDeleteHook mdh;
 	private IFileModificationValidator mv;
 
-	/*
-	 * @see RepositoryProvider#configureProject()
-	 */
+	@Override
 	public void configureProject() throws CoreException {
 	}
 
-	/*
-	 * @see RepositoryProvider#getID()
-	 */
+	@Override
 	public String getID() {
 		return NATURE_ID;
 	}
-	/*
-	 * @see IProjectNature#deconfigure()
-	 */
+	@Override
 	public void deconfigure() throws CoreException {
 	}
 
-	/*
-	 * @see RepositoryProvider#getFileModificationValidator()
-	 */
+	@Override
 	public IFileModificationValidator getFileModificationValidator() {
 		return mv;
 	}
 
-	/*
-	 * @see RepositoryProvider#getMoveDeleteHook()
-	 */
+	@Override
 	public IMoveDeleteHook getMoveDeleteHook() {
 		return mdh;
 	}

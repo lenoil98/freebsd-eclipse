@@ -36,36 +36,30 @@ public class EditBreakpointGroupAction extends AbstractBreakpointsViewAction {
 	 */
 	private IWorkingSet fSet = null;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
-        IWorkingSetEditWizard editWizard = PlatformUI.getWorkbench().getWorkingSetManager().createWorkingSetEditWizard(fSet);
-        WizardDialog dialog = new WizardDialog(DebugUIPlugin.getShell(), editWizard);
-        dialog.open();
+		IWorkingSetEditWizard editWizard = PlatformUI.getWorkbench().getWorkingSetManager().createWorkingSetEditWizard(fSet);
+		WizardDialog dialog = new WizardDialog(DebugUIPlugin.getShell(), editWizard);
+		dialog.open();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection sel) {
 		fSet = null;
 		if (sel instanceof IStructuredSelection) {
 			IStructuredSelection selection= (IStructuredSelection) sel;
 
-	        if (selection.size() == 1) {
-	            Object element = selection.getFirstElement();
+			if (selection.size() == 1) {
+				Object element = selection.getFirstElement();
 				if (element instanceof IBreakpointContainer) {
-	                IBreakpointContainer container = (IBreakpointContainer)element;
-	                IAdaptable category = container.getCategory();
-	                if (category instanceof WorkingSetCategory) {
-	                    IWorkingSet set = ((WorkingSetCategory)category).getWorkingSet();
-	                    action.setEnabled(true);
-	                    fSet = set;
-	                    return;
-	                }
+					IBreakpointContainer container = (IBreakpointContainer)element;
+					IAdaptable category = container.getCategory();
+					if (category instanceof WorkingSetCategory) {
+						IWorkingSet set = ((WorkingSetCategory)category).getWorkingSet();
+						action.setEnabled(true);
+						fSet = set;
+						return;
+					}
 				}
 			}
 		}

@@ -1,11 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2009, 2014 EclipseSource and others.
  *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which accompanies this distribution,
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   EclipseSource - initial API and implementation
@@ -33,7 +34,7 @@ public class TestElement extends ElementAdapter {
 	private final String typeName;
 	private String className;
 	private String id;
-	private Map<String, String> attrs = new HashMap<String, String>();
+	private Map<String, String> attrs = new HashMap<>();
 	private Node parentNode = null;
 	private List<Node> children = null;
 
@@ -124,7 +125,7 @@ public class TestElement extends ElementAdapter {
 	@Override
 	public Node appendChild(Node newChild) throws DOMException {
 		if (children == null) {
-			children = new ArrayList<Node>();
+			children = new ArrayList<>();
 		}
 		children.add(newChild);
 		return newChild;

@@ -185,17 +185,17 @@ public IJavaElement getHandleFromMemento(String token, MementoTokenizer memento,
 				return this;
 			if (!memento.hasMoreTokens()) return this;
 			String interphase = memento.nextToken();
-			if (!memento.hasMoreTokens() || memento.nextToken() != MementoTokenizer.COUNT) 
+			if (!memento.hasMoreTokens() || memento.nextToken() != MementoTokenizer.COUNT)
 				return this;
 			int sourceStart = Integer.parseInt(memento.nextToken());
-			if (!memento.hasMoreTokens() || memento.nextToken() != MementoTokenizer.COUNT) 
+			if (!memento.hasMoreTokens() || memento.nextToken() != MementoTokenizer.COUNT)
 				return this;
 			int sourceEnd = Integer.parseInt(memento.nextToken());
-			if (!memento.hasMoreTokens() || memento.nextToken() != MementoTokenizer.COUNT) 
+			if (!memento.hasMoreTokens() || memento.nextToken() != MementoTokenizer.COUNT)
 				return this;
 			int arrowPosition = Integer.parseInt(memento.nextToken());
 			LambdaExpression expression = LambdaFactory.createLambdaExpression(this, interphase, sourceStart, sourceEnd, arrowPosition);
-			if (!memento.hasMoreTokens() || (token = memento.nextToken()) != MementoTokenizer.LAMBDA_METHOD) 
+			if (!memento.hasMoreTokens() || (token = memento.nextToken()) != MementoTokenizer.LAMBDA_METHOD)
 				return expression;
 			return expression.getHandleFromMemento(token, memento, workingCopyOwner);
 		case JEM_TYPE:
@@ -329,6 +329,7 @@ public ISourceRange getJavadocRange() throws JavaModelException {
 						break;
 					case ITerminalSymbols.TokenNameCOMMENT_LINE :
 					case ITerminalSymbols.TokenNameCOMMENT_BLOCK :
+					case ITerminalSymbols.TokenNameCOMMA:
 						terminal= scanner.getNextToken();
 						continue loop;
 					default :
@@ -338,9 +339,7 @@ public ISourceRange getJavadocRange() throws JavaModelException {
 			if (docOffset != -1) {
 				return new SourceRange(docOffset + start, docEnd - docOffset);
 			}
-		} catch (InvalidInputException ex) {
-			// try if there is inherited Javadoc
-		} catch (IndexOutOfBoundsException e) {
+		} catch (InvalidInputException | IndexOutOfBoundsException e) {
 			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=305001
 		}
 	}
@@ -390,7 +389,7 @@ protected boolean isMainMethod(IMethod method) throws JavaModelException {
 		int flags= method.getFlags();
 		IType declaringType = null;
 		if (Flags.isStatic(flags) &&
-				(Flags.isPublic(flags) || 
+				(Flags.isPublic(flags) ||
 						((declaringType = getDeclaringType()) != null && declaringType.isInterface()))) {
 			String[] paramTypes= method.getParameterTypes();
 			if (paramTypes.length == 1) {

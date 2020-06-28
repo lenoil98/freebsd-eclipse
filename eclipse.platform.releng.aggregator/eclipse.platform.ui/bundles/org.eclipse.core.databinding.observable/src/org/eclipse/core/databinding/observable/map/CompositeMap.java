@@ -23,6 +23,7 @@ import java.util.Set;
 import org.eclipse.core.databinding.observable.Diffs;
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.core.databinding.observable.masterdetail.IObservableFactory;
+import org.eclipse.core.databinding.observable.set.IObservableSet;
 import org.eclipse.core.databinding.observable.set.WritableSet;
 import org.eclipse.core.runtime.Assert;
 
@@ -165,8 +166,8 @@ public class CompositeMap<K, I, V> extends ObservableMap<K, V> {
 		final Set<K> removes = new HashSet<>();
 		final Map<K, V> oldValues = new HashMap<>();
 		final Map<K, V> newValues = new HashMap<>();
-		Set<I> addedKeys = new HashSet<I>(diff.getAddedKeys());
-		Set<I> removedKeys = new HashSet<I>(diff.getRemovedKeys());
+		Set<I> addedKeys = new HashSet<>(diff.getAddedKeys());
+		Set<I> removedKeys = new HashSet<>(diff.getRemovedKeys());
 
 		for (I addedKey : addedKeys) {
 			Set<K> elements1 = firstMap.getKeys(addedKey);
@@ -285,7 +286,7 @@ public class CompositeMap<K, I, V> extends ObservableMap<K, V> {
 	 *            set representing the value set of <code>firstMap</code>.
 	 */
 	public CompositeMap(IObservableMap<K, I> firstMap,
-			IObservableFactory<Set<I>, IObservableMap<I, V>> secondMapFactory) {
+			IObservableFactory<? super IObservableSet<I>, ? extends IObservableMap<I, V>> secondMapFactory) {
 		super(firstMap.getRealm(), new HashMap<K, V>());
 		this.firstMap = new BidiObservableMap<>(firstMap);
 		this.firstMap.addMapChangeListener(firstMapListener);

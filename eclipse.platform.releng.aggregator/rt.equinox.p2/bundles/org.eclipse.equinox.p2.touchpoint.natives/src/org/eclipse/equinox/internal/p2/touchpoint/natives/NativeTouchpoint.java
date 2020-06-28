@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2017 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,12 +18,14 @@ import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.eclipse.core.runtime.*;
 import org.eclipse.equinox.internal.p2.touchpoint.natives.actions.ActionConstants;
 import org.eclipse.equinox.p2.core.*;
 import org.eclipse.equinox.p2.engine.IProfile;
 import org.eclipse.equinox.p2.engine.spi.Touchpoint;
 import org.eclipse.equinox.p2.metadata.IArtifactKey;
+import org.eclipse.equinox.p2.metadata.IInstallableUnit;
 import org.eclipse.equinox.p2.repository.artifact.IFileArtifactRepository;
 import org.eclipse.osgi.util.NLS;
 
@@ -38,7 +40,17 @@ public class NativeTouchpoint extends Touchpoint {
 
 	private static Map<IProfile, IBackupStore> backups = new WeakHashMap<>();
 
-	private List<NativePackageEntry> packagesToInstall = new ArrayList<>();
+	private static class NativePackageToInstallInfo {
+		NativePackageEntry entry;
+		IInstallableUnit iu;
+
+		public NativePackageToInstallInfo(NativePackageEntry entry, IInstallableUnit iu) {
+			this.entry = entry;
+			this.iu = iu;
+		}
+	}
+
+	private List<NativePackageToInstallInfo> packagesToInstall = new ArrayList<>();
 	private Properties installCommandsProperties = new Properties();
 
 	private IProvisioningAgent agent;
@@ -62,7 +74,8 @@ public class NativeTouchpoint extends Touchpoint {
 	}
 
 	@Override
-	public IStatus initializePhase(IProgressMonitor monitor, IProfile profile, String phaseId, Map<String, Object> touchpointParameters) {
+	public IStatus initializePhase(IProgressMonitor monitor, IProfile profile, String phaseId,
+			Map<String, Object> touchpointParameters) {
 		touchpointParameters.put(PARM_BACKUP, getBackupStore(profile));
 		return null;
 	}
@@ -75,7 +88,7 @@ public class NativeTouchpoint extends Touchpoint {
 	@Override
 	public IStatus prepare(IProfile profile) {
 		// does not have to do anything - everything is already in the correct place
-		// the commit means that the backup is discarded - if that fails it is not a 
+		// the commit means that the backup is discarded - if that fails it is not a
 		// terrible problem.
 		return super.prepare(profile);
 	}
@@ -93,16 +106,25 @@ public class NativeTouchpoint extends Touchpoint {
 		if (packagesToInstall.size() == 0)
 			return;
 		loadInstallCommandsProperties(installCommandsProperties, distro);
-		UIServices serviceUI = (UIServices) agent.getService(UIServices.SERVICE_NAME);
+		UIServices serviceUI = agent.getService(UIServices.class);
 		String text = Messages.PromptForNative_IntroText;
 		String downloadLinks = ""; //$NON-NLS-1$
 		List<NativePackageEntry> entriesWithoutDownloadLink = new ArrayList<>(packagesToInstall.size());
-		for (NativePackageEntry nativePackageEntry : packagesToInstall) {
-			text += '\t' + nativePackageEntry.name + ' ' + formatVersion(nativePackageEntry) + '\n';
-			if (nativePackageEntry.getDownloadLink() != null) {
-				downloadLinks += "    <a>" + nativePackageEntry.getDownloadLink() + "</a>\n"; //$NON-NLS-1$ //$NON-NLS-2$
+		for (NativePackageToInstallInfo nativePackageEntry : packagesToInstall) {
+			text += '\t' + nativePackageEntry.entry.name + ' ' + formatVersion(nativePackageEntry.entry);
+			if (nativePackageEntry.iu != null) {
+				String name = nativePackageEntry.iu.getProperty(IInstallableUnit.PROP_NAME, null);
+				if (name != null && !name.isEmpty()) {
+					text += ' ';
+					text += NLS.bind(Messages.NativeTouchpoint_PromptForNative_RequiredBy, name);
+				}
+			}
+
+			text += '\n';
+			if (nativePackageEntry.entry.getDownloadLink() != null) {
+				downloadLinks += "    <a>" + nativePackageEntry.entry.getDownloadLink() + "</a>\n"; //$NON-NLS-1$ //$NON-NLS-2$
 			} else {
-				entriesWithoutDownloadLink.add(nativePackageEntry);
+				entriesWithoutDownloadLink.add(nativePackageEntry.entry);
 			}
 		}
 
@@ -113,7 +135,7 @@ public class NativeTouchpoint extends Touchpoint {
 
 		String downloadText = null;
 		if (downloadLinks.length() > 0) {
-			downloadText = "You can download those from the following locations:\n" + downloadLinks;
+			downloadText = Messages.NativeTouchpoint_PromptForNative_YouCanDownloadFrom + downloadLinks;
 		}
 
 		serviceUI.showInformationMessage(Messages.PromptForNative_DialogTitle, text, downloadText);
@@ -139,7 +161,7 @@ public class NativeTouchpoint extends Touchpoint {
 		try (InputStream is = new BufferedInputStream(new FileInputStream(f))) {
 			properties.load(is);
 		} catch (IOException e) {
-			//fallthrough to return empty string
+			// fallthrough to return empty string
 		}
 	}
 
@@ -157,12 +179,18 @@ public class NativeTouchpoint extends Touchpoint {
 		return text;
 	}
 
-	public void addPackageToInstall(NativePackageEntry entry) {
-		packagesToInstall.add(entry);
+	/**
+	 * Add the given entry as a new native package that needs to be installed.
+	 * 
+	 * @param entry Package information about the native
+	 * @param iu    optional IU that has this requirement
+	 */
+	public void addPackageToInstall(NativePackageEntry entry, IInstallableUnit iu) {
+		packagesToInstall.add(new NativePackageToInstallInfo(entry, iu));
 	}
 
 	public List<NativePackageEntry> getPackagesToInstall() {
-		return Collections.unmodifiableList(packagesToInstall);
+		return Collections.unmodifiableList(packagesToInstall.stream().map(e -> e.entry).collect(Collectors.toList()));
 	}
 
 	public void setDistro(String distro) {
@@ -170,7 +198,8 @@ public class NativeTouchpoint extends Touchpoint {
 	}
 
 	/**
-	 * Converts a profile id into a string that can be used as a file name in any file system.
+	 * Converts a profile id into a string that can be used as a file name in any
+	 * file system.
 	 */
 	public static String escape(String toEscape) {
 		StringBuffer buffer = new StringBuffer();
@@ -178,20 +207,20 @@ public class NativeTouchpoint extends Touchpoint {
 		for (int i = 0; i < length; ++i) {
 			char ch = toEscape.charAt(i);
 			switch (ch) {
-				case '\\' :
-				case '/' :
-				case ':' :
-				case '*' :
-				case '?' :
-				case '"' :
-				case '<' :
-				case '>' :
-				case '|' :
-				case '%' :
-					buffer.append("%" + (int) ch + ";"); //$NON-NLS-1$ //$NON-NLS-2$
-					break;
-				default :
-					buffer.append(ch);
+			case '\\':
+			case '/':
+			case ':':
+			case '*':
+			case '?':
+			case '"':
+			case '<':
+			case '>':
+			case '|':
+			case '%':
+				buffer.append("%" + (int) ch + ";"); //$NON-NLS-1$ //$NON-NLS-2$
+				break;
+			default:
+				buffer.append(ch);
 			}
 		}
 		return buffer.toString();
@@ -204,25 +233,28 @@ public class NativeTouchpoint extends Touchpoint {
 		try {
 			store.restore();
 		} catch (IOException e) {
-			returnStatus = new Status(IStatus.ERROR, Activator.ID, NLS.bind(Messages.failed_backup_restore, store.getBackupName()), e);
+			returnStatus = new Status(IStatus.ERROR, Activator.ID,
+					NLS.bind(Messages.failed_backup_restore, store.getBackupName()), e);
 		} catch (ClosedBackupStoreException e) {
-			returnStatus = new Status(IStatus.ERROR, Activator.ID, NLS.bind(Messages.failed_backup_restore, store.getBackupName()), e);
+			returnStatus = new Status(IStatus.ERROR, Activator.ID,
+					NLS.bind(Messages.failed_backup_restore, store.getBackupName()), e);
 		}
 		clearProfileState(profile);
 		return returnStatus;
 	}
 
 	public static File getFileFromBundle(String distro, String file) {
-		URL[] installScripts = FileLocator.findEntries(Activator.getContext().getBundle(), new Path(NativeTouchpoint.FOLDER + '/' + distro + '/' + file));
+		URL[] installScripts = FileLocator.findEntries(Activator.getContext().getBundle(),
+				new Path(NativeTouchpoint.FOLDER + '/' + distro + '/' + file));
 		if (installScripts.length == 0)
 			return null;
 
 		try {
 			return URIUtil.toFile(URIUtil.toURI(FileLocator.toFileURL(installScripts[0])));
 		} catch (URISyntaxException e) {
-			//Can't happen, the URI is returned by OSGi
+			// Can't happen, the URI is returned by OSGi
 		} catch (IOException e) {
-			//continue to return null
+			// continue to return null
 		}
 		return null;
 	}
@@ -235,8 +267,9 @@ public class NativeTouchpoint extends Touchpoint {
 	}
 
 	/**
-	 * Gets the transactional state associated with a profile. A transactional state is
-	 * created if it did not exist.
+	 * Gets the transactional state associated with a profile. A transactional state
+	 * is created if it did not exist.
+	 * 
 	 * @param profile
 	 * @return a lazily initialized backup store
 	 */

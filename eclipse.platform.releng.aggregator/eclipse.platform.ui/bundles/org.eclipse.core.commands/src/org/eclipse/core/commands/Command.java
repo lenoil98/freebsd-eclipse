@@ -13,10 +13,8 @@
  *******************************************************************************/
 package org.eclipse.core.commands;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Objects;
 
 import org.eclipse.core.commands.common.NotDefinedException;
 import org.eclipse.core.commands.internal.util.Tracing;
@@ -356,25 +354,25 @@ public final class Command extends NamedHandleObjectWithState implements Compara
 		final boolean definedChanged = !this.defined;
 		this.defined = true;
 
-		final boolean nameChanged = !Util.equals(this.name, name);
+		final boolean nameChanged = !Objects.equals(this.name, name);
 		this.name = name;
 
-		final boolean descriptionChanged = !Util.equals(this.description,
+		final boolean descriptionChanged = !Objects.equals(this.description,
 				description);
 		this.description = description;
 
-		final boolean categoryChanged = !Util.equals(this.category, category);
+		final boolean categoryChanged = !Objects.equals(this.category, category);
 		this.category = category;
 
-		final boolean parametersChanged = !Util.equals(this.parameters,
+		final boolean parametersChanged = !Arrays.equals(this.parameters,
 				parameters);
 		this.parameters = parameters;
 
-		final boolean returnTypeChanged = !Util.equals(this.returnType,
+		final boolean returnTypeChanged = !Objects.equals(this.returnType,
 				returnType);
 		this.returnType = returnType;
 
-		final boolean helpContextIdChanged = !Util.equals(this.helpContextId,
+		final boolean helpContextIdChanged = !Objects.equals(this.helpContextId,
 				helpContextId);
 		this.helpContextId = helpContextId;
 
@@ -463,13 +461,6 @@ public final class Command extends NamedHandleObjectWithState implements Compara
 			firePreExecute(event);
 		}
 		final IHandler handler = this.handler;
-		// workaround for the division of responsibilities to get
-		// bug 369159 working
-		if ((handler != null)
-				&& "org.eclipse.ui.internal.MakeHandlersGo".equals(handler.getClass() //$NON-NLS-1$
-								.getName())) {
-			return handler.execute(event);
-		}
 
 		if (!isDefined()) {
 			final NotDefinedException exception = new NotDefinedException(
@@ -948,7 +939,7 @@ public final class Command extends NamedHandleObjectWithState implements Compara
 	 *         otherwise.
 	 */
 	public boolean setHandler(final IHandler handler) {
-		if (Util.equals(handler, this.handler)) {
+		if (Objects.equals(handler, this.handler)) {
 			return false;
 		}
 
@@ -1005,15 +996,12 @@ public final class Command extends NamedHandleObjectWithState implements Compara
 	 */
 	private IHandlerListener getHandlerListener() {
 		if (handlerListener == null) {
-			handlerListener = new IHandlerListener() {
-				@Override
-				public void handlerChanged(HandlerEvent handlerEvent) {
-					boolean enabledChanged = handlerEvent.isEnabledChanged();
-					boolean handledChanged = handlerEvent.isHandledChanged();
-					fireCommandChanged(new CommandEvent(Command.this, false,
-							false, false, handledChanged, false, false, false,
-							false, enabledChanged));
-				}
+			handlerListener = (HandlerEvent handlerEvent) -> {
+				boolean enabledChanged = handlerEvent.isEnabledChanged();
+				boolean handledChanged = handlerEvent.isHandledChanged();
+				fireCommandChanged(new CommandEvent(Command.this, false,
+						false, false, handledChanged, false, false, false,
+						false, enabledChanged));
 			};
 		}
 		return handlerListener;
@@ -1028,39 +1016,34 @@ public final class Command extends NamedHandleObjectWithState implements Compara
 	@Override
 	public String toString() {
 		if (string == null) {
-			final StringWriter sw = new StringWriter();
-			final BufferedWriter buffer = new BufferedWriter(sw);
-			try {
-				buffer.write("Command("); //$NON-NLS-1$
-				buffer.write(id);
-				buffer.write(',');
-				buffer.write(name==null?"":name); //$NON-NLS-1$
-				buffer.write(',');
-				buffer.newLine();
-				buffer.write("\t\t"); //$NON-NLS-1$
-				buffer.write(description==null?"":description); //$NON-NLS-1$
-				buffer.write(',');
-				buffer.newLine();
-				buffer.write("\t\t"); //$NON-NLS-1$
-				buffer.write(category==null?"":category.toString()); //$NON-NLS-1$
-				buffer.write(',');
-				buffer.newLine();
-				buffer.write("\t\t"); //$NON-NLS-1$
-				buffer.write(handler==null?"":handler.toString()); //$NON-NLS-1$
-				buffer.write(',');
-				buffer.newLine();
-				buffer.write("\t\t"); //$NON-NLS-1$
-				buffer.write(parameters == null ? "" : Arrays.toString(parameters)); //$NON-NLS-1$
-				buffer.write(',');
-				buffer.write(returnType==null?"":returnType.toString()); //$NON-NLS-1$
-				buffer.write(',');
-				buffer.write(""+defined); //$NON-NLS-1$
-				buffer.write(')');
-				buffer.flush();
-			} catch (IOException e) {
-				// should never get this exception
-			}
-			string = sw.toString();
+			String lineSeparator = System.lineSeparator();
+			StringBuilder builder = new StringBuilder();
+			builder.append("Command("); //$NON-NLS-1$
+			builder.append(id);
+			builder.append(',');
+			builder.append(name == null ? "" : name); //$NON-NLS-1$
+			builder.append(',');
+			builder.append(lineSeparator);
+			builder.append("\t\t"); //$NON-NLS-1$
+			builder.append(description == null ? "" : description); //$NON-NLS-1$
+			builder.append(',');
+			builder.append(lineSeparator);
+			builder.append("\t\t"); //$NON-NLS-1$
+			builder.append(category == null ? "" : category.toString()); //$NON-NLS-1$
+			builder.append(',');
+			builder.append(lineSeparator);
+			builder.append("\t\t"); //$NON-NLS-1$
+			builder.append(handler == null ? "" : handler.toString()); //$NON-NLS-1$
+			builder.append(',');
+			builder.append(lineSeparator);
+			builder.append("\t\t"); //$NON-NLS-1$
+			builder.append(parameters == null ? "" : Arrays.toString(parameters)); //$NON-NLS-1$
+			builder.append(',');
+			builder.append(returnType == null ? "" : returnType.toString()); //$NON-NLS-1$
+			builder.append(',');
+			builder.append("" + defined); //$NON-NLS-1$
+			builder.append(')');
+			string = builder.toString();
 		}
 		return string;
 	}

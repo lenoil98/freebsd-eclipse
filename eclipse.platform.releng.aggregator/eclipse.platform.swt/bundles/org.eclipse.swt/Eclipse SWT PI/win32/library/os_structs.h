@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -87,18 +87,6 @@ void setBP_PAINTPARAMSFields(JNIEnv *env, jobject lpObject, BP_PAINTPARAMS *lpSt
 #define getBP_PAINTPARAMSFields(a,b,c) NULL
 #define setBP_PAINTPARAMSFields(a,b,c)
 #define BP_PAINTPARAMS_sizeof() 0
-#endif
-
-#ifndef NO_BROWSEINFO
-void cacheBROWSEINFOFields(JNIEnv *env, jobject lpObject);
-BROWSEINFO *getBROWSEINFOFields(JNIEnv *env, jobject lpObject, BROWSEINFO *lpStruct);
-void setBROWSEINFOFields(JNIEnv *env, jobject lpObject, BROWSEINFO *lpStruct);
-#define BROWSEINFO_sizeof() sizeof(BROWSEINFO)
-#else
-#define cacheBROWSEINFOFields(a,b)
-#define getBROWSEINFOFields(a,b,c) NULL
-#define setBROWSEINFOFields(a,b,c)
-#define BROWSEINFO_sizeof() 0
 #endif
 
 #ifndef NO_BUTTON_IMAGELIST
@@ -195,6 +183,18 @@ void setCHOOSEFONTFields(JNIEnv *env, jobject lpObject, CHOOSEFONT *lpStruct);
 #define getCHOOSEFONTFields(a,b,c) NULL
 #define setCHOOSEFONTFields(a,b,c)
 #define CHOOSEFONT_sizeof() 0
+#endif
+
+#ifndef NO_CIDA
+void cacheCIDAFields(JNIEnv *env, jobject lpObject);
+CIDA *getCIDAFields(JNIEnv *env, jobject lpObject, CIDA *lpStruct);
+void setCIDAFields(JNIEnv *env, jobject lpObject, CIDA *lpStruct);
+#define CIDA_sizeof() sizeof(CIDA)
+#else
+#define cacheCIDAFields(a,b)
+#define getCIDAFields(a,b,c) NULL
+#define setCIDAFields(a,b,c)
+#define CIDA_sizeof() 0
 #endif
 
 #ifndef NO_COMBOBOXINFO

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  * Portions Copyright  2000-2005 The Apache Software Foundation
  *
  * This program and the accompanying materials are made 
@@ -161,8 +161,8 @@ public class InternalAntRunner {
 		// what kind of list it will return. We need a list that
 		// implements the method List.remove(Object) and ArrayList does.
 		ArrayList<String> result = new ArrayList<String>(args.length);
-		for (int i = 0; i < args.length; i++) {
-			result.add(args[i]);
+		for (String arg : args) {
+			result.add(arg);
 		}
 		return result;
 	}
@@ -178,7 +178,7 @@ public class InternalAntRunner {
 				for (String className : buildListeners) {
 					clazz = className;
 					Class<?> listener = Class.forName(className);
-					project.addBuildListener((BuildListener) listener.newInstance());
+					project.addBuildListener((BuildListener) listener.getConstructor().newInstance());
 				}
 			}
 		}
@@ -234,9 +234,9 @@ public class InternalAntRunner {
 		if ((messageOutputLevel != Project.MSG_DEBUG) && (messageOutputLevel != Project.MSG_VERBOSE)) {
 			return;
 		}
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < extraArguments.length; i++) {
-			sb.append(extraArguments[i]);
+		StringBuilder sb = new StringBuilder();
+		for (String extraArgument : extraArguments) {
+			sb.append(extraArgument);
 			sb.append(' ');
 		}
 		project.log(MessageFormat.format(RemoteAntMessages.getString("InternalAntRunner.Arguments__{0}_2"), new Object[] { sb.toString().trim() })); //$NON-NLS-1$
@@ -326,7 +326,7 @@ public class InternalAntRunner {
 		while (spaces.length() < maxlen) {
 			spaces += spaces;
 		}
-		StringBuffer msg = new StringBuffer();
+		StringBuilder msg = new StringBuilder();
 		msg.append(heading + lSep + lSep);
 		for (int i = 0; i < names.size(); i++) {
 			msg.append(' ');
@@ -565,7 +565,7 @@ public class InternalAntRunner {
 			buildLogger = new DefaultLogger();
 		} else if (!IAntCoreConstants.EMPTY_STRING.equals(loggerClassname)) {
 			try {
-				buildLogger = (BuildLogger) (Class.forName(loggerClassname).newInstance());
+				buildLogger = (BuildLogger) (Class.forName(loggerClassname).getConstructor().newInstance());
 			}
 			catch (ClassCastException e) {
 				String message = MessageFormat.format(RemoteAntMessages.getString("InternalAntRunner.{0}_which_was_specified_to_perform_logging_is_not_an_instance_of_org.apache.tools.ant.BuildLogger._2"), new Object[] { //$NON-NLS-1$
@@ -600,8 +600,7 @@ public class InternalAntRunner {
 	private void fireBuildStarted(Project project) {
 		if (!isVersionCompatible("1.5")) { //$NON-NLS-1$
 			BuildEvent event = new BuildEvent(project);
-			for (Iterator<BuildListener> iterator = project.getBuildListeners().iterator(); iterator.hasNext();) {
-				BuildListener listener = iterator.next();
+			for (BuildListener listener : project.getBuildListeners()) {
 				listener.buildStarted(event);
 			}
 		} else {
@@ -1160,7 +1159,7 @@ public class InternalAntRunner {
 	 */
 	private void printUsage() {
 		String lSep = System.getProperty("line.separator"); //$NON-NLS-1$
-		StringBuffer msg = new StringBuffer();
+		StringBuilder msg = new StringBuilder();
 		msg.append("ant ["); //$NON-NLS-1$
 		msg.append(RemoteAntMessages.getString("InternalAntRunner.options_13")); //$NON-NLS-1$
 		msg.append("] ["); //$NON-NLS-1$

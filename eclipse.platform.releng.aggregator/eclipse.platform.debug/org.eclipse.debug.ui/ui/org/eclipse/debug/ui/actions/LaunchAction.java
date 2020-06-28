@@ -14,6 +14,7 @@
 package org.eclipse.debug.ui.actions;
 
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -35,8 +36,6 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.ui.PlatformUI;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Launches a launch configuration in a specific mode.
@@ -143,12 +142,12 @@ public class LaunchAction extends Action {
 	 */
 	private void removeFromLaunchHistories(ILaunchConfiguration config, ILaunchGroup[] groups) {
 		LaunchHistory history = null;
-		for(int i = 0; i < groups.length; i++) {
-			history = DebugUIPlugin.getDefault().getLaunchConfigurationManager().getLaunchHistory(groups[i].getIdentifier());
-			if(history != null) {
+		for (ILaunchGroup group : groups) {
+			history = DebugUIPlugin.getDefault().getLaunchConfigurationManager().getLaunchHistory(group.getIdentifier());
+			if (history != null) {
 				history.removeFromHistory(fConfiguration);
 			} else {
-				DebugUIPlugin.logErrorMessage(MessageFormat.format("Unable to remove configuration [{0}] from launch history. The launch history for mode [{1}] does not exist.", new Object[] { config.getName(), groups[i].getMode() })); //$NON-NLS-1$
+				DebugUIPlugin.logErrorMessage(MessageFormat.format("Unable to remove configuration [{0}] from launch history. The launch history for mode [{1}] does not exist.", new Object[]{config.getName(), group.getMode()})); //$NON-NLS-1$
 			}
 		}
 	}

@@ -43,7 +43,7 @@ import org.eclipse.debug.core.ILaunchConfiguration;
 /**
  * Create an ANT script for a runnable JAR wit libraries in a sub-folder. The script is generated
  * based on the classpath of the selected launch-configuration.
- * 
+ *
  * @since 3.5
  */
 public class UnpackJarAntExporter extends FatJarAntExporter {
@@ -54,9 +54,7 @@ public class UnpackJarAntExporter extends FatJarAntExporter {
 
 	@Override
 	protected void buildANTScript(IPath antScriptLocation, String projectName, IPath absJarfile, String mainClass, SourceInfo[] sourceInfos) throws IOException {
-		OutputStream outputStream= null;
-		try {
-			outputStream= new FileOutputStream(antScriptLocation.toFile());
+		try (OutputStream outputStream = new FileOutputStream(antScriptLocation.toFile())) {
 			String absJarname= absJarfile.toString();
 			String subfolder= absJarfile.removeFileExtension().lastSegment() + "_lib"; //$NON-NLS-1$
 			String absSubfolder= absJarfile.removeLastSegments(1).append(subfolder).toString();
@@ -104,19 +102,17 @@ public class UnpackJarAntExporter extends FatJarAntExporter {
 			attribute.setAttribute("name", "Class-Path"); //$NON-NLS-1$ //$NON-NLS-2$s
 			StringBuilder classPath= new StringBuilder();
 			classPath.append("."); //$NON-NLS-1$
-			for (int i= 0; i < sourceInfos.length; i++) {
-				SourceInfo sourceInfo= sourceInfos[i];
+			for (SourceInfo sourceInfo : sourceInfos) {
 				if (sourceInfo.isJar) {
 					classPath.append(" ").append(subfolder).append("/") //$NON-NLS-1$ //$NON-NLS-2$
-							.append(new File(sourceInfo.absPath).getName());
+						.append(new File(sourceInfo.absPath).getName());
 				}
 			}
 			attribute.setAttribute("value", classPath.toString()); //$NON-NLS-1$
 			manifest.appendChild(attribute);
 
 			// add folders
-			for (int i= 0; i < sourceInfos.length; i++) {
-				SourceInfo sourceInfo= sourceInfos[i];
+			for (SourceInfo sourceInfo : sourceInfos) {
 				if (!sourceInfo.isJar) {
 					Element fileset= document.createElement("fileset"); //$NON-NLS-1$
 					fileset.setAttribute("dir", substituteBaseDirs(sourceInfo.absPath)); //$NON-NLS-1$
@@ -134,8 +130,7 @@ public class UnpackJarAntExporter extends FatJarAntExporter {
 			target.appendChild(mkdir);
 
 			// add libraries
-			for (int i= 0; i < sourceInfos.length; i++) {
-				SourceInfo sourceInfo= sourceInfos[i];
+			for (SourceInfo sourceInfo : sourceInfos) {
 				if (sourceInfo.isJar) {
 					Element copy= document.createElement("copy"); //$NON-NLS-1$
 					copy.setAttribute("file", substituteBaseDirs(sourceInfo.absPath)); //$NON-NLS-1$
@@ -143,10 +138,8 @@ public class UnpackJarAntExporter extends FatJarAntExporter {
 					target.appendChild(copy);
 				}
 			}
-
 			// add folders
-			for (int i= 0; i < sourceInfos.length; i++) {
-				SourceInfo sourceInfo= sourceInfos[i];
+			for (SourceInfo sourceInfo : sourceInfos) {
 				if (!sourceInfo.isJar) {
 				}
 			}
@@ -164,10 +157,6 @@ public class UnpackJarAntExporter extends FatJarAntExporter {
 				transformer.transform(source, result);
 			} catch (TransformerException e) {
 				throw new IOException(FatJarPackagerMessages.FatJarPackageAntScript_error_couldNotTransformToXML);
-			}
-		} finally {
-			if (outputStream != null) {
-				outputStream.close();
 			}
 		}
 	}

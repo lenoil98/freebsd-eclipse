@@ -82,8 +82,8 @@ public class DeltaDataTree extends AbstractDataTree {
 	 * Returns the tree as a backward delta.  If the delta is applied to the tree it
 	 * will produce its parent. The receiver must have a forward
 	 * delta representation. I.e.:  Call the receiver's parent A,
-	 * and the receiver B.  The receiver's representation is A->B.
-	 * Returns the delta A<-B.  The result is equivalent to A, but has B as its parent.
+	 * and the receiver B.  The receiver's representation is A-&gt;B.
+	 * Returns the delta A&lt;-B.  The result is equivalent to A, but has B as its parent.
 	 */
 	DeltaDataTree asBackwardDelta() {
 		if (getParent() == null)
@@ -103,8 +103,8 @@ public class DeltaDataTree extends AbstractDataTree {
 		if (rootNode.getName() == null) {
 			AbstractDataTreeNode[] children = rootNode.getChildren();
 			int nextChild = 0;
-			for (int i = 0; i < children.length; i++) {
-				AbstractDataTreeNode newChild = children[i].asReverseComparisonNode(comparator);
+			for (AbstractDataTreeNode c : children) {
+				AbstractDataTreeNode newChild = c.asReverseComparisonNode(comparator);
 				if (newChild != null) {
 					children[nextChild++] = newChild;
 				}

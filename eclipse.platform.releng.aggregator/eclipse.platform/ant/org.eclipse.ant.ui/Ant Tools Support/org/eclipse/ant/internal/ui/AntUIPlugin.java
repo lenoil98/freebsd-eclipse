@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2013 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -29,6 +29,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.editors.text.EditorsUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.texteditor.ChainedPreferenceStore;
@@ -78,11 +79,6 @@ public class AntUIPlugin extends AbstractUIPlugin {
 		plugin = this;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
-	 */
 	@Override
 	public void stop(BundleContext context) throws Exception {
 		try {
@@ -181,11 +177,6 @@ public class AntUIPlugin extends AbstractUIPlugin {
 		return section;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#createImageRegistry()
-	 */
 	@Override
 	protected ImageRegistry createImageRegistry() {
 		return AntUIImages.initializeImageRegistry();
@@ -213,7 +204,7 @@ public class AntUIPlugin extends AbstractUIPlugin {
 	 * Returns the active workbench window or <code>null</code> if none
 	 */
 	public static IWorkbenchWindow getActiveWorkbenchWindow() {
-		return getDefault().getWorkbench().getActiveWorkbenchWindow();
+		return PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 	}
 
 	/**
@@ -221,7 +212,7 @@ public class AntUIPlugin extends AbstractUIPlugin {
 	 */
 	public static boolean isMacOS() {
 		String osname = System.getProperty("os.name").toLowerCase(Locale.US); //$NON-NLS-1$
-		return osname.indexOf("mac") != -1; //$NON-NLS-1$
+		return osname.contains("mac"); //$NON-NLS-1$
 	}
 
 	/**

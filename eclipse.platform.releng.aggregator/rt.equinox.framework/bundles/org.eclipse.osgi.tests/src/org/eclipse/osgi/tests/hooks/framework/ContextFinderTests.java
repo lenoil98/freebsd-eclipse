@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2017 IBM Corporation and others.
+ * Copyright (c) 2013, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,8 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.osgi.tests.hooks.framework;
+
+import static org.eclipse.osgi.tests.bundles.AbstractBundleTests.stopQuietly;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,15 +32,17 @@ public class ContextFinderTests extends AbstractFrameworkHookTests {
 	private Map<String, String> configuration;
 	private Framework framework;
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		File file = OSGiTestsActivator.getContext().getDataFile(getName());
-		configuration = new HashMap<String, String>();
+		configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, file.getAbsolutePath());
 		framework = createFramework(configuration);
 		initAndStart(framework);
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		stopQuietly(framework);
 		super.tearDown();

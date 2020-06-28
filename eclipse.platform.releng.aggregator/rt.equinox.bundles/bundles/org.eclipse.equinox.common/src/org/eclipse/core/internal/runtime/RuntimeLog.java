@@ -101,12 +101,10 @@ public final class RuntimeLog {
 			return;
 		}
 		if (listeners != null) {
-			for (int i = 0; i < listeners.length; i++) {
+			for (ILogListener listener : listeners) {
 				try {
-					listeners[i].logging(status, IRuntimeConstants.PI_RUNTIME);
-				} catch (Exception e) {
-					handleException(e);
-				} catch (LinkageError e) {
+					listener.logging(status, IRuntimeConstants.PI_RUNTIME);
+				}catch (Exception | LinkageError e) {
 					handleException(e);
 				}
 			}
@@ -148,8 +146,8 @@ public final class RuntimeLog {
 			queued = queuedMessages.toArray(new IStatus[queuedMessages.size()]);
 			queuedMessages.clear();
 		}
-		for (int i = 0; i < queued.length; i++) {
-			log(queued[i]);
+		for (IStatus s : queued) {
+			log(s);
 		}
 	}
 
@@ -159,12 +157,10 @@ public final class RuntimeLog {
 		synchronized (logListeners) {
 			listeners = logListeners.toArray(new ILogListener[logListeners.size()]);
 		}
-		for (int i = 0; i < listeners.length; i++) {
+		for (ILogListener listener : listeners) {
 			try {
-				listeners[i].logging(status, IRuntimeConstants.PI_RUNTIME);
-			} catch (Exception e) {
-				handleException(e);
-			} catch (LinkageError e) {
+				listener.logging(status, IRuntimeConstants.PI_RUNTIME);
+			}catch (Exception | LinkageError e) {
 				handleException(e);
 			}
 		}

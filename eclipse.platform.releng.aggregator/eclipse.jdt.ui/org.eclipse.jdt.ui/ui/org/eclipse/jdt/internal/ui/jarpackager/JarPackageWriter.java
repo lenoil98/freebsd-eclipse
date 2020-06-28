@@ -68,7 +68,7 @@ public class JarPackageWriter extends Object implements IJarDescriptionWriter {
 	/**
 	 * Create a JarPackageWriter on the given output stream. It is the clients responsibility to
 	 * close the output stream.
-	 * 
+	 *
 	 * @param outputStream the the output stream
 	 * @param encoding the encoding
 	 */
@@ -90,7 +90,7 @@ public class JarPackageWriter extends Object implements IJarDescriptionWriter {
 
 	/**
 	 * Writes a XML representation of the JAR specification to to the underlying stream.
-	 * 
+	 *
 	 * @param jarPackage the JAR package data
 	 * @exception IOException if writing to the underlying stream fails
 	 */
@@ -159,7 +159,7 @@ public class JarPackageWriter extends Object implements IJarDescriptionWriter {
 		refactoring.setAttribute("structuralOnly", "" + jarPackage.isExportStructuralOnly()); //$NON-NLS-1$ //$NON-NLS-2$
 		refactoring.setAttribute("deprecationInfo", "" + jarPackage.isDeprecationAware()); //$NON-NLS-1$ //$NON-NLS-2$
 		final IProject[] projects= jarPackage.getRefactoringProjects();
-		if (projects != null && projects.length > 0) {
+		if (projects != null) {
 			for (int index= 0; index < projects.length; index++)
 				refactoring.setAttribute("project" + (index + 1), projects[index].getName()); //$NON-NLS-1$
 		}
@@ -218,9 +218,7 @@ public class JarPackageWriter extends Object implements IJarDescriptionWriter {
 		selectedElements.setAttribute("exportClassFiles", "" + jarPackage.areClassFilesExported()); //$NON-NLS-2$ //$NON-NLS-1$
 		selectedElements.setAttribute("exportOutputFolder", "" + jarPackage.areOutputFoldersExported()); //$NON-NLS-2$ //$NON-NLS-1$
 		selectedElements.setAttribute("exportJavaFiles", "" + jarPackage.areJavaFilesExported()); //$NON-NLS-2$ //$NON-NLS-1$
-		Object[] elements= jarPackage.getElements();
-		for (int i= 0; i < elements.length; i++) {
-			Object element= elements[i];
+		for (Object element : jarPackage.getElements()) {
 			if (element instanceof IResource)
 				add((IResource)element, selectedElements, document);
 			else if (element instanceof IJavaElement)
@@ -232,9 +230,7 @@ public class JarPackageWriter extends Object implements IJarDescriptionWriter {
 	private void xmlWriteSelectedProjects(JarPackageData jarPackage, Document document, Element xmlJarDesc) throws DOMException {
 		Element selectedElements= document.createElement("selectedProjects"); //$NON-NLS-1$
 		xmlJarDesc.appendChild(selectedElements);
-		Object[] elements= jarPackage.getRefactoringProjects();
-		for (int index= 0; index < elements.length; index++) {
-			Object element= elements[index];
+		for (Object element : jarPackage.getRefactoringProjects()) {
 			if (element instanceof IResource)
 				add((IResource)element, selectedElements, document);
 		}
@@ -242,7 +238,7 @@ public class JarPackageWriter extends Object implements IJarDescriptionWriter {
 
 	/**
 	 * Closes this stream. It is the client's responsibility to close the stream.
-	 * 
+	 *
 	 * @throws CoreException if closing the stream fails
 	 */
     @Override
@@ -280,10 +276,10 @@ public class JarPackageWriter extends Object implements IJarDescriptionWriter {
 	}
 
 	private void add(IPackageFragment[] packages, Element parent, Document document) {
-		for (int i= 0; i < packages.length; i++) {
+		for (IPackageFragment p : packages) {
 			Element pkg= document.createElement("package"); //$NON-NLS-1$
 			parent.appendChild(pkg);
-			pkg.setAttribute("handleIdentifier", packages[i].getHandleIdentifier()); //$NON-NLS-1$
+			pkg.setAttribute("handleIdentifier", p.getHandleIdentifier()); //$NON-NLS-1$
 		}
 	}
 

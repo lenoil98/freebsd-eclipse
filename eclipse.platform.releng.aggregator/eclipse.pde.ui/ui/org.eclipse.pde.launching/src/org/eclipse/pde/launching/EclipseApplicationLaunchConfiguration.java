@@ -102,9 +102,7 @@ public class EclipseApplicationLaunchConfiguration extends AbstractPDELaunchConf
 			programArgs.add("-pdelaunch"); //$NON-NLS-1$
 
 		String[] args = super.getProgramArguments(configuration);
-		for (String arg : args) {
-			programArgs.add(arg);
-		}
+		Collections.addAll(programArgs, args);
 
 		if (!programArgs.contains("-nosplash") && showSplash) { //$NON-NLS-1$
 			if (TargetPlatformHelper.getTargetVersion() >= 3.1) {
@@ -156,29 +154,23 @@ public class EclipseApplicationLaunchConfiguration extends AbstractPDELaunchConf
 	 * @param monitor
 	 * 			the progress monitor
 	 * @throws CoreException
-	 * 			if unable to retrieve launch attribute values
+	 * 			if unable to retrieve launch attribute values or the clear operation was cancelled
 	 * @since 3.3
 	 */
 	@Override
 	protected void clear(ILaunchConfiguration configuration, IProgressMonitor monitor) throws CoreException {
+		SubMonitor subMon = SubMonitor.convert(monitor, 2);
+
 		if (fWorkspaceLocation == null) {
 			fWorkspaceLocation = LaunchArgumentsHelper.getWorkspaceLocation(configuration);
 		}
 
-		SubMonitor subMon = SubMonitor.convert(monitor, 50);
-
 		// Clear workspace and prompt, if necessary
-		if (!LauncherUtils.clearWorkspace(configuration, fWorkspaceLocation, subMon.split(25)))
-			throw new CoreException(Status.CANCEL_STATUS);
-
-		subMon.setWorkRemaining(25);
-		if (subMon.isCanceled()) {
-			throw new CoreException(Status.CANCEL_STATUS);
-		}
+		LauncherUtils.clearWorkspace(configuration, fWorkspaceLocation, subMon.split(1));
 
 		// clear config area, if necessary
 		if (configuration.getAttribute(IPDELauncherConstants.CONFIG_CLEAR_AREA, false)) {
-			CoreUtility.deleteContent(getConfigDir(configuration), subMon.split(25));
+			CoreUtility.deleteContent(getConfigDir(configuration), subMon.split(1));
 		}
 
 		subMon.setWorkRemaining(0);

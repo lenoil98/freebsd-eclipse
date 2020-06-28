@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2019 Angelo Zerr and others.
+ * Copyright (c) 2008, 2020 Angelo Zerr and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -29,11 +29,13 @@ import java.io.StringReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
@@ -42,6 +44,7 @@ import org.eclipse.e4.ui.css.core.dom.ChildVisibilityAwareElement;
 import org.eclipse.e4.ui.css.core.dom.ExtendedCSSRule;
 import org.eclipse.e4.ui.css.core.dom.ExtendedDocumentCSS;
 import org.eclipse.e4.ui.css.core.dom.IElementProvider;
+import org.eclipse.e4.ui.css.core.dom.IStreamingNodeList;
 import org.eclipse.e4.ui.css.core.dom.parsers.CSSParser;
 import org.eclipse.e4.ui.css.core.dom.properties.ICSSPropertyCompositeHandler;
 import org.eclipse.e4.ui.css.core.dom.properties.ICSSPropertyHandler;
@@ -142,8 +145,10 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 	 * An ordered list of ICSSPropertyHandlerProvider
 	 */
 	protected List<ICSSPropertyHandlerProvider> propertyHandlerProviders = new ArrayList<>();
+	// for performance hold a map of handlers to singleton list
+	private Map<ICSSPropertyHandler2, List<ICSSPropertyHandler2>> propertyHandler2InstanceMap = new HashMap<>();
 
-	private Map<String, String> currentCSSPropertiesApplyed;
+	private Map<String, String> currentCSSPropertiesApplied;
 
 	private boolean throwError;
 
@@ -247,6 +252,19 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 		return s;
 	}
 
+	private void processNodeList(NodeList nodes, BiConsumer<Node, Boolean> consumer, boolean applyStylesToChildNodes) {
+		if (nodes instanceof IStreamingNodeList) {
+			((IStreamingNodeList) nodes).stream().forEach(child -> {
+				consumer.accept(child, applyStylesToChildNodes);
+			});
+		} else {
+			int length = nodes.getLength();
+			for (int k = 0; k < length; k++) {
+				consumer.accept(nodes.item(k), applyStylesToChildNodes);
+			}
+		}
+	}
+
 	/**
 	 * Return true if <code>source</code> is valid and false otherwise.
 	 *
@@ -288,8 +306,7 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 	public CSSStyleDeclaration parseStyleDeclaration(InputSource source) throws IOException {
 		checkInputSource(source);
 		CSSParser parser = makeCSSParser();
-		CSSStyleDeclaration styleDeclaration = parser.parseStyleDeclaration(source);
-		return styleDeclaration;
+		return parser.parseStyleDeclaration(source);
 	}
 
 	/*--------------- Parse CSS Selector -----------------*/
@@ -318,8 +335,7 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 	public SelectorList parseSelectors(InputSource source) throws IOException {
 		checkInputSource(source);
 		CSSParser parser = makeCSSParser();
-		SelectorList list = parser.parseSelectors(source);
-		return list;
+		return parser.parseSelectors(source);
 	}
 
 	/*--------------- Parse CSS Property Value-----------------*/
@@ -361,78 +377,73 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 	@Override
 	public void applyStyles(Object element, boolean applyStylesToChildNodes, boolean computeDefaultStyle) {
 		Element elt = getElement(element);
-		if (elt != null) {
-			if (!isVisible(elt)) {
-				return;
-			}
+		if (elt == null || !isVisible(elt)) {
+			return;
+		}
 
-			/*
-			 * Compute new Style to apply.
-			 */
-			CSSStyleDeclaration style = viewCSS.getComputedStyle(elt, null);
-			if (computeDefaultStyle) {
-				if (applyStylesToChildNodes) {
-					this.computeDefaultStyle = computeDefaultStyle;
-				}
-				/*
-				 * Apply default style.
-				 */
-				applyDefaultStyleDeclaration(element, false, style, null);
-			}
-
-			/*
-			 * Manage static pseudo instances
-			 */
-			String[] pseudoInstances = getStaticPseudoInstances(elt);
-			if (pseudoInstances != null && pseudoInstances.length > 0) {
-				// there are static pseudo instances defined, loop for it and
-				// apply styles for each pseudo instance.
-				for (String pseudoInstance : pseudoInstances) {
-					CSSStyleDeclaration styleWithPseudoInstance = viewCSS.getComputedStyle(elt, pseudoInstance);
-					if (computeDefaultStyle) {
-						/*
-						 * Apply default style for the current pseudo instance.
-						 */
-						applyDefaultStyleDeclaration(element, false, styleWithPseudoInstance, pseudoInstance);
-					}
-
-					if (styleWithPseudoInstance != null) {
-						CSSRule parentRule = styleWithPseudoInstance.getParentRule();
-						if (parentRule instanceof ExtendedCSSRule) {
-							applyConditionalPseudoStyle((ExtendedCSSRule) parentRule, pseudoInstance, element, styleWithPseudoInstance);
-						} else {
-							applyStyleDeclaration(elt, styleWithPseudoInstance, pseudoInstance);
-						}
-					}
-				}
-			}
-
-			if (style != null) {
-				applyStyleDeclaration(elt, style, null);
-			}
-			try {
-				// Apply inline style
-				applyInlineStyle(elt, false);
-			} catch (Exception e) {
-				handleExceptions(e);
-			}
-
+		/*
+		 * Compute new Style to apply.
+		 */
+		CSSStyleDeclaration style = viewCSS.getComputedStyle(elt, null);
+		if (computeDefaultStyle) {
 			if (applyStylesToChildNodes) {
-				/*
-				 * Style all children recursive.
-				 */
-				NodeList nodes = elt instanceof ChildVisibilityAwareElement
-						? ((ChildVisibilityAwareElement) elt).getVisibleChildNodes()
-								: elt.getChildNodes();
-						if (nodes != null) {
-							for (int k = 0; k < nodes.getLength(); k++) {
-								applyStyles(nodes.item(k), applyStylesToChildNodes);
-							}
-							onStylesAppliedToChildNodes(elt, nodes);
-						}
+				this.computeDefaultStyle = computeDefaultStyle;
+			}
+			/*
+			 * Apply default style.
+			 */
+			applyDefaultStyleDeclaration(element, false, style, null);
+		}
+
+		/*
+		 * Manage static pseudo instances
+		 */
+		String[] pseudoInstances = getStaticPseudoInstances(elt);
+		if (pseudoInstances != null && pseudoInstances.length > 0) {
+			// there are static pseudo instances defined, loop for it and
+			// apply styles for each pseudo instance.
+			for (String pseudoInstance : pseudoInstances) {
+				CSSStyleDeclaration styleWithPseudoInstance = viewCSS.getComputedStyle(elt, pseudoInstance);
+				if (computeDefaultStyle) {
+					/*
+					 * Apply default style for the current pseudo instance.
+					 */
+					applyDefaultStyleDeclaration(element, false, styleWithPseudoInstance, pseudoInstance);
+				}
+
+				if (styleWithPseudoInstance != null) {
+					CSSRule parentRule = styleWithPseudoInstance.getParentRule();
+					if (parentRule instanceof ExtendedCSSRule) {
+						applyConditionalPseudoStyle((ExtendedCSSRule) parentRule, pseudoInstance, element, styleWithPseudoInstance);
+					} else {
+						applyStyleDeclaration(elt, styleWithPseudoInstance, pseudoInstance);
+					}
+				}
 			}
 		}
 
+		if (style != null) {
+			applyStyleDeclaration(elt, style, null);
+		}
+		try {
+			// Apply inline style
+			applyInlineStyle(elt, false);
+		} catch (Exception e) {
+			handleExceptions(e);
+		}
+
+		if (applyStylesToChildNodes) {
+			/*
+			 * Style all children recursive.
+			 */
+			NodeList nodes = elt instanceof ChildVisibilityAwareElement
+					? ((ChildVisibilityAwareElement) elt).getVisibleChildNodes()
+							: elt.getChildNodes();
+					if (nodes != null) {
+						processNodeList(nodes, this::applyStyles, applyStylesToChildNodes);
+						onStylesAppliedToChildNodes(elt, nodes);
+					}
+		}
 	}
 
 	/**
@@ -447,9 +458,14 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 		if (parentNode instanceof ChildVisibilityAwareElement) {
 			NodeList l = ((ChildVisibilityAwareElement) parentNode).getVisibleChildNodes();
 			if (l != null) {
-				for (int i = 0; i < l.getLength(); i++) {
-					if (l.item(i) == elt) {
-						return true;
+				if (l instanceof IStreamingNodeList) {
+					return ((IStreamingNodeList) l).stream().anyMatch(node -> node == elt);
+				} else {
+					int length = l.getLength();
+					for (int i = 0; i < length; i++) {
+						if (l.item(i) == elt) {
+							return true;
+						}
 					}
 				}
 			}
@@ -524,11 +540,11 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 	@Override
 	public void applyStyleDeclaration(Object element, CSSStyleDeclaration style, String pseudo) {
 		// Apply style
-		boolean avoidanceCacheInstalled = currentCSSPropertiesApplyed == null;
+		boolean avoidanceCacheInstalled = currentCSSPropertiesApplied == null;
 		if (avoidanceCacheInstalled) {
-			currentCSSPropertiesApplyed = new HashMap<>();
+			currentCSSPropertiesApplied = new HashMap<>();
 		}
-		List<ICSSPropertyHandler2> handlers2 = null;
+		List<ICSSPropertyHandler2> handlers2 = Collections.emptyList();
 		for (int i = 0; i < style.getLength(); i++) {
 			String property = style.item(i);
 			CSSValue value = style.getPropertyCSSValue(property);
@@ -537,17 +553,23 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 				ICSSPropertyHandler2 propertyHandler2 = null;
 				if (handler instanceof ICSSPropertyHandler2) {
 					propertyHandler2 = (ICSSPropertyHandler2) handler;
-				} else {
-					if (handler instanceof ICSSPropertyHandler2Delegate) {
-						propertyHandler2 = ((ICSSPropertyHandler2Delegate) handler).getCSSPropertyHandler2();
-					}
+				} else if (handler instanceof ICSSPropertyHandler2Delegate) {
+					propertyHandler2 = ((ICSSPropertyHandler2Delegate) handler).getCSSPropertyHandler2();
 				}
 				if (propertyHandler2 != null) {
-					if (handlers2 == null) {
-						handlers2 = new ArrayList<>();
-					}
-					if (!handlers2.contains(propertyHandler2)) {
+					switch (handlers2.size()) {
+					case 0:
+						handlers2 = propertyHandler2InstanceMap.computeIfAbsent(propertyHandler2,
+								Collections::singletonList);
+						break;
+					case 1:
+						handlers2 = new ArrayList<>(handlers2);
 						handlers2.add(propertyHandler2);
+						break;
+					default:
+						if (!handlers2.contains(propertyHandler2)) {
+							handlers2.add(propertyHandler2);
+						}
 					}
 				}
 			} catch (Exception e) {
@@ -556,17 +578,15 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 				}
 			}
 		}
-		if (handlers2 != null) {
-			for (ICSSPropertyHandler2 handler2 : handlers2) {
-				try {
-					handler2.onAllCSSPropertiesApplyed(element, this, pseudo);
-				} catch (Exception e) {
-					handleExceptions(e);
-				}
+		for (ICSSPropertyHandler2 handler2 : handlers2) {
+			try {
+				handler2.onAllCSSPropertiesApplyed(element, this, pseudo);
+			} catch (Exception e) {
+				handleExceptions(e);
 			}
 		}
 		if (avoidanceCacheInstalled) {
-			currentCSSPropertiesApplyed = null;
+			currentCSSPropertiesApplied = null;
 		}
 
 	}
@@ -603,14 +623,18 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 	/*--------------- Apply inline style -----------------*/
 
 	@Override
-	public void applyInlineStyle(Object node, boolean applyStylesToChildNodes) throws IOException {
+	public void applyInlineStyle(Object node, boolean applyStylesToChildNodes) {
 		Element elt = getElement(node);
 		if (elt != null) {
 			if (elt instanceof CSSStylableElement) {
 				CSSStylableElement stylableElement = (CSSStylableElement) elt;
 				String style = stylableElement.getCSSStyle();
 				if (style != null && style.length() > 0) {
-					parseAndApplyStyleDeclaration(stylableElement.getNativeWidget(), style);
+					try {
+						parseAndApplyStyleDeclaration(stylableElement.getNativeWidget(), style);
+					} catch (IOException e) {
+						handleExceptions(e);
+					}
 				}
 			}
 			if (applyStylesToChildNodes) {
@@ -619,9 +643,7 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 				 */
 				NodeList nodes = elt.getChildNodes();
 				if (nodes != null) {
-					for (int k = 0; k < nodes.getLength(); k++) {
-						applyInlineStyle(nodes.item(k), applyStylesToChildNodes);
-					}
+					processNodeList(nodes, this::applyInlineStyle, applyStylesToChildNodes);
 				}
 			}
 		}
@@ -678,9 +700,7 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 				 */
 				NodeList nodes = elt.getChildNodes();
 				if (nodes != null) {
-					for (int k = 0; k < nodes.getLength(); k++) {
-						applyDefaultStyleDeclaration(nodes.item(k), applyStylesToChildNodes);
-					}
+					processNodeList(nodes, this::applyDefaultStyleDeclaration, applyStylesToChildNodes);
 					onStylesAppliedToChildNodes(elt, nodes);
 				}
 			}
@@ -699,7 +719,7 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 	@Override
 	public ICSSPropertyHandler applyCSSProperty(Object element, String property, CSSValue value, String pseudo)
 			throws Exception {
-		if (currentCSSPropertiesApplyed != null && currentCSSPropertiesApplyed.containsKey(property)) {
+		if (currentCSSPropertiesApplied != null && currentCSSPropertiesApplied.containsKey(property)) {
 			// CSS Property was already applied, ignore it.
 			return null;
 		}
@@ -727,8 +747,8 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 					if (result) {
 						// Add CSS Property to flag that this CSS Property was
 						// applied.
-						if (currentCSSPropertiesApplyed != null) {
-							currentCSSPropertiesApplyed.put(property, property);
+						if (currentCSSPropertiesApplied != null) {
+							currentCSSPropertiesApplied.put(property, property);
 						}
 						return handler;
 					}
@@ -887,7 +907,8 @@ public abstract class AbstractCSSEngine implements CSSEngine {
 	 * from the element contexts map and the widgets map. Overriding
 	 * classes must call the super implementation.
 	 */
-	protected void handleWidgetDisposed(Object widget) {
+	@Override
+	public void handleWidgetDisposed(Object widget) {
 		if (elementsContext != null) {
 			elementsContext.remove(widget);
 		}

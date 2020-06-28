@@ -45,7 +45,7 @@ public class LogHelper {
 		ArrayList<FrameworkLogEntry> childlist = new ArrayList<>();
 
 		int stackCode = t instanceof CoreException ? 1 : 0;
-		// ensure a substatus inside a CoreException is properly logged 
+		// ensure a substatus inside a CoreException is properly logged
 		if (stackCode == 1) {
 			IStatus coreStatus = ((CoreException) t).getStatus();
 			if (coreStatus != null) {
@@ -55,8 +55,8 @@ public class LogHelper {
 
 		if (status.isMultiStatus()) {
 			IStatus[] children = status.getChildren();
-			for (int i = 0; i < children.length; i++) {
-				childlist.add(getLog(children[i]));
+			for (IStatus child : children) {
+				childlist.add(getLog(child));
 			}
 		}
 

@@ -14,15 +14,13 @@
 
 package org.eclipse.ui.internal.navigator.resources.workbench;
 
-
+import java.text.Collator;
 
 // Sadly, there is nothing that can be done about these warnings, as
 // the INavigatorSorterService has a method that returns a ViewerSorter, so
 // we can't convert this to a ViewerComparator.
 import org.eclipse.core.resources.IResource;
 import org.eclipse.ui.views.navigator.ResourceSorter;
-
-import com.ibm.icu.text.Collator;
 
 /**
  * TODO - This refers to the deprecated ResourceSorter, however we are stuck with this
@@ -47,10 +45,10 @@ public class ResourceExtensionSorter extends ResourceSorter {
 		icuCollator = Collator.getInstance();
 	}
 
-    @Override
+	@Override
 	protected int compareNames(IResource resource1, IResource resource2) {
-    	return icuCollator.compare(resource1.getName(), resource2.getName());
-    }
+		return icuCollator.compare(resource1.getName(), resource2.getName());
+	}
 
 
 }

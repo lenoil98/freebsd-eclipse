@@ -16,6 +16,7 @@ package org.eclipse.debug.internal.ui.launchConfigurations;
 
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -69,8 +70,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * The perspective manager manages the 'perspective' settings
@@ -215,13 +214,13 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 
 		@Override
 		protected IStatus run(final IProgressMonitor monitor) {
-	        if (monitor.isCanceled()) {
+			if (monitor.isCanceled()) {
 				return Status.CANCEL_STATUS;
 			}
-	        Display asyncDisplay = DebugUIPlugin.getStandardDisplay();
-	        if (asyncDisplay == null || asyncDisplay.isDisposed()) {
-	            return Status.CANCEL_STATUS;
-	        }
+			Display asyncDisplay = DebugUIPlugin.getStandardDisplay();
+			if (asyncDisplay == null || asyncDisplay.isDisposed()) {
+				return Status.CANCEL_STATUS;
+			}
 			asyncDisplay.asyncExec(() -> {
 				IStatus result = null;
 				Throwable throwable = null;
@@ -242,10 +241,10 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 					done(result);
 				}
 			});
-	        return Job.ASYNC_FINISH;
+			return Job.ASYNC_FINISH;
 		}
 
-	    public abstract IStatus runInUIThread(IProgressMonitor monitor);
+		public abstract IStatus runInUIThread(IProgressMonitor monitor);
 
 	}
 
@@ -270,10 +269,10 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 	 */
 	private boolean fPrompting;
 
-    /**
-     * Maps each launch to its perspective context activation. These
-     * are disabled when a launch terminates.
-     */
+	/**
+	 * Maps each launch to its perspective context activation. These
+	 * are disabled when a launch terminates.
+	 */
 	private Map<ILaunch, IContextActivation[]> fLaunchToContextActivations = new HashMap<>();
 
 	/**
@@ -304,15 +303,14 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 	 */
 	@Override
 	public synchronized void launchRemoved(final ILaunch launch) {
-        ISuspendTrigger trigger = launch.getAdapter(ISuspendTrigger.class);
-        if (trigger != null) {
-            trigger.removeSuspendTriggerListener(this);
-        }
+		ISuspendTrigger trigger = launch.getAdapter(ISuspendTrigger.class);
+		if (trigger != null) {
+			trigger.removeSuspendTriggerListener(this);
+		}
 		Runnable r = () -> {
 			IContextActivation[] activations = fLaunchToContextActivations.remove(launch);
 			if (activations != null) {
-				for (int i = 0; i < activations.length; i++) {
-					IContextActivation activation = activations[i];
+				for (IContextActivation activation : activations) {
 					activation.getContextService().deactivateContext(activation);
 				}
 			}
@@ -336,10 +334,10 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 	 */
 	@Override
 	public synchronized void launchAdded(ILaunch launch) {
-        ISuspendTrigger trigger = launch.getAdapter(ISuspendTrigger.class);
-        if (trigger != null) {
-            trigger.addSuspendTriggerListener(this);
-        }
+		ISuspendTrigger trigger = launch.getAdapter(ISuspendTrigger.class);
+		if (trigger != null) {
+			trigger.addSuspendTriggerListener(this);
+		}
 		String perspectiveId = null;
 		// check event filters
 		try {
@@ -539,8 +537,7 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 	 */
 	private Shell getModalDialogOpen(Shell shell) {
 		Shell[] shells = shell.getShells();
-		for (int i = 0; i < shells.length; i++) {
-			Shell dialog = shells[i];
+		for (Shell dialog : shells) {
 			if ((dialog.getStyle() & (SWT.APPLICATION_MODAL | SWT.PRIMARY_MODAL | SWT.SYSTEM_MODAL)) > 0) {
 				return dialog;
 			}
@@ -563,8 +560,8 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 			return window;
 		}
 		IWorkbenchWindow[] windows = PlatformUI.getWorkbench().getWorkbenchWindows();
-		for (int i = 0; i < windows.length; i++) {
-			window = windows[i];
+		for (IWorkbenchWindow w : windows) {
+			window = w;
 			if (isWindowShowingPerspective(window, perspectiveId)) {
 				return window;
 			}
@@ -890,8 +887,8 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 	 *
 	 * @return XML
 	 * @exception IOException if unable to generate the XML
-     * @exception TransformerException if unable to generate the XML
-     * @exception ParserConfigurationException if unable to generate the XML
+	 * @exception TransformerException if unable to generate the XML
+	 * @exception ParserConfigurationException if unable to generate the XML
 	 */
 	private String generatePerspectiveXML() throws ParserConfigurationException, CoreException {
 		Document doc = DebugUIPlugin.getDocument();
@@ -1034,8 +1031,8 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 	private Set<String> parseModes(String modes) {
 		HashSet<String> modeset = new HashSet<>();
 		String[] ms = modes.split(","); //$NON-NLS-1$
-		for(int i = 0; i < ms.length; i++) {
-			modeset.add(ms[i].trim());
+		for (String m : ms) {
+			modeset.add(m.trim());
 		}
 		return modeset;
 	}
@@ -1071,35 +1068,20 @@ public class PerspectiveManager implements ILaunchListener, ISuspendTriggerListe
 		job.schedule();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.contexts.ISuspendTriggerListener#suspended(org.eclipse.debug.core.ILaunch, java.lang.Object)
-	 */
 	@Override
 	public void suspended(ILaunch launch, Object context) {
 		handleBreakpointHit(launch);
 	}
 
-	/**
-	 * @see org.eclipse.core.resources.ISaveParticipant#doneSaving(org.eclipse.core.resources.ISaveContext)
-	 */
 	@Override
 	public void doneSaving(ISaveContext context) {}
 
-	/**
-	 * @see org.eclipse.core.resources.ISaveParticipant#prepareToSave(org.eclipse.core.resources.ISaveContext)
-	 */
 	@Override
 	public void prepareToSave(ISaveContext context) throws CoreException {}
 
-	/**
-	 * @see org.eclipse.core.resources.ISaveParticipant#rollback(org.eclipse.core.resources.ISaveContext)
-	 */
 	@Override
 	public void rollback(ISaveContext context) {}
 
-	/**
-	 * @see org.eclipse.core.resources.ISaveParticipant#saving(org.eclipse.core.resources.ISaveContext)
-	 */
 	@Override
 	public void saving(ISaveContext context) throws CoreException {
 		try {

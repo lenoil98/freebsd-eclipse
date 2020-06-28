@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2017 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -24,7 +24,11 @@ import org.eclipse.osgi.framework.log.FrameworkLogEntry;
 import org.eclipse.osgi.internal.framework.EquinoxConfiguration;
 import org.eclipse.osgi.service.datalocation.Location;
 import org.eclipse.osgi.storage.StorageUtil;
-import org.osgi.framework.*;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.log.LogLevel;
 import org.osgi.service.log.admin.LoggerContext;
 
@@ -97,7 +101,8 @@ public class EquinoxLogServices {
 			//ignore and use LogLevel.WARN
 		}
 
-		logServiceManager = new LogServiceManager(logHistoryMax, defaultLevel, logWriter, perfWriter);
+		boolean captureLogEntryLocation = "true".equals(environmentInfo.getConfiguration(EquinoxConfiguration.PROP_LOG_CAPTURE_ENTRY_LOCATION, "true")); //$NON-NLS-1$ //$NON-NLS-2$
+		logServiceManager = new LogServiceManager(logHistoryMax, defaultLevel, captureLogEntryLocation, logWriter, perfWriter);
 		eclipseLogFactory = new EquinoxLogFactory(logWriter, logServiceManager);
 		rootFrameworkLog = eclipseLogFactory.createFrameworkLog(null, logWriter);
 
@@ -109,7 +114,7 @@ public class EquinoxLogServices {
 	private ServiceRegistration<?> perfLogReg;
 
 	/**
-	 * @throws BundleException  
+	 * @throws BundleException
 	 */
 	public void start(BundleContext context) throws BundleException {
 		logServiceManager.start(context);
@@ -118,7 +123,7 @@ public class EquinoxLogServices {
 	}
 
 	/**
-	 * @throws BundleException  
+	 * @throws BundleException
 	 */
 	public void stop(BundleContext context) throws BundleException {
 		frameworkLogReg.unregister();
@@ -133,10 +138,8 @@ public class EquinoxLogServices {
 	private ServiceRegistration<?> registerPerformanceLog(BundleContext context) {
 		Object service = createPerformanceLog(context.getBundle());
 		String serviceName = FrameworkLog.class.getName();
-		Dictionary<String, Object> serviceProperties = new Hashtable<>(7);
-		Dictionary<String, String> headers = context.getBundle().getHeaders();
+		Dictionary<String, Object> serviceProperties = new Hashtable<>();
 
-		serviceProperties.put(Constants.SERVICE_VENDOR, headers.get(Constants.BUNDLE_VENDOR));
 		serviceProperties.put(Constants.SERVICE_RANKING, Integer.valueOf(Integer.MIN_VALUE));
 		serviceProperties.put(Constants.SERVICE_PID, context.getBundle().getBundleId() + '.' + service.getClass().getName());
 		serviceProperties.put(FrameworkLog.SERVICE_PERFORMANCE, Boolean.TRUE.toString());

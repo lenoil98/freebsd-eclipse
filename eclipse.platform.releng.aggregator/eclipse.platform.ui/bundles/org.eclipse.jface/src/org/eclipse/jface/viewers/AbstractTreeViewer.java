@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,6 +17,7 @@
  *     Bruce Sutton, bug 221768
  *     Matthew Hall, bug 221988
  *     Julien Desgats, bug 203950
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 548314
  *******************************************************************************/
 
 package org.eclipse.jface.viewers;
@@ -56,7 +57,7 @@ import org.eclipse.swt.widgets.Widget;
  * <p>
  * As of 3.2, AbstractTreeViewer supports multiple equal elements (each with a
  * different parent chain) in the tree. This support requires that clients
- * enable the element map by calling <code>setUseHashLookup(true)</code>.
+ * enable the element map by calling <code>setUseHashlookup(true)</code>.
  * </p>
  * <p>
  * Content providers for abstract tree viewers must implement one of the
@@ -147,7 +148,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 * @param childElements
 	 *            the child elements to add
 	 */
-	public void add(Object parentElementOrTreePath, Object[] childElements) {
+	public void add(Object parentElementOrTreePath, Object... childElements) {
 		Assert.isNotNull(parentElementOrTreePath);
 		assertElementsNotNull(childElements);
 		if (checkBusy())
@@ -307,7 +308,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	private Object[] filter(Object parentElementOrTreePath, Object[] elements) {
 		ViewerFilter[] filters = getFilters();
 		if (filters != null) {
-			ArrayList filtered = new ArrayList(elements.length);
+			List<Object> filtered = new ArrayList<>(elements.length);
 			for (Object element : elements) {
 				boolean add = true;
 				for (ViewerFilter filter : filters) {
@@ -373,8 +374,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 		// Count of elements we have added. See bug 205700 for why this is needed.
 		int newItems = 0;
 
-		elementloop: for (int i = 0; i < elements.length; i++) {
-			Object element = elements[i];
+		elementloop: for (Object element : elements) {
 			// update the index relative to the original item array
 			indexInItems = insertionPosition(items, comparator,
 					indexInItems, element, parentPath);
@@ -722,8 +722,8 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	}
 
 	/**
-	 * Collapses all nodes of the viewer's tree, starting with the root. This
-	 * method is equivalent to <code>collapseToLevel(ALL_LEVELS)</code>.
+	 * Collapses all nodes of the viewer's tree, starting with the root. This method
+	 * is equivalent to <code>collapseToLevel(ALL_LEVELS)</code>.
 	 */
 	public void collapseAll() {
 		Object root = getRoot();
@@ -733,20 +733,28 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	}
 
 	/**
-	 * Collapses the subtree rooted at the given element or tree path to the
-	 * given level.
+	 * Collapses the subtree rooted at the given element or tree path to the given
+	 * level.
+	 * <p>
+	 * Note that the default implementation of this method does turn redraw off via
+	 * this operation via a call to <code>setRedraw</code>
+	 * </p>
 	 *
-	 * @param elementOrTreePath
-	 *            the element or tree path
-	 * @param level
-	 *            non-negative level, or <code>ALL_LEVELS</code> to collapse
-	 *            all levels of the tree
+	 * @param elementOrTreePath the element or tree path
+	 * @param level             non-negative level, or <code>ALL_LEVELS</code> to
+	 *                          collapse all levels of the tree
 	 */
 	public void collapseToLevel(Object elementOrTreePath, int level) {
 		Assert.isNotNull(elementOrTreePath);
-		Widget w = internalGetWidgetToSelect(elementOrTreePath);
-		if (w != null) {
-			internalCollapseToLevel(w, level);
+		Control control = getControl();
+		try {
+			control.setRedraw(false);
+			Widget w = internalGetWidgetToSelect(elementOrTreePath);
+			if (w != null) {
+				internalCollapseToLevel(w, level);
+			}
+		} finally {
+			control.setRedraw(true);
 		}
 	}
 
@@ -989,9 +997,8 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 
 		// Go through the items of the current collection
 		// If there is a mismatch return false
-		for (int i = 0; i < current.length; i++) {
-			if (current[i].getData() == null
-					|| !itemSet.containsKey(current[i].getData())) {
+		for (Item c : current) {
+			if (c.getData() == null || !itemSet.containsKey(c.getData())) {
 				return false;
 			}
 		}
@@ -1034,7 +1041,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 * method is equivalent to <code>expandToLevel(ALL_LEVELS)</code>.
 	 */
 	public void expandAll() {
-		expandToLevel(ALL_LEVELS, false);
+		expandToLevel(ALL_LEVELS, true);
 	}
 
 	/**
@@ -1058,18 +1065,18 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 *            levels of the tree
 	 */
 	public void expandToLevel(int level) {
-		expandToLevel(level, false);
+		expandToLevel(level, true);
 	}
 
 	/**
 	 * Expands the root of the viewer's tree to the given level.
 	 *
-	 * @param level
-	 *            non-negative level, or <code>ALL_LEVELS</code> to expand all
-	 *            levels of the tree
-	 * @param disableRedraw
-	 *            <code>true</code> when drawing operations should be disabled
-	 *            during expansion.
+	 * @param level         non-negative level, or <code>ALL_LEVELS</code> to expand
+	 *                      all levels of the tree
+	 * @param disableRedraw <code>true</code> when drawing operations should be
+	 *                      disabled during expansion. <code>true</code> when
+	 *                      drawing operations should be enabled during expansion.
+	 *                      Prefer using true as this results in a faster UI
 	 * @since 3.14
 	 */
 	public void expandToLevel(int level, boolean disableRedraw) {
@@ -1090,7 +1097,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 *            levels of the tree
 	 */
 	public void expandToLevel(Object elementOrTreePath, int level) {
-		expandToLevel(elementOrTreePath, level, false);
+		expandToLevel(elementOrTreePath, level, true);
 	}
 
 	/**
@@ -1098,14 +1105,14 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 * element becomes visible in this viewer's tree control, and then expands the
 	 * subtree rooted at the given element to the given level.
 	 *
-	 * @param elementOrTreePath
-	 *            the element
-	 * @param level
-	 *            non-negative level, or <code>ALL_LEVELS</code> to expand all
-	 *            levels of the tree
-	 * @param disableRedraw
-	 *            <code>true</code> when drawing operations should be disabled
-	 *            during expansion.
+	 * @param elementOrTreePath the element
+	 * @param level             non-negative level, or <code>ALL_LEVELS</code> to
+	 *                          expand all levels of the tree
+	 * @param disableRedraw     <code>true</code> when drawing operations should be
+	 *                          disabled during expansion. <code>false</code> when
+	 *                          drawing operations should be enabled during
+	 *                          expansion. Prefer true as this results in a faster
+	 *                          UI.
 	 * @since 3.14
 	 */
 	public void expandToLevel(Object elementOrTreePath, int level, boolean disableRedraw) {
@@ -1475,10 +1482,11 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 */
 	protected abstract Item[] getSelection(Control control);
 
+	@SuppressWarnings("rawtypes")
 	@Override
 	protected List getSelectionFromWidget() {
 		Widget[] items = getSelection(getControl());
-		ArrayList list = new ArrayList(items.length);
+		List<Object> list = new ArrayList<>(items.length);
 		for (Widget item : items) {
 			Object e = item.getData();
 			if (e != null) {
@@ -1563,15 +1571,15 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	@Override
 	protected void inputChanged(Object input, Object oldInput) {
 		preservingSelection(() -> {
-		    Control tree = getControl();
-		    tree.setRedraw(false);
-		    try {
-		        removeAll(tree);
-		        tree.setData(getRoot());
-		        internalInitializeTree(tree);
-		    } finally {
-		        tree.setRedraw(true);
-		    }
+			Control tree = getControl();
+			tree.setRedraw(false);
+			try {
+				removeAll(tree);
+				tree.setData(getRoot());
+				internalInitializeTree(tree);
+			} finally {
+				tree.setRedraw(true);
+			}
 		});
 	}
 
@@ -1590,10 +1598,6 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	/**
 	 * Recursively collapses the subtree rooted at the given widget to the given
 	 * level.
-	 * <p>
-	 * Note that the default implementation of this method does not call
-	 * <code>setRedraw</code>.
-	 * </p>
 	 *
 	 * @param widget the widget
 	 * @param level  non-negative level, or <code>ALL_LEVELS</code> to collapse all
@@ -1681,19 +1685,21 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 					createChildren(pw);
 					Object element = internalToElement(elementOrPath);
 					w = internalFindChild(pw, element);
-					if (expand && pw instanceof Item) {
-						// expand parent items top-down
-						Item item = (Item) pw;
-						LinkedList<Item> toExpandList = new LinkedList<>();
-						while (item != null && !getExpanded(item)) {
-							toExpandList.addFirst(item);
-							item = getParentItem(item);
-						}
-						for (Item toExpand : toExpandList) {
-							setExpanded(toExpand, true);
-						}
-					}
 				}
+			}
+		}
+		if (expand && w instanceof Item) {
+			// expand parent items top-down
+			Item item = getParentItem((Item) w);
+			LinkedList<Item> toExpandList = new LinkedList<>();
+			while (item != null) {
+				if (!getExpanded(item)) {
+					toExpandList.addFirst(item);
+				}
+				item = getParentItem(item);
+			}
+			for (Item toExpand : toExpandList) {
+				setExpanded(toExpand, true);
 			}
 		}
 		return w;
@@ -1715,13 +1721,12 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	}
 
 	/**
-	 * This method takes a tree path or an element. If the argument is not a
-	 * tree path, returns the parent of the given element or <code>null</code>
-	 * if the parent is not known. If the argument is a tree path with more than
-	 * one segment, returns its parent tree path, otherwise returns
-	 * <code>null</code>.
+	 * This method takes a tree path or an element. If the argument is not a tree
+	 * path, returns the parent of the given element or <code>null</code> if the
+	 * parent is not known. If the argument is a tree path with more than one
+	 * segment, returns its parent tree path, otherwise returns <code>null</code>.
 	 *
-	 * @param elementOrTreePath
+	 * @param elementOrTreePath the element or path to find parent for
 	 * @return the parent element, or parent path, or <code>null</code>
 	 *
 	 * @since 3.2
@@ -2225,10 +2230,9 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 * reflect the model. This method only affects the viewer, not the model.
 	 * </p>
 	 *
-	 * @param elementsOrTreePaths
-	 *            the elements to remove
+	 * @param elementsOrTreePaths the elements to remove
 	 */
-	public void remove(final Object[] elementsOrTreePaths) {
+	public void remove(final Object... elementsOrTreePaths) {
 		assertElementsNotNull(elementsOrTreePaths);
 		if (elementsOrTreePaths.length == 0) {
 			return;
@@ -2256,7 +2260,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 *
 	 * @since 3.2
 	 */
-	public void remove(final Object parent, final Object[] elements) {
+	public void remove(final Object parent, final Object... elements) {
 		assertElementsNotNull(elements);
 		if (elements.length == 0) {
 			return;
@@ -2423,7 +2427,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 *            the array of expanded elements
 	 * @see #getExpandedElements
 	 */
-	public void setExpandedElements(Object[] elements) {
+	public void setExpandedElements(Object... elements) {
 		assertElementsNotNull(elements);
 		if (checkBusy()) {
 			return;
@@ -2459,8 +2463,8 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 *
 	 * @since 3.2
 	 */
-	public void setExpandedTreePaths(TreePath[] treePaths) {
-		assertElementsNotNull(treePaths);
+	public void setExpandedTreePaths(TreePath... treePaths) {
+		assertElementsNotNull((Object[]) treePaths);
 		if (checkBusy())
 			return;
 		final IElementComparer comparer = getComparer();
@@ -2470,6 +2474,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 			public boolean equals(Object a, Object b) {
 				return ((TreePath) a).equals(((TreePath) b), comparer);
 			}
+
 
 			@Override
 			public int hashCode(Object element) {
@@ -2531,7 +2536,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 * a list of tree paths.
 	 */
 	@Override
-	protected void setSelectionToWidget(List v, boolean reveal) {
+	protected void setSelectionToWidget(@SuppressWarnings("rawtypes") List v, boolean reveal) {
 		if (v == null) {
 			setSelection(new ArrayList<>(0));
 			return;
@@ -2848,8 +2853,8 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 * Not to be called by clients. Return the items to be refreshed as part of
 	 * an update. elementChildren are the new elements.
 	 *
-	 * @param widget
-	 * @param elementChildren
+	 * @param widget widget to get children for
+	 * @param elementChildren unused
 	 * @since 3.4
 	 * @return Item[]
 	 *
@@ -2917,12 +2922,12 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	 * @since 2.0
 	 */
 	public Object[] getVisibleExpandedElements() {
-		ArrayList v = new ArrayList();
+		ArrayList<Object> v = new ArrayList<>();
 		internalCollectVisibleExpanded(v, getControl());
 		return v.toArray();
 	}
 
-	private void internalCollectVisibleExpanded(ArrayList result, Widget widget) {
+	private void internalCollectVisibleExpanded(ArrayList<Object> result, Widget widget) {
 		Item[] items = getChildren(widget);
 		for (Item item : items) {
 			if (getExpanded(item)) {
@@ -2939,13 +2944,14 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 
 	/**
 	 * Returns the tree path for the given item.
-	 * @param item
+	 *
+	 * @param item item to get path for
 	 * @return {@link TreePath}
 	 *
 	 * @since 3.2
 	 */
 	protected TreePath getTreePathFromItem(Item item) {
-		LinkedList segments = new LinkedList();
+		LinkedList<Object> segments = new LinkedList<>();
 		while (item != null) {
 			Object segment = item.getData();
 			Assert.isNotNull(segment);
@@ -3011,8 +3017,7 @@ public abstract class AbstractTreeViewer extends ColumnViewer {
 	protected void setSelectionToWidget(ISelection selection, boolean reveal) {
 		if (selection instanceof ITreeSelection) {
 			ITreeSelection treeSelection = (ITreeSelection) selection;
-			setSelectionToWidget(Arrays.asList(treeSelection.getPaths()),
-					reveal);
+			setSelectionToWidget(Arrays.asList(treeSelection.getPaths()), reveal);
 		} else {
 			super.setSelectionToWidget(selection, reveal);
 		}

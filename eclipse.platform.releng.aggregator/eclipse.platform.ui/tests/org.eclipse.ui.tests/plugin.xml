@@ -48,11 +48,6 @@
             id="org.eclipse.ui.tests.api.SessionPerspective">
       </perspective>
       <perspective
-            class="org.eclipse.ui.tests.api.PerspectiveWithFastView"
-            name="UI Test Perspective with Fast View"
-            id="org.eclipse.ui.tests.fastview_perspective">
-      </perspective>      
-      <perspective
             class="org.eclipse.ui.tests.api.PerspectiveWithMultiViewPlaceholdersAtTopLevel"
             name="UI Test Perspective with Multi View Placeholders At Top Level"
             id="org.eclipse.ui.tests.PerspectiveWithMultiViewPlaceholdersAtTopLevel">
@@ -628,6 +623,12 @@
             id="org.eclipse.ui.tests.multipageeditor.TestMultiPageEditor">
       </editor>
       <editor
+            name="Test Multi-Page Editor (throwing PartInitException)"
+            icon="icons/mockeditorpart2.gif"
+            class="org.eclipse.ui.tests.multipageeditor.TestMultiPageEditorThrowingPartInitException"
+            id="org.eclipse.ui.tests.multipageeditor.TestMultiPageEditorThrowingPartInitException">
+      </editor>
+      <editor
             class="org.eclipse.ui.tests.api.workbenchpart.TitleTestEditor"
             icon="icons/anything.gif"
             default="true"
@@ -831,6 +832,14 @@
             contentTypeId="org.eclipse.ui.tests.contentType.bug502837"
             editorId="org.eclipse.ui.tests.api.MockEditorPart1">
       </editorContentTypeBinding>
+      <editor
+            default="false"
+            id="org.eclipse.ui.tests.editor.bug516470"
+            name="Bug 516470 Editor">
+         <contentTypeBinding
+               contentTypeId="org.eclipse.ui.tests.contentType.bug516470-witheditor">
+         </contentTypeBinding>
+      </editor>
    </extension>
    <extension
          point="org.eclipse.ui.actionSets">
@@ -1196,6 +1205,18 @@
            file-extensions="bug502837"
            name="ContentType for bug502837"
            id="org.eclipse.ui.tests.contentType.bug502837">
+     </content-type>
+     <content-type
+           file-extensions="bug516470-noeditor"
+           id="org.eclipse.ui.tests.contentType.bug516470-noeditor"
+           name="Bug 516470 No editor content type"
+           priority="normal">
+     </content-type>
+     <content-type
+           file-extensions="bug516470-witheditor"
+           id="org.eclipse.ui.tests.contentType.bug516470-witheditor"
+           name="Bug 516470 With editor content type"
+           priority="normal">
      </content-type>
    </extension>
    		
@@ -3799,14 +3820,6 @@
    <extension
          point="org.eclipse.ui.statusHandlers">
       <statusHandler
-            class="org.eclipse.ui.tests.statushandlers.TestStatusHandler"
-            id="org.eclipse.ui.tests.statushandlers.TestStatusHandler">
-      </statusHandler>
-      <statusHandlerProductBinding
-            handlerId="org.eclipse.ui.tests.statushandlers.TestStatusHandler"
-            productId="org.eclipse.sdk.ide">
-      </statusHandlerProductBinding>
-      <statusHandler
             class="org.eclipse.ui.tests.statushandlers.FreeStatusHandler"
             id="org.eclipse.ui.tests.statushandlers.FreeStatusHandler">
       </statusHandler>
@@ -4111,6 +4124,19 @@
                style="push">
          </action>
       </actionSet>
+      <actionSet
+            id="org.eclipse.ui.tests.notInitializedActionSet"
+            label="actionSet for testing lazy loading of invisible action sets"
+            visible="false">
+         <action
+               class="org.eclipse.ui.tests.api.NotInitializedWorkbenchWindowActionDelegate"
+               id="org.eclipse.ui.tests.do_not_init"
+               label="Simply do not init me"
+               menubarPath="window/additions"
+               toolbarPath="window/additions"
+               style="push">
+         </action>
+      </actionSet>
    </extension>
    <extension
          point="org.eclipse.ui.commandImages">
@@ -4347,10 +4373,24 @@
       <key
             commandId="org.eclipse.ui.file.import"
             contextId="org.eclipse.ui.contexts.window"
-            platform="carbon,cocoa,gtk,win32"
+            platform="cocoa"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
             sequence="M1+8 I">
-	  </key>
+      </key>
+      <key
+            commandId="org.eclipse.ui.file.import"
+            contextId="org.eclipse.ui.contexts.window"
+            platform="gtk"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+8 I">
+      </key>
+      <key
+            commandId="org.eclipse.ui.file.import"
+            contextId="org.eclipse.ui.contexts.window"
+            platform="win32"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+8 I">
+     </key>
    </extension>
       <extension
             point="org.eclipse.ui.bindings">
@@ -4581,5 +4621,42 @@
           markerType="org.eclipse.ui.tests.testmarker3">
     </markerHelp>
  </extension>
-
+ <extension
+       id="org.eclipse.ui.tests.internal.Bug549139Test.TestModelProvider"
+       name="org.eclipse.ui.tests.internal.Bug549139Test.TestModelProvider"
+       point="org.eclipse.core.resources.modelProviders">
+    <modelProvider
+          class="org.eclipse.ui.tests.internal.Bug549139Test$TestModelProvider">
+    </modelProvider>
+    <extends-model id="org.eclipse.core.resources.modelProvider"/>
+    <enablement>
+          <instanceof value="org.eclipse.core.resources.IProject"/>
+    </enablement>
+ </extension>
+ <extension
+       point="org.eclipse.ui.quickAccess">
+    <computer
+          class="org.eclipse.ui.tests.quickaccess.TestQuickAccessComputer"
+          name="Test Quick Access Computer"
+          requiresUIAccess="false">
+    </computer>
+    <computer
+          class="org.eclipse.ui.tests.quickaccess.TestIncrementalQuickAccessComputer"
+          name="Test Incremental Quick Access Computer"
+          requiresUIAccess="false">
+    </computer>
+    <computer
+          class="org.eclipse.ui.tests.quickaccess.TestLongRunningQuickAccessComputer"
+          name="Test long running quick access"
+          requiresUIAccess="false">
+    </computer>
+ </extension>
+ <extension
+       id="datatransfer.ImportTestUtils.test.builder"
+       name="datatransfer.ImportTestUtils.test.builder"
+       point="org.eclipse.core.resources.builders">
+    <builder>
+          <run class="org.eclipse.ui.tests.datatransfer.ImportTestUtils$TestBuilder"/>
+    </builder>
+ </extension>
 </plugin>

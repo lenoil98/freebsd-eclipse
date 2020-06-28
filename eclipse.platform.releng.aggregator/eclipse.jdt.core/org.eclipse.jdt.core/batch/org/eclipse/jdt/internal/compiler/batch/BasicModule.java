@@ -95,7 +95,6 @@ public class BasicModule implements ISourceModule {
 		return exp;
 	}
 
-	boolean isAutomodule;
 	private boolean isOpen = false;
 	char[] name;
 	IModule.IModuleReference[] requires;
@@ -104,7 +103,7 @@ public class BasicModule implements ISourceModule {
 	Service[] provides;
 	IModule.IPackageExport[] opens;
 	private ICompilationUnit compilationUnit;
-	
+
 	public BasicModule(ModuleDeclaration descriptor, IModulePathEntry root) {
 		this.compilationUnit = descriptor.compilationResult().compilationUnit;
 		this.name = descriptor.moduleName;
@@ -154,7 +153,6 @@ public class BasicModule implements ISourceModule {
 		} else {
 			this.opens = new PackageExportImpl[0];
 		}
-		this.isAutomodule = false; // Just to be explicit
 		this.isOpen = descriptor.isOpen();
 	}
 	@Override
@@ -184,10 +182,6 @@ public class BasicModule implements ISourceModule {
 	@Override
 	public IModule.IPackageExport[] opens() {
 		return this.opens;
-	}
-	@Override
-	public boolean isAutomatic() {
-		return this.isAutomodule;
 	}
 	@Override
 	public boolean isOpen() {

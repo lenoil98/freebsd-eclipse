@@ -10,27 +10,39 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 541067
  *******************************************************************************/
 package org.eclipse.pde.ui.tests.target;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.*;
 import java.net.URL;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import junit.framework.TestCase;
 import org.eclipse.core.filebuffers.*;
 import org.eclipse.core.runtime.*;
+import org.eclipse.e4.core.contexts.EclipseContextFactory;
+import org.eclipse.e4.core.contexts.IEclipseContext;
+import org.eclipse.e4.core.services.events.IEventBroker;
 import org.eclipse.equinox.frameworkadmin.BundleInfo;
 import org.eclipse.pde.core.plugin.TargetPlatform;
 import org.eclipse.pde.core.target.*;
+import org.eclipse.pde.internal.core.PDECore;
 import org.eclipse.pde.ui.tests.PDETestsPlugin;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.osgi.service.event.EventHandler;
 
 /**
  * Common utility methods for target definition tests
  */
-public abstract class AbstractTargetTest extends TestCase {
+public abstract class AbstractTargetTest {
 
 
 	/**
@@ -42,8 +54,6 @@ public abstract class AbstractTargetTest extends TestCase {
 		ServiceReference<ITargetPlatformService> reference = PDETestsPlugin.getBundleContext()
 				.getServiceReference(ITargetPlatformService.class);
 		assertNotNull("Missing target platform service", reference);
-		if (reference == null)
-			return null;
 		return PDETestsPlugin.getBundleContext().getService(reference);
 	}
 
@@ -219,6 +229,13 @@ public abstract class AbstractTargetTest extends TestCase {
 	 * @throws CoreException
 	 */
 	protected void setTargetPlatform(ITargetDefinition target) throws CoreException {
+		final Object[] payload = new Object[1];
+		BundleContext bundleContext = PDECore.getDefault().getBundleContext();
+		IEclipseContext context = EclipseContextFactory.getServiceContext(bundleContext);
+		IEventBroker eventBroker = context.get(IEventBroker.class);
+		EventHandler handler = e -> payload[0] = e.getProperty(IEventBroker.DATA);
+		eventBroker.subscribe(TargetEvents.TOPIC_WORKSPACE_TARGET_CHANGED, handler);
+
 		// Create the job to load the target, but then join with the job's thread
 		LoadTargetDefinitionJob job = new LoadTargetDefinitionJob(target);
 		job.schedule();
@@ -227,11 +244,13 @@ public abstract class AbstractTargetTest extends TestCase {
 		} catch (InterruptedException e) {
 			assertFalse("Target platform reset interrupted", true);
 		}
-		ITargetHandle handle = null;
-		if (target != null) {
-			handle = target.getHandle();
-		}
-		assertEquals("Wrong target platform handle preference setting", handle, getTargetService().getWorkspaceTargetHandle());
+		ITargetPlatformService service = getTargetService();
+		ITargetDefinition definition = (target != null) ? target : service.getWorkspaceTargetDefinition();
+		eventBroker.unsubscribe(handler);
+		ITargetHandle handle = (target != null) ? target.getHandle() : null;
+		assertEquals("Wrong target platform handle preference setting", handle, service.getWorkspaceTargetHandle());
+		assertEquals("Wrong workspaceTargetChanged event payload", definition, payload[0]);
+
 	}
 
 	/**

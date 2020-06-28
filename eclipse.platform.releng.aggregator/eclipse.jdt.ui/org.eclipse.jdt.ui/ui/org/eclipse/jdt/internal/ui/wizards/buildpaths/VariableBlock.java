@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.ui.wizards.buildpaths;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -227,8 +226,7 @@ public class VariableBlock {
 		if (fWarning == null || fWarning.isDisposed())
 			return;
 
-		for (Iterator<CPVariableElement> iter= fSelectedElements.iterator(); iter.hasNext();) {
-			CPVariableElement element= iter.next();
+		for (CPVariableElement element : fSelectedElements) {
 			String deprecationMessage= element.getDeprecationMessage();
 			if (deprecationMessage != null) {
 				fWarning.setText(deprecationMessage);
@@ -253,7 +251,8 @@ public class VariableBlock {
 			entry= newEntry;
 			fHasChanges= true;
 		} else {
-			boolean hasChanges= !(entry.getName().equals(newEntry.getName()) && entry.getPath().equals(newEntry.getPath()));
+			boolean hasChanges= !entry.getName().equals(newEntry.getName())
+					|| !entry.getPath().equals(newEntry.getPath());
 			if (hasChanges) {
 				fHasChanges= true;
 				entry.setName(newEntry.getName());
@@ -327,11 +326,8 @@ public class VariableBlock {
 	private boolean doesChangeRequireFullBuild(List<String> removed, List<String> changed) {
 		try {
 			IJavaModel model= JavaCore.create(ResourcesPlugin.getWorkspace().getRoot());
-			IJavaProject[] projects= model.getJavaProjects();
-			for (int i= 0; i < projects.length; i++) {
-				IClasspathEntry[] entries= projects[i].getRawClasspath();
-				for (int k= 0; k < entries.length; k++) {
-					IClasspathEntry curr= entries[k];
+			for (IJavaProject project : model.getJavaProjects()) {
+				for (IClasspathEntry curr : project.getRawClasspath()) {
 					if (curr.getEntryKind() == IClasspathEntry.CPE_VARIABLE) {
 						String var= curr.getPath().segment(0);
 						if (removed.contains(var) || changed.contains(var)) {
@@ -380,14 +376,13 @@ public class VariableBlock {
 			IPath[] paths= new IPath[nVariables];
 			int k= 0;
 
-			for (int i= 0; i < fToChange.size(); i++) {
-				CPVariableElement curr= fToChange.get(i);
+			for (CPVariableElement curr : fToChange) {
 				names[k]= curr.getName();
 				paths[k]= curr.getPath();
 				k++;
 			}
-			for (int i= 0; i < fToRemove.size(); i++) {
-				names[k]= fToRemove.get(i);
+			for (String element : fToRemove) {
+				names[k]= element;
 				paths[k]= null;
 				k++;
 			}
@@ -411,8 +406,7 @@ public class VariableBlock {
 
 		String[] entries= JavaCore.getClasspathVariableNames();
 		ArrayList<CPVariableElement> elements= new ArrayList<>(entries.length);
-		for (int i= 0; i < entries.length; i++) {
-			String name= entries[i];
+		for (String name : entries) {
 			CPVariableElement elem;
 			IPath entryPath= JavaCore.getClasspathVariable(name);
 			if (entryPath != null) {

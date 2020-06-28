@@ -32,8 +32,7 @@ public void generate(JNIClass clazz) {
 
 public void generate(JNIMethod[] methods) {
 	sort(methods);	
-	for (int i = 0; i < methods.length; i++) {
-		JNIMethod method = methods[i];
+	for (JNIMethod method : methods) {
 		if ((method.getModifiers() & Modifier.NATIVE) == 0) continue;
 		generate(method);
 	}
@@ -42,7 +41,7 @@ public void generate(JNIMethod[] methods) {
 public void generate(JNIMethod method) {
 	String name = method.getName();
 	for (String str : files.values()) {
-		if (str.indexOf(name) != -1) {
+		if (str.contains(name)) {
 //			int modifiers = method.getModifiers();
 //			Class clazz = method.getDeclaringClass();
 //			String modifiersStr = Modifier.toString(modifiers);

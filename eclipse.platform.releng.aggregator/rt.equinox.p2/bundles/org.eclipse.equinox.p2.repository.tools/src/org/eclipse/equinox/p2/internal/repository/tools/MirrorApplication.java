@@ -231,8 +231,7 @@ public class MirrorApplication extends AbstractApplication implements IApplicati
 		IQueryResult<IInstallableUnit> ius = slice.query(QueryUtil.createIUAnyQuery(), monitor);
 		boolean iusSpecified = !ius.isEmpty(); // call before ius.iterator() to avoid bug 420318
 		ArrayList<IArtifactKey> keys = new ArrayList<>();
-		for (Iterator<IInstallableUnit> iterator = ius.iterator(); iterator.hasNext();) {
-			IInstallableUnit iu = iterator.next();
+		for (IInstallableUnit iu : ius) {
 			keys.addAll(iu.getArtifacts());
 		}
 
@@ -297,8 +296,8 @@ public class MirrorApplication extends AbstractApplication implements IApplicati
 
 		if (rootIUs != null) {
 			sourceIUs = new ArrayList<>();
-			for (int i = 0; i < rootIUs.length; i++) {
-				String[] segments = getArrayArgsFromString(rootIUs[i], "/"); //$NON-NLS-1$
+			for (String rootIU : rootIUs) {
+				String[] segments = getArrayArgsFromString(rootIU, "/"); //$NON-NLS-1$
 				VersionRange range = segments.length > 1 ? VersionRange.create(segments[1]) : null;
 				Iterator<IInstallableUnit> queryResult = metadataRepo.query(QueryUtil.createIUQuery(segments[0], range), null).iterator();
 				while (queryResult.hasNext())

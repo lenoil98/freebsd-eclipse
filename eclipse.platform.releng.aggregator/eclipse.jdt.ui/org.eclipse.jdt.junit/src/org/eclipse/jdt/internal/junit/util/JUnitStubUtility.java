@@ -113,7 +113,7 @@ public class JUnitStubUtility {
 	 */
 	public static String genStub(ICompilationUnit compilationUnit, String destTypeName, IMethod method, GenStubSettings settings, String extraAnnotations, ImportsManager imports) throws CoreException {
 		IType declaringtype= method.getDeclaringType();
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		String[] paramTypes= method.getParameterTypes();
 		String[] paramNames= method.getParameterNames();
 		String[] excTypes= method.getExceptionTypes();
@@ -277,7 +277,7 @@ public class JUnitStubUtility {
 	 * enclosing type separator in the qualified type name. Type erasure is performed on a parameterized
 	 * type, arrays use the square brackets and a type parameter is resolved while creating the return
 	 * value.
-	 * 
+	 *
 	 * @param method the method whose parameter types are required
 	 * @param useSimpleNames <code>true</code> if the last segment of the type name should be used
 	 *            instead of the fully qualified type name
@@ -295,7 +295,7 @@ public class JUnitStubUtility {
 				String[] fullNames= null;
 				for (int i= 0; i < parameterTypeSignatures.length; i++) {
 					String paramTypeSign= parameterTypeSignatures[i];
-					StringBuffer buf= new StringBuffer();
+					StringBuilder buf= new StringBuilder();
 
 					String typeSign= Signature.getTypeErasure(paramTypeSign);
 					String fullName;
@@ -330,7 +330,7 @@ public class JUnitStubUtility {
 			if (useSimpleNames) {
 				stream= stream.map(paramTypeName -> paramTypeName.substring(paramTypeName.lastIndexOf('.') + 1));
 			}
-			paramTypes= stream.collect(Collectors.joining(", ", "(", ")")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$	
+			paramTypes= stream.collect(Collectors.joining(", ", "(", ")")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		}
 
 		return paramTypes;
@@ -407,6 +407,9 @@ public class JUnitStubUtility {
 			result[i]= curr.getQualifiedName();
 		}
 		return result;
+	}
+
+	private JUnitStubUtility() {
 	}
 
 

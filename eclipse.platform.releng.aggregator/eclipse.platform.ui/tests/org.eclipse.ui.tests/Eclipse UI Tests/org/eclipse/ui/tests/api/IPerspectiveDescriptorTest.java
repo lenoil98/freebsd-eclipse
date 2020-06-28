@@ -13,62 +13,64 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.api;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.IPerspectiveDescriptor;
 import org.eclipse.ui.PlatformUI;
+import org.junit.Before;
+import org.junit.Test;
 
-public class IPerspectiveDescriptorTest extends TestCase {
+public class IPerspectiveDescriptorTest {
 
-    private IPerspectiveDescriptor[] fPerspectives;
+	private IPerspectiveDescriptor[] fPerspectives;
 
-    public IPerspectiveDescriptorTest(String testName) {
-        super(testName);
-    }
-
-    @Override
+	@Before
 	public void setUp() {
-        fPerspectives = PlatformUI
-                .getWorkbench().getPerspectiveRegistry().getPerspectives();
-    }
+		fPerspectives = PlatformUI
+				.getWorkbench().getPerspectiveRegistry().getPerspectives();
+	}
 
-    /**
-     * Tests that the ids for all perspective descriptors are non-null and non-empty.
-     */
-    public void testGetId() {
-        for (IPerspectiveDescriptor fPerspective : fPerspectives) {
-            String id = fPerspective.getId();
-            assertNotNull(id);
-            assertTrue(id.length() > 0);
-        }
-    }
+	/**
+	 * Tests that the ids for all perspective descriptors are non-null and non-empty.
+	 */
+	@Test
+	public void testGetId() {
+		for (IPerspectiveDescriptor fPerspective : fPerspectives) {
+			String id = fPerspective.getId();
+			assertNotNull(id);
+			assertTrue(!id.isEmpty());
+		}
+	}
 
-    /**
-     * Tests that the labels for all perspective descriptors are non-null and non-empty.
-     */
-    public void testGetLabel() {
-        for (IPerspectiveDescriptor fPerspective : fPerspectives) {
-            String label = fPerspective.getLabel();
-            assertNotNull(label);
-            assertTrue(label.length() > 0);
-        }
-    }
+	/**
+	 * Tests that the labels for all perspective descriptors are non-null and non-empty.
+	 */
+	@Test
+	public void testGetLabel() {
+		for (IPerspectiveDescriptor fPerspective : fPerspectives) {
+			String label = fPerspective.getLabel();
+			assertNotNull(label);
+			assertTrue(!label.isEmpty());
+		}
+	}
 
-    /**
-     * Tests that the image descriptors for all perspective descriptors are non-null.
-     * <p>
-     * Note that some perspective extensions in the test suite do not specify an icon
-     * attribute.  getImageDescriptor should return a default image descriptor in this
-     * case.  This is a regression test for bug 68325.
-     * </p>
-     */
-    public void testGetImageDescriptor() {
-        for (IPerspectiveDescriptor fPerspective : fPerspectives) {
-            ImageDescriptor image = fPerspective.getImageDescriptor();
-            assertNotNull(image);
-        }
-    }
+	/**
+	 * Tests that the image descriptors for all perspective descriptors are non-null.
+	 * <p>
+	 * Note that some perspective extensions in the test suite do not specify an icon
+	 * attribute.  getImageDescriptor should return a default image descriptor in this
+	 * case.  This is a regression test for bug 68325.
+	 * </p>
+	 */
+	@Test
+	public void testGetImageDescriptor() {
+		for (IPerspectiveDescriptor fPerspective : fPerspectives) {
+			ImageDescriptor image = fPerspective.getImageDescriptor();
+			assertNotNull(image);
+		}
+	}
 
 }
 

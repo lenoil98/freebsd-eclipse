@@ -83,7 +83,7 @@ public class Session {
 	private boolean noLocalChanges = false;
 	private boolean createBackups = true;
 	private int compressionLevel = 0;
-	private List expansions;
+	private List<String> expansions;
 	private Collection /* of ICVSFile */ textTransferOverrideSet = null;
 	
 	// state need to indicate whether 
@@ -91,12 +91,12 @@ public class Session {
 
 	// The resource bundle key that provides the file sending message
 	private String sendFileTitleMessage;
-	private Map responseHandlers;
+	private Map<String,ResponseHandler> responseHandlers;
 	
 	// List of errors accumulated while the command is executing
-    private List errors = new ArrayList();
-    
-    private Command currentCommand;
+	private List<IStatus> errors = new ArrayList<>();
+	
+	private Command currentCommand;
 
 	/**
 	 * Creates a new CVS session, initially in the CLOSED state.
@@ -136,7 +136,7 @@ public class Session {
 	 */
 	protected void resetModuleExpansion() {
 		if (expansions == null) 
-			expansions = new ArrayList();
+			expansions = new ArrayList<>();
 		else
 			expansions.clear();
 	}
@@ -236,7 +236,7 @@ public class Session {
 	 */
 	public boolean isValidRequest(String request) {
 		return (validRequests == null) ||
-			(validRequests.indexOf(" " + request + " ") != -1); //$NON-NLS-1$ //$NON-NLS-2$
+			(validRequests.contains(" " + request + " ")); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 	
 	public boolean isCVSNT() {
@@ -268,7 +268,7 @@ public class Session {
 	 */
 	public String[] getModuleExpansions() {
 		if (expansions == null) return new String[0];
-		return (String[]) expansions.toArray(new String[expansions.size()]);
+		return expansions.toArray(new String[expansions.size()]);
 	}
 	
 	/**
@@ -313,12 +313,12 @@ public class Session {
 
 	/**
 	 * Sends an argument to the server.
-	 * <p>e.g. sendArgument("Hello\nWorld\n  Hello World") sends:
+	 * <p>e.g. sendArgument("Hello\nWorld\n  Hello World") sends:</p>
 	 * <pre>
 	 *   Argument Hello \n
 	 *   Argumentx World \n
 	 *   Argumentx Hello World \n
-	 * </pre></p>
+	 * </pre>
 	 *
 	 * @param arg the argument to send
 	 */
@@ -357,10 +357,10 @@ public class Session {
 
 	/**
 	 * Sends an Is-modified request to the server without the file contents.
-	 * <p>e.g. if a file called "local_file" was modified, sends:
+	 * <p>e.g. if a file called "local_file" was modified, sends:</p>
 	 * <pre>
 	 *   Is-modified local_file \n
-	 * </pre></p><p>
+	 * </pre><p>
 	 * This request is an optimized form of the Modified request and may not
 	 * be supported by all servers.  Hence, if it is not supported, a Modified
 	 * request is sent instead along with the file's contents.  According to
@@ -420,11 +420,11 @@ public class Session {
 
 	/**
 	 * Sends a Directory request to the server.
-	 * <p>e.g. sendDirectory("local_dir", "remote_dir") sends:
+	 * <p>e.g. sendDirectory("local_dir", "remote_dir") sends:</p>
 	 * <pre>
 	 *   Directory local_dir
 	 *   repository_root/remote_dir
-	 * </pre></p>
+	 * </pre>
 	 * 
 	 * @param localDir the path of the local directory relative to localRoot
 	 * @param remoteDir the path of the remote directory relative to repositoryRoot
@@ -492,10 +492,10 @@ public class Session {
 
 	/**
 	 * Sends a global options to the server.
-	 * <p>e.g. sendGlobalOption("-n") sends:
+	 * <p>e.g. sendGlobalOption("-n") sends:</p>
 	 * <pre>
 	 *   Global_option -n \n
-	 * </pre></p>
+	 * </pre>
 	 * 
 	 * @param option the global option to send
 	 */
@@ -563,13 +563,13 @@ public class Session {
 
 	/**
 	 * Sends a Modified request to the server along with the file contents.
-	 * <p>e.g. if a file called "local_file" was modified, sends:
+	 * <p>e.g. if a file called "local_file" was modified, sends:</p>
 	 * <pre>
 	 *   Modified local_file \n
 	 *   file_permissions \n
 	 *   file_size \n
 	 *   [... file_contents ...]
-	 * </pre></p><p>
+	 * </pre><p>
 	 * Under some circumstances, Is-modified may be used in place of this request.<br>
 	 * Do not use with history, init, import, rdiff, release, rtag, or update.
 	 * </p><p>
@@ -760,14 +760,14 @@ public class Session {
 			}
 			size = Long.parseLong(sizeLine, 10);
 		} catch (NumberFormatException e) {
-		    // In some cases, the server will give us an error line here
-		    if (sizeLine != null && sizeLine.startsWith("E")) { //$NON-NLS-1$
-		        handleErrorLine(sizeLine.substring(1).trim(), org.eclipse.core.runtime.Status.OK_STATUS);
-		        return;
-		    } else {
-		    	IStatus status = new CVSStatus(IStatus.ERROR,CVSStatus.ERROR,CVSMessages.Session_badInt, e, localRoot);
-		        throw new CVSException(status); 
-		    }
+			// In some cases, the server will give us an error line here
+			if (sizeLine != null && sizeLine.startsWith("E")) { //$NON-NLS-1$
+				handleErrorLine(sizeLine.substring(1).trim(), org.eclipse.core.runtime.Status.OK_STATUS);
+				return;
+			} else {
+				IStatus status = new CVSStatus(IStatus.ERROR,CVSStatus.ERROR,CVSMessages.Session_badInt, e, localRoot);
+				throw new CVSException(status); 
+			}
 		}
 		// create an input stream that spans the next 'size' bytes from the connection
 		InputStream in = new SizeConstrainedInputStream(connection.getInputStream(), size, true /*discardOnClose*/);
@@ -808,7 +808,7 @@ public class Session {
 		file.setContents(in, responseType, true, new NullProgressMonitor());
 	}
 
-    /**
+	/**
 	 * Stores the value of the last Mod-time response encountered.
 	 * Valid only for the duration of a single CVS command.
 	 */
@@ -960,7 +960,7 @@ public class Session {
 	 * Get the response handler map to be used for this session. The map is created by making a copy of the global
 	 * reponse handler map.
 	 */
-	protected Map getReponseHandlers() {
+	protected Map<String,ResponseHandler> getReponseHandlers() {
 		if (responseHandlers == null) {
 			responseHandlers = Request.getReponseHandlerMap();
 		}
@@ -972,7 +972,7 @@ public class Session {
 	 * @return a space-delimited list of all valid response strings
 	 */
 	private String makeResponseList() {
-		StringBuffer result = new StringBuffer("ok error M E");  //$NON-NLS-1$
+		StringBuilder result = new StringBuilder("ok error M E");  //$NON-NLS-1$
 		Iterator elements = getReponseHandlers().keySet().iterator();
 		while (elements.hasNext()) {
 			result.append(' ');
@@ -990,56 +990,56 @@ public class Session {
 	}
 	
 	public ResponseHandler getResponseHandler(String responseID) {
-		return (ResponseHandler)getReponseHandlers().get(responseID);
+		return getReponseHandlers().get(responseID);
 	}
 
-    /**
-     * Accumulate the added errors so they can be included in the status returned
-     * when the command execution is finished. OK status are ignored.
-     * @param status the status to be accumulated
-     */
-    public void addError(IStatus status) {
-        if (!status.isOK())
-            errors.add(status);
-    }
-    
-    public boolean hasErrors() {
-        return !errors.isEmpty();
-    }
-    
-    public IStatus[] getErrors() {
-        return (IStatus[]) errors.toArray(new IStatus[errors.size()]);
-    }
+	/**
+	 * Accumulate the added errors so they can be included in the status returned
+	 * when the command execution is finished. OK status are ignored.
+	 * @param status the status to be accumulated
+	 */
+	public void addError(IStatus status) {
+		if (!status.isOK())
+			errors.add(status);
+	}
 	
-    public void clearErrors() {
-        errors.clear();
-    }
+	public boolean hasErrors() {
+		return !errors.isEmpty();
+	}
+	
+	public IStatus[] getErrors() {
+		return errors.toArray(new IStatus[errors.size()]);
+	}
+	
+	public void clearErrors() {
+		errors.clear();
+	}
 
-    public void setCurrentCommand(Command c) {
-        currentCommand = c;
-    }
-    
-    public Command getCurrentCommand() {
-        return currentCommand;
-    }
+	public void setCurrentCommand(Command c) {
+		currentCommand = c;
+	}
+	
+	public Command getCurrentCommand() {
+		return currentCommand;
+	}
 
 	/**
 	 * Report the given error line to any listeners
-     * @param line the error line
-     * @param status the status that indicates any problems encountered parsing the line
-     */
-    public void handleErrorLine(String line, IStatus status) {
-        ConsoleListeners.getInstance().errorLineReceived(this, line, status);
-    }
-    
-    /**
-     * An error has occurred while processing responses from the 
-     * server. Place this error is the status that will be returned
-     * from the command and show the error in the console
-     * @param status the status that descibes the error
-     */
-    public void handleResponseError(IStatus status) {
-        addError(status);
-        handleErrorLine(NLS.bind(CVSMessages.Session_0, new String[] { status.getMessage() }), status); 
-    }
+	 * @param line the error line
+	 * @param status the status that indicates any problems encountered parsing the line
+	 */
+	public void handleErrorLine(String line, IStatus status) {
+		ConsoleListeners.getInstance().errorLineReceived(this, line, status);
+	}
+	
+	/**
+	 * An error has occurred while processing responses from the 
+	 * server. Place this error is the status that will be returned
+	 * from the command and show the error in the console
+	 * @param status the status that descibes the error
+	 */
+	public void handleResponseError(IStatus status) {
+		addError(status);
+		handleErrorLine(NLS.bind(CVSMessages.Session_0, new String[] { status.getMessage() }), status); 
+	}
 }

@@ -70,6 +70,7 @@ import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
 import org.eclipse.jdt.core.refactoring.descriptors.ChangeMethodSignatureDescriptor;
 import org.eclipse.jdt.core.refactoring.descriptors.IntroduceParameterDescriptor;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.Corext;
@@ -100,8 +101,6 @@ import org.eclipse.jdt.ui.JavaElementLabels;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
-
-import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 
 
 public class IntroduceParameterRefactoring extends Refactoring implements IDelegateUpdating {
@@ -275,27 +274,27 @@ public class IntroduceParameterRefactoring extends Refactoring implements IDeleg
 	private void addParameterInfo(CompilationUnitRewrite cuRewrite) throws JavaModelException {
 		ITypeBinding typeBinding= Bindings.normalizeForDeclarationUse(fSelectedExpression.resolveTypeBinding(), fSelectedExpression.getAST());
 		String name= fParameterName != null ? fParameterName : guessedParameterName();
-		Expression expression= fSelectedExpression instanceof ParenthesizedExpression ? ((ParenthesizedExpression)fSelectedExpression).getExpression() : fSelectedExpression;
-		
-		ImportRewrite importRewrite= cuRewrite.getImportRewrite();			
+		Expression expression= ASTNodes.getUnparenthesedExpression(fSelectedExpression);
+
+		ImportRewrite importRewrite= cuRewrite.getImportRewrite();
 		ImportRewriteContext importRewriteContext= new ContextSensitiveImportRewriteContext(fSelectedExpression, importRewrite);
 		String typeName= importRewrite.addImport(typeBinding, importRewriteContext);
-		
+
 		String defaultValue= null;
 		if (expression instanceof ClassInstanceCreation && typeBinding.isParameterizedType()) {
 			ClassInstanceCreation classInstanceCreation= (ClassInstanceCreation) expression;
 			Type cicType= classInstanceCreation.getType();
 			if (cicType instanceof ParameterizedType && ((ParameterizedType) cicType).typeArguments().size() == 0) {
 				// expand the diamond:
-				AST ast= cuRewrite.getAST();				
-				Type type= importRewrite.addImport(typeBinding, ast, importRewriteContext);				
+				AST ast= cuRewrite.getAST();
+				Type type= importRewrite.addImport(typeBinding, ast, importRewriteContext);
 				classInstanceCreation.setType(type);    // Should not touch the original AST ...
 				defaultValue= ASTNodes.asFormattedString(classInstanceCreation, 0, StubUtility.getLineDelimiterUsed(cuRewrite.getCu()),
 						FormatterProfileManager.getProjectSettings(cuRewrite.getCu().getJavaProject()));
 				classInstanceCreation.setType(cicType); // ... so let's restore it right away.
 			}
 		}
-		
+
 		if (defaultValue == null) {
 			defaultValue= fSourceCU.getBuffer().getText(expression.getStartPosition(), expression.getLength());
 		}
@@ -481,8 +480,7 @@ public class IntroduceParameterRefactoring extends Refactoring implements IDeleg
 
 	private List<String> guessTempNamesFromMethodInvocation(MethodInvocation selectedMethodInvocation, String[] excludedVariableNames) {
 		String methodName= selectedMethodInvocation.getName().getIdentifier();
-		for (int i= 0; i < KNOWN_METHOD_NAME_PREFIXES.length; i++) {
-			String prefix= KNOWN_METHOD_NAME_PREFIXES[i];
+		for (String prefix : KNOWN_METHOD_NAME_PREFIXES) {
 			if (! methodName.startsWith(prefix))
 				continue; //not this prefix
 			if (methodName.length() == prefix.length())
@@ -508,7 +506,7 @@ public class IntroduceParameterRefactoring extends Refactoring implements IDeleg
 			typeName= expressionBinding.getName();
 		if (typeName.length() == 0)
 			return Collections.emptyList();
-		int typeParamStart= typeName.indexOf("<"); //$NON-NLS-1$
+		int typeParamStart= typeName.indexOf('<');
 		if (typeParamStart != -1)
 			typeName= typeName.substring(0, typeParamStart);
 		String[] proposals= StubUtility.getLocalNameSuggestions(fSourceCU.getJavaProject(), typeName, expressionBinding.getDimensions(), excluded);
@@ -571,7 +569,7 @@ public class IntroduceParameterRefactoring extends Refactoring implements IDeleg
 
 		final Map<String, String> arguments= new HashMap<>();
 		arguments.put(ATTRIBUTE_ARGUMENT, fParameter.getNewName());
-		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, Integer.valueOf(fSelectionStart).toString() + " " + Integer.valueOf(fSelectionLength).toString()); //$NON-NLS-1$
+		arguments.put(JavaRefactoringDescriptorUtil.ATTRIBUTE_SELECTION, Integer.toString(fSelectionStart) + " " + Integer.toString(fSelectionLength)); //$NON-NLS-1$
 		arguments.putAll(argumentsMap);
 		String signature= fChangeSignatureProcessor.getMethodName();
 		try {
@@ -597,9 +595,9 @@ public class IntroduceParameterRefactoring extends Refactoring implements IDeleg
 			int length= -1;
 			final StringTokenizer tokenizer= new StringTokenizer(selection);
 			if (tokenizer.hasMoreTokens())
-				offset= Integer.valueOf(tokenizer.nextToken()).intValue();
+				offset= Integer.parseInt(tokenizer.nextToken());
 			if (tokenizer.hasMoreTokens())
-				length= Integer.valueOf(tokenizer.nextToken()).intValue();
+				length= Integer.parseInt(tokenizer.nextToken());
 			if (offset >= 0 && length >= 0) {
 				fSelectionStart= offset;
 				fSelectionLength= length;

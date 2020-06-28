@@ -42,6 +42,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.WorkspaceModifyDelegatingOperation;
 import org.eclipse.ui.dialogs.IOverwriteQuery;
 import org.eclipse.ui.ide.IDE;
@@ -68,9 +69,7 @@ public class ExampleProjectCreationWizard extends Wizard implements INewWizard, 
 		}
 	}
 
-	/*
-	 * @see Wizard#addPages
-	 */
+	@Override
 	public void addPages() {
 		super.addPages();
 		if (fPage != null) {
@@ -78,9 +77,7 @@ public class ExampleProjectCreationWizard extends Wizard implements INewWizard, 
 		}
 	}
 
-	/*
-	 * @see Wizard#performFinish
-	 */
+	@Override
 	public boolean performFinish() {
 		if (fPage != null) {
 			ExampleProjectCreationOperation runnable= new ExampleProjectCreationOperation(fPage, new ImportOverwriteQuery());
@@ -120,20 +117,18 @@ public class ExampleProjectCreationWizard extends Wizard implements INewWizard, 
 		if (resource.getType() != IResource.FILE) {
 			return;
 		}
-		IWorkbenchWindow window= ExampleProjectsPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow();
+		IWorkbenchWindow window= PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		if (window == null) {
 			return;
 		}
 		final IWorkbenchPage activePage= window.getActivePage();
 		if (activePage != null) {
 			final Display display= getShell().getDisplay();
-			display.asyncExec(new Runnable() {
-				public void run() {
-					try {
-						IDE.openEditor(activePage, (IFile)resource, true);
-					} catch (PartInitException e) {
-						ExampleProjectsPlugin.log(e);
-					}
+			display.asyncExec(() -> {
+				try {
+					IDE.openEditor(activePage, (IFile)resource, true);
+				} catch (PartInitException e) {
+					ExampleProjectsPlugin.log(e);
 				}
 			});
 			BasicNewResourceWizard.selectAndReveal(resource, activePage.getWorkbenchWindow());
@@ -144,6 +139,7 @@ public class ExampleProjectCreationWizard extends Wizard implements INewWizard, 
 	 * Stores the configuration element for the wizard.  The config element will be used
 	 * in <code>performFinish</code> to set the result perspective.
 	 */
+	@Override
 	public void setInitializationData(IConfigurationElement cfig, String propertyName, Object data) {
 		fConfigElement= cfig;
 		IConfigurationElement[] children= cfig.getChildren("projectsetup"); //$NON-NLS-1$
@@ -159,6 +155,7 @@ public class ExampleProjectCreationWizard extends Wizard implements INewWizard, 
 	// overwrite dialog
 
 	private class ImportOverwriteQuery implements IOverwriteQuery {
+		@Override
 		public String queryOverwrite(String file) {
 			String[] returnCodes= { YES, NO, ALL, CANCEL};
 			int returnVal= openDialog(file);
@@ -167,19 +164,18 @@ public class ExampleProjectCreationWizard extends Wizard implements INewWizard, 
 
 		private int openDialog(final String file) {
 			final int[] result= { IDialogConstants.CANCEL_ID };
-			getShell().getDisplay().syncExec(new Runnable() {
-				public void run() {
-					String title= ExampleProjectMessages.ExampleProjectCreationWizard_overwritequery_title;
-					String msg= MessageFormat.format(ExampleProjectMessages.ExampleProjectCreationWizard_overwritequery_message, new Object[] {file});
-					String[] options= {IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL, IDialogConstants.YES_TO_ALL_LABEL, IDialogConstants.CANCEL_LABEL};
-					MessageDialog dialog= new MessageDialog(getShell(), title, null, msg, MessageDialog.QUESTION, options, 0);
-					result[0]= dialog.open();
-				}
+			getShell().getDisplay().syncExec(() -> {
+				String title= ExampleProjectMessages.ExampleProjectCreationWizard_overwritequery_title;
+				String msg= MessageFormat.format(ExampleProjectMessages.ExampleProjectCreationWizard_overwritequery_message, file);
+				String[] options= {IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL, IDialogConstants.YES_TO_ALL_LABEL, IDialogConstants.CANCEL_LABEL};
+				MessageDialog dialog= new MessageDialog(getShell(), title, null, msg, MessageDialog.QUESTION, options, 0);
+				result[0]= dialog.open();
 			});
 			return result[0];
 		}
 	}
 
+	@Override
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
 
 	}

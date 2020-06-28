@@ -15,7 +15,6 @@
 package org.eclipse.jdt.internal.ui.propertiesfileeditor;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.graphics.Image;
@@ -49,6 +48,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringExecutionStarter;
 import org.eclipse.jdt.internal.corext.refactoring.nls.AccessorClassModifier;
 import org.eclipse.jdt.internal.corext.refactoring.nls.NLSPropertyFileModifier;
@@ -61,11 +61,10 @@ import org.eclipse.jdt.ui.text.java.correction.ChangeCorrectionProposal;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.EditAnnotator;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 /**
  * The properties file quick assist processor.
- * 
+ *
  * @since 3.8
  */
 public class PropertiesQuickAssistProcessor {
@@ -91,8 +90,8 @@ public class PropertiesQuickAssistProcessor {
 		getCreateFieldsInAccessorClassProposals(invocationContext, resultingCollections);
 		getRemovePropertiesProposals(invocationContext, resultingCollections);
 		getRenameKeysProposals(invocationContext, resultingCollections);
-	
-		if (resultingCollections.size() == 0)
+
+		if (resultingCollections.isEmpty())
 			return null;
 		return resultingCollections.toArray(new ICompletionProposal[resultingCollections.size()]);
 	}
@@ -114,21 +113,22 @@ public class PropertiesQuickAssistProcessor {
 					return false;
 				}
 			}
-	
+
 			ITypedRegion partition= null;
 			if (document instanceof IDocumentExtension3)
 				partition= ((IDocumentExtension3)document).getPartition(IPropertiesFilePartitions.PROPERTIES_FILE_PARTITIONING, invocationContext.getOffset(), false);
 			if (partition == null)
 				return false;
-	
+
 			String type= partition.getType();
-			if (!(type.equals(IPropertiesFilePartitions.PROPERTY_VALUE) || type.equals(IDocument.DEFAULT_CONTENT_TYPE))) {
+			if (!type.equals(IPropertiesFilePartitions.PROPERTY_VALUE)
+					&& !type.equals(IDocument.DEFAULT_CONTENT_TYPE)) {
 				return false;
 			}
 			proposalOffset= partition.getOffset();
 			proposalLength= partition.getLength();
 			text= document.get(proposalOffset, proposalLength);
-	
+
 			if (type.equals(IPropertiesFilePartitions.PROPERTY_VALUE)) {
 				text= text.substring(1); //see PropertiesFilePartitionScanner()
 				proposalOffset++;
@@ -139,7 +139,7 @@ public class PropertiesQuickAssistProcessor {
 			proposalLength= selectionLength;
 			text= document.get(proposalOffset, proposalLength);
 		}
-	
+
 		if (PropertiesFileEscapes.containsUnescapedBackslash(text)) {
 			if (resultingCollections == null)
 				return true;
@@ -169,11 +169,10 @@ public class PropertiesQuickAssistProcessor {
 			return false;
 
 		List<String> keys= getKeysFromSelection(document, selectionOffset, selectionLength);
-		if (keys == null || keys.size() == 0)
+		if (keys == null || keys.isEmpty())
 			return false;
 
-		for (Iterator<String> iterator= keys.iterator(); iterator.hasNext();) {
-			String key= iterator.next();
+		for (String key : keys) {
 			if (!isValidJavaIdentifier(key))
 				continue;
 			IField field= accessorClass.getField(key);
@@ -184,7 +183,7 @@ public class PropertiesQuickAssistProcessor {
 			fields.add(key);
 		}
 
-		if (fields.size() == 0)
+		if (fields.isEmpty())
 			return false;
 
 		ICompilationUnit cu= accessorClass.getCompilationUnit();
@@ -226,13 +225,12 @@ public class PropertiesQuickAssistProcessor {
 			return false;
 
 		List<String> keys= getKeysFromSelection(document, selectionOffset, selectionLength);
-		if (keys == null || keys.size() == 0)
+		if (keys == null || keys.isEmpty())
 			return false;
 		if (resultingCollections == null)
 			return true;
 
-		for (Iterator<String> iterator= keys.iterator(); iterator.hasNext();) {
-			String key= iterator.next();
+		for (String key : keys) {
 			IField field= accessorClass.getField(key);
 			if (field.exists())
 				fields.add(key);
@@ -369,9 +367,9 @@ public class PropertiesQuickAssistProcessor {
 			final StringBuffer buf= new StringBuffer();
 
 			try {
-				for (int i= 0; i < fChanges.length; i++) {
-					if (fChanges[i] instanceof TextChange) {
-						TextChange change= (TextChange) fChanges[i];
+				for (Change fChange : fChanges) {
+					if (fChange instanceof TextChange) {
+						TextChange change= (TextChange) fChange;
 						String filename= getFileName(change);
 						if (filename != null) {
 							buf.append("<b>"); //$NON-NLS-1$
@@ -381,9 +379,7 @@ public class PropertiesQuickAssistProcessor {
 						}
 						change.setKeepPreviewEdits(true);
 						IDocument currentContent= change.getCurrentDocument(monitor);
-
 						TextEdit rootEdit= change.getEdit();
-
 						EditAnnotator ea= new EditAnnotator(buf, currentContent) {
 							@Override
 							protected boolean rangeRemoved(TextEdit edit) {
@@ -443,5 +439,8 @@ public class PropertiesQuickAssistProcessor {
 		public String getCommandId() {
 			return IJavaEditorActionDefinitionIds.RENAME_ELEMENT;
 		}
+	}
+
+	private PropertiesQuickAssistProcessor() {
 	}
 }

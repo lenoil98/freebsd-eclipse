@@ -110,7 +110,7 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 			}
 			fTypeProposals= null;
 		}
-		
+
 		String typeName;
 		if (isNewTypeVar) {
 			typeName= VAR_TYPE;
@@ -142,7 +142,7 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 			setDisplayName(Messages.format(CorrectionMessages.TypeChangeCompletionProposal_method_name, args));
 		}
 	}
-	
+
 	private boolean containsNestedCapture(ITypeBinding binding, boolean isNested) {
 		if (binding == null || binding.isPrimitive() || binding.isTypeVariable()) {
 			return false;
@@ -159,9 +159,8 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 		if (binding.isArray()) {
 			return containsNestedCapture(binding.getElementType(), true);
 		}
-		ITypeBinding[] typeArguments= binding.getTypeArguments();
-		for (int i= 0; i < typeArguments.length; i++) {
-			if (containsNestedCapture(typeArguments[i], true)) {
+		for (ITypeBinding typeArgument : binding.getTypeArguments()) {
+			if (containsNestedCapture(typeArgument, true)) {
 				return true;
 			}
 		}
@@ -222,7 +221,7 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 				Javadoc javadoc= methodDecl.getJavadoc();
 				if (javadoc != null && origReturnType != null && origReturnType.isPrimitiveType()
 						&& ((PrimitiveType) origReturnType).getPrimitiveTypeCode() == PrimitiveType.VOID) {
-					
+
 					TagElement returnTag= JavadocTagsSubProcessor.findTag(javadoc, TagElement.TAG_RETURN, null);
 					if (returnTag == null) {
 						returnTag= ast.newTagElement();
@@ -230,7 +229,7 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 						TextElement commentStart= ast.newTextElement();
 						returnTag.fragments().add(commentStart);
 						addLinkedPosition(rewrite.track(commentStart), false, "comment_start"); //$NON-NLS-1$
-						
+
 						ListRewrite tagsRewriter= rewrite.getListRewrite(javadoc, Javadoc.TAGS_PROPERTY);
 						JavadocTagsSubProcessor.insertTag(tagsRewriter, returnTag, null);
 					}
@@ -318,8 +317,8 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 			final String KEY_TYPE= "type"; //$NON-NLS-1$
 			addLinkedPosition(rewrite.track(type), true, KEY_TYPE);
 			if (fTypeProposals != null) {
-				for (int i= 0; i < fTypeProposals.length; i++) {
-					addLinkedPositionProposal(KEY_TYPE, fTypeProposals[i]);
+				for (ITypeBinding fTypeProposal : fTypeProposals) {
+					addLinkedPositionProposal(KEY_TYPE, fTypeProposal);
 				}
 			}
 			if (fIsNewTypeVar) {
@@ -339,7 +338,7 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 		}
 		if (! oldType.isParameterizedType())
 			return;
-		
+
 		final ITypeBinding oldTypeDeclaration= oldType.getTypeDeclaration();
 		Arrays.sort(typeProposals, new Comparator<ITypeBinding>() {
 			@Override
@@ -393,10 +392,8 @@ public class TypeChangeCorrectionProposal extends LinkedCorrectionProposal {
 
 		ITypeBinding binding= createdType.resolveBinding();
 		if (binding != null) {
-			ITypeBinding[] typeArguments= binding.getTypeArguments();
 			ListRewrite argumentsRewrite= rewrite.getListRewrite(createdType, ParameterizedType.TYPE_ARGUMENTS_PROPERTY);
-			for (int i= 0; i < typeArguments.length; i++) {
-				ITypeBinding typeArgument= typeArguments[i];
+			for (ITypeBinding typeArgument : binding.getTypeArguments()) {
 				Type argumentNode= importRewrite.addImport(typeArgument, ast, context, TypeLocation.TYPE_ARGUMENT);
 				argumentsRewrite.insertLast(argumentNode, null);
 			}

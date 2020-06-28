@@ -15,14 +15,15 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.dialogs;
 
+import static org.eclipse.jface.viewers.LabelProvider.createTextImageProvider;
 import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
@@ -73,7 +74,6 @@ import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.internal.misc.StatusUtil;
 import org.eclipse.ui.internal.progress.ProgressManager;
 import org.eclipse.ui.internal.registry.EditorRegistry;
-import org.eclipse.ui.internal.util.Util;
 import org.eclipse.ui.preferences.IWorkbenchPreferenceContainer;
 import org.eclipse.ui.statushandlers.StatusManager;
 
@@ -85,8 +85,7 @@ import org.eclipse.ui.statushandlers.StatusManager;
  *
  * @since 3.1
  */
-public class ContentTypesPreferencePage extends PreferencePage implements
-		IWorkbenchPreferencePage {
+public class ContentTypesPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
 	public ContentTypesPreferencePage() {
 	}
 
@@ -134,14 +133,11 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 		final int sortValue;
 
 		/**
-		 * @param specText
-		 *            the spec text (filename, extension or pattern)
-		 * @param specType
-		 *            one of {@link IContentType#FILE_NAME_SPEC},
-		 *            {@link IContentType#FILE_EXTENSION_SPEC},
-		 *            {@link IContentType#FILE_PATTERN_SPEC}
-		 * @param isPredefined
-		 *            true if predefined, false is user-defined
+		 * @param specText     the spec text (filename, extension or pattern)
+		 * @param specType     one of {@link IContentType#FILE_NAME_SPEC},
+		 *                     {@link IContentType#FILE_EXTENSION_SPEC},
+		 *                     {@link IContentType#FILE_PATTERN_SPEC}
+		 * @param isPredefined true if predefined, false is user-defined
 		 * @param sortValue
 		 */
 		public Spec(String specText, int specType, boolean isPredefined, int sortValue) {
@@ -214,13 +210,12 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 			String[] prePatternFileSpecs = contentType
 					.getFileSpecs(IContentType.FILE_PATTERN_SPEC | IContentType.IGNORE_USER_DEFINED);
 
-			return createSpecs(userextfileSpecs, usernamefileSpecs, userPatternFileSpecs,
-					preextfileSpecs, prenamefileSpecs, prePatternFileSpecs);
+			return createSpecs(userextfileSpecs, usernamefileSpecs, userPatternFileSpecs, preextfileSpecs,
+					prenamefileSpecs, prePatternFileSpecs);
 		}
 
-		private Spec[] createSpecs(String[] userextfileSpecs,
-				String[] usernamefileSpecs, String[] userPatternFileSpecs, String[] preextfileSpecs,
-				String[] prenamefileSpecs, String[] prePatternFileSpecs) {
+		private Spec[] createSpecs(String[] userextfileSpecs, String[] usernamefileSpecs, String[] userPatternFileSpecs,
+				String[] preextfileSpecs, String[] prenamefileSpecs, String[] prePatternFileSpecs) {
 			List<Spec> returnValues = new ArrayList<>();
 			for (String usernamefileSpec : usernamefileSpecs) {
 				Spec spec = new Spec(usernamefileSpec, IContentType.FILE_NAME_SPEC, false, 0);
@@ -270,14 +265,14 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 
 		@Override
 		public Object[] getChildren(Object parentElement) {
-			List elements = new ArrayList();
+			List<IContentType> elements = new ArrayList<>();
 			IContentType baseType = (IContentType) parentElement;
 			for (IContentType contentType : manager.getAllContentTypes()) {
-				if (Util.equals(contentType.getBaseType(), baseType)) {
+				if (Objects.equals(contentType.getBaseType(), baseType)) {
 					elements.add(contentType);
 				}
 			}
-			return elements.toArray();
+			return elements.toArray(new IContentType[0]);
 		}
 
 		@Override
@@ -362,21 +357,16 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 			}
 			return new Object[0];
 		});
-		editorAssociationsViewer.setLabelProvider(new LabelProvider() {
-			@Override
-			public String getText(Object element) {
-				return ((IEditorDescriptor) element).getLabel();
-			}
+		editorAssociationsViewer.setLabelProvider(
+				createTextImageProvider(element -> ((IEditorDescriptor) element).getLabel(),
+						element -> {
+							Image res = ((IEditorDescriptor) element).getImageDescriptor().createImage();
+							if (res != null) {
+								disposableEditorIcons.add(res);
+							}
+							return res;
+						}));
 
-			@Override
-			public Image getImage(Object element) {
-				Image res = ((IEditorDescriptor) element).getImageDescriptor().createImage();
-				if (res != null) {
-					disposableEditorIcons.add(res);
-				}
-				return res;
-			}
-		});
 		Composite buttonsComposite = new Composite(composite, SWT.NONE);
 		buttonsComposite.setLayout(new GridLayout(1, false));
 		buttonsComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
@@ -444,8 +434,7 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 		charsetField.setLayoutData(data);
 		setButton = new Button(composite, SWT.PUSH);
 		setButton.setFont(parent.getFont());
-		setButton
-				.setText(WorkbenchMessages.ContentTypes_characterSetUpdateLabel);
+		setButton.setText(WorkbenchMessages.ContentTypes_characterSetUpdateLabel);
 		setButton.setEnabled(false);
 		setButtonLayoutData(setButton);
 		setButton.addSelectionListener(widgetSelectedAdapter(e -> {
@@ -457,8 +446,7 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 				getSelectedContentType().setDefaultCharset(text);
 				setButton.setEnabled(false);
 			} catch (CoreException e1) {
-				StatusUtil.handleStatus(e1.getStatus(), StatusManager.SHOW,
-						parent.getShell());
+				StatusUtil.handleStatus(e1.getStatus(), StatusManager.SHOW, parent.getShell());
 			}
 		}));
 
@@ -470,8 +458,7 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 				if (charset == null) {
 					charset = ""; //$NON-NLS-1$
 				}
-				setButton.setEnabled(!charset.equals(charsetField.getText())
-						&& getErrorMessage() == null);
+				setButton.setEnabled(!charset.equals(charsetField.getText()) && getErrorMessage() == null);
 			}
 		});
 
@@ -489,6 +476,7 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 
 	}
 
+	@SuppressWarnings("unchecked")
 	private void createFileAssociations(final Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
 		composite.setLayout(new GridLayout(2, false));
@@ -515,9 +503,7 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 				return;
 			}
 			boolean enabled = true;
-			List elements = selection.toList();
-			for (Iterator i = elements.iterator(); i.hasNext();) {
-				Spec spec = (Spec) i.next();
+			for (Spec spec : (Iterable<Spec>) selection) {
 				if (spec.isPredefined) {
 					enabled = false;
 				}
@@ -540,8 +526,7 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 			Shell shell = composite.getShell();
 			IContentType selectedContentType = getSelectedContentType();
 			ContentTypeFilenameAssociationDialog dialog = new ContentTypeFilenameAssociationDialog(shell,
-					WorkbenchMessages.ContentTypes_addDialog_title,
-					IWorkbenchHelpContextIds.FILE_EXTENSION_DIALOG,
+					WorkbenchMessages.ContentTypes_addDialog_title, IWorkbenchHelpContextIds.FILE_EXTENSION_DIALOG,
 					WorkbenchMessages.ContentTypes_addDialog_messageHeader,
 					WorkbenchMessages.ContentTypes_addDialog_message, WorkbenchMessages.ContentTypes_addDialog_label);
 			if (dialog.open() == Window.OK) {
@@ -566,8 +551,7 @@ public class ContentTypesPreferencePage extends PreferencePage implements
 			IContentType selectedContentType = getSelectedContentType();
 			Spec spec = getSelectedSpecs()[0];
 			ContentTypeFilenameAssociationDialog dialog = new ContentTypeFilenameAssociationDialog(shell,
-					WorkbenchMessages.ContentTypes_editDialog_title,
-					IWorkbenchHelpContextIds.FILE_EXTENSION_DIALOG,
+					WorkbenchMessages.ContentTypes_editDialog_title, IWorkbenchHelpContextIds.FILE_EXTENSION_DIALOG,
 					WorkbenchMessages.ContentTypes_editDialog_messageHeader,
 					WorkbenchMessages.ContentTypes_editDialog_message, WorkbenchMessages.ContentTypes_editDialog_label);
 			dialog.setInitialValue(spec.toString());

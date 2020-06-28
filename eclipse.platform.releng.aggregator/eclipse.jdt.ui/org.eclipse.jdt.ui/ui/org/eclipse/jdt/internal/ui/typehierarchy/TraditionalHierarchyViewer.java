@@ -94,13 +94,9 @@ public class TraditionalHierarchyViewer extends TypeHierarchyViewer {
 				IType input= hierarchy.getType();
 				if (input == null) {
 					IType[] classes= hierarchy.getRootClasses();
-					for (int i= 0; i < classes.length; i++) {
-						res.add(classes[i]);
-					}
+					res.addAll(Arrays.asList(classes));
 					IType[] interfaces= hierarchy.getRootInterfaces();
-					for (int i= 0; i < interfaces.length; i++) {
-						res.add(interfaces[i]);
-					}
+					res.addAll(Arrays.asList(interfaces));
 				} else {
 					if (Flags.isInterface(hierarchy.getCachedFlags(input))) {
 						res.add(input);
@@ -108,9 +104,9 @@ public class TraditionalHierarchyViewer extends TypeHierarchyViewer {
 						res.add(hierarchy.getSuperInterfaces(input)[0]);
 					} else {
 						IType[] roots= hierarchy.getRootClasses();
-						for (int i= 0; i < roots.length; i++) {
-							if (isObject(roots[i])) {
-								res.add(roots[i]);
+						for (IType t : roots) {
+							if (isObject(t)) {
+								res.add(t);
 								return;
 							}
 						}
@@ -129,25 +125,21 @@ public class TraditionalHierarchyViewer extends TypeHierarchyViewer {
 			if (hierarchy != null) {
 				IType[] types= hierarchy.getSubtypes(type);
 				if (isObject(type)) {
-					for (int i= 0; i < types.length; i++) {
-						IType curr= types[i];
-						if (!isAnonymousFromInterface(curr)) { // no anonymous classes on 'Object' -> will be children of interface
-							res.add(curr);
+					for (IType t : types) {
+						if (!isAnonymousFromInterface(t)) { // no anonymous classes on 'Object' -> will be children of interface
+							res.add(t);
 						}
 					}
 				} else {
 					boolean isHierarchyOnType= (hierarchy.getType() != null);
 					boolean isClass= !Flags.isInterface(hierarchy.getCachedFlags(type));
 					if (isClass || isHierarchyOnType) {
-						for (int i= 0; i < types.length; i++) {
-							res.add(types[i]);
-						}
+						res.addAll(Arrays.asList(types));
 					} else {
-						for (int i= 0; i < types.length; i++) {
-							IType curr= types[i];
+						for (IType t : types) {
 							// no classes implementing interfaces, only if anonymous
-							if (Flags.isInterface(hierarchy.getCachedFlags(curr)) || isAnonymous(curr)) {
-								res.add(curr);
+							if (Flags.isInterface(hierarchy.getCachedFlags(t)) || isAnonymous(t)) {
+								res.add(t);
 							}
 						}
 					}

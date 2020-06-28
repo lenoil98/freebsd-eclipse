@@ -42,9 +42,6 @@ public class RemoteContentProvider extends WorkbenchContentProvider {
 		cachedTrees = new HashMap<>();
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-	 */
 	@Override
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		if (viewer instanceof AbstractTreeViewer) {
@@ -100,15 +97,12 @@ public class RemoteContentProvider extends WorkbenchContentProvider {
 		return workingSet;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.model.WorkbenchContentProvider#getChildren(java.lang.Object)
-	 */
 	@Override
 	public Object[] getChildren(Object element) {
 		//check to see if we already have the children cached in the tree map
 		Object tree = cachedTrees.get(element);
 		if (tree != null) {
-		  	return ((RemoteFolderTree) tree).getChildren();
+			return ((RemoteFolderTree) tree).getChildren();
 		}
 		
 		if (manager != null) {
@@ -120,8 +114,7 @@ public class RemoteContentProvider extends WorkbenchContentProvider {
 			}
 		}
 		Object[] children = super.getChildren(element);
-		for (int i = 0; i < children.length; i++) {
-			Object object = children[i];
+		for (Object object : children) {
 			if (object instanceof CVSModelElement) 
 				((CVSModelElement)object).setWorkingSet(getWorkingSet());
 		}
@@ -130,8 +123,7 @@ public class RemoteContentProvider extends WorkbenchContentProvider {
 
 	public void cancelJobs(RepositoryRoot[] roots) {
 		if (manager != null) {
-			for (int i = 0; i < roots.length; i++) {
-				RepositoryRoot root = roots[i];
+			for (RepositoryRoot root : roots) {
 				cancelJobs(root.getRoot());
 			}
 		}

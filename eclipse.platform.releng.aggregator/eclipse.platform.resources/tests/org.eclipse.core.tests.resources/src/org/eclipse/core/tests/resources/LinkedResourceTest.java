@@ -18,8 +18,6 @@ import java.io.*;
 import java.io.File;
 import java.net.URI;
 import java.util.HashMap;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.filesystem.URIUtil;
@@ -68,21 +66,6 @@ public class LinkedResourceTest extends ResourceTest {
 	protected IPath nonExistingLocation;
 	protected IProject nonExistingProject;
 	protected IProject otherExistingProject;
-
-	public static Test suite() {
-		return new TestSuite(LinkedResourceTest.class);
-		//						TestSuite suite = new TestSuite();
-		//						suite.addTest(new LinkedResourceTest("testFindFilesForLocationCaseVariant"));
-		//						return suite;
-	}
-
-	public LinkedResourceTest() {
-		super();
-	}
-
-	public LinkedResourceTest(String name) {
-		super(name);
-	}
 
 	protected void doCleanup() throws Exception {
 		ensureExistsInWorkspace(new IResource[] {existingProject, otherExistingProject, closedProject, existingFolderInExistingProject, existingFolderInExistingFolder, existingFileInExistingProject}, true);
@@ -1043,10 +1026,10 @@ public class LinkedResourceTest extends ResourceTest {
 	public void testIsLinked() {
 		//initially nothing is linked
 		IResource[] toTest = new IResource[] {closedProject, existingFileInExistingProject, existingFolderInExistingFolder, existingFolderInExistingProject, existingProject, nonExistingFileInExistingFolder, nonExistingFileInExistingProject, nonExistingFileInOtherExistingProject, nonExistingFolderInExistingFolder, nonExistingFolderInExistingProject, nonExistingFolderInNonExistingFolder, nonExistingFolderInNonExistingProject, nonExistingFolderInOtherExistingProject, nonExistingProject, otherExistingProject};
-		for (int i = 0; i < toTest.length; i++) {
-			assertTrue("1.0 " + toTest[i], !toTest[i].isLinked());
-			assertTrue("1.1 " + toTest[i], !toTest[i].isLinked(IResource.NONE));
-			assertTrue("1.2 " + toTest[i], !toTest[i].isLinked(IResource.CHECK_ANCESTORS));
+		for (IResource t : toTest) {
+			assertTrue("1.0 " + t, !t.isLinked());
+			assertTrue("1.1 " + t, !t.isLinked(IResource.NONE));
+			assertTrue("1.2 " + t, !t.isLinked(IResource.CHECK_ANCESTORS));
 		}
 		// create a link
 		IFolder link = nonExistingFolderInExistingProject;
@@ -1074,10 +1057,10 @@ public class LinkedResourceTest extends ResourceTest {
 	public void testsetLinkLocation() {
 		// initially nothing is linked
 		IResource[] toTest = new IResource[] {closedProject, existingFileInExistingProject, existingFolderInExistingFolder, existingFolderInExistingProject, existingProject, nonExistingFileInExistingFolder, nonExistingFileInExistingProject, nonExistingFileInOtherExistingProject, nonExistingFolderInExistingFolder, nonExistingFolderInExistingProject, nonExistingFolderInNonExistingFolder, nonExistingFolderInNonExistingProject, nonExistingFolderInOtherExistingProject, nonExistingProject, otherExistingProject};
-		for (int i = 0; i < toTest.length; i++) {
-			assertTrue("1.0 " + toTest[i], !toTest[i].isLinked());
-			assertTrue("1.1 " + toTest[i], !toTest[i].isLinked(IResource.NONE));
-			assertTrue("1.2 " + toTest[i], !toTest[i].isLinked(IResource.CHECK_ANCESTORS));
+		for (IResource toTest1 : toTest) {
+			assertTrue("1.0 " + toTest1, !toTest1.isLinked());
+			assertTrue("1.1 " + toTest1, !toTest1.isLinked(IResource.NONE));
+			assertTrue("1.2 " + toTest1, !toTest1.isLinked(IResource.CHECK_ANCESTORS));
 		}
 		// create a link
 		IFolder link = nonExistingFolderInExistingProject;
@@ -1156,10 +1139,10 @@ public class LinkedResourceTest extends ResourceTest {
 	public void testsetLinkLocationPath() {
 		//initially nothing is linked
 		IResource[] toTest = new IResource[] {closedProject, existingFileInExistingProject, existingFolderInExistingFolder, existingFolderInExistingProject, existingProject, nonExistingFileInExistingFolder, nonExistingFileInExistingProject, nonExistingFileInOtherExistingProject, nonExistingFolderInExistingFolder, nonExistingFolderInExistingProject, nonExistingFolderInNonExistingFolder, nonExistingFolderInNonExistingProject, nonExistingFolderInOtherExistingProject, nonExistingProject, otherExistingProject};
-		for (int i = 0; i < toTest.length; i++) {
-			assertTrue("1.0 " + toTest[i], !toTest[i].isLinked());
-			assertTrue("1.1 " + toTest[i], !toTest[i].isLinked(IResource.NONE));
-			assertTrue("1.2 " + toTest[i], !toTest[i].isLinked(IResource.CHECK_ANCESTORS));
+		for (IResource toTest1 : toTest) {
+			assertTrue("1.0 " + toTest1, !toTest1.isLinked());
+			assertTrue("1.1 " + toTest1, !toTest1.isLinked(IResource.NONE));
+			assertTrue("1.2 " + toTest1, !toTest1.isLinked(IResource.CHECK_ANCESTORS));
 		}
 		//create a link
 		IFolder link = nonExistingFolderInExistingProject;
@@ -1213,9 +1196,7 @@ public class LinkedResourceTest extends ResourceTest {
 			ensureExistsInWorkspace(top, true);
 			linkedFolder.createLink(folderStore.toURI(), IResource.NONE, getMonitor());
 			linkedFile.createLink(fileStore.toURI(), IResource.NONE, getMonitor());
-		} catch (CoreException e) {
-			fail("4.99", e);
-		} catch (IOException e) {
+		} catch (CoreException | IOException e) {
 			fail("4.99", e);
 		}
 
@@ -1876,7 +1857,7 @@ public class LinkedResourceTest extends ResourceTest {
 
 			// there should be an entry in .project for the linked file
 			String string = readStringInFileSystem(existingProject.getFile(".project"));
-			assertTrue("3.0", string.indexOf(linkedFile.getProjectRelativePath().toString()) != -1);
+			assertTrue("3.0", string.contains(linkedFile.getProjectRelativePath().toString()));
 
 			// move the folder
 			try {
@@ -1995,7 +1976,7 @@ public class LinkedResourceTest extends ResourceTest {
 	}
 
 	/**
-	 * Create a project with a linked resource at depth > 2, and refresh it.
+	 * Create a project with a linked resource at depth &gt; 2, and refresh it.
 	 */
 	public void testRefreshDeepLink() {
 		IFolder link = nonExistingFolderInExistingFolder;

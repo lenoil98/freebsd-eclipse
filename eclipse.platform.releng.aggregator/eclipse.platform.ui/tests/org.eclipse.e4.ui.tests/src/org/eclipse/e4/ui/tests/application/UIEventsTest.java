@@ -47,7 +47,6 @@ import org.eclipse.e4.ui.workbench.UIEvents.UILabel;
 import org.eclipse.e4.ui.workbench.UIEvents.Window;
 import org.eclipse.emf.common.notify.Notifier;
 import org.junit.Test;
-import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 
 public class UIEventsTest extends HeadlessApplicationElementTest {
@@ -59,17 +58,14 @@ public class UIEventsTest extends HeadlessApplicationElementTest {
 		String[] attIds;
 		boolean[] hasFired;
 
-		EventHandler attListener = new EventHandler() {
-			@Override
-			public void handleEvent(Event event) {
-				assertTrue(event.getTopic().equals(topic),
-						"Incorrect Topic: " + event.getTopic()); //$NON-NLS-1$
+		EventHandler attListener = event -> {
+			assertTrue(event.getTopic().equals(topic),
+					"Incorrect Topic: " + event.getTopic()); //$NON-NLS-1$
 
-				String attId = (String) event.getProperty(EventTags.ATTNAME);
-				int attIndex = getAttIndex(attId);
-				assertTrue(attIndex >= 0, "Unknown Attribite: " + attId); //$NON-NLS-1$
-				hasFired[attIndex] = true;
-			}
+			String attId = (String) event.getProperty(EventTags.ATTNAME);
+			int attIndex = getAttIndex(attId);
+			assertTrue(attIndex >= 0, "Unknown Attribite: " + attId); //$NON-NLS-1$
+			hasFired[attIndex] = true;
 		};
 
 		public EventTester(String name, String topic, String[] attIds,
@@ -114,7 +110,7 @@ public class UIEventsTest extends HeadlessApplicationElementTest {
 		}
 
 		public String[] getAttIds(boolean fired) {
-			List<String> atts = new ArrayList<String>();
+			List<String> atts = new ArrayList<>();
 			for (int i = 0; i < hasFired.length; i++) {
 				if (hasFired[i] == fired)
 					atts.add(attIds[i]);
@@ -348,12 +344,7 @@ public class UIEventsTest extends HeadlessApplicationElementTest {
 		assertFalse("child context has same IEventBroker", appEB == childEB);
 
 		final boolean seen[] = { false };
-		childEB.subscribe(testTopic, new EventHandler() {
-			@Override
-			public void handleEvent(Event event) {
-				seen[0] = true;
-			}
-		});
+		childEB.subscribe(testTopic, event -> seen[0] = true);
 
 		// ensure the EBs are wired up
 		assertFalse(seen[0]);
@@ -382,7 +373,7 @@ public class UIEventsTest extends HeadlessApplicationElementTest {
 	 * @param tester
 	 */
 	private void ensureNoCrossTalk(EventTester[] allTesters, EventTester skipMe) {
-		List<EventTester> badTesters = new ArrayList<EventTester>();
+		List<EventTester> badTesters = new ArrayList<>();
 		for (EventTester t : allTesters) {
 			if (t.equals(skipMe))
 				continue;
@@ -405,8 +396,8 @@ public class UIEventsTest extends HeadlessApplicationElementTest {
 		String[] unfiredIds = tester.getAttIds(false);
 		if (unfiredIds.length > 0) {
 			StringBuilder msg = new StringBuilder("No event fired:").append(unfiredIds);
-			for (int i = 0; i < unfiredIds.length; i++) {
-				msg.append(' ').append(unfiredIds[i]);
+			for (String unfiredId : unfiredIds) {
+				msg.append(' ').append(unfiredId);
 			}
 			fail(msg.toString());
 		}

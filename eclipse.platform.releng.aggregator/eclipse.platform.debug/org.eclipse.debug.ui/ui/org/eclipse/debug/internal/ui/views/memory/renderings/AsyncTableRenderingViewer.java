@@ -58,6 +58,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.UIJob;
 
 public class AsyncTableRenderingViewer extends AsyncVirtualContentTableViewer {
@@ -167,7 +168,7 @@ public class AsyncTableRenderingViewer extends AsyncVirtualContentTableViewer {
 
 		fTableCursor.addKeyListener(fCursorKeyAdapter);
 
-		fCursorTraverseListener = e -> handleCursorTraverseEvt(e);
+		fCursorTraverseListener = this::handleCursorTraverseEvt;
 
 		fTableCursor.addTraverseListener(fCursorTraverseListener);
 
@@ -310,7 +311,7 @@ public class AsyncTableRenderingViewer extends AsyncVirtualContentTableViewer {
 	private synchronized void attemptSetKeySelection()
 	{
 		if (fPendingSelection != null) {
-            doAttemptSetKeySelection(fPendingSelection);
+			doAttemptSetKeySelection(fPendingSelection);
 		}
 
 	}
@@ -576,7 +577,7 @@ public class AsyncTableRenderingViewer extends AsyncVirtualContentTableViewer {
 	public void showTableCursor(final boolean show)
 	{
 
-		Display display = DebugUIPlugin.getDefault().getWorkbench().getDisplay();
+		Display display = PlatformUI.getWorkbench().getDisplay();
 		if (Thread.currentThread() == display.getThread())
 		{
 			if (!fTableCursor.isDisposed())
@@ -613,9 +614,7 @@ public class AsyncTableRenderingViewer extends AsyncVirtualContentTableViewer {
 		int colNum = -1;
 		int numCol = getColumnProperties().length;
 
-		for (int j=0; j<tableItems.length; j++)
-		{
-			TableItem item = tableItems[j];
+		for (TableItem item : tableItems) {
 			if (item.getData() != null)
 			{
 				for (int i=0; i<numCol; i++)
@@ -898,11 +897,10 @@ public class AsyncTableRenderingViewer extends AsyncVirtualContentTableViewer {
 		return fTableCursor;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ContentViewer#getLabelProvider()
-	 * Implemented minimum to work with PrintTableRendering action.
-	 * This is not a real table labe provider, only goes to the table
-	 * to get the text at the specified row and column.
+	/*
+	 * Implemented minimum to work with PrintTableRendering action. This is not a
+	 * real table labe provider, only goes to the table to get the text at the
+	 * specified row and column.
 	 */
 	@Override
 	public IBaseLabelProvider getLabelProvider() {
@@ -1016,9 +1014,6 @@ public class AsyncTableRenderingViewer extends AsyncVirtualContentTableViewer {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.provisional.viewers.AsynchronousViewer#getModel()
-	 */
 	@Override
 	public AsynchronousModel getModel() {
 		return super.getModel();
@@ -1032,9 +1027,13 @@ public class AsyncTableRenderingViewer extends AsyncVirtualContentTableViewer {
 
 	@Override
 	protected void updateComplete(IStatusMonitor monitor) {
+		if (fTableCursor.isDisposed()) {
+			return;
+		}
+
 		super.updateComplete(monitor);
 
-		if (!hasPendingUpdates() && !fTableCursor.isDisposed())
+		if (!hasPendingUpdates())
 		{
 			attemptSetKeySelection();
 			fTableCursor.redraw();

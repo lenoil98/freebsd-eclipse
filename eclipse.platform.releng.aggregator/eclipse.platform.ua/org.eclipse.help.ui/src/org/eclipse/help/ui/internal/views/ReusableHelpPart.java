@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.ui.internal.views;
 
@@ -17,6 +18,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -99,8 +101,6 @@ import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ILayoutExtension;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
-
-import com.ibm.icu.text.Collator;
 
 public class ReusableHelpPart implements IHelpUIConstants,
 		IActivityManagerListener {
@@ -193,7 +193,7 @@ public class ReusableHelpPart implements IHelpUIConstants,
 
 		@Override
 		public void run() {
-			BusyIndicator.showWhile(getControl().getDisplay(), () -> busyRun());
+			BusyIndicator.showWhile(getControl().getDisplay(), this::busyRun);
 		}
 
 		protected abstract void busyRun();
@@ -331,8 +331,8 @@ public class ReusableHelpPart implements IHelpUIConstants,
 					subMenuManager = new SubMenuManager(
 						ReusableHelpPart.this.menuManager);
 				} else {
-			        subMenuManager = null;
-			    }
+					subMenuManager = null;
+				}
 			}
 		}
 
@@ -352,7 +352,7 @@ public class ReusableHelpPart implements IHelpUIConstants,
 				try {
 					((SubToolBarManager) subToolBarManager).disposeManager();
 					if (subMenuManager != null) {
-					    ((SubMenuManager)subMenuManager).disposeManager();
+						((SubMenuManager)subMenuManager).disposeManager();
 					}
 				} catch (RuntimeException e) {
 					// Bug 218079
@@ -535,7 +535,7 @@ public class ReusableHelpPart implements IHelpUIConstants,
 			} else {
 				((SubToolBarManager) subToolBarManager).setVisible(visible);
 				if (subMenuManager != null) {
-				    ((SubMenuManager)subMenuManager).setVisible(visible);
+					((SubMenuManager)subMenuManager).setVisible(visible);
 				}
 				ReusableHelpPart.this.toolBarManager.update(true);
 				getControl().getParent().layout();
@@ -574,8 +574,8 @@ public class ReusableHelpPart implements IHelpUIConstants,
 				PartRec rec = partRecs.get(focusPart);
 				String partId = rec.part.getId();
 				if ( partId != IHelpUIConstants.HV_SEE_ALSO && partId != IHelpUIConstants.HV_MISSING_CONTENT) {
-				    rec.part.setFocus();
-				    return;
+					rec.part.setFocus();
+					return;
 				}
 			}
 		}
@@ -1013,7 +1013,7 @@ public class ReusableHelpPart implements IHelpUIConstants,
 		mform.getForm().setDelayedReflow(false);
 		toolkit.decorateFormHeading(mform.getForm().getForm());
 		MenuManager manager = new MenuManager();
-		IMenuListener listener = manager1 -> contextMenuAboutToShow(manager1);
+		IMenuListener listener = this::contextMenuAboutToShow;
 		manager.setRemoveAllWhenShown(true);
 		manager.addMenuListener(listener);
 		Menu contextMenu = manager.createContextMenu(form.getForm());
@@ -1127,8 +1127,8 @@ public class ReusableHelpPart implements IHelpUIConstants,
 	}
 
 	public boolean isMonitoringContextHelp() {
-		return currentPage != null
-				&& currentPage.getId().equals(HV_CONTEXT_HELP_PAGE);
+		return currentPage != null && (currentPage.getId().equals(HV_CONTEXT_HELP_PAGE)
+				|| currentPage.getId().equals(HV_BROWSER_PAGE));
 	}
 
 	public Control getControl() {
@@ -1186,8 +1186,22 @@ public class ReusableHelpPart implements IHelpUIConstants,
 	 * @param isExplicitRequest is true if this is the result of a direct user request such as
 	 * pressing F1 and false if it is in response to a focus change listener
 	 */
-	public void update(IContextProvider provider, IContext context, IWorkbenchPart part,
-			Control control, boolean isExplicitRequest) {
+	public void update(IContextProvider provider, IContext context, IWorkbenchPart part, Control control,
+			boolean isExplicitRequest) {
+		IContext realContext = context;
+		if (provider != null) {
+			realContext = provider.getContext(control);
+		}
+		if (realContext != null) {
+			String contextText = realContext.getText();
+			IHelpResource[] topics = realContext.getRelatedTopics();
+			if (contextText == null && topics.length == 1) {
+				showURL(topics[0].getHref());
+				return;
+			}
+		}
+		// Ensure that context help is currently showing
+		showPage(IHelpUIConstants.HV_CONTEXT_HELP_PAGE);
 		mform.setInput(new ContextHelpProviderInput(provider, context, control, part, isExplicitRequest));
 	}
 
@@ -1331,12 +1345,12 @@ public class ReusableHelpPart implements IHelpUIConstants,
 				if (aurl.endsWith("&noframes=true") || aurl.endsWith("?noframes=true")) //$NON-NLS-1$ //$NON-NLS-2$
 					aurl = aurl.substring(0, aurl.length() - 14);
 				DefaultHelpUI.showInWorkbenchBrowser(aurl, false);
-                */
+				*/
 
-			    PlatformUI.getWorkbench().getHelpSystem().displayHelpResource(aurl);
+				PlatformUI.getWorkbench().getHelpSystem().displayHelpResource(aurl);
 
 			} catch (Exception e) {
-				HelpUIPlugin.logError("Error opening browser", e); //$NON-NLS-1$
+				Platform.getLog(getClass()).error("Error opening browser", e); //$NON-NLS-1$
 			}
 		}
 	}
@@ -1354,7 +1368,7 @@ public class ReusableHelpPart implements IHelpUIConstants,
 	}
 
 	public boolean isHelpResource(String url) {
-		if (url == null || url.indexOf("://") == -1) //$NON-NLS-1$
+		if (url == null || !url.contains("://")) //$NON-NLS-1$
 			return true;
 		return false;
 	}

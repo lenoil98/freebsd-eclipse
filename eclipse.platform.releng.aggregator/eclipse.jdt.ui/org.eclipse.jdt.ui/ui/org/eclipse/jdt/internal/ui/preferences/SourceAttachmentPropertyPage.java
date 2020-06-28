@@ -123,7 +123,8 @@ public class SourceAttachmentPropertyPage extends PropertyPage implements IStatu
 					return createMessageContent(composite, Messages.format(PreferencesMessages.SourceAttachmentPropertyPage_read_only, containerName), fRoot);
 				}
 				IStatus attributeStatus= initializer.getAttributeStatus(containerPath, jproject, IClasspathAttribute.SOURCE_ATTACHMENT_ENCODING);
-				canEditEncoding= !(attributeStatus.getCode() == ClasspathContainerInitializer.ATTRIBUTE_NOT_SUPPORTED || attributeStatus.getCode() == ClasspathContainerInitializer.ATTRIBUTE_READ_ONLY);
+				canEditEncoding= (attributeStatus.getCode() != ClasspathContainerInitializer.ATTRIBUTE_NOT_SUPPORTED)
+						&& (attributeStatus.getCode() != ClasspathContainerInitializer.ATTRIBUTE_READ_ONLY);
 
 				entry= JavaModelUtil.findEntryInContainer(container, fRoot.getPath());
 			}
@@ -151,11 +152,11 @@ public class SourceAttachmentPropertyPage extends PropertyPage implements IStatu
 
 		Label label= new Label(inner, SWT.LEFT + SWT.WRAP);
 		label.setLayoutData(gd);
-		
+
 		try {
 			if (root != null) {
 				message= message + "\n\n" + PreferencesMessages.SourceAttachmentPropertyPage_location_path; //$NON-NLS-1$
-				
+
 				Text location= new Text(inner, SWT.READ_ONLY | SWT.WRAP);
 				SWTUtil.fixReadonlyTextBackground(location);
 				gd= new GridData(GridData.HORIZONTAL_ALIGN_FILL);
@@ -171,7 +172,7 @@ public class SourceAttachmentPropertyPage extends PropertyPage implements IStatu
 			JavaPlugin.log(e);
 			// don't show location
 		}
-		
+
 		label.setText(message);
 		return inner;
 	}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2012 IBM Corporation and others.
+ * Copyright (c) 2005, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -32,6 +32,7 @@ import org.eclipse.jdt.internal.corext.template.java.SignatureUtil;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.javaeditor.EditorUtility;
+import org.eclipse.jdt.internal.ui.text.CompletionTimeoutProgressMonitor;
 import org.eclipse.jdt.internal.ui.text.java.ContentAssistHistory.RHSHistory;
 
 /**
@@ -58,7 +59,6 @@ public class JavaContentAssistInvocationContext extends ContentAssistInvocationC
 
 	private IJavaCompletionProposal[] fKeywordProposals= null;
 	private CompletionContext fCoreContext= null;
-
 
 	/**
 	 * Creates a new context.
@@ -87,7 +87,7 @@ public class JavaContentAssistInvocationContext extends ContentAssistInvocationC
 
 	/**
 	 * Creates a new context.
-	 * 
+	 *
 	 * @param javaProject the Java project
 	 * @since 3.9
 	 */
@@ -100,18 +100,19 @@ public class JavaContentAssistInvocationContext extends ContentAssistInvocationC
 	/**
 	 * Returns the compilation unit that content assist is invoked in, <code>null</code> if there
 	 * is none.
-	 * 
+	 *
 	 * @return the compilation unit that content assist is invoked in, possibly <code>null</code>
 	 */
 	public ICompilationUnit getCompilationUnit() {
 		if (!fCUComputed) {
 			fCUComputed= true;
-			if (fCollector != null)
+			if (fCollector != null) {
 				fCU= fCollector.getCompilationUnit();
-			else {
+			} else {
 				IJavaElement je= EditorUtility.getEditorInputJavaElement(fEditor, false);
-				if (je instanceof ICompilationUnit)
+				if (je instanceof ICompilationUnit) {
 					fCU= (ICompilationUnit)je;
+				}
 			}
 		}
 		return fCU;
@@ -167,14 +168,16 @@ public class JavaContentAssistInvocationContext extends ContentAssistInvocationC
 		if (fCollector != null) {
 			CompletionContext context= fCollector.getContext();
 			if (context != null) {
-				if (fCoreContext == null)
+				if (fCoreContext == null) {
 					fCoreContext= context;
+				}
 				return context;
 			}
 		}
 
-		if (fCoreContext == null)
+		if (fCoreContext == null) {
 			computeKeywordsAndContext(); // Retrieve the context ourselves
+		}
 
 		return fCoreContext;
 	}
@@ -212,8 +215,9 @@ public class JavaContentAssistInvocationContext extends ContentAssistInvocationC
 					fRHSHistory= JavaPlugin.getDefault().getContentAssistHistory().getHistory(expected);
 				}
 			}
-			if (fRHSHistory == null)
+			if (fRHSHistory == null) {
 				fRHSHistory= JavaPlugin.getDefault().getContentAssistHistory().getHistory(null);
+			}
 		}
 		return fRHSHistory;
 	}
@@ -255,10 +259,11 @@ public class JavaContentAssistInvocationContext extends ContentAssistInvocationC
 	 */
 	public CompletionProposalLabelProvider getLabelProvider() {
 		if (fLabelProvider == null) {
-			if (fCollector != null)
+			if (fCollector != null) {
 				fLabelProvider= fCollector.getLabelProvider();
-			else
+			} else {
 				fLabelProvider= new CompletionProposalLabelProvider();
+			}
 		}
 
 		return fLabelProvider;
@@ -289,8 +294,9 @@ public class JavaContentAssistInvocationContext extends ContentAssistInvocationC
 	private void computeKeywordsAndContext() {
 		ICompilationUnit cu= getCompilationUnit();
 		if (cu == null) {
-			if (fKeywordProposals == null)
+			if (fKeywordProposals == null) {
 				fKeywordProposals= new IJavaCompletionProposal[0];
+			}
 			return;
 		}
 
@@ -298,18 +304,23 @@ public class JavaContentAssistInvocationContext extends ContentAssistInvocationC
 		collector.setIgnored(CompletionProposal.KEYWORD, false);
 
 		try {
-			cu.codeComplete(getInvocationOffset(), collector);
-			if (fCoreContext == null)
+			cu.codeComplete(getInvocationOffset(), collector, new CompletionTimeoutProgressMonitor());
+			if (fCoreContext == null) {
 				fCoreContext= collector.getContext();
-			if (fKeywordProposals == null)
+			}
+			if (fKeywordProposals == null) {
 				fKeywordProposals= collector.getKeywordCompletionProposals();
-			if (fLabelProvider == null)
+			}
+			if (fLabelProvider == null) {
 				fLabelProvider= collector.getLabelProvider();
+			}
 		} catch (JavaModelException x) {
-			if (!x.isDoesNotExist() || cu.getJavaProject() == null || cu.getJavaProject().isOnClasspath(cu))
+			if (!x.isDoesNotExist() || cu.getJavaProject() == null || cu.getJavaProject().isOnClasspath(cu)) {
 				JavaPlugin.log(x);
-			if (fKeywordProposals == null)
+			}
+			if (fKeywordProposals == null) {
 				fKeywordProposals= new IJavaCompletionProposal[0];
+			}
 		}
 	}
 

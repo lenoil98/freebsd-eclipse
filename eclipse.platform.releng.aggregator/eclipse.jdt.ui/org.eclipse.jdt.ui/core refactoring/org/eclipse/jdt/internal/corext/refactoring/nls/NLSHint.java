@@ -87,8 +87,7 @@ public class NLSHint {
 				int rawLinesLength= rawLines.length;
 				int eclipseLinesLength= eclipseNLSLines.size();
 				lines= new NLSLine[rawLinesLength + eclipseLinesLength];
-				for (int i= 0; i < rawLinesLength; i++)
-					lines[i]= rawLines[i];
+				System.arraycopy(rawLines, 0, lines, 0, rawLinesLength);
 				for (int i= 0; i < eclipseLinesLength; i++)
 					lines[i+rawLinesLength]= eclipseNLSLines.get(i);
 			}
@@ -210,10 +209,8 @@ public class NLSHint {
 	private NLSSubstitution[] createSubstitutions(NLSLine[] lines, Properties props, CompilationUnit astRoot) {
 		List<NLSSubstitution> result= new ArrayList<>();
 
-		for (int i= 0; i < lines.length; i++) {
-			NLSElement[] elements= lines[i].getElements();
-			for (int j= 0; j < elements.length; j++) {
-				NLSElement nlsElement= elements[j];
+		for (NLSLine line : lines) {
+			for (NLSElement nlsElement : line.getElements()) {
 				if (nlsElement.hasTag()) {
 					AccessorClassReference accessorClassReference= NLSHintHelper.getAccessorClassReference(astRoot, nlsElement);
 					if (accessorClassReference == null) {
@@ -236,10 +233,8 @@ public class NLSHint {
 	}
 
 	private static AccessorClassReference findFirstAccessorReference(NLSLine[] lines, CompilationUnit astRoot) {
-		for (int i= 0; i < lines.length; i++) {
-			NLSElement[] elements= lines[i].getElements();
-			for (int j= 0; j < elements.length; j++) {
-				NLSElement nlsElement= elements[j];
+		for (NLSLine line : lines) {
+			for (NLSElement nlsElement : line.getElements()) {
 				if (nlsElement.hasTag()) {
 					AccessorClassReference accessorClassReference= NLSHintHelper.getAccessorClassReference(astRoot, nlsElement);
 					if (accessorClassReference != null) {
@@ -248,12 +243,9 @@ public class NLSHint {
 				}
 			}
 		}
-
 		// try to find a access with missing //non-nls tag (bug 75155)
-		for (int i= 0; i < lines.length; i++) {
-			NLSElement[] elements= lines[i].getElements();
-			for (int j= 0; j < elements.length; j++) {
-				NLSElement nlsElement= elements[j];
+		for (NLSLine line : lines) {
+			for (NLSElement nlsElement : line.getElements()) {
 				if (!nlsElement.hasTag()) {
 					AccessorClassReference accessorClassReference= NLSHintHelper.getAccessorClassReference(astRoot, nlsElement);
 					if (accessorClassReference != null) {

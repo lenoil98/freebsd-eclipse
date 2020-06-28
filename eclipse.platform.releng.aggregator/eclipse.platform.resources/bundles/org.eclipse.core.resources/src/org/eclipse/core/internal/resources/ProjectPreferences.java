@@ -469,9 +469,11 @@ public class ProjectPreferences extends EclipsePreferences {
 					List<String> addedNames = Arrays.asList(internalChildNames());
 					String[] names = computeChildren();
 					// add names only for nodes that were not added previously
-					for (int i = 0; i < names.length; i++)
-						if (!addedNames.contains(names[i]))
-							addChild(names[i], null);
+					for (String name : names) {
+						if (!addedNames.contains(name)) {
+							addChild(name, null);
+						}
+					}
 				}
 			} finally {
 				// mark as initialized so that subsequent project opening will not initialize preferences again
@@ -615,7 +617,7 @@ public class ProjectPreferences extends EclipsePreferences {
 					table.put(VERSION_KEY, VERSION_VALUE);
 					// print the table to a string and remove the timestamp that Properties#store always adds
 					String s = removeTimestampFromTable(table);
-					String systemLineSeparator = System.getProperty("line.separator"); //$NON-NLS-1$
+					String systemLineSeparator = System.lineSeparator();
 					String fileLineSeparator = FileUtil.getLineSeparator(fileInWorkspace);
 					if (!systemLineSeparator.equals(fileLineSeparator))
 						s = s.replaceAll(systemLineSeparator, fileLineSeparator);

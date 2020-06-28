@@ -94,9 +94,18 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
 	public List<MPerspective> getChildren() {
 		if (children == null) {
-			children = new EObjectContainmentWithInverseEList<MPerspective>(MPerspective.class, this, AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN, UiPackageImpl.UI_ELEMENT__PARENT) { private static final long serialVersionUID = 1L; @Override public Class<?> getInverseFeatureClass() { return MUIElement.class; } };
+			children = new EObjectContainmentWithInverseEList<MPerspective>(MPerspective.class, this,
+					AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN, UiPackageImpl.UI_ELEMENT__PARENT) {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public Class<?> getInverseFeatureClass() {
+					return MUIElement.class;
+				}
+			};
 		}
 		return children;
 	}
@@ -106,13 +115,16 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
 	public MPerspective getSelectedElement() {
-		if (selectedElement != null && ((EObject)selectedElement).eIsProxy()) {
-			InternalEObject oldSelectedElement = (InternalEObject)selectedElement;
-			selectedElement = (MPerspective)eResolveProxy(oldSelectedElement);
+		if (selectedElement != null && ((EObject) selectedElement).eIsProxy()) {
+			InternalEObject oldSelectedElement = (InternalEObject) selectedElement;
+			selectedElement = (MPerspective) eResolveProxy(oldSelectedElement);
 			if (selectedElement != oldSelectedElement) {
 				if (eNotificationRequired())
-					eNotify(new ENotificationImpl(this, Notification.RESOLVE, AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT, oldSelectedElement, selectedElement));
+					eNotify(new ENotificationImpl(this, Notification.RESOLVE,
+							AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT, oldSelectedElement,
+							selectedElement));
 			}
 		}
 		return selectedElement;
@@ -132,11 +144,13 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
 	public void setSelectedElement(MPerspective newSelectedElement) {
 		MPerspective oldSelectedElement = selectedElement;
 		selectedElement = newSelectedElement;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT, oldSelectedElement, selectedElement));
+			eNotify(new ENotificationImpl(this, Notification.SET,
+					AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT, oldSelectedElement, selectedElement));
 	}
 
 	/**
@@ -148,10 +162,11 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	@Override
 	public NotificationChain eInverseAdd(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
-				return ((InternalEList<InternalEObject>)(InternalEList<?>)getChildren()).basicAdd(otherEnd, msgs);
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
+			return ((InternalEList<InternalEObject>) (InternalEList<?>) getChildren()).basicAdd(otherEnd, msgs);
+		default:
+			return super.eInverseAdd(otherEnd, featureID, msgs);
 		}
-		return super.eInverseAdd(otherEnd, featureID, msgs);
 	}
 
 	/**
@@ -162,10 +177,11 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
-				return ((InternalEList<?>)getChildren()).basicRemove(otherEnd, msgs);
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
+			return ((InternalEList<?>) getChildren()).basicRemove(otherEnd, msgs);
+		default:
+			return super.eInverseRemove(otherEnd, featureID, msgs);
 		}
-		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
 
 	/**
@@ -176,13 +192,15 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
-				return getChildren();
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT:
-				if (resolve) return getSelectedElement();
-				return basicGetSelectedElement();
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
+			return getChildren();
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT:
+			if (resolve)
+				return getSelectedElement();
+			return basicGetSelectedElement();
+		default:
+			return super.eGet(featureID, resolve, coreType);
 		}
-		return super.eGet(featureID, resolve, coreType);
 	}
 
 	/**
@@ -194,15 +212,17 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
-				getChildren().clear();
-				getChildren().addAll((Collection<? extends MPerspective>)newValue);
-				return;
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT:
-				setSelectedElement((MPerspective)newValue);
-				return;
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
+			getChildren().clear();
+			getChildren().addAll((Collection<? extends MPerspective>) newValue);
+			return;
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT:
+			setSelectedElement((MPerspective) newValue);
+			return;
+		default:
+			super.eSet(featureID, newValue);
+			return;
 		}
-		super.eSet(featureID, newValue);
 	}
 
 	/**
@@ -213,14 +233,16 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
-				getChildren().clear();
-				return;
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT:
-				setSelectedElement((MPerspective)null);
-				return;
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
+			getChildren().clear();
+			return;
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT:
+			setSelectedElement((MPerspective) null);
+			return;
+		default:
+			super.eUnset(featureID);
+			return;
 		}
-		super.eUnset(featureID);
 	}
 
 	/**
@@ -231,12 +253,13 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
-				return children != null && !children.isEmpty();
-			case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT:
-				return selectedElement != null;
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
+			return children != null && !children.isEmpty();
+		case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT:
+			return selectedElement != null;
+		default:
+			return super.eIsSet(featureID);
 		}
-		return super.eIsSet(featureID);
 	}
 
 	/**
@@ -248,24 +271,30 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	public int eBaseStructuralFeatureID(int derivedFeatureID, Class<?> baseClass) {
 		if (baseClass == MElementContainer.class) {
 			switch (derivedFeatureID) {
-				case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN: return UiPackageImpl.ELEMENT_CONTAINER__CHILDREN;
-				case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT: return UiPackageImpl.ELEMENT_CONTAINER__SELECTED_ELEMENT;
-				default: return -1;
+			case AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN:
+				return UiPackageImpl.ELEMENT_CONTAINER__CHILDREN;
+			case AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT:
+				return UiPackageImpl.ELEMENT_CONTAINER__SELECTED_ELEMENT;
+			default:
+				return -1;
 			}
 		}
 		if (baseClass == MGenericStack.class) {
 			switch (derivedFeatureID) {
-				default: return -1;
+			default:
+				return -1;
 			}
 		}
 		if (baseClass == MPartSashContainerElement.class) {
 			switch (derivedFeatureID) {
-				default: return -1;
+			default:
+				return -1;
 			}
 		}
 		if (baseClass == MWindowElement.class) {
 			switch (derivedFeatureID) {
-				default: return -1;
+			default:
+				return -1;
 			}
 		}
 		return super.eBaseStructuralFeatureID(derivedFeatureID, baseClass);
@@ -280,24 +309,30 @@ public class PerspectiveStackImpl extends UIElementImpl implements MPerspectiveS
 	public int eDerivedStructuralFeatureID(int baseFeatureID, Class<?> baseClass) {
 		if (baseClass == MElementContainer.class) {
 			switch (baseFeatureID) {
-				case UiPackageImpl.ELEMENT_CONTAINER__CHILDREN: return AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN;
-				case UiPackageImpl.ELEMENT_CONTAINER__SELECTED_ELEMENT: return AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT;
-				default: return -1;
+			case UiPackageImpl.ELEMENT_CONTAINER__CHILDREN:
+				return AdvancedPackageImpl.PERSPECTIVE_STACK__CHILDREN;
+			case UiPackageImpl.ELEMENT_CONTAINER__SELECTED_ELEMENT:
+				return AdvancedPackageImpl.PERSPECTIVE_STACK__SELECTED_ELEMENT;
+			default:
+				return -1;
 			}
 		}
 		if (baseClass == MGenericStack.class) {
 			switch (baseFeatureID) {
-				default: return -1;
+			default:
+				return -1;
 			}
 		}
 		if (baseClass == MPartSashContainerElement.class) {
 			switch (baseFeatureID) {
-				default: return -1;
+			default:
+				return -1;
 			}
 		}
 		if (baseClass == MWindowElement.class) {
 			switch (baseFeatureID) {
-				default: return -1;
+			default:
+				return -1;
 			}
 		}
 		return super.eDerivedStructuralFeatureID(baseFeatureID, baseClass);

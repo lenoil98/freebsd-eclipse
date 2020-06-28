@@ -84,32 +84,29 @@ public class UndoDocumentChange extends Change {
 
 	private UndoEdit performEdits() throws BadLocationException, MalformedTreeException {
 		ITextFileBufferManager fileBufferManager= FileBuffers.getTextFileBufferManager();
-		
+
 		ITextFileBuffer fileBuffer= fileBufferManager.getTextFileBuffer(fDocument);
 		if (fileBuffer == null || ! fileBuffer.isSynchronizationContextRequested()) {
 			return fUndo.apply(fDocument, TextEdit.CREATE_UNDO);
 		}
-		
+
 		/** The lock for waiting for computation in the UI thread to complete. */
 		final Lock completionLock= new Lock();
 		final UndoEdit[] result= new UndoEdit[1];
 		final BadLocationException[] exception= new BadLocationException[1];
-		Runnable runnable= new Runnable() {
-			@Override
-			public void run() {
-				synchronized (completionLock) {
-					try {
-						result[0]= fUndo.apply(fDocument, TextEdit.CREATE_UNDO);
-					} catch (BadLocationException e) {
-						exception[0]= e;
-					} finally {
-						completionLock.fDone= true;
-						completionLock.notifyAll();
-					}
+		Runnable runnable= () -> {
+			synchronized (completionLock) {
+				try {
+					result[0]= fUndo.apply(fDocument, TextEdit.CREATE_UNDO);
+				} catch (BadLocationException e) {
+					exception[0]= e;
+				} finally {
+					completionLock.fDone= true;
+					completionLock.notifyAll();
 				}
 			}
 		};
-		
+
 		synchronized (completionLock) {
 			fileBufferManager.execute(runnable);
 			while (! completionLock.fDone) {
@@ -119,11 +116,11 @@ public class UndoDocumentChange extends Change {
 				}
 			}
 		}
-		
+
 		if (exception[0] != null) {
 			throw exception[0];
 		}
-		
+
 		return result[0];
 	}
 

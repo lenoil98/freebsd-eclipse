@@ -26,41 +26,48 @@ import org.eclipse.ui.internal.views.bookmarkexplorer.BookmarkMessages;
 
 /**
  * Action to remove the selected bookmarks.
+ *
+ * Marked for deletion, see Bug 550439
+ *
+ * @noreference
+ * @noinstantiate This class is not intended to be instantiated by clients.
+ * @noextend This class is not intended to be subclassed by clients.
  */
+@Deprecated
 class RemoveBookmarkAction extends BookmarkAction {
 
-    /**
-     * Create a new instance of this class.
-     *
-     * @param view the view
-     */
-    public RemoveBookmarkAction(BookmarkNavigator view) {
-        super(view, BookmarkMessages.RemoveBookmark_text);
-        setToolTipText(BookmarkMessages.RemoveBookmark_toolTip);
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(this,
-                IBookmarkHelpContextIds.REMOVE_BOOKMARK_ACTION);
-        setEnabled(false);
-    }
+	/**
+	 * Create a new instance of this class.
+	 *
+	 * @param view the view
+	 */
+	public RemoveBookmarkAction(BookmarkNavigator view) {
+		super(view, BookmarkMessages.RemoveBookmark_text);
+		setToolTipText(BookmarkMessages.RemoveBookmark_toolTip);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(this,
+				IBookmarkHelpContextIds.REMOVE_BOOKMARK_ACTION);
+		setEnabled(false);
+	}
 
-    /**
-     * Delete the marker selection.
-     */
-    @Override
+	/**
+	 * Delete the marker selection.
+	 */
+	@Override
 	public void run() {
-        final IStructuredSelection sel = getStructuredSelection();
-        if (sel.isEmpty()) {
+		final IStructuredSelection sel = getStructuredSelection();
+		if (sel.isEmpty()) {
 			return;
 		}
 		List<IMarker> list = sel.toList();
-        IMarker[] markers = new IMarker[list.size()];
-        list.toArray(markers);
-     	IUndoableOperation op = new DeleteMarkersOperation(markers, BookmarkMessages.RemoveBookmark_undoText);
-   		execute(op, BookmarkMessages.RemoveBookmark_errorTitle, null,
-   				WorkspaceUndoUtil.getUIInfoAdapter(getView().getShell()));
-    }
+		IMarker[] markers = new IMarker[list.size()];
+		list.toArray(markers);
+		IUndoableOperation op = new DeleteMarkersOperation(markers, BookmarkMessages.RemoveBookmark_undoText);
+		execute(op, BookmarkMessages.RemoveBookmark_errorTitle, null,
+				WorkspaceUndoUtil.getUIInfoAdapter(getView().getShell()));
+	}
 
-    @Override
+	@Override
 	public void selectionChanged(IStructuredSelection sel) {
-        setEnabled(!sel.isEmpty());
-    }
+		setEnabled(!sel.isEmpty());
+	}
 }

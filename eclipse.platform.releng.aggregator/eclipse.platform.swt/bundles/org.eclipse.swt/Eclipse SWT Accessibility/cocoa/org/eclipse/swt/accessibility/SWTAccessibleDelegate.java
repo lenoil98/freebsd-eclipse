@@ -31,10 +31,10 @@ class SWTAccessibleDelegate extends NSObject {
 	static final byte[] SWT_OBJECT = {'S', 'W', 'T', '_', 'O', 'B', 'J', 'E', 'C', 'T', '\0'};
 
 	static Callback accessible2Args, accessible3Args, accessible4Args;
-	static long /*int*/ proc2Args, proc3Args, proc4Args;
+	static long proc2Args, proc3Args, proc4Args;
 
 	Accessible accessible;
-	long /*int*/ delegateJniRef;
+	long delegateJniRef;
 	int childID;
 
 	NSArray attributeNames = null;
@@ -46,15 +46,12 @@ class SWTAccessibleDelegate extends NSObject {
 
 		accessible2Args = new Callback(clazz, "accessibleProc", 2);
 		proc2Args = accessible2Args.getAddress();
-		if (proc2Args == 0) SWT.error (SWT.ERROR_NO_MORE_CALLBACKS);
 
 		accessible3Args = new Callback(clazz, "accessibleProc", 3);
 		proc3Args = accessible3Args.getAddress();
-		if (proc3Args == 0) SWT.error (SWT.ERROR_NO_MORE_CALLBACKS);
 
 		accessible4Args = new Callback(clazz, "accessibleProc", 4);
 		proc4Args = accessible3Args.getAddress();
-		if (proc4Args == 0) SWT.error (SWT.ERROR_NO_MORE_CALLBACKS);
 
 		// Accessible custom controls need to implement the NSAccessibility protocol. To do that,
 		// we dynamically add the methods to the control's class that are required
@@ -67,7 +64,7 @@ class SWTAccessibleDelegate extends NSObject {
 		byte[] types = {'*','\0'};
 		int size = C.PTR_SIZEOF, align = C.PTR_SIZEOF == 4 ? 2 : 3;
 
-		long /*int*/ cls = OS.objc_allocateClassPair(OS.class_NSObject, className, 0);
+		long cls = OS.objc_allocateClassPair(OS.class_NSObject, className, 0);
 		OS.class_addIvar(cls, SWT_OBJECT, size, (byte)align, types);
 
 		// Add the NSAccessibility overrides
@@ -176,7 +173,7 @@ class SWTAccessibleDelegate extends NSObject {
 		return new NSArray(temp2.id);
 	}
 
-	static long /*int*/ accessibleProc(long /*int*/ id, long /*int*/ sel) {
+	static long accessibleProc(long id, long sel) {
 		SWTAccessibleDelegate swtAcc = getAccessibleDelegate(id);
 		if (swtAcc == null) return 0;
 
@@ -200,7 +197,7 @@ class SWTAccessibleDelegate extends NSObject {
 		return 0;
 	}
 
-	static long /*int*/ accessibleProc(long /*int*/ id, long /*int*/ sel, long /*int*/ arg0) {
+	static long accessibleProc(long id, long sel, long arg0) {
 		SWTAccessibleDelegate swtAcc = getAccessibleDelegate(id);
 		if (swtAcc == null) return 0;
 
@@ -228,7 +225,7 @@ class SWTAccessibleDelegate extends NSObject {
 		return 0;
 	}
 
-	static long /*int*/ accessibleProc(long /*int*/ id, long /*int*/ sel, long /*int*/ arg0, long /*int*/ arg1) {
+	static long accessibleProc(long id, long sel, long arg0, long arg1) {
 		SWTAccessibleDelegate swtAcc = getAccessibleDelegate(id);
 		if (swtAcc == null) return 0;
 
@@ -246,9 +243,9 @@ class SWTAccessibleDelegate extends NSObject {
 		return 0;
 	}
 
-	static SWTAccessibleDelegate getAccessibleDelegate(long /*int*/ id) {
+	static SWTAccessibleDelegate getAccessibleDelegate(long id) {
 		if (id == 0) return null;
-		long /*int*/ [] jniRef = new long /*int*/ [1];
+		long [] jniRef = new long [1];
 		OS.object_getInstanceVariable(id, SWT_OBJECT, jniRef);
 		if (jniRef[0] == 0) return null;
 		return (SWTAccessibleDelegate)OS.JNIGetObject(jniRef[0]);

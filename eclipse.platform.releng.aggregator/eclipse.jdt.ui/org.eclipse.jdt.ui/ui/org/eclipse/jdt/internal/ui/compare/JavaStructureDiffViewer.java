@@ -119,13 +119,13 @@ class JavaStructureDiffViewer extends StructureDiffViewer implements IElementCha
 		Object o= getRoot();
 		if (o != null) {
 			Object[] children= getSortedChildren(o);
-			if (children != null && children.length > 0) {
-				for (int i= 0; i < children.length; i++) {
-					o= children[i];
+			if (children != null) {
+				for (Object child : children) {
+					o= child;
 					Object[] sortedChildren= getSortedChildren(o);
-					if (sortedChildren != null && sortedChildren.length > 0) {
-						for (int j= 0; j < sortedChildren.length; j++) {
-							o= sortedChildren[j];
+					if (sortedChildren != null) {
+						for (Object sortedChild : sortedChildren) {
+							o= sortedChild;
 							if (o instanceof DiffNode) {
 								DiffNode dn= (DiffNode) o;
 								ITypedElement e= dn.getId();
@@ -229,7 +229,7 @@ class JavaStructureDiffViewer extends StructureDiffViewer implements IElementCha
 	/**
 	 * Tracks property changes of the configuration object. Clients may override to track their own
 	 * property changes. In this case they must call the inherited method.
-	 * 
+	 *
 	 * @param event the property change event
 	 */
 	@Override
@@ -264,8 +264,7 @@ class JavaStructureDiffViewer extends StructureDiffViewer implements IElementCha
 	@Override
 	public void elementChanged(ElementChangedEvent event) {
 		ITypedElement[] elements= findAffectedElement(event);
-		for (int i= 0; i < elements.length; i++) {
-			ITypedElement e= elements[i];
+		for (ITypedElement e : elements) {
 			if (e == null || !(e instanceof IContentChangeNotifier))
 				continue;
 			contentChanged((IContentChangeNotifier)e);
@@ -274,7 +273,7 @@ class JavaStructureDiffViewer extends StructureDiffViewer implements IElementCha
 
 	/**
 	 * Tells which elements of the comparison are affected by the change.
-	 * 
+	 *
 	 * @param event element changed event
 	 * @return array of typed elements affected by the event. May return an empty array.
 	 * @since 3.5
@@ -296,7 +295,7 @@ class JavaStructureDiffViewer extends StructureDiffViewer implements IElementCha
 
 	/**
 	 * Tests whether the given element is affected by the change and if so, adds it to given set.
-	 * 
+	 *
 	 * @param element the element to test
 	 * @param delta the Java element delta
 	 * @param affectedElements the set of affected elements
@@ -307,10 +306,10 @@ class JavaStructureDiffViewer extends StructureDiffViewer implements IElementCha
 		if (isEditable(javaElement) && findJavaElementDelta(javaElement, delta) != null)
 			affectedElements.add(element);
 	}
-	
+
 	/**
 	 * Tells whether the given Java element can be edited.
-	 * 
+	 *
 	 * @param javaElement the element to test
 	 * @return <code>true</code> if the element can be edited, <code>false</code> otherwise
 	 * @since 3.5
@@ -321,7 +320,7 @@ class JavaStructureDiffViewer extends StructureDiffViewer implements IElementCha
 
 	/**
 	 * Test whether the given delta represents a significant change.
-	 * 
+	 *
 	 * @param cuDelta the Java element delta
 	 * @return <code>true</code> if the delta represents a content change
 	 * @since 3.5
@@ -333,7 +332,7 @@ class JavaStructureDiffViewer extends StructureDiffViewer implements IElementCha
 
 	/**
 	 * Check whether the given delta has been sent when saving this reconciler's editor.
-	 * 
+	 *
 	 * @param cu the compilation unit
 	 * @param delta the deltas
 	 * @return <code>true</code> if the given delta
@@ -388,8 +387,8 @@ class JavaStructureDiffViewer extends StructureDiffViewer implements IElementCha
 		if (children == null || children.length == 0)
 			return null;
 
-		for (int i= 0; i < children.length; i++) {
-			IJavaElementDelta d= findJavaElementDelta(unit, children[i]);
+		for (IJavaElementDelta child : children) {
+			IJavaElementDelta d= findJavaElementDelta(unit, child);
 			if (d != null)
 				return d;
 		}

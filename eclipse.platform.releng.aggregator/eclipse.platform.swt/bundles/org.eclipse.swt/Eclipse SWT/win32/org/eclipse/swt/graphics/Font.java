@@ -47,7 +47,7 @@ public final class Font extends Resource {
 	 *
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
-	public long /*int*/ handle;
+	public long handle;
 
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -111,8 +111,8 @@ public Font(Device device, FontData[] fds) {
 	super(device);
 	if (fds == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	if (fds.length == 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	for (int i=0; i<fds.length; i++) {
-		if (fds[i] == null) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+	for (FontData fd : fds) {
+		if (fd == null) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	}
 	init(fds[0]);
 	init();
@@ -210,7 +210,7 @@ public FontData[] getFontData() {
  */
 @Override
 public int hashCode () {
-	return (int)/*64*/handle;
+	return (int)handle;
 }
 
 void init (FontData fd) {
@@ -266,7 +266,7 @@ public String toString () {
  *
  * @noreference This method is not intended to be referenced by clients.
  */
-public static Font win32_new(Device device, long /*int*/ handle) {
+public static Font win32_new(Device device, long handle) {
 	Font font = new Font(device);
 	font.handle = handle;
 	return font;

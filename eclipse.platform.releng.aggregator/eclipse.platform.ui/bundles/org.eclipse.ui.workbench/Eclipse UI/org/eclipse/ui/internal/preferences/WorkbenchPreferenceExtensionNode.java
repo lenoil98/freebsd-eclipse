@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2016 IBM Corporation and others.
+ * Copyright (c) 2005, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,7 +12,7 @@
  *     IBM Corporation - initial API and implementation
  *     Jan-Hendrik Diederich, Bredex GmbH - bug 201052
  *     Oakland Software (Francis Upton) <francisu@ieee.org> - bug 219273
- *
+ *     Alexander Fedorov <alexander.fedorov@arsysop.ru> - Bug 548799
  *******************************************************************************/
 
 package org.eclipse.ui.internal.preferences;
@@ -23,11 +23,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.internal.registry.IWorkbenchRegistryConstants;
 import org.eclipse.ui.internal.registry.KeywordRegistry;
 import org.eclipse.ui.model.IComparableContribution;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 /**
  * The WorkbenchPreferenceExtensionNode is the abstract class for all property
@@ -36,7 +36,7 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
  * @since 3.1
  */
 public abstract class WorkbenchPreferenceExtensionNode extends WorkbenchPreferenceExpressionNode
-    implements IComparableContribution {
+		implements IComparableContribution {
 
 	private Collection<String> keywordReferences;
 
@@ -67,7 +67,7 @@ public abstract class WorkbenchPreferenceExtensionNode extends WorkbenchPreferen
 	/**
 	 * Get the ids of the keywords the receiver is bound to.
 	 *
-	 * @return Collection of <code>String</code>.  Never <code>null</code>.
+	 * @return Collection of <code>String</code>. Never <code>null</code>.
 	 */
 	public Collection<String> getKeywordReferences() {
 		if (keywordReferences == null) {
@@ -94,7 +94,7 @@ public abstract class WorkbenchPreferenceExtensionNode extends WorkbenchPreferen
 	/**
 	 * Get the labels of all of the keywords of the receiver.
 	 *
-	 * @return Collection of <code>String</code>.  Never <code>null</code>.
+	 * @return Collection of <code>String</code>. Never <code>null</code>.
 	 */
 	public Collection<String> getKeywordLabels() {
 		if (keywordLabelCache != null) {
@@ -108,14 +108,15 @@ public abstract class WorkbenchPreferenceExtensionNode extends WorkbenchPreferen
 			return keywordLabelCache;
 		}
 
-		keywordLabelCache = new ArrayList<>(refs.size());
+		Collection<String> labels = new ArrayList<>(refs.size());
+
 		for (String reference : refs) {
 			String label = KeywordRegistry.getInstance().getKeywordLabel(reference);
-			if(label != null) {
-				keywordLabelCache.add(label);
+			if (label != null) {
+				labels.add(label);
 			}
 		}
-
+		keywordLabelCache = labels;
 		return keywordLabelCache;
 	}
 
@@ -128,54 +129,52 @@ public abstract class WorkbenchPreferenceExtensionNode extends WorkbenchPreferen
 
 	@Override
 	public void disposeResources() {
-        if (image != null) {
-            image.dispose();
-            image = null;
-        }
-        super.disposeResources();
+		if (image != null) {
+			image.dispose();
+			image = null;
+		}
+		super.disposeResources();
 	}
 
 	@Override
 	public Image getLabelImage() {
-        if (image == null) {
-        	ImageDescriptor desc = getImageDescriptor();
-        	if (desc != null) {
+		if (image == null) {
+			ImageDescriptor desc = getImageDescriptor();
+			if (desc != null) {
 				image = imageDescriptor.createImage();
 			}
-        }
-        return image;
-    }
-
+		}
+		return image;
+	}
 
 	@Override
 	public String getLabelText() {
 		return getConfigurationElement().getAttribute(IWorkbenchRegistryConstants.ATT_NAME);
 	}
 
-    /**
-     * Returns the image descriptor for this node.
-     *
-     * @return the image descriptor
-     */
-    @Override
+	/**
+	 * Returns the image descriptor for this node.
+	 *
+	 * @return the image descriptor
+	 */
+	@Override
 	public ImageDescriptor getImageDescriptor() {
-    	if (imageDescriptor != null) {
+		if (imageDescriptor != null) {
 			return imageDescriptor;
 		}
-
-    	String imageName = getConfigurationElement().getAttribute(IWorkbenchRegistryConstants.ATT_ICON);
+		String imageName = getConfigurationElement().getAttribute(IWorkbenchRegistryConstants.ATT_ICON);
 		if (imageName != null) {
 			String contributingPluginId = pluginId;
-			imageDescriptor = AbstractUIPlugin.imageDescriptorFromPlugin(contributingPluginId, imageName);
+			imageDescriptor = ResourceLocator.imageDescriptorFromBundle(contributingPluginId, imageName).orElse(null);
 		}
 		return imageDescriptor;
-    }
+	}
 
-    /**
-     * Return the configuration element.
-     *
-     * @return the configuration element
-     */
+	/**
+	 * Return the configuration element.
+	 *
+	 * @return the configuration element
+	 */
 	public IConfigurationElement getConfigurationElement() {
 		return configurationElement;
 	}
@@ -192,27 +191,23 @@ public abstract class WorkbenchPreferenceExtensionNode extends WorkbenchPreferen
 
 	@Override
 	public <T> T getAdapter(Class<T> adapter) {
-        if (adapter == IConfigurationElement.class)
+		if (adapter == IConfigurationElement.class)
 			return adapter.cast(getConfigurationElement());
-        return null;
-    }
+		return null;
+	}
 
-    @Override
-	public String getLabel()
-    {
-        return getLabelText();
-    }
+	@Override
+	public String getLabel() {
+		return getLabelText();
+	}
 
-    @Override
-	public int getPriority()
-    {
-        return priority;
-    }
+	@Override
+	public int getPriority() {
+		return priority;
+	}
 
-    public void setPriority(int pri)
-    {
-        priority = pri;
-    }
-
+	public void setPriority(int pri) {
+		priority = pri;
+	}
 
 }

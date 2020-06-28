@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -38,6 +38,7 @@ import org.eclipse.core.runtime.Status;
 
 import org.eclipse.core.resources.ResourcesPlugin;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
 import org.eclipse.jdt.ui.JavaUI;
@@ -45,7 +46,6 @@ import org.eclipse.jdt.ui.PreferenceConstants;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaUIMessages;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 
 /**
@@ -61,17 +61,6 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 	 */
 	private static class ByteArrayWrapper {
 
-		private static int hashCode(byte[] array) {
-			int prime= 31;
-			if (array == null)
-				return 0;
-			int result= 1;
-			for (int index= 0; index < array.length; index++) {
-				result= prime * result + array[index];
-			}
-			return result;
-		}
-
 		private byte[] byteArray;
 
 		public ByteArrayWrapper(byte[] byteArray) {
@@ -79,10 +68,7 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 		}
 		@Override
 		public int hashCode() {
-			final int prime= 31;
-			int result= 1;
-			result= prime * result + ByteArrayWrapper.hashCode(byteArray);
-			return result;
+			return 31 + Arrays.hashCode(byteArray);
 		}
 
 		@Override
@@ -100,7 +86,7 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 		}
 	}
 
-	
+
 	/**
 	 * Canonical name for UTF-8 encoding
 	 * @since 3.6
@@ -147,7 +133,7 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 
 	/**
 	 * Returns the initial size of dictionary.
-	 * 
+	 *
 	 * @return The initial size of dictionary.
 	 * @since 3.6
 	 */
@@ -194,9 +180,9 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 		final StringBuilder buffer= new StringBuilder(BUFFER_CAPACITY);
 		final HashSet<RankedWordProposal> result= new HashSet<>(BUCKET_CAPACITY * hashs.size());
 
-		for (int index= 0; index < hashs.size(); index++) {
+		for (String hash2 : hashs) {
 
-			hash= hashs.get(index);
+			hash= hash2;
 
 			final Object candidates= getCandidates(hash);
 			if (candidates == null)
@@ -292,10 +278,10 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 		final ArrayList<byte[]> candidateList= (ArrayList<byte[]>)candidates;
 		final ArrayList<RankedWordProposal> matches= new ArrayList<>(candidateList.size());
 
-		for (int index= 0; index < candidateList.size(); index++) {
+		for (byte[] element : candidateList) {
 			String candidate;
 			try {
-				candidate= new String(candidateList.get(index), UTF_8);
+				candidate= new String(element, UTF_8);
 			} catch (UnsupportedEncodingException e) {
 				JavaPlugin.log(e);
 				return;
@@ -328,7 +314,7 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 	 * @since 3.3
 	 */
 	protected boolean isEmpty() {
-		return fHashBuckets.size() == 0;
+		return fHashBuckets.isEmpty();
 	}
 
 	/**
@@ -400,9 +386,9 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 
 		while (true) {
 
-			for (int index= 0; index < mutators.length; index++) {
+			for (char mutator : mutators) {
 
-				characters[offset]= mutators[index];
+				characters[offset]= mutator;
 				neighborhood.add(fHashProvider.getHash(new String(characters)));
 			}
 
@@ -419,9 +405,9 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 		for (int index= 0; index < word.length(); index++) {
 
 			mutated= characters[index];
-			for (int mutator= 0; mutator < mutators.length; mutator++) {
+			for (char mutator2 : mutators) {
 
-				characters[index]= mutators[mutator];
+				characters[index]= mutator2;
 				neighborhood.add(fHashProvider.getHash(new String(characters)));
 			}
 			characters[index]= mutated;
@@ -430,8 +416,7 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 		characters= word.toCharArray();
 		final char[] deleted= new char[characters.length - 1];
 
-		for (int index= 0; index < deleted.length; index++)
-			deleted[index]= characters[index];
+		System.arraycopy(characters, 0, deleted, 0, deleted.length);
 
 		next= characters[characters.length - 1];
 		offset= deleted.length;
@@ -452,7 +437,7 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 		neighborhood.remove(hash);
 		final Set<RankedWordProposal> matches= getCandidates(word, sentence, neighborhood);
 
-		if (matches.size() == 0 && candidates.size() == 0)
+		if (matches.isEmpty() && candidates.isEmpty())
 			getCandidates(word, sentence, candidates);
 
 		candidates.addAll(matches);
@@ -547,8 +532,7 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 			JavaPlugin.log(e);
 			return false;
 		}
-		for (int index= 0; index < candidateList.size(); index++) {
-			byte[] candidate= candidateList.get(index);
+		for (byte[] candidate : candidateList) {
 			if (Arrays.equals(candidate, wordBytes) || Arrays.equals(candidate, lowercaseWordBytes)) {
 				return true;
 			}
@@ -617,29 +601,31 @@ public abstract class AbstractSpellDictionary implements ISpellDictionary {
 					CharsetDecoder decoder= Charset.forName(getEncoding()).newDecoder();
 					decoder.onMalformedInput(CodingErrorAction.REPORT);
 					decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-					final BufferedReader reader= new BufferedReader(new InputStreamReader(stream, decoder));
+					try (final BufferedReader reader= new BufferedReader(new InputStreamReader(stream, decoder))) {
 
-					boolean doRead= true;
-					while (doRead) {
-						try {
-							word= reader.readLine();
-						} catch (MalformedInputException ex) {
-							// Tell the decoder to replace malformed input in order to read the line.
-							decoder.onMalformedInput(CodingErrorAction.REPLACE);
-							decoder.reset();
-							word= reader.readLine();
-							decoder.onMalformedInput(CodingErrorAction.REPORT);
+						boolean doRead= true;
+						while (doRead) {
+							try {
+								word= reader.readLine();
+							} catch (MalformedInputException ex) {
+								// Tell the decoder to replace malformed input in order to read the line.
+								decoder.onMalformedInput(CodingErrorAction.REPLACE);
+								decoder.reset();
+								word= reader.readLine();
+								decoder.onMalformedInput(CodingErrorAction.REPORT);
 
-							String message= Messages.format(JavaUIMessages.AbstractSpellingDictionary_encodingError, new String[] { word, decoder.replacement(), BasicElementLabels.getURLPart(url.toString()) });
-							IStatus status= new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, IStatus.OK, message, ex);
-							JavaPlugin.log(status);
+								String message= Messages.format(JavaUIMessages.AbstractSpellingDictionary_encodingError,
+										new String[] { word, decoder.replacement(), BasicElementLabels.getURLPart(url.toString()) });
+								IStatus status= new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, IStatus.OK, message, ex);
+								JavaPlugin.log(status);
 
+								doRead= word != null;
+								continue;
+							}
 							doRead= word != null;
-							continue;
+							if (doRead)
+								hashWord(word);
 						}
-						doRead= word != null;
-						if (doRead)
-							hashWord(word);
 					}
 					return true;
 				}

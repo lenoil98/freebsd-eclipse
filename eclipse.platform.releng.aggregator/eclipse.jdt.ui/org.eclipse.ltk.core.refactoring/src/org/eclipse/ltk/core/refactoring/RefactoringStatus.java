@@ -14,7 +14,6 @@
 package org.eclipse.ltk.core.refactoring;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
@@ -142,9 +141,7 @@ public class RefactoringStatus {
 	 */
 	public RefactoringStatusEntry[] getEntries(IRefactoringStatusEntryComparator comparator, RefactoringStatusEntry entry) {
 		final List<RefactoringStatusEntry> matches= new ArrayList<>(fEntries.size());
-		RefactoringStatusEntry current= null;
-		for (Iterator<RefactoringStatusEntry> iterator= fEntries.iterator(); iterator.hasNext();) {
-			current= iterator.next();
+		for (RefactoringStatusEntry current : fEntries) {
 			if (comparator.compare(current, entry) == 0)
 				matches.add(current);
 		}
@@ -187,8 +184,7 @@ public class RefactoringStatus {
 	 */
 	public RefactoringStatusEntry getEntryMatchingCode(String pluginId, int code) {
 		Assert.isTrue(pluginId != null);
-		for (Iterator<RefactoringStatusEntry> iter= fEntries.iterator(); iter.hasNext(); ) {
-			RefactoringStatusEntry entry= iter.next();
+		for (RefactoringStatusEntry entry : fEntries) {
 			if (pluginId.equals(entry.getPluginId()) && entry.getCode() == code)
 				return entry;
 		}
@@ -209,9 +205,7 @@ public class RefactoringStatus {
 		Assert.isTrue(severity >= OK && severity <= FATAL);
 		if (severity > fSeverity)
 			return null;
-		Iterator<RefactoringStatusEntry> iter= fEntries.iterator();
-		while (iter.hasNext()) {
-			RefactoringStatusEntry entry= iter.next();
+		for (RefactoringStatusEntry entry : fEntries) {
 			if (entry.getSeverity() >= severity)
 				return entry;
 		}
@@ -228,7 +222,7 @@ public class RefactoringStatus {
 	 * @since 3.1
 	 */
 	public RefactoringStatusEntry getEntryWithHighestSeverity() {
-		if (fEntries == null || fEntries.size() == 0)
+		if (fEntries == null || fEntries.isEmpty())
 			return null;
 		RefactoringStatusEntry result= fEntries.get(0);
 		for (int i= 1; i < fEntries.size(); i++) {
@@ -423,8 +417,8 @@ public class RefactoringStatus {
 		} else {
 			IStatus[] children= status.getChildren();
 			RefactoringStatus result= new RefactoringStatus();
-			for (int i= 0; i < children.length; i++) {
-				result.merge(RefactoringStatus.create(children[i]));
+			for (IStatus child : children) {
+				result.merge(RefactoringStatus.create(child));
 			}
 			return result;
 		}
@@ -672,13 +666,13 @@ public class RefactoringStatus {
 	 */
 	@Override
 	public String toString() {
-		StringBuffer buff= new StringBuffer();
+		StringBuilder buff= new StringBuilder();
 		buff.append("<") //$NON-NLS-1$
 			.append(getSeverityString(fSeverity)).append("\n"); //$NON-NLS-1$
 		if (!isOK()) {
-			for (Iterator<RefactoringStatusEntry> iter= fEntries.iterator(); iter.hasNext(); ) {
+			for (RefactoringStatusEntry refactoringStatusEntry : fEntries) {
 				buff.append("\t") //$NON-NLS-1$
-					.append(iter.next()).append("\n"); //$NON-NLS-1$
+					.append(refactoringStatusEntry).append("\n"); //$NON-NLS-1$
 			}
 		}
 		buff.append(">"); //$NON-NLS-1$

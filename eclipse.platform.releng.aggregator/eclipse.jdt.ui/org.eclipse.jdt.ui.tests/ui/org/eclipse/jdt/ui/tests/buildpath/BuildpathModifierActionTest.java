@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,8 +13,12 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.buildpath;
 
-import java.util.Iterator;
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
+
+import org.junit.After;
+import org.junit.Test;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 
@@ -38,31 +42,15 @@ import org.eclipse.jdt.internal.corext.buildpath.ClasspathModifier;
 
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.CPListElement;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-public class BuildpathModifierActionTest extends TestCase {
+public class BuildpathModifierActionTest {
 
     private static final String DEFAULT_OUTPUT_FOLDER_NAME= "bin";
 	private static final String PROJECT_NAME= "P01";
 
 	private IJavaProject fJavaProject;
 
-	public BuildpathModifierActionTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return new TestSuite(BuildpathModifierActionTest.class);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
-	}
-
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		if (fJavaProject != null) {
 			JavaProjectHelper.delete(fJavaProject);
 			fJavaProject= null;
@@ -77,10 +65,11 @@ public class BuildpathModifierActionTest extends TestCase {
     }
 
 	private static void assertIsOnBuildpath(IClasspathEntry[] entries, IPath path) {
-		for (int i= 0; i < entries.length; i++) {
-	        if (entries[i].getPath().equals(path))
-	        	return;
-        }
+		for (IClasspathEntry entry : entries) {
+			if (entry.getPath().equals(path)) {
+				return;
+			}
+		}
 		assertTrue("Element with location " + path + " is not on buildpath", false);
     }
 
@@ -101,12 +90,12 @@ public class BuildpathModifierActionTest extends TestCase {
 	        	assertTrue("Resource " + createdResources[i] + " is nor file nor folder.", false);
 	        }
         }
-    	for (int i= 0; i < createdFolders.length; i++) {
-	        assertTrue("Folder at " + createdFolders[i] + " was not created", contains(createdPaths, createdFolders[i]));
-        }
-    	for (int i= 0; i < createdFiles.length; i++) {
-    		assertTrue("File at " + createdFiles[i] + " was not created", contains(createdPaths, createdFiles[i]));
-        }
+		for (IPath createdFolder : createdFolders) {
+			assertTrue("Folder at " + createdFolder + " was not created", contains(createdPaths, createdFolder));
+		}
+		for (IPath createdFile : createdFiles) {
+			assertTrue("File at " + createdFile + " was not created", contains(createdPaths, createdFile));
+		}
 
     	IResource[] deletedResources= delta.getDeletedResources();
     	IPath[] deletedPaths= new IPath[deletedResources.length];
@@ -124,12 +113,12 @@ public class BuildpathModifierActionTest extends TestCase {
 	        	assertTrue("Resource " + deletedResources[i] + " is nor file nor folder.", false);
 	        }
         }
-    	for (int i= 0; i < removedFolders.length; i++) {
-	        assertTrue("Folder at " + removedFolders[i] + " was not removed", contains(deletedPaths, removedFolders[i]));
-        }
-    	for (int i= 0; i < removedFiles.length; i++) {
-    		assertTrue("File at " + removedFiles[i] + " was not removed", contains(deletedPaths, removedFiles[i]));
-        }
+		for (IPath removedFolder : removedFolders) {
+			assertTrue("Folder at " + removedFolder + " was not removed", contains(deletedPaths, removedFolder));
+		}
+		for (IPath removedFile : removedFiles) {
+			assertTrue("File at " + removedFile + " was not removed", contains(deletedPaths, removedFile));
+		}
     }
 
     private static void assertDeltaRemovedEntries(BuildpathDelta delta, IPath[] paths) {
@@ -137,17 +126,16 @@ public class BuildpathModifierActionTest extends TestCase {
     	assertTrue("Expected " + paths.length + " is " + removedEntries.size(), removedEntries.size() == paths.length);
     	IPath[] removed= new IPath[removedEntries.size()];
     	int i= 0;
-    	for (Iterator<CPListElement> iterator= removedEntries.iterator(); iterator.hasNext();) {
-	        CPListElement element= iterator.next();
+    	for (CPListElement element : removedEntries) {
 	        removed[i]= element.getPath();
 	        i++;
         }
-    	for (int j= 0; j < paths.length; j++) {
-	        assertTrue("Entry " + paths[j] + " was not removed", contains(removed, paths[j]));
-        }
-    	for (int j= 0; j < removed.length; j++) {
-	        assertTrue("Entry " + removed[j] + " was removed", contains(paths, removed[j]));
-        }
+		for (IPath path : paths) {
+			assertTrue("Entry " + path + " was not removed", contains(removed, path));
+		}
+		for (IPath removed1 : removed) {
+			assertTrue("Entry " + removed1 + " was removed", contains(paths, removed1));
+		}
     }
 
     private static void assertDeltaAddedEntries(BuildpathDelta delta, IPath[] paths) {
@@ -155,24 +143,24 @@ public class BuildpathModifierActionTest extends TestCase {
     	assertTrue("Expected " + paths.length + " is " + addedEntries.size(), addedEntries.size() == paths.length);
     	IPath[] added= new IPath[addedEntries.size()];
     	int i= 0;
-    	for (Iterator<CPListElement> iterator= addedEntries.iterator(); iterator.hasNext();) {
-	        CPListElement element= iterator.next();
+    	for (CPListElement element : addedEntries) {
 	        added[i]= element.getPath();
 	        i++;
         }
-    	for (int j= 0; j < paths.length; j++) {
-	        assertTrue("Entry " + paths[j] + " was not added", contains(added, paths[j]));
-        }
-    	for (int j= 0; j < added.length; j++) {
-	        assertTrue("Entry " + added[j] + " was added", contains(paths, added[j]));
-        }
+		for (IPath path : paths) {
+			assertTrue("Entry " + path + " was not added", contains(added, path));
+		}
+		for (IPath add : added) {
+			assertTrue("Entry " + add + " was added", contains(paths, add));
+		}
     }
 
     private static boolean contains(IPath[] paths, IPath path) {
-    	for (int i= 0; i < paths.length; i++) {
-	        if (paths[i].equals(path))
-	        	return true;
-        }
+		for (IPath p : paths) {
+			if (p.equals(path)) {
+				return true;
+			}
+		}
 	    return false;
     }
 
@@ -185,6 +173,7 @@ public class BuildpathModifierActionTest extends TestCase {
     	assertTrue("Expected count was " + expected + " is " + entries.length, expected == entries.length);
     }
 
+    @Test
 	public void testAddExternalJar01AddMyLib() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 
@@ -207,6 +196,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertIsOnBuildpath(classpathEntries, JavaProjectHelper.MYLIB.makeAbsolute());
 	}
 
+    @Test
 	public void testAddExternalJar02AddMuiltiLibs() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 
@@ -233,6 +223,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertIsOnBuildpath(classpathEntries, JavaProjectHelper.NLS_LIB.makeAbsolute());
 	}
 
+    @Test
 	public void testAddExternalJar02AddMuiltiLibsTwice() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 
@@ -265,6 +256,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertIsOnBuildpath(classpathEntries, JavaProjectHelper.NLS_LIB.makeAbsolute());
 	}
 
+    @Test
 	public void testAddExternalJarBug132827() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 
@@ -291,6 +283,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertIsOnBuildpath(classpathEntries, JavaProjectHelper.MYLIB.makeAbsolute());
 	}
 
+    @Test
 	public void testEditOutputFolder01SetOutputFolderForSourceFolder() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 		IPackageFragmentRoot src= JavaProjectHelper.addSourceContainer(fJavaProject, "src");
@@ -319,6 +312,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue("Output path is " + location + " expected was " + outputPath, outputPath.equals(location));
 	}
 
+    @Test
 	public void testEditOutputFolder02RemoveProjectAsSourceFolder() throws Exception {
 		fJavaProject= createProject(null);
 
@@ -354,6 +348,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue("Output path is " + location + " expected was " + outputPath, outputPath.equals(location));
 	}
 
+    @Test
 	public void testEditOutputFolder03ExcludeOutputFolderSelf() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 		IPackageFragmentRoot src1= JavaProjectHelper.addSourceContainer(fJavaProject, "src1");
@@ -385,6 +380,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue(exclusionPatterns[0].toString().equals("bin/"));
 	}
 
+    @Test
 	public void testEditOutputFolder03ExcludeOutputFolderOther() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 		IPackageFragmentRoot src1= JavaProjectHelper.addSourceContainer(fJavaProject, "src1");
@@ -420,6 +416,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue(exclusionPatterns[0].toString().equals("bin/"));
 	}
 
+    @Test
 	public void testEditOutputFolder04RemoveProjectAndExcludeOutput() throws Exception {
 		fJavaProject= createProject(null);
 
@@ -462,6 +459,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue(exclusionPatterns[0].toString().equals("bin/"));
 	}
 
+    @Test
 	public void testEditOutputFolder05CannotOutputToSource() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 		IPackageFragmentRoot src1= JavaProjectHelper.addSourceContainer(fJavaProject, "src1");
@@ -476,6 +474,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue(status.getMessage(), status.getSeverity() == IStatus.ERROR);
 	}
 
+    @Test
 	public void testEditOutputFolderBug153068() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 		IPackageFragmentRoot src= JavaProjectHelper.addSourceContainer(fJavaProject, "src");
@@ -489,6 +488,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue(status.getMessage(), status.getSeverity() == IStatus.ERROR);
 	}
 
+    @Test
 	public void testEditOutputFolderBug154044() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 		IPackageFragmentRoot src1= JavaProjectHelper.addSourceContainer(fJavaProject, "src1");
@@ -527,6 +527,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue(exclusionPatterns[0].toString(), exclusionPatterns[0].toString().equals("sub/newBin/"));
 	}
 
+    @Test
 	public void testEditOutputFolderBug154044OldIsProject() throws Exception {
 		fJavaProject= createProject(null);
 		IPackageFragmentRoot p01= JavaProjectHelper.addSourceContainer(fJavaProject, null);
@@ -564,6 +565,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue(exclusionPatterns[0].toString(), exclusionPatterns[0].toString().equals("bin/"));
 	}
 
+    @Test
 	public void testEditOutputFolderBug154044DonotDeleteDefaultOutputFolder() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 		IPackageFragmentRoot src1= JavaProjectHelper.addSourceContainer(fJavaProject, "src1");
@@ -601,6 +603,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue(exclusionPatterns.length == 0);
 	}
 
+    @Test
 	public void testEditOutputFolderBug154196() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 		IPackageFragmentRoot src1= JavaProjectHelper.addSourceContainer(fJavaProject, "src1");
@@ -636,6 +639,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertTrue(exclusionPatterns.length == 0);
 	}
 
+    @Test
 	public void testRemoveFromBuildpath01() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 		IPackageFragmentRoot src1= JavaProjectHelper.addSourceContainer(fJavaProject, "src1");
@@ -658,6 +662,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertNumberOfEntries(classpathEntries, 1);
 	}
 
+    @Test
 	public void testRemoveFromBuildpath01RemoveProject() throws Exception {
 		fJavaProject= createProject(null);
 		IPackageFragmentRoot p01= JavaProjectHelper.addSourceContainer(fJavaProject, null);
@@ -676,6 +681,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertNumberOfEntries(classpathEntries, 1);
 	}
 
+    @Test
 	public void testRemoveFromBuildpath01RemoveLibs() throws Exception {
 		fJavaProject= createProject(DEFAULT_OUTPUT_FOLDER_NAME);
 
@@ -705,6 +711,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertNumberOfEntries(classpathEntries, 1);
 	}
 
+    @Test
 	public void testRemoveFromBuildpathBug153299Src() throws Exception {
 		fJavaProject= createProject(null);
 
@@ -728,6 +735,7 @@ public class BuildpathModifierActionTest extends TestCase {
 		assertNumberOfEntries(classpathEntries, 2);
 	}
 
+    @Test
 	public void testRemoveFromBuildpathBug153299Lib() throws Exception {
 		fJavaProject= createProject(null);
 		IPackageFragmentRoot p01= JavaProjectHelper.addSourceContainer(fJavaProject, null, new IPath[] {new Path("src1/")});

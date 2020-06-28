@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -154,7 +154,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchPreferenceConstants;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
@@ -162,9 +161,7 @@ import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IHyperlink;
 import org.eclipse.ui.console.TextConsole;
 import org.eclipse.ui.ide.IDE;
-import org.eclipse.ui.internal.WorkbenchWindow;
 import org.eclipse.ui.internal.console.ConsoleHyperlinkPosition;
-import org.eclipse.ui.internal.util.PrefUtil;
 import org.eclipse.ui.intro.IIntroManager;
 import org.eclipse.ui.intro.IIntroPart;
 import org.eclipse.ui.progress.UIJob;
@@ -172,6 +169,7 @@ import org.eclipse.ui.progress.WorkbenchJob;
 import org.osgi.service.prefs.BackingStoreException;
 
 import com.sun.jdi.InternalException;
+import com.sun.jdi.InvocationException;
 
 import junit.framework.TestCase;
 
@@ -188,6 +186,7 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 	public static final String ONE_FIVE_PROJECT_NAME = "OneFive";
 	public static final String ONE_SEVEN_PROJECT_NAME = "OneSeven";
 	public static final String ONE_EIGHT_PROJECT_NAME = "OneEight";
+	public static final String NINE_PROJECT_NAME = "Nine";
 	public static final String BOUND_JRE_PROJECT_NAME = "BoundJRE";
 	public static final String CLONE_SUFFIX = "Clone";
 
@@ -206,7 +205,8 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 			"org.eclipse.debug.tests.targets.HcrClass5", "org.eclipse.debug.tests.targets.HcrClass6", "org.eclipse.debug.tests.targets.HcrClass7", "org.eclipse.debug.tests.targets.HcrClass8",
 			"org.eclipse.debug.tests.targets.HcrClass9", "TestContributedStepFilterClass", "TerminateAll_01", "TerminateAll_02", "StepResult1",
 			"StepResult2", "StepResult3", "StepUncaught", "TriggerPoint_01", "BulkThreadCreationTest", "MethodExitAndException",
-			"Bug534319earlyStart", "Bug534319lateStart", "Bug534319singleThread", "Bug534319startBetwen", "MethodCall", "Bug538303", "Bug540243" };
+			"Bug534319earlyStart", "Bug534319lateStart", "Bug534319singleThread", "Bug534319startBetwen", "MethodCall", "Bug538303", "Bug540243",
+			"OutSync", "OutSync2", "ConsoleOutputUmlaut", "ErrorRecurrence" };
 
 	/**
 	 * the default timeout
@@ -238,6 +238,7 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 	private static boolean loaded15 = false;
 	private static boolean loaded17 = false;
 	private static boolean loaded18 = false;
+	private static boolean loaded9 = false;
 	private static boolean loadedEE = false;
 	private static boolean loadedJRE = false;
 	private static boolean loadedMulti = false;
@@ -267,6 +268,8 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 		loaded17 = pro.exists();
 		pro = ResourcesPlugin.getWorkspace().getRoot().getProject(ONE_EIGHT_PROJECT_NAME);
 		loaded18 = pro.exists();
+		pro = ResourcesPlugin.getWorkspace().getRoot().getProject(NINE_PROJECT_NAME);
+		loaded9 = pro.exists();
 		pro = ResourcesPlugin.getWorkspace().getRoot().getProject(BOUND_JRE_PROJECT_NAME);
 		loadedJRE = pro.exists();
 		pro = ResourcesPlugin.getWorkspace().getRoot().getProject(BOUND_EE_PROJECT_NAME);
@@ -308,16 +311,6 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 	        // turn off monitor information
 	        jdiUIPreferences.setValue(IJavaDebugUIConstants.PREF_SHOW_MONITOR_THREAD_INFO, false);
 
-	        // turn off workbench heap monitor
-	        PrefUtil.getAPIPreferenceStore().setValue(IWorkbenchPreferenceConstants.SHOW_MEMORY_MONITOR, false);
-	        IWorkbenchWindow[] windows = PlatformUI.getWorkbench().getWorkbenchWindows();
-	        for (int i = 0; i < windows.length; i++) {
-	            IWorkbenchWindow window = windows[i];
-	            if(window instanceof WorkbenchWindow){
-	                ((WorkbenchWindow) window).showHeapStatus(false);
-	            }
-	        }
-
 	        //make sure we are auto-refreshing external workspace changes
 	        IEclipsePreferences node = InstanceScope.INSTANCE.getNode(ResourcesPlugin.PI_RESOURCES);
 	        if(node != null) {
@@ -344,7 +337,7 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 	        	catch(Exception e) {
 	        		handleProjectCreationException(e, ONE_FOUR_PROJECT_CLOSED_NAME, jp);
 	        	}
-	        	jp = createProject(ONE_FOUR_PROJECT_NAME, JavaProjectHelper.TEST_SRC_DIR.toString(), JavaProjectHelper.J2SE_1_4_EE_NAME, false);
+				jp = createProject(ONE_FOUR_PROJECT_NAME, JavaProjectHelper.TEST_SRC_DIR.toString(), JavaProjectHelper.JAVA_SE_1_7_EE_NAME, false);
 	        	IPackageFragmentRoot src = jp.findPackageFragmentRoot(new Path(ONE_FOUR_PROJECT_NAME).append(JavaProjectHelper.SRC_DIR).makeAbsolute());
 	        	assertNotNull("The 'src' package fragment root should not be null", src);
 	        	File root = JavaTestPlugin.getDefault().getFileInPlugin(new Path("testjars"));
@@ -394,7 +387,7 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 		ArrayList<ILaunchConfiguration> cfgs = new ArrayList<>(1);
         try {
 	        if (!loaded15) {
-				jp = createProject(ONE_FIVE_PROJECT_NAME, JavaProjectHelper.TEST_1_5_SRC_DIR.toString(), JavaProjectHelper.J2SE_1_5_EE_NAME, true);
+				jp = createProject(ONE_FIVE_PROJECT_NAME, JavaProjectHelper.TEST_1_5_SRC_DIR.toString(), JavaProjectHelper.JAVA_SE_1_7_EE_NAME, true);
 				cfgs.add(createLaunchConfiguration(jp, "a.b.c.MethodBreakpoints"));
 				cfgs.add(createLaunchConfiguration(jp, "a.b.c.IntegerAccess"));
 				cfgs.add(createLaunchConfiguration(jp, "a.b.c.StepIntoSelectionWithGenerics"));
@@ -465,9 +458,13 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 	        if (!loaded18) {
 	        	jp = createProject(ONE_EIGHT_PROJECT_NAME, JavaProjectHelper.TEST_1_8_SRC_DIR.toString(), JavaProjectHelper.JAVA_SE_1_8_EE_NAME, false);
 	    		cfgs.add(createLaunchConfiguration(jp, "EvalTest18"));
+	    		cfgs.add(createLaunchConfiguration(jp, "FunctionalCaptureTest18"));
 	    		cfgs.add(createLaunchConfiguration(jp, "EvalTestIntf18"));
 				cfgs.add(createLaunchConfiguration(jp, "EvalIntfSuperDefault"));
 				cfgs.add(createLaunchConfiguration(jp, "DebugHoverTest18"));
+				cfgs.add(createLaunchConfiguration(jp, "DebugHoverTest2Lambdas"));
+				cfgs.add(createLaunchConfiguration(jp, "Bug317045"));
+				cfgs.add(createLaunchConfiguration(jp, "Bug549394"));
 				cfgs.add(createLaunchConfiguration(jp, "Bug541110"));
 				cfgs.add(createLaunchConfiguration(jp, "ClosureVariableTest_Bug542989"));
 				cfgs.add(createLaunchConfiguration(jp, "Bug404097BreakpointInLocalClass"));
@@ -475,6 +472,10 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 				cfgs.add(createLaunchConfiguration(jp, "Bug404097BreakpointInLambda"));
 				cfgs.add(createLaunchConfiguration(jp, "Bug404097BreakpointUsingInnerClass"));
 				cfgs.add(createLaunchConfiguration(jp, "Bug404097BreakpointUsingLocalClass"));
+				cfgs.add(createLaunchConfiguration(jp, "Bug560392"));
+				cfgs.add(createLaunchConfiguration(jp, "Bug561715"));
+				cfgs.add(createLaunchConfiguration(jp, "Bug562056"));
+				cfgs.add(createLaunchConfiguration(jp, "RemoteEvaluator"));
 	    		loaded18 = true;
 	    		waitForBuild();
 	        }
@@ -493,6 +494,34 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 			}
 			handleProjectCreationException(e, ONE_EIGHT_PROJECT_NAME, jp);
         }
+	}
+
+	/**
+	 * Creates the Java 9 compliant project
+	 */
+	synchronized void assert9Project() {
+		IJavaProject jp = null;
+		ArrayList<ILaunchConfiguration> cfgs = new ArrayList<>(1);
+		try {
+			if (!loaded9) {
+				jp = createProject(NINE_PROJECT_NAME, JavaProjectHelper.TEST_9_SRC_DIR.toString(), JavaProjectHelper.JAVA_SE_9_EE_NAME, false);
+				cfgs.add(createLaunchConfiguration(jp, "LogicalStructures"));
+				loaded9 = true;
+				waitForBuild();
+			}
+		} catch (Exception e) {
+			try {
+				if (jp != null) {
+					jp.getProject().delete(true, true, null);
+					for (int i = 0; i < cfgs.size(); i++) {
+						cfgs.get(i).delete();
+					}
+				}
+			} catch (CoreException ce) {
+				// ignore
+			}
+			handleProjectCreationException(e, NINE_PROJECT_NAME, jp);
+		}
 	}
 
 	/**
@@ -536,7 +565,7 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 		        JavaProjectHelper.addSourceContainer(jp, JavaProjectHelper.SRC_DIR, JavaProjectHelper.BIN_DIR);
 
 		        // add VM specific JRE container
-		        IExecutionEnvironment j2se14 = JavaRuntime.getExecutionEnvironmentsManager().getEnvironment(JavaProjectHelper.J2SE_1_4_EE_NAME);
+				IExecutionEnvironment j2se14 = JavaRuntime.getExecutionEnvironmentsManager().getEnvironment(JavaProjectHelper.JAVA_SE_1_7_EE_NAME);
 		        assertNotNull("Missing J2SE-1.4 environment", j2se14);
 		        IPath path = JavaRuntime.newJREContainerPath(j2se14);
 		        JavaProjectHelper.addContainerEntry(jp, path);
@@ -763,6 +792,16 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 	protected IJavaProject get18Project() {
 		assert18Project();
 		return getJavaProject(ONE_EIGHT_PROJECT_NAME);
+	}
+
+	/**
+	 * Returns the 'Nine' project, used for Java 9 tests.
+	 *
+	 * @return the test project
+	 */
+	protected IJavaProject get9Project() {
+		assert9Project();
+		return getJavaProject(NINE_PROJECT_NAME);
 	}
 
 	/**
@@ -2814,15 +2853,26 @@ public abstract class AbstractDebugTest extends TestCase implements  IEvaluation
 			}
 			IEvaluationResult result = listener.getResult();
 			assertNotNull("The evaluation should have result: ", result);
-			assertNull("The evaluation should not have exception : " + result.getException(), result.getException());
+			assertNull("Evaluation of '" + snippet + "' should not have exception : " + findCause(result.getException()), result.getException());
 
 			String firstError = result.hasErrors() ? result.getErrorMessages()[0] : "";
-			assertFalse("The evaluation should not have errors : " + firstError, result.hasErrors());
+			assertFalse("The evaluation of '\" + snippet + \"'  should not have errors : " + firstError, result.hasErrors());
 			return listener.getResult().getValue();
 		}
 		finally {
 			engine.dispose();
 		}
+	}
+
+	private static Object findCause(DebugException problem) {
+		if (problem == null) {
+			return null;
+		}
+		Throwable cause = problem.getCause();
+		if (cause instanceof InvocationException) {
+			return ((InvocationException)cause).exception().toString();
+		}
+		return cause;
 	}
 
 	/**

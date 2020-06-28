@@ -14,9 +14,6 @@
 
 package org.eclipse.ua.tests.help.performance;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import org.eclipse.test.performance.Dimension;
 import org.eclipse.test.performance.PerformanceTestCase;
 import org.eclipse.ua.tests.help.util.LoadServletUtil;
@@ -26,18 +23,6 @@ import org.eclipse.ua.tests.help.util.LoadServletUtil;
  */
 
 public class HelpServerTest extends PerformanceTestCase {
-
-	/*
-	 * Returns an instance of this Test.
-	 */
-	public static Test suite() {
-		return new TestSuite(HelpServerTest.class);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-	}
 
 	@Override
 	protected void tearDown() throws Exception {
@@ -51,7 +36,7 @@ public class HelpServerTest extends PerformanceTestCase {
 		for (int i=0; i < 100; ++i) {
 			boolean warmup = i < 2;
 			if (!warmup) {
-			    startMeasuring();
+				startMeasuring();
 			}
 
 			for (int j = 0; j <= 100; j++) {
@@ -59,8 +44,8 @@ public class HelpServerTest extends PerformanceTestCase {
 			}
 
 			if (!warmup) {
-			    stopMeasuring();
-		    }
+				stopMeasuring();
+			}
 		}
 
 		commitMeasurements();
@@ -75,14 +60,14 @@ public class HelpServerTest extends PerformanceTestCase {
 			boolean warmup = i < 2;
 			LoadServletUtil.stopServer();
 			if (!warmup) {
-			    startMeasuring();
+				startMeasuring();
 			}
 
 			LoadServletUtil.startServer();
 
 			if (!warmup) {
-			    stopMeasuring();
-		    }
+				stopMeasuring();
+			}
 		}
 
 		commitMeasurements();

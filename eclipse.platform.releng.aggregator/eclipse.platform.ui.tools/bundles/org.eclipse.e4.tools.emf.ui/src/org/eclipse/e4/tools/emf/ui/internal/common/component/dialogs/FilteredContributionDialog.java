@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2017 TwelveTone LLC and others.
+ * Copyright (c) 2014, 2020 TwelveTone LLC and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -100,6 +99,9 @@ import org.eclipse.swt.widgets.Text;
 public abstract class FilteredContributionDialog extends SaveDialogBoundsSettingsDialog {
 
 	private static final int MAX_RESULTS = 500;
+	private static final int DIALOG_MINIMUM_WIDTH = 600;
+	private static final int DIALOG_MINIMUM_HEIGHT = 350;
+
 	private Image contributionTypeImage;
 	private TableViewer viewer;
 	private static final String PREF_SEARCHSCOPE = "searchScope"; //$NON-NLS-1$
@@ -123,7 +125,7 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 	protected boolean includeNonBundles;
 	private Label lblStatus;
 	private Button btnIncludeNoneBundle;
-	private WritableList viewerList;
+	private WritableList<ContributionData> viewerList;
 	protected BundleImageCache imageCache;
 	protected Job currentSearchThread;
 	private ContributionResultHandlerImpl currentResultHandler;
@@ -179,9 +181,9 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 
 	private class ContributionResultHandlerImpl implements ContributionResultHandler {
 		private boolean cancled = false;
-		private final IObservableList list;
+		private final IObservableList<ContributionData> list;
 
-		public ContributionResultHandlerImpl(IObservableList list) {
+		public ContributionResultHandlerImpl(IObservableList<ContributionData> list) {
 			this.list = list;
 		}
 
@@ -245,6 +247,12 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 
 	public void setStatus(final String message) {
 		getShell().getDisplay().asyncExec(() -> lblStatus.setText(message));
+	}
+
+	@Override
+	protected void configureShell(Shell newShell) {
+		super.configureShell(newShell);
+		newShell.setMinimumSize(DIALOG_MINIMUM_WIDTH, DIALOG_MINIMUM_HEIGHT);
 	}
 
 	@Override
@@ -422,7 +430,7 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 	}
 
 	protected Image getTitleImage() {
-		return imageCache.create("/icons/full/wizban/newsearch_wiz.gif"); //$NON-NLS-1$
+		return imageCache.create("/icons/full/wizban/newsearch_wiz.png"); //$NON-NLS-1$
 	}
 
 	protected void createOptions(Composite compOptions) {
@@ -620,11 +628,6 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 		updateUiState();
 	}
 
-	@Override
-	protected boolean isResizable() {
-		return true;
-	}
-
 	public List<String> getFilterPackages() {
 		return filterPackages;
 	}
@@ -666,7 +669,7 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 		}
 
 		final ArrayList<String> sorted = new ArrayList<>(bundleIds);
-		Collections.sort(sorted);
+		sorted.sort(null);
 
 		final TitleAreaFilterDialog dlg = new TitleAreaFilterDialog(getShell(), new ColumnLabelProvider()) {
 			@Override
@@ -706,7 +709,7 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 		}
 
 		final ArrayList<String> sorted = new ArrayList<>(packages);
-		Collections.sort(sorted);
+		sorted.sort(null);
 
 		final TitleAreaFilterDialog dlg = new TitleAreaFilterDialog(getShell(), new ColumnLabelProvider()) {
 			@Override
@@ -768,7 +771,7 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 		}
 
 		final ArrayList<String> sorted = new ArrayList<>(parentLocations);
-		Collections.sort(sorted);
+		sorted.sort(null);
 
 		final TitleAreaFilterDialog dlg = new TitleAreaFilterDialog(getShell(), new ColumnLabelProvider()) {
 			@Override
@@ -793,7 +796,7 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 
 	protected void rebuildViewer() {
 
-		viewerList = new WritableList();
+		viewerList = new WritableList<>();
 
 		final TableViewer oldViewer = viewer;
 		viewer = new TableViewer(compOptions, SWT.FULL_SELECTION | SWT.BORDER);
@@ -803,7 +806,7 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 		}
 		final GridData gd = new GridData(GridData.FILL_BOTH);
 		viewer.getControl().setLayoutData(gd);
-		viewer.setContentProvider(new ObservableListContentProvider());
+		viewer.setContentProvider(new ObservableListContentProvider<>());
 		viewer.setLabelProvider(new StyledCellLabelProvider() {
 			@Override
 			public void update(ViewerCell cell) {
@@ -999,7 +1002,9 @@ public abstract class FilteredContributionDialog extends SaveDialogBoundsSetting
 			currentSearchThread.cancel();
 			if (bJoin) {
 				try {
-					currentSearchThread.join();
+					if (currentSearchThread != null) {
+						currentSearchThread.join();
+					}
 				} catch (final InterruptedException e) {
 				} finally {
 					currentSearchThread = null;

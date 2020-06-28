@@ -14,8 +14,8 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.views.properties.tabbed.view;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -40,8 +40,6 @@ import org.eclipse.ui.views.properties.tabbed.ITabDescriptorProvider;
 import org.eclipse.ui.views.properties.tabbed.ITypeMapper;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Provides information about the tabbed property extension points. Each tabbed
@@ -204,7 +202,7 @@ public class TabbedPropertyRegistry {
 	 * the current contributor id or an empty array if none is found.
 	 */
 	protected ISectionDescriptor[] readSectionDescriptors() {
-		List result = new ArrayList();
+		List<ISectionDescriptor> result = new ArrayList<>();
 		IConfigurationElement[] extensions = getConfigurationElements(EXTPT_SECTIONS);
 		for (IConfigurationElement extension : extensions) {
 			IConfigurationElement[] sections = extension
@@ -215,8 +213,7 @@ public class TabbedPropertyRegistry {
 				result.add(descriptor);
 			}
 		}
-		return (ISectionDescriptor[]) result
-				.toArray(new ISectionDescriptor[result.size()]);
+		return result.toArray(new ISectionDescriptor[result.size()]);
 	}
 
 	/**
@@ -233,7 +230,7 @@ public class TabbedPropertyRegistry {
 				.getExtensionPoint(FrameworkUtil.getBundle(TabbedPropertyRegistry.class).getSymbolicName(),
 						extensionPointId);
 		IConfigurationElement[] extensions = point.getConfigurationElements();
-		List unordered = new ArrayList(extensions.length);
+		List<IConfigurationElement> unordered = new ArrayList<>(extensions.length);
 		for (IConfigurationElement extension : extensions) {
 			if (!extension.getName().equals(extensionPointId)) {
 				continue;
@@ -244,8 +241,7 @@ public class TabbedPropertyRegistry {
 			}
 			unordered.add(extension);
 		}
-		return (IConfigurationElement[]) unordered
-				.toArray(new IConfigurationElement[unordered.size()]);
+		return unordered.toArray(new IConfigurationElement[unordered.size()]);
 	}
 
 	/**
@@ -283,9 +279,8 @@ public class TabbedPropertyRegistry {
 					selection);
 		}
 
-		ITabDescriptor[] result = filterTabDescriptors(allDescriptors, part,
+		return filterTabDescriptors(allDescriptors, part,
 				selection);
-		return result;
 	}
 
 	/**
@@ -295,7 +290,7 @@ public class TabbedPropertyRegistry {
 	protected ITabDescriptor[] filterTabDescriptors(
 			ITabDescriptor[] descriptors, IWorkbenchPart part,
 			ISelection selection) {
-		List result = new ArrayList();
+		List<ITabDescriptor> result = new ArrayList<>();
 		for (ITabDescriptor descriptor : descriptors) {
 			ITabDescriptor filteredDescriptor = adaptDescriptorFor(descriptor,
 					part, selection);
@@ -306,26 +301,23 @@ public class TabbedPropertyRegistry {
 		if (result.isEmpty()) {
 			return EMPTY_DESCRIPTOR_ARRAY;
 		}
-		return (ITabDescriptor[]) result.toArray(new ITabDescriptor[result
-				.size()]);
+		return result.toArray(new ITabDescriptor[result.size()]);
 	}
 
 	/**
 	 * Given a property tab descriptor remove all its section descriptors that
 	 * do not apply to the given input object.
 	 */
+	@SuppressWarnings("unchecked")
 	protected ITabDescriptor adaptDescriptorFor(ITabDescriptor target,
 			IWorkbenchPart part, ISelection selection) {
-		List filteredSectionDescriptors = new ArrayList();
-		List descriptors = target.getSectionDescriptors();
-		for (Iterator iter = descriptors.iterator(); iter.hasNext();) {
-			ISectionDescriptor descriptor = (ISectionDescriptor) iter.next();
+		List<ISectionDescriptor> filteredSectionDescriptors = new ArrayList<>();
+		for (ISectionDescriptor descriptor : (List<ISectionDescriptor>) target.getSectionDescriptors()) {
 			if (descriptor.appliesTo(part, selection)) {
 				filteredSectionDescriptors.add(descriptor);
 			}
 		}
-		AbstractTabDescriptor result = (AbstractTabDescriptor) ((AbstractTabDescriptor) target)
-				.clone();
+		AbstractTabDescriptor result = (AbstractTabDescriptor) ((AbstractTabDescriptor) target).clone();
 		result.setSectionDescriptors(filteredSectionDescriptors);
 		return result;
 	}
@@ -336,12 +328,12 @@ public class TabbedPropertyRegistry {
 	 */
 	protected ITabDescriptor[] getAllTabDescriptors() {
 		if (tabDescriptors == null) {
-			List temp = readTabDescriptors();
+			@SuppressWarnings("unchecked")
+			List<TabDescriptor> temp = readTabDescriptors();
 			populateWithSectionDescriptors(temp);
 			temp = sortTabDescriptorsByCategory(temp);
 			temp = sortTabDescriptorsByAfterTab(temp);
-			tabDescriptors = (TabDescriptor[]) temp
-					.toArray(new TabDescriptor[temp.size()]);
+			tabDescriptors = temp.toArray(new TabDescriptor[temp.size()]);
 		}
 		return tabDescriptors;
 	}
@@ -351,7 +343,7 @@ public class TabbedPropertyRegistry {
 	 * current contributor id or an empty list if none is found.
 	 */
 	protected List readTabDescriptors() {
-		List result = new ArrayList();
+		List<TabDescriptor> result = new ArrayList<>();
 		IConfigurationElement[] extensions = getConfigurationElements(EXTPT_TABS);
 		for (IConfigurationElement extension : extensions) {
 			IConfigurationElement[] tabs = extension.getChildren(ELEMENT_TAB);
@@ -408,7 +400,7 @@ public class TabbedPropertyRegistry {
 	 * Sorts the tab descriptors in the given list according to category.
 	 */
 	protected List<TabDescriptor> sortTabDescriptorsByCategory(List<TabDescriptor> descriptors) {
-		Collections.sort(descriptors, (one, two) -> {
+		descriptors.sort((one, two) -> {
 			String categoryOne = one.getCategory();
 			String categoryTwo = two.getCategory();
 			int categoryOnePosition = getIndex(propertyCategories.toArray(), categoryOne);
@@ -427,9 +419,8 @@ public class TabbedPropertyRegistry {
 		}
 		List<TabDescriptor> sorted = new ArrayList<>();
 		int categoryIndex = 0;
-		for (int i = 0; i < propertyCategories.size(); i++) {
+		for (String category : propertyCategories) {
 			List<TabDescriptor> categoryList = new ArrayList<>();
-			String category = propertyCategories.get(i);
 			int topOfCategory = categoryIndex;
 			int endOfCategory = categoryIndex;
 			while (endOfCategory < tabs.size() &&
@@ -445,7 +436,7 @@ public class TabbedPropertyRegistry {
 					categoryList.add(tabs.get(j));
 				}
 			}
-			Collections.sort(categoryList, (one, two) -> {
+			categoryList.sort((one, two) -> {
 				if (two.getAfterTab().equals(one.getId())) {
 					return -1;
 				} else if (one.getAfterTab().equals(two.getId())) {
@@ -454,9 +445,7 @@ public class TabbedPropertyRegistry {
 					return 0;
 				}
 			});
-			for (int j = 0; j < categoryList.size(); j++) {
-				sorted.add(categoryList.get(j));
-			}
+			sorted.addAll(categoryList);
 			categoryIndex = endOfCategory;
 		}
 		return sorted;

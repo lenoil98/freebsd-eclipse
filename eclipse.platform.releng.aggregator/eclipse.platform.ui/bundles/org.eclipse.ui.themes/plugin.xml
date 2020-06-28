@@ -4,21 +4,15 @@
    <extension
          point="org.eclipse.e4.ui.css.swt.theme">
       <theme
-            basestylesheeturi="css/e4_classic_winxp.css"
+            basestylesheeturi="css/e4_classic.css"
             id="org.eclipse.e4.ui.css.theme.e4_classic"
             label="%theme.classic">
       </theme>
     <theme
-        basestylesheeturi="css/e4-dark.css"
+        basestylesheeturi="css/e4-dark_linux.css"
         id="org.eclipse.e4.ui.css.theme.e4_dark"
         label="%theme.dark"
         os="freebsd">
-    </theme>
-    <theme
-        basestylesheeturi="css/e4-dark.css"
-        id="org.eclipse.e4.ui.css.theme.e4_dark"
-        label="%theme.dark"
-        os="linux">
     </theme>
     <theme
         basestylesheeturi="css/e4-dark_win.css"
@@ -37,20 +31,13 @@
         basestylesheeturi="css/e4-dark_mac.css"
         id="org.eclipse.e4.ui.css.theme.e4_dark"
         label="%theme.dark"
-        os="macosx"
-        os_version="10.14">
+        os="macosx">
     </theme>
       <theme
             basestylesheeturi="css/e4_default_gtk.css"
             id="org.eclipse.e4.ui.css.theme.e4_default"
             label="%theme.gtk"
             os="freebsd">
-      </theme>
-      <theme
-            basestylesheeturi="css/e4_default_gtk.css"
-            id="org.eclipse.e4.ui.css.theme.e4_default"
-            label="%theme.gtk"
-            os="linux">
       </theme>
       <theme
             basestylesheeturi="css/e4_default_mac.css"
@@ -65,13 +52,6 @@
             os="win32"
             os_version="6.0,6.1,6.2,6.3,10.0">
       </theme>
-   <theme
-         basestylesheeturi="css/e4_classic_win7.css"
-         id="org.eclipse.e4.ui.css.theme.e4_classic"
-         label="%theme.winClassic"
-         os="win32"
-         os_version="6.0,6.1,6.2,6.3">
-   </theme>
    <theme
 		basestylesheeturi="css/high-contrast.css"
         id="org.eclipse.e4.ui.css.theme.high-contrast"

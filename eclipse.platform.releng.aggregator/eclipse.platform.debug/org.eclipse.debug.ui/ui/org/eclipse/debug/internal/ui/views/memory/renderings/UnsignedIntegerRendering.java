@@ -37,33 +37,30 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 		String ret;
 		long result = 0;
 
-		if (columnSize == 1)
-		{
+		switch (columnSize) {
+		case 1:
 			result = byteArray[0];
 			result &= 0xff;
-		}
-		else if (columnSize == 2)
-		{
+			break;
+		case 2:
 			result = RenderingsUtil.convertByteArrayToInt(byteArray, endianess);
-		}
-		else if (columnSize == 4)
-		{
+			break;
+		case 4:
 			result = RenderingsUtil.convertByteArrayToLong(byteArray, endianess);
-		}
-		else if (columnSize == 8)
-		{
+			break;
+		case 8:
 			BigInteger value = RenderingsUtil.convertByteArrayToUnsignedLong(byteArray, endianess);
 			return value.toString();
-		}
-		else if (columnSize == 16)
+		case 16:
 		{
 			BigInteger bigRet = RenderingsUtil.convertByteArrayToUnsignedBigInt(byteArray, endianess);
 			return bigRet.toString();
 		}
-		else
+		default:
 		{
 			BigInteger bigRet = RenderingsUtil.convertByteArrayToUnsignedBigInt(byteArray, endianess, columnSize);
 			return bigRet.toString();
+		}
 		}
 
 		ret = Long.valueOf(result).toString();
@@ -75,32 +72,37 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 	{
 		try {
 			byte[] bytes;
-			if (colSize == 1)
+			switch (colSize) {
+			case 1:
 			{
 				short i = Short.parseShort(newValue);
 				bytes = RenderingsUtil.convertShortToByteArray(i, endianess);
 				bytes = extractBytes(bytes, endianess, colSize);
+				break;
 			}
 			// unsigned integer
-			else if (colSize == 2)
+			case 2:
 			{
 				int i = Integer.parseInt(newValue);
 				bytes = RenderingsUtil.convertIntToByteArray(i, endianess);
 				bytes = extractBytes(bytes, endianess, colSize);
+				break;
 			}
-			else if (colSize == 4)
+			case 4:
 			{
 				long i = Long.parseLong(newValue);
 				bytes = RenderingsUtil.convertLongToByteArray(i, endianess);
 				bytes = extractBytes(bytes, endianess, colSize);
+				break;
 			}
-			else if (colSize == 8)
+			case 8:
 			{
 				BigInteger i = new BigInteger(newValue);
 				bytes = RenderingsUtil.convertBigIntegerToByteArray(i, endianess);
 				bytes = extractBytes(bytes, endianess, colSize);
+				break;
 			}
-			else if (colSize == 16)
+			case 16:
 			{
 				BigInteger i = new BigInteger(newValue);
 				bytes = RenderingsUtil.convertUnsignedBigIntegerToByteArray(i, endianess);
@@ -108,12 +110,13 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 
 				return bytes;
 			}
-			else
+			default:
 			{
 				BigInteger i = new BigInteger(newValue);
 				bytes = RenderingsUtil.convertUnsignedBigIntToByteArray(i, endianess, colSize);
 				bytes = extractBytes(bytes, endianess, colSize);
 				return bytes;
+			}
 			}
 
 			return bytes;
@@ -122,18 +125,13 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.ibm.debug.extended.ui.AbstractMemoryRenderer#getString(java.lang.String, java.math.BigInteger, byte[])
-	 */
 	@Override
 	public String getString(String dataType, BigInteger address, MemoryByte[] data) {
 
 		String paddedStr = DebugUIPlugin.getDefault().getPreferenceStore().getString(IDebugUIConstants.PREF_PADDED_STR);
 		boolean invalid = false;
-		for (int i=0; i<data.length; i++)
-		{
-			if (!data[i].isReadable())
-			{
+		for (MemoryByte memByte : data) {
+			if (!memByte.isReadable()) {
 				invalid = true;
 				break;
 			}
@@ -141,7 +139,7 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 
 		if (invalid)
 		{
-			StringBuffer strBuf = new StringBuffer();
+			StringBuilder strBuf = new StringBuilder();
 			for (int i=0; i<data.length; i++)
 			{
 				strBuf.append(paddedStr);
@@ -151,8 +149,9 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 
 		int columnSize = getBytesPerColumn();
 		int endianess = getDisplayEndianess();
-		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN)
+		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN) {
 			endianess = getBytesEndianess(data);
+		}
 
 		byte[] byteArray = new byte[data.length];
 		for (int i=0; i<byteArray.length;i ++)
@@ -163,7 +162,7 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 		// if endianess is unknown, do not render, just return padded string
 		if (RenderingsUtil.ENDIANESS_UNKNOWN == endianess)
 		{
-			StringBuffer strBuf = new StringBuffer();
+			StringBuilder strBuf = new StringBuilder();
 			for (int i=0; i<byteArray.length; i++)
 			{
 				strBuf.append(paddedStr);
@@ -174,23 +173,22 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 		return convertToString(byteArray, columnSize, endianess);
 	}
 
-	/* (non-Javadoc)
-	 * @see com.ibm.debug.extended.ui.AbstractMemoryRenderer#getBytes(java.lang.String, java.math.BigInteger, java.lang.String)
-	 */
 	@Override
 	public byte[] getBytes(String dataType, BigInteger address, MemoryByte[] currentValues, String data) {
 
 		int columnSize = getBytesPerColumn();
 		int endianess = getDisplayEndianess();
-		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN)
+		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN) {
 			endianess = getBytesEndianess(currentValues);
+		}
 
 		// if endianess is unknown, do not try to render new data to bytes
 		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN)
 		{
 			byte[] retBytes = new byte[currentValues.length];
-			for (int i=0 ;i<currentValues.length; i++)
+			for (int i=0 ;i<currentValues.length; i++) {
 				retBytes[i] = currentValues[i].getValue();
+			}
 			return retBytes;
 		}
 
@@ -199,8 +197,9 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 
 	private byte[] extractBytes(byte[] bytes, int endianess, int colSize) {
 
-		if (colSize > bytes.length)
+		if (colSize > bytes.length) {
 			throw new NumberFormatException();
+		}
 
 		// take the least significant 'colSize' bytes out of the bytes array
 		// if it's big endian, it's the last 'colSize' bytes
@@ -211,8 +210,9 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 			// number is invalid, throw number format exception
 			for (int i=0; i<colSize; i++)
 			{
-				if (bytes[i] != 0)
+				if (bytes[i] != 0) {
 					throw new NumberFormatException();
+				}
 			}
 
 			byte[] copy = new byte[colSize];
@@ -230,8 +230,9 @@ public class UnsignedIntegerRendering extends AbstractIntegerRendering {
 			// number is invalid, throw number format exception
 			for (int i=colSize; i<bytes.length; i++)
 			{
-				if (bytes[i] != 0)
+				if (bytes[i] != 0) {
 					throw new NumberFormatException();
+				}
 			}
 
 			byte[] copy = new byte[colSize];

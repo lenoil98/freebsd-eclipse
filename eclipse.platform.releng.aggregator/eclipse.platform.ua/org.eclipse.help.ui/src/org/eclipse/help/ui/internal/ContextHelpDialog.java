@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.ui.internal;
 
@@ -224,8 +225,8 @@ public class ContextHelpDialog {
 		}
 		if (styledText == null && context.getText() != null) {
 			styledText = context.getText();
-		    styledText= styledText.replaceAll("<b>","<@#\\$b>"); //$NON-NLS-1$ //$NON-NLS-2$
-		    styledText= styledText.replaceAll("</b>", "</@#\\$b>"); //$NON-NLS-1$ //$NON-NLS-2$
+			styledText= styledText.replaceAll("<b>","<@#\\$b>"); //$NON-NLS-1$ //$NON-NLS-2$
+			styledText= styledText.replaceAll("</b>", "</@#\\$b>"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		if (styledText == null) { // no description found in context objects.
 			styledText = Messages.ContextHelpPart_noDescription;
@@ -332,7 +333,7 @@ public class ContextHelpDialog {
 		}
 
 		// create dynamic help link if current context allows dynamic help
-		IWorkbenchWindow wbWindow = HelpUIPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow();
+		IWorkbenchWindow wbWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		if (DefaultHelpUI.isActiveShell(parentShell, wbWindow) || HelpTray.isAppropriateFor(parentShell)) {
 			// Create separator.
 			label = new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL);
@@ -409,10 +410,7 @@ public class ContextHelpDialog {
 										.toString());
 			}
 		} catch (Throwable e) {
-			HelpUIPlugin
-					.logError(
-							"An error occurred when opening context-sensitive help pop-up.", //$NON-NLS-1$
-							e);
+			Platform.getLog(getClass()).error("An error occurred when opening context-sensitive help pop-up.", e); //$NON-NLS-1$
 		}
 	}
 

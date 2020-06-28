@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2016 IBM Corporation and others.
+ * Copyright (c) 2007, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which accompanies this distribution,
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors: IBM Corporation - initial API and implementation
  ******************************************************************************/
 package org.eclipse.osgi.internal.signedcontent;
@@ -15,14 +15,25 @@ package org.eclipse.osgi.internal.signedcontent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.*;
-import java.util.*;
-import org.eclipse.osgi.signedcontent.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.eclipse.osgi.signedcontent.InvalidContentException;
+import org.eclipse.osgi.signedcontent.SignedContent;
+import org.eclipse.osgi.signedcontent.SignedContentEntry;
+import org.eclipse.osgi.signedcontent.SignerInfo;
 import org.eclipse.osgi.storage.bundlefile.BundleEntry;
 import org.eclipse.osgi.storage.bundlefile.BundleFile;
 import org.eclipse.osgi.util.NLS;
 
 public class SignedContentImpl implements SignedContent {
+	final static int VERIFY_LIMIT = 1000 * 1024; // 1 mb; not sure what the best limit is
 	final static SignerInfo[] EMPTY_SIGNERINFO = new SignerInfo[0];
 	// the content which is signed
 	volatile SignedBundleFile content; // TODO can this be more general?
@@ -39,6 +50,7 @@ public class SignedContentImpl implements SignedContent {
 		this.contentMDResults = contentMDResults;
 	}
 
+	@Override
 	public SignedContentEntry[] getSignedEntries() {
 		if (contentMDResults == null)
 			return new SignedContentEntry[0];
@@ -51,6 +63,7 @@ public class SignedContentImpl implements SignedContent {
 		return results.toArray(new SignedContentEntry[results.size()]);
 	}
 
+	@Override
 	public SignedContentEntry getSignedEntry(String name) {
 		if (contentMDResults == null)
 			return null;
@@ -58,10 +71,12 @@ public class SignedContentImpl implements SignedContent {
 		return mdResult == null ? null : new SignedContentEntryImpl(name, (SignerInfo[]) mdResult[0]);
 	}
 
+	@Override
 	public SignerInfo[] getSignerInfos() {
 		return signerInfos;
 	}
 
+	@Override
 	public Date getSigningTime(SignerInfo signerInfo) {
 		if (tsaSignerInfos == null)
 			return null;
@@ -69,6 +84,7 @@ public class SignedContentImpl implements SignedContent {
 		return tsaInfo == null ? null : (Date) tsaInfo[1];
 	}
 
+	@Override
 	public SignerInfo getTSASignerInfo(SignerInfo signerInfo) {
 		if (tsaSignerInfos == null)
 			return null;
@@ -76,22 +92,26 @@ public class SignedContentImpl implements SignedContent {
 		return tsaInfo == null ? null : (SignerInfo) tsaInfo[0];
 	}
 
+	@Override
 	public boolean isSigned() {
 		return signerInfos.length > 0;
 	}
 
+	@Override
 	public void checkValidity(SignerInfo signer) throws CertificateExpiredException, CertificateNotYetValidException {
 		Date signingTime = getSigningTime(signer);
 		if (checkedValid)
 			return;
 		Certificate[] certs = signer.getCertificateChain();
-		for (int i = 0; i < certs.length; i++) {
-			if (!(certs[i] instanceof X509Certificate))
+		for (Certificate cert : certs) {
+			if (!(cert instanceof X509Certificate)) {
 				continue;
-			if (signingTime == null)
-				((X509Certificate) certs[i]).checkValidity();
-			else
-				((X509Certificate) certs[i]).checkValidity(signingTime);
+			}
+			if (signingTime == null) {
+				((X509Certificate) cert).checkValidity();
+			} else {
+				((X509Certificate) cert).checkValidity(signingTime);
+			}
 		}
 		checkedValid = true;
 	}
@@ -118,9 +138,11 @@ public class SignedContentImpl implements SignedContent {
 	}
 
 	private boolean containsInfo(SignerInfo signerInfo) {
-		for (int i = 0; i < signerInfos.length; i++)
-			if (signerInfo == signerInfos[i])
+		for (SignerInfo si : signerInfos) {
+			if (signerInfo == si) {
 				return true;
+			}
+		}
 		return false;
 	}
 
@@ -146,18 +168,22 @@ public class SignedContentImpl implements SignedContent {
 			this.entrySigners = entrySigners == null ? EMPTY_SIGNERINFO : entrySigners;
 		}
 
+		@Override
 		public String getName() {
 			return entryName;
 		}
 
+		@Override
 		public SignerInfo[] getSignerInfos() {
 			return entrySigners;
 		}
 
+		@Override
 		public boolean isSigned() {
 			return entrySigners.length > 0;
 		}
 
+		@Override
 		public void verify() throws IOException, InvalidContentException {
 			BundleFile currentContent = content;
 			if (currentContent == null)
@@ -171,7 +197,17 @@ public class SignedContentImpl implements SignedContent {
 			}
 			if (entry == null)
 				throw new InvalidContentException(NLS.bind(SignedContentMessages.file_is_removed_from_jar, entryName, currentContent.getBaseFile().toString()), exception);
-			entry.getBytes();
+
+			if (entry.getSize() > VERIFY_LIMIT) {
+				try (InputStream in = entry.getInputStream()) {
+					final byte[] buf = new byte[1024];
+					while (in.read(buf) > 0) {
+						// just exhausting the stream to verify
+					}
+				}
+			} else {
+				entry.getBytes();
+			}
 		}
 	}
 }

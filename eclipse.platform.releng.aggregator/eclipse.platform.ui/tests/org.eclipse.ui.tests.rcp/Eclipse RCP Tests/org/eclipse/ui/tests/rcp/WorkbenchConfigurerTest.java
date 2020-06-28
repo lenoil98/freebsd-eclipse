@@ -46,23 +46,23 @@ import org.junit.Test;
 public class WorkbenchConfigurerTest {
 
 
-    private Display display = null;
+	private Display display = null;
 
 	@Before
 	public void setUp() {
 
-        assertNull(display);
-        display = PlatformUI.createDisplay();
-        assertNotNull(display);
-    }
+		assertNull(display);
+		display = PlatformUI.createDisplay();
+		assertNotNull(display);
+	}
 
 	@After
 	public void tearDown() {
-        assertNotNull(display);
-        display.dispose();
-        assertTrue(display.isDisposed());
+		assertNotNull(display);
+		display.dispose();
+		assertTrue(display.isDisposed());
 
-    }
+	}
 
 	@Ignore
 	@Test
@@ -139,7 +139,7 @@ public class WorkbenchConfigurerTest {
 	// tests to ensure that all WorkbenchAdvisor API is called from the UI thread.
 	@Test
 	public void testThreading() {
-		final ArrayList<Exception> results = new ArrayList<Exception>();
+		final ArrayList<Exception> results = new ArrayList<>();
 
 		WorkbenchAdvisor advisor = new RCPTestWorkbenchAdvisor(1) {
 

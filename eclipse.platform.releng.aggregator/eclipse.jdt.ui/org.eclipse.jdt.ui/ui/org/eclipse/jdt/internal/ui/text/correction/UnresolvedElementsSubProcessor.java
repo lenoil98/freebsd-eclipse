@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Renaud Waldura &lt;renaud+eclipse@waldura.com&gt; - New class/interface with wizard
@@ -42,6 +42,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 
 import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.PlatformUI;
 
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.CompositeChange;
@@ -72,6 +73,7 @@ import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
+import org.eclipse.jdt.core.dom.EnumConstantDeclaration;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionMethodReference;
 import org.eclipse.jdt.core.dom.FieldAccess;
@@ -101,6 +103,7 @@ import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SwitchCase;
+import org.eclipse.jdt.core.dom.SwitchExpression;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.ThrowStatement;
@@ -188,9 +191,7 @@ public class UnresolvedElementsSubProcessor {
 		boolean suggestVariableProposals= true;
 		int typeKind= 0;
 
-		while (selectedNode instanceof ParenthesizedExpression) {
-			selectedNode= ((ParenthesizedExpression) selectedNode).getExpression();
-		}
+		selectedNode= ASTNodes.getUnparenthesedExpression(selectedNode);
 
 
 		Name node= null;
@@ -234,8 +235,14 @@ public class UnresolvedElementsSubProcessor {
 						typeKind= TypeKinds.REF_TYPES;
 						suggestVariableProposals= false;
 					}
-				} else if (locationInParent == SwitchCase.EXPRESSION_PROPERTY) {
-					ITypeBinding switchExp= ((SwitchStatement) node.getParent().getParent()).getExpression().resolveTypeBinding();
+				} else if (locationInParent == SwitchCase.EXPRESSION_PROPERTY || locationInParent == SwitchCase.EXPRESSIONS2_PROPERTY) {
+					ASTNode caseParent= node.getParent().getParent();
+					ITypeBinding switchExp= null;
+					if (caseParent instanceof SwitchStatement) {
+						switchExp= ((SwitchStatement) caseParent).getExpression().resolveTypeBinding();
+					} else if (caseParent instanceof SwitchExpression) {
+						switchExp= ((SwitchExpression) caseParent).getExpression().resolveTypeBinding();
+					}
 					if (switchExp != null && switchExp.isEnum()) {
 						binding= switchExp;
 					}
@@ -304,7 +311,7 @@ public class UnresolvedElementsSubProcessor {
 
 		// similar variables
 		addSimilarVariableProposals(cu, astRoot, binding, resolvedField, simpleName, isWriteAccess, proposals);
-		
+
 		if (binding == null) {
 			addStaticImportFavoriteProposals(context, simpleName, false, proposals);
 		}
@@ -349,7 +356,7 @@ public class UnresolvedElementsSubProcessor {
 					rewrite.remove(statement, null);
 				}
 				String label= CorrectionMessages.UnresolvedElementsSubProcessor_removestatement_description;
-				Image image= JavaPlugin.getDefault().getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_DELETE);
+				Image image= PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_DELETE);
 				ASTRewriteCorrectionProposal proposal= new ASTRewriteCorrectionProposal(label, cu, rewrite, IProposalRelevance.REMOVE_ASSIGNMENT, image);
 				proposals.add(proposal);
 			}
@@ -534,9 +541,8 @@ public class UnresolvedElementsSubProcessor {
 
 							MethodInvocation newInv= ast.newMethodInvocation();
 							newInv.setName(ast.newSimpleName(curr.getName()));
-							ITypeBinding[] parameterTypes= curr.getParameterTypes();
-							for (int k= 0; k < parameterTypes.length; k++) {
-								ASTNode arg= ASTNodeFactory.newDefaultExpression(ast, parameterTypes[k]);
+							for (ITypeBinding parameterType : curr.getParameterTypes()) {
+								ASTNode arg= ASTNodeFactory.newDefaultExpression(ast, parameterType);
 								newInv.arguments().add(arg);
 								proposal.addLinkedPosition(rewrite.track(arg), false, null);
 							}
@@ -560,9 +566,8 @@ public class UnresolvedElementsSubProcessor {
 	}
 
 	private static boolean hasMethodWithName(ITypeBinding typeBinding, String name) {
-		IVariableBinding[] fields= typeBinding.getDeclaredFields();
-		for (int i= 0; i < fields.length; i++) {
-			if (fields[i].getName().equals(name)) {
+		for (IVariableBinding field : typeBinding.getDeclaredFields()) {
+			if (field.getName().equals(name)) {
 				return true;
 			}
 		}
@@ -574,9 +579,8 @@ public class UnresolvedElementsSubProcessor {
 	}
 
 	private static boolean hasFieldWithName(ITypeBinding typeBinding, String name) {
-		IMethodBinding[] methods= typeBinding.getDeclaredMethods();
-		for (int i= 0; i < methods.length; i++) {
-			if (methods[i].getName().equals(name)) {
+		for (IMethodBinding method : typeBinding.getDeclaredMethods()) {
+			if (method.getName().equals(name)) {
 				return true;
 			}
 		}
@@ -603,7 +607,7 @@ public class UnresolvedElementsSubProcessor {
 
 		IJavaProject javaProject= cu.getJavaProject();
 		int kind= evauateTypeKind(selectedNode, javaProject);
-		
+
 		if (kind == TypeKinds.REF_TYPES) {
 			addEnhancedForWithoutTypeProposals(cu, selectedNode, proposals);
 		}
@@ -643,7 +647,7 @@ public class UnresolvedElementsSubProcessor {
 					if (name.equals("var")) { //$NON-NLS-1$
 						isVarTypeProblem= true;
 					}
-				}				
+				}
 			}
 			if (isVarTypeProblem) {
 				// check if "var" is present as lambda parameter type
@@ -653,14 +657,14 @@ public class UnresolvedElementsSubProcessor {
 					parent= parent.getParent();
 					if (parent.getLocationInParent() == LambdaExpression.PARAMETERS_PROPERTY) {
 						isVarInLambdaParamType= true;
-					}						
+					}
 				}
-				
+
 				if (isVarInLambdaParamType) {
 					ReorgCorrectionsSubProcessor.getNeedHigherComplianceProposals(context, problem, proposals, JavaCore.VERSION_11);
 				} else {
-					ReorgCorrectionsSubProcessor.getNeedHigherComplianceProposals(context, problem, proposals, JavaCore.VERSION_10);						
-				}		
+					ReorgCorrectionsSubProcessor.getNeedHigherComplianceProposals(context, problem, proposals, JavaCore.VERSION_10);
+				}
 			}
 		}
 
@@ -700,7 +704,7 @@ public class UnresolvedElementsSubProcessor {
 			kind &= ~TypeKinds.ANNOTATIONS; // only propose annotations when there are no other suggestions
 		}
 		addNewTypeProposals(cu, node, kind, IProposalRelevance.NEW_TYPE, proposals);
-		
+
 		ReorgCorrectionsSubProcessor.addProjectSetupFixProposal(context, problem, node.getFullyQualifiedName(), proposals);
 	}
 
@@ -716,7 +720,7 @@ public class UnresolvedElementsSubProcessor {
 						int relevance= StubUtility.hasLocalVariableName(cu.getJavaProject(), name) ? 10 : 7;
 						String label= Messages.format(CorrectionMessages.UnresolvedElementsSubProcessor_create_loop_variable_description, BasicElementLabels.getJavaElementName(name));
 						Image image= JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_LOCAL);
-						
+
 						proposals.add(new NewVariableCorrectionProposal(label, cu, NewVariableCorrectionProposal.LOCAL, simpleName, null, relevance, image));
 					}
 				}
@@ -732,10 +736,10 @@ public class UnresolvedElementsSubProcessor {
 			if (!isImportName)
 				return;
 		}
-		
+
 		final IJavaProject javaProject= cu.getJavaProject();
 		String name= node.getFullyQualifiedName();
-		
+
 		String nullityAnnotation= null;
 		String[] annotationNameOptions= { JavaCore.COMPILER_NULLABLE_ANNOTATION_NAME, JavaCore.COMPILER_NONNULL_ANNOTATION_NAME, JavaCore.COMPILER_NONNULL_BY_DEFAULT_ANNOTATION_NAME };
 		Hashtable<String, String> defaultOptions= JavaCore.getDefaultOptions();
@@ -755,7 +759,7 @@ public class UnresolvedElementsSubProcessor {
 		Bundle[] annotationsBundles= JavaPlugin.getDefault().getBundles("org.eclipse.jdt.annotation", version); //$NON-NLS-1$
 		if (annotationsBundles == null)
 			return;
-		
+
 		if (! cu.getJavaProject().getProject().hasNature("org.eclipse.pde.PluginNature")) //$NON-NLS-1$
 			addCopyAnnotationsJarProposal(cu, node, nullityAnnotation, annotationsBundles[0], proposals);
 	}
@@ -802,7 +806,7 @@ public class UnresolvedElementsSubProcessor {
 				CompilationUnitChange addImportChange= createAddImportChange(cu, name, fullyQualifiedName);
 				return new CompositeChange(changeName, new Change[] { copyFileChange, addEntryChange, addImportChange});
 			}
-			
+
 			@Override
 			public Object getAdditionalProposalInfo(IProgressMonitor monitor) {
 				return CorrectionMessages.UnresolvedElementsSubProcessor_copy_annotation_jar_info;
@@ -870,8 +874,7 @@ public class UnresolvedElementsSubProcessor {
 		}
 
 		// add all similar elements
-		for (int i= 0; i < elements.length; i++) {
-			SimilarElement elem= elements[i];
+		for (SimilarElement elem : elements) {
 			if ((elem.getKind() & TypeKinds.ALL_TYPES) != 0) {
 				String fullName= elem.getName();
 				if (!fullName.equals(resolvedTypeName)) {
@@ -1231,8 +1234,8 @@ public class UnresolvedElementsSubProcessor {
 		IBinding[] bindings= (new ScopeAnalyzer(astRoot)).getDeclarationsInScope(nameNode, ScopeAnalyzer.METHODS);
 
 		HashSet<String> suggestedRenames= new HashSet<>();
-		for (int i= 0; i < bindings.length; i++) {
-			IMethodBinding binding= (IMethodBinding) bindings[i];
+		for (IBinding b : bindings) {
+			IMethodBinding binding= (IMethodBinding) b;
 			String curr= binding.getName();
 			if (!curr.equals(methodName) && binding.getParameterTypes().length == nArguments && NameMatcher.isSimilarName(methodName, curr) && suggestedRenames.add(curr)) {
 				String label= Messages.format(CorrectionMessages.UnresolvedElementsSubProcessor_changemethod_description, BasicElementLabels.getJavaElementName(curr));
@@ -1243,15 +1246,14 @@ public class UnresolvedElementsSubProcessor {
 
 		if (isOnlyParameterMismatch) {
 			ArrayList<IMethodBinding> parameterMismatchs= new ArrayList<>();
-			for (int i= 0; i < bindings.length; i++) {
-				IMethodBinding binding= (IMethodBinding) bindings[i];
+			for (IBinding binding : bindings) {
 				if (binding.getName().equals(methodName)) {
-					parameterMismatchs.add(binding);
+					parameterMismatchs.add((IMethodBinding) binding);
 				}
 			}
 			addParameterMissmatchProposals(context, problem, parameterMismatchs, invocationNode, arguments, proposals);
 		}
-		
+
 		if (sender == null) {
 			addStaticImportFavoriteProposals(context, nameNode, true, proposals);
 		}
@@ -1272,7 +1274,7 @@ public class UnresolvedElementsSubProcessor {
 		}
 
 	}
-	
+
 	private static void addStaticImportFavoriteProposals(IInvocationContext context, SimpleName node, boolean isMethod, Collection<ICommandAccess> proposals) throws JavaModelException {
 		IJavaProject project= context.getCompilationUnit().getJavaProject();
 		if (JavaModelUtil.is50OrHigher(project)) {
@@ -1284,19 +1286,16 @@ public class UnresolvedElementsSubProcessor {
 
 			CompilationUnit root= context.getASTRoot();
 			AST ast= root.getAST();
-			
+
 			String name= node.getIdentifier();
-			String[] staticImports= SimilarElementsRequestor.getStaticImportFavorites(context.getCompilationUnit(), name, isMethod, favourites);
-			for (int i= 0; i < staticImports.length; i++) {
-				String curr= staticImports[i];
-				
+			for (String curr : SimilarElementsRequestor.getStaticImportFavorites(context.getCompilationUnit(), name, isMethod, favourites)) {
 				ImportRewrite importRewrite= StubUtility.createImportRewrite(root, true);
 				ASTRewrite astRewrite= ASTRewrite.create(ast);
-				
+
 				String label;
 				String qualifiedTypeName= Signature.getQualifier(curr);
 				String elementLabel= BasicElementLabels.getJavaElementName(JavaModelUtil.concatenateName(Signature.getSimpleName(qualifiedTypeName), name));
-				
+
 				String res= importRewrite.addStaticImport(qualifiedTypeName, name, isMethod, new ContextSensitiveImportRewriteContext(root, node.getStartPosition(), importRewrite));
 				int dot= res.lastIndexOf('.');
 				if (dot != -1) {
@@ -1315,7 +1314,7 @@ public class UnresolvedElementsSubProcessor {
 			}
 		}
 	}
-	
+
 
 	private static void addNewMethodProposals(ICompilationUnit cu, CompilationUnit astRoot, Expression sender, List<Expression> arguments, boolean isSuperInvocation, ASTNode invocationNode, String methodName, Collection<ICommandAccess> proposals) throws JavaModelException {
 		ITypeBinding nodeParentType= Bindings.getBindingOfParentType(invocationNode);
@@ -1340,7 +1339,7 @@ public class UnresolvedElementsSubProcessor {
 				if (parameterTypes != null) {
 					String sig= org.eclipse.jdt.internal.ui.text.correction.ASTResolving.getMethodSignature(methodName, parameterTypes, false);
 					boolean is18OrHigher= JavaModelUtil.is18OrHigher(targetCU.getJavaProject());
-					boolean isSenderTypeAbstractClass = (senderDeclBinding.getModifiers() &  Modifier.ABSTRACT) > 0; 
+					boolean isSenderTypeAbstractClass = (senderDeclBinding.getModifiers() &  Modifier.ABSTRACT) > 0;
 					boolean isSenderBindingInterface= senderDeclBinding.isInterface();
 					if (nodeParentType == senderDeclBinding) {
 						label= Messages.format(CorrectionMessages.UnresolvedElementsSubProcessor_createmethod_description, sig);
@@ -1419,10 +1418,7 @@ public class UnresolvedElementsSubProcessor {
 		if (!hasCastProposal) {
 			// x.getName() -> ((TestCase) x).getName
 
-			Expression target= sender;
-			while (target instanceof ParenthesizedExpression) {
-				target= ((ParenthesizedExpression) target).getExpression();
-			}
+			Expression target= ASTNodes.getUnparenthesedExpression(sender);
 
 			String label;
 			if (target.getNodeType() != ASTNode.CAST_EXPRESSION) {
@@ -1780,11 +1776,11 @@ public class UnresolvedElementsSubProcessor {
 					proposal.setDisplayName(Messages.format(CorrectionMessages.UnresolvedElementsSubProcessor_addargumentcast_description, arg));
 					proposals.add(proposal);
 				}
-				
+
 				TypeMismatchSubProcessor.addChangeSenderTypeProposals(context, nodeToCast, castType, false, IProposalRelevance.CAST_ARGUMENT_2, proposals);
 			}
 		}
-		
+
 		if (nDiffs == 2) { // try to swap
 			int idx1= indexOfDiff[0];
 			int idx2= indexOfDiff[1];
@@ -1995,13 +1991,22 @@ public class UnresolvedElementsSubProcessor {
 				recursiveConstructor= ASTResolving.findParentMethodDeclaration(selectedNode).resolveBinding();
 			}
 		}
+
+		if (selectedNode.getParent() instanceof EnumConstantDeclaration) {
+			EnumConstantDeclaration enumNode= (EnumConstantDeclaration) selectedNode.getParent();
+			ITypeBinding typeBinding= Bindings.getBindingOfParentType(selectedNode);
+			if (typeBinding != null && !typeBinding.isAnonymous()) {
+				targetBinding= typeBinding;
+				arguments= enumNode.arguments();
+				selectedNode= enumNode;
+			}
+		}
+
 		if (targetBinding == null) {
 			return;
 		}
-		IMethodBinding[] methods= targetBinding.getDeclaredMethods();
 		ArrayList<IMethodBinding> similarElements= new ArrayList<>();
-		for (int i= 0; i < methods.length; i++) {
-			IMethodBinding curr= methods[i];
+		for (IMethodBinding curr : targetBinding.getDeclaredMethods()) {
 			if (curr.isConstructor() && recursiveConstructor != curr) {
 				similarElements.add(curr); // similar elements can contain a implicit default constructor
 			}
@@ -2027,9 +2032,7 @@ public class UnresolvedElementsSubProcessor {
 		int offset= problem.getOffset();
 		int len= problem.getLength();
 
-		IJavaElement[] elements= cu.codeSelect(offset, len);
-		for (int i= 0; i < elements.length; i++) {
-			IJavaElement curr= elements[i];
+		for (IJavaElement curr : cu.codeSelect(offset, len)) {
 			if (curr instanceof IType && !TypeFilter.isFiltered((IType) curr)) {
 				String qualifiedTypeName= ((IType) curr).getFullyQualifiedName('.');
 
@@ -2059,9 +2062,8 @@ public class UnresolvedElementsSubProcessor {
 		SimpleName nameNode= decl.getName();
 		String methodName= nameNode.getIdentifier();
 
-		IBinding[] bindings= (new ScopeAnalyzer(root)).getDeclarationsInScope(nameNode, ScopeAnalyzer.METHODS);
-		for (int i= 0; i < bindings.length; i++) {
-			String currName= bindings[i].getName();
+		for (IBinding binding : (new ScopeAnalyzer(root)).getDeclarationsInScope(nameNode, ScopeAnalyzer.METHODS)) {
+			String currName= binding.getName();
 			if (NameMatcher.isSimilarName(methodName, currName)) {
 				String label= Messages.format(CorrectionMessages.UnresolvedElementsSubProcessor_arraychangetomethod_description, BasicElementLabels.getJavaElementName(currName));
 				proposals.add(new RenameNodeCorrectionProposal(label, context.getCompilationUnit(), nameNode.getStartPosition(), nameNode.getLength(), currName, IProposalRelevance.ARRAY_CHANGE_TO_METHOD));
@@ -2103,9 +2105,7 @@ public class UnresolvedElementsSubProcessor {
 
 		if (annotation instanceof NormalAnnotation) {
 			// similar names
-			IMethodBinding[] otherMembers= annotBinding.getDeclaredMethods();
-			for (int i= 0; i < otherMembers.length; i++) {
-				IMethodBinding binding= otherMembers[i];
+			for (IMethodBinding binding : annotBinding.getDeclaredMethods()) {
 				String curr= binding.getName();
 				int relevance= NameMatcher.isSimilarName(memberName, curr) ? IProposalRelevance.CHANGE_TO_ATTRIBUTE_SIMILAR_NAME : IProposalRelevance.CHANGE_TO_ATTRIBUTE;
 				String label= Messages.format(CorrectionMessages.UnresolvedElementsSubProcessor_UnresolvedElementsSubProcessor_changetoattribute_description, BasicElementLabels.getJavaElementName(curr));
@@ -2121,6 +2121,9 @@ public class UnresolvedElementsSubProcessor {
 				proposals.add(new NewAnnotationMemberProposal(label, targetCU, selectedNode, annotBinding, IProposalRelevance.CREATE_ATTRIBUTE, image));
 			}
 		}
+	}
+
+	private UnresolvedElementsSubProcessor() {
 	}
 
 

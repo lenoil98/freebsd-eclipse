@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
@@ -109,20 +108,18 @@ public class ContributionTemplateStore extends TemplateStore {
 	@Override
 	protected void loadContributedTemplates() throws IOException {
 		IConfigurationElement[] extensions= getTemplateExtensions();
-		Collection<TemplatePersistenceData> contributed= readContributedTemplates(extensions);
-		for (Iterator<TemplatePersistenceData> it= contributed.iterator(); it.hasNext();) {
-			TemplatePersistenceData data= it.next();
+		for (TemplatePersistenceData data : readContributedTemplates(extensions)) {
 			internalAdd(data);
 		}
 	}
 
 	private Collection<TemplatePersistenceData> readContributedTemplates(IConfigurationElement[] extensions) throws IOException {
 		Collection<TemplatePersistenceData> templates= new ArrayList<>();
-		for (int i= 0; i < extensions.length; i++) {
-			if (extensions[i].getName().equals(TEMPLATE))
-				createTemplate(templates, extensions[i]);
-			else if (extensions[i].getName().equals(INCLUDE)) {
-				readIncludedTemplates(templates, extensions[i]);
+		for (IConfigurationElement extension : extensions) {
+			if (extension.getName().equals(TEMPLATE)) {
+				createTemplate(templates, extension);
+			} else if (extension.getName().equals(INCLUDE)) {
+				readIncludedTemplates(templates, extension);
 			}
 		}
 
@@ -149,8 +146,7 @@ public class ContributionTemplateStore extends TemplateStore {
 				try (InputStream stream= new BufferedInputStream(url.openStream())) {
 					TemplateReaderWriter reader= new TemplateReaderWriter();
 					TemplatePersistenceData[] datas= reader.read(stream, bundle);
-					for (int i= 0; i < datas.length; i++) {
-						TemplatePersistenceData data= datas[i];
+					for (TemplatePersistenceData data : datas) {
 						if (data.isCustom()) {
 							if (data.getId() == null)
 								EditorsPlugin.logErrorMessage(NLSUtility.format(ContributionTemplateMessages.ContributionTemplateStore_ignore_no_id, data.getTemplate().getName()));
@@ -243,7 +239,7 @@ public class ContributionTemplateStore extends TemplateStore {
 	}
 
 	private static boolean isValidTemplateId(String id) {
-		return id != null && id.trim().length() != 0; // TODO test validity?
+		return id != null && !id.trim().isEmpty(); // TODO test validity?
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,7 @@ package org.eclipse.swt.tests.junit;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -75,6 +76,7 @@ public void test_ConstructorI() {
 	for (int i = 0; i < cases.length; i++) {
 		newShell = new Shell(cases[i]);
 		assertTrue("a " +i, newShell.getDisplay() == shell.getDisplay());
+		assertNotEquals(0, newShell.getStyle() & cases[i]);
 		newShell.dispose();
 	}
 }
@@ -500,8 +502,8 @@ public void test_open() {
 
 @Test
 public void test_setActive() {
-	if (SwtTestUtil.isGTK) {
-		//TODO Fix GTK failure.
+	if (SwtTestUtil.isGTK || SwtTestUtil.isCocoa) {
+		//TODO Fix GTK and Cocoa failure.
 		if (SwtTestUtil.verbose) {
 			System.out.println("Excluded test_setActive(org.eclipse.swt.tests.junit.Test_org_eclipse_swt_widgets_Shell))");
 		}
@@ -515,9 +517,6 @@ public void test_setActive() {
 	/* Test setActive for visible shell. */
 	shell.setVisible(true);
 	shell.setActive();
-	if (SwtTestUtil.isCocoa) { //workaround for Bug 536564
-		drainEventQueue(shell.getDisplay(), 5000);
-	}
 	assertTrue("visible shell was not made active", shell.getDisplay().getActiveShell() == shell);
 
 	/* Test setActive for visible dialog shell. */
@@ -525,9 +524,6 @@ public void test_setActive() {
 	testShell.setBounds(shell.getBounds());
 	testShell.setVisible(true);
 	testShell.setActive();
-	if (SwtTestUtil.isCocoa) { //workaround for Bug 536564
-		drainEventQueue(shell.getDisplay(), 2000);
-	}
 	assertTrue("visible dialog shell was not made active", testShell.getDisplay().getActiveShell() == testShell);
 
 	/* Test setActive for non-visible shell. */
@@ -535,9 +531,6 @@ public void test_setActive() {
 	shell.setVisible(false);
 	shell.setActive();
 	shell2.setText("Shell2: Not active");
-	if (SwtTestUtil.isCocoa) { //workaround for Bug 536564
-		drainEventQueue(shell.getDisplay(), 2000);
-	}
 	assertTrue("non-visible shell was made active", shell.getDisplay().getActiveShell() != shell);
 
 	/* Test setActive for non-visible dialog shell. */
@@ -545,30 +538,9 @@ public void test_setActive() {
 	testShell.setVisible(false);
 	testShell.setActive();
 	shell2.setText("Shell2: Not active");
-	if (SwtTestUtil.isCocoa) { //workaround for Bug 536564
-		drainEventQueue(shell.getDisplay(), 2000);
-	}
 	assertTrue("non-visible dialog shell was made active", testShell.getDisplay().getActiveShell() != testShell);
 
 	shell2.dispose();
-}
-
-private static void drainEventQueue(Display display, int millis) {
-	if (millis == 0) {
-		while (!display.isDisposed() && display.readAndDispatch()) {
-		}
-		return;
-	}
-	long end = System.currentTimeMillis() + millis;
-	while (!display.isDisposed() && System.currentTimeMillis() < end) {
-		if (!display.readAndDispatch ()) {
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	}
 }
 
 @Override
@@ -680,8 +652,8 @@ public void test_activateEventSend() {
 			});
 		testShell.open();
 		int[] styles = {SWT.ON_TOP, SWT.APPLICATION_MODAL, SWT.PRIMARY_MODAL, SWT.SYSTEM_MODAL, SWT.NO_TRIM, SWT.BORDER, SWT.SHELL_TRIM};
-		for (int i = 0; i < styles.length; i++) {
-			Shell childShell = new Shell(testShell, styles[i]);
+		for (int style : styles) {
+			Shell childShell = new Shell(testShell, style);
 			listenerCalled = false;
 			childShell.open();
 			childShell.dispose();
@@ -824,93 +796,127 @@ public void test_setSizeLorg_eclipse_swt_graphics_Point() {
 Shell testShell;
 
 private void createShell() {
-    tearDown();
-    shell = new Shell();
-    testShell = new Shell(shell, SWT.DIALOG_TRIM | SWT.MIN);
+	tearDown();
+	shell = new Shell();
+	testShell = new Shell(shell, SWT.DIALOG_TRIM | SWT.MIN);
 	testShell.setSize(100,300);
 	testShell.setText("Shell");
-    testShell.setLayout(new FillLayout());
-    setWidget(testShell);
+	testShell.setLayout(new FillLayout());
+	setWidget(testShell);
 
 }
 
 @Test
 public void test_consistency_Open() {
 	if (SwtTestUtil.fTestConsistency) {
-	    createShell();
-	    final Display display = shell.getDisplay();
-	    List<String> events = new ArrayList<>();
-	    String[] temp = hookExpectedEvents(testShell, getTestName(), events);
-	    shell.pack();
-	    shell.open();
-	    testShell.pack();
-	    testShell.open();
-	    new Thread() {
-	        @Override
+		createShell();
+		final Display display = shell.getDisplay();
+		List<String> events = new ArrayList<>();
+		String[] temp = hookExpectedEvents(testShell, getTestName(), events);
+		shell.pack();
+		shell.open();
+		testShell.pack();
+		testShell.open();
+		new Thread() {
+			@Override
 			public void run() {
-	            display.asyncExec(new Thread() {
-				    @Override
+				display.asyncExec(new Thread() {
+					@Override
 					public void run() {
-				        shell.dispose();
-				    }
+						shell.dispose();
+					}
 				});
-	    }}.start();
+		}}.start();
 
-	    while(!shell.isDisposed()) {
-	        if(!display.readAndDispatch()) display.sleep();
-	    }
-	    setUp();
-	    String[] results = events.toArray(new String[events.size()]);
-	    assertArrayEquals(getTestName() + " event ordering", temp, results);
+		while(!shell.isDisposed()) {
+			if(!display.readAndDispatch()) display.sleep();
+		}
+		setUp();
+		String[] results = events.toArray(new String[events.size()]);
+		assertArrayEquals(getTestName() + " event ordering", temp, results);
 	}
 }
 
 @Test
 public void test_consistency_Iconify() {
-    createShell();
-    consistencyEvent(1, 0, 0, 0, ConsistencyUtility.SHELL_ICONIFY, null, false);
+	createShell();
+	consistencyEvent(1, 0, 0, 0, ConsistencyUtility.SHELL_ICONIFY, null, false);
 }
 
 @Test
 public void test_consistency_Close() {
-    createShell();
-    consistencyPrePackShell();
-    consistencyEvent(0, SWT.ALT, 0, SWT.F4, ConsistencyUtility.DOUBLE_KEY_PRESS);
-    createShell();
+	createShell();
+	consistencyPrePackShell();
+	consistencyEvent(0, SWT.ALT, 0, SWT.F4, ConsistencyUtility.DOUBLE_KEY_PRESS);
+	createShell();
 }
 
 @Test
 public void test_consistency_Dispose() {
-    createShell();
+	createShell();
 
-    final Button button = new Button(testShell, SWT.PUSH);
-    button.setText("dispose");
-    button.addSelectionListener( new SelectionAdapter() {
-        @Override
+	final Button button = new Button(testShell, SWT.PUSH);
+	button.setText("dispose");
+	button.addSelectionListener( new SelectionAdapter() {
+		@Override
 		public void widgetSelected(SelectionEvent se) {
-            button.dispose();
-            testShell.dispose();
-        }
-    });
-    List<String> events = new ArrayList<>();
-    consistencyPrePackShell(testShell);
-    Point pt = button.getLocation();
-    consistencyEvent(pt.x, pt.y, 1, 0, ConsistencyUtility.MOUSE_CLICK, events);
-    createShell();
+			button.dispose();
+			testShell.dispose();
+		}
+	});
+	List<String> events = new ArrayList<>();
+	consistencyPrePackShell(testShell);
+	Point pt = button.getLocation();
+	consistencyEvent(pt.x, pt.y, 1, 0, ConsistencyUtility.MOUSE_CLICK, events);
+	createShell();
 }
 
 @Test
 public void test_setAlpha() {
-    createShell();
-    testShell.setAlpha(128);
-    int alpha = testShell.getAlpha();
-    if (SwtTestUtil.isGTK && alpha == 255) {
-    	System.out.println("Test_org_eclipse_swt_widgets_Shell.test_setAlpha(): expected 128, but was 255. "
-    			+ "Probably missing window manager functionality, see bug 498208.");
-    } else {
-    	assertEquals(128, alpha);
-    }
-    testShell.setAlpha(255);
-    assertEquals(255, testShell.getAlpha());
+	createShell();
+	testShell.setAlpha(128);
+	int alpha = testShell.getAlpha();
+	if (SwtTestUtil.isGTK && alpha == 255) {
+		System.out.println("Test_org_eclipse_swt_widgets_Shell.test_setAlpha(): expected 128, but was 255. "
+				+ "Probably missing window manager functionality, see bug 498208.");
+	} else {
+		assertEquals(128, alpha);
+	}
+	testShell.setAlpha(255);
+	assertEquals(255, testShell.getAlpha());
 }
+
+@Test // see bug#520488
+public void test_childDisposesParent () {
+	createShell();
+	Shell root = new Shell(testShell, SWT.SHELL_TRIM);
+	Shell child = new Shell(root, SWT.SHELL_TRIM);
+	child.addListener(SWT.Dispose, e -> root.dispose());
+	root.dispose();
+}
+
+@Test
+public void test_bug558652_scrollBarNPE() {
+	createShell();
+	int[] styles = new int[] { SWT.NONE, SWT.DIALOG_TRIM, SWT.SHELL_TRIM };
+	for (int style : styles) {
+		Shell shell = new Shell(testShell, style);
+		assertNull(shell.getVerticalBar());
+		assertNull(shell.getHorizontalBar());
+		shell.dispose();
+		shell = new Shell(testShell, style | SWT.V_SCROLL);
+		assertNotNull(shell.getVerticalBar());
+		assertNull(shell.getHorizontalBar());
+		shell.dispose();
+		shell = new Shell(testShell, style | SWT.H_SCROLL);
+		assertNull(shell.getVerticalBar());
+		assertNotNull(shell.getHorizontalBar());
+		shell.dispose();
+		shell = new Shell(testShell, style | SWT.V_SCROLL | SWT.H_SCROLL);
+		assertNotNull(shell.getVerticalBar());
+		assertNotNull(shell.getHorizontalBar());
+		shell.dispose();
+	}
+}
+
 }

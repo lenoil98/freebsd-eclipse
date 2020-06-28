@@ -319,7 +319,7 @@ public class Path implements IPath, Cloneable {
 	@Override
 	public IPath append(String tail) {
 		//optimize addition of a single segment
-		if (tail.indexOf(SEPARATOR) == -1 && tail.indexOf("\\") == -1 && tail.indexOf(DEVICE_SEPARATOR) == -1) { //$NON-NLS-1$
+		if (tail.indexOf(SEPARATOR) == -1 && tail.indexOf('\\') == -1 && tail.indexOf(DEVICE_SEPARATOR) == -1) {
 			int tailLength = tail.length();
 			if (tailLength < 3) {
 				//some special cases
@@ -351,8 +351,7 @@ public class Path implements IPath, Cloneable {
 	 */
 	private boolean canonicalize() {
 		//look for segments that need canonicalizing
-		for (int i = 0, max = segments.length; i < max; i++) {
-			String segment = segments[i];
+		for (String segment : segments) {
 			if (segment.charAt(0) == '.' && (segment.equals("..") || segment.equals("."))) { //$NON-NLS-1$ //$NON-NLS-2$
 				//path needs to be canonicalized
 				collapseParentReferences();
@@ -558,7 +557,7 @@ public class Path implements IPath, Cloneable {
 	 * Returns the platform-neutral encoding of the given segment onto
 	 * the given string buffer. This escapes literal colon characters with double colons.
 	 */
-	private void encodeSegment(String string, StringBuffer buf) {
+	private void encodeSegment(String string, StringBuilder buf) {
 		int len = string.length();
 		for (int i = 0; i < len; i++) {
 			char c = string.charAt(i);
@@ -1143,7 +1142,7 @@ public class Path implements IPath, Cloneable {
 		int resultSize = computeLength();
 		if (resultSize <= 0)
 			return EMPTY_STRING;
-		StringBuffer result = new StringBuffer(resultSize);
+		StringBuilder result = new StringBuilder(resultSize);
 		if (device != null)
 			result.append(device);
 		if ((flags & HAS_LEADING) != 0)

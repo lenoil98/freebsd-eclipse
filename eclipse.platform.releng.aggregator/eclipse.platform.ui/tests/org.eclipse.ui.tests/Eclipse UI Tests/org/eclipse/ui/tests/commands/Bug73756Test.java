@@ -14,6 +14,9 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.commands;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
@@ -22,8 +25,9 @@ import org.eclipse.jface.action.ExternalActionManager;
 import org.eclipse.jface.util.Util;
 import org.eclipse.ui.statushandlers.StatusAdapter;
 import org.eclipse.ui.statushandlers.StatusManager;
-import org.eclipse.ui.tests.harness.util.UITestCase;
 import org.eclipse.ui.tests.statushandlers.TestStatusHandler;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * A tests whether is active will log an exception if the command is not
@@ -31,7 +35,7 @@ import org.eclipse.ui.tests.statushandlers.TestStatusHandler;
  *
  * @since 3.1
  */
-public final class Bug73756Test extends UITestCase {
+public final class Bug73756Test {
 
 	private static String CMD_ID = "a command that is not defined";
 
@@ -40,29 +44,27 @@ public final class Bug73756Test extends UITestCase {
 
 	private static int SEVERITY = IStatus.ERROR;
 
-	private static String MESSAGE = MessageFormat.format(Util.translateString(
-			RESOURCE_BUNDLE, "undefinedCommand.WarningMessage", null), //$NON-NLS-1$
+	private static String MESSAGE = MessageFormat.format(
+			Util.translateString(RESOURCE_BUNDLE, "undefinedCommand.WarningMessage", null), //$NON-NLS-1$
 			CMD_ID);
 
 	private static String PLUGIN_ID = "org.eclipse.jface";
 
-	/**
-	 * Constructs a new instance of <code>Bug73756Test</code>.
-	 *
-	 * @param name
-	 *            The name of the test
-	 */
-	public Bug73756Test(final String name) {
-		super(name);
+	@Before
+	public void doTearDown() throws Exception {
+		TestStatusHandler.uninstall();
 	}
 
 	/**
-	 * Tests that calling <code>isActive()</code> on an undefined command
-	 * causes a log message to be written. This simple calls
-	 * <code>isActive()</code> for a bogus command identifier. A log listener
-	 * flips a boolean flag if a log message is written.
+	 * Tests that calling <code>isActive()</code> on an undefined command causes a
+	 * log message to be written. This simple calls <code>isActive()</code> for a
+	 * bogus command identifier. A log listener flips a boolean flag if a log
+	 * message is written.
 	 */
-	public final void testUndefinedCommandIsActiveLogged() {
+	@Test
+	public final void testUndefinedCommandIsActiveLogged() throws Exception {
+		TestStatusHandler.install();
+
 		// Check if a bogus command is active.
 		ExternalActionManager.getInstance().getCallback().isActive(CMD_ID);
 

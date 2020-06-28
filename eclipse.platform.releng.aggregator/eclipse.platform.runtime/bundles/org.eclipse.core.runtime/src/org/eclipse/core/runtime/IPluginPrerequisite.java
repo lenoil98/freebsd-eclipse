@@ -22,7 +22,6 @@ import org.osgi.framework.Constants;
  * classes defined by the prerequisite plug-in to be visible
  * to the plug-in that declared the dependency.
  *
- * @see IPluginDescriptor#getPluginPrerequisites()
  * @deprecated
  * In Eclipse 3.0 the plug-in prerequisite representation was changed.  Clients of
  * <code>IPluginPrerequisite</code> are directed to the headers associated with the relevant bundle.
@@ -41,13 +40,10 @@ import org.osgi.framework.Constants;
  *     ...
  * </pre>
  * <p>
- * See {@link IPluginDescriptor} for information on the relationship between plug-in
- * descriptors and bundles.
- * </p><p>
  * This interface must only be used by plug-ins
  * which explicitly require the org.eclipse.core.runtime.compatibility plug-in.
  * </p>
- * 
+ *
  * @noextend This interface is not intended to be extended by clients.
  * @noreference This interface is not intended to be referenced by clients.
  * @noimplement This interface is not intended to be implemented by clients.

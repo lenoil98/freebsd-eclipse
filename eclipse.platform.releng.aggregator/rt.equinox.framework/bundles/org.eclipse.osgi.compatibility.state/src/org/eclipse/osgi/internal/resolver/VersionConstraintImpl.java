@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Danail Nachev -  ProSyst - bug 218625
@@ -154,6 +154,7 @@ abstract class VersionConstraintImpl implements VersionConstraint {
 			return isSatisfiedBy(((BaseCapability) capability).getBaseDescription());
 		}
 
+		@Override
 		public int hashCode() {
 			return System.identityHashCode(VersionConstraintImpl.this);
 		}
@@ -162,6 +163,7 @@ abstract class VersionConstraintImpl implements VersionConstraint {
 			return VersionConstraintImpl.this;
 		}
 
+		@Override
 		public boolean equals(Object obj) {
 			if (this == obj)
 				return true;
@@ -170,6 +172,7 @@ abstract class VersionConstraintImpl implements VersionConstraint {
 			return ((BundleRequirementImpl) obj).getVersionConstraint() == VersionConstraintImpl.this;
 		}
 
+		@Override
 		public String toString() {
 			return getNamespace() + BaseDescriptionImpl.toString(getAttributes(), false) + BaseDescriptionImpl.toString(getDirectives(), true);
 		}
@@ -195,18 +198,18 @@ abstract class VersionConstraintImpl implements VersionConstraint {
 		}
 	}
 
-	static StringBuffer addFilterAttributes(StringBuffer filter, Map<String, ?> attributes) {
+	static StringBuilder addFilterAttributes(StringBuilder filter, Map<String, ?> attributes) {
 		for (Map.Entry<String, ?> entry : attributes.entrySet()) {
 			addFilterAttribute(filter, entry.getKey(), entry.getValue());
 		}
 		return filter;
 	}
 
-	static StringBuffer addFilterAttribute(StringBuffer filter, String attr, Object value) {
+	static StringBuilder addFilterAttribute(StringBuilder filter, String attr, Object value) {
 		return addFilterAttribute(filter, attr, value, true);
 	}
 
-	static StringBuffer addFilterAttribute(StringBuffer filter, String attr, Object value, boolean escapeWildCard) {
+	static StringBuilder addFilterAttribute(StringBuilder filter, String attr, Object value, boolean escapeWildCard) {
 		if (value instanceof VersionRange) {
 			VersionRange range = (VersionRange) value;
 			filter.append(range.toFilterString(attr));

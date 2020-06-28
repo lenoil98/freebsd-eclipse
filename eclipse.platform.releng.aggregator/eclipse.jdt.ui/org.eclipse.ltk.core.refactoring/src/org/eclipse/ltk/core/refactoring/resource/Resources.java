@@ -15,7 +15,6 @@ package org.eclipse.ltk.core.refactoring.resource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -66,8 +65,7 @@ public class Resources {
 	 */
 	public static IStatus checkInSync(IResource[] resources) {
 		IStatus result= null;
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
+		for (IResource resource : resources) {
 			if (!resource.isSynchronized(IResource.DEPTH_INFINITE)) {
 				result= addOutOfSync(result, resource);
 			}
@@ -108,12 +106,11 @@ public class Resources {
 	 */
 	public static IStatus makeCommittable(IResource[] resources, Object context) {
 		List<IFile> readOnlyFiles= new ArrayList<>();
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
+		for (IResource resource : resources) {
 			if (resource.getType() == IResource.FILE &&  isReadOnly(resource))
 				readOnlyFiles.add((IFile) resource);
 		}
-		if (readOnlyFiles.size() == 0)
+		if (readOnlyFiles.isEmpty())
 			return Status.OK_STATUS;
 
 		Map<IFile, Long> oldTimeStamps= createModificationStampMap(readOnlyFiles);
@@ -124,8 +121,7 @@ public class Resources {
 
 		IStatus modified= null;
 		Map<IFile, Long> newTimeStamps= createModificationStampMap(readOnlyFiles);
-		for (Iterator<Entry<IFile, Long>> iter= oldTimeStamps.entrySet().iterator(); iter.hasNext();) {
-			Entry<IFile, Long> entry= iter.next();
+		for (Entry<IFile, Long> entry : oldTimeStamps.entrySet()) {
 			if (!entry.getValue().equals(newTimeStamps.get(entry.getKey())))
 				modified= addModified(modified, entry.getKey());
 		}
@@ -136,8 +132,7 @@ public class Resources {
 
 	private static Map<IFile, Long> createModificationStampMap(List<IFile> files){
 		Map<IFile, Long> map= new HashMap<>();
-		for (Iterator<IFile> iter= files.iterator(); iter.hasNext(); ) {
-			IFile file= iter.next();
+		for (IFile file : files) {
 			map.put(file, Long.valueOf(file.getModificationStamp()));
 		}
 		return map;
@@ -225,8 +220,8 @@ public class Resources {
 
 	private static int getSelectedResourceTypes(IResource[] resources) {
 		int types = 0;
-		for (int i = 0; i < resources.length; i++) {
-			types |= resources[i].getType();
+		for (IResource resource : resources) {
+			types |= resource.getType();
 		}
 		return types;
 	}

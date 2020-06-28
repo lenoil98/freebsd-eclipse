@@ -31,10 +31,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -69,15 +74,36 @@ public class BatchTestUtils {
 	public static String _tmpGenFolderName;
 	private static File _tmpGenDir;
 
+	public static final class DiagnosticReport<S> implements DiagnosticListener<S> {
+		public StringBuffer buffer;
+		private List<Diagnostic<? extends S>> diagnostics = new ArrayList<>();
+		DiagnosticReport() {
+			this.buffer = new StringBuffer();
+		}
+		public void report(Diagnostic<? extends S> diagnostic) {
+			diagnostics.add(diagnostic);
+			buffer.append(diagnostic.getMessage(Locale.getDefault()));
+			buffer.append("\n");
+		}
+		public List<Diagnostic<? extends S>> get(Diagnostic.Kind first, Diagnostic.Kind... rest) {
+			Set<Diagnostic.Kind> wanted = EnumSet.of(first, rest);
+			return diagnostics.stream().filter(d -> wanted.contains(d.getKind())).collect(Collectors.toList());
+		}
+		public String toString() {
+			return this.buffer.toString();
+		}
+	}
+
 	/**
 	 * Create a class that contains an annotation that generates another class,
 	 * and compile it.  Verify that generation and compilation succeeded.
 	 */
-	public static void compileOneClass(JavaCompiler compiler, List<String> options, File inputFile) {
-		compileOneClass(compiler, options, inputFile, false);
+	public static DiagnosticReport<JavaFileObject> compileOneClass(JavaCompiler compiler, List<String> options, File inputFile) {
+		return compileOneClass(compiler, options, inputFile, false);
 	}
-	public static void compileOneClass(JavaCompiler compiler, List<String> options, File inputFile, boolean useJLS8Processors) {
-		StandardJavaFileManager manager = compiler.getStandardFileManager(null, Locale.getDefault(), Charset.defaultCharset());
+	public static DiagnosticReport<JavaFileObject> compileOneClass(JavaCompiler compiler, List<String> options, File inputFile, boolean useJLS8Processors) {
+		DiagnosticReport<JavaFileObject> diagnostics = new DiagnosticReport<>();
+		StandardJavaFileManager manager = compiler.getStandardFileManager(diagnostics, Locale.getDefault(), Charset.defaultCharset());
 
 		// create new list containing inputfile
 		List<File> files = new ArrayList<File>();
@@ -93,7 +119,7 @@ public class BatchTestUtils {
 		addProcessorPaths(options, useJLS8Processors, true);
 		options.add("-XprintRounds");
 		options.add("-XprintProcessorInfo");
-		CompilationTask task = compiler.getTask(printWriter, manager, null, options, null, units);
+		CompilationTask task = compiler.getTask(printWriter, manager, diagnostics, options, null, units);
 		Boolean result = task.call();
 
 		if (!result.booleanValue()) {
@@ -106,6 +132,7 @@ public class BatchTestUtils {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		return diagnostics;
 	}
 
 	public static void compileTree(JavaCompiler compiler, List<String> options, File targetFolder) {
@@ -122,16 +149,23 @@ public class BatchTestUtils {
 	}
 
 	public static void compileInModuleMode(JavaCompiler compiler, List<String> options, String processor,
-			File targetFolder, DiagnosticListener<? super JavaFileObject> listener, boolean multiModule) {
+			File targetFolder, DiagnosticListener<? super JavaFileObject> listener, boolean multiModule) throws IOException {
 		compileInModuleMode(compiler, options, processor, targetFolder, listener, multiModule, true);
 	}
 	public static void compileInModuleMode(JavaCompiler compiler, List<String> options, String processor,
-			File targetFolder, DiagnosticListener<? super JavaFileObject> listener, boolean multiModule, boolean processBinariesAgain) {
+			File targetFolder, DiagnosticListener<? super JavaFileObject> listener, boolean multiModule, boolean processBinariesAgain) throws IOException {
 		StandardJavaFileManager manager = compiler.getStandardFileManager(null, Locale.getDefault(), Charset.defaultCharset());
 		Iterable<? extends File> location = manager.getLocation(StandardLocation.CLASS_PATH);
 		// create new list containing inputfile
 		List<File> files = new ArrayList<File>();
 		findFilesUnder(targetFolder, files);
+		files.sort(new Comparator<File>() {
+			@Override
+			public int compare(File f1, File f2) {
+				int compareTo = f1.getAbsolutePath().compareTo(f2.getAbsolutePath());
+				return compareTo;
+			}
+		});
 		Iterable<? extends JavaFileObject> units = manager.getJavaFileObjectsFromFiles(files);
 		StringWriter stringWriter = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(stringWriter);
@@ -145,7 +179,7 @@ public class BatchTestUtils {
 		copyOptions.add(_tmpBinFolderName);
 		copyOptions.add("-s");
 		copyOptions.add(_tmpGenFolderName);
-		addModuleProcessorPath(copyOptions, getSrcFolderName(), multiModule);
+		addModuleProcessorPath(copyOptions, targetFolder.getAbsolutePath(), multiModule);
 		copyOptions.add("-XprintRounds");
 		CompilationTask task = compiler.getTask(printWriter, manager, listener, copyOptions, null, units);
 		Boolean result = task.call();
@@ -154,6 +188,8 @@ public class BatchTestUtils {
 			String errorOutput = stringWriter.getBuffer().toString();
 			System.err.println("Compilation failed: " + errorOutput);
 	 		junit.framework.TestCase.assertTrue("Compilation failed : " + errorOutput, false);
+		} else {
+			junit.framework.TestCase.assertEquals("succeeded", System.getProperty(processor));
 		}
 		if (!processBinariesAgain) {
 			return;
@@ -164,6 +200,7 @@ public class BatchTestUtils {
 			System.clearProperty(processor);
 			copyOptions = new ArrayList<>();
 			copyOptions.addAll(options);
+			copyOptions.add("-Abinary");
 			copyOptions.add("-cp");
 			copyOptions.add(_jls8ProcessorJarPath + File.pathSeparator + _tmpGenFolderName);
 			copyOptions.add("--processor-module-path");
@@ -257,6 +294,7 @@ public class BatchTestUtils {
 			System.clearProperty(processor);
 			copyOptions = new ArrayList<>();
 			copyOptions.addAll(options);
+			copyOptions.add("-Abinary");
 			copyOptions.add("-cp");
 			copyOptions.add(_tmpBinFolderName + File.pathSeparator + _jls8ProcessorJarPath + File.pathSeparator + _tmpGenFolderName);
 			copyOptions.add("-processorpath");
@@ -361,7 +399,7 @@ public class BatchTestUtils {
 		}
 	}
 	protected static void findClassesUnder(Path root, Path folder, List<String> classes, String moduleName) throws IOException {
-		if (folder == null) 
+		if (folder == null)
 			folder = root;
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(folder)) {
 	        for (Path entry : stream) {

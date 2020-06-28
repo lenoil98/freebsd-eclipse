@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.pde.api.tools.internal.provisional.search;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -38,8 +39,6 @@ import org.eclipse.pde.api.tools.internal.provisional.model.IApiType;
 import org.eclipse.pde.api.tools.internal.provisional.model.IApiTypeContainer;
 import org.eclipse.pde.api.tools.internal.provisional.model.IApiTypeRoot;
 import org.eclipse.pde.api.tools.internal.search.SearchMessages;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Engine used to search for API use
@@ -160,7 +159,7 @@ public final class ApiSearchEngine {
 		IApiMember member = null;
 		for (Iterator<IReference> iter = references.iterator(); iter.hasNext();) {
 			if (localmonitor.isCanceled()) {
-				return Collections.EMPTY_LIST;
+				return Collections.emptyList();
 			}
 			ref = iter.next();
 			member = ref.getResolvedReference();

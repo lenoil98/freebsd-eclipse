@@ -44,11 +44,6 @@ import org.eclipse.ui.handlers.HandlerUtil;
  */
 public class OpenExternalAntDocHandler extends AbstractHandler {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.core.commands.IHandler#execute(org.eclipse.core.commands.ExecutionEvent)
-	 */
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IEditorPart part = HandlerUtil.getActiveEditor(event);
@@ -130,7 +125,7 @@ public class OpenExternalAntDocHandler extends AbstractHandler {
 		buffer.append(taskPart);
 		buffer.append('/');
 		buffer.append(taskName);
-		buffer.append(".html"); //$NON-NLS-1$	
+		buffer.append(".html"); //$NON-NLS-1$
 	}
 
 	private URL getBaseLocation() throws MalformedURLException {
@@ -148,7 +143,7 @@ public class OpenExternalAntDocHandler extends AbstractHandler {
 				return null;
 			}
 			String className = definition.getClassName();
-			if (className.indexOf("taskdef") != -1) { //$NON-NLS-1$
+			if (className.contains("taskdef")) { //$NON-NLS-1$
 				return "Tasks"; //$NON-NLS-1$
 			}
 			return "Types"; //$NON-NLS-1$

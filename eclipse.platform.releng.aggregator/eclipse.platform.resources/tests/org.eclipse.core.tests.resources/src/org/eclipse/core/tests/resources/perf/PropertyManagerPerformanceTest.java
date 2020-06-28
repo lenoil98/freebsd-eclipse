@@ -14,10 +14,7 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources.perf;
 
-import java.util.ArrayList;
-import java.util.List;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import java.util.*;
 import org.eclipse.core.internal.resources.Workspace;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
@@ -35,17 +32,6 @@ public class PropertyManagerPerformanceTest extends ResourceTest {
 		return value.toString();
 	}
 
-	public static Test suite() {
-		//			TestSuite suite = new TestSuite();
-		//			suite.addTest(new PropertyManagerTest("testProperties"));
-		//			return suite;
-		return new TestSuite(PropertyManagerPerformanceTest.class);
-	}
-
-	public PropertyManagerPerformanceTest(String name) {
-		super(name);
-	}
-
 	/**
 	 * Creates a tree of resources.
 	 */
@@ -57,9 +43,7 @@ public class PropertyManagerPerformanceTest extends ResourceTest {
 		folders[3] = folders[2].getFolder("folder4");
 		folders[4] = folders[3].getFolder("folder5");
 		List<IResource> resources = new ArrayList<>(filesPerFolder * folders.length);
-		for (IFolder folder : folders) {
-			resources.add(folder);
-		}
+		resources.addAll(Arrays.asList(folders));
 		ensureExistsInWorkspace(folders, true);
 		for (IFolder folder : folders) {
 			for (int j = 0; j < filesPerFolder; j++) {

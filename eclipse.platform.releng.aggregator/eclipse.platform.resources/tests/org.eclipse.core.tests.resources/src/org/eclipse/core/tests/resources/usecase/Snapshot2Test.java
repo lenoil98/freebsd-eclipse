@@ -14,8 +14,7 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources.usecase;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
@@ -28,20 +27,11 @@ import org.eclipse.core.runtime.Path;
  * Only snapshots are taken. No full saves.
  */
 public class Snapshot2Test extends SnapshotTest {
-	public Snapshot2Test() {
-		super();
-	}
-
-	public Snapshot2Test(String name) {
-		super(name);
-	}
 
 	protected static String[] defineHierarchy1() {
 		List<String> result = new ArrayList<>();
 		String[] old = Snapshot1Test.defineHierarchy1();
-		for (String element : old) {
-			result.add(element);
-		}
+		result.addAll(Arrays.asList(old));
 		result.add(new Path(PROJECT_1).append("added file").toString());
 		result.add(new Path(PROJECT_1).append("yet another file").toString());
 		result.add(new Path(PROJECT_1).append("a folder").addTrailingSeparator().toString());

@@ -17,7 +17,6 @@ package org.eclipse.equinox.internal.p2.repository;
 
 import java.io.*;
 import java.net.*;
-import java.util.EventObject;
 import java.util.HashSet;
 import org.eclipse.core.runtime.*;
 import org.eclipse.equinox.internal.p2.core.helpers.LogHelper;
@@ -59,11 +58,13 @@ public class CacheManager {
 			super(stream);
 		}
 
+		@Override
 		public IStatus getStatus() {
 
 			return status;
 		}
 
+		@Override
 		public void setStatus(IStatus aStatus) {
 			status = aStatus;
 		}
@@ -80,7 +81,7 @@ public class CacheManager {
 	private static final String JAR_EXTENSION = ".jar"; //$NON-NLS-1$
 	private static final String XML_EXTENSION = ".xml"; //$NON-NLS-1$
 
-	private final HashSet<String> knownPrefixes = new HashSet<String>(5);
+	private final HashSet<String> knownPrefixes = new HashSet<>(5);
 
 	/**
 	 * Returns a hash of the repository location.
@@ -273,11 +274,11 @@ public class CacheManager {
 	void deleteCache(URI repositoryLocation) {
 		for (String prefix : knownPrefixes) {
 			File[] cacheFiles = getCacheFiles(repositoryLocation, prefix);
-			for (int i = 0; i < cacheFiles.length; i++) {
+			for (File cacheFile : cacheFiles) {
 				// delete the cache file if it exists
-				safeDelete(cacheFiles[i]);
+				safeDelete(cacheFile);
 				// delete a resumable download if it exists
-				safeDelete(new File(new File(cacheFiles[i].getParentFile(), DOWNLOADING), cacheFiles[i].getName()));
+				safeDelete(new File(new File(cacheFile.getParentFile(), DOWNLOADING), cacheFile.getName()));
 			}
 		}
 	}
@@ -339,13 +340,11 @@ public class CacheManager {
 	 */
 	private void registerRepoEventListener(IProvisioningEventBus eventBus) {
 		if (busListener == null) {
-			busListener = new SynchronousProvisioningListener() {
-				public void notify(EventObject o) {
-					if (o instanceof RepositoryEvent) {
-						RepositoryEvent event = (RepositoryEvent) o;
-						if (RepositoryEvent.REMOVED == event.getKind() && IRepository.TYPE_METADATA == event.getRepositoryType()) {
-							deleteCache(event.getRepositoryLocation());
-						}
+			busListener = o -> {
+				if (o instanceof RepositoryEvent) {
+					RepositoryEvent event = (RepositoryEvent) o;
+					if (RepositoryEvent.REMOVED == event.getKind() && IRepository.TYPE_METADATA == event.getRepositoryType()) {
+						deleteCache(event.getRepositoryLocation());
 					}
 				}
 			};

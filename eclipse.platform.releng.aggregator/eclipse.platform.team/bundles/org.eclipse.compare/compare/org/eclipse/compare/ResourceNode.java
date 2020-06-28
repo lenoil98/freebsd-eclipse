@@ -121,7 +121,7 @@ public class ResourceNode extends BufferedContent
 
 	/**
 	 * Returns the hash code of the name.
-     * @return a hash code value for this object.
+	 * @return a hash code value for this object.
 	 */
 	@Override
 	public int hashCode() {
@@ -135,8 +135,8 @@ public class ResourceNode extends BufferedContent
 			if (fResource instanceof IContainer) {
 				try {
 					IResource members[]= ((IContainer)fResource).members();
-					for (int i= 0; i < members.length; i++) {
-						IStructureComparator child= createChild(members[i]);
+					for (IResource member : members) {
+						IStructureComparator child = createChild(member);
 						if (child != null)
 							fChildren.add(child);
 					}

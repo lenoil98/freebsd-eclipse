@@ -96,6 +96,7 @@ public final class FixMessages extends NLS {
 	public static String Java50Fix_SerialVersion_hash_description;
 	public static String Java50Fix_InitializeSerialVersionId_subtask_description;
 	public static String Java50Fix_SerialVersion_CalculateHierarchy_description;
+	public static String Java50Fix_RemoveUnnecessaryArrayCreation_description;
 
 	public static String StringFix_AddRemoveNonNls_description;
 	public static String StringFix_AddNonNls_description;
@@ -151,7 +152,7 @@ public final class FixMessages extends NLS {
 	public static String TypeParametersFix_insert_inferred_type_arguments_name;
 	public static String TypeParametersFix_remove_redundant_type_arguments_description;
 	public static String TypeParametersFix_remove_redundant_type_arguments_name;
-	
+
 	public static String TypeAnnotationFix_move;
 	public static String TypeAnnotationFix_remove;
 

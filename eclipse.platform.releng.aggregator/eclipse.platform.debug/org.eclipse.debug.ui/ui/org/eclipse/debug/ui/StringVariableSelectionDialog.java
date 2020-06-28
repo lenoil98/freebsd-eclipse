@@ -119,7 +119,7 @@ public class StringVariableSelectionDialog extends ElementListSelectionDialog {
 		Object[] selected = getResult();
 		if (selected != null && selected.length == 1) {
 			IStringVariable variable = (IStringVariable)selected[0];
-			StringBuffer buffer = new StringBuffer();
+			StringBuilder buffer = new StringBuilder();
 			buffer.append("${"); //$NON-NLS-1$
 			buffer.append(variable.getName());
 			if (fArgumentValue != null && fArgumentValue.length() > 0) {
@@ -183,13 +183,13 @@ public class StringVariableSelectionDialog extends ElementListSelectionDialog {
 		ArrayList<Object> filtered = new ArrayList<>();
 		filtered.addAll(Arrays.asList(elements));
 		if(!fFilters.isEmpty() && !fShowAllSelected) {
-			for (int i = 0; i < elements.length; i++) {
-				if(elements[i] instanceof IDynamicVariable) {
+			for (Object element : elements) {
+				if (element instanceof IDynamicVariable) {
 					boolean bFiltered = false;
 					for (int j = 0; (j < fFilters.size()) && !bFiltered; j++) {
 						VariableFilter filter = fFilters.get(j);
-						if(filter.isFiltered((IDynamicVariable)elements[i])) {
-							filtered.remove(elements[i]);
+						if (filter.isFiltered((IDynamicVariable) element)) {
+							filtered.remove(element);
 							bFiltered = true;
 						}
 					}
@@ -199,9 +199,6 @@ public class StringVariableSelectionDialog extends ElementListSelectionDialog {
 		super.setListElements(filtered.toArray());
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.Dialog#createContents(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected Control createContents(Composite parent) {
 		Control ctrl = super.createContents(parent);
@@ -209,9 +206,6 @@ public class StringVariableSelectionDialog extends ElementListSelectionDialog {
 		return ctrl;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Control control = super.createDialogArea(parent);
@@ -361,12 +355,12 @@ public class StringVariableSelectionDialog extends ElementListSelectionDialog {
 		String text = null;
 		if (objects.length == 1) {
 			IStringVariable variable = (IStringVariable)objects[0];
-			 IArgumentSelector selector = StringVariablePresentationManager.getDefault().getArgumentSelector(variable);
-			 if (variable instanceof IDynamicVariable) {
-			 	argEnabled = ((IDynamicVariable)variable).supportsArgument();
-			 }
-			 buttonEnabled = argEnabled && selector != null;
-			 text = variable.getDescription();
+			IArgumentSelector selector = StringVariablePresentationManager.getDefault().getArgumentSelector(variable);
+			if (variable instanceof IDynamicVariable) {
+				argEnabled = ((IDynamicVariable)variable).supportsArgument();
+			}
+			buttonEnabled = argEnabled && selector != null;
+			text = variable.getDescription();
 		}
 		if (text == null) {
 			text = IInternalDebugCoreConstants.EMPTY_STRING;
@@ -376,9 +370,6 @@ public class StringVariableSelectionDialog extends ElementListSelectionDialog {
 		fDescriptionText.setText(text);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.Dialog#okPressed()
-	 */
 	@Override
 	protected void okPressed() {
 		fArgumentValue = fArgumentText.getText().trim();
@@ -394,16 +385,13 @@ public class StringVariableSelectionDialog extends ElementListSelectionDialog {
 		return IDebugUIConstants.PLUGIN_ID + ".STRING_VARIABLE_SELECTION_DIALOG_SECTION"; //$NON-NLS-1$
 	}
 
-	 /* (non-Javadoc)
-     * @see org.eclipse.jface.dialogs.Dialog#getDialogBoundsSettings()
-     */
-    @Override
+	@Override
 	protected IDialogSettings getDialogBoundsSettings() {
-    	 IDialogSettings settings = DebugUIPlugin.getDefault().getDialogSettings();
-         IDialogSettings section = settings.getSection(getDialogSettingsSectionName());
-         if (section == null) {
-             section = settings.addNewSection(getDialogSettingsSectionName());
-         }
-         return section;
-    }
+		IDialogSettings settings = DebugUIPlugin.getDefault().getDialogSettings();
+		IDialogSettings section = settings.getSection(getDialogSettingsSectionName());
+		if (section == null) {
+			section = settings.addNewSection(getDialogSettingsSectionName());
+		}
+		return section;
+	}
 }

@@ -19,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Objects;
 
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IStatus;
@@ -85,16 +86,7 @@ class FileImageDescriptor extends ImageDescriptor {
 			return false;
 		}
 		FileImageDescriptor other = (FileImageDescriptor) o;
-		if (location != null) {
-			if (!location.equals(other.location)) {
-				return false;
-			}
-		} else {
-			if (other.location != null) {
-				return false;
-			}
-		}
-		return name.equals(other.name);
+		return Objects.equals(location, other.location) && Objects.equals(name, other.name);
 	}
 
 	/**
@@ -173,8 +165,7 @@ class FileImageDescriptor extends ImageDescriptor {
 				tail = ".png"; //$NON-NLS-1$
 			}
 			String x = zoom == 150 ? "@1.5x" : "@2x"; //$NON-NLS-1$ //$NON-NLS-2$
-			String file = lead + x + tail;
-			return file;
+			return lead + x + tail;
 		}
 		return null;
 	}
@@ -203,9 +194,7 @@ class FileImageDescriptor extends ImageDescriptor {
 		if (InternalPolicy.DEBUG_LOAD_URL_IMAGE_DESCRIPTOR_2x) {
 			try {
 				return new Image(device, new ImageProvider());
-			} catch (SWTException exception) {
-				// If we fail, fall back to the old 1x implementation.
-			} catch (IllegalArgumentException exception) {
+			} catch (SWTException | IllegalArgumentException exception) {
 				// If we fail, fall back to the old 1x implementation.
 			}
 		}

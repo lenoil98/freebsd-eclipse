@@ -17,36 +17,32 @@ import org.eclipse.team.internal.ccvs.core.ICVSRepositoryLocation;
 import org.eclipse.team.internal.ccvs.core.ICVSResource;
 import org.eclipse.team.internal.ccvs.ui.operations.ITagOperation;
 import org.eclipse.team.internal.ccvs.ui.operations.TagInRepositoryOperation;
-import org.eclipse.team.internal.ui.actions.TeamAction;
 
 public class TagInRepositoryAction extends TagAction {
 
-	/**
-	 * @see TeamAction#isEnabled()
-	 */
+	@Override
 	public boolean isEnabled() {
 		ICVSResource[] resources = getSelectedCVSResources();
 		if (resources.length == 0) return false;
-		for (int i = 0; i < resources.length; i++) {
-			if (resources[i] instanceof ICVSRepositoryLocation) return false;
+		for (ICVSResource resource : resources) {
+			if (resource instanceof ICVSRepositoryLocation) {
+				return false;
+			}
 		}
 		return true;
 	}
 	
-	/**
-	 * @see CVSAction#needsToSaveDirtyEditors()
-	 */
+	@Override
 	protected boolean needsToSaveDirtyEditors() {
 		return false;
 	}
 	
-	/**
-	 * @see org.eclipse.team.internal.ccvs.ui.actions.WorkspaceAction#requiresLocalSyncInfo()
-	 */
+	@Override
 	protected boolean requiresLocalSyncInfo() {
 		return false;
 	}
 
+	@Override
 	protected ITagOperation createTagOperation() {
 		return new TagInRepositoryOperation(getTargetPart(), getSelectedRemoteResources());
 	}

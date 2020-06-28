@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -149,13 +149,13 @@ public abstract class RefactoringWizard extends Wizard {
 	 * Flag (value 128) indicating that a help control should be shown.
 	 * The flag is ignored if the flag {@link #WIZARD_BASED_USER_INTERFACE}
 	 * is specified (the '?' button is always shown there).
-	 * 
+	 *
 	 * @see org.eclipse.jface.dialogs.TrayDialog#setHelpAvailable(boolean)
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	public static final int SHOW_HELP_CONTROL= 1 << 7;
-	
+
 	private static final int LAST= 1 << 8;
 
 	private final int fFlags;
@@ -189,7 +189,7 @@ public abstract class RefactoringWizard extends Wizard {
 		this(null, refactoring, flags);
 		Assert.isNotNull(refactoring);
 	}
-	
+
 	/**
 	 * Creates a new refactoring wizard for the given refactoring context.
 	 *
@@ -204,7 +204,7 @@ public abstract class RefactoringWizard extends Wizard {
 		this(refactoringContext, null, flags);
 		Assert.isNotNull(refactoringContext);
 	}
-	
+
 	private RefactoringWizard(RefactoringContext refactoringContext, Refactoring refactoring, int flags) {
 		Assert.isTrue(flags < LAST);
 		if ((flags & DIALOG_BASED_USER_INTERFACE) == 0)
@@ -239,19 +239,19 @@ public abstract class RefactoringWizard extends Wizard {
 	public final RefactoringContext getRefactoringContext() {
 		return fRefactoringContext;
 	}
-	
+
 	/**
 	 * Returns the refactoring wizard flags that have been set for this wizard.
 	 * Note that the set of valid flags may grow in the future.
 	 *
 	 * @return the wizard's flags
-	 * 
+	 *
 	 * @since 3.6
 	 */
 	public final int getWizardFlags(){
 		return fFlags;
 	}
-	
+
 	/**
 	 * Sets the default page title to the given value. This value is used
 	 * as a page title for wizard pages which don't provide their own
@@ -348,7 +348,7 @@ public abstract class RefactoringWizard extends Wizard {
 	public final Change getChange() {
 		return fChange;
 	}
-	
+
     /**
 	 * @param b {@inheritDoc}
      * @deprecated {@link #WIZARD_BASED_USER_INTERFACE} always shows a '?' button.
@@ -455,9 +455,7 @@ public abstract class RefactoringWizard extends Wizard {
 		if (fDefaultPageTitle == null)
 			return;
 
-		IWizardPage[] pages= getPages();
-		for (int i= 0; i < pages.length; i++) {
-			IWizardPage page= pages[i];
+		for (IWizardPage page : getPages()) {
 			if (page.getTitle() == null)
 				page.setTitle(fDefaultPageTitle);
 		}
@@ -482,9 +480,9 @@ public abstract class RefactoringWizard extends Wizard {
 	 * Sets the runnable context that will be used to computing refactoring conditions and change
 	 * while the refactoring dialog is not yet shown. The default is to use the active workbench
 	 * window.
-	 * 
+	 *
 	 * @param context a runnable context, or <code>null</code> to re-set the default
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	public void setInitialComputationContext(IRunnableContext context) {
@@ -547,9 +545,7 @@ public abstract class RefactoringWizard extends Wizard {
 		try {
 			PlatformUI.getWorkbench().getProgressService().busyCursorWhile(
 				new WorkbenchRunnableAdapter(op, ResourcesPlugin.getWorkspace().getRoot()));
-		} catch (InterruptedException e) {
-			exception= e;
-		} catch (InvocationTargetException e) {
+		} catch (InterruptedException | InvocationTargetException e) {
 			exception= e;
 		}
 		RefactoringStatus status= null;
@@ -619,7 +615,8 @@ public abstract class RefactoringWizard extends Wizard {
 	 */
 	public final Change internalCreateChange(InternalAPI api, CreateChangeOperation operation, boolean updateStatus) {
 		Assert.isNotNull(api);
-		return createChange(operation, updateStatus, getContainer());
+		IRunnableContext context= getContainer() != null ? getContainer() : fRunnableContext;
+		return createChange(operation, updateStatus, context);
 	}
 
 	/**
@@ -663,7 +660,7 @@ public abstract class RefactoringWizard extends Wizard {
 		InvocationTargetException exception= null;
 		try {
 			context.run(true, fIsChangeCreationCancelable, new WorkbenchRunnableAdapter(
-				operation, ResourcesPlugin.getWorkspace().getRoot()));
+					operation, ResourcesPlugin.getWorkspace().getRoot()));
 		} catch (InterruptedException e) {
 			setConditionCheckingStatus(null);
 			return null;

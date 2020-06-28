@@ -53,8 +53,8 @@ public class SWT_AWT {
 
 static boolean loaded, swingInitialized;
 
-static native final long /*int*/ getAWTHandle (Canvas canvas);
-static native final Object initFrame (long /*int*/ handle, String className);
+static native final long getAWTHandle (Canvas canvas);
+static native final Object initFrame (long handle, String className);
 static native final void synthesizeWindowActivation (Frame frame, boolean doActivate);
 
 static synchronized void loadLibrary () {
@@ -131,7 +131,7 @@ public static Frame new_Frame (final Composite parent) {
 	if ((parent.getStyle () & SWT.EMBEDDED) == 0) {
 		SWT.error (SWT.ERROR_INVALID_ARGUMENT);
 	}
-	final long /*int*/ handle = parent.handle;
+	final long handle = parent.handle;
 	final Frame[] result = new Frame[1];
 	final Throwable[] exception = new Throwable[1];
 	Runnable runnable = () -> {
@@ -233,21 +233,13 @@ public static Frame new_Frame (final Composite parent) {
 			case SWT.Activate:
 				EventQueue.invokeLater(() -> {
 					if (frame.isActive()) return;
-					try {
-						Class<?> clazz = frame.getClass();
-						Method method = clazz.getMethod("synthesizeWindowActivation", boolean.class);
-						if (method != null) method.invoke(frame, Boolean.TRUE);
-					} catch (Throwable e1) {}
+					synthesizeWindowActivation(frame, true);
 				});
 				break;
 			case SWT.Deactivate:
 				EventQueue.invokeLater(() -> {
 					if (!frame.isActive()) return;
-					try {
-						Class<?> clazz = frame.getClass();
-						Method method = clazz.getMethod("synthesizeWindowActivation", boolean.class);
-						if (method != null) method.invoke(frame, Boolean.FALSE);
-					} catch (Throwable e1) {}
+					synthesizeWindowActivation(frame, false);
 				});
 				break;
 		}
@@ -286,7 +278,7 @@ public static Frame new_Frame (final Composite parent) {
 public static Shell new_Shell (final Display display, final Canvas parent) {
 	if (display == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	if (parent == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
-	long /*int*/ handle = 0;
+	long handle = 0;
 	try {
 		loadLibrary ();
 		handle = getAWTHandle (parent);

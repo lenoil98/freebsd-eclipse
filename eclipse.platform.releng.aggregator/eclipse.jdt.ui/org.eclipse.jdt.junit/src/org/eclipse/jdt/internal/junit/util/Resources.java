@@ -60,8 +60,7 @@ public class Resources {
 	 */
 	public static IStatus checkInSync(IResource[] resources) {
 		IStatus result= null;
-		for (int i= 0; i < resources.length; i++) {
-			IResource resource= resources[i];
+		for (IResource resource : resources) {
 			if (!resource.isSynchronized(IResource.DEPTH_INFINITE)) {
 				result= addOutOfSync(result, resource);
 			}
@@ -108,7 +107,7 @@ public class Resources {
 			if (resource.getType() == IResource.FILE && resource.getResourceAttributes().isReadOnly())
 				readOnlyFiles.add((IFile) resource);
 		}
-		if (readOnlyFiles.size() == 0)
+		if (readOnlyFiles.isEmpty())
 			return Status.OK_STATUS;
 
 		Map<IFile, Long> oldTimeStamps= createModificationStampMap(readOnlyFiles);

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,7 @@ package org.eclipse.jdt.internal.launching;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -27,7 +28,6 @@ import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.debug.core.DebugPlugin;
@@ -43,7 +43,6 @@ import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.VMRunnerConfiguration;
 import org.eclipse.osgi.util.NLS;
 
-import com.ibm.icu.text.DateFormat;
 
 /**
  * A launcher for running Java main classes.
@@ -402,8 +401,10 @@ public class StandardVMRunner extends AbstractVMRunner {
 
 	@Override
 	public String showCommandLine(VMRunnerConfiguration configuration, ILaunch launch, IProgressMonitor monitor) throws CoreException {
-		CommandDetails cmd = getCommandLine(configuration, launch, monitor);
-		if (monitor.isCanceled() || cmd == null) {
+		IProgressMonitor subMonitor = SubMonitor.convert(monitor, 1);
+
+		CommandDetails cmd = getCommandLine(configuration, launch, subMonitor);
+		if (subMonitor.isCanceled() || cmd == null) {
 			return ""; //$NON-NLS-1$
 		}
 		String[] cmdLine = cmd.getCommandLine();
@@ -412,10 +413,6 @@ public class StandardVMRunner extends AbstractVMRunner {
 	}
 
 	private CommandDetails getCommandLine(VMRunnerConfiguration config, ILaunch launch, IProgressMonitor monitor) throws CoreException {
-		if (monitor == null) {
-			monitor = new NullProgressMonitor();
-		}
-
 		IProgressMonitor subMonitor = SubMonitor.convert(monitor, 1);
 		subMonitor.subTask(LaunchingMessages.StandardVMRunner_Constructing_command_line____2);
 		String program = constructProgramString(config);
@@ -440,6 +437,11 @@ public class StandardVMRunner extends AbstractVMRunner {
 		if (cp.length > 0) {
 			arguments.add("-classpath"); //$NON-NLS-1$
 			arguments.add(convertClassPath(cp));
+		}
+
+		// https://openjdk.java.net/jeps/12
+		if (config.isPreviewEnabled()) {
+			arguments.add("--enable-preview"); //$NON-NLS-1$
 		}
 
 		String dependencies = config.getOverrideDependencies();
@@ -485,28 +487,25 @@ public class StandardVMRunner extends AbstractVMRunner {
 
 	@Override
 	public void run(VMRunnerConfiguration config, ILaunch launch, IProgressMonitor monitor) throws CoreException {
-		if (monitor == null) {
-			monitor = new NullProgressMonitor();
-		}
+		IProgressMonitor subMonitor = SubMonitor.convert(monitor, 1);
 
-		CommandDetails cmdDetails = getCommandLine(config, launch, monitor);
+		CommandDetails cmdDetails = getCommandLine(config, launch, subMonitor);
 		// check for cancellation
-		if (monitor.isCanceled() || cmdDetails == null) {
+		if (subMonitor.isCanceled() || cmdDetails == null) {
 			return;
 		}
 		String[] cmdLine = cmdDetails.getCommandLine();
 
-		IProgressMonitor subMonitor = SubMonitor.convert(monitor, 1);
 		subMonitor.beginTask(LaunchingMessages.StandardVMRunner_Launching_VM____1, 2);
 		subMonitor.subTask(LaunchingMessages.StandardVMRunner_Starting_virtual_machine____3);
-		Process p= null;
-		p = exec(cmdLine, cmdDetails.getWorkingDir(), cmdDetails.getEnvp());
+		Process p = null;
+		p = exec(cmdLine, cmdDetails.getWorkingDir(), cmdDetails.getEnvp(), config.isMergeOutput());
 		if (p == null) {
 			return;
 		}
 
 		// check for cancellation
-		if (monitor.isCanceled()) {
+		if (subMonitor.isCanceled()) {
 			p.destroy();
 			return;
 		}

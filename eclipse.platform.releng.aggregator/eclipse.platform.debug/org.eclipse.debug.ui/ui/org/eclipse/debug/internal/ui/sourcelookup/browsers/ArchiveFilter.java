@@ -43,9 +43,6 @@ public class ArchiveFilter extends ViewerFilter {
 	 */
 	private List<ISourceContainer> fExisting;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.ViewerFilter#select(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-	 */
 	@Override
 	public boolean select(Viewer viewer, Object parentElement, Object element) {
 		return fArchives.contains(element) && !fExisting.contains(element);
@@ -83,8 +80,7 @@ public class ArchiveFilter extends ViewerFilter {
 		boolean added = false;
 		try {
 			IResource[] resources = container.members();
-			for (int i = 0; i < resources.length; i++) {
-				IResource resource = resources[i];
+			for (IResource resource : resources) {
 				if (resource instanceof IFile) {
 					IFile file = (IFile)resource;
 					String ext = file.getFileExtension();

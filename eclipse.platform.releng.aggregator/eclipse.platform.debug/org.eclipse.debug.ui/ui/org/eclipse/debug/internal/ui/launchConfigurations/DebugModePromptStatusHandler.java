@@ -29,9 +29,6 @@ import org.eclipse.swt.widgets.Shell;
 
 public class DebugModePromptStatusHandler implements IStatusHandler {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.IStatusHandler#handleStatus(org.eclipse.core.runtime.IStatus, java.lang.Object)
-	 */
 	@Override
 	public Object handleStatus(IStatus status, Object source) throws CoreException {
 		if (source instanceof ILaunchConfiguration) {
@@ -42,16 +39,16 @@ public class DebugModePromptStatusHandler implements IStatusHandler {
 		}
 
 		IPreferenceStore store = DebugUIPlugin.getDefault().getPreferenceStore();
-        ILaunchConfiguration configuration = (ILaunchConfiguration)source;
-        String pref = store.getString(IInternalDebugUIConstants.PREF_RELAUNCH_IN_DEBUG_MODE);
-        if (pref != null) {
-            if (pref.equals(MessageDialogWithToggle.NEVER)) {
-                return Boolean.FALSE;
-            } else if (pref.equals(MessageDialogWithToggle.ALWAYS)) {
-                relaunchInDebugMode(configuration);
-                return Boolean.TRUE;
-            }
-        }
+		ILaunchConfiguration configuration = (ILaunchConfiguration)source;
+		String pref = store.getString(IInternalDebugUIConstants.PREF_RELAUNCH_IN_DEBUG_MODE);
+		if (pref != null) {
+			if (pref.equals(MessageDialogWithToggle.NEVER)) {
+				return Boolean.FALSE;
+			} else if (pref.equals(MessageDialogWithToggle.ALWAYS)) {
+				relaunchInDebugMode(configuration);
+				return Boolean.TRUE;
+			}
+		}
 
 		Shell activeShell = DebugUIPlugin.getShell();
 		String title = LaunchConfigurationsMessages.DebugModePromptStatusHandler_0;

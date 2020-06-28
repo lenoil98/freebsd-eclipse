@@ -101,7 +101,7 @@ public class NLSHintHelper {
 
 	/**
 	 * Returns the accessor binding info or <code>null</code> if this element is not a nls'ed entry
-	 * 
+	 *
 	 * @param astRoot the ast root
 	 * @param region the text region
 	 * @param usedFullyQualifiedName boolean flag to indicate that fully qualified name is used to
@@ -229,8 +229,8 @@ public class NLSHintHelper {
 					return true;
 
 				String name= method.getDeclaringClass().getQualifiedName();
-				if (!("java.util.ResourceBundle".equals(name) && "getBundle".equals(method.getName()) && node.arguments().size() > 0) && //old school //$NON-NLS-1$ //$NON-NLS-2$
-						!("org.eclipse.osgi.util.NLS".equals(name) && "initializeMessages".equals(method.getName()) && node.arguments().size() == 2)) //Eclipse style //$NON-NLS-1$ //$NON-NLS-2$
+				if ((!"java.util.ResourceBundle".equals(name) || !"getBundle".equals(method.getName()) || (node.arguments().size() <= 0)) && //old school //$NON-NLS-1$ //$NON-NLS-2$
+						(!"org.eclipse.osgi.util.NLS".equals(name) || !"initializeMessages".equals(method.getName()) || (node.arguments().size() != 2))) //Eclipse style //$NON-NLS-1$ //$NON-NLS-2$
 					return true;
 
 				Expression argument= (Expression)node.arguments().get(0);
@@ -333,15 +333,11 @@ public class NLSHintHelper {
 	}
 
 	public static IPackageFragment getResourceBundlePackage(IJavaProject javaProject, String packageName, String resourceName) throws JavaModelException {
-		IPackageFragmentRoot[] allRoots= javaProject.getAllPackageFragmentRoots();
-		for (int i= 0; i < allRoots.length; i++) {
-			IPackageFragmentRoot root= allRoots[i];
+		for (IPackageFragmentRoot root : javaProject.getAllPackageFragmentRoots()) {
 			if (root.getKind() == IPackageFragmentRoot.K_SOURCE) {
 				IPackageFragment packageFragment= root.getPackageFragment(packageName);
 				if (packageFragment.exists()) {
-					Object[] resources= packageFragment.isDefaultPackage() ? root.getNonJavaResources() : packageFragment.getNonJavaResources();
-					for (int j= 0; j < resources.length; j++) {
-						Object object= resources[j];
+					for (Object object : packageFragment.isDefaultPackage() ? root.getNonJavaResources() : packageFragment.getNonJavaResources()) {
 						if (object instanceof IFile) {
 							IFile file= (IFile) object;
 							if (file.getName().equals(resourceName)) {
@@ -371,9 +367,7 @@ public class NLSHintHelper {
 	}
 
 	public static IStorage getResourceBundle(IJavaProject javaProject, String packageName, String resourceName) throws JavaModelException {
-		IPackageFragmentRoot[] allRoots= javaProject.getAllPackageFragmentRoots();
-		for (int i= 0; i < allRoots.length; i++) {
-			IPackageFragmentRoot root= allRoots[i];
+		for (IPackageFragmentRoot root : javaProject.getAllPackageFragmentRoots()) {
 			if (root.getKind() == IPackageFragmentRoot.K_SOURCE) {
 				IStorage storage= getResourceBundle(root, packageName, resourceName);
 				if (storage != null)
@@ -386,9 +380,7 @@ public class NLSHintHelper {
 	public static IStorage getResourceBundle(IPackageFragmentRoot root, String packageName, String resourceName) throws JavaModelException {
 		IPackageFragment packageFragment= root.getPackageFragment(packageName);
 		if (packageFragment.exists()) {
-			Object[] resources= packageFragment.isDefaultPackage() ? root.getNonJavaResources() : packageFragment.getNonJavaResources();
-			for (int j= 0; j < resources.length; j++) {
-				Object object= resources[j];
+			for (Object object : packageFragment.isDefaultPackage() ? root.getNonJavaResources() : packageFragment.getNonJavaResources()) {
 				if (JavaModelUtil.isOpenableStorage(object)) {
 					IStorage storage= (IStorage)object;
 					if (storage.getName().equals(resourceName)) {

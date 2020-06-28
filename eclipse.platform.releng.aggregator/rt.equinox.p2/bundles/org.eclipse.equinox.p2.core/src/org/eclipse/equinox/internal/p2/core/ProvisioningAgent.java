@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -28,7 +28,7 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
  */
 public class ProvisioningAgent implements IProvisioningAgent, ServiceTrackerCustomizer<IAgentServiceFactory, Object> {
 
-	private final Map<String, Object> agentServices = Collections.synchronizedMap(new HashMap<String, Object>());
+	private final Map<String, Object> agentServices = Collections.synchronizedMap(new HashMap<>());
 	private BundleContext context;
 	private volatile boolean stopped = false;
 	private ServiceRegistration<IProvisioningAgent> reg;
@@ -79,12 +79,6 @@ public class ProvisioningAgent implements IProvisioningAgent, ServiceTrackerCust
 			trackers.put(firstRef, tracker);
 			return service;
 		}
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T getService(Class<T> key) {
-		return (T) getService(key.getName());
 	}
 
 	private void checkRunning() {

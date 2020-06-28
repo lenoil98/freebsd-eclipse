@@ -74,7 +74,6 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
-import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.manipulation.ImportReferencesCollector;
@@ -113,13 +112,10 @@ public final class ClipboardOperationAction extends TextEditorAction {
 		}
 
 		public ClipboardData(byte[] bytes) throws IOException {
-			DataInputStream dataIn = new DataInputStream(new ByteArrayInputStream(bytes));
-			try {
+			try (DataInputStream dataIn = new DataInputStream(new ByteArrayInputStream(bytes))) {
 				fOriginHandle= dataIn.readUTF();
 				fTypeImports= readArray(dataIn);
 				fStaticImports= readArray(dataIn);
-			} finally {
-				dataIn.close();
 			}
 		}
 
@@ -135,8 +131,8 @@ public final class ClipboardOperationAction extends TextEditorAction {
 
 		private static void writeArray(DataOutputStream dataOut, String[] array) throws IOException {
 			dataOut.writeInt(array.length);
-			for (int i = 0; i < array.length; i++) {
-				dataOut.writeUTF(array[i]);
+			for (String a : array) {
+				dataOut.writeUTF(a);
 			}
 		}
 
@@ -154,13 +150,11 @@ public final class ClipboardOperationAction extends TextEditorAction {
 
 		public byte[] serialize() throws IOException {
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			DataOutputStream dataOut = new DataOutputStream(out);
-			try {
+			try (DataOutputStream dataOut = new DataOutputStream(out)) {
 				dataOut.writeUTF(fOriginHandle);
 				writeArray(dataOut, fTypeImports);
 				writeArray(dataOut, fStaticImports);
 			} finally {
-				dataOut.close();
 				out.close();
 			}
 
@@ -231,20 +225,25 @@ public final class ClipboardOperationAction extends TextEditorAction {
 		super(bundle, prefix, editor);
 		fOperationCode= operationCode;
 
-		if (operationCode == ITextOperationTarget.CUT) {
-			setHelpContextId(IAbstractTextEditorHelpContextIds.CUT_ACTION);
-			setActionDefinitionId(IWorkbenchCommandConstants.EDIT_CUT);
-			updateImages(IWorkbenchCommandConstants.EDIT_CUT);
-		} else if (operationCode == ITextOperationTarget.COPY) {
-			setHelpContextId(IAbstractTextEditorHelpContextIds.COPY_ACTION);
-			setActionDefinitionId(IWorkbenchCommandConstants.EDIT_COPY);
-			updateImages(IWorkbenchCommandConstants.EDIT_COPY);
-		} else if (operationCode == ITextOperationTarget.PASTE) {
-			setHelpContextId(IAbstractTextEditorHelpContextIds.PASTE_ACTION);
-			setActionDefinitionId(IWorkbenchCommandConstants.EDIT_PASTE);
-			updateImages(IWorkbenchCommandConstants.EDIT_PASTE);
-		} else {
-			Assert.isTrue(false, "Invalid operation code"); //$NON-NLS-1$
+		switch (operationCode) {
+			case ITextOperationTarget.CUT:
+				setHelpContextId(IAbstractTextEditorHelpContextIds.CUT_ACTION);
+				setActionDefinitionId(IWorkbenchCommandConstants.EDIT_CUT);
+				updateImages(IWorkbenchCommandConstants.EDIT_CUT);
+				break;
+			case ITextOperationTarget.COPY:
+				setHelpContextId(IAbstractTextEditorHelpContextIds.COPY_ACTION);
+				setActionDefinitionId(IWorkbenchCommandConstants.EDIT_COPY);
+				updateImages(IWorkbenchCommandConstants.EDIT_COPY);
+				break;
+			case ITextOperationTarget.PASTE:
+				setHelpContextId(IAbstractTextEditorHelpContextIds.PASTE_ACTION);
+				setActionDefinitionId(IWorkbenchCommandConstants.EDIT_PASTE);
+				updateImages(IWorkbenchCommandConstants.EDIT_PASTE);
+				break;
+			default:
+				Assert.isTrue(false, "Invalid operation code"); //$NON-NLS-1$
+				break;
 		}
 		update();
 	}
@@ -306,7 +305,7 @@ public final class ClipboardOperationAction extends TextEditorAction {
 
 	/**
 	 * Returns whether the Smart Insert Mode is selected.
-	 * 
+	 *
 	 * @return <code>true</code> if the Smart Insert Mode is selected
 	 * @since 3.7
 	 */
@@ -431,8 +430,8 @@ public final class ClipboardOperationAction extends TextEditorAction {
 		if (selection.getLength() < 30) {
 			String text= selection.getText();
 			if (text != null) {
-				for (int i= 0; i < text.length(); i++) {
-					if (!Character.isJavaIdentifierPart(text.charAt(i))) {
+				for (char c : text.toCharArray()) {
+					if (!Character.isJavaIdentifierPart(c)) {
 						return true;
 					}
 				}
@@ -471,8 +470,7 @@ public final class ClipboardOperationAction extends TextEditorAction {
 		}
 
 		HashSet<String> namesToImport= new HashSet<>(typeImportsRefs.size());
-		for (int i= 0; i < typeImportsRefs.size(); i++) {
-			Name curr= typeImportsRefs.get(i);
+		for (SimpleName curr : typeImportsRefs) {
 			IBinding binding= curr.resolveBinding();
 			if (binding != null && binding.getKind() == IBinding.TYPE) {
 				ITypeBinding typeBinding= (ITypeBinding) binding;
@@ -493,8 +491,7 @@ public final class ClipboardOperationAction extends TextEditorAction {
 		}
 
 		HashSet<String> staticsToImport= new HashSet<>(staticImportsRefs.size());
-		for (int i= 0; i < staticImportsRefs.size(); i++) {
-			Name curr= staticImportsRefs.get(i);
+		for (SimpleName curr : staticImportsRefs) {
 			IBinding binding= curr.resolveBinding();
 			if (binding != null) {
 				StringBuilder buf= new StringBuilder(Bindings.getImportName(binding));
@@ -548,21 +545,18 @@ public final class ClipboardOperationAction extends TextEditorAction {
 
 	private void addImports(final ICompilationUnit unit, ClipboardData data) throws CoreException {
 		final ImportRewrite rewrite= StubUtility.createImportRewrite(unit, true);
-		String[] imports= data.getTypeImports();
-		for (int i= 0; i < imports.length; i++) {
-			String type= imports[i];
+		for (String type : data.getTypeImports()) {
 			if (type.indexOf('.') != -1 || JavaModelUtil.isVersionLessThan(unit.getJavaProject().getOption(JavaCore.COMPILER_COMPLIANCE, true), JavaCore.VERSION_1_4)) {
 				rewrite.addImport(type);
 			}
 		}
-		String[] staticImports= data.getStaticImports();
-		for (int i= 0; i < staticImports.length; i++) {
-			String name= Signature.getSimpleName(staticImports[i]);
+		for (String staticImport : data.getStaticImports()) {
+			String name= Signature.getSimpleName(staticImport);
 			boolean isField= !name.endsWith("()"); //$NON-NLS-1$
 			if (!isField) {
 				name= name.substring(0, name.length() - 2);
 			}
-			String qualifier= Signature.getQualifier(staticImports[i]);
+			String qualifier= Signature.getQualifier(staticImport);
 			rewrite.addStaticImport(qualifier, name, isField);
 		}
 

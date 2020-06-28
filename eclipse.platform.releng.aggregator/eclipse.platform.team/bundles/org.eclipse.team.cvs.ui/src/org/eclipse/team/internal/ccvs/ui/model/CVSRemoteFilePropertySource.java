@@ -83,9 +83,6 @@ public class CVSRemoteFilePropertySource implements IPropertySource {
 		return propertyDescriptors;
 	}
 
-	/*
-	 * @see IPropertySource#getPropertyValue(Object)
-	 */
 	@Override
 	public Object getPropertyValue(Object id) {
 		if (!initialized) {
@@ -142,9 +139,9 @@ public class CVSRemoteFilePropertySource implements IPropertySource {
 				try {
 					ILogEntry[] entries = file.getLogEntries(monitor);
 					String revision = file.getRevision();
-					for (int i = 0; i < entries.length; i++) {
-						if (entries[i].getRevision().equals(revision)) {
-							entry = entries[i];
+					for (ILogEntry e : entries) {
+						if (e.getRevision().equals(revision)) {
+							entry = e;
 							return;
 						}
 					}

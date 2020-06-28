@@ -51,13 +51,11 @@ public class RefreshModelParticipantJob extends RefreshParticipantJob {
 		@Override
 		public void diffsChanged(IDiffChangeEvent event, IProgressMonitor monitor) {
 			IDiff[] additions = event.getAdditions();
-			for (int i = 0; i < additions.length; i++) {
-				IDiff node = additions[i];
+			for (IDiff node : additions) {
 				changes.put(node.getPath(), node);
 			}
 			IDiff[] changed = event.getChanges();
-			for (int i = 0; i < changed.length; i++) {
-				IDiff node = changed[i];
+			for (IDiff node : changed) {
 				changes.put(node.getPath(), node);
 			}
 		}
@@ -97,17 +95,17 @@ public class RefreshModelParticipantJob extends RefreshParticipantJob {
 		return ((ModelSynchronizeParticipant)getParticipant()).getContext().getDiffTree().size();
 	}
 
-    @Override
+	@Override
 	protected int getIncomingChangeCount() {
-      IResourceDiffTree diffTree = ((ModelSynchronizeParticipant)getParticipant()).getContext().getDiffTree();
-      return (int) diffTree.countFor(IThreeWayDiff.INCOMING, IThreeWayDiff.DIRECTION_MASK);
-    }
+		IResourceDiffTree diffTree = ((ModelSynchronizeParticipant)getParticipant()).getContext().getDiffTree();
+		return (int) diffTree.countFor(IThreeWayDiff.INCOMING, IThreeWayDiff.DIRECTION_MASK);
+	}
 
-    @Override
+	@Override
 	protected int getOutgoingChangeCount() {
-      IResourceDiffTree diffTree = ((ModelSynchronizeParticipant)getParticipant()).getContext().getDiffTree();
-      return (int) diffTree.countFor(IThreeWayDiff.OUTGOING, IThreeWayDiff.DIRECTION_MASK);
-    }
+		IResourceDiffTree diffTree = ((ModelSynchronizeParticipant)getParticipant()).getContext().getDiffTree();
+		return (int) diffTree.countFor(IThreeWayDiff.OUTGOING, IThreeWayDiff.DIRECTION_MASK);
+	}
 
 	@Override
 	protected void handleProgressGroupSet(IProgressMonitor group, int ticks) {

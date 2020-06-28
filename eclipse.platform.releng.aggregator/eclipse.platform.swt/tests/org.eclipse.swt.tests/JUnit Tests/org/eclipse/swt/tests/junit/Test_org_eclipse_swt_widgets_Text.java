@@ -24,6 +24,7 @@ import org.eclipse.swt.events.SegmentListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
@@ -60,8 +61,8 @@ public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
 
 	int[] cases = {0, SWT.SINGLE, SWT.MULTI, SWT.MULTI | SWT.V_SCROLL, SWT.MULTI | SWT.H_SCROLL, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL,
 					SWT.WRAP};
-	for (int i = 0; i < cases.length; i++)
-		text = new Text(shell, cases[i]);
+	for (int style : cases)
+		text = new Text(shell, style);
 }
 
 @Test
@@ -1155,6 +1156,21 @@ public void test_setFontLorg_eclipse_swt_graphics_Font() {
 }
 
 @Test
+public void test_setForegroundAfterBackground() {
+	makeCleanEnvironment(false);
+	Color gray = text.getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY);
+	Color white = text.getDisplay().getSystemColor(SWT.COLOR_WHITE);
+	int systemColor = SwtTestUtil.isCocoa ? SWT.COLOR_LIST_FOREGROUND : SWT.COLOR_WIDGET_FOREGROUND;
+	Color defaultForeground = text.getDisplay().getSystemColor(systemColor);
+
+	text.setBackground(gray);
+	assertEquals(text.getForeground(), defaultForeground);
+	text.setForeground(white);
+	assertEquals(text.getForeground(), white);
+	assertEquals(text.getBackground(), gray);
+}
+
+@Test
 public void test_setOrientationI() {
 	text.setOrientation(SWT.RIGHT_TO_LEFT);
 	if ((text.getStyle() & SWT.MIRRORED) != 0) {
@@ -1465,26 +1481,26 @@ protected void setWidget(Widget w) {
 
 @Test
 public void test_consistency_EnterSelection () {
-    makeCleanEnvironment(true);
-    consistencyEvent(13, 10, 0, 0, ConsistencyUtility.KEY_PRESS);
+	makeCleanEnvironment(true);
+	consistencyEvent(13, 10, 0, 0, ConsistencyUtility.KEY_PRESS);
 }
 
 @Test
 public void test_consistency_Modify() {
-    makeCleanEnvironment(true);
-    consistencyEvent('a', 0, 0, 0, ConsistencyUtility.KEY_PRESS);
+	makeCleanEnvironment(true);
+	consistencyEvent('a', 0, 0, 0, ConsistencyUtility.KEY_PRESS);
 }
 
 @Test
 public void test_consistency_MenuDetect () {
-    makeCleanEnvironment(true);
-    consistencyEvent(10, 10, 3, ConsistencyUtility.ESCAPE_MENU, ConsistencyUtility.MOUSE_CLICK);
+	makeCleanEnvironment(true);
+	consistencyEvent(10, 10, 3, ConsistencyUtility.ESCAPE_MENU, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Test
 public void test_consistency_DragDetect () {
-    makeCleanEnvironment(true);
-    consistencyEvent(30, 10, 50, 0, ConsistencyUtility.MOUSE_DRAG);
+	makeCleanEnvironment(true);
+	consistencyEvent(30, 10, 50, 0, ConsistencyUtility.MOUSE_DRAG);
 }
 
 @Test

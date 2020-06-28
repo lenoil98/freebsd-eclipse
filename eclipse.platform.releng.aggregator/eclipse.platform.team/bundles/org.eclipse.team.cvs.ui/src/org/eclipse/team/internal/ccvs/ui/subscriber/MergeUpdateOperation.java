@@ -44,26 +44,17 @@ public class MergeUpdateOperation extends SafeUpdateOperation {
 		super(configuration, elements, promptBeforeUpdate);
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.CVSSubscriberAction#getJobName(org.eclipse.team.ui.sync.SyncInfoSet)
-	 */
 	@Override
 	protected String getJobName() {
 		SyncInfoSet syncSet = getSyncInfoSet();
 		return NLS.bind(CVSUIMessages.MergeUpdateAction_jobName, new String[] { Integer.valueOf(syncSet.size()).toString() }); 
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.SafeUpdateOperation#getOverwriteLocalChanges()
-	 */
 	@Override
 	protected boolean getOverwriteLocalChanges() {
 		return true;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.SafeUpdateOperation#updated(org.eclipse.core.resources.IResource[])
-	 */
 	@Override
 	protected void updated(IResource[] resources) throws TeamException {
 		// Mark all succesfully updated resources as merged
@@ -72,9 +63,6 @@ public class MergeUpdateOperation extends SafeUpdateOperation {
 		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.SafeUpdateOperation#runUpdateDeletions(org.eclipse.team.core.synchronize.SyncInfo[], org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected void runUpdateDeletions(SyncInfo[] nodes, IProgressMonitor monitor) throws TeamException {
 		// When merging, update deletions become outgoing deletions so just delete
@@ -82,8 +70,8 @@ public class MergeUpdateOperation extends SafeUpdateOperation {
 		// indicate an outgoing deletion
 		try {
 			monitor.beginTask(null, 100 * nodes.length);
-			for (int i = 0; i < nodes.length; i++) {
-				IResource resource = nodes[i].getLocal();
+			for (SyncInfo node : nodes) {
+				IResource resource = node.getLocal();
 				if (resource.getType() == IResource.FILE) {
 					((IFile)resource).delete(false /* force */, true /* keep local history */, Policy.subMonitorFor(monitor, 100));
 				}
@@ -95,9 +83,6 @@ public class MergeUpdateOperation extends SafeUpdateOperation {
 		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.SafeUpdateOperation#runSafeUpdate(org.eclipse.team.core.synchronize.SyncInfo[], org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected void runSafeUpdate(IProject project, SyncInfo[] nodes, IProgressMonitor monitor) throws TeamException {
 		if(nodes.length > 0) {
@@ -108,8 +93,7 @@ public class MergeUpdateOperation extends SafeUpdateOperation {
 			// Incoming additions require different handling then incoming changes and deletions
 			List<SyncInfo> additions = new ArrayList<>();
 			List<SyncInfo> changes = new ArrayList<>();
-			for (int i = 0; i < nodes.length; i++) {
-				SyncInfo resource = nodes[i];
+			for (SyncInfo resource : nodes) {
 				int kind = resource.getKind();
 				if ((kind & SyncInfo.CHANGE_MASK) == SyncInfo.ADDITION) {
 					additions.add(resource);
@@ -159,9 +143,6 @@ public class MergeUpdateOperation extends SafeUpdateOperation {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.ui.subscriber.SafeUpdateOperation#overwriteUpdate(org.eclipse.team.core.synchronize.SyncInfoSet, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected void overwriteUpdate(SyncInfoSet set, IProgressMonitor monitor) throws TeamException {
 		SyncInfo[] nodes = set.getSyncInfos();
@@ -169,8 +150,8 @@ public class MergeUpdateOperation extends SafeUpdateOperation {
 		setSubscriber(nodes[0]);
 		monitor.beginTask(null, 1000 * nodes.length);
 		try {
-			for (int i = 0; i < nodes.length; i++) {
-				makeRemoteLocal(nodes[i], Policy.subMonitorFor(monitor, 1000));
+			for (SyncInfo node : nodes) {
+				makeRemoteLocal(node, Policy.subMonitorFor(monitor, 1000));
 			}
 		} finally {
 			monitor.done();

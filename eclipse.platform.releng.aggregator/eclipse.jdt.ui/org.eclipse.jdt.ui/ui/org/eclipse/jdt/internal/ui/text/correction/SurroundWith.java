@@ -187,7 +187,7 @@ public abstract class SurroundWith {
 	/**
 	 * Selected nodes in <code>context</code> under <code>selection</code> or null if no valid
 	 * selection.
-	 * 
+	 *
 	 * @param context The context in which the proposal is applied.
 	 * @return Selected nodes or null if no valid selection.
 	 * @throws CoreException if the analyzer cannot be created
@@ -237,8 +237,8 @@ public abstract class SurroundWith {
 		if (fIsNewContext) {
 			ImportRewrite importRewrite= StubUtility.createImportRewrite((CompilationUnit)selectedNodes[0].getRoot(), false);
 			ImportRewriteContext importRewriteContext= new ContextSensitiveImportRewriteContext(selectedNodes[0], importRewrite);
-			for (int i= 0; i < selectedNodes.length; i++) {
-				qualifyThisExpressions(selectedNodes[i], rewrite, importRewrite, importRewriteContext);
+			for (ASTNode selectedNode : selectedNodes) {
+				qualifyThisExpressions(selectedNode, rewrite, importRewrite, importRewriteContext);
 			}
 		}
 
@@ -247,8 +247,7 @@ public abstract class SurroundWith {
 			rewrite.replace(selectedNodes[0], wrap, null);
 			ListRewrite listRewrite= rewrite.getListRewrite(wrap, Block.STATEMENTS_PROPERTY);
 
-			for (Iterator<ASTNode> iterator= inserted.iterator(); iterator.hasNext();) {
-				ASTNode node= iterator.next();
+			for (ASTNode node : inserted) {
 				listRewrite.insertLast(node, null);
 			}
 
@@ -256,8 +255,7 @@ public abstract class SurroundWith {
 			ListRewrite listRewrite= getListRewrite(selectedNodes[0], rewrite);
 
 			ASTNode current= selectedNodes[selectedNodes.length - 1];
-			for (Iterator<ASTNode> iterator= inserted.iterator(); iterator.hasNext();) {
-				ASTNode node= iterator.next();
+			for (ASTNode node : inserted) {
 				listRewrite.insertAfter(node, current, null);
 				current= node;
 			}
@@ -287,9 +285,7 @@ public abstract class SurroundWith {
 		if (!fIsNewContext)
 			return result;
 
-		IVariableBinding[] reads= getReads(selectedNodes, maxVariableId);
-		for (int i= 0; i < reads.length; i++) {
-			IVariableBinding read= reads[i];
+		for (IVariableBinding read : getReads(selectedNodes, maxVariableId)) {
 			if (!read.isField()) {
 				ASTNode readDecl= getRootNode().findDeclaringNode(read);
 				if (readDecl instanceof VariableDeclaration) {
@@ -323,10 +319,7 @@ public abstract class SurroundWith {
 		List<VariableDeclarationFragment> result= new ArrayList<>();
 		if (!bodyAfterSelection.isEmpty()) {
 
-			IVariableBinding[] accesses= getAccesses(bodyAfterSelection.toArray(new ASTNode[bodyAfterSelection.size()]), maxVariableId);
-
-			for (int i= 0; i < accesses.length; i++) {
-				IVariableBinding curVar= accesses[i];
+			for (IVariableBinding curVar : getAccesses(bodyAfterSelection.toArray(new ASTNode[bodyAfterSelection.size()]), maxVariableId)) {
 				if (!curVar.isField()) {
 					ASTNode readDecl= ASTNodes.findDeclaration(curVar, getRootNode());
 					if (readDecl instanceof VariableDeclarationFragment) {
@@ -387,8 +380,7 @@ public abstract class SurroundWith {
 	 */
 	private final void moveToBlock(ASTNode[] toMove, List<ASTNode> statements, final List<VariableDeclarationFragment> accessedAfter, final List<VariableDeclaration> accessedInside, final ASTRewrite rewrite) {
 
-		for (int i= 0; i < toMove.length; i++) {
-			ASTNode node= toMove[i];
+		for (ASTNode node : toMove) {
 			if (node instanceof VariableDeclarationStatement) {
 				VariableDeclarationStatement statement= (VariableDeclarationStatement)node;
 				final ListRewrite blockRewrite= getListRewrite(statement, rewrite);
@@ -494,7 +486,7 @@ public abstract class SurroundWith {
 
 	/**
 	 * Makes the given statement final.
-	 * 
+	 *
 	 * @param statement the statment
 	 * @param rewrite the AST rewrite
 	 */
@@ -541,7 +533,7 @@ public abstract class SurroundWith {
 
 	/**
 	 * Get a list rewrite for statement sequence node is element
-	 * 
+	 *
 	 * @param node the AST node
 	 * @param rewrite AST rewrite
 	 * @return The list rewrite

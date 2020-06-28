@@ -73,7 +73,7 @@ public class ManifestContentAssistProcessor extends TypePackageCompletionProcess
 		fExecEnvs = new String[envs.length];
 		for (int i = 0; i < envs.length; i++)
 			fExecEnvs[i] = envs[i].getId();
-		Arrays.sort(fExecEnvs, (o1, o2) -> o1.compareToIgnoreCase(o2));
+		Arrays.sort(fExecEnvs, String::compareToIgnoreCase);
 	}
 
 	/**
@@ -742,8 +742,7 @@ public class ManifestContentAssistProcessor extends TypePackageCompletionProcess
 	// if you use java.util.Arrays.asList(), we get an UnsupportedOperation later in the code
 	protected final ArrayList<Object> initializeNewList(Object[] values) {
 		ArrayList<Object> list = new ArrayList<>(values.length);
-		for (Object value : values)
-			list.add(value);
+		Collections.addAll(list, values);
 		return list;
 	}
 

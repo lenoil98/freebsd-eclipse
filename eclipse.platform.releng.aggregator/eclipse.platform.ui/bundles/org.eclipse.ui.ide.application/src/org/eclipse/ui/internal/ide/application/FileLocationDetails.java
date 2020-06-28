@@ -1,3 +1,16 @@
+/*******************************************************************************
+ * Copyright (c) 2016 Brian de Alwis and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Brian de Alwis - initial API and implementation
+ *******************************************************************************/
 package org.eclipse.ui.internal.ide.application;
 
 import java.util.regex.Matcher;
@@ -25,7 +38,7 @@ import org.eclipse.core.runtime.Path;
  * <li>filepath+line+col</li>
  * </ul>
  * Certain OS/WS interpret colons differently (see bug 496845)
- * 
+ *
  * @see #resolve(String)
  */
 public class FileLocationDetails {

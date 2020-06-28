@@ -41,93 +41,75 @@ public class BreakpointsCollapseAllAction implements IViewActionDelegate, IActio
 
 	private IAction fAction;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IViewActionDelegate#init(org.eclipse.ui.IViewPart)
-	 */
 	@Override
 	public void init(IViewPart view) {
 		fView = (AbstractDebugView) view;
-        IInternalTreeModelViewer viewer = (IInternalTreeModelViewer)fView.getViewer();
-        if (viewer != null) {
-            viewer.addViewerUpdateListener(this);
-            viewer.addModelChangedListener(this);
-        }
+		IInternalTreeModelViewer viewer = (IInternalTreeModelViewer)fView.getViewer();
+		if (viewer != null) {
+			viewer.addViewerUpdateListener(this);
+			viewer.addModelChangedListener(this);
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		((TreeViewer) fView.getViewer()).collapseAll();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#dispose()
-	 */
 	@Override
 	public void dispose() {
-        ITreeModelViewer viewer = (ITreeModelViewer)fView.getViewer();
-        if (viewer != null) {
-            viewer.removeViewerUpdateListener(this);
-            viewer.removeModelChangedListener(this);
-        }
+		ITreeModelViewer viewer = (ITreeModelViewer)fView.getViewer();
+		if (viewer != null) {
+			viewer.removeViewerUpdateListener(this);
+			viewer.removeModelChangedListener(this);
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#init(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void init(IAction action) {
 		fAction = action;
 		action.setActionDefinitionId(CollapseAllHandler.COMMAND_ID);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#runWithEvent(org.eclipse.jface.action.IAction, org.eclipse.swt.widgets.Event)
-	 */
 	@Override
 	public void runWithEvent(IAction action, Event event) {
 		run(action);
 	}
 
-    @Override
+	@Override
 	public void viewerUpdatesBegin() {
-    }
+	}
 
-    @Override
+	@Override
 	public void viewerUpdatesComplete() {
-    }
+	}
 
-    @Override
+	@Override
 	public void updateStarted(IViewerUpdate update) {
-    }
+	}
 
-    @Override
+	@Override
 	public void updateComplete(IViewerUpdate update) {
-          if (!update.isCanceled()) {
-              if (TreePath.EMPTY.equals(update.getElementPath())) {
-                  update();
-              }
-          }
-    }
+		if (!update.isCanceled()) {
+			if (TreePath.EMPTY.equals(update.getElementPath())) {
+				update();
+			}
+		}
+	}
 
-    private void update() {
-        IInternalTreeModelViewer viewer = (IInternalTreeModelViewer)fView.getViewer();
-        if (viewer != null && fAction != null) {
-            fAction.setEnabled(viewer.getInput() != null && viewer.getChildCount(TreePath.EMPTY) > 0);
-        }
-    }
+	private void update() {
+		IInternalTreeModelViewer viewer = (IInternalTreeModelViewer)fView.getViewer();
+		if (viewer != null && fAction != null) {
+			fAction.setEnabled(viewer.getInput() != null && viewer.getChildCount(TreePath.EMPTY) > 0);
+		}
+	}
 
-    @Override
+	@Override
 	public void modelChanged(IModelDelta delta, IModelProxy proxy) {
-        update();
-    }
+		update();
+	}
 }

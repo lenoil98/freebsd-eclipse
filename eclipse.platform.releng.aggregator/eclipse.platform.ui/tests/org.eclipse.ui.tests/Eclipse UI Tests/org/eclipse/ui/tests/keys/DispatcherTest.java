@@ -26,33 +26,31 @@ import org.eclipse.jface.bindings.keys.KeyStroke;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.tests.commands.CheckInvokedHandler;
-import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-public class DispatcherTest extends UITestCase {
+public class DispatcherTest {
 
 	private KeyBindingDispatcher dispatcher;
 	private IProject p;
 
-	@Override
+	@Before
 	public void doSetUp() throws CoreException {
-		this.dispatcher = getWorkbench().getService(KeyBindingDispatcher.class);
+		this.dispatcher = PlatformUI.getWorkbench().getService(KeyBindingDispatcher.class);
 		CheckInvokedHandler.invoked = false;
 		p = ResourcesPlugin.getWorkspace().getRoot().getProject(getClass().getName() + System.currentTimeMillis());
 		p.create(new NullProgressMonitor());
 		p.open(new NullProgressMonitor());
 	}
 
-	@Override
-	protected void doTearDown() throws Exception {
+	@After
+	public void doTearDown() throws Exception {
 		p.delete(true, new NullProgressMonitor());
-	}
-
-	public DispatcherTest() {
-		super(DispatcherTest.class.getSimpleName());
 	}
 
 	@Test
@@ -61,10 +59,10 @@ public class DispatcherTest extends UITestCase {
 		try (ByteArrayInputStream stream = new ByteArrayInputStream("hello".getBytes())) {
 			file.create(stream, true, new NullProgressMonitor());
 		}
-		IEditorPart part = IDE.openEditor(getWorkbench().getActiveWorkbenchWindow().getActivePage(), file);
+		IEditorPart part = IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), file);
 		try {
 			int shellCount = Display.getCurrent().getShells().length;
-			dispatcher.press(Arrays.asList(new KeyStroke[] { KeyStroke.getInstance(SWT.CTRL, 'O') }), null);
+			dispatcher.press(Arrays.asList(KeyStroke.getInstance(SWT.CTRL, 'O')), null);
 			Assert.assertFalse("No handler should have been invoked", CheckInvokedHandler.invoked);
 			Assert.assertEquals("No Shell should have been added", shellCount, Display.getCurrent().getShells().length);
 		} finally {
@@ -80,10 +78,10 @@ public class DispatcherTest extends UITestCase {
 		try (ByteArrayInputStream stream = new ByteArrayInputStream("hello".getBytes())) {
 			file.create(stream, true, new NullProgressMonitor());
 		}
-		IEditorPart part = IDE.openEditor(getWorkbench().getActiveWorkbenchWindow().getActivePage(), file);
+		IEditorPart part = IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), file);
 		try {
 			int shellCount = Display.getCurrent().getShells().length;
-			dispatcher.press(Arrays.asList(new KeyStroke[] { KeyStroke.getInstance(SWT.CTRL, 'O') }), null);
+			dispatcher.press(Arrays.asList(KeyStroke.getInstance(SWT.CTRL, 'O')), null);
 			Assert.assertTrue("Handler should have been invoked", CheckInvokedHandler.invoked);
 			Assert.assertEquals("No Shell should have been added", shellCount, Display.getCurrent().getShells().length);
 		} finally {

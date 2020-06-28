@@ -152,7 +152,7 @@ public class FindReplaceDocumentAdapter implements CharSequence {
 		if (operationCode == FIND_FIRST) {
 			// Reset
 
-			if (findString == null || findString.length() == 0)
+			if (findString == null || findString.isEmpty())
 				return null;
 
 			// Validate start offset
@@ -233,7 +233,7 @@ public class FindReplaceDocumentAdapter implements CharSequence {
 					if (operationCode == REPLACE_FIND_NEXT)
 						fFindReplaceState= FIND_NEXT;
 
-					if (found && fFindReplaceMatcher.group().length() > 0)
+					if (found && !fFindReplaceMatcher.group().isEmpty())
 						return new Region(fFindReplaceMatcher.start(), fFindReplaceMatcher.group().length());
 					return null;
 				}
@@ -263,7 +263,7 @@ public class FindReplaceDocumentAdapter implements CharSequence {
 	}
 
 	/**
-	 * Substitutes \R in a regex find pattern with (?>\r\n?|\n)
+	 * Substitutes \R in a regex find pattern with {@code (?>\r\n?|\n)}
 	 *
 	 * @param findString the original find pattern
 	 * @return the transformed find pattern

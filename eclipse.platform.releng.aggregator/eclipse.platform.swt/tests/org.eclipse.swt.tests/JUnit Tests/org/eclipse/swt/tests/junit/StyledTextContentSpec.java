@@ -126,7 +126,7 @@ public void run() {
 		}
 	}
 	try {
-		contentInstance = (StyledTextContent)contentClass.newInstance();
+		contentInstance = (StyledTextContent)contentClass.getDeclaredConstructor().newInstance();
 	} catch (IllegalAccessException e) {
 		MessageBox box = new MessageBox(Display.getDefault().getActiveShell(), SWT.ICON_ERROR);
 		box.setMessage("Unable to access content class:\n" + contentClassName); //$NON-NLS-1$
@@ -137,13 +137,16 @@ public void run() {
 		box.setMessage("Unable to instantiate content class:\n" + contentClassName); //$NON-NLS-1$
 		box.open();
 		return;
+	} catch (IllegalArgumentException|InvocationTargetException|NoSuchMethodException|SecurityException e) {
+		MessageBox box = new MessageBox(Display.getDefault().getActiveShell(), SWT.ICON_ERROR);
+		box.setMessage("Unable to instantiate content class:\n" + contentClassName+". Due to:"+e.getMessage()); //$NON-NLS-1$
+		box.open();
 	}
 	Class<?> clazz;
 	clazz = this.getClass();
-	Method[] methods = clazz.getDeclaredMethods();
-	for (int i=0; i<methods.length; i++) {
+	for (Method method : clazz.getDeclaredMethods()) {
 		setUp();
-		currentMethod = methods[i];
+		currentMethod = method;
 		failed = false;
 		try {
 			if (currentMethod.getName().startsWith("test_")) {
@@ -971,7 +974,7 @@ public void test_Text_Changed_Event() {
 	catch (IllegalArgumentException ex) {assertTrue(":17:", true);}
 
 	verify = 18;
- 	content.setText("L1\r");
+	content.setText("L1\r");
 	content.replaceTextRange(3, 0, "\ntest\r\n");
 
 	verify = 19;

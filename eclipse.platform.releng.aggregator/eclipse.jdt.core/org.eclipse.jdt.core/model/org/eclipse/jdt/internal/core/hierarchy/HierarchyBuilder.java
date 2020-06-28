@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -181,6 +181,7 @@ public abstract class HierarchyBuilder {
 				break;
 			case TypeDeclaration.INTERFACE_DECL :
 			case TypeDeclaration.ANNOTATION_TYPE_DECL :
+			case TypeDeclaration.RECORD_DECL :
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=329663
 				if (this.hierarchy.typeToSuperInterfaces.get(typeHandle) == null)
 					this.hierarchy.addInterface(typeHandle);
@@ -246,6 +247,9 @@ public abstract class HierarchyBuilder {
 			case TypeDeclaration.ENUM_DECL :
 				flag = NameLookup.ACCEPT_ENUMS;
 				break;
+			case TypeDeclaration.RECORD_DECL :
+				flag = NameLookup.ACCEPT_RECORDS;
+				break;
 			default:
 				//case IGenericType.ANNOTATION :
 				flag = NameLookup.ACCEPT_ANNOTATIONS;
@@ -293,17 +297,7 @@ protected IBinaryType createInfoFromClassFile(Openable handle, IResource file) {
 	IBinaryType info = null;
 	try {
 		info = Util.newClassFileReader(file);
-	} catch (org.eclipse.jdt.internal.compiler.classfmt.ClassFormatException e) {
-		if (TypeHierarchy.DEBUG) {
-			e.printStackTrace();
-		}
-		return null;
-	} catch (java.io.IOException e) {
-		if (TypeHierarchy.DEBUG) {
-			e.printStackTrace();
-		}
-		return null;
-	} catch (CoreException e) {
+	} catch (org.eclipse.jdt.internal.compiler.classfmt.ClassFormatException | java.io.IOException | CoreException e) {
 		if (TypeHierarchy.DEBUG) {
 			e.printStackTrace();
 		}

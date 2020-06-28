@@ -347,8 +347,9 @@ public class BackupStore implements IBackupStore {
 		if (file.isDirectory()) {
 			File[] files = file.listFiles();
 			if (files != null)
-				for (int i = 0; i < files.length; i++)
-					backupAll(files[i]);
+				for (File f : files) {
+					backupAll(f);
+				}
 		}
 		backup(file);
 	}
@@ -367,8 +368,9 @@ public class BackupStore implements IBackupStore {
 		if (file.isDirectory()) {
 			File[] files = file.listFiles();
 			if (files != null)
-				for (int i = 0; i < files.length; i++)
-					backupCopyAll(files[i]);
+				for (File f : files) {
+					backupCopyAll(f);
+				}
 			// if directory was empty, it needs to be backed up and then recreated
 			//
 			if (files == null || files.length == 0) {
@@ -561,6 +563,12 @@ public class BackupStore implements IBackupStore {
 		File buRoot = new File(backupRoot, backupName);
 		if (!fullyDelete(buRoot))
 			logWarning(NLS.bind(Messages.BackupStore_can_not_remove_bu_directory, buRoot.getAbsolutePath()));
+		for (String newName : renamedInPlace.values()) {
+			File buFile = new File(newName);
+			if (!fullyDelete(buFile)) {
+				logWarning(NLS.bind(Messages.BackupStore_can_not_remove_bu_file, buRoot.getAbsolutePath()));
+			}
+		}
 	}
 
 	private static void logWarning(String message) {
@@ -588,9 +596,9 @@ public class BackupStore implements IBackupStore {
 		if (file.isDirectory()) {
 			File[] children = file.listFiles();
 			if (children != null) {
-				for (int i = 0; i < children.length; i++) {
+				for (File child : children) {
 					// we will not stop even if some deletion failed
-					fullyDelete(new File(file, children[i].getName()));
+					fullyDelete(new File(file, child.getName()));
 				}
 			}
 		}
@@ -608,8 +616,8 @@ public class BackupStore implements IBackupStore {
 			unrestorable.add(buRoot);
 			return;
 		}
-		for (int i = 0; i < children.length; i++) {
-			File bu = new File(buRoot, children[i].getName());
+		for (File child : children) {
+			File bu = new File(buRoot, child.getName());
 			File target = new File(root, bu.getName());
 			if (bu.isDirectory()) {
 				if (!target.exists() && !target.mkdir()) {
@@ -675,9 +683,9 @@ public class BackupStore implements IBackupStore {
 			unrestorable.add(buRoot);
 			return;
 		}
-		for (int i = 0; i < children.length; i++) {
-			// Names are  root-chars, or drive letters in the root bu directory 
-			String name = children[i].getName();
+		for (File child : children) {
+			// Names are  root-chars, or drive letters in the root bu directory
+			String name = child.getName();
 			String rName = name;
 			String prefix = ""; //$NON-NLS-1$
 			while (rName.startsWith(ROOTCHAR)) {

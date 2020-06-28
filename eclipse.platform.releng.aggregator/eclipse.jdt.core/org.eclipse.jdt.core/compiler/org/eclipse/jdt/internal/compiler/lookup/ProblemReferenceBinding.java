@@ -28,6 +28,9 @@ public class ProblemReferenceBinding extends ReferenceBinding {
 public ProblemReferenceBinding(char[][] compoundName, ReferenceBinding closestMatch, int problemReason) {
 	this.compoundName = compoundName;
 	this.closestMatch = closestMatch;
+	if (closestMatch != null) {
+		this.sourceName = closestMatch.sourceName;
+	}
 	this.problemReason = problemReason;
 }
 
@@ -48,6 +51,20 @@ public TypeBinding closestMatch() {
  */
 public ReferenceBinding closestReferenceMatch() {
 	return this.closestMatch;
+}
+
+@Override
+public ReferenceBinding superclass() {
+	if (this.closestMatch != null)
+		return this.closestMatch.superclass();
+	return super.superclass();
+}
+
+@Override
+public ReferenceBinding[] superInterfaces() {
+	if (this.closestMatch != null)
+		return this.closestMatch.superInterfaces();
+	return super.superInterfaces();
 }
 
 @Override

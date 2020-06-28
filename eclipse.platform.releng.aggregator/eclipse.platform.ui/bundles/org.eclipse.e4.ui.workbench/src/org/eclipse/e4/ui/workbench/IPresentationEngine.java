@@ -70,7 +70,7 @@ public interface IPresentationEngine {
 	/**
 	 * When applied as a tag to an MUIElement inhibits detaching the element (ie.
 	 * through DnD...
-	 * 
+	 *
 	 * @since 1.6
 	 */
 	String NO_DETACH = "NoDetach"; //$NON-NLS-1$
@@ -211,7 +211,10 @@ public interface IPresentationEngine {
 	String ADORNMENT_PIN = "Pin Adornment"; //$NON-NLS-1$
 
 	/**
-	 * This is a <b>Boolean</b> preference used to control animations in the application
+	 * This is a <b>Boolean</b> preference used to control animations in the
+	 * application
+	 *
+	 * @deprecated not supported in the Eclipse platform anymore
 	 */
 	String ANIMATIONS_ENABLED = "Animations Enabled"; //$NON-NLS-1$
 
@@ -289,7 +292,7 @@ public interface IPresentationEngine {
 	 * elements implementation's @Focus method (if any). If no such method exists we delegate the
 	 * the renderer's 'forceFocus' method.
 	 *
-	 * @param element
+	 * @param element the element to set UI focus on
 	 */
 	void focusGui(MUIElement element);
 
@@ -297,8 +300,8 @@ public interface IPresentationEngine {
 	 * Run the UI. This method is responsible for creating the initial UI and (if necessary)
 	 * spinning the event loop for the life of the application.
 	 *
-	 * @param uiRoot
-	 * @param appContext
+	 * @param uiRoot the root gui element
+	 * @param appContext application context
 	 *
 	 * @return The application's return value
 	 */

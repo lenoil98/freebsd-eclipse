@@ -1,13 +1,13 @@
 /*******************************************************************************
  * Copyright (c) 2006, 2016 IBM Corporation and others.
  *
- * This program and the accompanying materials 
+ * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -129,11 +129,11 @@ public class LocationHelper {
 	}
 
 	public static String decode(String urlString, boolean plusEncoded) {
-		//first encode '+' characters, because URLDecoder incorrectly converts 
+		//first encode '+' characters, because URLDecoder incorrectly converts
 		//them to spaces on certain class library implementations.
 		if (plusEncoded && urlString.indexOf('+') >= 0) {
 			int len = urlString.length();
-			StringBuffer buf = new StringBuffer(len);
+			StringBuilder buf = new StringBuilder(len);
 			for (int i = 0; i < len; i++) {
 				char c = urlString.charAt(i);
 				if (c == '+')
@@ -145,11 +145,9 @@ public class LocationHelper {
 		}
 		try {
 			return URLDecoder.decode(urlString, "UTF-8"); //$NON-NLS-1$
-		} catch (UnsupportedEncodingException e) {
+		} catch (UnsupportedEncodingException | RuntimeException e) {
 			// Tried but failed
 			// TODO should we throw runtime exception here?
-			return urlString;
-		} catch (RuntimeException e) {
 			// May have illegal characters for decoding
 			return urlString;
 		}

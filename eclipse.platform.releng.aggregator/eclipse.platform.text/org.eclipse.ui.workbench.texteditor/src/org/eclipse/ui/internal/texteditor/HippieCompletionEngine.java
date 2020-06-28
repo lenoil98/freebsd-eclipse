@@ -162,15 +162,15 @@ public final class HippieCompletionEngine {
 
 	/**
 	 * Search for possible completions in the backward direction. If there
-     * is a possible completion that begins before <code>firstPosition</code>
-     * but ends after that position, it will not be included in the results.
+	 * is a possible completion that begins before <code>firstPosition</code>
+	 * but ends after that position, it will not be included in the results.
 	 *
 	 * @param document the document to be scanned
 	 * @param prefix the completion prefix
 	 * @param firstPosition the caret position
 	 * @return a {@link List} of possible completions ({@link String}s)
 	 *         from the caret position to the beginning of the document.
-     *         The empty suggestion is not included in the results.
+	 *         The empty suggestion is not included in the results.
 	 * @throws BadLocationException if any error occurs
 	 */
 	public List<String> getCompletionsBackwards(IDocument document, CharSequence prefix, int firstPosition) throws BadLocationException {
@@ -217,8 +217,7 @@ public final class HippieCompletionEngine {
 		HashSet<String> seenAlready= new HashSet<>();
 		ArrayList<String> uniqueSuggestions= new ArrayList<>();
 
-		for (Iterator<String> i= suggestions.iterator(); i.hasNext();) {
-			String suggestion= i.next();
+		for (String suggestion : suggestions) {
 			if (!seenAlready.contains(suggestion)) {
 				seenAlready.add(suggestion);
 				uniqueSuggestions.add(suggestion);
@@ -259,8 +258,8 @@ public final class HippieCompletionEngine {
 		IWorkbenchWindow window= currentTextEditor.getSite().getWorkbenchWindow();
 		IEditorReference editorsArray[]= window.getActivePage().getEditorReferences();
 
-		for (int i= 0; i < editorsArray.length; i++) {
-			IEditorPart realEditor= editorsArray[i].getEditor(false);
+		for (IEditorReference editor : editorsArray) {
+			IEditorPart realEditor = editor.getEditor(false);
 			if (realEditor instanceof ITextEditor && !realEditor.equals(currentTextEditor)) {
 				ITextEditor textEditor= (ITextEditor)realEditor;
 				provider= textEditor.getDocumentProvider();

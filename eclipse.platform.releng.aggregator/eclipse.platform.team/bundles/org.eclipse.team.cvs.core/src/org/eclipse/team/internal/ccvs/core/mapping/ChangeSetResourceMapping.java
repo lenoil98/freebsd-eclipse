@@ -40,13 +40,12 @@ public class ChangeSetResourceMapping extends ResourceMapping {
 	}
 
 	public IProject[] getProjects() {
-		Set result = new HashSet();
+		Set<IProject> result = new HashSet<>();
 		IResource[] resources = changeSet.getResources();
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			result.add(resource.getProject());
 		}
-		return (IProject[]) result.toArray(new IProject[result.size()]);
+		return result.toArray(new IProject[result.size()]);
 	}
 
 	public ResourceTraversal[] getTraversals(ResourceMappingContext context,

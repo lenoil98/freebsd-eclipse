@@ -305,8 +305,8 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 			addUpdates(viewer, treePath, (TestElement) treePath.getLastSegment(), 0, STATE_UPDATES);
 		}
 		IModelDelta[] childDeltas = pendingDelta.getChildDeltas();
-		for (int i = 0; i < childDeltas.length; i++) {
-			addStateUpdates(viewer, childDeltas[i], deltaFlags);
+		for (IModelDelta childDelta : childDeltas) {
+			addStateUpdates(viewer, childDelta, deltaFlags);
 		}
 	}
 
@@ -374,8 +374,8 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 	}
 
 	public static boolean isFiltered(Object element, ViewerFilter[] filters) {
-		for (int i = 0; i < filters.length; i++) {
-			if (!filters[i].select(null, null, element)) {
+		for (ViewerFilter filter : filters) {
+			if (!filter.select(null, null, element)) {
 				return true;
 			}
 		}
@@ -416,8 +416,8 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 					fChildrenUpdatesScheduled.put(path, childrenIndexes);
 				}
 
-				for (int i = 0; i < children.length; i++) {
-					addUpdates(viewer, path.createChildPath(children[i]), children[i], filters, levels, flags);
+				for (TestElement child : children) {
+					addUpdates(viewer, path.createChildPath(child), child, filters, levels, flags);
 				}
 			}
 
@@ -430,8 +430,8 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 			fProxyModels.add(element.getModel());
 		}
 		TestElement[] children = element.getChildren();
-		for (int i = 0; i < children.length; i++) {
-			addProxies(children[i]);
+		for (TestElement child : children) {
+			addProxies(child);
 		}
 	}
 
@@ -457,10 +457,10 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 		}
 
 		if (fFailOnRedundantUpdates && !fRedundantUpdates.isEmpty()) {
-			Assert.fail("Redundant Updates: " + fRedundantUpdates.toString()); //$NON-NLS-1$
+			Assert.fail("Redundant Updates: " + fRedundantUpdates); //$NON-NLS-1$
 		}
 		if (fFailOnRedundantLabelUpdates && !fRedundantLabelUpdates.isEmpty()) {
-			Assert.fail("Redundant Label Updates: " + fRedundantLabelUpdates.toString()); //$NON-NLS-1$
+			Assert.fail("Redundant Label Updates: " + fRedundantLabelUpdates); //$NON-NLS-1$
 		}
 		if (fFailOnMultipleLabelUpdateSequences && fLabelUpdatesComplete > (fLabelUpdatesCompleteAtReset + 1)) {
 			Assert.fail("Multiple label update sequences detected"); //$NON-NLS-1$
@@ -561,7 +561,7 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 			}
 		}
 		if ((flags & MODEL_PROXIES_INSTALLED) != 0) {
-			if (fProxyModels.size() != 0) {
+			if (!fProxyModels.isEmpty()) {
 				return false;
 			}
 		}
@@ -772,16 +772,16 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 	}
 
 	private String toString(int flags) {
-		StringBuffer buf = new StringBuffer("Viewer Update Listener"); //$NON-NLS-1$
+		StringBuilder buf = new StringBuilder("Viewer Update Listener"); //$NON-NLS-1$
 
 		if (fJobError != null) {
 			buf.append("\n\t"); //$NON-NLS-1$
 			buf.append("fJobError = " + fJobError); //$NON-NLS-1$
 			if (fJobError.getException() != null) {
 				StackTraceElement[] trace = fJobError.getException().getStackTrace();
-				for (int i = 0; i < trace.length; i++) {
+				for (StackTraceElement t : trace) {
 					buf.append("\n\t\t"); //$NON-NLS-1$
-					buf.append(trace[i]);
+					buf.append(t);
 				}
 			}
 		}
@@ -901,7 +901,7 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 		if (set.isEmpty()) {
 			return "(EMPTY)"; //$NON-NLS-1$
 		}
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		for (Iterator<TreePath> itr = set.iterator(); itr.hasNext();) {
 			buf.append("\n\t\t"); //$NON-NLS-1$
 			buf.append(toString(itr.next()));
@@ -913,7 +913,7 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 		if (map.isEmpty()) {
 			return "(EMPTY)"; //$NON-NLS-1$
 		}
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		for (Iterator<TreePath> itr = map.keySet().iterator(); itr.hasNext();) {
 			buf.append("\n\t\t"); //$NON-NLS-1$
 			TreePath path = itr.next();
@@ -929,7 +929,7 @@ public class TestModelUpdatesListener implements IViewerUpdateListener, ILabelUp
 		if (path.getSegmentCount() == 0) {
 			return "/"; //$NON-NLS-1$
 		}
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < path.getSegmentCount(); i++) {
 			buf.append("/"); //$NON-NLS-1$
 			buf.append(path.getSegment(i));

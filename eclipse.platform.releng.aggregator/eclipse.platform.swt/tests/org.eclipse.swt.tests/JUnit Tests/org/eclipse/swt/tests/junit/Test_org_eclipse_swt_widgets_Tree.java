@@ -28,6 +28,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.TreeListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
@@ -61,15 +62,15 @@ public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
 	}
 
 	int[] cases = {0, SWT.BORDER};
-	for (int i = 0; i < cases.length; i++)
-		tree = new Tree(shell, cases[i]);
+	for (int style : cases)
+		tree = new Tree(shell, style);
 
 	cases = new int[]{0, 10, 100};
-	for (int j = 0; j < cases.length; j++) {
-		for (int i = 0; i < cases[j]; i++) {
+	for (int count : cases) {
+		for (int i = 0; i < count; i++) {
 			new TreeItem(tree, 0);
 		}
-		assertEquals(cases[j], tree.getItemCount());
+		assertEquals(count, tree.getItemCount());
 		tree.removeAll();
 	}
 }
@@ -253,8 +254,8 @@ public void test_getItems() {
 
 	makeCleanEnvironment(false);
 
-	for (int j = 0; j < cases.length; j++) {
-		for (int i = 0; i < cases[j]; i++) {
+	for (int count : cases) {
+		for (int i = 0; i < count; i++) {
 			TreeItem ti = new TreeItem(tree, 0);
 			ti.setText(String.valueOf(i));
 		}
@@ -761,7 +762,7 @@ private void makeCleanEnvironment(boolean single) {
 }
 
 private void createTree(List<String> events) {
-    makeCleanEnvironment(true);
+	makeCleanEnvironment(true);
 	for (int i = 0; i < 3; i++) {
 		TreeItem item = new TreeItem(tree, SWT.NONE);
 		item.setText("TreeItem" + i);
@@ -776,70 +777,138 @@ private void createTree(List<String> events) {
 
 @Test
 public void test_consistency_KeySelection() {
-    List<String> events = new ArrayList<>();
-    createTree(events);
-    consistencyEvent(0, SWT.ARROW_DOWN, 0, 0, ConsistencyUtility.KEY_PRESS, events);
+	List<String> events = new ArrayList<>();
+	createTree(events);
+	consistencyEvent(0, SWT.ARROW_DOWN, 0, 0, ConsistencyUtility.KEY_PRESS, events);
 }
 
 @Test
 public void test_consistency_MouseSelection() {
-    List<String> events = new ArrayList<>();
-    createTree(events);
-    consistencyEvent(30, 30, 1, 0, ConsistencyUtility.MOUSE_CLICK, events);
+	List<String> events = new ArrayList<>();
+	createTree(events);
+	consistencyEvent(30, 30, 1, 0, ConsistencyUtility.MOUSE_CLICK, events);
 }
 
 @Test
 public void test_consistency_MouseExpand() {
-    List<String> events = new ArrayList<>();
-    createTree(events);
-    consistencyEvent(11, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK, events);
+	List<String> events = new ArrayList<>();
+	createTree(events);
+	consistencyEvent(11, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK, events);
 }
 
 @Test
 public void test_consistency_KeyExpand() {
-    List<String> events = new ArrayList<>();
-    createTree(events);
-    int code=SWT.ARROW_RIGHT;
-    if(SwtTestUtil.isGTK)
-        code = SWT.KEYPAD_ADD;
-    consistencyEvent(0, code, 0, 0, ConsistencyUtility.KEY_PRESS, events);
+	List<String> events = new ArrayList<>();
+	createTree(events);
+	int code=SWT.ARROW_RIGHT;
+	if(SwtTestUtil.isGTK)
+		code = SWT.KEYPAD_ADD;
+	consistencyEvent(0, code, 0, 0, ConsistencyUtility.KEY_PRESS, events);
 }
 
 @Test
 public void test_consistency_DoubleClick () {
-    List<String> events = new ArrayList<>();
-    createTree(events);
-    consistencyPrePackShell();
-    consistencyEvent(20, tree.getItemHeight()*2, 1, 0,
-            	     ConsistencyUtility.MOUSE_DOUBLECLICK, events);
+	List<String> events = new ArrayList<>();
+	createTree(events);
+	consistencyPrePackShell();
+	consistencyEvent(20, tree.getItemHeight()*2, 1, 0,
+					 ConsistencyUtility.MOUSE_DOUBLECLICK, events);
 }
 
 @Test
 public void test_consistency_EnterSelection () {
-    List<String> events = new ArrayList<>();
-    createTree(events);
-    consistencyEvent(13, 10, 0, 0, ConsistencyUtility.KEY_PRESS, events);
+	List<String> events = new ArrayList<>();
+	createTree(events);
+	consistencyEvent(13, 10, 0, 0, ConsistencyUtility.KEY_PRESS, events);
 }
 
 @Test
 public void test_consistency_SpaceSelection () {
-    List<String> events = new ArrayList<>();
-    createTree(events);
-    consistencyEvent(' ', 32, 0, 0, ConsistencyUtility.KEY_PRESS, events);
+	List<String> events = new ArrayList<>();
+	createTree(events);
+	consistencyEvent(' ', 32, 0, 0, ConsistencyUtility.KEY_PRESS, events);
 }
 
 @Test
 public void test_consistency_MenuDetect () {
-    List<String> events = new ArrayList<>();
-    createTree(events);
-    consistencyEvent(50, 25, 3, 0, ConsistencyUtility.MOUSE_CLICK, events);
+	List<String> events = new ArrayList<>();
+	createTree(events);
+	consistencyEvent(50, 25, 3, 0, ConsistencyUtility.MOUSE_CLICK, events);
 }
 
 @Test
 public void test_consistency_DragDetect () {
-    List<String> events = new ArrayList<>();
-    createTree(events);
-    consistencyEvent(30, 20, 50, 30, ConsistencyUtility.MOUSE_DRAG, events);
+	List<String> events = new ArrayList<>();
+	createTree(events);
+	consistencyEvent(30, 20, 50, 30, ConsistencyUtility.MOUSE_DRAG, events);
+}
+
+@Test
+public void test_disposeItemNotTriggerSelection() {
+	Display display = shell.getDisplay();
+	shell.setLayout(new FillLayout());
+	Tree tree = new Tree (shell, SWT.BORDER);
+	for (int i=0; i<4; i++) {
+		TreeItem iItem = new TreeItem (tree, 0);
+		iItem.setText ("TreeItem (0) -" + i);
+		for (int j=0; j<4; j++) {
+			TreeItem jItem = new TreeItem (iItem, 0);
+			jItem.setText ("TreeItem (1) -" + j);
+			for (int k=0; k<4; k++) {
+				TreeItem kItem = new TreeItem (jItem, 0);
+				kItem.setText ("TreeItem (2) -" + k);
+				for (int l=0; l<4; l++) {
+					TreeItem lItem = new TreeItem(kItem, 0);
+					lItem.setText ("TreeItem (3) -" + l);
+				}
+			}
+		}
+	}
+	final boolean [] selectionCalled = { false };
+	tree.addListener(SWT.Selection, event -> {
+		selectionCalled [0] = true;
+	});
+
+	final TreeItem firstNode = tree.getItem(0);
+	firstNode.setExpanded(true);
+	tree.setSelection(firstNode.getItem(3));
+
+	shell.setSize(200, 200);
+	shell.open();
+
+	display.timerExec(1000, () -> {
+		if (shell.isDisposed()) {
+			return;
+		}
+
+		final TreeItem[] selection = tree.getSelection();
+		if (selection.length != 1) {
+			return;
+		}
+
+		final TreeItem item = selection[0];
+		final TreeItem parentItem = item.getParentItem();
+		if (parentItem == null) {
+			return;
+		}
+
+		tree.deselectAll();
+		item.dispose();
+
+	});
+
+	long end = System.currentTimeMillis() + 3000;
+	while (!shell.isDisposed() && System.currentTimeMillis() < end) {
+		if (!shell.getDisplay().readAndDispatch ()) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	assertFalse(selectionCalled[0]);
 }
 
 @Test

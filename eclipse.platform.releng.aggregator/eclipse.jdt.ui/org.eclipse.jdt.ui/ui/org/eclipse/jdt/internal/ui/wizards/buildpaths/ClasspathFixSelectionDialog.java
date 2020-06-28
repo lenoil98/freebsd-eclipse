@@ -190,7 +190,7 @@ public class ClasspathFixSelectionDialog extends StatusDialog {
 			label.setText(Messages.format(NewWizardMessages.ClasspathFixSelectionDialog_proposals_message, args));
 
 			fFixSelectionTable= new TableViewer(composite, SWT.SINGLE | SWT.BORDER);
-			fFixSelectionTable.setContentProvider(new ArrayContentProvider());
+			fFixSelectionTable.setContentProvider(ArrayContentProvider.getInstance());
 			fFixSelectionTable.setLabelProvider(new ClasspathFixLabelProvider());
 			fFixSelectionTable.setComparator(new ViewerComparator() {
 				@Override
@@ -205,7 +205,7 @@ public class ClasspathFixSelectionDialog extends StatusDialog {
 			fFixSelectionTable.addSelectionChangedListener(listener);
 
 			Dialog.applyDialogFont(table);
-			
+
 			GridData gridData= new GridData(SWT.FILL, SWT.FILL, true, true);
 			gridData.heightHint= table.getItemHeight() * Math.max(4, Math.min(10, count));
 			gridData.widthHint= convertWidthInCharsToPixels(50);

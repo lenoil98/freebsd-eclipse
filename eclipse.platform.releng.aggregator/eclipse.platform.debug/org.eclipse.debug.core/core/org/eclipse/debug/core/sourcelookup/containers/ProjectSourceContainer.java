@@ -15,6 +15,7 @@
 package org.eclipse.debug.core.sourcelookup.containers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -91,12 +92,10 @@ public class ProjectSourceContainer extends ContainerSourceContainer {
 				IProject[] projects = getAllReferencedProjects(project);
 				ISourceContainer[] folders = super.createSourceContainers();
 				List<ISourceContainer> all = new ArrayList<>(folders.length + projects.length);
-				for (int i = 0; i < folders.length; i++) {
-					all.add(folders[i]);
-				}
-				for (int i = 0; i < projects.length; i++) {
+				Collections.addAll(all, folders);
+				for (IProject p : projects) {
 					if (project.exists() && project.isOpen()) {
-						ProjectSourceContainer container = new ProjectSourceContainer(projects[i], false);
+						ProjectSourceContainer container = new ProjectSourceContainer(p, false);
 						container.init(getDirector());
 						all.add(container);
 					}
@@ -116,10 +115,10 @@ public class ProjectSourceContainer extends ContainerSourceContainer {
 
 	private void getAllReferencedProjects(Set<IProject> all, IProject project) throws CoreException {
 		IProject[] refs = project.getReferencedProjects();
-		for (int i = 0; i < refs.length; i++) {
-			if (!all.contains(refs[i]) && refs[i].exists() && refs[i].isOpen()) {
-				all.add(refs[i]);
-				getAllReferencedProjects(all, refs[i]);
+		for (IProject ref : refs) {
+			if (!all.contains(ref) && ref.exists() && ref.isOpen()) {
+				all.add(ref);
+				getAllReferencedProjects(all, ref);
 			}
 		}
 	}

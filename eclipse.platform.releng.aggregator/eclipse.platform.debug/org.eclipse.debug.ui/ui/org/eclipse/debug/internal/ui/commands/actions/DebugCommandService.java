@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2013 IBM Corporation and others.
+ * Copyright (c) 2006, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -22,6 +22,8 @@ import java.util.Map.Entry;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.commands.IDebugCommandHandler;
+import org.eclipse.debug.core.commands.IDebugCommandRequest;
+import org.eclipse.debug.internal.ui.DebugUIPlugin;
 import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.debug.ui.contexts.DebugContextEvent;
 import org.eclipse.debug.ui.contexts.IDebugContextListener;
@@ -47,12 +49,12 @@ public class DebugCommandService implements IDebugContextListener {
 	/**
 	 * Window this service is for.
 	 */
-	private IWorkbenchWindow fWindow = null;
+	private IWorkbenchWindow fWindow;
 
 	/**
 	 * The context service for this command service.
 	 */
-	private IDebugContextService fContextService = null;
+	private IDebugContextService fContextService;
 
 	/**
 	 * Service per window
@@ -65,11 +67,16 @@ public class DebugCommandService implements IDebugContextListener {
 	 * @param window the window
 	 * @return service
 	 */
-	public synchronized static DebugCommandService getService(IWorkbenchWindow window) {
+	public static DebugCommandService getService(IWorkbenchWindow window) {
 		DebugCommandService service = fgServices.get(window);
 		if (service == null) {
-			service = new DebugCommandService(window);
-			fgServices.put(window, service);
+			synchronized (fgServices) {
+				service = fgServices.get(window);
+				if (service == null) {
+					service = new DebugCommandService(window);
+					fgServices.put(window, service);
+				}
+			}
 		}
 		return service;
 	}
@@ -104,7 +111,9 @@ public class DebugCommandService implements IDebugContextListener {
 
 	private void dispose() {
 		fContextService.removeDebugContextListener(this);
-		fgServices.remove(fWindow);
+		synchronized (fgServices) {
+			fgServices.remove(fWindow);
+		}
 		fCommandUpdates.clear();
 		fWindow = null;
 	}
@@ -117,7 +126,6 @@ public class DebugCommandService implements IDebugContextListener {
 	 */
 	public void postUpdateCommand(Class<?> commandType, IEnabledTarget action) {
 		synchronized (fCommandUpdates) {
-			Job.getJobManager().cancel(commandType);
 			List<IEnabledTarget> actions = fCommandUpdates.get(commandType);
 			if (actions == null) {
 				actions = new ArrayList<>();
@@ -172,12 +180,16 @@ public class DebugCommandService implements IDebugContextListener {
 	 * @param actions the actions to update
 	 */
 	private void updateCommand(Class<?> handlerType, Object[] elements, IEnabledTarget[] actions) {
+		cancelHandlerEnablementUpdateJobs(handlerType);
 		if (elements.length == 1) {
 			// usual case - one element
 			Object element = elements[0];
 			IDebugCommandHandler handler = getHandler(element, handlerType);
 			if (handler != null) {
 				UpdateActionsRequest request = new UpdateActionsRequest(elements, actions);
+				if (DebugUIPlugin.DEBUG_COMMAND_SERVICE) {
+					DebugUIPlugin.trace(request + " to " + handler); //$NON-NLS-1$
+				}
 				handler.canExecute(request);
 				return;
 			}
@@ -187,14 +199,17 @@ public class DebugCommandService implements IDebugContextListener {
 				ActionsUpdater updater = new ActionsUpdater(actions, map.size());
 				for (Entry<IDebugCommandHandler, List<Object>> entry : map.entrySet()) {
 					UpdateHandlerRequest request = new UpdateHandlerRequest(entry.getValue().toArray(), updater);
+					if (DebugUIPlugin.DEBUG_COMMAND_SERVICE) {
+						DebugUIPlugin.trace(request + " to " + entry.getKey()); //$NON-NLS-1$
+					}
 					entry.getKey().canExecute(request);
 				}
 				return;
 			}
 		}
 		// ABORT - no command processors
-		for (int i = 0; i < actions.length; i++) {
-			actions[i].setEnabled(false);
+		for (IEnabledTarget action : actions) {
+			action.setEnabled(false);
 		}
 	}
 
@@ -247,9 +262,8 @@ public class DebugCommandService implements IDebugContextListener {
 	 */
 	private Map<IDebugCommandHandler, List<Object>> collate(Object[] elements, Class<?> handlerType) {
 		Map<IDebugCommandHandler, List<Object>> map = new HashMap<>();
- 		for (int i = 0; i < elements.length; i++) {
- 			Object element = elements[i];
- 			IDebugCommandHandler handler = getHandler(element, handlerType);
+		for (Object element : elements) {
+			IDebugCommandHandler handler = getHandler(element, handlerType);
 			if (handler == null) {
 				return null;
 			} else {
@@ -268,4 +282,36 @@ public class DebugCommandService implements IDebugContextListener {
 		return (IDebugCommandHandler)DebugPlugin.getAdapter(element, handlerType);
 	}
 
+	/**
+	 * Cancel handler enablement update jobs created in
+	 * {@link org.eclipse.debug.core.commands.AbstractDebugCommand#canExecute(org.eclipse.debug.core.commands.IEnabledStateRequest)}.
+	 * for the specified handler type. The debug command handler defines its type in
+	 * {@link org.eclipse.debug.core.commands.AbstractDebugCommand#getEnabledStateJobFamily(IDebugCommandRequest)}.
+	 *
+	 * Does not cancel jobs if there are more than 2 workbench windows, since 1
+	 * window could cancel updates from another window, breaking some updates. See
+	 * bug 560348.
+	 *
+	 * @param handlerType cancels enablement update jobs for this type of handler.
+	 */
+	private void cancelHandlerEnablementUpdateJobs(Class<?> handlerType) {
+		if (handlerType != null) {
+			boolean hasMultipleWindowServices = hasMultipleWindowServices();
+			if (!hasMultipleWindowServices) {
+				if (DebugUIPlugin.DEBUG_COMMAND_SERVICE) {
+					Job[] jobs = Job.getJobManager().find(handlerType);
+					for (Job job : jobs) {
+						DebugUIPlugin.trace("WOULD cancel " + job); //$NON-NLS-1$
+					}
+				}
+				Job.getJobManager().cancel(handlerType);
+			}
+		}
+	}
+
+	private static boolean hasMultipleWindowServices() {
+		synchronized (fgServices) {
+			return fgServices.size() > 1;
+		}
+	}
 }

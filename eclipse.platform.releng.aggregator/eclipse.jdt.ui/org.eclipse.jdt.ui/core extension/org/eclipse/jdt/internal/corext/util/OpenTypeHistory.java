@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -140,9 +139,8 @@ public class OpenTypeHistory extends History<TypeNameMatch, TypeNameMatch> {
 		*/
 
 		private boolean processChildrenDelta(IJavaElementDelta delta) {
-			IJavaElementDelta[] children= delta.getAffectedChildren();
-			for (int i= 0; i < children.length; i++) {
-				if (processDelta(children[i])) {
+			for (IJavaElementDelta child : delta.getAffectedChildren()) {
+				if (processDelta(child)) {
 					return true;
 				}
 			}
@@ -275,18 +273,16 @@ public class OpenTypeHistory extends History<TypeNameMatch, TypeNameMatch> {
 		int size= values.size();
 		TypeNameMatch[] result= new TypeNameMatch[size];
 		int i= size - 1;
-		for (Iterator<TypeNameMatch> iter= values.iterator(); iter.hasNext();) {
-			result[i]= iter.next();
+		for (TypeNameMatch typeNameMatch : values) {
+			result[i]= typeNameMatch;
 			i--;
 		}
 		return result;
 	}
 
 	public synchronized TypeNameMatch[] getFilteredTypeInfos(TypeInfoFilter filter) {
-		Collection<TypeNameMatch> values= getValues();
 		List<TypeNameMatch> result= new ArrayList<>();
-		for (Iterator<TypeNameMatch> iter= values.iterator(); iter.hasNext();) {
-			TypeNameMatch type= iter.next();
+		for (TypeNameMatch type : getValues()) {
 			if ((filter == null || filter.matchesHistoryElement(type)) && !TypeFilter.isFiltered(type.getFullyQualifiedName()))
 				result.add(type);
 		}
@@ -307,8 +303,7 @@ public class OpenTypeHistory extends History<TypeNameMatch, TypeNameMatch> {
 		List<TypeNameMatch> typesToCheck= new ArrayList<>(getKeys());
 		monitor.beginTask(CorextMessages.TypeInfoHistory_consistency_check, typesToCheck.size());
 		monitor.setTaskName(CorextMessages.TypeInfoHistory_consistency_check);
-		for (Iterator<TypeNameMatch> iter= typesToCheck.iterator(); iter.hasNext();) {
-			TypeNameMatch type= iter.next();
+		for (TypeNameMatch type : typesToCheck) {
 			long currentTimestamp= getContainerTimestamp(type);
 			Long lastTested= fTimestampMapping.get(type);
 			if (lastTested != null && currentTimestamp != IResource.NULL_STAMP && currentTimestamp == lastTested.longValue() && !isContainerDirty(type))

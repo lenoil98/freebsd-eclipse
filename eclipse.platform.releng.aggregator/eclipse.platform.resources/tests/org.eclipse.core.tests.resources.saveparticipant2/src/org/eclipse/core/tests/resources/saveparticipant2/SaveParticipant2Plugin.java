@@ -59,6 +59,7 @@ public class SaveParticipant2Plugin extends Plugin implements ISaveParticipant {
 		getWorkspace().removeSaveParticipant(getPluginId());
 	}
 
+	@Override
 	public void doneSaving(ISaveContext context) {
 		try {
 			writeExpectedSaveNumber(context.getSaveNumber());
@@ -75,7 +76,7 @@ public class SaveParticipant2Plugin extends Plugin implements ISaveParticipant {
 	}
 
 	private String getMessage(int expectedPreviousSaveNumber, int previousSaveNumber) {
-		StringBuffer message = new StringBuffer();
+		StringBuilder message = new StringBuilder();
 		message.append("Expected previous saved id was: ");
 		message.append(expectedPreviousSaveNumber);
 		message.append("\nPrevious saved id is: ");
@@ -99,6 +100,7 @@ public class SaveParticipant2Plugin extends Plugin implements ISaveParticipant {
 		return ResourcesPlugin.getWorkspace();
 	}
 
+	@Override
 	public void prepareToSave(ISaveContext context) throws CoreException {
 		resetSaveLifecycleLog();
 		IStatus status = validate(context);
@@ -113,13 +115,8 @@ public class SaveParticipant2Plugin extends Plugin implements ISaveParticipant {
 	 */
 	private void readExpectedSavedNumber() {
 		IPath location = getStateLocation().append(SAVE_NUMBER_LOCATION);
-		try {
-			DataInputStream input = new DataInputStream(new FileInputStream(location.toOSString()));
-			try {
-				expectedPreviousSaveNumber = input.readInt();
-			} finally {
-				input.close();
-			}
+		try (DataInputStream input = new DataInputStream(new FileInputStream(location.toOSString()))) {
+			expectedPreviousSaveNumber = input.readInt();
 		} catch (IOException e) {
 			expectedPreviousSaveNumber = 0;
 		}
@@ -143,9 +140,11 @@ public class SaveParticipant2Plugin extends Plugin implements ISaveParticipant {
 		saveLifecycleLog = new MultiStatus(getPluginId(), IStatus.OK, message, null);
 	}
 
+	@Override
 	public void rollback(ISaveContext context) {
 	}
 
+	@Override
 	public void saving(ISaveContext context) throws CoreException {
 	}
 
@@ -204,11 +203,8 @@ public class SaveParticipant2Plugin extends Plugin implements ISaveParticipant {
 	 */
 	private void writeExpectedSaveNumber(int saveNumber) throws IOException {
 		IPath location = getStateLocation().append(SAVE_NUMBER_LOCATION);
-		DataOutputStream output = new DataOutputStream(new FileOutputStream(location.toOSString()));
-		try {
+		try (DataOutputStream output = new DataOutputStream(new FileOutputStream(location.toOSString()))) {
 			output.writeInt(saveNumber);
-		} finally {
-			output.close();
 		}
 	}
 

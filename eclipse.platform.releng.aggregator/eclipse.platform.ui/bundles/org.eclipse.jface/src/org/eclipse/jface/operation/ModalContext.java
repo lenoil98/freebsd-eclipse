@@ -121,13 +121,11 @@ public class ModalContext {
 				if (runnable != null) {
 					runnable.run(progressMonitor);
 				}
-			} catch (InvocationTargetException | InterruptedException | RuntimeException e) {
-				throwable = e;
 			} catch (ThreadDeath e) {
 				// Make sure to propagate ThreadDeath, or threads will never
 				// fully terminate.
 				throw e;
-			} catch (Error e) {
+			} catch (InvocationTargetException | InterruptedException | RuntimeException | Error e) {
 				throwable = e;
 			} finally {
 				progressMonitor.done();
@@ -186,7 +184,7 @@ public class ModalContext {
 						// so be generous about how many may fail consecutively before we
 						// give up.
 						if (exceptionCount > 50 || display.isDisposed()) {
-			                if (t instanceof RuntimeException) {
+							if (t instanceof RuntimeException) {
 								throw (RuntimeException) t;
 							} else if (t instanceof Error) {
 								throw (Error) t;
@@ -437,11 +435,9 @@ public class ModalContext {
 			if (runnable != null) {
 				runnable.run(progressMonitor);
 			}
-		} catch (InvocationTargetException | InterruptedException e) {
-			throw e;
 		} catch (OperationCanceledException e) {
 			throw new InterruptedException();
-		} catch (ThreadDeath e) {
+		} catch (InvocationTargetException | InterruptedException | ThreadDeath e) {
 			// Make sure to propagate ThreadDeath, or threads will never fully
 			// terminate.
 			throw e;

@@ -75,7 +75,7 @@ public class ImportRemover {
 	private final String PROPERTY_KEY= String.valueOf(System.currentTimeMillis());
 	private final String REMOVED= "removed"; //$NON-NLS-1$
 	private final String RETAINED= "retained"; //$NON-NLS-1$
-	
+
 	private Set<String> fAddedImports= new HashSet<>();
 
 	private Set<StaticImportData> fAddedStaticImports= new HashSet<>();
@@ -142,23 +142,20 @@ public class ImportRemover {
 				super.postVisit(node);
 			}
 		});
-		
-		for (Iterator<SimpleName> iterator= importNames.iterator(); iterator.hasNext();) {
-			SimpleName name= iterator.next();
+
+		for (SimpleName name : importNames) {
 			if (isInRemoved(name, removedStartsEnds))
 				removedRefs.add(name);
 			else
 				unremovedRefs.add(name);
 		}
-		for (Iterator<SimpleName> iterator= staticNames.iterator(); iterator.hasNext();) {
-			SimpleName name= iterator.next();
+		for (SimpleName name : staticNames) {
 			if (isInRemoved(name, removedStartsEnds))
 				removedRefs.add(name);
 			else
 				unremovedRefs.add(name);
 		}
-		for (Iterator<ImportDeclaration> iterator= fInlinedStaticImports.iterator(); iterator.hasNext(); ) {
-			ImportDeclaration importDecl= iterator.next();
+		for (ImportDeclaration importDecl : fInlinedStaticImports) {
 			Name name= importDecl.getName();
 			if (name instanceof QualifiedName)
 				name= ((QualifiedName) name).getName();
@@ -186,12 +183,11 @@ public class ImportRemover {
 		List<SimpleName> removedRefs= new ArrayList<>();
 		List<SimpleName> unremovedRefs= new ArrayList<>();
 		divideTypeRefs(importNames, staticNames, removedRefs, unremovedRefs);
-		if (removedRefs.size() == 0)
+		if (removedRefs.isEmpty())
 			return new IBinding[0];
 
 		HashMap<String, IBinding> potentialRemoves= getPotentialRemoves(removedRefs);
-		for (Iterator<SimpleName> iterator= unremovedRefs.iterator(); iterator.hasNext();) {
-			SimpleName name= iterator.next();
+		for (SimpleName name : unremovedRefs) {
 			potentialRemoves.remove(name.getIdentifier());
 		}
 
@@ -201,8 +197,7 @@ public class ImportRemover {
 
 	private HashMap<String, IBinding> getPotentialRemoves(List<SimpleName> removedRefs) {
 		HashMap<String, IBinding>potentialRemoves= new HashMap<>();
-		for (Iterator<SimpleName> iterator= removedRefs.iterator(); iterator.hasNext();) {
-			SimpleName name= iterator.next();
+		for (SimpleName name : removedRefs) {
 			if (fAddedImports.contains(name.getIdentifier()) || hasAddedStaticImport(name))
 				continue;
 			IBinding binding= name.resolveBinding();
@@ -235,7 +230,7 @@ public class ImportRemover {
 	}
 
 	public boolean hasRemovedNodes() {
-		return fHasRemovedNodes || fInlinedStaticImports.size() != 0;
+		return fHasRemovedNodes || !fInlinedStaticImports.isEmpty();
 	}
 
 	public void registerAddedImport(String typeName) {
@@ -258,7 +253,7 @@ public class ImportRemover {
 				addName(node.getName());
 				return false;
 			}
-			
+
 			@Override
 			public boolean visit(QualifiedName node) {
 				addName(node.getName());
@@ -307,16 +302,15 @@ public class ImportRemover {
 	}
 
 	public void applyRemoves(ImportRewrite importRewrite) {
-		IBinding[] bindings= getImportsToRemove();
-		for (int i= 0; i < bindings.length; i++) {
-			if (bindings[i] instanceof ITypeBinding) {
-				ITypeBinding typeBinding= (ITypeBinding) bindings[i];
+		for (IBinding b : getImportsToRemove()) {
+			if (b instanceof ITypeBinding) {
+				ITypeBinding typeBinding= (ITypeBinding) b;
 				importRewrite.removeImport(typeBinding.getTypeDeclaration().getQualifiedName());
-			} else if (bindings[i] instanceof IMethodBinding) {
-				IMethodBinding binding= (IMethodBinding) bindings[i];
+			} else if (b instanceof IMethodBinding) {
+				IMethodBinding binding= (IMethodBinding) b;
 				importRewrite.removeStaticImport(binding.getDeclaringClass().getQualifiedName() + '.' + binding.getName());
-			} else if (bindings[i] instanceof IVariableBinding) {
-				IVariableBinding binding= (IVariableBinding) bindings[i];
+			} else if (b instanceof IVariableBinding) {
+				IVariableBinding binding= (IVariableBinding) b;
 				importRewrite.removeStaticImport(binding.getDeclaringClass().getQualifiedName() + '.' + binding.getName());
 			}
 		}

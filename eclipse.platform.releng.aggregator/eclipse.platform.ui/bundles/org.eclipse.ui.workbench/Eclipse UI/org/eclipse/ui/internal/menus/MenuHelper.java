@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2018 IBM Corporation and others.
+ * Copyright (c) 2010, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -36,62 +36,28 @@ import org.eclipse.core.runtime.IAdapterManager;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.InvalidRegistryObjectException;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.e4.core.commands.ECommandService;
 import org.eclipse.e4.core.commands.EHandlerService;
-import org.eclipse.e4.core.contexts.ContextFunction;
-import org.eclipse.e4.core.contexts.IContextFunction;
 import org.eclipse.e4.core.contexts.IEclipseContext;
-import org.eclipse.e4.core.di.annotations.CanExecute;
-import org.eclipse.e4.core.di.annotations.Execute;
-import org.eclipse.e4.ui.internal.workbench.ContributionsAnalyzer;
-import org.eclipse.e4.ui.internal.workbench.RenderedElementUtil;
 import org.eclipse.e4.ui.internal.workbench.swt.Policy;
 import org.eclipse.e4.ui.internal.workbench.swt.WorkbenchSWTActivator;
 import org.eclipse.e4.ui.model.application.MApplication;
 import org.eclipse.e4.ui.model.application.commands.MCommand;
-import org.eclipse.e4.ui.model.application.commands.impl.CommandsFactoryImpl;
 import org.eclipse.e4.ui.model.application.ui.MCoreExpression;
 import org.eclipse.e4.ui.model.application.ui.MExpression;
-import org.eclipse.e4.ui.model.application.ui.basic.MPart;
 import org.eclipse.e4.ui.model.application.ui.impl.UiFactoryImpl;
 import org.eclipse.e4.ui.model.application.ui.menu.ItemType;
-import org.eclipse.e4.ui.model.application.ui.menu.MDirectMenuItem;
-import org.eclipse.e4.ui.model.application.ui.menu.MDirectToolItem;
-import org.eclipse.e4.ui.model.application.ui.menu.MHandledItem;
-import org.eclipse.e4.ui.model.application.ui.menu.MHandledMenuItem;
 import org.eclipse.e4.ui.model.application.ui.menu.MHandledToolItem;
 import org.eclipse.e4.ui.model.application.ui.menu.MMenu;
-import org.eclipse.e4.ui.model.application.ui.menu.MMenuElement;
-import org.eclipse.e4.ui.model.application.ui.menu.MMenuItem;
-import org.eclipse.e4.ui.model.application.ui.menu.MToolBarElement;
 import org.eclipse.e4.ui.model.application.ui.menu.MToolItem;
 import org.eclipse.e4.ui.model.application.ui.menu.impl.MenuFactoryImpl;
 import org.eclipse.e4.ui.workbench.IPresentationEngine;
-import org.eclipse.e4.ui.workbench.renderers.swt.AbstractContributionItem;
-import org.eclipse.jface.action.ActionContributionItem;
-import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.action.IMenuCreator;
+import org.eclipse.e4.ui.workbench.IWorkbench;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.ui.IActionDelegate;
-import org.eclipse.ui.ISelectionService;
-import org.eclipse.ui.IWorkbenchCommandConstants;
-import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.IWorkbenchWindowPulldownDelegate;
-import org.eclipse.ui.IWorkbenchWindowPulldownDelegate2;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandImageService;
 import org.eclipse.ui.commands.ICommandService;
-import org.eclipse.ui.internal.ActionDescriptor;
-import org.eclipse.ui.internal.OpenPreferencesAction;
-import org.eclipse.ui.internal.PluginAction;
 import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.internal.WorkbenchWindow;
-import org.eclipse.ui.internal.e4.compatibility.CompatibilityPart;
-import org.eclipse.ui.internal.handlers.ActionDelegateHandlerProxy;
 import org.eclipse.ui.internal.registry.IWorkbenchRegistryConstants;
 import org.eclipse.ui.internal.util.Util;
 import org.eclipse.ui.menus.CommandContributionItem;
@@ -107,7 +73,6 @@ public class MenuHelper {
 	}
 
 	private static final Pattern SCHEME_PATTERN = Pattern.compile("\\p{Alpha}[\\p{Alnum}+.-]*:.*"); //$NON-NLS-1$
-	public static final String MAIN_MENU_ID = ActionSet.MAIN_MENU;
 	private static Field urlField;
 
 	/**
@@ -123,27 +88,6 @@ public class MenuHelper {
 	 * @see #getName(ImageDescriptor)
 	 */
 	private static Field nameField;
-
-	public static String getActionSetCommandId(IConfigurationElement element) {
-		String id = MenuHelper.getDefinitionId(element);
-		if (id != null) {
-			return id;
-		}
-		id = MenuHelper.getId(element);
-		String actionSetId = null;
-		Object obj = element.getParent();
-		while (obj instanceof IConfigurationElement && actionSetId == null) {
-			IConfigurationElement parent = (IConfigurationElement) obj;
-			String parentName = parent.getName();
-			if (parentName.equals(IWorkbenchRegistryConstants.TAG_ACTION_SET)
-					|| parentName.equals(IWorkbenchRegistryConstants.TAG_VIEW_CONTRIBUTION)
-					|| parentName.equals(IWorkbenchRegistryConstants.TAG_EDITOR_CONTRIBUTION)) {
-				actionSetId = MenuHelper.getId(parent);
-			}
-			obj = parent.getParent();
-		}
-		return IWorkbenchRegistryConstants.AUTOGENERATED_PREFIX + actionSetId + '/' + id;
-	}
 
 	public static String getImageUrl(ImageDescriptor imageDescriptor) {
 		return getIconURI(imageDescriptor, null);
@@ -191,23 +135,6 @@ public class MenuHelper {
 		return null;
 	}
 
-	/**
-	 * @param element
-	 *            the configuration element
-	 * @return <code>true</code> if the checkEnabled is <code>true</code>.
-	 */
-	static boolean getVisibleEnabled(IConfigurationElement element) {
-		IConfigurationElement[] children = element
-				.getChildren(IWorkbenchRegistryConstants.TAG_VISIBLE_WHEN);
-		String checkEnabled = null;
-
-		if (children.length > 0) {
-			checkEnabled = children[0].getAttribute(IWorkbenchRegistryConstants.ATT_CHECK_ENABLED);
-		}
-
-		return checkEnabled != null && checkEnabled.equalsIgnoreCase("true"); //$NON-NLS-1$
-	}
-
 	static MExpression getVisibleWhen(final IConfigurationElement commandAddition) {
 		try {
 			IConfigurationElement[] visibleConfig = commandAddition
@@ -215,8 +142,7 @@ public class MenuHelper {
 			if (visibleConfig.length > 0 && visibleConfig.length < 2) {
 				IConfigurationElement[] visibleChild = visibleConfig[0].getChildren();
 				if (visibleChild.length == 0) {
-					String checkEnabled = visibleConfig[0]
-							.getAttribute(IWorkbenchRegistryConstants.ATT_CHECK_ENABLED);
+					String checkEnabled = visibleConfig[0].getAttribute(IWorkbenchRegistryConstants.ATT_CHECK_ENABLED);
 					if (Boolean.parseBoolean(checkEnabled)) {
 						final String commandId = getCommandId(commandAddition);
 						if (commandId == null) {
@@ -226,21 +152,18 @@ public class MenuHelper {
 						Expression visWhen = new Expression() {
 							@Override
 							public EvaluationResult evaluate(IEvaluationContext context) {
-								EHandlerService service = getFromContext(context,
-										EHandlerService.class);
-								ICommandService commandService = getFromContext(context,
-										ICommandService.class);
+								EHandlerService service = getFromContext(context, EHandlerService.class);
+								ICommandService commandService = getFromContext(context, ICommandService.class);
 								if (service == null || commandService == null) {
-									WorkbenchPlugin
-											.log("Could not retrieve EHandlerService or ICommandService from context evaluation context for" //$NON-NLS-1$
+									WorkbenchPlugin.log(
+											"Could not retrieve EHandlerService or ICommandService from context evaluation context for" //$NON-NLS-1$
 													+ commandId);
 									return EvaluationResult.FALSE;
 								}
 								Command c = commandService.getCommand(commandId);
-								ParameterizedCommand generateCommand = ParameterizedCommand
-										.generateCommand(c, Collections.EMPTY_MAP);
-								return EvaluationResult
-										.valueOf(service.canExecute(generateCommand));
+								ParameterizedCommand generateCommand = ParameterizedCommand.generateCommand(c,
+										Collections.EMPTY_MAP);
+								return EvaluationResult.valueOf(service.canExecute(generateCommand));
 							}
 						};
 						MCoreExpression exp = UiFactoryImpl.eINSTANCE.createCoreExpression();
@@ -267,13 +190,10 @@ public class MenuHelper {
 	/**
 	 * Do a type-safe extraction of an object from the evalation context
 	 *
-	 * @param context
-	 *            the evaluation context
-	 * @param expectedType
-	 *            the expected type
+	 * @param context      the evaluation context
+	 * @param expectedType the expected type
 	 * @return an object of the expected type or <code>null</code>
-	 * @throws NullPointerException
-	 *             if either argument is <code>null</code>
+	 * @throws NullPointerException if either argument is <code>null</code>
 	 */
 	protected static <T> T getFromContext(IEvaluationContext context, Class<T> expectedType) {
 		if (context == null || expectedType == null) {
@@ -287,8 +207,7 @@ public class MenuHelper {
 	 * Returns id attribute of the element or unique string computed from the
 	 * element registry handle
 	 *
-	 * @param element
-	 *            non null
+	 * @param element non null
 	 * @return non null id
 	 */
 	public static String getId(IConfigurationElement element) {
@@ -328,18 +247,6 @@ public class MenuHelper {
 		return element.getAttribute(IWorkbenchRegistryConstants.ATT_LABEL);
 	}
 
-	static String getPath(IConfigurationElement element) {
-		return element.getAttribute(IWorkbenchRegistryConstants.ATT_PATH);
-	}
-
-	static String getMenuBarPath(IConfigurationElement element) {
-		return element.getAttribute(IWorkbenchRegistryConstants.ATT_MENUBAR_PATH);
-	}
-
-	static String getToolBarPath(IConfigurationElement element) {
-		return element.getAttribute(IWorkbenchRegistryConstants.ATT_TOOLBAR_PATH);
-	}
-
 	static String getMnemonic(IConfigurationElement element) {
 		return element.getAttribute(IWorkbenchRegistryConstants.ATT_MNEMONIC);
 	}
@@ -360,8 +267,7 @@ public class MenuHelper {
 		if (!SCHEME_PATTERN.matcher(iconPath).matches()) {
 			// First attempt to resolve in ISharedImages (e.g. "IMG_OBJ_FOLDER")
 			// as per bug 391232 & AbstractUIPlugin.imageDescriptorFromPlugin().
-			ImageDescriptor d = WorkbenchPlugin.getDefault().getSharedImages()
-					.getImageDescriptor(iconPath);
+			ImageDescriptor d = WorkbenchPlugin.getDefault().getSharedImages().getImageDescriptor(iconPath);
 			if (d != null) {
 				return getImageUrl(d);
 			}
@@ -384,10 +290,6 @@ public class MenuHelper {
 	public static boolean isSeparatorVisible(IConfigurationElement element) {
 		String val = element.getAttribute(IWorkbenchRegistryConstants.ATT_VISIBLE);
 		return Boolean.parseBoolean(val);
-	}
-
-	public static String getClassSpec(IConfigurationElement element) {
-		return element.getAttribute(IWorkbenchRegistryConstants.ATT_CLASS);
 	}
 
 	public static String getCommandId(IConfigurationElement element) {
@@ -419,19 +321,9 @@ public class MenuHelper {
 		return IWorkbenchRegistryConstants.STYLE_PULLDOWN.equals(style);
 	}
 
-	public static boolean getRetarget(IConfigurationElement element) {
-		String r = element.getAttribute(IWorkbenchRegistryConstants.ATT_RETARGET);
-		return Boolean.valueOf(r);
-	}
-
-	public static String getDefinitionId(IConfigurationElement element) {
-		return element.getAttribute(IWorkbenchRegistryConstants.ATT_DEFINITION_ID);
-	}
-
 	public static Map<String, String> getParameters(IConfigurationElement element) {
 		HashMap<String, String> map = new HashMap<>();
-		IConfigurationElement[] parameters = element
-				.getChildren(IWorkbenchRegistryConstants.TAG_PARAMETER);
+		IConfigurationElement[] parameters = element.getChildren(IWorkbenchRegistryConstants.TAG_PARAMETER);
 		for (IConfigurationElement parameter : parameters) {
 			String name = parameter.getAttribute(IWorkbenchRegistryConstants.ATT_NAME);
 			String value = parameter.getAttribute(IWorkbenchRegistryConstants.ATT_VALUE);
@@ -444,6 +336,7 @@ public class MenuHelper {
 
 	public static MMenu createMenuAddition(IConfigurationElement menuAddition) {
 		MMenu element = MenuFactoryImpl.eINSTANCE.createMenu();
+		element.getPersistedState().put(IWorkbench.PERSIST_STATE, Boolean.FALSE.toString());
 		String id = MenuHelper.getId(menuAddition);
 		element.setElementId(id);
 		String text = MenuHelper.getLabel(menuAddition);
@@ -455,296 +348,10 @@ public class MenuHelper {
 			}
 		}
 		element.setVisibleWhen(getVisibleWhen(menuAddition));
-		element.setIconURI(MenuHelper
-				.getIconURI(menuAddition, IWorkbenchRegistryConstants.ATT_ICON));
+		element.setIconURI(MenuHelper.getIconURI(menuAddition, IWorkbenchRegistryConstants.ATT_ICON));
 		element.setLabel(Util.safeString(text));
 
 		return element;
-	}
-
-	public static MMenuElement createLegacyMenuActionAdditions(MApplication app,
-			final IConfigurationElement element) {
-		final String id = MenuHelper.getId(element);
-		String text = MenuHelper.getLabel(element);
-		String mnemonic = MenuHelper.getMnemonic(element);
-		if (text != null && mnemonic != null) {
-			int idx = text.indexOf(mnemonic);
-			if (idx != -1) {
-				text = text.substring(0, idx) + '&' + text.substring(idx);
-			}
-		}
-		String iconUri = MenuHelper.getIconURI(element, IWorkbenchRegistryConstants.ATT_ICON);
-		final String cmdId = MenuHelper.getActionSetCommandId(element);
-
-		MCommand cmd = ContributionsAnalyzer.getCommandById(app, cmdId);
-		if (cmd == null) {
-			ECommandService commandService = app.getContext().get(ECommandService.class);
-			Command command = commandService.getCommand(cmdId);
-			if (command == null) {
-				ICommandService ics = app.getContext().get(ICommandService.class);
-				command = commandService.defineCommand(cmdId, text, null, ics.getCategory(null),
-						null);
-			}
-			cmd = CommandsFactoryImpl.eINSTANCE.createCommand();
-			cmd.setCommandName(text);
-			cmd.setElementId(cmdId);
-			app.getCommands().add(cmd);
-		}
-
-		String style = element.getAttribute(IWorkbenchRegistryConstants.ATT_STYLE);
-		String pulldown = element.getAttribute("pulldown"); //$NON-NLS-1$
-		if (IWorkbenchRegistryConstants.STYLE_PULLDOWN.equals(style)
-				|| (pulldown != null && pulldown.equals("true"))) { //$NON-NLS-1$
-			MMenuItem item = RenderedElementUtil.createRenderedMenuItem();
-			item.setLabel(text);
-			if (iconUri != null) {
-				item.setIconURI(iconUri);
-			}
-			IContextFunction generator = new ContextFunction() {
-				@Override
-				public Object compute(IEclipseContext context, String contextKey) {
-					IWorkbenchWindow window = context.get(IWorkbenchWindow.class);
-					if (window == null) {
-						return null;
-					}
-					ActionDescriptor desc = new ActionDescriptor(element,
-							ActionDescriptor.T_WORKBENCH_PULLDOWN, window);
-					final PluginAction action = desc.getAction();
-					return new ActionContributionItem(action) {
-						@Override
-						public void dispose() {
-							super.dispose();
-							action.disposeDelegate();
-						}
-					};
-				}
-			};
-			RenderedElementUtil.setContributionManager(item, generator);
-			return item;
-		}
-
-		ItemType type = ItemType.PUSH;
-		if (IWorkbenchRegistryConstants.STYLE_TOGGLE.equals(style)) {
-			type = ItemType.CHECK;
-		} else if (IWorkbenchRegistryConstants.STYLE_RADIO.equals(style)) {
-			type = ItemType.RADIO;
-		}
-		MHandledMenuItem item = MenuFactoryImpl.eINSTANCE.createHandledMenuItem();
-		item.setElementId(id);
-		item.setLabel(text);
-		item.setType(type);
-		item.setCommand(cmd);
-		if (iconUri != null) {
-			item.setIconURI(iconUri);
-		}
-		return item;
-	}
-
-	public static String getDescription(IConfigurationElement configElement) {
-		return configElement.getAttribute(IWorkbenchRegistryConstants.TAG_DESCRIPTION);
-	}
-
-	public static MToolBarElement createLegacyToolBarActionAdditions(MApplication app,
-			final IConfigurationElement element) {
-		String cmdId = MenuHelper.getActionSetCommandId(element);
-		final String id = MenuHelper.getId(element);
-		String text = MenuHelper.getLabel(element);
-		String mnemonic = MenuHelper.getMnemonic(element);
-		if (text != null && mnemonic != null) {
-			int idx = text.indexOf(mnemonic);
-			if (idx != -1) {
-				text = text.substring(0, idx) + '&' + text.substring(idx);
-			}
-		}
-		String iconUri = MenuHelper.getIconURI(element, IWorkbenchRegistryConstants.ATT_ICON);
-		String disabledIconUri = MenuHelper.getIconURI(element,
-				IWorkbenchRegistryConstants.ATT_DISABLEDICON);
-		MCommand cmd = ContributionsAnalyzer.getCommandById(app, cmdId);
-		if (cmd == null) {
-			ECommandService commandService = app.getContext().get(ECommandService.class);
-			Command command = commandService.getCommand(cmdId);
-			if (command == null) {
-				ICommandService ics = app.getContext().get(
-						ICommandService.class);
-				command = commandService.defineCommand(cmdId, text, null, ics.getCategory(null),
-						null);
-			}
-			cmd = CommandsFactoryImpl.eINSTANCE.createCommand();
-			cmd.setCommandName(text);
-			cmd.setElementId(cmdId);
-			app.getCommands().add(cmd);
-		}
-		final MHandledToolItem item = MenuFactoryImpl.eINSTANCE.createHandledToolItem();
-
-		String style = element.getAttribute(IWorkbenchRegistryConstants.ATT_STYLE);
-		String pulldown = element.getAttribute("pulldown"); //$NON-NLS-1$
-		if (IWorkbenchRegistryConstants.STYLE_TOGGLE.equals(style)) {
-			item.setType(ItemType.CHECK);
-			IContextFunction generator = createToggleFunction(element);
-			if (generator != null) {
-				item.getTransientData().put(ItemType.CHECK.toString(), generator);
-			}
-		} else if (IWorkbenchRegistryConstants.STYLE_RADIO.equals(style)) {
-			item.setType(ItemType.RADIO);
-		} else {
-			item.setType(ItemType.PUSH);
-		}
-
-		if (IWorkbenchRegistryConstants.STYLE_PULLDOWN.equals(style)
-				|| (pulldown != null && pulldown.equals("true"))) { //$NON-NLS-1$
-			MMenu menu = RenderedElementUtil.createRenderedMenu();
-			ECommandService cs = app.getContext().get(ECommandService.class);
-			final ParameterizedCommand parmCmd = cs.createCommand(cmdId, null);
-			IContextFunction generator = new ContextFunction() {
-				@Override
-				public Object compute(IEclipseContext context, String contextKey) {
-					return new IMenuCreator() {
-						private ActionDelegateHandlerProxy handlerProxy;
-
-						private ActionDelegateHandlerProxy getProxy() {
-							if (handlerProxy == null) {
-								handlerProxy = new ActionDelegateHandlerProxy(element,
-										IWorkbenchRegistryConstants.ATT_CLASS, id, parmCmd,
-										PlatformUI
-										.getWorkbench().getActiveWorkbenchWindow(), null, null,
- null);
-							}
-							return handlerProxy;
-						}
-
-						private IWorkbenchWindowPulldownDelegate getDelegate() {
-							getProxy();
-							if (handlerProxy == null) {
-								return null;
-							}
-							if (handlerProxy.getDelegate() == null) {
-								handlerProxy.loadDelegate();
-
-								ISelectionService service = PlatformUI.getWorkbench()
-										.getActiveWorkbenchWindow().getSelectionService();
-								IActionDelegate delegate = handlerProxy.getDelegate();
-								delegate.selectionChanged(handlerProxy.getAction(),
-										service.getSelection());
-							}
-							return (IWorkbenchWindowPulldownDelegate) handlerProxy.getDelegate();
-						}
-
-						@Override
-						public Menu getMenu(Menu parent) {
-							IWorkbenchWindowPulldownDelegate2 delegate = (IWorkbenchWindowPulldownDelegate2) getDelegate();
-							if (delegate == null) {
-								return null;
-							}
-							return delegate.getMenu(parent);
-						}
-
-						@Override
-						public Menu getMenu(Control parent) {
-							return getDelegate() == null ? null : getDelegate().getMenu(parent);
-						}
-
-						@Override
-						public void dispose() {
-							if (handlerProxy != null) {
-								handlerProxy.dispose();
-								handlerProxy = null;
-							}
-						}
-					};
-				}
-			};
-			RenderedElementUtil.setContributionManager(menu, generator);
-			item.setMenu(menu);
-		}
-
-		item.setElementId(id);
-		item.setCommand(cmd);
-		if (iconUri == null) {
-			item.setLabel(text);
-		} else {
-			item.setIconURI(iconUri);
-		}
-		if (disabledIconUri != null) {
-			setDisabledIconURI(item, disabledIconUri);
-		}
-		String tooltip = getTooltip(element);
-		// if no tooltip defined, use the textual label as the tooltip
-		item.setTooltip(tooltip == null ? text : tooltip);
-		return item;
-	}
-
-	private static int getType(String name) {
-		if (name.equals(IWorkbenchRegistryConstants.TAG_ACTION_SET)) {
-			return ActionDescriptor.T_WORKBENCH;
-		} else if (name.equals(IWorkbenchRegistryConstants.TAG_VIEW_CONTRIBUTION)) {
-			return ActionDescriptor.T_VIEW;
-		} else if (name.equals(IWorkbenchRegistryConstants.TAG_EDITOR_CONTRIBUTION)) {
-			return ActionDescriptor.T_EDITOR;
-		}
-		return -1;
-	}
-
-	private static IContextFunction createToggleFunction(final IConfigurationElement element) {
-		Object ice = element.getParent();
-		if (!(ice instanceof IConfigurationElement)) {
-			return null;
-		}
-
-		// identify the type of contribution that this is
-		IConfigurationElement parent = (IConfigurationElement) ice;
-		final int type = getType(parent.getName());
-		if (type == -1) {
-			// unknown, don't create a toggling function
-			return null;
-		}
-
-		IContextFunction generator = new ContextFunction() {
-			private ActionDescriptor getDescriptor(IEclipseContext context) {
-				switch (type) {
-				case ActionDescriptor.T_WORKBENCH:
-					IWorkbenchWindow window = context.get(IWorkbenchWindow.class);
-					return window == null ? null : new ActionDescriptor(element, type, window);
-				case ActionDescriptor.T_EDITOR:
-					return new ActionDescriptor(element, type, null);
-				case ActionDescriptor.T_VIEW:
-					MPart part = context.get(MPart.class);
-					if (part != null) {
-						Object object = part.getObject();
-						if (object instanceof CompatibilityPart) {
-							return new ActionDescriptor(element, type,
-									((CompatibilityPart) object).getPart());
-						}
-					}
-					return null;
-				default:
-					return null;
-				}
-			}
-
-			@Override
-			public Object compute(IEclipseContext context, String contextKey) {
-				final MHandledItem model = context.get(MHandledItem.class);
-				if (model == null) {
-					return null;
-				}
-				ActionDescriptor desc = getDescriptor(context);
-				final IAction action = desc.getAction();
-				final IPropertyChangeListener propListener = event -> {
-					if (IAction.CHECKED.equals(event.getProperty())) {
-						boolean checked = false;
-						if (event.getNewValue() instanceof Boolean) {
-							checked = ((Boolean) event.getNewValue()).booleanValue();
-						}
-						model.setSelected(checked);
-					}
-				};
-				action.addPropertyChangeListener(propListener);
-				Runnable obj = () -> action.removePropertyChangeListener(propListener);
-				model.setSelected(action.isChecked());
-				return obj;
-			}
-		};
-		return generator;
 	}
 
 	public static MMenu createMenu(MenuManager manager) {
@@ -752,34 +359,6 @@ public class MenuHelper {
 		subMenu.setLabel(manager.getMenuText());
 		subMenu.setElementId(manager.getId());
 		return subMenu;
-	}
-
-	public static MMenuItem createItem(MApplication application, CommandContributionItem cci) {
-		MCommand command = getMCommand(application, cci);
-		if (command != null) {
-			CommandContributionItemParameter data = cci.getData();
-			MHandledMenuItem menuItem = MenuFactoryImpl.eINSTANCE.createHandledMenuItem();
-			menuItem.setCommand(command);
-			menuItem.setContributorURI(command.getContributorURI());
-			if (data.label != null) {
-				menuItem.setLabel(data.label);
-			} else {
-				menuItem.setLabel(command.getCommandName());
-			}
-			if (data.mnemonic != null) {
-				menuItem.setMnemonics(data.mnemonic);
-			}
-			if (data.icon != null) {
-				menuItem.setIconURI(getIconURI(data.icon, application.getContext()));
-			} else {
-				menuItem.setIconURI(getIconURI(command.getElementId(), application.getContext(),
-						ICommandImageService.TYPE_DEFAULT));
-			}
-			String itemId = cci.getId();
-			menuItem.setElementId(itemId == null ? command.getElementId() : itemId);
-			return menuItem;
-		}
-		return null;
 	}
 
 	public static MHandledToolItem createToolItem(MApplication application, CommandContributionItem cci) {
@@ -853,244 +432,6 @@ public class MenuHelper {
 		return null;
 	}
 
-	public static MToolItem createToolItem(MApplication application, ActionContributionItem item) {
-		final IAction action = item.getAction();
-		String id = action.getActionDefinitionId();
-		if (id != null) {
-			for (MCommand command : application.getCommands()) {
-				if (id.equals(command.getElementId())) {
-					MHandledToolItem toolItem = MenuFactoryImpl.eINSTANCE.createHandledToolItem();
-					toolItem.setCommand(command);
-					toolItem.setContributorURI(command.getContributorURI());
-					toolItem.setVisible(item.isVisible());
-
-					String iconURI = getIconURI(action.getImageDescriptor(),
-							application.getContext());
-					if (iconURI == null) {
-						iconURI = getIconURI(id, application.getContext(),
-								ICommandImageService.TYPE_DEFAULT);
-						if (iconURI == null) {
-							toolItem.setLabel(command.getCommandName());
-						} else {
-							toolItem.setIconURI(iconURI);
-						}
-					} else {
-						toolItem.setIconURI(iconURI);
-					}
-					if (action.getToolTipText() != null) {
-						toolItem.setTooltip(action.getToolTipText());
-					}
-
-					String disabledIconURI = getIconURI(action.getDisabledImageDescriptor(),
-							application.getContext());
-					if (disabledIconURI == null)
-						disabledIconURI = getIconURI(id, application.getContext(),
-								ICommandImageService.TYPE_DEFAULT);
-					if (disabledIconURI != null)
-						setDisabledIconURI(toolItem, disabledIconURI);
-
-					switch (action.getStyle()) {
-					case IAction.AS_CHECK_BOX:
-						toolItem.setType(ItemType.CHECK);
-						toolItem.setSelected(action.isChecked());
-						break;
-					case IAction.AS_RADIO_BUTTON:
-						toolItem.setType(ItemType.RADIO);
-						toolItem.setSelected(action.isChecked());
-						break;
-					default:
-						toolItem.setType(ItemType.PUSH);
-						break;
-					}
-					String itemId = item.getId();
-					toolItem.setElementId(itemId == null ? id : itemId);
-					return toolItem;
-				}
-			}
-		} else {
-			final MDirectToolItem toolItem = MenuFactoryImpl.eINSTANCE.createDirectToolItem();
-			String itemId = item.getId();
-			toolItem.setElementId(itemId);
-			toolItem.setVisible(item.isVisible());
-			String iconURI = getIconURI(action.getImageDescriptor(), application.getContext());
-			if (iconURI == null) {
-				if (itemId == null) {
-					if (action.getText() != null) {
-						toolItem.setLabel(action.getText());
-					}
-				} else {
-					iconURI = getIconURI(itemId, application.getContext(),
-							ICommandImageService.TYPE_DEFAULT);
-					if (iconURI == null) {
-						if (action.getText() != null) {
-							toolItem.setLabel(action.getText());
-						}
-					} else {
-						toolItem.setIconURI(iconURI);
-					}
-				}
-			} else {
-				toolItem.setIconURI(iconURI);
-			}
-			if (action.getToolTipText() != null) {
-				toolItem.setTooltip(action.getToolTipText());
-			}
-
-			switch (action.getStyle()) {
-			case IAction.AS_CHECK_BOX:
-				toolItem.setType(ItemType.CHECK);
-				toolItem.setSelected(action.isChecked());
-				break;
-			case IAction.AS_RADIO_BUTTON:
-				toolItem.setType(ItemType.RADIO);
-				toolItem.setSelected(action.isChecked());
-				break;
-			default:
-				toolItem.setType(ItemType.PUSH);
-				break;
-			}
-			toolItem.setContributionURI("bundleclass://org.eclipse.ui.workbench/programmic.contribution"); //$NON-NLS-1$
-			toolItem.setObject(new DirectProxy(action));
-			toolItem.setEnabled(action.isEnabled());
-
-			final IPropertyChangeListener propertyListener = event -> {
-				String property = event.getProperty();
-				if (property.equals(IAction.ENABLED)) {
-					toolItem.setEnabled(action.isEnabled());
-				} else if (property.equals(IAction.CHECKED)) {
-					toolItem.setSelected(action.isChecked());
-				} else if (property.equals(IAction.TEXT)) {
-					toolItem.setLabel(action.getText());
-				} else if (property.equals(IAction.TOOL_TIP_TEXT)) {
-					toolItem.setLabel(action.getToolTipText());
-				}
-			};
-			// property listener is removed in
-			// DirectContributionItem#handleWidgetDispose()
-			action.addPropertyChangeListener(propertyListener);
-			toolItem.getTransientData().put(AbstractContributionItem.DISPOSABLE, (Runnable) () -> action.removePropertyChangeListener(propertyListener));
-			return toolItem;
-		}
-		return null;
-	}
-
-	public static MMenuItem createItem(MApplication application, ActionContributionItem item) {
-		IAction action = item.getAction();
-		String id = action.getActionDefinitionId();
-		if (action instanceof OpenPreferencesAction) {
-			for (MCommand command : application.getCommands()) {
-				if (IWorkbenchCommandConstants.WINDOW_PREFERENCES.equals(command.getElementId())) {
-					MHandledMenuItem menuItem = MenuFactoryImpl.eINSTANCE.createHandledMenuItem();
-					menuItem.setCommand(command);
-					menuItem.setLabel(command.getCommandName());
-					menuItem.setIconURI(getIconURI(action.getImageDescriptor(),
-							application.getContext()));
-
-					// extract the mnemonic definition
-					String text = action.getText();
-					int index = text.indexOf('&');
-					if (index != -1 && index != text.length() - 1) {
-						menuItem.setMnemonics(text.substring(index + 1, index + 2));
-					}
-
-					switch (action.getStyle()) {
-					case IAction.AS_CHECK_BOX:
-						menuItem.setType(ItemType.CHECK);
-						menuItem.setSelected(action.isChecked());
-						break;
-					case IAction.AS_RADIO_BUTTON:
-						menuItem.setType(ItemType.RADIO);
-						menuItem.setSelected(action.isChecked());
-						break;
-					default:
-						menuItem.setType(ItemType.PUSH);
-						break;
-					}
-
-					String itemId = item.getId();
-					menuItem.setElementId(itemId == null ? id : itemId);
-					return menuItem;
-				}
-			}
-		} else if (id != null) {
-
-			for (MCommand command : application.getCommands()) {
-				if (id.equals(command.getElementId())) {
-					MHandledMenuItem menuItem = MenuFactoryImpl.eINSTANCE.createHandledMenuItem();
-					menuItem.setCommand(command);
-					if (action.getText() != null) {
-						menuItem.setLabel(action.getText());
-					} else {
-						menuItem.setLabel(command.getCommandName());
-					}
-					menuItem.setIconURI(getIconURI(action.getImageDescriptor(),
-							application.getContext()));
-
-					switch (action.getStyle()) {
-					case IAction.AS_CHECK_BOX:
-						menuItem.setType(ItemType.CHECK);
-						menuItem.setSelected(action.isChecked());
-						break;
-					case IAction.AS_RADIO_BUTTON:
-						menuItem.setType(ItemType.RADIO);
-						menuItem.setSelected(action.isChecked());
-						break;
-					default:
-						menuItem.setType(ItemType.PUSH);
-						break;
-					}
-
-					String itemId = item.getId();
-					menuItem.setElementId(itemId == null ? id : itemId);
-					return menuItem;
-				}
-			}
-		} else {
-			MDirectMenuItem menuItem = MenuFactoryImpl.eINSTANCE.createDirectMenuItem();
-			if (action.getText() != null) {
-				menuItem.setLabel(action.getText());
-			}
-			String itemId = item.getId();
-			menuItem.setElementId(itemId == null ? id : itemId);
-			menuItem.setIconURI(getIconURI(action.getImageDescriptor(), application.getContext()));
-			switch (action.getStyle()) {
-			case IAction.AS_CHECK_BOX:
-				menuItem.setType(ItemType.CHECK);
-				menuItem.setSelected(action.isChecked());
-				break;
-			case IAction.AS_RADIO_BUTTON:
-				menuItem.setType(ItemType.RADIO);
-				menuItem.setSelected(action.isChecked());
-				break;
-			default:
-				menuItem.setType(ItemType.PUSH);
-				break;
-			}
-			menuItem.setContributionURI("bundleclass://org.eclipse.ui.workbench/programmic.contribution"); //$NON-NLS-1$
-			menuItem.setObject(new DirectProxy(action));
-			return menuItem;
-		}
-		return null;
-	}
-
-	static class DirectProxy {
-		private IAction action;
-
-		public DirectProxy(IAction action) {
-			this.action = action;
-		}
-
-		@CanExecute
-		public boolean canExecute() {
-			return action.isEnabled();
-		}
-
-		@Execute
-		public void execute() {
-			action.run();
-		}
-	}
-
 	public static String getIconURI(ImageDescriptor descriptor, IEclipseContext context) {
 		if (descriptor == null) {
 			return null;
@@ -1151,11 +492,10 @@ public class MenuHelper {
 	}
 
 	/**
-	 * Rewrite certain types of URLs to more durable forms, as these URLs may
-	 * may be persisted in the model.
+	 * Rewrite certain types of URLs to more durable forms, as these URLs may may be
+	 * persisted in the model.
 	 *
-	 * @param url
-	 *            the url
+	 * @param url the url
 	 * @return the rewritten URL
 	 */
 	private static String rewriteDurableURL(String url) {

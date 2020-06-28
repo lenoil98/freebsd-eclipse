@@ -19,12 +19,15 @@ package org.eclipse.ui.internal.genericeditor;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.source.ICharacterPairMatcher;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.text.source.IVerticalRuler;
 import org.eclipse.jface.text.source.projection.ProjectionSupport;
 import org.eclipse.jface.text.source.projection.ProjectionViewer;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.editors.text.EditorsUI;
@@ -34,14 +37,14 @@ import org.eclipse.ui.texteditor.ChainedPreferenceStore;
 import org.eclipse.ui.texteditor.SourceViewerDecorationSupport;
 
 /**
- * A generic code editor that is aimed at being extended by contributions.
- * Behavior is supposed to be added via extensions, not by inheritance.
+ * A generic code editor that is aimed at being extended by contributions. Behavior is supposed to be added via extensions, not by inheritance.
  *
  * @since 1.0
  */
 public class ExtensionBasedTextEditor extends TextEditor {
 
 	private static final String CONTEXT_ID = "org.eclipse.ui.genericeditor.genericEditorContext"; //$NON-NLS-1$
+	public static final String GENERIC_EDITOR_ID = "org.eclipse.ui.genericeditor.GenericEditor"; //$NON-NLS-1$
 
 	private static final String MATCHING_BRACKETS = GenericEditorPreferenceConstants.EDITOR_MATCHING_BRACKETS;
 	private static final String MATCHING_BRACKETS_COLOR = GenericEditorPreferenceConstants.EDITOR_MATCHING_BRACKETS_COLOR;
@@ -49,9 +52,11 @@ public class ExtensionBasedTextEditor extends TextEditor {
 	private static final String ENCLOSING_BRACKETS = GenericEditorPreferenceConstants.EDITOR_ENCLOSING_BRACKETS;
 
 	private ExtensionBasedTextViewerConfiguration configuration;
+	private Image contentTypeImage;
+	private ImageDescriptor contentTypeImageDescripter;
 
 	/**
-	 * 
+	 *
 	 */
 	public ExtensionBasedTextEditor() {
 		configuration = new ExtensionBasedTextViewerConfiguration(this, getPreferenceStore());
@@ -61,61 +66,84 @@ public class ExtensionBasedTextEditor extends TextEditor {
 	/**
 	 * Initializes the key binding scopes of this generic code editor.
 	 */
-	@Override
-	protected void initializeKeyBindingScopes() {
+	@Override protected void initializeKeyBindingScopes() {
 		setKeyBindingScopes(new String[] { CONTEXT_ID });
 	}
 
-	@Override
-	protected void doSetInput(IEditorInput input) throws CoreException {
+	@Override protected void doSetInput(IEditorInput input) throws CoreException {
 		super.doSetInput(input);
 		configuration.watchDocument(getDocumentProvider().getDocument(input));
 	}
 
-	@Override
-	protected ISourceViewer createSourceViewer(Composite parent, IVerticalRuler ruler, int styles) {
+	@Override protected ISourceViewer createSourceViewer(Composite parent, IVerticalRuler ruler, int styles) {
 		fAnnotationAccess = getAnnotationAccess();
 		fOverviewRuler = createOverviewRuler(getSharedColors());
 
-		ProjectionViewer viewer = new ProjectionViewer(parent, ruler, getOverviewRuler(), isOverviewRulerVisible(),
-				styles);
+		ProjectionViewer viewer = new ProjectionViewer(parent, ruler, getOverviewRuler(), isOverviewRulerVisible(), styles);
 		SourceViewerDecorationSupport support = getSourceViewerDecorationSupport(viewer);
 		configureCharacterPairMatcher(viewer, support);
 		return viewer;
 	}
 
-	@Override
-	public void createPartControl(Composite parent) {
+	@Override public void createPartControl(Composite parent) {
 		super.createPartControl(parent);
 		ProjectionViewer viewer = (ProjectionViewer) getSourceViewer();
 
 		new ProjectionSupport(viewer, getAnnotationAccess(), getSharedColors()).install();
 		viewer.doOperation(ProjectionViewer.TOGGLE);
+		computeImage();
 	}
 
-	@Override
-	protected void initializeEditor() {
+	@Override protected void initializeEditor() {
 		super.initializeEditor();
-		setPreferenceStore(new ChainedPreferenceStore(new IPreferenceStore[] {
-				GenericEditorPreferenceConstants.getPreferenceStore(), EditorsUI.getPreferenceStore() }));
+		setPreferenceStore(new ChainedPreferenceStore(new IPreferenceStore[] { GenericEditorPreferenceConstants.getPreferenceStore(), EditorsUI.getPreferenceStore() }));
 	}
 
 	/**
-	 * Configure the {@link ICharacterPairMatcher} from the
-	 * "org.eclipse.ui.genericeditor.characterPairMatchers" extension point.
-	 * 
-	 * @param viewer  the source viewer.
-	 * 
-	 * @param support the source viewer decoration support.
+	 * Configure the {@link ICharacterPairMatcher} from the "org.eclipse.ui.genericeditor.characterPairMatchers" extension point.
+	 *
+	 * @param viewer
+	 *            the source viewer.
+	 *
+	 * @param support
+	 *            the source viewer decoration support.
 	 */
 	private void configureCharacterPairMatcher(ISourceViewer viewer, SourceViewerDecorationSupport support) {
-		List<ICharacterPairMatcher> matchers = GenericEditorPlugin.getDefault().getCharacterPairMatcherRegistry()
-				.getCharacterPairMatchers(viewer, this, configuration.getContentTypes());
+		List<ICharacterPairMatcher> matchers = GenericEditorPlugin.getDefault().getCharacterPairMatcherRegistry().getCharacterPairMatchers(viewer, this, configuration.getContentTypes(viewer));
 		if (!matchers.isEmpty()) {
 			ICharacterPairMatcher matcher = matchers.get(0);
 			support.setCharacterPairMatcher(matcher);
-			support.setMatchingCharacterPainterPreferenceKeys(MATCHING_BRACKETS, MATCHING_BRACKETS_COLOR,
-					HIGHLIGHT_BRACKET_AT_CARET_LOCATION, ENCLOSING_BRACKETS);
+			support.setMatchingCharacterPainterPreferenceKeys(MATCHING_BRACKETS, MATCHING_BRACKETS_COLOR, HIGHLIGHT_BRACKET_AT_CARET_LOCATION, ENCLOSING_BRACKETS);
 		}
+	}
+
+	@Override
+	public Image getTitleImage() {
+		return this.contentTypeImage != null ? this.contentTypeImage : super.getTitleImage();
+	}
+
+	private void computeImage() {
+		contentTypeImageDescripter = GenericEditorPlugin.getDefault().getContentTypeImagesRegistry()
+				.getImageDescriptor(getContentTypes());
+		if (contentTypeImageDescripter != null) {
+			this.contentTypeImage = contentTypeImageDescripter.createImage();
+		}
+	}
+
+	private IContentType[] getContentTypes() {
+		ISourceViewer sourceViewer = getSourceViewer();
+		if (sourceViewer != null) {
+			return configuration.getContentTypes(sourceViewer).toArray(new IContentType[] {});
+		}
+		return new IContentType[] {};
+	}
+
+	@Override
+	public void dispose() {
+		if (this.contentTypeImage != null) {
+			this.contentTypeImage.dispose();
+			this.contentTypeImage = null;
+		}
+		super.dispose();
 	}
 }

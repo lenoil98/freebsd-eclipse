@@ -18,11 +18,11 @@ package org.eclipse.jface.examples.databinding.snippets;
 
 import org.eclipse.core.databinding.DataBindingContext;
 import org.eclipse.core.databinding.observable.Realm;
+import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.observable.value.SelectObservableValue;
 import org.eclipse.jface.databinding.swt.DisplayRealm;
-import org.eclipse.jface.databinding.swt.WidgetProperties;
-import org.eclipse.jface.databinding.viewers.IViewerObservableValue;
-import org.eclipse.jface.databinding.viewers.ViewersObservables;
+import org.eclipse.jface.databinding.swt.typed.WidgetProperties;
+import org.eclipse.jface.databinding.viewers.typed.ViewerProperties;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ListViewer;
 import org.eclipse.swt.SWT;
@@ -35,45 +35,33 @@ import org.eclipse.swt.widgets.Shell;
 
 /**
  * Demonstrate usage of SelectObservableValue
- *
- * @since 3.2
  */
 public class Snippet024SelectObservableValue {
-	protected Shell shell;
-
 	public static void main(String[] args) {
 		final Display display = Display.getDefault();
+
 		Realm.runWithDefault(DisplayRealm.getRealm(display), () -> {
-			try {
-				Snippet024SelectObservableValue window = new Snippet024SelectObservableValue();
-				window.open();
-			} catch (Exception e) {
-				e.printStackTrace();
+			Shell shell = createShell();
+
+			while (!shell.isDisposed()) {
+				if (!display.readAndDispatch()) {
+					display.sleep();
+				}
 			}
 		});
+
+		display.dispose();
 	}
 
-	public void open() {
-		final Display display = Display.getDefault();
-		createContents();
-		shell.open();
-		shell.layout();
-		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
-		}
-	}
-
-	protected void createContents() {
-		shell = new Shell();
+	private static Shell createShell() {
+		Shell shell = new Shell();
 		shell.setSize(400, 300);
 		shell.setLayout(new GridLayout(2, true));
 		shell.setText("Snippet024SelectObservableValue");
 
 		final ListViewer listViewer = new ListViewer(shell, SWT.BORDER);
 		listViewer.setContentProvider(new ArrayContentProvider());
-		listViewer.getList().setLayoutData(
-				new GridData(SWT.FILL, SWT.FILL, true, true));
+		listViewer.getList().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
 		final Group group = new Group(shell, SWT.NONE);
 		group.setText("Radio Group");
@@ -84,18 +72,20 @@ public class Snippet024SelectObservableValue {
 		Color[] colors = Color.values();
 
 		listViewer.setInput(colors);
-		IViewerObservableValue listViewerSelection = ViewersObservables
-				.observeSingleSelection(listViewer);
+		IObservableValue<Color> listViewerSelection = ViewerProperties.singleSelection(Color.class).observe(listViewer);
 
-		SelectObservableValue radioGroup = new SelectObservableValue();
-		for (int i = 0; i < colors.length; i++) {
+		SelectObservableValue<Color> radioGroup = new SelectObservableValue<>();
+		for (Color color : colors) {
 			Button button = new Button(group, SWT.RADIO);
-			button.setText(colors[i].toString());
-			radioGroup.addOption(colors[i], WidgetProperties.selection().observe(button));
+			button.setText(color.toString());
+			radioGroup.addOption(color, WidgetProperties.buttonSelection().observe(button));
 		}
 
-		DataBindingContext dbc = new DataBindingContext();
-		dbc.bindValue(radioGroup, listViewerSelection);
+		DataBindingContext bindingContext = new DataBindingContext();
+		bindingContext.bindValue(radioGroup, listViewerSelection);
+
+		shell.open();
+		return shell;
 	}
 
 	public static class Color {
@@ -119,8 +109,7 @@ public class Snippet024SelectObservableValue {
 		}
 
 		public static Color[] values() {
-			return new Color[] { RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO,
-					VIOLET };
+			return new Color[] { RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO, VIOLET };
 		}
 	}
 }

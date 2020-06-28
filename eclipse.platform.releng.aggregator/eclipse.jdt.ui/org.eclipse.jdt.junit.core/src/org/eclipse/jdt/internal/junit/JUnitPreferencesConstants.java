@@ -98,7 +98,7 @@ public class JUnitPreferencesConstants {
 	 * Javadoc location for org.junit.jupiter.params (JUnit 5)
 	 */
 	public static final String JUNIT_JUPITER_PARAMS_JAVADOC= JUnitCorePlugin.PLUGIN_ID + ".junit5.jupiter.params.javadoclocation"; //$NON-NLS-1$
-	
+
 	/**
 	 * Javadoc location for org.junit.platform.commons (JUnit 5)
 	 */
@@ -178,7 +178,7 @@ public class JUnitPreferencesConstants {
 		if (list == null)
 			return ""; //$NON-NLS-1$
 
-		StringBuffer buffer= new StringBuffer();
+		StringBuilder buffer= new StringBuilder();
 		for (int i= 0; i < list.length; i++) {
 			if (i > 0)
 				buffer.append(',');
@@ -187,10 +187,10 @@ public class JUnitPreferencesConstants {
 		}
 		return buffer.toString();
 	}
-	
+
 	/**
 	 * Parses the comma-separated string into an array of strings.
-	 * 
+	 *
 	 * @param listString a comma-separated string
 	 * @return an array of strings
 	 */

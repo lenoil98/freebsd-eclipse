@@ -15,15 +15,12 @@ package org.eclipse.compare.internal.core.patch;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.text.ParseException;
+import java.text.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
 import org.eclipse.compare.patch.IFilePatch2;
 import org.eclipse.core.runtime.*;
-
-import com.ibm.icu.text.DateFormat;
-import com.ibm.icu.text.SimpleDateFormat;
 
 public class PatchReader {
 	private static final boolean DEBUG= false;
@@ -159,8 +156,7 @@ public class PatchReader {
 	private String readUnifiedDiff(List<FilePatch2> diffs, LineReader lr, String line, String diffArgs, String fileName, DiffProject diffProject) throws IOException {
 		List<FilePatch2> newDiffs= new ArrayList<>();
 		String nextLine= readUnifiedDiff(newDiffs, lr, line, diffArgs, fileName);
-		for (Iterator<FilePatch2> iter= newDiffs.iterator(); iter.hasNext();) {
-			FilePatch2 diff= iter.next();
+		for (FilePatch2 diff : newDiffs) {
 			diffProject.add(diff);
 			diffs.add(diff);
 		}
@@ -595,10 +591,10 @@ public class PatchReader {
 	private long extractDate(String[] args, int n) {
 		if (n < args.length) {
 			String line= args[n];
-			for (int i= 0; i < this.fDateFormats.length; i++) {
-				this.fDateFormats[i].setLenient(true);
+			for (DateFormat dateFormat : this.fDateFormats) {
+				dateFormat.setLenient(true);
 				try {
-					Date date= this.fDateFormats[i].parse(line);
+					Date date = dateFormat.parse(line);
 					return date.getTime();
 				} catch (ParseException ex) {
 					// silently ignored
@@ -671,7 +667,7 @@ public class PatchReader {
 		while (st.hasMoreElements()) {
 			String token= st.nextToken().trim();
 			if (token.length() > 0)
- 				l.add(token);
+				l.add(token);
 		}
 		return l.toArray(new String[l.size()]);
 	}
@@ -696,8 +692,7 @@ public class PatchReader {
 		if (!isWorkspacePatch() || this.fDiffs.length == 0)
 			return this.fDiffs;
 		List<FilePatch2> result = new ArrayList<>();
-		for (int i = 0; i < this.fDiffs.length; i++) {
-			FilePatch2 diff = this.fDiffs[i];
+		for (FilePatch2 diff : this.fDiffs) {
 			result.add(diff.asRelativeDiff());
 		}
 		return result.toArray(new FilePatch2[result.size()]);

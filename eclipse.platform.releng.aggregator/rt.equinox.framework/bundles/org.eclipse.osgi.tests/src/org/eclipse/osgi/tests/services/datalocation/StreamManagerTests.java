@@ -7,13 +7,21 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.osgi.tests.services.datalocation;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.eclipse.core.runtime.Platform;
@@ -59,20 +67,20 @@ public class StreamManagerTests extends OSGiTest {
 			System.setProperty("osgi.useReliableFiles", reliableFile);
 	}
 
-	private void rm(File file) {
-		if (file.isDirectory()) {
-			File[] list = file.listFiles();
-			if (list != null) {
-				for (int idx = 0; idx < list.length; idx++) {
-					rm(list[idx]);
+	private void rm(File folder) {
+		if (folder.isDirectory()) {
+			File[] files = folder.listFiles();
+			if (files != null) {
+				for (File file : files) {
+					rm(file);
 				}
 			}
 		}
-		file.delete();
+		folder.delete();
 	}
 
 	private String getInputStreamContents(InputStream is) throws IOException {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		byte[] data = new byte[64];
 		int len;
 		try {
@@ -99,7 +107,7 @@ public class StreamManagerTests extends OSGiTest {
 	/**
 	 * This tests that FM will keep a backup version of a reliableFile and that
 	 * corrupting the reliableFile will recover the previous contents.
-	 * 
+	 *
 	 */
 	public void testReliableFile() {
 		String fileName = "testReliableFile.txt";
@@ -161,9 +169,10 @@ public class StreamManagerTests extends OSGiTest {
 			//now request only the primary file
 			try {
 				InputStream[] isSet = manager1.getInputStreamSet(new String[] {fileName});
-				for (int i = 0; i < isSet.length; i++) {
-					if (isSet[i] != null)
-						isSet[i].close();
+				for (InputStream set : isSet) {
+					if (set != null) {
+						set.close();
+					}
 				}
 				fail("getInputStreamSet was successful");
 			} catch (IOException e) {
@@ -198,13 +207,14 @@ public class StreamManagerTests extends OSGiTest {
 			System.setProperty("osgi.useReliableFiles", "true"); // force reliable files
 			manager1 = new StorageManager(base, null);
 			manager1.open(true);
-			ManagedOutputStream fmos = manager1.getOutputStream(fileName);
-			assertNotNull(fmos);
-			DataOutputStream bufferedOut = new DataOutputStream(new BufferedOutputStream(fmos));
-			// 200 K of integers (200 * 1024 / 4)
-			for (int i = 0; i < (200 * 1024 / 4); i++)
-				bufferedOut.writeInt(i);
-			bufferedOut.close();
+			try (ManagedOutputStream fmos = manager1.getOutputStream(fileName)) {
+				assertNotNull(fmos);
+				try (DataOutputStream bufferedOut = new DataOutputStream(new BufferedOutputStream(fmos))) {
+					// 200 K of integers (200 * 1024 / 4)
+					for (int i = 0; i < (200 * 1024 / 4); i++)
+						bufferedOut.writeInt(i);
+				}
+			}
 			manager1.close();
 			manager1 = null;
 
@@ -212,11 +222,13 @@ public class StreamManagerTests extends OSGiTest {
 			System.setProperty("osgi.useReliableFiles", "true"); // force reliable files
 			manager2 = new StorageManager(base, null);
 			manager2.open(true);
-			InputStream is = manager2.getInputStream(fileName);
-			assertNotNull(is);
-			DataInputStream bufferedIn = new DataInputStream(new BufferedInputStream(is));
-			for (int i = 0; i < (200 * 1024 / 4); i++)
-				assertEquals("Wrong content found", i, bufferedIn.readInt());
+			try (InputStream is = manager2.getInputStream(fileName)) {
+				assertNotNull(is);
+				try (DataInputStream bufferedIn = new DataInputStream(new BufferedInputStream(is))) {
+					for (int i = 0; i < (200 * 1024 / 4); i++)
+						assertEquals("Wrong content found", i, bufferedIn.readInt());
+				}
+			}
 			manager2.close();
 			manager2 = null;
 

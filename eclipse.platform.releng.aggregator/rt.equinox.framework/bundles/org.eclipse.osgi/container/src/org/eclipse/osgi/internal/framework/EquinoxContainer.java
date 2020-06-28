@@ -7,16 +7,23 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.osgi.internal.framework;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import org.eclipse.osgi.framework.eventmgr.ListenerQueue;
 import org.eclipse.osgi.framework.log.FrameworkLogEntry;
 import org.eclipse.osgi.framework.util.SecureAction;
@@ -32,7 +39,11 @@ import org.eclipse.osgi.signedcontent.SignedContentFactory;
 import org.eclipse.osgi.storage.Storage;
 import org.eclipse.osgi.util.ManifestElement;
 import org.eclipse.osgi.util.NLS;
-import org.osgi.framework.*;
+import org.osgi.framework.AdminPermission;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 import org.osgi.service.packageadmin.PackageAdmin;
 import org.osgi.service.startlevel.StartLevel;
 import org.osgi.util.tracker.ServiceTracker;
@@ -55,6 +66,7 @@ public class EquinoxContainer implements ThreadFactory, Runnable {
 
 	private final Object monitor = new Object();
 
+	private final ClassLoader bootLoader;
 	private ServiceRegistry serviceRegistry;
 	private ContextFinder contextFinder;
 
@@ -64,15 +76,23 @@ public class EquinoxContainer implements ThreadFactory, Runnable {
 	private StorageSaver storageSaver;
 
 	public EquinoxContainer(Map<String, ?> configuration) {
+		ClassLoader platformClassLoader = null;
+		try {
+			Method getPlatformClassLoader = ClassLoader.class.getMethod("getPlatformClassLoader"); //$NON-NLS-1$
+			platformClassLoader = (ClassLoader) getPlatformClassLoader.invoke(null);
+		} catch (Throwable t) {
+			// try everything possible to not fail
+			platformClassLoader = new ClassLoader(Object.class.getClassLoader()) {
+				/* boot class loader */};
+		}
+		this.bootLoader = platformClassLoader;
 		this.equinoxConfig = new EquinoxConfiguration(configuration, new HookRegistry(this));
 		this.logServices = new EquinoxLogServices(this.equinoxConfig);
 		this.equinoxConfig.logMessages(this.logServices);
 		this.equinoxConfig.getHookRegistry().initialize();
 		try {
 			this.storage = Storage.createStorage(this);
-		} catch (IOException e) {
-			throw new RuntimeException("Error initializing storage.", e); //$NON-NLS-1$
-		} catch (BundleException e) {
+		} catch (IOException | BundleException e) {
 			throw new RuntimeException("Error initializing storage.", e); //$NON-NLS-1$
 		}
 		this.packageAdmin = new PackageAdminImpl(storage.getModuleContainer());
@@ -87,17 +107,18 @@ public class EquinoxContainer implements ThreadFactory, Runnable {
 		HashSet<String> exactMatch = new HashSet<>(bootPackages.length);
 		List<String> stemMatch = new ArrayList<>(bootPackages.length);
 		boolean delegateAllValue = false;
-		for (int i = 0; i < bootPackages.length; i++) {
-			if (bootPackages[i].equals("*")) { //$NON-NLS-1$
+		for (String bootPackage : bootPackages) {
+			if (bootPackage.equals("*")) { //$NON-NLS-1$
 				delegateAllValue = true;
 				exactMatch.clear();
 				stemMatch.clear();
 				break;
-			} else if (bootPackages[i].endsWith("*")) { //$NON-NLS-1$
-				if (bootPackages[i].length() > 2 && bootPackages[i].endsWith(".*")) //$NON-NLS-1$
-					stemMatch.add(bootPackages[i].substring(0, bootPackages[i].length() - 1));
+			} else if (bootPackage.endsWith("*")) { //$NON-NLS-1$
+				if (bootPackage.length() > 2 && bootPackage.endsWith(".*")) { //$NON-NLS-1$
+					stemMatch.add(bootPackage.substring(0, bootPackage.length() - 1));
+				}
 			} else {
-				exactMatch.add(bootPackages[i]);
+				exactMatch.add(bootPackage);
 			}
 		}
 		bootDelegateAll = delegateAllValue;
@@ -150,9 +171,11 @@ public class EquinoxContainer implements ThreadFactory, Runnable {
 		if (bootDelegation.contains(name))
 			return true;
 		if (bootDelegationStems != null)
-			for (int i = 0; i < bootDelegationStems.length; i++)
-				if (name.startsWith(bootDelegationStems[i]))
+			for (String bootDelegationStem : bootDelegationStems) {
+				if (name.startsWith(bootDelegationStem)) {
 					return true;
+				}
+			}
 		return false;
 	}
 
@@ -185,7 +208,7 @@ public class EquinoxContainer implements ThreadFactory, Runnable {
 		// do this outside of the lock to avoid deadlock
 		currentSaver.close();
 		currentStorage.close();
-		// Must be done last since it will result in termination of the 
+		// Must be done last since it will result in termination of the
 		// framework active thread.
 		currentExecutor.shutdown();
 	}
@@ -199,7 +222,7 @@ public class EquinoxContainer implements ThreadFactory, Runnable {
 			if (EquinoxConfiguration.CONTEXTCLASSLOADER_PARENT_APP.equals(type))
 				parent = ClassLoader.getSystemClassLoader();
 			else if (EquinoxConfiguration.CONTEXTCLASSLOADER_PARENT_BOOT.equals(type))
-				parent = EquinoxContainerAdaptor.BOOT_CLASSLOADER;
+				parent = bootLoader;
 			else if (EquinoxConfiguration.CONTEXTCLASSLOADER_PARENT_FWK.equals(type))
 				parent = EquinoxContainer.class.getClassLoader();
 			else if (EquinoxConfiguration.CONTEXTCLASSLOADER_PARENT_EXT.equals(type)) {
@@ -209,7 +232,7 @@ public class EquinoxContainer implements ThreadFactory, Runnable {
 			} else { // default is ccl (null or any other value will use ccl)
 				parent = current.getContextClassLoader();
 			}
-			contextFinder = new ContextFinder(parent);
+			contextFinder = new ContextFinder(parent, bootLoader);
 			current.setContextClassLoader(contextFinder);
 			return;
 		} catch (Exception e) {
@@ -305,4 +328,7 @@ public class EquinoxContainer implements ThreadFactory, Runnable {
 		// Do nothing; just used to ensure the active thread is created during init
 	}
 
+	public ClassLoader getBootLoader() {
+		return bootLoader;
+	}
 }

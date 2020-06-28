@@ -123,9 +123,6 @@ public abstract class SynchronizationOperation extends TeamOperation {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.operation.IRunnableWithProgress#run(org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	public final void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 		try {
@@ -173,8 +170,8 @@ public abstract class SynchronizationOperation extends TeamOperation {
 	 * execute method. Clients should call either {@link #run()} or {@link #run(IProgressMonitor)}
 	 * to invoke the operation.
 	 * @param monitor a progress monitor
-	 * @throws InvocationTargetException
-	 * @throws InterruptedException
+	 * @throws InvocationTargetException if an error occurs
+	 * @throws InterruptedException if operation is interrupted
 	 */
 	protected abstract void execute(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException;
 

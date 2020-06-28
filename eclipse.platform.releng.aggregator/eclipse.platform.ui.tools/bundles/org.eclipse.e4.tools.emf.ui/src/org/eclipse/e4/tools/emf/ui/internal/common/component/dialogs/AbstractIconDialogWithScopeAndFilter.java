@@ -34,6 +34,7 @@ import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.tools.emf.ui.common.IClassContributionProvider.ContributionData;
 import org.eclipse.e4.tools.emf.ui.common.IClassContributionProvider.Filter;
 import org.eclipse.e4.tools.emf.ui.common.ResourceSearchScope;
+import org.eclipse.e4.tools.emf.ui.common.Util;
 import org.eclipse.e4.tools.emf.ui.internal.Messages;
 import org.eclipse.e4.tools.emf.ui.internal.StringMatcher;
 import org.eclipse.e4.tools.emf.ui.internal.common.ClassContributionCollector;
@@ -170,41 +171,24 @@ public abstract class AbstractIconDialogWithScopeAndFilter extends FilteredContr
 					}
 				}
 
-				// scale image if larger then max height
-				// also remember max width for column resizing
-
-				double scale1 = (double) maxDisplayedImageSize / img.getImageData().height;
-				final double scale2 = (double) maxDisplayedImageSize / img.getImageData().width;
-				if (scale2 < scale1) {
-					scale1 = scale2;
-				}
-				if (scale1 < 1) {
-					int width = (int) (img.getImageData().width * scale1);
-					if (width == 0) {
-						width = 1;
-					}
-					int height = (int) (img.getImageData().height * scale1);
-					if (height == 0) {
-						height = 1;
-					}
-					final Image img2 = new Image(img.getDevice(), img.getImageData().scaledTo(width, height));
-					img.dispose();
-					img = img2;
-					icons.put(file, img);
+				Image scaled = Util.scaleImage(img, maxDisplayedImageSize);
+				if (!scaled.equals(img)) {
+					icons.put(file, scaled);
 				}
 				final int width = AbstractIconDialogWithScopeAndFilter.this.getViewer().getTable().getColumn(0)
 						.getWidth();
-				if (img.getImageData().width > width) {
+				if (scaled.getImageData().width > width) {
 					AbstractIconDialogWithScopeAndFilter.this.getViewer().getTable().getColumn(0)
-					.setWidth(img.getImageData().width);
+							.setWidth(scaled.getImageData().width);
 				}
-				final int height = img.getImageData().height;
+				final int height = scaled.getImageData().height;
 				if (height > maxImageHeight) {
 					maxImageHeight = height;
 				}
 
-				cell.setImage(img);
+				cell.setImage(scaled);
 			}
+
 		});
 		colIcon.getColumn().setWidth(30);
 
@@ -273,7 +257,9 @@ public abstract class AbstractIconDialogWithScopeAndFilter extends FilteredContr
 
 		clearImages();
 
-		callback = new IconMatchCallback((IObservableList) getViewer().getInput());
+		@SuppressWarnings("unchecked")
+		IObservableList<Entry> fileList = (IObservableList<Entry>) getViewer().getInput();
+		callback = new IconMatchCallback(fileList);
 		final Filter filter = new Filter(project, getFilterTextBox().getText());
 		filter.setSearchScope(getSearchScopes());
 		filter.setBundles(getFilterBundles());
@@ -317,9 +303,9 @@ public abstract class AbstractIconDialogWithScopeAndFilter extends FilteredContr
 
 	private class IconMatchCallback {
 		private volatile boolean cancel;
-		private final IObservableList list;
+		private final IObservableList<Entry> list;
 
-		private IconMatchCallback(IObservableList list) {
+		private IconMatchCallback(IObservableList<Entry> list) {
 			this.list = list;
 		}
 
@@ -340,13 +326,16 @@ public abstract class AbstractIconDialogWithScopeAndFilter extends FilteredContr
 		private final StringMatcher matcherGif;
 		private final StringMatcher matcherJpg;
 		private final StringMatcher matcherPng;
+		private final StringMatcher matcherBinFolder;
 		private final Filter filter;
 		private boolean includeNonBundles;
+
 
 		public SearchThread(IconMatchCallback callback, Filter filter) {
 			matcherGif = new StringMatcher("*" + filter.namePattern + "*.gif", true, false); //$NON-NLS-1$//$NON-NLS-2$
 			matcherJpg = new StringMatcher("*" + filter.namePattern + "*.jpg", true, false); //$NON-NLS-1$//$NON-NLS-2$
 			matcherPng = new StringMatcher("*" + filter.namePattern + "*.png", true, false); //$NON-NLS-1$//$NON-NLS-2$
+			matcherBinFolder = new StringMatcher("bin/*", true, false); //$NON-NLS-1$
 			this.callback = callback;
 			this.filter = filter;
 		}
@@ -393,7 +382,8 @@ public abstract class AbstractIconDialogWithScopeAndFilter extends FilteredContr
 							return true;
 						} else if (resource.getType() == IResource.FILE && !resource.isLinked()) {
 							final String path = resource.getProjectRelativePath().toString();
-							if (matcherGif.match(path) || matcherPng.match(path) || matcherJpg.match(path)) {
+							if (!matcherBinFolder.match(path)
+									&& (matcherGif.match(path) || matcherPng.match(path) || matcherJpg.match(path))) {
 								if (E.notEmpty(filter.getPackages())) {
 									if (!filter.getPackages().contains(
 											resource.getProjectRelativePath().removeLastSegments(1).toOSString())) {

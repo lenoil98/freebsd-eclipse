@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,6 +21,7 @@ package org.eclipse.ui.dialogs;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -87,16 +88,13 @@ import org.eclipse.ui.internal.ide.model.ResourceFactory;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.statushandlers.StatusManager;
 
-import com.ibm.icu.text.Collator;
-
 /**
  * Shows a list of resources to the user with a text entry field for a string
  * pattern used to filter the list of resources.
  *
  * @since 3.3
  */
-public class FilteredResourcesSelectionDialog extends
-		FilteredItemsSelectionDialog {
+public class FilteredResourcesSelectionDialog extends FilteredItemsSelectionDialog {
 
 	private static final String DIALOG_SETTINGS = "org.eclipse.ui.dialogs.FilteredResourcesSelectionDialog"; //$NON-NLS-1$
 
@@ -122,8 +120,8 @@ public class FilteredResourcesSelectionDialog extends
 
 	private ItemsFilter latestFilter;
 	/**
-	 * The base outer-container which will be used to search for resources. This
-	 * is the root of the tree that spans the search space. Often, this is the
+	 * The base outer-container which will be used to search for resources. This is
+	 * the root of the tree that spans the search space. Often, this is the
 	 * workspace root.
 	 */
 	private IContainer container;
@@ -131,6 +129,7 @@ public class FilteredResourcesSelectionDialog extends
 	/**
 	 * The container to use as starting point for relative search, or
 	 * <code>null</code> if none.
+	 *
 	 * @since 3.6
 	 */
 	private IContainer searchContainer;
@@ -142,19 +141,16 @@ public class FilteredResourcesSelectionDialog extends
 	/**
 	 * Creates a new instance of the class
 	 *
-	 * @param shell
-	 *            the parent shell
-	 * @param multi
-	 *            the multi selection flag
-	 * @param container
-	 *            the container to select resources from, e.g. the workspace root
-	 * @param typesMask
-	 *            a mask specifying which resource types should be shown in the dialog.
-	 *            The mask should contain one or more of the resource type bit masks
-	 *            defined in {@link IResource#getType()}
+	 * @param shell     the parent shell
+	 * @param multi     the multi selection flag
+	 * @param container the container to select resources from, e.g. the workspace
+	 *                  root
+	 * @param typesMask a mask specifying which resource types should be shown in
+	 *                  the dialog. The mask should contain one or more of the
+	 *                  resource type bit masks defined in
+	 *                  {@link IResource#getType()}
 	 */
-	public FilteredResourcesSelectionDialog(Shell shell, boolean multi,
-			IContainer container, int typesMask) {
+	public FilteredResourcesSelectionDialog(Shell shell, boolean multi, IContainer container, int typesMask) {
 		super(shell, multi);
 
 		setSelectionHistory(new ResourceSelectionHistory());
@@ -163,8 +159,8 @@ public class FilteredResourcesSelectionDialog extends
 		setMessage(IDEWorkbenchMessages.OpenResourceDialog_message);
 
 		/*
-		 * Allow location of paths relative to a searchContainer, which is
-		 * initialized from the active editor or the selected element.
+		 * Allow location of paths relative to a searchContainer, which is initialized
+		 * from the active editor or the selected element.
 		 */
 		IWorkbenchWindow ww = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		if (ww != null) {
@@ -219,8 +215,7 @@ public class FilteredResourcesSelectionDialog extends
 	/**
 	 * Adds or replaces subtitle of the dialog
 	 *
-	 * @param text
-	 *            the new subtitle
+	 * @param text the new subtitle
 	 */
 	private void setSubtitle(String text) {
 		if (text == null || text.length() == 0) {
@@ -232,12 +227,10 @@ public class FilteredResourcesSelectionDialog extends
 
 	@Override
 	protected IDialogSettings getDialogSettings() {
-		IDialogSettings settings = IDEWorkbenchPlugin.getDefault()
-				.getDialogSettings().getSection(DIALOG_SETTINGS);
+		IDialogSettings settings = IDEWorkbenchPlugin.getDefault().getDialogSettings().getSection(DIALOG_SETTINGS);
 
 		if (settings == null) {
-			settings = IDEWorkbenchPlugin.getDefault().getDialogSettings()
-					.addNewSection(DIALOG_SETTINGS);
+			settings = IDEWorkbenchPlugin.getDefault().getDialogSettings().addNewSection(DIALOG_SETTINGS);
 		}
 
 		return settings;
@@ -258,9 +251,8 @@ public class FilteredResourcesSelectionDialog extends
 			memento.save(writer);
 			settings.put(WORKINGS_SET_SETTINGS, writer.getBuffer().toString());
 		} catch (IOException e) {
-			StatusManager.getManager().handle(
-					new Status(IStatus.ERROR, WorkbenchPlugin.PI_WORKBENCH,
-							IStatus.ERROR, "", e)); //$NON-NLS-1$
+			StatusManager.getManager()
+					.handle(new Status(IStatus.ERROR, WorkbenchPlugin.PI_WORKBENCH, IStatus.ERROR, "", e)); //$NON-NLS-1$
 			// don't do anything. Simply don't store the settings
 		}
 	}
@@ -281,13 +273,11 @@ public class FilteredResourcesSelectionDialog extends
 		String setting = settings.get(WORKINGS_SET_SETTINGS);
 		if (setting != null) {
 			try {
-				IMemento memento = XMLMemento.createReadRoot(new StringReader(
-						setting));
+				IMemento memento = XMLMemento.createReadRoot(new StringReader(setting));
 				workingSetFilterActionGroup.restoreState(memento);
 			} catch (WorkbenchException e) {
-				StatusManager.getManager().handle(
-						new Status(IStatus.ERROR, WorkbenchPlugin.PI_WORKBENCH,
-								IStatus.ERROR, "", e)); //$NON-NLS-1$
+				StatusManager.getManager()
+						.handle(new Status(IStatus.ERROR, WorkbenchPlugin.PI_WORKBENCH, IStatus.ERROR, "", e)); //$NON-NLS-1$
 				// don't do anything. Simply don't restore the settings
 			}
 		}
@@ -306,44 +296,35 @@ public class FilteredResourcesSelectionDialog extends
 		this.groupResourcesByLocationAction = new GroupResourcesByLocationAction();
 		menuManager.add(this.groupResourcesByLocationAction);
 
-		workingSetFilterActionGroup = new WorkingSetFilterActionGroup(
-				getShell(), event -> {
-					String property = event.getProperty();
+		workingSetFilterActionGroup = new WorkingSetFilterActionGroup(getShell(), event -> {
+			String property = event.getProperty();
 
-					if (WorkingSetFilterActionGroup.CHANGE_WORKING_SET
-							.equals(property)) {
+			if (WorkingSetFilterActionGroup.CHANGE_WORKING_SET.equals(property)) {
 
-						IWorkingSet workingSet = (IWorkingSet) event
-								.getNewValue();
+				IWorkingSet workingSet = (IWorkingSet) event.getNewValue();
 
-						if (workingSet != null
-								&& !(workingSet.isAggregateWorkingSet() && workingSet
-										.isEmpty())) {
-							workingSetFilter.setWorkingSet(workingSet);
-							setSubtitle(workingSet.getLabel());
-						} else {
-							IWorkbenchWindow window = PlatformUI
-									.getWorkbench()
-									.getActiveWorkbenchWindow();
+				if (workingSet != null && !(workingSet.isAggregateWorkingSet() && workingSet.isEmpty())) {
+					workingSetFilter.setWorkingSet(workingSet);
+					setSubtitle(workingSet.getLabel());
+				} else {
+					IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 
-							if (window != null) {
-								IWorkbenchPage page = window
-										.getActivePage();
-								workingSet = page.getAggregateWorkingSet();
+					if (window != null) {
+						IWorkbenchPage page = window.getActivePage();
+						workingSet = page.getAggregateWorkingSet();
 
-								if (workingSet.isAggregateWorkingSet()
-										&& workingSet.isEmpty()) {
-									workingSet = null;
-								}
-							}
-
-							workingSetFilter.setWorkingSet(workingSet);
-							setSubtitle(null);
+						if (workingSet.isAggregateWorkingSet() && workingSet.isEmpty()) {
+							workingSet = null;
 						}
-
-						scheduleRefresh();
 					}
-				});
+
+					workingSetFilter.setWorkingSet(workingSet);
+					setSubtitle(null);
+				}
+
+				scheduleRefresh();
+			}
+		});
 
 		menuManager.add(new Separator());
 		workingSetFilterActionGroup.fillContextMenu(menuManager);
@@ -375,20 +356,16 @@ public class FilteredResourcesSelectionDialog extends
 	@Override
 	public int open() {
 		if (getInitialPattern() == null) {
-			IWorkbenchWindow window = PlatformUI.getWorkbench()
-					.getActiveWorkbenchWindow();
+			IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 			if (window != null) {
-				ISelection selection = window.getSelectionService()
-						.getSelection();
+				ISelection selection = window.getSelectionService().getSelection();
 				if (selection instanceof ITextSelection) {
 					String text = ((ITextSelection) selection).getText();
 					if (text != null) {
 						text = text.trim();
 						if (text.length() > 0) {
-							IWorkspace workspace = ResourcesPlugin
-									.getWorkspace();
-							IStatus result = workspace.validateName(text,
-									IResource.FILE);
+							IWorkspace workspace = ResourcesPlugin.getWorkspace();
+							IStatus result = workspace.validateName(text, IResource.FILE);
 							if (result.isOK()) {
 								setInitialPattern(text);
 							}
@@ -486,7 +463,7 @@ public class FilteredResourcesSelectionDialog extends
 			// Don't compare file names again, so subtract 1
 			int c12 = p1.segmentCount() - 1;
 			int c22 = p2.segmentCount() - 1;
-			for (int i= 0; i < c12 && i < c22; i++) {
+			for (int i = 0; i < c12 && i < c22; i++) {
 				comparability = collator.compare(p1.segment(i), p2.segment(i));
 				if (comparability != 0)
 					return comparability;
@@ -499,27 +476,26 @@ public class FilteredResourcesSelectionDialog extends
 
 	/**
 	 * Return the "distance" of the item from the root of the relative search
-	 * container. Distances can be compared (smaller numbers are better).
-	 * <br>
-	 * - Closest distance is if the item is the same folder as the search container.<br>
+	 * container. Distances can be compared (smaller numbers are better). <br>
+	 * - Closest distance is if the item is the same folder as the search
+	 * container.<br>
 	 * - Next are folders inside the search container.<br>
-	 * - After all those, distance increases with decreasing matching prefix folder count.<br>
+	 * - After all those, distance increases with decreasing matching prefix folder
+	 * count.<br>
 	 *
-	 * @param item
-	 *            parent of the resource being examined
-	 * @return the "distance" of the passed in IResource from the search
-	 *         container
+	 * @param item parent of the resource being examined
+	 * @return the "distance" of the passed in IResource from the search container
 	 * @since 3.6
 	 */
 	private int pathDistance(IContainer item) {
 		// Container search path: e.g. /a/b/c
 		IPath containerPath = searchContainer.getFullPath();
-		// itemPath:          distance:
-		// /a/b/c         ==> 0
-		// /a/b/c/d/e     ==> 2
-		// /a/b           ==> Integer.MAX_VALUE/4 + 1
-		// /a/x/e/f       ==> Integer.MAX_VALUE/4 + 2
-		// /g/h           ==> Integer.MAX_VALUE/2
+		// itemPath: distance:
+		// /a/b/c ==> 0
+		// /a/b/c/d/e ==> 2
+		// /a/b ==> Integer.MAX_VALUE/4 + 1
+		// /a/x/e/f ==> Integer.MAX_VALUE/4 + 2
+		// /g/h ==> Integer.MAX_VALUE/2
 		IPath itemPath = item.getFullPath();
 		if (itemPath.equals(containerPath))
 			return 0;
@@ -534,23 +510,19 @@ public class FilteredResourcesSelectionDialog extends
 			return itemPath.segmentCount() - matching;
 		}
 
-		//outside searchContainer:
+		// outside searchContainer:
 		return Integer.MAX_VALUE / 4 + containerSegmentCount - matching;
 	}
 
 	@Override
-	protected void fillContentProvider(AbstractContentProvider contentProvider,
-			ItemsFilter itemsFilter, IProgressMonitor progressMonitor)
-			throws CoreException {
+	protected void fillContentProvider(AbstractContentProvider contentProvider, ItemsFilter itemsFilter,
+			IProgressMonitor progressMonitor) throws CoreException {
 		if (itemsFilter instanceof ResourceFilter) {
 			IResource[] members = container.members();
-			progressMonitor
-					.beginTask(
-							WorkbenchMessages.FilteredItemsSelectionDialog_searchJob_taskName,
-							members.length);
+			progressMonitor.beginTask(WorkbenchMessages.FilteredItemsSelectionDialog_searchJob_taskName,
+					members.length);
 
-			ResourceProxyVisitor visitor = new ResourceProxyVisitor(
-					contentProvider, (ResourceFilter) itemsFilter,
+			ResourceProxyVisitor visitor = new ResourceProxyVisitor(contentProvider, (ResourceFilter) itemsFilter,
 					progressMonitor);
 
 			if (visitor.visit(container.createProxy())) {
@@ -576,8 +548,7 @@ public class FilteredResourcesSelectionDialog extends
 		 * Creates a new instance of the action.
 		 */
 		public ShowDerivedResourcesAction() {
-			super(
-					IDEWorkbenchMessages.FilteredResourcesSelectionDialog_showDerivedResourcesAction,
+			super(IDEWorkbenchMessages.FilteredResourcesSelectionDialog_showDerivedResourcesAction,
 					IAction.AS_CHECK_BOX);
 		}
 
@@ -611,11 +582,11 @@ public class FilteredResourcesSelectionDialog extends
 
 	/**
 	 * A label provider for ResourceDecorator objects. It creates labels with a
-	 * resource full path for duplicates. It uses the Platform UI label
-	 * decorator for providing extra resource info.
+	 * resource full path for duplicates. It uses the Platform UI label decorator
+	 * for providing extra resource info.
 	 */
-	private class ResourceItemLabelProvider extends LabelProvider implements
-			ILabelProviderListener, IStyledLabelProvider {
+	private class ResourceItemLabelProvider extends LabelProvider
+			implements ILabelProviderListener, IStyledLabelProvider {
 
 		// Need to keep our own list of listeners
 		private ListenerList<ILabelProviderListener> listeners = new ListenerList<>();
@@ -813,8 +784,7 @@ public class FilteredResourcesSelectionDialog extends
 	/**
 	 * A label provider for details of ResourceItem objects.
 	 */
-	private class ResourceItemDetailsLabelProvider extends
-			ResourceItemLabelProvider {
+	private class ResourceItemDetailsLabelProvider extends ResourceItemLabelProvider {
 		@Override
 		public Image getImage(Object element) {
 			if (!(element instanceof IResource)) {
@@ -839,7 +809,7 @@ public class FilteredResourcesSelectionDialog extends
 				return null;
 			}
 
-			return parent.getFullPath()	.makeRelative().toString();
+			return parent.getFullPath().makeRelative().toString();
 		}
 
 		@Override
@@ -860,25 +830,22 @@ public class FilteredResourcesSelectionDialog extends
 		/**
 		 * Sets the active working set.
 		 *
-		 * @param workingSet
-		 *            the working set the filter should work with
+		 * @param workingSet the working set the filter should work with
 		 */
 		public void setWorkingSet(IWorkingSet workingSet) {
 			resourceWorkingSetFilter.setWorkingSet(workingSet);
 		}
 
 		@Override
-		public boolean select(Viewer viewer, Object parentElement,
-				Object element) {
-			return resourceWorkingSetFilter.select(viewer, parentElement,
-						element);
+		public boolean select(Viewer viewer, Object parentElement, Object element) {
+			return resourceWorkingSetFilter.select(viewer, parentElement, element);
 		}
 	}
 
 	/**
-	 * ResourceProxyVisitor to visit resource tree and get matched resources.
-	 * During visit resources it updates progress monitor and adds matched
-	 * resources to ContentProvider instance.
+	 * ResourceProxyVisitor to visit resource tree and get matched resources. During
+	 * visit resources it updates progress monitor and adds matched resources to
+	 * ContentProvider instance.
 	 */
 	private static class ResourceProxyVisitor implements IResourceProxyVisitor {
 
@@ -896,9 +863,8 @@ public class FilteredResourcesSelectionDialog extends
 		 * @param progressMonitor
 		 * @throws CoreException
 		 */
-		public ResourceProxyVisitor(AbstractContentProvider contentProvider,
-				ResourceFilter resourceFilter, IProgressMonitor progressMonitor)
-				throws CoreException {
+		public ResourceProxyVisitor(AbstractContentProvider contentProvider, ResourceFilter resourceFilter,
+				IProgressMonitor progressMonitor) throws CoreException {
 			super();
 			this.proxyContentProvider = contentProvider;
 			this.resourceFilter = resourceFilter;
@@ -915,8 +881,7 @@ public class FilteredResourcesSelectionDialog extends
 
 			proxyContentProvider.add(resource, resourceFilter);
 
-			if (resource.getType() == IResource.FOLDER && resource.isDerived()
-					&& !resourceFilter.isShowDerived()) {
+			if (resource.getType() == IResource.FOLDER && resource.isDerived() && !resourceFilter.isShowDerived()) {
 
 				return false;
 			}
@@ -940,23 +905,31 @@ public class FilteredResourcesSelectionDialog extends
 		private IContainer filterContainer;
 
 		/**
-		 * Container path pattern. Is <code>null</code> when only a file name pattern is used.
+		 * Container path pattern. Is <code>null</code> when only a file name pattern is
+		 * used.
+		 *
 		 * @since 3.6
 		 */
 		private SearchPattern containerPattern;
 		/**
-		 * Container path pattern, relative to the current searchContainer. Is <code>null</code> if there's no search container.
+		 * Container path pattern, relative to the current searchContainer. Is
+		 * <code>null</code> if there's no search container.
+		 *
 		 * @since 3.6
 		 */
 		private SearchPattern relativeContainerPattern;
 
 		/**
-		 * Camel case pattern for the name part of the file name (without extension). Is <code>null</code> if there's no extension.
+		 * Camel case pattern for the name part of the file name (without extension). Is
+		 * <code>null</code> if there's no extension.
+		 *
 		 * @since 3.6
 		 */
 		SearchPattern namePattern;
 		/**
-		 * Camel case pattern for the file extension. Is <code>null</code> if there's no extension.
+		 * Camel case pattern for the file extension. Is <code>null</code> if there's no
+		 * extension.
+		 *
 		 * @since 3.6
 		 */
 		SearchPattern extensionPattern;
@@ -966,13 +939,11 @@ public class FilteredResourcesSelectionDialog extends
 		/**
 		 * Creates new ResourceFilter instance
 		 *
-		 * @param container
-		 * @param showDerived
-		 *            flag which determine showing derived elements
-		 * @param typeMask
+		 * @param container   filtered container
+		 * @param showDerived flag which determine showing derived elements
+		 * @param typeMask    filter type mask. See {@link IResource#getType()} types.
 		 */
-		public ResourceFilter(IContainer container, boolean showDerived,
-				int typeMask) {
+		public ResourceFilter(IContainer container, boolean showDerived, int typeMask) {
 			super();
 			this.filterContainer = container;
 			this.showDerived = showDerived;
@@ -983,10 +954,8 @@ public class FilteredResourcesSelectionDialog extends
 		 * Creates new ResourceFilter instance
 		 *
 		 * @param container
-		 * @param searchContainer
-		 *            IContainer to use for performing relative search
-		 * @param showDerived
-		 *            flag which determine showing derived elements
+		 * @param searchContainer IContainer to use for performing relative search
+		 * @param showDerived     flag which determine showing derived elements
 		 * @param typeMask
 		 * @since 3.6
 		 */
@@ -1001,22 +970,29 @@ public class FilteredResourcesSelectionDialog extends
 			if (sep != -1) {
 				filenamePattern = stringPattern.substring(sep + 1, stringPattern.length());
 				if ("*".equals(filenamePattern)) //$NON-NLS-1$
-					filenamePattern= "**"; //$NON-NLS-1$
+					filenamePattern = "**"; //$NON-NLS-1$
 
 				if (sep > 0) {
 					if (filenamePattern.length() == 0) // relative patterns don't need a file name
-						filenamePattern= "**"; //$NON-NLS-1$
+						filenamePattern = "**"; //$NON-NLS-1$
 
 					String containerPattern = stringPattern.substring(0, sep);
 
 					if (searchContainer != null) {
-						relativeContainerPattern = new SearchPattern(SearchPattern.RULE_EXACT_MATCH | SearchPattern.RULE_PATTERN_MATCH);
-						relativeContainerPattern.setPattern(searchContainer.getFullPath().append(containerPattern).toString());
+						relativeContainerPattern = new SearchPattern(
+								SearchPattern.RULE_EXACT_MATCH | SearchPattern.RULE_PATTERN_MATCH);
+						relativeContainerPattern
+								.setPattern(searchContainer.getFullPath().append(containerPattern).toString());
 					}
 
-					if (!containerPattern.startsWith("" + IPath.SEPARATOR)) //$NON-NLS-1$
-						containerPattern = IPath.SEPARATOR + containerPattern;
-					this.containerPattern= new SearchPattern(SearchPattern.RULE_EXACT_MATCH | SearchPattern.RULE_PREFIX_MATCH | SearchPattern.RULE_PATTERN_MATCH);
+					if (!containerPattern.startsWith(Character.toString('*'))) {
+						if (!containerPattern.startsWith(Character.toString(IPath.SEPARATOR))) {
+							containerPattern = IPath.SEPARATOR + containerPattern;
+						}
+						containerPattern = '*' + containerPattern;
+					}
+					this.containerPattern = new SearchPattern(SearchPattern.RULE_EXACT_MATCH
+							| SearchPattern.RULE_PREFIX_MATCH | SearchPattern.RULE_PATTERN_MATCH);
 					this.containerPattern.setPattern(containerPattern);
 				}
 				boolean isPrefixPattern = matchRule == SearchPattern.RULE_PREFIX_MATCH
@@ -1032,7 +1008,7 @@ public class FilteredResourcesSelectionDialog extends
 				filenamePattern = getPattern();
 				matchRule = getMatchRule();
 			} else {
-				filenamePattern= stringPattern;
+				filenamePattern = stringPattern;
 			}
 
 			int lastPatternDot = filenamePattern.lastIndexOf('.');
@@ -1042,8 +1018,7 @@ public class FilteredResourcesSelectionDialog extends
 					namePattern.setPattern(filenamePattern.substring(0, lastPatternDot));
 					String extensionPatternStr = filenamePattern.substring(lastPatternDot + 1);
 					// Add a '<' except this is a camel case pattern or a prefix pattern
-					if (matchRule != SearchPattern.RULE_CAMELCASE_MATCH
-							&& matchRule != SearchPattern.RULE_PREFIX_MATCH
+					if (matchRule != SearchPattern.RULE_CAMELCASE_MATCH && matchRule != SearchPattern.RULE_PREFIX_MATCH
 							&& !extensionPatternStr.endsWith("*")) //$NON-NLS-1$
 						extensionPatternStr += '<';
 					extensionPattern = new SearchPattern();
@@ -1061,9 +1036,8 @@ public class FilteredResourcesSelectionDialog extends
 		}
 
 		/**
-		 * @param item
-		 *            Must be instance of IResource, otherwise
-		 *            <code>false</code> will be returned.
+		 * @param item Must be instance of IResource, otherwise <code>false</code> will
+		 *             be returned.
 		 * @see org.eclipse.ui.dialogs.FilteredItemsSelectionDialog.ItemsFilter#isConsistentItem(java.lang.Object)
 		 */
 		@Override
@@ -1078,9 +1052,8 @@ public class FilteredResourcesSelectionDialog extends
 		}
 
 		/**
-		 * @param item
-		 *            Must be instance of IResource, otherwise
-		 *            <code>false</code> will be returned.
+		 * @param item Must be instance of IResource, otherwise <code>false</code> will
+		 *             be returned.
 		 * @see org.eclipse.ui.dialogs.FilteredItemsSelectionDialog.ItemsFilter#matchItem(java.lang.Object)
 		 */
 		@Override
@@ -1089,8 +1062,7 @@ public class FilteredResourcesSelectionDialog extends
 				return false;
 			}
 			IResource resource = (IResource) item;
-			return (this.filterTypeMask & resource.getType()) != 0
-					&& matchName(resource)
+			return (this.filterTypeMask & resource.getType()) != 0 && matchName(resource)
 					&& (this.showDerived || !resource.isDerived());
 		}
 
@@ -1105,11 +1077,12 @@ public class FilteredResourcesSelectionDialog extends
 					// match path relative to current selection:
 					if (relativeContainerPattern != null)
 						return relativeContainerPattern.matches(containerPath);
+				// match direct parency
+
 					return false;
 				}
 				return true;
 			}
-
 			return false;
 		}
 
@@ -1117,8 +1090,7 @@ public class FilteredResourcesSelectionDialog extends
 			if (namePattern != null) {
 				// fix for https://bugs.eclipse.org/bugs/show_bug.cgi?id=212565
 				int lastDot = name.lastIndexOf('.');
-				if (lastDot != -1
-						&& namePattern.matches(name.substring(0, lastDot))
+				if (lastDot != -1 && namePattern.matches(name.substring(0, lastDot))
 						&& extensionPattern.matches(name.substring(lastDot + 1))) {
 					return true;
 				}
@@ -1211,18 +1183,15 @@ public class FilteredResourcesSelectionDialog extends
 	}
 
 	/**
-	 * <code>ResourceSelectionHistory</code> provides behavior specific to
-	 * resources - storing and restoring <code>IResource</code>s state
-	 * to/from XML (memento).
+	 * <code>ResourceSelectionHistory</code> provides behavior specific to resources
+	 * - storing and restoring <code>IResource</code>s state to/from XML (memento).
 	 */
 	private class ResourceSelectionHistory extends SelectionHistory {
 
 		@Override
 		protected Object restoreItemFromMemento(IMemento element) {
 			ResourceFactory resourceFactory = new ResourceFactory();
-			IResource resource = (IResource) resourceFactory
-					.createElement(element);
-			return resource;
+			return resourceFactory.createElement(element);
 		}
 
 		@Override

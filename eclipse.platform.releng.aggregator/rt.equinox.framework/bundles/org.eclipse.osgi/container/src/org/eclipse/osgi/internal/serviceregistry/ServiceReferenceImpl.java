@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -19,7 +19,7 @@ import org.osgi.framework.*;
 
 /**
  * A reference to a service.
- * 
+ *
  * <p>
  * The Framework returns <code>ServiceReference</code> objects from the
  * <code>BundleContext.getServiceReference</code> and
@@ -40,7 +40,7 @@ import org.osgi.framework.*;
  * If the same service object is registered multiple times,
  * <code>ServiceReference</code> objects associated with different
  * <code>ServiceRegistration</code> objects are not equal.
- * 
+ *
  * @see BundleContext#getServiceReference
  * @see BundleContext#getServiceReferences
  * @see BundleContext#getService
@@ -66,20 +66,21 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	 * Returns the property value to which the specified property key is mapped
 	 * in the properties <code>Dictionary</code> object of the service
 	 * referenced by this <code>ServiceReference</code> object.
-	 * 
+	 *
 	 * <p>
 	 * Property keys are case-insensitive.
-	 * 
+	 *
 	 * <p>
 	 * This method must continue to return property values after the service has
 	 * been unregistered. This is so references to unregistered services (for
 	 * example, <code>ServiceReference</code> objects stored in the log) can
 	 * still be interrogated.
-	 * 
+	 *
 	 * @param key The property key.
 	 * @return The property value to which the key is mapped; <code>null</code>
 	 *         if there is no property named after the key.
 	 */
+	@Override
 	public Object getProperty(String key) {
 		return registration.getProperty(key);
 	}
@@ -88,22 +89,23 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	 * Returns an array of the keys in the properties <code>Dictionary</code>
 	 * object of the service referenced by this <code>ServiceReference</code>
 	 * object.
-	 * 
+	 *
 	 * <p>
 	 * This method will continue to return the keys after the service has been
 	 * unregistered. This is so references to unregistered services (for
 	 * example, <code>ServiceReference</code> objects stored in the log) can
 	 * still be interrogated.
-	 * 
+	 *
 	 * <p>
 	 * This method is <i>case-preserving </i>; this means that every key in the
 	 * returned array must have the same case as the corresponding key in the
 	 * properties <code>Dictionary</code> that was passed to the
 	 * {@link BundleContext#registerService(String[],Object,java.util.Dictionary)}
 	 * or {@link ServiceRegistration#setProperties} methods.
-	 * 
+	 *
 	 * @return An array of property keys.
 	 */
+	@Override
 	public String[] getPropertyKeys() {
 		return registration.getPropertyKeys();
 	}
@@ -111,17 +113,18 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	/**
 	 * Returns the bundle that registered the service referenced by this
 	 * <code>ServiceReference</code> object.
-	 * 
+	 *
 	 * <p>
 	 * This method must return <code>null</code> when the service has been
 	 * unregistered. This can be used to determine if the service has been
 	 * unregistered.
-	 * 
+	 *
 	 * @return The bundle that registered the service referenced by this
 	 *         <code>ServiceReference</code> object; <code>null</code> if
 	 *         that service has already been unregistered.
 	 * @see BundleContext#registerService(String[],Object,java.util.Dictionary)
 	 */
+	@Override
 	public Bundle getBundle() {
 		return registration.getBundle();
 	}
@@ -130,14 +133,15 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	 * Returns the bundles that are using the service referenced by this
 	 * <code>ServiceReference</code> object. Specifically, this method returns
 	 * the bundles whose usage count for that service is greater than zero.
-	 * 
+	 *
 	 * @return An array of bundles whose usage count for the service referenced
 	 *         by this <code>ServiceReference</code> object is greater than
 	 *         zero; <code>null</code> if no bundles are currently using that
 	 *         service.
-	 * 
+	 *
 	 * @since 1.1
 	 */
+	@Override
 	public Bundle[] getUsingBundles() {
 		return registration.getUsingBundles();
 	}
@@ -159,16 +163,17 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	 * package source of the specified bundle then return <code>true</code>;
 	 * otherwise return <code>false</code>.</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param bundle The <code>Bundle</code> object to check.
 	 * @param className The class name to check.
 	 * @return <code>true</code> if the bundle which registered the service
 	 *         referenced by this <code>ServiceReference</code> and the
 	 *         specified bundle use the same source for the package of the
 	 *         specified class name. Otherwise <code>false</code> is returned.
-	 * 
+	 *
 	 * @since 1.3
 	 */
+	@Override
 	public boolean isAssignableTo(Bundle bundle, String className) {
 		return registration.isAssignableTo(bundle, className);
 	}
@@ -176,7 +181,7 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	/**
 	 * Compares this <code>ServiceReference</code> with the specified
 	 * <code>ServiceReference</code> for order.
-	 * 
+	 *
 	 * <p>
 	 * If this <code>ServiceReference</code> and the specified
 	 * <code>ServiceReference</code> have the same
@@ -191,13 +196,14 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	 * <code>ServiceReference</code> if it has a higher
 	 * {@link Constants#SERVICE_ID service id} and greater if it has a lower
 	 * service id.
-	 * 
+	 *
 	 * @param object The <code>ServiceReference</code> to be compared.
 	 * @return Returns a negative integer, zero, or a positive integer if this
 	 *         <code>ServiceReference</code> is less than, equal to, or
 	 *         greater than the specified <code>ServiceReference</code>.
 	 * @since 1.4
 	 */
+	@Override
 	public int compareTo(Object object) {
 		ServiceRegistrationImpl<?> other = ((ServiceReferenceImpl<?>) object).registration;
 
@@ -225,6 +231,7 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	 *
 	 * @return  a hash code value for this object.
 	 */
+	@Override
 	public int hashCode() {
 		return registration.hashCode();
 	}
@@ -236,6 +243,7 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	 * @return  <code>true</code> if this object is the same as the obj
 	 *          argument; <code>false</code> otherwise.
 	 */
+	@Override
 	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;
@@ -255,13 +263,14 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	 *
 	 * @return String
 	 */
+	@Override
 	public String toString() {
 		return registration.toString();
 	}
 
 	/**
 	 * Return the ServiceRegistrationImpl for this ServiceReferenceImpl.
-	 * 
+	 *
 	 * @return The ServiceRegistrationImpl for this ServiceReferenceImpl.
 	 */
 	public ServiceRegistrationImpl<S> getRegistration() {
@@ -300,7 +309,7 @@ public class ServiceReferenceImpl<S> implements ServiceReference<S> {
 	 * {@link ServiceRegistration#setProperties(Dictionary)} must be called to
 	 * modify the properties of the service.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @return A copy of the properties of the service referenced by this
 	 *         {@code ServiceReference} object
 	 * @since 1.9

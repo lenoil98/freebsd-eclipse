@@ -14,6 +14,7 @@
 
 package org.eclipse.team.internal.ui.history;
 
+import java.text.DateFormat;
 import java.util.Date;
 
 import org.eclipse.core.resources.IFile;
@@ -45,8 +46,6 @@ import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileHistory;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.internal.ui.TeamUIMessages;
-
-import com.ibm.icu.text.DateFormat;
 
 public class GenericHistoryTableProvider {
 	private IFileHistory currentFileHistory;
@@ -98,9 +97,6 @@ public class GenericHistoryTableProvider {
 			return dateFormat;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IColorProvider#getForeground(java.lang.Object)
-		 */
 		@Override
 		public Color getForeground(Object element) {
 			IFileRevision entry = adaptToFileRevision(element);
@@ -110,17 +106,10 @@ public class GenericHistoryTableProvider {
 
 			return null;
 		}
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IColorProvider#getBackground(java.lang.Object)
-		 */
 		@Override
 		public Color getBackground(Object element) {
 			return null;
 		}
-		/*
-		 * (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IFontProvider#getFont(java.lang.Object)
-		 */
 		@Override
 		public Font getFont(Object element) {
 			IFileRevision entry = adaptToFileRevision(element);
@@ -132,8 +121,8 @@ public class GenericHistoryTableProvider {
 				if (currentRevisionFont == null) {
 					Font defaultFont = JFaceResources.getDefaultFont();
 					FontData[] data = defaultFont.getFontData();
-					for (int i = 0; i < data.length; i++) {
-						data[i].setStyle(SWT.BOLD);
+					for (FontData d : data) {
+						d.setStyle(SWT.BOLD);
 					}
 					currentRevisionFont = new Font(viewer.getTable().getDisplay(), data);
 				}
@@ -177,9 +166,8 @@ public class GenericHistoryTableProvider {
 			if (e1 == null || e2 == null) {
 				result = super.compare(viewer, o1, o2);
 			} else {
-				int[] columnSortOrder = SORT_ORDERS_BY_COLUMN[columnNumber];
-				for (int i = 0; i < columnSortOrder.length; ++i) {
-					result = compareColumnValue(columnSortOrder[i], e1, e2);
+				for (int columnSortOrder : SORT_ORDERS_BY_COLUMN[columnNumber]) {
+					result = compareColumnValue(columnSortOrder, e1, e2);
 					if (result != 0)
 						break;
 				}
@@ -320,7 +308,7 @@ public class GenericHistoryTableProvider {
 	 */
 	private SelectionListener getColumnListener(final TableViewer tableViewer) {
 		/**
-	 	 * This class handles selections of the column headers.
+		 * This class handles selections of the column headers.
 		 * Selection of the column header will cause resorting
 		 * of the shown tasks using that column's sorter.
 		 * Repeated selection of the header will toggle

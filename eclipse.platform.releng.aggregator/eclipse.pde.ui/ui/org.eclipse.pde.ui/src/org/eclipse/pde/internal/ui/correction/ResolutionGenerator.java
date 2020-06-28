@@ -21,8 +21,8 @@ import java.util.Arrays;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.pde.internal.core.ICoreConstants;
-import org.eclipse.pde.internal.core.TargetPlatformHelper;
+import org.eclipse.pde.core.plugin.IPluginModelBase;
+import org.eclipse.pde.internal.core.*;
 import org.eclipse.pde.internal.core.builders.PDEMarkerFactory;
 import org.eclipse.pde.internal.ui.PDEUIMessages;
 import org.eclipse.ui.*;
@@ -80,7 +80,11 @@ public class ResolutionGenerator implements IMarkerResolutionGenerator2 {
 			case PDEMarkerFactory.M_MISMATCHED_EXEC_ENV :
 				return new IMarkerResolution[] {new UpdateClasspathResolution(AbstractPDEMarkerResolution.RENAME_TYPE, marker)};
 			case PDEMarkerFactory.M_UNKNOW_EXEC_ENV :
-				return new IMarkerResolution[] {new RemoveUnknownExecEnvironments(AbstractPDEMarkerResolution.REMOVE_TYPE,marker)};
+				return new IMarkerResolution[] {
+						new RemoveUnknownExecEnvironments(AbstractPDEMarkerResolution.REMOVE_TYPE, marker) };
+			case PDEMarkerFactory.M_EXEC_ENV_TOO_LOW:
+				return new IMarkerResolution[] {
+						new ReplaceExecEnvironment(AbstractPDEMarkerResolution.RENAME_TYPE, marker) };
 			case PDEMarkerFactory.M_DEPRECATED_IMPORT_SERVICE :
 				return new IMarkerResolution[] {new RemoveImportExportServicesResolution(AbstractPDEMarkerResolution.REMOVE_TYPE, ICoreConstants.IMPORT_SERVICE, marker)};
 			case PDEMarkerFactory.M_DEPRECATED_EXPORT_SERVICE :
@@ -88,7 +92,7 @@ public class ResolutionGenerator implements IMarkerResolutionGenerator2 {
 			case PDEMarkerFactory.M_UNECESSARY_DEP :
 				return new IMarkerResolution[] {new RemoveRequireBundleResolution(AbstractPDEMarkerResolution.REMOVE_TYPE, marker.getAttribute("bundleId", null), marker)}; //$NON-NLS-1$
 			case PDEMarkerFactory.M_MISSING_EXPORT_PKGS :
-				return new IMarkerResolution[] { new AddExportPackageMarkerResolution(marker,AbstractPDEMarkerResolution.CREATE_TYPE, marker.getAttribute("packages", null)) }; //$NON-NLS-1$
+				return new IMarkerResolution[] { new AddExportPackageMarkerResolution(marker,AbstractPDEMarkerResolution.CREATE_TYPE, marker.getAttribute("packages", null)), new AddExportPackageInternalDirectiveMarkerResolution(marker,AbstractPDEMarkerResolution.CREATE_TYPE, marker.getAttribute("packages", null))  }; //$NON-NLS-1$//$NON-NLS-2$
 			case PDEMarkerFactory.B_REMOVE_SLASH_FILE_ENTRY :
 				return new IMarkerResolution[] {new RemoveSeperatorBuildEntryResolution(AbstractPDEMarkerResolution.RENAME_TYPE, marker)};
 			case PDEMarkerFactory.B_APPEND_SLASH_FOLDER_ENTRY :
@@ -216,8 +220,16 @@ public class ResolutionGenerator implements IMarkerResolutionGenerator2 {
 
 	private IMarkerResolution[] getUnresolvedBundle(IMarker marker) {
 		String bundleId = marker.getAttribute("bundleId", (String) null); //$NON-NLS-1$
-		if (bundleId == null)
+		if (bundleId == null){
+			PDEState pdeState = TargetPlatformHelper.getPDEState();
+			if (pdeState != null) {
+				IPluginModelBase[] targetModels = pdeState.getTargetModels();
+				if (targetModels != null && targetModels.length == 0) {
+					return new IMarkerResolution[] { new ConfigureTargetPlatformResolution()};
+				}
+			}
 			return NO_RESOLUTIONS;
+		}
 
 		boolean optionalBundle = marker.getAttribute("optional", false); //$NON-NLS-1$
 		if (optionalBundle) {

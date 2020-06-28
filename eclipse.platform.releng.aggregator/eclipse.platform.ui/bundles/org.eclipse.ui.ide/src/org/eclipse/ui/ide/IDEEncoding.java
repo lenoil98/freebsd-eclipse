@@ -17,7 +17,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -43,7 +42,7 @@ import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 public final class IDEEncoding {
 
 	private IDEEncoding () {
-        // prevent instantiation
+		// prevent instantiation
 	}
 
 	//The preference for the user entered encodings.
@@ -84,7 +83,7 @@ public final class IDEEncoding {
 			encodings.add(enc);
 		}
 
-		Collections.sort(encodings);
+		encodings.sort(null);
 		return encodings;
 	}
 
@@ -106,7 +105,7 @@ public final class IDEEncoding {
 	/**
 	 * Add value to the list of workbench encodings.
 	 *
-	 * @param value
+	 * @param value encoding to add
 	 */
 	public static void addIDEEncoding(String value) {
 

@@ -157,8 +157,8 @@ public class ExclusionInclusionDialog extends StatusDialog {
 		IPath[] pattern= (IPath[]) entryToEdit.getAttribute(key);
 
 		ArrayList<String> elements= new ArrayList<>(pattern.length);
-		for (int i= 0; i < pattern.length; i++) {
-			elements.add(pattern[i].toString());
+		for (IPath p : pattern) {
+			elements.add(p.toString());
 		}
 		patternList.setElements(elements);
 		patternList.selectFirstElement();
@@ -199,12 +199,18 @@ public class ExclusionInclusionDialog extends StatusDialog {
 	}
 
 	protected void doCustomButtonPressed(ListDialogField<String> field, int index) {
-		if (index == IDX_ADD) {
+		switch (index) {
+		case IDX_ADD:
 			addEntry(field);
-		} else if (index == IDX_EDIT) {
+			break;
+		case IDX_EDIT:
 			editEntry(field);
-		} else if (index == IDX_ADD_MULTIPLE) {
+			break;
+		case IDX_ADD_MULTIPLE:
 			addMultipleEntries(field);
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -330,8 +336,8 @@ public class ExclusionInclusionDialog extends StatusDialog {
 
 		IPath[] res= ExclusionInclusionEntryDialog.chooseExclusionPattern(getShell(), fCurrSourceFolder, title, message, null, true);
 		if (res != null) {
-			for (int i= 0; i < res.length; i++) {
-				field.addElement(res[i].toString());
+			for (IPath p : res) {
+				field.addElement(p.toString());
 			}
 		}
 	}

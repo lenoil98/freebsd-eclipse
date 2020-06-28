@@ -13,6 +13,9 @@
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.util;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
@@ -26,8 +29,6 @@ import org.eclipse.jdt.core.manipulation.CodeGeneration;
 
 import org.eclipse.jdt.internal.core.manipulation.StubUtility;
 
-import org.eclipse.jdt.ui.PreferenceConstants;
-
 import org.eclipse.jdt.internal.ui.preferences.formatter.FormatterProfileManager;
 
 public class InfoFilesUtil {
@@ -36,19 +37,21 @@ public class InfoFilesUtil {
 	 * Creates a compilation unit in the given package fragment with the specified file name. The
 	 * compilation unit is formatted and contains the given contents with file and type comments
 	 * prepended to it.
-	 * 
+	 *
 	 * @param fileName the name of the compilation unit
 	 * @param fileContent the contents of the compilation unit
 	 * @param pack the package fragment to create the compilation unit in
+	 * @param addComments whether to add comments
 	 * @param monitor the progress monitor
 	 * @throws CoreException when there is a problem while creating the compilation unit
 	 */
-	public static void createInfoJavaFile(String fileName, String fileContent, IPackageFragment pack, IProgressMonitor monitor) throws CoreException {
+	public static void createInfoJavaFile(String fileName, String fileContent, IPackageFragment pack, boolean addComments, IProgressMonitor monitor) throws CoreException {
 		String lineDelimiter= StubUtility.getLineDelimiterUsed(pack.getJavaProject());
 		StringBuilder content= new StringBuilder();
-		boolean addComments= Boolean.valueOf(PreferenceConstants.getPreference(PreferenceConstants.CODEGEN_ADD_COMMENTS, pack.getJavaProject())).booleanValue();
 		String fileComment= addComments ? getFileComment(fileName, pack, lineDelimiter) : null;
-		String typeComment= addComments ? getTypeComment(fileName, pack, lineDelimiter) : null;
+		String typeComment= addComments ?
+				(JavaModelUtil.MODULE_INFO_JAVA.equals(fileName) ? getModuleComment(fileName, pack, fileContent, lineDelimiter) : getTypeComment(fileName, pack, lineDelimiter))
+				: null;
 		if (fileComment != null) {
 			content.append(fileComment);
 			content.append(lineDelimiter);
@@ -101,6 +104,20 @@ public class InfoFilesUtil {
 		ICompilationUnit cu= pack.getCompilationUnit(fileName);
 		String typeName= fileName.substring(0, fileName.length() - JavaModelUtil.DEFAULT_CU_SUFFIX.length());
 		return CodeGeneration.getTypeComment(cu, typeName, lineDelimiterUsed);
+	}
+
+	public static String getModuleComment(String fileName, IPackageFragment pack, String fileContent, String lineDelimiterUsed) throws CoreException {
+		ICompilationUnit cu= pack.getCompilationUnit(fileName);
+		Pattern p= Pattern.compile("\\s*module\\s*(\\w*).*"); //$NON-NLS-1$
+		Matcher m= p.matcher(fileContent);
+		String moduleName= ""; //$NON-NLS-1$
+		if (m.matches()) {
+			moduleName= m.group(1);
+		}
+		return CodeGeneration.getModuleComment(cu, moduleName, new String[0], new String[0], lineDelimiterUsed);
+	}
+
+	private InfoFilesUtil() {
 	}
 
 }

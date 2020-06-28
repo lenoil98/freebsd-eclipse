@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,7 @@
  *     Craig Foote (Footeware.ca) - https://bugs.eclipse.org/325743
  *     Simon Scholz <simon.scholz@vogella.com> - Bug 460405
  *     Cornel Izbasa <cizbasa@info.uvt.ro> - Bug 417447
+ *     Rolf Theunissen <rolf.theunissen@gmail.com> - Bug 23862
  *******************************************************************************/
 package org.eclipse.ui.views.properties;
 
@@ -27,14 +28,14 @@ import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.IRegistryEventListener;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.RegistryFactory;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
-import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IEditorPart;
@@ -62,6 +63,7 @@ import org.eclipse.ui.part.IPage;
 import org.eclipse.ui.part.IPageBookViewPage;
 import org.eclipse.ui.part.IShowInSource;
 import org.eclipse.ui.part.IShowInTarget;
+import org.eclipse.ui.part.MessagePage;
 import org.eclipse.ui.part.PageBook;
 import org.eclipse.ui.part.PageBookView;
 import org.eclipse.ui.part.ShowInContext;
@@ -105,29 +107,34 @@ import org.eclipse.ui.part.ShowInContext;
  */
 public class PropertySheet extends PageBookView
 		implements ISelectionListener, IShowInTarget, IShowInSource, IRegistryEventListener, ISecondarySaveableSource {
-    /**
-     * No longer used but preserved to avoid api change
-     */
-    public static final String HELP_CONTEXT_PROPERTY_SHEET_VIEW = IPropertiesHelpContextIds.PROPERTY_SHEET_VIEW;
+	/**
+	 * No longer used but preserved to avoid api change
+	 */
+	public static final String HELP_CONTEXT_PROPERTY_SHEET_VIEW = IPropertiesHelpContextIds.PROPERTY_SHEET_VIEW;
 
-    /**
-     * Extension point used to modify behavior of the view
-     */
-    private static final String EXT_POINT = "org.eclipse.ui.propertiesView"; //$NON-NLS-1$
+	/**
+	 * Extension point used to modify behavior of the view
+	 */
+	private static final String EXT_POINT = "org.eclipse.ui.propertiesView"; //$NON-NLS-1$
 
-    /**
-     * The initial selection when the property sheet opens
-     */
-    private ISelection bootstrapSelection;
+	/**
+	 * Message to show on the default page.
+	 */
+	private String defaultText = PropertiesMessages.PropertyViewer_noProperties;
 
-    /**
-     * The current selection of the property sheet
-     */
-    private ISelection currentSelection;
+	/**
+	 * The initial selection when the property sheet opens
+	 */
+	private ISelection bootstrapSelection;
 
-    /**
-     * The current part for which this property sheets is active
-     */
+	/**
+	 * The current selection of the property sheet
+	 */
+	private ISelection currentSelection;
+
+	/**
+	 * The current part for which this property sheets is active
+	 */
 	private IWorkbenchPart currentPart;
 
 	/**
@@ -141,7 +148,7 @@ public class PropertySheet extends PageBookView
 	private HashSet<String> ignoredViews;
 
 	/** the view was hidden */
-	private boolean wasHidden;
+	private boolean wasHidden = true;
 
 	/**
 	 * the selection update which was made during the view was hidden need to be
@@ -150,6 +157,9 @@ public class PropertySheet extends PageBookView
 	private boolean selectionUpdatePending;
 
 	private final SaveablesTracker saveablesTracker;
+
+	private boolean needsUpdate = false;
+
 
 	/**
 	 * Propagates state changes of the saveable part tracked by this properties
@@ -192,40 +202,39 @@ public class PropertySheet extends PageBookView
 
 	}
 
-    /**
-     * Creates a property sheet view.
-     */
-    public PropertySheet() {
-        super();
-        pinPropertySheetAction = new PinPropertySheetAction();
-        RegistryFactory.getRegistry().addListener(this, EXT_POINT);
+	/**
+	 * Creates a property sheet view.
+	 */
+	public PropertySheet() {
+		super();
+		pinPropertySheetAction = new PinPropertySheetAction();
+		RegistryFactory.getRegistry().addListener(this, EXT_POINT);
 		saveablesTracker = new SaveablesTracker();
-    }
+	}
 
-    @Override
+	@Override
 	protected IPage createDefaultPage(PageBook book) {
-		IPageBookViewPage page = (IPageBookViewPage) Adapters.adapt(this, IPropertySheetPage.class);
-        if(page == null) {
-        	page = new PropertySheetPage();
-        }
-        initPage(page);
-        page.createControl(book);
-        return page;
-    }
+		MessagePage page = new MessagePage();
+		initPage(page);
+		page.createControl(book);
+		page.setMessage(defaultText);
+		return page;
+	}
 
 	/**
-     * The <code>PropertySheet</code> implementation of this <code>IWorkbenchPart</code>
-     * method creates a <code>PageBook</code> control with its default page showing.
-     */
-    @Override
+	 * The <code>PropertySheet</code> implementation of this
+	 * <code>IWorkbenchPart</code> method creates a <code>PageBook</code> control
+	 * with its default page showing.
+	 */
+	@Override
 	public void createPartControl(Composite parent) {
-        super.createPartControl(parent);
+		super.createPartControl(parent);
 
-        pinPropertySheetAction.addPropertyChangeListener(new IPropertyChangeListener(){
-			@Override
-			public void propertyChange(PropertyChangeEvent event) {
-				if (IAction.CHECKED.equals(event.getProperty())) {
-					updateContentDescription();
+		pinPropertySheetAction.addPropertyChangeListener(event -> {
+			if (IAction.CHECKED.equals(event.getProperty())) {
+				updateContentDescription();
+				if (!isPinned()) {
+					selectionChanged(currentPart, currentSelection);
 				}
 			}
 		});
@@ -242,58 +251,94 @@ public class PropertySheet extends PageBookView
 		if (saveables instanceof SaveablesList) {
 			((SaveablesList) saveables).addModelLifecycleListener(saveablesTracker);
 		}
-        getSite().getPage().getWorkbenchWindow().getWorkbench().getHelpSystem()
+		getSite().getPage().getWorkbenchWindow().getWorkbench().getHelpSystem()
 				.setHelp(getPageBook(),
 						IPropertiesHelpContextIds.PROPERTY_SHEET_VIEW);
-    }
+	}
 
-    @Override
+	@Override
 	public void dispose() {
 		IWorkbenchPartSite site = getSite();
 		IWorkbenchPage page = site.getPage();
 		ISaveablesLifecycleListener saveables = site.getService(ISaveablesLifecycleListener.class);
 
-        // remove ourselves as a selection and registry listener
+		// remove ourselves as a selection and registry listener
 		page.removePostSelectionListener(this);
-        RegistryFactory.getRegistry().removeListener(this);
+		RegistryFactory.getRegistry().removeListener(this);
 		if (saveables instanceof SaveablesList) {
 			((SaveablesList) saveables).removeModelLifecycleListener(saveablesTracker);
 		}
-        currentPart = null;
-        currentSelection = null;
-        pinPropertySheetAction = null;
-        super.dispose();
-    }
+		currentPart = null;
+		currentSelection = null;
+		pinPropertySheetAction = null;
+		super.dispose();
+	}
 
-    @Override
+	@Override
 	protected PageRec doCreatePage(IWorkbenchPart part) {
-        // Get a custom property sheet page but not if the part is also a
+		// Get a custom property sheet page but not if the part is also a
 		// PropertySheet. In this case the child property sheet would
 		// accidentally reuse the parent's property sheet page.
-    	if(part instanceof PropertySheet) {
-    		return null;
-    	}
+		if(part instanceof PropertySheet) {
+			return null;
+		}
 		IPropertySheetPage page = Adapters.adapt(part, IPropertySheetPage.class);
-        if (page != null) {
-            if (page instanceof IPageBookViewPage) {
+		if (page != null) {
+			if (page instanceof IPageBookViewPage) {
 				initPage((IPageBookViewPage) page);
 			}
-            page.createControl(getPageBook());
-            return new PageRec(part, page);
-        }
+			page.createControl(getPageBook());
+			return new PageRec(part, page);
+		}
 
-        // Use the default page
-        return null;
-    }
+		// IContributedContentsView without contributed view, show default page
+		IContributedContentsView view = Adapters.adapt(part, IContributedContentsView.class);
+		if (view != null && view.getContributingPart() == null) {
+			return null;
+		}
 
-    @Override
+		// Only if a part is a selection provider, it could have properties for the
+		// default PropertySheetPage. Every part gets its own PropertySheetPage
+		ISelectionProvider provider = part.getSite().getSelectionProvider();
+		if (provider != null) {
+			IPage dPage = createPropertySheetPage(getPageBook());
+			return new PageRec(part, dPage);
+		}
+
+		// No properties to be shown, use the default page
+		return null;
+	}
+
+	/**
+	 * Creates and returns a default properties page for this view. This page is
+	 * used when a part does not provide a IPropertySheetPage
+	 *
+	 * @param book the pagebook control
+	 * @return A default properties page
+	 *
+	 * @since 3.10
+	 */
+	protected IPage createPropertySheetPage(PageBook book) {
+		// First consult platform adaptors for backward compatibility and testing code.
+		IPropertySheetPage page = Platform.getAdapterManager().getAdapter(this, IPropertySheetPage.class);
+		if (page == null) {
+			page = new PropertySheetPage();
+		}
+		if (page instanceof IPageBookViewPage) {
+			initPage((IPageBookViewPage) page);
+		}
+		page.createControl(book);
+		return page;
+	}
+
+	@Override
 	protected void doDestroyPage(IWorkbenchPart part, PageRec rec) {
-        IPropertySheetPage page = (IPropertySheetPage) rec.page;
-        page.dispose();
-        rec.dispose();
-    }
+		IPropertySheetPage page = (IPropertySheetPage) rec.page;
+		page.dispose();
+		rec.dispose();
+	}
 
-    @Override
+	@Override
 	protected IWorkbenchPart getBootstrapPart() {
 		IWorkbenchPage page = getSite().getPage();
 		if (page == null) {
@@ -335,13 +380,13 @@ public class PropertySheet extends PageBookView
 			}
 		}
 		return null;
-    }
+	}
 
-    @Override
+	@Override
 	public void init(IViewSite site) throws PartInitException {
-   		site.getPage().addPostSelectionListener(this);
-   		super.init(site);
-    }
+			site.getPage().addPostSelectionListener(this);
+			super.init(site);
+	}
 
 	@Override
 	public void saveState(IMemento memento) {
@@ -357,20 +402,20 @@ public class PropertySheet extends PageBookView
 		}
 	}
 
-    @Override
+	@Override
 	protected boolean isImportant(IWorkbenchPart part) {
 		// Don't interfere with other property views
 		if (part == null) {
 			return false;
 		}
-    	IWorkbenchPartSite site = part.getSite();
+		IWorkbenchPartSite site = part.getSite();
 		if (site == null) {
 			return false;
 		}
 		String partID = site.getId();
 		boolean isPropertyView = getSite().getId().equals(partID);
 		return !isPinned() && !isPropertyView && !isViewIgnored(partID);
-    }
+	}
 
 	@Override
 	public void partClosed(IWorkbenchPart part) {
@@ -385,32 +430,33 @@ public class PropertySheet extends PageBookView
 
 	@Override
 	protected void partVisible(IWorkbenchPart part) {
-	    super.partVisible(part);
-		if (wasHidden && part == this) {
+		super.partVisible(part);
+		if (part == this) {
+			wasHidden = false;
 			if (selectionUpdatePending) {
 				showSelectionAndDescription();
 			}
 		}
 	}
 
-    @Override
+	@Override
 	protected void partHidden(IWorkbenchPart part) {
 		if (part == this) {
 			wasHidden = true;
 		}
-    	// Explicitly ignore parts becoming hidden as this
-    	// can cause issues when the Property View is maximized
-    	// See bug 325743 for more details
-    }
+		// Explicitly ignore parts becoming hidden as this
+		// can cause issues when the Property View is maximized
+		// See bug 325743 for more details
+	}
 
 	/**
-     * The <code>PropertySheet</code> implementation of this <code>IPartListener</code>
-     * method first sees if the active part is an <code>IContributedContentsView</code>
-     * adapter and if so, asks it for its contributing part.
-     */
-    @Override
+	 * The <code>PropertySheet</code> implementation of this <code>IPartListener</code>
+	 * method first sees if the active part is an <code>IContributedContentsView</code>
+	 * adapter and if so, asks it for its contributing part.
+	 */
+	@Override
 	public void partActivated(IWorkbenchPart part) {
-		if (wasHidden && part == this) {
+		if (part == this) {
 			wasHidden = false;
 			super.partActivated(part);
 			if (selectionUpdatePending) {
@@ -419,12 +465,19 @@ public class PropertySheet extends PageBookView
 			return;
 		}
 
+		if (!isImportant(part)) {
+			return;
+		}
+
 		IContributedContentsView view = Adapters.adapt(part, IContributedContentsView.class);
 		IWorkbenchPart source = null;
 		if (view != null) {
 			source = view.getContributingPart();
 		}
-		if (source == null) {
+
+		if (source != null && !isImportant(source)) {
+			return;
+		} else if (source == null) {
 			source = part;
 		}
 
@@ -445,48 +498,51 @@ public class PropertySheet extends PageBookView
 
 		super.partActivated(source);
 
-        if(isImportant(part)) {
-        	currentPart = part;
-        	// reset the selection (to allow selectionChanged() accept part change for empty selections)
-        	currentSelection = null;
-        }
+		if (currentPart == null && bootstrapSelection != null) {
+			// When the view is first opened, pass the selection to the page
+			currentSelection = bootstrapSelection;
+			bootstrapSelection = null;
+			selectionUpdatePending = true;
+		} else {
+			// reset the selection (to allow selectionChanged() accept part change for empty
+			// selections)
+			currentSelection = null;
+		}
+		currentPart = part;
+	}
 
-        // When the view is first opened, pass the selection to the page
-        if (bootstrapSelection != null) {
-            IPropertySheetPage page = (IPropertySheetPage) getCurrentPage();
-            if (page != null) {
-				page.selectionChanged(part, bootstrapSelection);
-			}
-            bootstrapSelection = null;
-        }
-    }
-
-    @Override
-    public void selectionChanged(IWorkbenchPart part, ISelection sel) {
+	@Override
+	public void selectionChanged(IWorkbenchPart part, ISelection sel) {
 		// we ignore selection if we are hidden OR selection is coming from
 		// another source as the last one
 		if (part == null || !part.equals(currentPart)) {
 			return;
 		}
 
-		// we ignore null selection, or if we are pinned, or our own selection
-		// or same selection
-		if (sel == null || !isImportant(part) || sel.equals(currentSelection)) {
+		if (isPinned()) {
+			currentPart = part;
+			currentSelection = sel;
+			needsUpdate = true;
 			return;
 		}
 
-        currentPart = part;
-        currentSelection = sel;
+		// we ignore null selection, or if we are pinned, or our own selection
+		// or same selection
+		if (sel == null || isPinned() || (!needsUpdate && sel.equals(currentSelection))) {
+			return;
+		}
 
-		boolean visible = getSite() != null && getSite().getPage().isPartVisible(this);
-		if (!visible) {
+		currentSelection = sel;
+		needsUpdate = false;
+
+		if (wasHidden) {
 			selectionUpdatePending = true;
 			return;
 		}
 
-        // pass the selection to the page
+		// pass the selection to the page
 		showSelectionAndDescription();
-    }
+	}
 
 	private void updateContentDescription() {
 		if (isPinned() && currentPart != null) {
@@ -503,9 +559,9 @@ public class PropertySheet extends PageBookView
 		if (currentPart == null || currentSelection == null) {
 			return;
 		}
-		IPropertySheetPage page = (IPropertySheetPage) getCurrentPage();
-		if (page != null) {
-			page.selectionChanged(currentPart, currentSelection);
+		IPage page = getCurrentPage();
+		if (page instanceof ISelectionListener) {
+			((ISelectionListener) page).selectionChanged(currentPart, currentSelection);
 		}
 		updateContentDescription();
 	}
@@ -634,8 +690,8 @@ public class PropertySheet extends PageBookView
 	private HashSet<String> getIgnoredViews() {
 		if (ignoredViews == null) {
 			ignoredViews = new HashSet<>();
-	        IExtensionRegistry registry = RegistryFactory.getRegistry();
-	        IExtensionPoint ep = registry.getExtensionPoint(EXT_POINT);
+			IExtensionRegistry registry = RegistryFactory.getRegistry();
+			IExtensionPoint ep = registry.getExtensionPoint(EXT_POINT);
 			if (ep != null) {
 				IExtension[] extensions = ep.getExtensions();
 				for (IExtension extension : extensions) {

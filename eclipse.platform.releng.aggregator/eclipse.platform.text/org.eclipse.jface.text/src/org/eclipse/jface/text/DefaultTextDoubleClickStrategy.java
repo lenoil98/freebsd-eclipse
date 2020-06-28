@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,6 +18,7 @@ import java.text.CharacterIterator;
 import java.util.Locale;
 
 import com.ibm.icu.text.BreakIterator;
+
 
 
 /**
@@ -75,8 +76,8 @@ public class DefaultTextDoubleClickStrategy implements ITextDoubleClickStrategy 
 
 		@Override
 		public char last() {
-	        fIndex= fOffset < fEndOffset ? fEndOffset -1 : fEndOffset;
-        	return current();
+			fIndex= fOffset < fEndOffset ? fEndOffset -1 : fEndOffset;
+			return current();
 		}
 
 		@Override

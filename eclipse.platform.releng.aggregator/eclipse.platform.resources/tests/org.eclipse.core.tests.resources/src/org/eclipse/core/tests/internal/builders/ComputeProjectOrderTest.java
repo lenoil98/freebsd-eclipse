@@ -18,22 +18,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.*;
 import java.util.function.Predicate;
-import junit.framework.JUnit4TestAdapter;
 import org.eclipse.core.internal.resources.ComputeProjectOrder;
 import org.eclipse.core.internal.resources.ComputeProjectOrder.Digraph;
 import org.eclipse.core.internal.resources.ComputeProjectOrder.Digraph.Edge;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-/**
- *
- */
-@RunWith(JUnit4.class)
 public class ComputeProjectOrderTest {
-	public static junit.framework.Test suite() {
-		return new JUnit4TestAdapter(ComputeProjectOrderTest.class);
-	}
 
 	@Test
 	public void testComputeVertexOrderDuration() {
@@ -200,15 +190,13 @@ public class ComputeProjectOrderTest {
 			assertEquals(expectedEdges, filtered.getEdges());
 		}
 		// check whole cycle can be removed
-		{
-			Digraph<String> filtered = ComputeProjectOrder.buildFilteredDigraph(digraph,
-					node -> node.equals(b) || node.equals(c) || node.equals(d), String.class);
-			Set<Object> expectedVertexes = new HashSet<>(4, (float) 1.);
-			expectedVertexes.add(a);
-			expectedVertexes.add(e);
-			assertEquals(expectedVertexes, filtered.vertexMap.keySet());
-			assertEquals(Collections.singleton(new Edge<>(a, e)), filtered.getEdges());
-		}
+		Digraph<String> filtered = ComputeProjectOrder.buildFilteredDigraph(digraph,
+				node -> node.equals(b) || node.equals(c) || node.equals(d), String.class);
+		Set<Object> expectedVertexes = new HashSet<>(4, (float) 1.);
+		expectedVertexes.add(a);
+		expectedVertexes.add(e);
+		assertEquals(expectedVertexes, filtered.vertexMap.keySet());
+		assertEquals(Collections.singleton(new Edge<>(a, e)), filtered.getEdges());
 	}
 
 	@Test
@@ -237,18 +225,16 @@ public class ComputeProjectOrderTest {
 			assertEquals(Collections.singleton(new Edge<>(a, d)), filtered.getEdges());
 		}
 		// check removing another node keeps self reference
-		{
-			Digraph<String> filtered = ComputeProjectOrder.buildFilteredDigraph(digraph, d::equals, String.class);
-			Set<String> expectedVertexes = new HashSet<>(3, (float) 1.);
-			expectedVertexes.add(a);
-			expectedVertexes.add(b);
-			expectedVertexes.add(c);
-			assertEquals(expectedVertexes, filtered.vertexMap.keySet());
-			Set<Edge<String>> expectedEdges = new HashSet<>(3, (float) 1.);
-			expectedEdges.add(new Edge<>(a, b));
-			expectedEdges.add(new Edge<>(b, c));
-			expectedEdges.add(new Edge<>(c, b));
-			assertEquals(expectedEdges, filtered.getEdges());
-		}
+		Digraph<String> filtered = ComputeProjectOrder.buildFilteredDigraph(digraph, d::equals, String.class);
+		Set<String> expectedVertexes = new HashSet<>(3, (float) 1.);
+		expectedVertexes.add(a);
+		expectedVertexes.add(b);
+		expectedVertexes.add(c);
+		assertEquals(expectedVertexes, filtered.vertexMap.keySet());
+		Set<Edge<String>> expectedEdges = new HashSet<>(3, (float) 1.);
+		expectedEdges.add(new Edge<>(a, b));
+		expectedEdges.add(new Edge<>(b, c));
+		expectedEdges.add(new Edge<>(c, b));
+		assertEquals(expectedEdges, filtered.getEdges());
 	}
 }

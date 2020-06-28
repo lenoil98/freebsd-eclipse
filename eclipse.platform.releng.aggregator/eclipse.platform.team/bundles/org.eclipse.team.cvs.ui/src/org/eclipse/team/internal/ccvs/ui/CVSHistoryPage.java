@@ -18,6 +18,8 @@ package org.eclipse.team.internal.ccvs.ui;
 
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.eclipse.compare.*;
@@ -76,10 +78,6 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.part.IPageSite;
 import org.eclipse.ui.progress.IProgressConstants;
 import org.eclipse.ui.texteditor.ITextEditorActionConstants;
-
-import com.ibm.icu.text.DateFormat;
-import com.ibm.icu.text.SimpleDateFormat;
-import com.ibm.icu.util.Calendar;
 
 public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryCompareAdapter {
 	
@@ -305,30 +303,30 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 	}
 
 	private TextViewer createText(SashForm parent) {
-    SourceViewer result = new SourceViewer(parent, null, null, true, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI | SWT.READ_ONLY);
-    result.getTextWidget().setIndent(2);
-    result.configure(new TextSourceViewerConfiguration(EditorsUI.getPreferenceStore()) {
-      @Override
+	SourceViewer result = new SourceViewer(parent, null, null, true, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI | SWT.READ_ONLY);
+	result.getTextWidget().setIndent(2);
+	result.configure(new TextSourceViewerConfiguration(EditorsUI.getPreferenceStore()) {
+	@Override
 	protected Map getHyperlinkDetectorTargets(ISourceViewer sourceViewer) {
-        return Collections.singletonMap("org.eclipse.ui.DefaultTextEditor", //$NON-NLS-1$
-            new IAdaptable() {
-              @Override
+		return Collections.singletonMap("org.eclipse.ui.DefaultTextEditor", //$NON-NLS-1$
+			new IAdaptable() {
+			@Override
 			public <T> T getAdapter(Class<T> adapter) {
-                if(adapter==IFile.class && getInput() instanceof IFile) {
-                  return adapter.cast(getInput());
-                } else if(adapter==IFileHistory.class && getInput() instanceof IFileHistory) {
-                  return adapter.cast(getInput());
-                }
-                return Platform.getAdapterManager().getAdapter(CVSHistoryPage.this, adapter);
-              }
-            });
-      }
-    });
+				if(adapter==IFile.class && getInput() instanceof IFile) {
+					return adapter.cast(getInput());
+				} else if(adapter==IFileHistory.class && getInput() instanceof IFileHistory) {
+					return adapter.cast(getInput());
+				}
+				return Platform.getAdapterManager().getAdapter(CVSHistoryPage.this, adapter);
+			}
+			});
+	}
+	});
 
-    result.addSelectionChangedListener(event -> copyAction.update());
-    result.setTextDoubleClickStrategy(
-                new DefaultTextDoubleClickStrategy(),
-                IDocument.DEFAULT_CONTENT_TYPE);
+	result.addSelectionChangedListener(event -> copyAction.update());
+	result.setTextDoubleClickStrategy(
+				new DefaultTextDoubleClickStrategy(),
+				IDocument.DEFAULT_CONTENT_TYPE);
 		result.activatePlugins();
 		return result;
 	}
@@ -380,10 +378,10 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 				CVSTag tag1 = (CVSTag) e1;
 				CVSTag tag2 = (CVSTag) e2;
 				int type1 = tag1.getType();
-				 int type2 = tag2.getType();
-				 if (type1 != type2) {
-				 return type2 - type1;
-				 }
+				int type2 = tag2.getType();
+				if (type1 != type2) {
+					return type2 - type1;
+				}
 				if (sortTagsAscending)
 					return super.compare(viewer, tag1, tag2);
 				else
@@ -591,7 +589,7 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 				monitor.done();
 			}
 		});
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(getContentsAction, IHelpContextIds.GET_FILE_CONTENTS_ACTION);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(getContentsAction, IHelpContextIds.GET_FILE_CONTENTS_ACTION);
 
 		getRevisionAction = getContextMenuAction(CVSUIMessages.HistoryView_getRevisionAction, true /* needs progress */, monitor -> {
 			ICVSRemoteFile remoteFile = (ICVSRemoteFile) CVSWorkspaceRoot.getRemoteResourceFor(((CVSFileRevision) currentSelection).getCVSRemoteFile());
@@ -616,7 +614,7 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 				// Cancelled by user
 			}
 		});
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(getRevisionAction, IHelpContextIds.GET_FILE_REVISION_ACTION);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(getRevisionAction, IHelpContextIds.GET_FILE_REVISION_ACTION);
 
 		// Override MoveRemoteTagAction to work for log entries
 		final IActionDelegate tagActionDelegate = new MoveRemoteTagAction() {
@@ -651,31 +649,31 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 				}
 				return resources;
 			}
-            /*
-             * Override the creation of the tag operation in order to support
-             * the refresh of the view after the tag operation completes
-             */
-            @Override
+			/*
+			 * Override the creation of the tag operation in order to support
+			 * the refresh of the view after the tag operation completes
+			 */
+			@Override
 			protected ITagOperation createTagOperation() {
-                return new TagInRepositoryOperation(getTargetPart(), getSelectedRemoteResources()) {
-                    @Override
+				return new TagInRepositoryOperation(getTargetPart(), getSelectedRemoteResources()) {
+					@Override
 					public void execute(IProgressMonitor monitor) throws CVSException, InterruptedException {
-                        super.execute(monitor);
-                        Display.getDefault().asyncExec(() -> {
-						    if( ! wasCancelled()) {
-						        refresh();
-						    }
+						super.execute(monitor);
+						Display.getDefault().asyncExec(() -> {
+							if( ! wasCancelled()) {
+								refresh();
+							}
 						});
-                    };
-                };
-            }
+					}
+				};
+			}
 		};
 		tagWithExistingAction = getContextMenuAction(CVSUIMessages.HistoryView_tagWithExistingAction, false /* no progress */, monitor -> {
 			tagActionDelegate.selectionChanged(tagWithExistingAction, treeViewer.getSelection());
 			tagActionDelegate.run(tagWithExistingAction);
 		});
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(getRevisionAction, IHelpContextIds.TAG_WITH_EXISTING_ACTION);
-        
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(getRevisionAction, IHelpContextIds.TAG_WITH_EXISTING_ACTION);
+		
 		// Toggle text visible action
 		toggleTextAction = new Action(TeamUIMessages.GenericHistoryView_ShowCommentViewer) {
 			@Override
@@ -717,7 +715,7 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 				store.setValue(ICVSUIConstants.PREF_SHOW_SEARCH, toggleSearchAction.isChecked());
 				if (!toggleSearchAction.isChecked()){
 					if (searchFilter != null)
-					  treeViewer.removeFilter(searchFilter);
+						treeViewer.removeFilter(searchFilter);
 				} else {
 					searchField.setMessage(CVSUIMessages.CVSHistoryPage_EnterSearchTerm);
 					searchField.selectAll();
@@ -863,7 +861,7 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 			manager.add(new Separator("openCompare")); //$NON-NLS-1$
 		}
 		if (file != null &&
-		  !(file instanceof RemoteFile)) {
+			!(file instanceof RemoteFile)) {
 			// Add the "Add to Workspace" action if 1 revision is selected.
 			ISelection sel = treeViewer.getSelection();
 			if (!sel.isEmpty()) {
@@ -1154,9 +1152,9 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 	
 	private IFileRevision getFileRevision(String revision) {
 		if (entries != null) {
-			for (int i = 0; i < entries.length; i++) {
-				if (entries[i].getContentIdentifier().equals(revision)) {
-					return entries[i];
+			for (IFileRevision entry : entries) {
+				if (entry.getContentIdentifier().equals(revision)) {
+					return entry;
 				}
 			}
 		} else if (cvsFileHistory != null) {
@@ -1172,17 +1170,17 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 	public void selectLocalRevision(long timeStamp){
 		IFileRevision entry = null;
 		if (entries != null) {
-			for (int i = 0; i < entries.length; i++) {
-				if (entries[i].getTimestamp() == timeStamp) {
-					entry = entries[i];
+			for (IFileRevision e : entries) {
+				if (e.getTimestamp() == timeStamp) {
+					entry = e;
 					break;
 				}
 			}
 		}else if (cvsFileHistory != null) {
 			IFileRevision[] tempEntries = cvsFileHistory.getFileRevisions();
-			for (int i = 0; i < tempEntries.length; i++) {
-				if (tempEntries[i].getTimestamp() == timeStamp) {
-					entry = tempEntries[i];
+			for (IFileRevision tempEntry : tempEntries) {
+				if (tempEntry.getTimestamp() == timeStamp) {
+					entry = tempEntry;
 					break;
 				}
 			}
@@ -1414,10 +1412,10 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 		@Override
 		public void run() {
 			String searchString = searchField.getText();
-			if (searchString.equals("") || //$NON-NLS-1$
+			if (searchString.isEmpty() ||
 				searchString.equals(CVSUIMessages.CVSHistoryPage_EnterSearchTerm)) {
-				 if (searchFilter != null)
-					 treeViewer.removeFilter(searchFilter);
+				if (searchFilter != null)
+					treeViewer.removeFilter(searchFilter);
 				return;
 			}
 			
@@ -1627,16 +1625,16 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 		private void mapExpandedElements(Object[] expandedElements) {
 			//store the names of the currently expanded categories in a map
 			HashMap elementMap = new HashMap();
-			for (int i=0; i<expandedElements.length; i++){
-				elementMap.put(((DateHistoryCategory)expandedElements[i]).getName(), null);
+			for (Object expandedElement : expandedElements) {
+				elementMap.put(((DateHistoryCategory) expandedElement).getName(), null);
 			}
 			
 			//Go through the new categories and keep track of the previously expanded ones
 			ArrayList expandable = new ArrayList();
-			for (int i = 0; i<categories.length; i++){
+			for (AbstractHistoryCategory category : categories) {
 				//check to see if this category is currently expanded
-				if (elementMap.containsKey(categories[i].getName())){
-					expandable.add(categories[i]);
+				if (elementMap.containsKey(category.getName())) {
+					expandable.add(category);
 				}
 			}
 			
@@ -1673,7 +1671,7 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 			//Assume that some revisions have been found
 			boolean revisionsFound = true;
 			
-			if (finalCategories.size() == 0){
+			if (finalCategories.isEmpty()){
 				//no revisions found for the current mode, so add a message category
 				finalCategories.add(getErrorMessage());
 				revisionsFound = false;
@@ -1698,7 +1696,7 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 				message = CVSUIMessages.CVSHistoryPage_NoRevisions;
 				break;
 			}
-		 
+		
 			MessageHistoryCategory messageCategory = new MessageHistoryCategory(NLS.bind(CVSUIMessages.CVSHistoryPage_NoRevisionsForMode, new String[] { message }));
 			return messageCategory;
 		}
@@ -1740,16 +1738,13 @@ public class CVSHistoryPage extends HistoryPage implements IAdaptable, IHistoryC
 	}
 
 	private class HistoryResourceListener implements IResourceChangeListener {
-		/**
-		 * @see IResourceChangeListener#resourceChanged(IResourceChangeEvent)
-		 */
 		@Override
 		public void resourceChanged(IResourceChangeEvent event) {
 			IResourceDelta root = event.getDelta();
 			//Safety check for non-managed files that are added with the CVSHistoryPage
 			//in view
 			if (file == null ||	file.getIResource() == null)
-				 return;
+				return;
 			
 			IResourceDelta resourceDelta = root.findMember(((IFile)file.getIResource()).getFullPath());
 			if (resourceDelta != null){

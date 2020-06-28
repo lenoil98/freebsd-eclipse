@@ -12,7 +12,7 @@ package org.eclipse.urischeme.internal.registration;
 
 /**
  * Interface having all the static methods and also methods which perform
- * actions in the windows registry.<br />
+ * actions in the windows registry.<br>
  * This interface is predominantly used by WindowsRegistry.
  *
  */
@@ -31,10 +31,11 @@ public interface IRegistryWriter {
 	 *
 	 * @param scheme The uri scheme which should be handled by the application
 	 *               mentioned in the OS.
+	 * @param launcherPath The path to the launcher binary
 	 * @throws WinRegistryException if Windows Registry I/O error occurred
 	 *
 	 */
-	void addScheme(String scheme) throws WinRegistryException;
+	void addScheme(String scheme, String launcherPath) throws WinRegistryException;
 
 
 	/**

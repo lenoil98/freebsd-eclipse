@@ -1,13 +1,13 @@
 /*******************************************************************************
  * Copyright (c) 2007, 2017 IBM Corporation and others.
  *
- * This program and the accompanying materials 
+ * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -36,7 +36,7 @@ import org.eclipse.osgi.util.NLS;
 
 /**
  * An Ant task to call the p2 Director application.
- * 
+ *
  * @since 1.0
  */
 public class DirectorTask extends Task implements ILog {
@@ -142,7 +142,7 @@ public class DirectorTask extends Task implements ILog {
 		}
 		if (ius.size() > 0) {
 			result.add("-installIUs"); //$NON-NLS-1$
-			StringBuffer arg = new StringBuffer();
+			StringBuilder arg = new StringBuilder();
 			for (Iterator<IUDescription> iterator = ius.iterator(); iterator.hasNext();) {
 				IUDescription object = iterator.next();
 				arg.append(object.getVersionedId().toString());
@@ -274,8 +274,8 @@ public class DirectorTask extends Task implements ILog {
 		log(0, status);
 		if (status.isMultiStatus()) {
 			IStatus[] children = status.getChildren();
-			for (int i = 0; i < children.length; i++) {
-				log(1, children[i]);
+			for (IStatus child : children) {
+				log(1, child);
 			}
 		}
 	}

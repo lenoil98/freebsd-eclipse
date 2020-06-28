@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -61,7 +61,7 @@ public class ConsoleManager implements IConsoleManager {
 	/**
 	 * Console listeners
 	 */
-	private ListenerList<IConsoleListener> fListeners = null;
+	private ListenerList<IConsoleListener> fListeners = new ListenerList<>();
 
 	/**
 	 * List of registered consoles
@@ -107,8 +107,7 @@ public class ConsoleManager implements IConsoleManager {
 				}
 
 				IWorkbenchWindow[] workbenchWindows = PlatformUI.getWorkbench().getWorkbenchWindows();
-				for (int i = 0; i < workbenchWindows.length; i++) {
-					IWorkbenchWindow window = workbenchWindows[i];
+				for (IWorkbenchWindow window : workbenchWindows) {
 					if (window != null) {
 						IWorkbenchPage page = window.getActivePage();
 						if (page != null) {
@@ -168,9 +167,6 @@ public class ConsoleManager implements IConsoleManager {
 		 * @param update the type of change
 		 */
 		public void notify(IConsole[] consoles, int update) {
-			if (fListeners == null) {
-				return;
-			}
 			fChanged = consoles;
 			fType = update;
 			for (IConsoleListener iConsoleListener : fListeners) {
@@ -195,25 +191,19 @@ public class ConsoleManager implements IConsoleManager {
 
 	@Override
 	public void addConsoleListener(IConsoleListener listener) {
-		if (fListeners == null) {
-			fListeners = new ListenerList<>();
-		}
 		fListeners.add(listener);
 	}
 
 	@Override
 	public void removeConsoleListener(IConsoleListener listener) {
-		if (fListeners != null) {
-			fListeners.remove(listener);
-		}
+		fListeners.remove(listener);
 	}
 
 	@Override
 	public void addConsoles(IConsole[] consoles) {
 		List<IConsole> added = new ArrayList<>(consoles.length);
 		synchronized (fConsoles) {
-			for (int i = 0; i < consoles.length; i++) {
-				IConsole console = consoles[i];
+			for (IConsole console : consoles) {
 				if(console instanceof TextConsole) {
 					TextConsole ioconsole = (TextConsole)console;
 					createPatternMatchListeners(ioconsole);
@@ -233,8 +223,7 @@ public class ConsoleManager implements IConsoleManager {
 	public void removeConsoles(IConsole[] consoles) {
 		List<IConsole> removed = new ArrayList<>(consoles.length);
 		synchronized (fConsoles) {
-			for (int i = 0; i < consoles.length; i++) {
-				IConsole console = consoles[i];
+			for (IConsole console : consoles) {
 				if (fConsoles.remove(console)) {
 					removed.add(console);
 				}
@@ -346,16 +335,20 @@ public class ConsoleManager implements IConsoleManager {
 	}
 
 	/**
-	 * Returns whether the given console view should be brought to the top.
-	 * The view should not be brought to the top if the view is pinned on
-	 * a console other than the given console.
+	 * Returns whether the given console view should be brought to the top. The view
+	 * should not be brought to the top if the view is pinned on a console other
+	 * than the given console.
+	 *
+	 * @param console     the console to be shown in the view
+	 * @param consoleView the view which should be brought to the top
+	 * @return whether the given console view should be brought to the top
 	 */
 	private boolean shouldBringToTop(IConsole console, IViewPart consoleView) {
-		boolean bringToTop= true;
+		boolean bringToTop = true;
 		if (consoleView instanceof IConsoleView) {
-			IConsoleView cView= (IConsoleView)consoleView;
+			IConsoleView cView = (IConsoleView) consoleView;
 			if (cView.isPinned()) {
-				IConsole pinnedConsole= cView.getConsole();
+				IConsole pinnedConsole = cView.getConsole();
 				bringToTop = console.equals(pinnedConsole);
 			}
 		}
@@ -394,8 +387,7 @@ public class ConsoleManager implements IConsoleManager {
 			fPatternMatchListeners = new ArrayList<>();
 			IExtensionPoint extensionPoint= Platform.getExtensionRegistry().getExtensionPoint(ConsolePlugin.getUniqueIdentifier(), IConsoleConstants.EXTENSION_POINT_CONSOLE_PATTERN_MATCH_LISTENERS);
 			IConfigurationElement[] elements = extensionPoint.getConfigurationElements();
-			for (int i = 0; i < elements.length; i++) {
-				IConfigurationElement config = elements[i];
+			for (IConfigurationElement config : elements) {
 				PatternMatchListenerExtension extension = new PatternMatchListenerExtension(config);
 				fPatternMatchListeners.add(extension);
 			}
@@ -427,23 +419,23 @@ public class ConsoleManager implements IConsoleManager {
 		return list.toArray(new PatternMatchListener[0]);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.console.IConsoleManager#getPageParticipants(org.eclipse.ui.console.IConsole)
+	/*
+	 * @see
+	 * org.eclipse.ui.console.IConsoleManager#getPageParticipants(org.eclipse.ui.
+	 * console.IConsole)
 	 */
 	public IConsolePageParticipant[] getPageParticipants(IConsole console) {
 		if(fPageParticipants == null) {
 			fPageParticipants = new ArrayList<>();
 			IExtensionPoint extensionPoint = Platform.getExtensionRegistry().getExtensionPoint(ConsolePlugin.getUniqueIdentifier(), IConsoleConstants.EXTENSION_POINT_CONSOLE_PAGE_PARTICIPANTS);
 			IConfigurationElement[] elements = extensionPoint.getConfigurationElements();
-			for(int i = 0; i < elements.length; i++) {
-				IConfigurationElement config = elements[i];
+			for (IConfigurationElement config : elements) {
 				ConsolePageParticipantExtension extension = new ConsolePageParticipantExtension(config);
 				fPageParticipants.add(extension);
 			}
 		}
 		ArrayList<IConsolePageParticipant> list = new ArrayList<>();
-		for (Iterator<ConsolePageParticipantExtension> i = fPageParticipants.iterator(); i.hasNext();) {
-			ConsolePageParticipantExtension extension = i.next();
+		for (ConsolePageParticipantExtension extension : fPageParticipants) {
 			try {
 				if (extension.isEnabledFor(console)) {
 					list.add(extension.createDelegate());
@@ -455,7 +447,7 @@ public class ConsoleManager implements IConsoleManager {
 		return list.toArray(new IConsolePageParticipant[0]);
 	}
 
-	/* (non-Javadoc)
+	/*
 	 * @see org.eclipse.ui.console.IConsoleManager#getConsoleFactories()
 	 */
 	public ConsoleFactoryExtension[] getConsoleFactoryExtensions() {
@@ -463,8 +455,8 @@ public class ConsoleManager implements IConsoleManager {
 			fConsoleFactoryExtensions = new ArrayList<>();
 			IExtensionPoint extensionPoint = Platform.getExtensionRegistry().getExtensionPoint(ConsolePlugin.getUniqueIdentifier(), IConsoleConstants.EXTENSION_POINT_CONSOLE_FACTORIES);
 			IConfigurationElement[] configurationElements = extensionPoint.getConfigurationElements();
-			for (int i = 0; i < configurationElements.length; i++) {
-				fConsoleFactoryExtensions.add(new ConsoleFactoryExtension(configurationElements[i]));
+			for (IConfigurationElement configurationElement : configurationElements) {
+				fConsoleFactoryExtensions.add(new ConsoleFactoryExtension(configurationElement));
 			}
 		}
 		return fConsoleFactoryExtensions.toArray(new ConsoleFactoryExtension[0]);

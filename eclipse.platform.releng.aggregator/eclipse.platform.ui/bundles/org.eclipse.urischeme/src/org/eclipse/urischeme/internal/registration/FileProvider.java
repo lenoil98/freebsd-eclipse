@@ -10,9 +10,12 @@
  *******************************************************************************/
 package org.eclipse.urischeme.internal.registration;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.URL;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,6 +35,7 @@ public class FileProvider implements IFileProvider {
 	@Override
 	public void write(String path, byte[] bytes) throws IOException {
 		Path filePath = Paths.get(path);
+		Files.createDirectories(filePath.getParent());
 		Files.write(filePath, bytes);
 	}
 
@@ -57,5 +61,16 @@ public class FileProvider implements IFileProvider {
 	public boolean isDirectory(String path) {
 		Path filePath = Paths.get(path);
 		return Files.isDirectory(filePath);
+	}
+
+	@Override
+	public String getFilePath(URL url) {
+		return new File(url.getPath()).getPath();
+	}
+
+	@Override
+	public DirectoryStream<Path> newDirectoryStream(String path, String glob) throws IOException {
+		Path dirPath = Paths.get(path);
+		return Files.newDirectoryStream(dirPath, glob);
 	}
 }

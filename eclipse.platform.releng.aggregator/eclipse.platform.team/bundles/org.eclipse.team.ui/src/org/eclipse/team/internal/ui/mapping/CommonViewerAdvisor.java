@@ -160,34 +160,33 @@ public class CommonViewerAdvisor extends AbstractTreeViewerAdvisor implements IN
 			getNavigatorContentService().getDnDService().bindDragAssistant(new ResourceDragAdapterAssistant());
 			super.initDragAndDrop();
 		}
-	    /**
-	     * Gets the expanded elements that are visible to the user. An expanded
-	     * element is only visible if the parent is expanded.
-	     *
-	     * @return the visible expanded elements
-	     * @since 2.0
-	     */
-	    public TreePath[] getVisibleExpandedPaths() {
-	        ArrayList<TreePath> v = new ArrayList<>();
-	        internalCollectVisibleExpanded(v, getControl());
-	        return v.toArray(new TreePath[v.size()]);
-	    }
+		/**
+		 * Gets the expanded elements that are visible to the user. An expanded
+		 * element is only visible if the parent is expanded.
+		 *
+		 * @return the visible expanded elements
+		 * @since 2.0
+		 */
+		public TreePath[] getVisibleExpandedPaths() {
+			ArrayList<TreePath> v = new ArrayList<>();
+			internalCollectVisibleExpanded(v, getControl());
+			return v.toArray(new TreePath[v.size()]);
+		}
 
-	    private void internalCollectVisibleExpanded(ArrayList<TreePath> result, Widget widget) {
-	        Item[] items = getChildren(widget);
-	        for (int i = 0; i < items.length; i++) {
-	            Item item = items[i];
-	            if (getExpanded(item)) {
-	            	TreePath path = getTreePathFromItem(item);
-	                if (path != null) {
+		private void internalCollectVisibleExpanded(ArrayList<TreePath> result, Widget widget) {
+			Item[] items = getChildren(widget);
+			for (Item item : items) {
+				if (getExpanded(item)) {
+					TreePath path = getTreePathFromItem(item);
+					if (path != null) {
 						result.add(path);
-	                }
-	                //Only recurse if it is expanded - if
-	                //not then the children aren't visible
-	                internalCollectVisibleExpanded(result, item);
-	            }
-	        }
-	    }
+					}
+					//Only recurse if it is expanded - if
+					//not then the children aren't visible
+					internalCollectVisibleExpanded(result, item);
+				}
+			}
+		}
 	}
 
 	/**
@@ -299,8 +298,7 @@ public class CommonViewerAdvisor extends AbstractTreeViewerAdvisor implements IN
 		Set<String> result = new HashSet<>();
 		Object property = configuration.getProperty(ITeamContentProviderManager.PROP_PAGE_LAYOUT);
 		boolean isFlatLayout = property != null && property.equals(ITeamContentProviderManager.FLAT_LAYOUT);
-		for (int i = 0; i < providers.length; i++) {
-			ModelProvider provider = providers[i];
+		for (ModelProvider provider : providers) {
 			ITeamContentProviderDescriptor desc = TeamUI.getTeamContentProviderManager().getDescriptor(provider.getId());
 			if (desc != null && desc.isEnabled() && (!isFlatLayout || desc.isFlatLayoutSupported()))
 				result.add(desc.getContentExtensionId());
@@ -312,8 +310,7 @@ public class CommonViewerAdvisor extends AbstractTreeViewerAdvisor implements IN
 		ITeamContentProviderManager teamContentProviderManager = TeamUI.getTeamContentProviderManager();
 		ITeamContentProviderDescriptor[] descriptors = teamContentProviderManager.getDescriptors();
 		Set<String> toBind = new HashSet<>();
-		for (int i = 0; i < descriptors.length; i++) {
-			ITeamContentProviderDescriptor descriptor = descriptors[i];
+		for (ITeamContentProviderDescriptor descriptor : descriptors) {
 			toBind.add(descriptor.getContentExtensionId());
 		}
 		v.getNavigatorContentService().bindExtensions(toBind.toArray(new String[toBind.size()]), true);
@@ -335,8 +332,8 @@ public class CommonViewerAdvisor extends AbstractTreeViewerAdvisor implements IN
 		configuration.addPropertyChangeListener(this);
 		GridData data = new GridData(GridData.FILL_BOTH);
 		viewer.getControl().setLayoutData(data);
-        viewer.getNavigatorContentService().addListener(this);
-        initializeViewer(viewer);
+		viewer.getNavigatorContentService().addListener(this);
+		initializeViewer(viewer);
 		IBaseLabelProvider provider = viewer.getLabelProvider();
 		if (provider instanceof DecoratingLabelProvider) {
 			DecoratingLabelProvider dlp = (DecoratingLabelProvider) provider;
@@ -407,8 +404,8 @@ public class CommonViewerAdvisor extends AbstractTreeViewerAdvisor implements IN
 	@Override
 	public void setInitialInput() {
 		CommonViewer viewer = (CommonViewer)getViewer();
-        viewer.setInput(getInitialInput());
-        viewer.expandToLevel(2);
+		viewer.setInput(getInitialInput());
+		viewer.expandToLevel(2);
 	}
 
 	@Override

@@ -15,7 +15,6 @@ package org.eclipse.ui.navigator.resources;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
@@ -340,8 +339,7 @@ public class ResourceDropAdapterAssistant extends CommonDropAdapterAssistant {
 	private IResource[] getSelectedResources(IStructuredSelection selection) {
 		ArrayList<IResource> selectedResources = new ArrayList<>();
 
-		for (Iterator<?> i = selection.iterator(); i.hasNext();) {
-			Object o = i.next();
+		for (Object o : selection) {
 			IResource resource = Adapters.adapt(o, IResource.class);
 			if (resource != null) {
 				selectedResources.add(resource);
@@ -384,8 +382,8 @@ public class ResourceDropAdapterAssistant extends CommonDropAdapterAssistant {
 			operation.copyResources(sources, target);
 		} else {
 			boolean allSourceAreLinksOrVirtualFolders = true;
-			for (int i = 0; i < sources.length; i++) {
-				if (!sources[i].isVirtual() && !sources[i].isLinked()) {
+			for (IResource source : sources) {
+				if (!source.isVirtual() && !source.isLinked()) {
 					allSourceAreLinksOrVirtualFolders = false;
 					break;
 				}

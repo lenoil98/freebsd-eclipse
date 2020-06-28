@@ -21,10 +21,10 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.team.internal.ui.ProjectSetImporter;
 import org.eclipse.team.internal.ui.TeamUIMessages;
-import org.eclipse.team.internal.ui.TeamUIPlugin;
 import org.eclipse.team.ui.TeamOperation;
 import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.IWorkingSetManager;
+import org.eclipse.ui.PlatformUI;
 
 public class ImportProjectSetOperation extends TeamOperation {
 
@@ -39,7 +39,7 @@ public class ImportProjectSetOperation extends TeamOperation {
 	 *
 	 * @param context
 	 *            a runnable context,
-	 *            <code>null</null> for running in background
+	 *            <code>null</code> for running in background
 	 * @param psfFileContents
 	 *            the psf file content to load
 	 * @param urlString
@@ -91,11 +91,6 @@ public class ImportProjectSetOperation extends TeamOperation {
 		createWorkingSet(workingSets, newProjects);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.jface.operation.IRunnableWithProgress#run(org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	public void run(IProgressMonitor monitor)
 			throws InvocationTargetException, InterruptedException{
@@ -106,31 +101,21 @@ public class ImportProjectSetOperation extends TeamOperation {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.team.ui.TeamOperation#canRunAsJob()
-	 */
 	@Override
 	protected boolean canRunAsJob() {
 		return true;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.team.ui.TeamOperation#getJobName()
-	 */
 	@Override
 	protected String getJobName() {
 		return TeamUIMessages.ImportProjectSetMainPage_jobName;
 	}
 
 	private void createWorkingSet(IWorkingSet[] workingSets, IProject[] projects) {
-		IWorkingSetManager manager = TeamUIPlugin.getPlugin().getWorkbench().getWorkingSetManager();
+		IWorkingSetManager manager = PlatformUI.getWorkbench().getWorkingSetManager();
 		String workingSetName;
-		for (int i = 0; i < workingSets.length; i++) {
-			workingSetName = workingSets[i].getName();
+		for (IWorkingSet workingSet : workingSets) {
+			workingSetName = workingSet.getName();
 			IWorkingSet oldSet = manager.getWorkingSet(workingSetName);
 			if (oldSet == null) {
 				IWorkingSet newSet = manager.createWorkingSet(workingSetName, projects);

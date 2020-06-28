@@ -31,9 +31,6 @@ import org.eclipse.swt.widgets.*;
  * <dd>CloseWindowListener, LocationListener, OpenWindowListener, ProgressListener, StatusTextListener, TitleListener, VisibilityWindowListener</dd>
  * </dl>
  * <p>
- * Note: MOZILLA is deprecated and is no longer supported.
- * </p>
- * <p>
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
@@ -104,17 +101,18 @@ public Browser (Composite parent, int style) {
 	}
 	dispose ();
 
-	String errMsg = " because no underlying browser available.\n";
+	String errMsg = " because there is no underlying browser available.\n";
 	switch (SWT.getPlatform()) {
 	case "gtk":
-		errMsg = errMsg + "   Please ensure Webkit with its Gtk 3.x bindings installed. Webkit2 API level preferred.\n";
+		errMsg = errMsg + "Please ensure that WebKit with its GTK 3.x bindings is installed (WebKit2 API level is preferred)."
+				+ " Additionally, please note that GTK4 does not currently have Browser support.\n";
 		break;
 	case "cocoa":
-		errMsg = errMsg + " SWT failed to load webkit library.\n";
+		errMsg = errMsg + "SWT failed to load the WebKit library.\n";
 		break;
 	case "win32":
-		errMsg = errMsg + " SWT uses either IE or Webkit. Either SWT.WEBKIT flag is passed and Webkit library was not "
-				+ "loaded properly by SWT or SWT failed to load IE.\n";
+		errMsg = errMsg + "SWT uses either IE or WebKit. Either the SWT.WEBKIT flag is passed and the WebKit library was not "
+				+ "loaded properly by SWT, or SWT failed to load IE.\n";
 		break;
 	default:
 		break;
@@ -143,7 +141,6 @@ static Composite checkParent (Composite parent) {
 	return parent;
 }
 
-@SuppressWarnings("deprecation")
 static int checkStyle(int style) {
 	String platform = SWT.getPlatform ();
 	if (DefaultType == SWT.DEFAULT) {
@@ -155,7 +152,7 @@ static int checkStyle(int style) {
 		* that can arise from having multiple native renderers loaded within the same
 		* process. A client can do this by setting the
 		* "org.eclipse.swt.browser.DefaultType" java system property to a value like
-		* "ie" or "webkit". Value "mozilla" is ignored now.
+		* "ie" or "webkit".
 		*/
 
 		/*
@@ -196,14 +193,6 @@ static int checkStyle(int style) {
 		if (DefaultType == SWT.DEFAULT) {
 			DefaultType = SWT.NONE;
 		}
-	}
-
-	/* remove SWT.MOZILLA style if specified */
-	if ((style & SWT.MOZILLA) != 0) {
-		System.err.println ("Unsupported Browser Type: SWT.MOZILLA style is deprecated.\n" //$NON-NLS-1$
-				+ "It'll be removed from the user specified style. Browser will be created with the modified style " //$NON-NLS-1$
-				+ "and if no other style bit is specified, browser with SWT.NONE style will be created"); //$NON-NLS-1$
-		style &= ~SWT.MOZILLA;
 	}
 
 	if ((style & SWT.WEBKIT) == 0) {
@@ -656,9 +645,7 @@ public Object evaluate (String script) throws SWTException {
  * An <code>SWTException</code> is thrown if the return value has an
  * unsupported type, or if evaluating the script causes a javascript
  * error to be thrown.
- * <p>
- * Note: Chrome security context is applicable only to Browsers with style <code>SWT.Mozilla</code>.
- * </p>
+ *
  * @param script the script with javascript commands
  * @param trusted <code>true</code> or <code>false</code> depending on the security context to be used
  *
@@ -704,7 +691,7 @@ public boolean forward () {
 
 /**
  * Returns the type of native browser being used by this instance.
- * Examples: "ie", "mozilla", "voyager", "webkit"
+ * Examples: "ie", "webkit"
  *
  * @return the type of the native browser
  *

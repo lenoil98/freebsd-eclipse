@@ -78,9 +78,6 @@ public class EnableBreakpointsAction implements IViewActionDelegate, IPartListen
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		IStructuredSelection selection= getSelection();
@@ -114,8 +111,8 @@ public class EnableBreakpointsAction implements IViewActionDelegate, IPartListen
 			}
 			public void setEnabled(IBreakpoint[] breakpoints) throws CoreException {
 				boolean enable= isEnableAction();
-				for (int i = 0; i < breakpoints.length; i++) {
-					breakpoints[i].setEnabled(enable);
+				for (IBreakpoint breakpoint : breakpoints) {
+					breakpoint.setEnabled(enable);
 				}
 			}
 		};
@@ -140,9 +137,6 @@ public class EnableBreakpointsAction implements IViewActionDelegate, IPartListen
 		return (IStructuredSelection)getView().getViewSite().getSelectionProvider().getSelection();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
 		setAction(action);
@@ -156,24 +150,24 @@ public class EnableBreakpointsAction implements IViewActionDelegate, IPartListen
 		boolean allDisabled= true;
 		while (itr.hasNext()) {
 			Object selected= itr.next();
-            IBreakpoint bp = (IBreakpoint)DebugPlugin.getAdapter(selected, IBreakpoint.class);
+			IBreakpoint bp = (IBreakpoint)DebugPlugin.getAdapter(selected, IBreakpoint.class);
 
-            if (bp != null) {
-                try {
-                    if (bp.isEnabled()) {
-                        allDisabled= false;
-                    } else {
-                        allEnabled= false;
-                    }
-                } catch (CoreException ce) {
-                    handleException(ce);
-                }
-            }
-            else if (selected instanceof IBreakpointContainer) {
+			if (bp != null) {
+				try {
+					if (bp.isEnabled()) {
+						allDisabled= false;
+					} else {
+						allEnabled= false;
+					}
+				} catch (CoreException ce) {
+					handleException(ce);
+				}
+			}
+			else if (selected instanceof IBreakpointContainer) {
 				IBreakpoint[] breakpoints = ((IBreakpointContainer) selected).getBreakpoints();
-				for (int i = 0; i < breakpoints.length; i++) {
+				for (IBreakpoint breakpoint : breakpoints) {
 					try {
-						if (breakpoints[i].isEnabled()) {
+						if (breakpoint.isEnabled()) {
 							allDisabled= false;
 						} else {
 							allEnabled= false;

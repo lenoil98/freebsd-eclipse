@@ -16,6 +16,7 @@ package org.eclipse.debug.internal.core;
 
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,8 +44,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * The information associated with a launch configuration handle.
@@ -123,7 +122,7 @@ public class LaunchConfigurationInfo {
 	 * Constructs a new empty info
 	 */
 	protected LaunchConfigurationInfo() {
-		setAttributeTable(new TreeMap<String, Object>());
+		setAttributeTable(new TreeMap<>());
 	}
 
 	/**
@@ -152,10 +151,10 @@ public class LaunchConfigurationInfo {
 	 */
 	protected void setAttributes(Map<String, ?> map) {
 		if (map == null) {
-			setAttributeTable(new TreeMap<String, Object>());
+			setAttributeTable(new TreeMap<>());
 			return;
 		}
-		setAttributeTable(new TreeMap<String, Object>(map));
+		setAttributeTable(new TreeMap<>(map));
 	}
 
 	/**

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2018 IBM Corporation and others.
+ * Copyright (c) 2008, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -60,7 +60,7 @@ public class HTMLTidyTest extends TestCase {
 	 * a Java launch configuration with program argument<br>
 	 * <code>"${resource_loc}"</code><br>
 	 * (including double quotes!).
-	 * 
+	 *
 	 * @param args 1 argument: Absolute path to a file or folder
 	 * @throws Exception if checking fails
 	 */
@@ -127,15 +127,14 @@ public class HTMLTidyTest extends TestCase {
 					matchers.add(new StringMatcher(line, true, false));
 				}
 			}
-		};
+		}
 		return matchers.toArray(new StringMatcher[matchers.size()]);
 	}
 
 	private boolean isIgnored(File file) {
 		String relativePath= file.getAbsolutePath().substring(fworkspacePathLength);
 		relativePath= relativePath.replace('\\', '/');
-		for (int i= 0; i < fIgnores.length; i++) {
-			StringMatcher matcher= fIgnores[i];
+		for (StringMatcher matcher : fIgnores) {
 			if (matcher.match(relativePath))
 				return true;
 		}
@@ -144,10 +143,8 @@ public class HTMLTidyTest extends TestCase {
 
 	private boolean checkFolder(File folder) throws Exception {
 
-		File[] files= folder.listFiles();
 		boolean success= true;
-		for (int i= 0; i < files.length; i++) {
-			File file= files[i];
+		for (File file : folder.listFiles()) {
 			if (isIgnored(file)) {
 //				System.out.println("Ignored: " + file.getAbsolutePath() + (file.isDirectory() ? "/*" : ""));
 				continue;

@@ -33,35 +33,37 @@ import org.eclipse.team.internal.ui.Utils;
 import org.eclipse.ui.IWorkbenchPart;
 
 public class FetchAllMembersOperation extends RemoteOperation {
-   
+	
 	class RLogTreeBuilder {
-		    
-		    private ICVSRepositoryLocation location;
+			
+			private ICVSRepositoryLocation location;
 			private RemoteFolderTree tree;
 			private CVSTag tag;
 
-	        public RLogTreeBuilder(ICVSRepositoryLocation location, CVSTag tag) {
-	            this.tag = tag;
-	            this.location = location;
-	            reset();
-	        }
+			public RLogTreeBuilder(ICVSRepositoryLocation location, CVSTag tag) {
+				this.tag = tag;
+				this.location = location;
+				reset();
+			}
 			
-	        public RemoteFolderTree getTree() {
-	            return tree;
-	        }
-	       
-	        /**
-	         * Reset the builder to prepare for a new build
-	         */
-	        public void reset() {
-	        	tree = new RemoteFolderTree(null, location, ICVSRemoteFolder.REPOSITORY_ROOT_FOLDER_NAME, tag);
-	        	tree.setChildren(new ICVSRemoteResource[0]);
-	        }
-	        
-	        /* (non-Javadoc)
-			 * @see org.eclipse.team.internal.ccvs.core.client.listeners.RDiffSummaryListener.IFileDiffListener#newFile(java.lang.String, java.lang.String)
+			public RemoteFolderTree getTree() {
+				return tree;
+			}
+		
+			/**
+			 * Reset the builder to prepare for a new build
 			 */
-	        public void newFile(IPath remoteFilePath, ICVSRemoteFile remoteFile) {
+			public void reset() {
+				tree = new RemoteFolderTree(null, location, ICVSRemoteFolder.REPOSITORY_ROOT_FOLDER_NAME, tag);
+				tree.setChildren(new ICVSRemoteResource[0]);
+			}
+			
+		/*
+		 * @see
+		 * org.eclipse.team.internal.ccvs.core.client.listeners.RDiffSummaryListener.
+		 * IFileDiffListener#newFile(java.lang.String, java.lang.String)
+		 */
+			public void newFile(IPath remoteFilePath, ICVSRemoteFile remoteFile) {
 				try {
 					addFile(tree,tag,remoteFile, remoteFilePath);
 				} catch (CVSException e) {
@@ -87,7 +89,7 @@ public class FetchAllMembersOperation extends RemoteOperation {
 				tree.setChildren(newChildren);
 			}
 			
-		    /* 
+			/* 
 			 * Get the folder at the given path in the given tree, creating any missing folders as needed.
 			 */
 			private ICVSRemoteFolder getFolder(RemoteFolderTree tree, CVSTag tag, IPath remoteFolderPath, IPath parentPath) throws CVSException {
@@ -128,27 +130,23 @@ public class FetchAllMembersOperation extends RemoteOperation {
 			try {
 				operation.run(monitor);	
 				ICVSRemoteResource[] remoteRes = getRemoteResources(); 
-			    final ICVSRemoteFolder project = (ICVSRemoteFolder) remoteRes[0];
+				final ICVSRemoteFolder project = (ICVSRemoteFolder) remoteRes[0];
 				//Get the entry paths
 				String[] entry = cache.getCachedFilePaths();
 				//Strip repo + project info from entries
 				RLogTreeBuilder treeBuilder = new RLogTreeBuilder(project.getRepository(),tag);
-				for (int i = 0; i < entry.length; i++) {
-					ILogEntry[] logEntry = cache.getLogEntries(entry[i]);
-					
+				for (String e : entry) {
+					ILogEntry[] logEntry = cache.getLogEntries(e);
 					//might not have state if this a branch entry
 					if (logEntry[0].getState() != null &&
-						logEntry[0].getState().equals(DEAD_STATE))
+							logEntry[0].getState().equals(DEAD_STATE))
 						continue;
-					
-					
 					ICVSRemoteFile remoteFile = logEntry[0].getRemoteFile();
 					//if the current folder tag is a branch tag, we need to take the extra step
 					//of making sure that the file's revision number has been set appropriately
 					if (tag.getType() == CVSTag.BRANCH &&
-						remoteFile.getRevision().equals(LogListener.BRANCH_REVISION))
+							remoteFile.getRevision().equals(LogListener.BRANCH_REVISION))
 						verifyRevision(tag, logEntry[0], remoteFile);
-					
 					IPath logPath = new Path(null,remoteFile.getRepositoryRelativePath());
 					if (logPath.segmentCount()>0)
 						logPath = logPath.removeFirstSegments(1);

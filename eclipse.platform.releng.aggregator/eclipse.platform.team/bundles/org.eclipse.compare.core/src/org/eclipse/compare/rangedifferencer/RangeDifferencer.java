@@ -89,7 +89,7 @@ public final class RangeDifferencer {
 	 * The differences are returned as an array of <code>RangeDifference</code>s.
 	 * If no differences are detected an empty array is returned.
 	 *
-	 * @param factory
+	 * @param factory factory to instantiate new {@link RangeDifference}s
 	 * @param pm if not <code>null</code> used to report progress
 	 * @param left the left range comparator
 	 * @param right the right range comparator
@@ -141,7 +141,7 @@ public final class RangeDifferencer {
 	 * If the ancestor range comparator is <code>null</code>, a two-way
 	 * comparison is performed.
 	 *
-	 * @param factory
+	 * @param factory factory to instantiate new {@link RangeDifference}s
 	 * @param pm if not <code>null</code> used to report progress
 	 * @param ancestor the ancestor range comparator or <code>null</code>
 	 * @param left the left range comparator
@@ -278,7 +278,7 @@ public final class RangeDifferencer {
 	 * In contrast to <code>findDifferences</code>, the result
 	 * contains <code>RangeDifference</code> elements for non-differing ranges too.
 	 *
-	 * @param factory
+	 * @param factory factory to instantiate new {@link RangeDifference}s
 	 * @param pm if not <code>null</code> used to report progress
 	 * @param left the left range comparator
 	 * @param right the right range comparator
@@ -294,9 +294,7 @@ public final class RangeDifferencer {
 		int mstart= 0;
 		int ystart= 0;
 
-		for (int i= 0; i < in.length; i++) {
-			RangeDifference es= in[i];
-
+		for (RangeDifference es : in) {
 			rd= factory.createRangeDifference(RangeDifference.NOCHANGE, mstart, es.rightStart() - mstart, ystart, es.leftStart() - ystart);
 			if (rd.maxLength() != 0)
 				out.add(rd);
@@ -354,7 +352,7 @@ public final class RangeDifferencer {
 	 * If the ancestor range comparator is <code>null</code>, a two-way
 	 * comparison is performed.
 	 *
-	 * @param factory
+	 * @param factory factory to instantiate new {@link RangeDifference}s
 	 * @param pm if not <code>null</code> used to report progress
 	 * @param ancestor the ancestor range comparator or <code>null</code>
 	 * @param left the left range comparator
@@ -375,9 +373,7 @@ public final class RangeDifferencer {
 		int ystart= 0;
 		int astart= 0;
 
-		for (int i= 0; i < in.length; i++) {
-			RangeDifference es= in[i];
-
+		for (RangeDifference es : in) {
 			rd= factory.createRangeDifference(RangeDifference.NOCHANGE, mstart, es.rightStart() - mstart, ystart, es.leftStart() - ystart, astart, es.ancestorStart() - astart);
 			if (rd.maxLength() > 0)
 				out.add(rd);

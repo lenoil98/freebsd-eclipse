@@ -17,15 +17,10 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import org.eclipse.core.filesystem.EFS;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
-
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorRegistry;
 import org.eclipse.ui.IWorkbenchPage;
@@ -34,11 +29,14 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.WorkbenchException;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Ignore;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 
 /**
  * Tests opening the
- * <code>org.eclipse.ui.internal.editorsupport.win32.OleEditor<code>.
+ * <code>org.eclipse.ui.internal.editorsupport.win32.OleEditor</code>.
  * <p>
  * <strong>Note:</strong> The tests pass on all platforms but
  * only perform for real when a system in-place editor is
@@ -47,21 +45,15 @@ import org.eclipse.ui.tests.harness.util.UITestCase;
  *
  * @since 3.4
  */
+@RunWith(JUnit4.class)
+@Ignore
 public class OpenSystemInPlaceEditorTest extends UITestCase {
-
-
-	public static Test suite() {
-		return new TestSuite(OpenSystemInPlaceEditorTest.class);
-	}
-
 
 	/**
 	 * Creates the test object.
-	 *
-	 * @param testName the test name
 	 */
-	public OpenSystemInPlaceEditorTest(String testName) {
-		super(testName);
+	public OpenSystemInPlaceEditorTest() {
+		super(OpenSystemInPlaceEditorTest.class.getSimpleName());
 	}
 
 	public void testWorkspaceFile() throws Exception {

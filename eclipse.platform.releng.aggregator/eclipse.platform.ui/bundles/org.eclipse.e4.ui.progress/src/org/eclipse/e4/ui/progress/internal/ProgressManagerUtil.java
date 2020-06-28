@@ -114,8 +114,8 @@ public class ProgressManagerUtil {
 	 */
 	static void logException(Throwable exception) {
 		Services.getInstance().getLogService().log(LogService.LOG_ERROR,
-		        exception.getMessage() == null ? "" : exception.getMessage(), //$NON-NLS-1$
-		        exception);
+				exception.getMessage() == null ? "" : exception.getMessage(), //$NON-NLS-1$
+				exception);
 	}
 
 	// /**
@@ -137,14 +137,12 @@ public class ProgressManagerUtil {
 
 	/**
 	 * Open the progress view in the supplied window.
-	 *
-	 * @param window
 	 */
 	// TODO E4
 	public static void openProgressView() {
 		Services services = Services.getInstance();
 		MPart progressView = (MPart) services.getModelService().find(
-		        ProgressManager.PROGRESS_VIEW_NAME, services.getMWindow());
+				ProgressManager.PROGRESS_VIEW_NAME, services.getMWindow());
 		EPartService partService = services.getPartService();
 		if (progressView == null) {
 			progressView = partService.createPart(ProgressManager.PROGRESS_VIEW_NAME);
@@ -249,15 +247,16 @@ public class ProgressManagerUtil {
 	}
 
 	/**
-	 * If there are any modal shells open reschedule openJob to wait until they
-	 * are closed. Return true if it rescheduled, false if there is nothing
-	 * blocking it.
+	 * If there are any modal shells open reschedule openJob to wait until they are
+	 * closed. Return true if it rescheduled, false if there is nothing blocking it.
 	 *
-	 * @param openJob
+	 * @param openJob         the job to reschedule (with delay) when modal dialog
+	 *                        is open
+	 * @param progressService service to do progress related work
 	 * @return boolean. true if the job was rescheduled due to modal dialogs.
 	 */
 	public static boolean rescheduleIfModalShellOpen(Job openJob,
-	        IProgressService progressService) {
+			IProgressService progressService) {
 		Shell modal = getModalShellExcluding(null);
 		if (modal == null) {
 			return false;
@@ -306,7 +305,7 @@ public class ProgressManagerUtil {
 		// If shell is null or disposed, then look through all shells
 		if (shell == null || shell.isDisposed()) {
 			return getModalChildExcluding(Services.getInstance().getShell()
-			        .getShells(), shell);
+					.getShells(), shell);
 		}
 
 		// Start with the shell to exclude and check it's shells

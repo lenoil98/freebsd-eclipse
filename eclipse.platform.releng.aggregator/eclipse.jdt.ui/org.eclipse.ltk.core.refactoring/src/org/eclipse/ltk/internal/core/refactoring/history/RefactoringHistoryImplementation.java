@@ -41,8 +41,9 @@ public final class RefactoringHistoryImplementation extends RefactoringHistory {
 		if (array == null)
 			return 0;
 		int result= 1;
-		for (int index= 0; index < array.length; index++)
-			result= 31 * result + (array[index] == null ? 0 : array[index].hashCode());
+		for (Object a : array) {
+			result= 31 * result + (a == null ? 0 : a.hashCode());
+		}
 		return result;
 	}
 
@@ -119,7 +120,7 @@ public final class RefactoringHistoryImplementation extends RefactoringHistory {
 
 	@Override
 	public String toString() {
-		final StringBuffer buffer= new StringBuffer(256);
+		final StringBuilder buffer= new StringBuilder(256);
 		buffer.append(getClass().getName());
 		buffer.append("[descriptors="); //$NON-NLS-1$
 		buffer.append(getDescriptors().toString());

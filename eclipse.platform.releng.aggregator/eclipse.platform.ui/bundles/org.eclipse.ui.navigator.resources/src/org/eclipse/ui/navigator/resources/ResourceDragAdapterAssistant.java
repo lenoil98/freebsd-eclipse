@@ -15,7 +15,6 @@
 
 package org.eclipse.ui.navigator.resources;
 
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -91,8 +90,7 @@ public class ResourceDragAdapterAssistant extends
 					if (actualLength < length) {
 						String[] tempFileNames = fileNames;
 						fileNames = new String[actualLength];
-						for (int i = 0; i < actualLength; i++)
-							fileNames[i] = tempFileNames[i];
+						System.arraycopy(tempFileNames, 0, fileNames, 0, actualLength);
 					}
 					anEvent.data = fileNames;
 
@@ -108,10 +106,9 @@ public class ResourceDragAdapterAssistant extends
 	}
 
 	private IResource[] getSelectedResources(IStructuredSelection aSelection) {
-		Set<IResource> resources = new LinkedHashSet<IResource>();
+		Set<IResource> resources = new LinkedHashSet<>();
 		IResource resource = null;
-		for (Iterator<?> iter = aSelection.iterator(); iter.hasNext();) {
-			Object selected = iter.next();
+		for (Object selected : aSelection) {
 			resource = Adapters.adapt(selected, IRESOURCE_TYPE);
 			if (resource != null) {
 				resources.add(resource);

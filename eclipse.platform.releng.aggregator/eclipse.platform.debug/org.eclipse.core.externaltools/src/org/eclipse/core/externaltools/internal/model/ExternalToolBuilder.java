@@ -65,11 +65,8 @@ public final class ExternalToolBuilder extends IncrementalProjectBuilder {
 	private static String buildType = IExternalToolConstants.BUILD_TYPE_NONE;
 
 	private static IProject buildProject= null;
-    private static IResourceDelta buildDelta= null;
+	private static IResourceDelta buildDelta= null;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.internal.events.InternalBuilder#build(int, java.util.Map, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
 		if (ExternalToolsCore.getDefault().getBundle().getState() != Bundle.ACTIVE) {
@@ -77,9 +74,9 @@ public final class ExternalToolBuilder extends IncrementalProjectBuilder {
 		}
 
 		ILaunchConfiguration config= BuilderCoreUtils.configFromBuildCommandArgs(getProject(), args, new String[1]);
-        if (config == null) {
-            throw ExternalToolsCore.newError(ExternalToolsModelMessages.ExternalToolBuilder_0, null);
-        }
+		if (config == null) {
+			throw ExternalToolsCore.newError(ExternalToolsModelMessages.ExternalToolBuilder_0, null);
+		}
 		IProject[] projectsWithinScope= null;
 		IResource[] resources = ExternalToolsCoreUtil.getResourcesForBuildScope(config);
 		if (resources != null) {
@@ -88,64 +85,64 @@ public final class ExternalToolBuilder extends IncrementalProjectBuilder {
 				projectsWithinScope[i]= resources[i].getProject();
 			}
 		}
-        boolean kindCompatible= commandConfiguredForKind(config, kind);
-        if (kindCompatible && configEnabled(config)) {
-            doBuildBasedOnScope(resources, kind, config, args, monitor);
-        }
+		boolean kindCompatible= commandConfiguredForKind(config, kind);
+		if (kindCompatible && configEnabled(config)) {
+			doBuildBasedOnScope(resources, kind, config, args, monitor);
+		}
 
 		return projectsWithinScope;
 	}
 
-    private boolean commandConfiguredForKind(ILaunchConfiguration config, int kind) {
-        try {
-            if (!(config.getAttribute(IExternalToolConstants.ATTR_TRIGGERS_CONFIGURED, false))) {
-                ICommand command= getCommand();
-                //adapt the builder command to make use of the 3.1 support for setting command build kinds
-                //this will only happen once for builder/command defined before the support existed
-                BuilderCoreUtils.configureTriggers(config, command);
-                IProjectDescription desc= getProject().getDescription();
-                ICommand[] commands= desc.getBuildSpec();
-                int index= getBuilderCommandIndex(commands, command);
-                if (index != -1) {
-                    commands[index]= command;
-                    desc.setBuildSpec(commands);
-                    getProject().setDescription(desc, null);
-                    ILaunchConfigurationWorkingCopy copy= config.getWorkingCopy();
-                    copy.setAttribute(IExternalToolConstants.ATTR_TRIGGERS_CONFIGURED, true);
-                    copy.doSave();
-                }
-                return command.isBuilding(kind);
-            }
-        } catch (CoreException e) {
-           ExternalToolsCore.log(e);
-           return true;
-        }
-        return true;
-    }
+	private boolean commandConfiguredForKind(ILaunchConfiguration config, int kind) {
+		try {
+			if (!(config.getAttribute(IExternalToolConstants.ATTR_TRIGGERS_CONFIGURED, false))) {
+				ICommand command= getCommand();
+				//adapt the builder command to make use of the 3.1 support for setting command build kinds
+				//this will only happen once for builder/command defined before the support existed
+				BuilderCoreUtils.configureTriggers(config, command);
+				IProjectDescription desc= getProject().getDescription();
+				ICommand[] commands= desc.getBuildSpec();
+				int index= getBuilderCommandIndex(commands, command);
+				if (index != -1) {
+					commands[index]= command;
+					desc.setBuildSpec(commands);
+					getProject().setDescription(desc, null);
+					ILaunchConfigurationWorkingCopy copy= config.getWorkingCopy();
+					copy.setAttribute(IExternalToolConstants.ATTR_TRIGGERS_CONFIGURED, true);
+					copy.doSave();
+				}
+				return command.isBuilding(kind);
+			}
+		} catch (CoreException e) {
+			ExternalToolsCore.log(e);
+			return true;
+		}
+		return true;
+	}
 
-    private int getBuilderCommandIndex(ICommand[] buildSpec, ICommand command) {
+	private int getBuilderCommandIndex(ICommand[] buildSpec, ICommand command) {
 		Map<String, String> commandArgs = command.getArguments();
-        if (commandArgs == null) {
-            return -1;
-        }
-        String handle= commandArgs.get(BuilderCoreUtils.LAUNCH_CONFIG_HANDLE);
-        if (handle == null) {
-            return -1;
-        }
-        for (int i = 0; i < buildSpec.length; ++i) {
-            ICommand buildSpecCommand= buildSpec[i];
-            if (ID.equals(buildSpecCommand.getBuilderName())) {
+		if (commandArgs == null) {
+			return -1;
+		}
+		String handle= commandArgs.get(BuilderCoreUtils.LAUNCH_CONFIG_HANDLE);
+		if (handle == null) {
+			return -1;
+		}
+		for (int i = 0; i < buildSpec.length; ++i) {
+			ICommand buildSpecCommand= buildSpec[i];
+			if (ID.equals(buildSpecCommand.getBuilderName())) {
 				Map<String, String> buildSpecArgs = buildSpecCommand.getArguments();
-                if (buildSpecArgs != null) {
-                    String buildSpecHandle= buildSpecArgs.get(BuilderCoreUtils.LAUNCH_CONFIG_HANDLE);
-                    if (handle.equals(buildSpecHandle)) {
-                        return i;
-                    }
-                }
-            }
-        }
-        return -1;
-    }
+				if (buildSpecArgs != null) {
+					String buildSpecHandle= buildSpecArgs.get(BuilderCoreUtils.LAUNCH_CONFIG_HANDLE);
+					if (handle.equals(buildSpecHandle)) {
+						return i;
+					}
+				}
+			}
+		}
+		return -1;
+	}
 
 	/**
 	 * Returns whether the given builder config is enabled or not.
@@ -207,15 +204,15 @@ public final class ExternalToolBuilder extends IncrementalProjectBuilder {
 		return buildProject;
 	}
 
-    /**
-     * Returns the <code>IResourceDelta</code> that is being built and has triggered the current external
-     * tool builder. <code>null</code> is returned if no build is currently occurring.
-     *
-     * @return resource delta for the build or <code>null</code>
-     */
-    public static IResourceDelta getBuildDelta() {
-        return buildDelta;
-    }
+	/**
+	 * Returns the <code>IResourceDelta</code> that is being built and has triggered the current external
+	 * tool builder. <code>null</code> is returned if no build is currently occurring.
+	 *
+	 * @return resource delta for the build or <code>null</code>
+	 */
+	public static IResourceDelta getBuildDelta() {
+		return buildDelta;
+	}
 
 	/**
 	 * Stores the currently active build kind and build project when a build begins
@@ -241,9 +238,9 @@ public final class ExternalToolBuilder extends IncrementalProjectBuilder {
 				buildType = IExternalToolConstants.BUILD_TYPE_AUTO;
 				buildDelta = getDelta(getProject());
 				break;
-            case IncrementalProjectBuilder.CLEAN_BUILD :
-                buildType = IExternalToolConstants.BUILD_TYPE_CLEAN;
-                break;
+			case IncrementalProjectBuilder.CLEAN_BUILD :
+				buildType = IExternalToolConstants.BUILD_TYPE_CLEAN;
+				break;
 			default :
 				buildType = IExternalToolConstants.BUILD_TYPE_NONE;
 				break;
@@ -257,17 +254,17 @@ public final class ExternalToolBuilder extends IncrementalProjectBuilder {
 	private void buildEnded() {
 		buildType= IExternalToolConstants.BUILD_TYPE_NONE;
 		buildProject= null;
-        buildDelta= null;
+		buildDelta= null;
 	}
 
 	private boolean buildScopeIndicatesBuild(IResource[] resources) {
-		for (int i = 0; i < resources.length; i++) {
-			IResourceDelta delta = getDelta(resources[i].getProject());
+		for (IResource resource : resources) {
+			IResourceDelta delta = getDelta(resource.getProject());
 			if (delta == null) {
 				//project just added to the workspace..no previous build tree
 				return true;
 			}
-			IPath path= resources[i].getProjectRelativePath();
+			IPath path = resource.getProjectRelativePath();
 			IResourceDelta change= delta.findMember(path);
 			if (change != null) {
 				final boolean[] trueChange= new boolean[1];
@@ -284,20 +281,20 @@ public final class ExternalToolBuilder extends IncrementalProjectBuilder {
 		return false;
 	}
 
-    @Override
+	@Override
 	protected void clean(IProgressMonitor monitor) throws CoreException {
-	    ICommand command= getCommand();
-        ILaunchConfiguration config= BuilderCoreUtils.configFromBuildCommandArgs(getProject(), command.getArguments(), new String[1]);
-    	if (!configEnabled(config)) {
-	    	return;
-	    }
+		ICommand command= getCommand();
+		ILaunchConfiguration config= BuilderCoreUtils.configFromBuildCommandArgs(getProject(), command.getArguments(), new String[1]);
+		if (!configEnabled(config)) {
+			return;
+		}
 
-        if ((!config.getAttribute(IExternalToolConstants.ATTR_TRIGGERS_CONFIGURED, false))) {
-            //old behavior
-            super.clean(monitor);
-            return;
-        }
+		if ((!config.getAttribute(IExternalToolConstants.ATTR_TRIGGERS_CONFIGURED, false))) {
+			//old behavior
+			super.clean(monitor);
+			return;
+		}
 
 		launchBuild(IncrementalProjectBuilder.CLEAN_BUILD, config, null, monitor);
-    }
+	}
 }

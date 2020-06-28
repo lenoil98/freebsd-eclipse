@@ -23,8 +23,6 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.TextUtilities;
 
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.dom.SimplePropertyDescriptor;
-import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.rewrite.TargetSourceRangeComputer;
 import org.eclipse.jdt.internal.compiler.parser.RecoveryScannerData;
 import org.eclipse.jdt.internal.core.dom.rewrite.ASTRewriteAnalyzer;
@@ -48,7 +46,7 @@ class InternalASTRewrite extends NodeEventHandler {
 
 	protected final RewriteEventStore eventStore;
 	protected final NodeInfoStore nodeStore;
-	/** ASTNode clone -> ASTNode original */ 
+	/** ASTNode clone -> ASTNode original */
 	protected final Hashtable clonedNodes;
 
 	int cloneDepth = 0;
@@ -113,7 +111,7 @@ class InternalASTRewrite extends NodeEventHandler {
 				/*
 				 * A modified node cannot be considered as cloned any more.
 				 * we can't copy the original formatting/comments and at the same time modify the node.
-				 * 
+				 *
 				 * Workaround for https://bugs.eclipse.org/405699 is to remove such nodes from clonedNodes
 				 * and instead mark all children as cloned (or skip them if they are not in clonedNodes).
 				 */
@@ -134,11 +132,11 @@ class InternalASTRewrite extends NodeEventHandler {
 						}
 					}
 				}
-				
+
 				node = node.getParent();
 			}
 		}
-		
+
 		ASTNode source = (ASTNode)this.clonedNodes.get(newChild);
 		if(source != null) {
 			if(this.cloneDepth == 0) {

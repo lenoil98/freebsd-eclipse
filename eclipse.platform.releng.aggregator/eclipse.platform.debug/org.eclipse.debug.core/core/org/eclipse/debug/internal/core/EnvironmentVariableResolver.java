@@ -31,9 +31,6 @@ import org.eclipse.osgi.service.environment.Constants;
  */
 public class EnvironmentVariableResolver implements IDynamicVariableResolver {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.variables.IDynamicVariableResolver#resolveValue(org.eclipse.core.variables.IDynamicVariable, java.lang.String)
-	 */
 	@Override
 	public String resolveValue(IDynamicVariable variable, String argument) throws CoreException {
 		if (argument == null) {
@@ -43,12 +40,12 @@ public class EnvironmentVariableResolver implements IDynamicVariableResolver {
 		String value = map.get(argument);
 		if (value == null && Platform.getOS().equals(Constants.OS_WIN32)) {
 			// On Win32, env variables are case insensitive, so we search the map
-            // for matches manually.
+			// for matches manually.
 			for (Entry<String, String> entry : map.entrySet()) {
 				String key = entry.getKey();
-                if (key.equalsIgnoreCase(argument)) {
-                    return entry.getValue();
-                }
+				if (key.equalsIgnoreCase(argument)) {
+					return entry.getValue();
+				}
 			}
 		}
 		return value;

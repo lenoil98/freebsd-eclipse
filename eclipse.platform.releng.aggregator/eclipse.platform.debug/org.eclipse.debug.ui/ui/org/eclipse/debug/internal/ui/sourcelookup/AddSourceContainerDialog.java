@@ -138,18 +138,18 @@ public class AddSourceContainerDialog extends TitleAreaDialog {
 	protected void okPressed() {
 		ISourceContainerType type = (ISourceContainerType) fViewer.getStructuredSelection().getFirstElement();
 		if (type != null) {
-            ISourceContainerBrowser browser = DebugUITools.getSourceContainerBrowser(type.getId());
-            if (browser != null) {
-                ISourceContainer[] results = browser.addSourceContainers(getShell(), fDirector);
-                if (results != null && results.length > 0) {
-                    fSourceContainerViewer.addEntries(results);
-                    super.okPressed();
-                }
-                else {
-                	return;
-                }
-            }
-        }
+			ISourceContainerBrowser browser = DebugUITools.getSourceContainerBrowser(type.getId());
+			if (browser != null) {
+				ISourceContainer[] results = browser.addSourceContainers(getShell(), fDirector);
+				if (results != null && results.length > 0) {
+					fSourceContainerViewer.addEntries(results);
+					super.okPressed();
+				}
+				else {
+					return;
+				}
+			}
+		}
 		super.okPressed();
 	}
 
@@ -160,8 +160,7 @@ public class AddSourceContainerDialog extends TitleAreaDialog {
 	 */
 	private ISourceContainerType[] filterTypes(ISourceContainerType[] types){
 		ArrayList<ISourceContainerType> validTypes = new ArrayList<>();
-		for (int i=0; i< types.length; i++) {
-			ISourceContainerType type = types[i];
+		for (ISourceContainerType type : types) {
 			if (fDirector.supportsSourceContainerType(type)) {
 				ISourceContainerBrowser sourceContainerBrowser = DebugUITools.getSourceContainerBrowser(type.getId());
 				if(sourceContainerBrowser != null && sourceContainerBrowser.canAddSourceContainers(fDirector)) {

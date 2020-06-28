@@ -83,9 +83,7 @@ class PackagesViewLabelProvider extends AppearanceAwareLabelProvider {
 	 * Decoration is only concerned with error ticks
 	 */
 	private Image getLogicalPackageImage(LogicalPackage cp) {
-		IPackageFragment[] fragments= cp.getFragments();
-		for (int i= 0; i < fragments.length; i++) {
-			IPackageFragment fragment= fragments[i];
+		for (IPackageFragment fragment : cp.getFragments()) {
 			if(!isEmpty(fragment)) {
 				return decorateCompoundElement(JavaPluginImages.DESC_OBJS_LOGICAL_PACKAGE, cp);
 			}
@@ -153,7 +151,7 @@ class PackagesViewLabelProvider extends AppearanceAwareLabelProvider {
 			return super.getText(fragment);
 		}
 		IResource res= fragment.getResource();
-		if(res != null && !(res.getType() == IResource.FILE))
+		if(res != null && (res.getType() != IResource.FILE))
 			return decorateText(res.getName(), fragment);
 		else
 			return decorateText(calculateName(fragment), fragment);
@@ -162,7 +160,7 @@ class PackagesViewLabelProvider extends AppearanceAwareLabelProvider {
 	private String calculateName(IPackageFragment fragment) {
 
 		String name= fragment.getElementName();
-		if (name.indexOf(".") != -1) //$NON-NLS-1$
+		if (name.indexOf('.') != -1)
 			name= name.substring(name.lastIndexOf(".") + 1); //$NON-NLS-1$
 		return name;
 

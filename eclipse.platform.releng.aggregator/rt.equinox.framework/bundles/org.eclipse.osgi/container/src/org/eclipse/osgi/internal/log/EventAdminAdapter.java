@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -51,6 +51,7 @@ public class EventAdminAdapter implements ServiceTrackerCustomizer<Object, Objec
 		eventHandlerTracker.close();
 	}
 
+	@Override
 	public Object addingService(ServiceReference<Object> reference) {
 		Object toTrack = null;
 		Object objectClass = reference.getProperty(Constants.OBJECTCLASS);
@@ -66,10 +67,7 @@ public class EventAdminAdapter implements ServiceTrackerCustomizer<Object, Objec
 		if (eventAdmin != null && logEventHandlers > 0 && logListener == null) {
 			try {
 				logListener = new EventAdminLogListener(context.getService(eventAdmin));
-			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NoSuchMethodException e) {
+			} catch (ClassNotFoundException | NoSuchMethodException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -79,11 +77,13 @@ public class EventAdminAdapter implements ServiceTrackerCustomizer<Object, Objec
 		return toTrack;
 	}
 
+	@Override
 	public void modifiedService(ServiceReference<Object> reference, Object tracked) {
 		removedService(reference, tracked);
 		addingService(reference);
 	}
 
+	@Override
 	public void removedService(ServiceReference<Object> reference, Object tracked) {
 		if (tracked == eventAdmin) {
 			eventAdmin = null;
@@ -104,9 +104,10 @@ public class EventAdminAdapter implements ServiceTrackerCustomizer<Object, Objec
 
 		if (property instanceof String[]) {
 			String[] topics = (String[]) property;
-			for (int i = 0; i < topics.length; i++) {
-				if (check.contains(topics[i]))
+			for (String topic : topics) {
+				if (check.contains(topic)) {
 					return true;
+				}
 			}
 		}
 

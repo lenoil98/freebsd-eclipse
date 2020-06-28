@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,10 +14,13 @@
 package org.eclipse.jdt.internal.core.builder;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.zip.ZipFile;
 
 import org.eclipse.core.resources.IContainer;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -36,6 +39,7 @@ import org.eclipse.jdt.internal.core.util.Util;
 
 public class ClasspathDirectory extends ClasspathLocation {
 
+final boolean isOnModulePath;
 IContainer binaryFolder; // includes .class files for a single directory
 boolean isOutputFolder;
 SimpleLookupTable directoryCache;
@@ -93,6 +97,7 @@ IModule initializeModule() {
 	}
 	return null;
 }
+/** Lists all java-like files and also sub-directories (for recursive tests). */
 String[] directoryList(String qualifiedPackageName) {
 	String[] dirList = (String[]) this.directoryCache.get(qualifiedPackageName);
 	if (dirList == this.missingPackageHolder) return null; // package exists in another classpath directory or jar
@@ -107,7 +112,8 @@ String[] directoryList(String qualifiedPackageName) {
 			for (int i = 0, l = members.length; i < l; i++) {
 				IResource m = members[i];
 				String name = m.getName();
-				if (m.getType() == IResource.FILE && org.eclipse.jdt.internal.compiler.util.Util.isClassFileName(name)) {
+				if (m.getType() == IResource.FOLDER || // include folders so we recognize empty parent packages
+						(m.getType() == IResource.FILE && org.eclipse.jdt.internal.compiler.util.Util.isClassFileName(name))) {
 					// add exclusion pattern check here if we want to hide .class files
 					dirList[index++] = name;
 				}
@@ -154,11 +160,7 @@ public NameEnvironmentAnswer findClass(String binaryFileName, String qualifiedPa
 	IBinaryType reader = null;
 	try {
 		reader = Util.newClassFileReader(this.binaryFolder.getFile(new Path(qualifiedBinaryFileName)));
-	} catch (CoreException e) {
-		return null;
-	} catch (ClassFormatException e) {
-		return null;
-	} catch (IOException e) {
+	} catch (CoreException | ClassFormatException | IOException e) {
 		return null;
 	}
 	if (reader != null) {
@@ -215,7 +217,23 @@ public boolean isPackage(String qualifiedPackageName, String moduleName) {
 		if (this.module == null || !moduleName.equals(String.valueOf(this.module.name())))
 			return false;
 	}
-	return directoryList(qualifiedPackageName) != null;
+	String[] list = directoryList(qualifiedPackageName);
+	if (list != null) {
+		// 1. search files here:
+		for (String entry : list) {
+			String entryLC = entry.toLowerCase();
+			if (entryLC.endsWith(SuffixConstants.SUFFIX_STRING_class) || entryLC.endsWith(SuffixConstants.SUFFIX_STRING_java))
+				return true;
+		}
+		// 2. recurse into sub directories
+		for (String entry : list) {
+			if (entry.indexOf('.') == -1) { // no plain files without '.' are returned by directoryList()
+				if (isPackage(qualifiedPackageName+'/'+entry, null/*already checked*/))
+					return true;
+			}
+		}
+	}
+	return false;
 }
 @Override
 public boolean hasCompilationUnit(String qualifiedPackageName, String moduleName) {
@@ -250,8 +268,26 @@ public String debugPathString() {
 
 @Override
 public NameEnvironmentAnswer findClass(String typeName, String qualifiedPackageName, String moduleName, String qualifiedBinaryFileName) {
-	// 
+	//
 	return findClass(typeName, qualifiedPackageName, moduleName, qualifiedBinaryFileName, false, null);
+}
+
+@Override
+public char[][] listPackages() {
+	Set<String> packageNames = new HashSet<>();
+	IPath basePath = this.binaryFolder.getFullPath();
+	try {
+		this.binaryFolder.accept(r -> {
+			String extension = r.getFileExtension();
+			if (r instanceof IFile && extension != null && SuffixConstants.EXTENSION_class.equals(extension.toLowerCase())) {
+				packageNames.add(r.getParent().getFullPath().makeRelativeTo(basePath).toString().replace('/', '.'));
+			}
+			return true;
+		});
+	} catch (CoreException e) {
+		Util.log(e, "Failed to scan packages of "+this.binaryFolder); //$NON-NLS-1$
+	}
+	return packageNames.stream().map(String::toCharArray).toArray(char[][]::new);
 }
 
 }

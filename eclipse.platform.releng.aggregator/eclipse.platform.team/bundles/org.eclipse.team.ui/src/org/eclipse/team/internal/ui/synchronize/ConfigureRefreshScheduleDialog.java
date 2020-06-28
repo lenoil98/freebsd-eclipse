@@ -37,56 +37,38 @@ public class ConfigureRefreshScheduleDialog extends DetailsDialog {
 		this.schedule = schedule;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected void createMainDialogArea(Composite parent) {
-		IPageValidator validator = new IPageValidator() {
-			@Override
-			public void setComplete(String errorMessage) {
-				setPageComplete(errorMessage == null);
-				setErrorMessage(errorMessage);
-			}
+		IPageValidator validator = errorMessage -> {
+			setPageComplete(errorMessage == null);
+			setErrorMessage(errorMessage);
 		};
 		scheduleComposite = new ConfigureSynchronizeScheduleComposite(parent, schedule, validator);
 		Dialog.applyDialogFont(parent);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.dialogs.Dialog#okPressed()
-	 */
 	@Override
 	protected void okPressed() {
 		scheduleComposite.saveValues();
 		super.okPressed();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ui.dialogs.DetailsDialog#includeDetailsButton()
-	 */
 	@Override
 	protected boolean includeDetailsButton() {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ui.dialogs.DetailsDialog#createDropDownDialogArea(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected Composite createDropDownDialogArea(Composite parent) {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ui.dialogs.DetailsDialog#updateEnablements()
-	 */
 	@Override
 	protected void updateEnablements() {
 	}
 
-    @Override
+	@Override
 	protected String getHelpContextId() {
-        return IHelpContextIds.CONFIGURE_REFRESH_SCHEDULE_DIALOG;
-    }
+		return IHelpContextIds.CONFIGURE_REFRESH_SCHEDULE_DIALOG;
+	}
 }

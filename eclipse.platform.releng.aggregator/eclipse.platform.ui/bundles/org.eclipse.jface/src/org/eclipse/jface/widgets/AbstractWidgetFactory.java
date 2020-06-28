@@ -15,7 +15,6 @@ package org.eclipse.jface.widgets;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import org.eclipse.swt.widgets.Widget;
 
@@ -27,11 +26,16 @@ import org.eclipse.swt.widgets.Widget;
  * @param <F> factory
  * @param <W> widget
  * @param <P> parent
+ *
+ * @noextend this class is not intended to be subclassed by clients.
+ *
+ * @since 3.18
+ *
  */
 public abstract class AbstractWidgetFactory<F extends AbstractWidgetFactory<?, ?, ?>, W extends Widget, P extends Widget> {
 	private Class<F> factoryClass;
 
-	private Function<P, W> widgetCreator;
+	private WidgetSupplier<W, P> widgetCreator;
 
 	private List<Property<W>> properties = new ArrayList<>();
 
@@ -39,7 +43,7 @@ public abstract class AbstractWidgetFactory<F extends AbstractWidgetFactory<?, ?
 	 * @param factoryClass
 	 * @param widgetCreator
 	 */
-	protected AbstractWidgetFactory(Class<F> factoryClass, Function<P, W> widgetCreator) {
+	AbstractWidgetFactory(Class<F> factoryClass, WidgetSupplier<W, P> widgetCreator) {
 		this.factoryClass = factoryClass;
 		this.widgetCreator = widgetCreator;
 	}
@@ -60,7 +64,7 @@ public abstract class AbstractWidgetFactory<F extends AbstractWidgetFactory<?, ?
 	 * @return this
 	 */
 	public final W create(P parent) {
-		W widget = widgetCreator.apply(parent);
+		W widget = widgetCreator.create(parent);
 		properties.forEach(p -> p.apply(widget));
 		return widget;
 	}
@@ -68,12 +72,12 @@ public abstract class AbstractWidgetFactory<F extends AbstractWidgetFactory<?, ?
 	/**
 	 * Adds a property like image, text, enabled, listeners, ... to the widget.
 	 *
-	 * <br/>
+	 * <br>
 	 * Example:
 	 *
 	 * <pre>
 	 * public LabelFactory text(String text) {
-	 * 	addProperty(l -> l.setText(text));
+	 * 	addProperty(l -&gt; l.setText(text));
 	 * 	return this;
 	 * }
 	 * </pre>

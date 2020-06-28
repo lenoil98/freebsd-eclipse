@@ -40,6 +40,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		prefs.putInt(CompilerFlags.P_NOT_EXTERNALIZED, CompilerFlags.IGNORE);
 		prefs.putInt(CompilerFlags.P_SERVICE_COMP_WITHOUT_LAZY_ACT, CompilerFlags.WARNING);
 		prefs.putInt(CompilerFlags.P_NO_AUTOMATIC_MODULE, CompilerFlags.WARNING);
+		prefs.putInt(CompilerFlags.P_EXEC_ENV_TOO_LOW, CompilerFlags.WARNING);
 
 		prefs.putInt(CompilerFlags.P_BUILD, CompilerFlags.WARNING);
 		prefs.putInt(CompilerFlags.P_BUILD_MISSING_OUTPUT, CompilerFlags.IGNORE);
@@ -52,7 +53,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		prefs.putInt(CompilerFlags.P_BUILD_ENCODINGS, CompilerFlags.IGNORE);
 
 		prefs.putInt(CompilerFlags.P_INCOMPATIBLE_ENV, CompilerFlags.WARNING);
-		prefs.putInt(CompilerFlags.P_MISSING_EXPORT_PKGS, CompilerFlags.WARNING);
+		prefs.putInt(CompilerFlags.P_MISSING_EXPORT_PKGS, CompilerFlags.IGNORE);
 
 		prefs.putInt(CompilerFlags.P_MISSING_VERSION_EXP_PKG, CompilerFlags.IGNORE);
 		prefs.putInt(CompilerFlags.P_MISSING_VERSION_IMP_PKG, CompilerFlags.IGNORE);
@@ -69,5 +70,11 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		} catch (BackingStoreException e) {
 			PDECore.log(e);
 		}
+
+		// Now init pde.core preferences
+		PDEPreferencesManager corePrefs = PDECore.getDefault().getPreferencesManager();
+		corePrefs.setDefault(ICoreConstants.WORKSPACE_PLUGINS_OVERRIDE_TARGET, true);
+		corePrefs.setDefault(ICoreConstants.DISABLE_API_ANALYSIS_BUILDER, false);
+		corePrefs.setDefault(ICoreConstants.TEST_PLUGIN_PATTERN, ICoreConstants.TEST_PLUGIN_PATTERN_DEFAULTVALUE);
 	}
 }

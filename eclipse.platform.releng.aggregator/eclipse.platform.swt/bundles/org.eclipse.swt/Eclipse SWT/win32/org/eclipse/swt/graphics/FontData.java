@@ -14,9 +14,9 @@
 package org.eclipse.swt.graphics;
 
 
+import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
-import org.eclipse.swt.*;
 
 /**
  * Instances of this class describe operating system fonts.
@@ -317,7 +317,7 @@ public boolean equals (Object object) {
 		getName().equals(fd.getName());
 }
 
-long /*int*/ EnumLocalesProc(long /*int*/ lpLocaleString) {
+long EnumLocalesProc(long lpLocaleString) {
 
 	/* Get the locale ID */
 	int length = 8;
@@ -380,7 +380,7 @@ public int getHeight() {
  * @since 3.0
  */
 public String getLocale () {
-	StringBuffer buffer = new StringBuffer ();
+	StringBuilder buffer = new StringBuilder ();
 	char sep = '_';
 	if (lang != null) {
 		buffer.append (lang);
@@ -521,9 +521,7 @@ public void setLocale(String locale) {
 		data.lfCharSet = (byte)OS.DEFAULT_CHARSET;
 	} else {
 		Callback callback = new Callback (this, "EnumLocalesProc", 1); //$NON-NLS-1$
-		long /*int*/ lpEnumLocalesProc = callback.getAddress ();
-		if (lpEnumLocalesProc == 0) SWT.error(SWT.ERROR_NO_MORE_CALLBACKS);
-		OS.EnumSystemLocales(lpEnumLocalesProc, OS.LCID_SUPPORTED);
+		OS.EnumSystemLocales(callback.getAddress (), OS.LCID_SUPPORTED);
 		callback.dispose ();
 	}
 }
@@ -598,7 +596,7 @@ public void setStyle(int style) {
  */
 @Override
 public String toString() {
-	StringBuffer buffer = new StringBuffer(128);
+	StringBuilder buffer = new StringBuilder(128);
 	buffer.append("1|"); //$NON-NLS-1$
 	String name = getName();
 	buffer.append(name);

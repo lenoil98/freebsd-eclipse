@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -31,7 +31,7 @@ public class TestDynamic_004 extends AbstractStateTest {
 	BundleDescription bundle_3 = null;
 	BundleDescription bundle_4 = null;
 
-	
+
 	public void testTest_003() {
 		State state = buildEmptyState();
 		StateObjectFactory sof = StateObjectFactory.defaultFactory;
@@ -55,21 +55,20 @@ public class TestDynamic_004 extends AbstractStateTest {
 		}
 		checkBundlesResolved_a();
 		checkWiring_a();
-		
+
 		// Dynamics
 		ExportPackageDescription exp = state.linkDynamicImport(bundle_1, "q");
 		assertNotNull("Package [q] is not wired when it should be ", exp);
 		assertEquals("Package [q] is wired incorrectly ", exp.getExporter(), bundle_3);
-		
+
 	} // end of method
 
-	
+
 	public void checkWiringState_1() {
 		ExportPackageDescription[] exports = bundle_1.getResolvedImports();
 		assertNotNull("export array is unexpectedly null", exports);
 		assertTrue("export array is unexpectedly empty", exports.length > 0);
-		for (int i = 0; i < exports.length; i++) {
-			ExportPackageDescription exp = exports[i];
+		for (ExportPackageDescription exp : exports) {
 			String exportPackageName = exp.getName();
 			assertNotNull("package name is null", exportPackageName);
 			if (exportPackageName.equals("p")) {
@@ -83,8 +82,7 @@ public class TestDynamic_004 extends AbstractStateTest {
 		ExportPackageDescription[] exports = bundle_1.getResolvedImports();
 		assertNotNull("export array is unexpectedly null", exports);
 		assertTrue("export array is unexpectedly empty", exports.length > 0);
-		for (int i = 0; i < exports.length; i++) {
-			ExportPackageDescription exp = exports[i];
+		for (ExportPackageDescription exp : exports) {
 			String exportPackageName = exp.getName();
 			assertNotNull("package name is null", exportPackageName);
 			if (exportPackageName.equals("q")) {
@@ -100,7 +98,7 @@ public class TestDynamic_004 extends AbstractStateTest {
 	public void checkWiringState_4() {
 	} // end method
 
-	
+
 	public void checkWiring_a() {
 		checkWiringState_1();
 		checkWiringState_2();
@@ -108,7 +106,7 @@ public class TestDynamic_004 extends AbstractStateTest {
 		checkWiringState_4();
 	} // end method
 
-	
+
 	public void addBundlesToState_a(State state) {
 		boolean added = false;
 		added = state.addBundle(bundle_1);
@@ -121,7 +119,7 @@ public class TestDynamic_004 extends AbstractStateTest {
 		assertTrue("failed to add bundle ", added);
 	} // end method
 
-	
+
 	public void checkBundlesResolved_a() {
 		assertTrue("unexpected bundle resolution state", bundle_1.isResolved());
 		assertTrue("unexpected bundle resolution state", bundle_2.isResolved());
@@ -129,7 +127,7 @@ public class TestDynamic_004 extends AbstractStateTest {
 		assertTrue("unexpected bundle resolution state", bundle_4.isResolved());
 	} // end method
 
-	
+
 	public BundleDescription create_bundle_1(StateObjectFactory sof) {
 		java.util.Dictionary dictionary_1 = new java.util.Properties();
 		BundleDescription bundle = null;

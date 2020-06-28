@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 GK Software AG, and others.
+ * Copyright (c) 2017, 2019 GK Software AG, and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,7 @@ package org.eclipse.jdt.internal.ui.wizards.buildpaths;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -56,46 +57,57 @@ import org.eclipse.jdt.internal.ui.refactoring.contentassist.JavaPackageCompleti
 import org.eclipse.jdt.internal.ui.wizards.IStatusChangeListener;
 import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages;
 import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddExport;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddExpose;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.ModuleEncapsulationDetail.ModuleAddOpens;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.IDialogFieldListener;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.LayoutUtil;
+import org.eclipse.jdt.internal.ui.wizards.dialogfields.SelectionButtonDialogFieldGroup;
 import org.eclipse.jdt.internal.ui.wizards.dialogfields.StringDialogField;
 
 
 /**
- * UI to define one additional exports (add-exports).
+ * UI to define one additional exports (add-exports) or opens (add-opens).
  */
 public class ModuleAddExportsBlock {
+
+	private static final String[] EXPORTS_OPENS_LABELS= new String[] {"exports", "opens"}; //$NON-NLS-1$ //$NON-NLS-2$
+	private static final int IDX_EXPORTS= 0;
+	private static final int IDX_OPENS= 1;
 
 	private final IStatusChangeListener fContext;
 
 	private StringDialogField fSourceModule;
 	private StringDialogField fPackage;
 	private StringDialogField fTargetModules;
+	private SelectionButtonDialogFieldGroup fExposeKindButtons;
 
 	private IStatus fSourceModuleStatus;
 	private IStatus fPackageStatus;
 
 	private Control fSWTWidget;
 
-	private final ModuleAddExport fInitialValue;
-	
+	private final ModuleAddExpose fInitialValue;
+
 	private IJavaElement[] fSourceJavaElements;
+	private Collection<String> fPossibleTargetModules;
 
 	/**
 	 * @param context listeners for status updates
 	 * @param sourceJavaElements java element representing the source modules from where packages should be exported
+	 * @param possibleTargetModules modules to be offered in content assist, or {@code null}
 	 * @param initialValue The value to edit
 	 */
-	public ModuleAddExportsBlock(IStatusChangeListener context, IJavaElement[] sourceJavaElements, ModuleAddExport initialValue) {
+	public ModuleAddExportsBlock(IStatusChangeListener context, IJavaElement[] sourceJavaElements, Collection<String> possibleTargetModules, ModuleAddExpose initialValue) {
 		fContext= context;
 		fInitialValue= initialValue;
 		fSourceJavaElements= sourceJavaElements;
+		fPossibleTargetModules= possibleTargetModules;
 
 		fSourceModuleStatus= new StatusInfo();
 		fPackageStatus= new StatusInfo();
 
-		IDialogFieldListener adapter= field -> addExportsDialogFieldChanged(field);
+		IDialogFieldListener adapter= this::addExportsDialogFieldChanged;
 
 		// create the dialog fields (no widgets yet)
 		fSourceModule= new StringDialogField();
@@ -110,6 +122,11 @@ public class ModuleAddExportsBlock {
 		fTargetModules.setDialogFieldListener(adapter);
 		fTargetModules.setLabelText(NewWizardMessages.AddExportsBlock_targetModules_label);
 
+		fExposeKindButtons= new SelectionButtonDialogFieldGroup(SWT.RADIO, EXPORTS_OPENS_LABELS, 2);
+		fExposeKindButtons.setSelection(IDX_EXPORTS, initialValue instanceof ModuleAddExport);
+		fExposeKindButtons.setSelection(IDX_OPENS, initialValue instanceof ModuleAddOpens);
+		fExposeKindButtons.setDialogFieldListener(adapter);
+
 		setDefaults();
 	}
 
@@ -121,16 +138,16 @@ public class ModuleAddExportsBlock {
 			}
 			fPackage.setText(fInitialValue.fPackage);
 			fTargetModules.setText(fInitialValue.fTargetModules);
-			fTargetModules.setEnabled(false);
+			fTargetModules.setEnabled(fPossibleTargetModules != null);
 		}
 	}
 
 	private Set<String> moduleNames() {
 		Set<String> moduleNames= new HashSet<>();
 		if (fSourceJavaElements != null) {
-			for (int i= 0; i < fSourceJavaElements.length; i++) {
-				if (fSourceJavaElements[i] instanceof IPackageFragmentRoot) {
-					IModuleDescription module= ((IPackageFragmentRoot) fSourceJavaElements[i]).getModuleDescription();
+			for (IJavaElement element : fSourceJavaElements) {
+				if (element instanceof IPackageFragmentRoot) {
+					IModuleDescription module= ((IPackageFragmentRoot) element).getModuleDescription();
 					if (module != null) {
 						moduleNames.add(module.getElementName());
 					}
@@ -184,7 +201,7 @@ public class ModuleAddExportsBlock {
 
 	/**
 	 * Gets the add-export value entered by the user
-	 * @return the add-export value, or an empty string if any of the fields was left empty. 
+	 * @return the add-export value, or an empty string if any of the fields was left empty.
 	 */
 	public String getValue() {
 		String sourceModule= getSourceModuleText();
@@ -195,13 +212,16 @@ public class ModuleAddExportsBlock {
 		return sourceModule+'/'+pack+'='+targetModules;
 	}
 
-	public ModuleAddExport getExport(CPListElementAttribute parentAttribute) {
+	public ModuleAddExpose getExport(CPListElementAttribute parentAttribute) {
 		String sourceModule= getSourceModuleText();
 		String pack= getPackageText();
 		String targetModules= getTargetModulesText();
-		if (sourceModule.isEmpty() || pack.isEmpty() || targetModules.isEmpty())
+		if (sourceModule.isEmpty() || pack.isEmpty())
 			return null;
-		return new ModuleAddExport(sourceModule, pack, targetModules, parentAttribute);
+		if (fExposeKindButtons.isSelected(IDX_EXPORTS))
+			return new ModuleAddExport(sourceModule, pack, targetModules, parentAttribute);
+		else
+			return new ModuleAddOpens(sourceModule, pack, targetModules, parentAttribute);
 	}
 
 	/**
@@ -261,7 +281,13 @@ public class ModuleAddExportsBlock {
 		LayoutUtil.setHorizontalGrabbing(targetModulesField);
 		BidiUtils.applyBidiProcessing(targetModulesField, StructuredTextTypeHandlerFactory.JAVA);
 
+		if (fPossibleTargetModules != null) {
+			ModuleDialog.configureModuleContentAssist(fTargetModules.getTextControl(parent), fPossibleTargetModules);
+		}
+
 		DialogField.createEmptySpace(composite, 2);
+
+		fExposeKindButtons.doFillIntoGrid(composite, 2);
 
 		Dialog.applyDialogFont(composite);
 
@@ -297,9 +323,10 @@ public class ModuleAddExportsBlock {
 					assert fSourceJavaElements.length == 1;
 					IPackageFragmentRoot[] packageFragmentRoots= ((IJavaProject) fSourceJavaElements[0]).getPackageFragmentRoots();
 					int count= 0;
-					for (int i= 0; i < packageFragmentRoots.length; i++) {
-						if (packageFragmentRoots[i].getKind() == IPackageFragmentRoot.K_SOURCE) // only the project's own sources
-							packageFragmentRoots[count++]= packageFragmentRoots[i];
+					for (IPackageFragmentRoot packageFragmentRoot : packageFragmentRoots) {
+						if (packageFragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+							packageFragmentRoots[count++]= packageFragmentRoot;
+						}
 					}
 					if (count < packageFragmentRoots.length)
 						packageFragmentRoots= Arrays.copyOf(packageFragmentRoots, count);

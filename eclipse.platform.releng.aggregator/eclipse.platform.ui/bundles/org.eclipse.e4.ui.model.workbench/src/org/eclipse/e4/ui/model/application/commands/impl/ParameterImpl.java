@@ -99,6 +99,7 @@ public class ParameterImpl extends ApplicationElementImpl implements MParameter 
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
 	public String getName() {
 		return name;
 	}
@@ -108,6 +109,7 @@ public class ParameterImpl extends ApplicationElementImpl implements MParameter 
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
 	public void setName(String newName) {
 		String oldName = name;
 		name = newName;
@@ -120,6 +122,7 @@ public class ParameterImpl extends ApplicationElementImpl implements MParameter 
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
 	public String getValue() {
 		return value;
 	}
@@ -129,11 +132,13 @@ public class ParameterImpl extends ApplicationElementImpl implements MParameter 
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
 	public void setValue(String newValue) {
 		String oldValue = value;
 		value = newValue;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, CommandsPackageImpl.PARAMETER__VALUE, oldValue, value));
+			eNotify(new ENotificationImpl(this, Notification.SET, CommandsPackageImpl.PARAMETER__VALUE, oldValue,
+					value));
 	}
 
 	/**
@@ -144,12 +149,13 @@ public class ParameterImpl extends ApplicationElementImpl implements MParameter 
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case CommandsPackageImpl.PARAMETER__NAME:
-				return getName();
-			case CommandsPackageImpl.PARAMETER__VALUE:
-				return getValue();
+		case CommandsPackageImpl.PARAMETER__NAME:
+			return getName();
+		case CommandsPackageImpl.PARAMETER__VALUE:
+			return getValue();
+		default:
+			return super.eGet(featureID, resolve, coreType);
 		}
-		return super.eGet(featureID, resolve, coreType);
 	}
 
 	/**
@@ -160,14 +166,16 @@ public class ParameterImpl extends ApplicationElementImpl implements MParameter 
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case CommandsPackageImpl.PARAMETER__NAME:
-				setName((String)newValue);
-				return;
-			case CommandsPackageImpl.PARAMETER__VALUE:
-				setValue((String)newValue);
-				return;
+		case CommandsPackageImpl.PARAMETER__NAME:
+			setName((String) newValue);
+			return;
+		case CommandsPackageImpl.PARAMETER__VALUE:
+			setValue((String) newValue);
+			return;
+		default:
+			super.eSet(featureID, newValue);
+			return;
 		}
-		super.eSet(featureID, newValue);
 	}
 
 	/**
@@ -178,14 +186,16 @@ public class ParameterImpl extends ApplicationElementImpl implements MParameter 
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case CommandsPackageImpl.PARAMETER__NAME:
-				setName(NAME_EDEFAULT);
-				return;
-			case CommandsPackageImpl.PARAMETER__VALUE:
-				setValue(VALUE_EDEFAULT);
-				return;
+		case CommandsPackageImpl.PARAMETER__NAME:
+			setName(NAME_EDEFAULT);
+			return;
+		case CommandsPackageImpl.PARAMETER__VALUE:
+			setValue(VALUE_EDEFAULT);
+			return;
+		default:
+			super.eUnset(featureID);
+			return;
 		}
-		super.eUnset(featureID);
 	}
 
 	/**
@@ -196,12 +206,13 @@ public class ParameterImpl extends ApplicationElementImpl implements MParameter 
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case CommandsPackageImpl.PARAMETER__NAME:
-				return NAME_EDEFAULT == null ? name != null : !NAME_EDEFAULT.equals(name);
-			case CommandsPackageImpl.PARAMETER__VALUE:
-				return VALUE_EDEFAULT == null ? value != null : !VALUE_EDEFAULT.equals(value);
+		case CommandsPackageImpl.PARAMETER__NAME:
+			return NAME_EDEFAULT == null ? name != null : !NAME_EDEFAULT.equals(name);
+		case CommandsPackageImpl.PARAMETER__VALUE:
+			return VALUE_EDEFAULT == null ? value != null : !VALUE_EDEFAULT.equals(value);
+		default:
+			return super.eIsSet(featureID);
 		}
-		return super.eIsSet(featureID);
 	}
 
 	/**
@@ -211,7 +222,8 @@ public class ParameterImpl extends ApplicationElementImpl implements MParameter 
 	 */
 	@Override
 	public String toString() {
-		if (eIsProxy()) return super.toString();
+		if (eIsProxy())
+			return super.toString();
 
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (name: "); //$NON-NLS-1$

@@ -14,8 +14,6 @@
 package org.eclipse.core.tests.filesystem;
 
 import java.net.URI;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.URIUtil;
 import org.eclipse.core.runtime.*;
@@ -25,18 +23,6 @@ import org.eclipse.core.tests.internal.filesystem.wrapper.WrapperFileSystem;
  * Tests API methods of the class {@link org.eclipse.core.filesystem.URIUtil}.
  */
 public class URIUtilTest extends FileSystemTest {
-	public static Test suite() {
-		return new TestSuite(URIUtilTest.class);
-	}
-
-	public URIUtilTest() {
-		super("");
-	}
-
-	public URIUtilTest(String name) {
-		super(name);
-	}
-
 	/**
 	 * Tests API method {@link org.eclipse.core.filesystem.URIUtil#equals(java.net.URI, java.net.URI)}.
 	 */
@@ -99,7 +85,7 @@ public class URIUtilTest extends FileSystemTest {
 
 	/**
 	 * Test API methods {@link org.eclipse.core.filesystem.URIUtil#toURI(IPath)},
-	 * {@link org.eclipse.core.filesystem.URIUtil#toURI(String)))} results equality
+	 * {@link org.eclipse.core.filesystem.URIUtil#toURI(String)} results equality
 	 */
 	public void testToURIAbsolute() {
 		String pathString = null;
@@ -116,7 +102,7 @@ public class URIUtilTest extends FileSystemTest {
 
 	/**
 	 * Test API methods {@link org.eclipse.core.filesystem.URIUtil#toURI(IPath)},
-	 * {@link org.eclipse.core.filesystem.URIUtil#toURI(String)))} results equality
+	 * {@link org.eclipse.core.filesystem.URIUtil#toURI(String)} results equality
 	 */
 	public void testToURIRelative() {
 		String pathString = "test/path with/spaces to_file.txt";
@@ -129,7 +115,7 @@ public class URIUtilTest extends FileSystemTest {
 	}
 
 	/**
-	 * Test API methods {@link org.eclipse.core.filesystem.URIUtil#toURI(org.eclipse.core.runtime.IPath))}.
+	 * Test API methods {@link org.eclipse.core.filesystem.URIUtil#toURI(org.eclipse.core.runtime.IPath)}.
 	 * {@link org.eclipse.core.filesystem.URIUtil#toPath(URI)} transformation with relative and absolute paths
 	 */
 	public void testFromPathToURI() {

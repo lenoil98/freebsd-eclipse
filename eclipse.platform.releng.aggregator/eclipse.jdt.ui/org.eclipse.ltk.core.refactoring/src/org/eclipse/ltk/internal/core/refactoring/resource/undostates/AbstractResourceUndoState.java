@@ -99,7 +99,7 @@ abstract class AbstractResourceUndoState extends ResourceUndoState {
 	/**
 	 * Restore any saved attributed of the specified resource. This method is called after the
 	 * existent resource represented by the receiver has been created.
-	 * 
+	 *
 	 * @param resource the newly created resource
 	 * @throws CoreException if accessing the resource fails
 	 */
@@ -114,9 +114,10 @@ abstract class AbstractResourceUndoState extends ResourceUndoState {
 			resource.setResourceAttributes(resourceAttributes);
 		}
 		if (markerDescriptions != null) {
-			for (int i = 0; i < markerDescriptions.length; i++) {
-				if (markerDescriptions[i].resource.exists())
-					markerDescriptions[i].createMarker();
+			for (MarkerUndoState markerDescription : markerDescriptions) {
+				if (markerDescription.resource.exists()) {
+					markerDescription.createMarker();
+				}
 			}
 		}
 	}

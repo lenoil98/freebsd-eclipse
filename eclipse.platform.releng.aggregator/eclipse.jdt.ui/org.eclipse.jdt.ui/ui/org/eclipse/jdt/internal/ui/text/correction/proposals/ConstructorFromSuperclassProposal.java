@@ -120,8 +120,7 @@ public class ConstructorFromSuperclassProposal extends LinkedCorrectionProposal 
 
 	private void addLinkedRanges(ASTRewrite rewrite, MethodDeclaration newStub) {
 		List<SingleVariableDeclaration> parameters= newStub.parameters();
-		for (int i= 0; i < parameters.size(); i++) {
-			SingleVariableDeclaration curr= parameters.get(i);
+		for (SingleVariableDeclaration curr : parameters) {
 			String name= curr.getName().getIdentifier();
 			addLinkedPosition(rewrite.track(curr.getType()), false, "arg_type_" + name); //$NON-NLS-1$
 			addLinkedPosition(rewrite.track(curr.getName()), false, "arg_name_" + name); //$NON-NLS-1$
@@ -160,9 +159,8 @@ public class ConstructorFromSuperclassProposal extends LinkedCorrectionProposal 
 			}
 
 			List<Type> thrownExceptions= decl.thrownExceptionTypes();
-			ITypeBinding[] excTypes= binding.getExceptionTypes();
-			for (int i= 0; i < excTypes.length; i++) {
-				Type excType= getImportRewrite().addImport(excTypes[i], ast, importRewriteContext, TypeLocation.EXCEPTION);
+			for (ITypeBinding t : binding.getExceptionTypes()) {
+				Type excType= getImportRewrite().addImport(t, ast, importRewriteContext, TypeLocation.EXCEPTION);
 				thrownExceptions.add(excType);
 			}
 
@@ -171,10 +169,10 @@ public class ConstructorFromSuperclassProposal extends LinkedCorrectionProposal 
 			}
 
 			List<Expression> arguments= invocation.arguments();
-			for (int i= 0; i < paramNames.length; i++) {
-				Name argument= ast.newSimpleName(paramNames[i]);
+			for (String paramName : paramNames) {
+				Name argument= ast.newSimpleName(paramName);
 				arguments.add(argument);
-				addLinkedPosition(rewrite.track(argument), false, "arg_name_" + paramNames[i]); //$NON-NLS-1$
+				addLinkedPosition(rewrite.track(argument), false, "arg_name_" + paramName); //$NON-NLS-1$
 			}
 		}
 
@@ -210,8 +208,8 @@ public class ConstructorFromSuperclassProposal extends LinkedCorrectionProposal 
 
 		String key= "arg_name_" + firstName; //$NON-NLS-1$
 		addLinkedPosition(rewrite.track(enclosing), false, key);
-		for (int i= 0; i < enclosingArgNames.length; i++) {
-			addLinkedPositionProposal(key, enclosingArgNames[i], null); // alternative names
+		for (String enclosingArgName : enclosingArgNames) {
+			addLinkedPositionProposal(key, enclosingArgName, null); // alternative names
 		}
 		return invocation;
 	}

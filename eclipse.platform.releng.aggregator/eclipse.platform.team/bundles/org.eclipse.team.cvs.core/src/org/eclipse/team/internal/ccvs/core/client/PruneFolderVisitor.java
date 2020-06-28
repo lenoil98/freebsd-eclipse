@@ -51,8 +51,7 @@ public class PruneFolderVisitor implements ICVSResourceVisitor {
 		
 		// Visit the resources
 		Set prunableParents = new HashSet();
-		for (int i = 0; i < resources.length; i++) {
-			ICVSResource cvsResource = resources[i];
+		for (ICVSResource cvsResource : resources) {
 			// prune the resource and it's children when appropriate
 			cvsResource.accept(this);
 			// if the resource doesn't exists, attempt to prune it's parent
@@ -64,16 +63,13 @@ public class PruneFolderVisitor implements ICVSResourceVisitor {
 			pruneFolderAndParentsIfAppropriate(cvsFolder);
 		}
 	}
-	/**
-	 * @see ICVSResourceVisitor#visitFile(IManagedFile)
-	 */
+	
+	@Override
 	public void visitFile(ICVSFile file) throws CVSException {
 		// nothing to do here
 	}
 
-	/**
-	 * @see ICVSResourceVisitor#visitFolder(ICVSFolder)
-	 */
+	@Override
 	public void visitFolder(ICVSFolder folder) throws CVSException {
 		// First prune any empty children
 		folder.acceptChildren(this);

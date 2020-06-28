@@ -14,6 +14,7 @@
 package org.eclipse.debug.internal.ui.views.breakpoints;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -77,21 +78,14 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		fDefaultWorkingSet = getDefaultWorkingSet();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#getCategories(org.eclipse.debug.core.model.IBreakpoint)
-	 */
 	@Override
 	public IAdaptable[] getCategories(IBreakpoint breakpoint) {
 		List<IAdaptable> result = new ArrayList<>();
 		IWorkingSet[] workingSets = fWorkingSetManager.getWorkingSets();
-		for (int i = 0; i < workingSets.length; i++) {
-			IWorkingSet set = workingSets[i];
+		for (IWorkingSet set : workingSets) {
 			if (IDebugUIConstants.BREAKPOINT_WORKINGSET_ID.equals(set.getId())) {
 				IAdaptable[] elements = set.getElements();
-				for (int j = 0; j < elements.length; j++) {
-					IAdaptable adaptable = elements[j];
+				for (IAdaptable adaptable : elements) {
 					if (adaptable.equals(breakpoint)) {
 						result.add(new WorkingSetCategory(set));
 						break;
@@ -102,11 +96,6 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		return result.toArray(new IAdaptable[result.size()]);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#dispose()
-	 */
 	@Override
 	public void dispose() {
 		fWorkingSetManager.removePropertyChangeListener(this);
@@ -116,11 +105,6 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		super.dispose();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
-	 */
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		String property = event.getProperty();
@@ -157,9 +141,9 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		}
 		if(property.equals(IWorkingSetManager.CHANGE_WORKING_SET_ADD)) {
 			IAdaptable[] breakpoints = set.getElements();
-			for (int i = 0; i < breakpoints.length; i++) {
-				if (breakpoints[i] instanceof IBreakpoint) {
-					IMarker marker = ((IBreakpoint)breakpoints[i]).getMarker();
+			for (IAdaptable breakpoint : breakpoints) {
+				if (breakpoint instanceof IBreakpoint) {
+					IMarker marker = ((IBreakpoint) breakpoint).getMarker();
 					fCache.addEntry(marker, set.getName());
 					fCache.flushMarkerCache(marker);
 				}
@@ -170,20 +154,15 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.core.IBreakpointsListener#breakpointsAdded(org.eclipse.debug.core.model.IBreakpoint[])
-	 */
 	@Override
 	public void breakpointsAdded(IBreakpoint[] breakpoints) {
 		Map<IWorkingSet, List<IBreakpoint>> setToBreakpoints = new HashMap<>();
-		for (int i = 0; i < breakpoints.length; i++) {
-			IMarker marker = breakpoints[i].getMarker();
+		for (IBreakpoint breakpoint : breakpoints) {
+			IMarker marker = breakpoint.getMarker();
 			String[] names = getWorkingsetAttributeFromMarker(marker, IInternalDebugUIConstants.WORKING_SET_NAME);
 			//add it to the default set if the listing is empty
 			if (names.length == 0) {
-				queueToSet(breakpoints[i], getDefaultWorkingSet(), setToBreakpoints);
+				queueToSet(breakpoint, getDefaultWorkingSet(), setToBreakpoints);
 			} else {
 				for (int j = 1; j < names.length; j++) {
 					IWorkingSet set = PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSet(names[j]);
@@ -191,7 +170,7 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 					if (set == null) {
 						set = getDefaultWorkingSet();
 					}
-					queueToSet(breakpoints[i], set, setToBreakpoints);
+					queueToSet(breakpoint, set, setToBreakpoints);
 				}
 			}
 		}
@@ -223,12 +202,11 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 			IAdaptable[] elements = set.getElements();
 			Set<IAdaptable> collection = new HashSet<>(elements.length);
 			List<IAdaptable> list = new ArrayList<>(elements.length + breakpoints.length);
-			for(int i = 0; i < elements.length; i++) {
-				collection.add(elements[i]);
-				list.add(elements[i]);
+			for (IAdaptable element : elements) {
+				collection.add(element);
+				list.add(element);
 			}
-			for (int i = 0; i < breakpoints.length; i++) {
-				IBreakpoint breakpoint = breakpoints[i];
+			for (IBreakpoint breakpoint : breakpoints) {
 				if (!collection.contains(breakpoint)) {
 					list.add(breakpoint);
 					fCache.addEntry(breakpoint.getMarker(), set.getName()); //fix for bug 103731
@@ -239,19 +217,13 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.core.IBreakpointsListener#breakpointsRemoved(org.eclipse.debug.core.model.IBreakpoint[],
-	 *      org.eclipse.core.resources.IMarkerDelta[])
-	 */
 	@Override
 	public void breakpointsRemoved(IBreakpoint[] breakpoints,
 			IMarkerDelta[] deltas) {
 		IWorkingSet[] workingSets = fWorkingSetManager.getWorkingSets();
 		IWorkingSet set = null;
-		for (int i = 0; i < workingSets.length; i++) {
-			set = workingSets[i];
+		for (IWorkingSet workingSet : workingSets) {
+			set = workingSet;
 			if (IDebugUIConstants.BREAKPOINT_WORKINGSET_ID.equals(set.getId())) {
 				clean(set);
 			}
@@ -280,8 +252,7 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		}
 		if (update) {
 			List<IAdaptable> newElements = new ArrayList<>(elements.length);
-			for (int i = 0; i < elements.length; i++) {
-				IAdaptable adaptable = elements[i];
+			for (IAdaptable adaptable : elements) {
 				if (adaptable != null) {
 					newElements.add(adaptable);
 				}
@@ -290,12 +261,6 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.core.IBreakpointsListener#breakpointsChanged(org.eclipse.debug.core.model.IBreakpoint[],
-	 *      org.eclipse.core.resources.IMarkerDelta[])
-	 */
 	@Override
 	public void breakpointsChanged(IBreakpoint[] breakpoints, IMarkerDelta[] deltas) {
 	}
@@ -342,12 +307,6 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#canRemove(org.eclipse.debug.core.model.IBreakpoint,
-	 *      org.eclipse.core.runtime.IAdaptable)
-	 */
 	@Override
 	public boolean canRemove(IBreakpoint breakpoint, IAdaptable category) {
 		if (category instanceof WorkingSetCategory) {
@@ -357,12 +316,6 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		return super.canRemove(breakpoint, category);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#canAdd(org.eclipse.debug.core.model.IBreakpoint,
-	 *      org.eclipse.core.runtime.IAdaptable)
-	 */
 	@Override
 	public boolean canAdd(IBreakpoint breakpoint, IAdaptable category) {
 		if (category instanceof WorkingSetCategory) {
@@ -372,12 +325,6 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		return super.canAdd(breakpoint, category);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#addBreakpoint(org.eclipse.debug.core.model.IBreakpoint,
-	 *      org.eclipse.core.runtime.IAdaptable)
-	 */
 	@Override
 	public void addBreakpoint(IBreakpoint breakpoint, IAdaptable category) {
 		addBreakpoints(new IBreakpoint[]{breakpoint}, category);
@@ -403,20 +350,13 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		return new String[] {};
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#removeBreakpoint(org.eclipse.debug.core.model.IBreakpoint,
-	 *      org.eclipse.core.runtime.IAdaptable)
-	 */
 	@Override
 	public void removeBreakpoint(IBreakpoint breakpoint, IAdaptable category) {
 		if (category instanceof WorkingSetCategory) {
 			IWorkingSet set = ((WorkingSetCategory) category).getWorkingSet();
 			IAdaptable[] elements = set.getElements();
 			List<IAdaptable> list = new ArrayList<>();
-			for (int i = 0; i < elements.length; i++) {
-				IAdaptable adaptable = elements[i];
+			for (IAdaptable adaptable : elements) {
 				if (!adaptable.equals(breakpoint)) {
 					list.add(adaptable);
 				}
@@ -427,17 +367,11 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegate#getCategories()
-	 */
 	@Override
 	public IAdaptable[] getCategories() {
 		IWorkingSet[] workingSets = fWorkingSetManager.getWorkingSets();
 		List<IAdaptable> all = new ArrayList<>();
-		for (int i = 0; i < workingSets.length; i++) {
-			IWorkingSet set = workingSets[i];
+		for (IWorkingSet set : workingSets) {
 			if (IDebugUIConstants.BREAKPOINT_WORKINGSET_ID.equals(set
 					.getId())) {
 				all.add(new WorkingSetCategory(set));
@@ -446,9 +380,6 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		return all.toArray(new IAdaptable[all.size()]);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegateExtension#addBreakpoints(org.eclipse.debug.core.model.IBreakpoint[], org.eclipse.core.runtime.IAdaptable)
-	 */
 	@Override
 	public void addBreakpoints(IBreakpoint[] breakpoints, IAdaptable category) {
 		if (category instanceof WorkingSetCategory) {
@@ -457,20 +388,14 @@ public class BreakpointSetOrganizer extends AbstractBreakpointOrganizerDelegate 
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.IBreakpointOrganizerDelegateExtension#removeBreakpoints(org.eclipse.debug.core.model.IBreakpoint[], org.eclipse.core.runtime.IAdaptable)
-	 */
 	@Override
 	public void removeBreakpoints(IBreakpoint[] breakpoints, IAdaptable category) {
 		if (category instanceof WorkingSetCategory) {
 			IWorkingSet set = ((WorkingSetCategory) category).getWorkingSet();
 			IAdaptable[] elements = set.getElements();
 			List<IAdaptable> list = new ArrayList<>(elements.length);
-			for (int i = 0; i < elements.length; i++) {
-				list.add(elements[i]);
-			}
-			for (int i = 0; i < breakpoints.length; i++) {
-				IBreakpoint breakpoint = breakpoints[i];
+			Collections.addAll(list, elements);
+			for (IBreakpoint breakpoint : breakpoints) {
 				fCache.removeMappedEntry(breakpoint.getMarker(), set.getName());
 				fCache.flushMarkerCache(breakpoint.getMarker());
 				list.remove(breakpoint);

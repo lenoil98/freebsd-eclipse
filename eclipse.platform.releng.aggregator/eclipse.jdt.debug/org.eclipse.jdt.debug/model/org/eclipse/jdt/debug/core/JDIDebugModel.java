@@ -113,6 +113,13 @@ public class JDIDebugModel {
 			+ ".PREF_SHOW_STEP_RESULT"; //$NON-NLS-1$
 
 	/**
+	 * Preference key for specifying if PREF_SHOW_STEP_RESULT is respected for remote debugging.
+	 *
+	 * @since 3.15
+	 */
+	public static final String PREF_SHOW_STEP_RESULT_REMOTE = getPluginIdentifier() + ".PREF_SHOW_STEP_RESULT_REMOTE"; //$NON-NLS-1$
+
+	/**
 	 * Preference key for specifying if the timeout (in ms) after which the return method result of a step operation is not observed any longer (0
 	 * means no timeout, a negative value means: simulate a timeout condition).
 	 *
@@ -126,6 +133,15 @@ public class JDIDebugModel {
 	 * @since 3.12
 	 */
 	public static final int DEF_SHOW_STEP_TIMEOUT = 7000;
+
+	/**
+	 * The preference key for the behavior of exception breakpoint hits recurring for the same exception instance.
+	 *
+	 * @see org.eclipse.jdt.debug.core.IJavaExceptionBreakpoint.SuspendOnRecurrenceStrategy
+	 *
+	 * @since 3.14
+	 */
+	public static final String PREF_SUSPEND_ON_RECURRENCE_STRATEGY = getPluginIdentifier() + ".PREF_SUSPEND_ON_RECURRENCE_STRATEGY"; //$NON-NLS-1$
 
 	/**
 	 * Not to be instantiated.
@@ -831,15 +847,14 @@ public class JDIDebugModel {
 		String markerType = JavaLineBreakpoint.getMarkerType();
 		IBreakpointManager manager = DebugPlugin.getDefault()
 				.getBreakpointManager();
-		IBreakpoint[] breakpoints = manager.getBreakpoints(modelId);
-		for (int i = 0; i < breakpoints.length; i++) {
-			if (!(breakpoints[i] instanceof IJavaLineBreakpoint)) {
+		for (IBreakpoint bp : manager.getBreakpoints(modelId)) {
+			if (!(bp instanceof IJavaLineBreakpoint)) {
 				continue;
 			}
-			IJavaLineBreakpoint breakpoint = (IJavaLineBreakpoint) breakpoints[i];
+			IJavaLineBreakpoint breakpoint = (IJavaLineBreakpoint) bp;
 			IMarker marker = breakpoint.getMarker();
 			if (marker != null && marker.exists()
-					&& marker.getType().equals(markerType)) {
+				&& marker.getType().equals(markerType)) {
 				String breakpointTypeName = breakpoint.getTypeName();
 				if (JavaDebugUtils.typeNamesEqual(breakpointTypeName, typeName) || (breakpointTypeName != null && breakpointTypeName.startsWith(typeName + '$'))) {
 					if (breakpoint.getLineNumber() == lineNumber) {
@@ -877,19 +892,18 @@ public class JDIDebugModel {
 		String markerType = JavaLineBreakpoint.getMarkerType();
 		IBreakpointManager manager = DebugPlugin.getDefault()
 				.getBreakpointManager();
-		IBreakpoint[] breakpoints = manager.getBreakpoints(modelId);
-		for (int i = 0; i < breakpoints.length; i++) {
-			if (!(breakpoints[i] instanceof IJavaLineBreakpoint)) {
+		for (IBreakpoint bp : manager.getBreakpoints(modelId)) {
+			if (!(bp instanceof IJavaLineBreakpoint)) {
 				continue;
 			}
-			IJavaLineBreakpoint breakpoint = (IJavaLineBreakpoint) breakpoints[i];
+			IJavaLineBreakpoint breakpoint = (IJavaLineBreakpoint) bp;
 			IMarker marker = breakpoint.getMarker();
 			if (marker != null && marker.exists()
-					&& marker.getType().equals(markerType)) {
+				&& marker.getType().equals(markerType)) {
 				String breakpointTypeName = breakpoint.getTypeName();
 				if ((JavaDebugUtils.typeNamesEqual(breakpointTypeName, typeName) || (breakpointTypeName != null && breakpointTypeName.startsWith(typeName + '$')))
-						&& breakpoint.getLineNumber() == lineNumber
-						&& resource.equals(marker.getResource())) {
+					&& breakpoint.getLineNumber() == lineNumber
+					&& resource.equals(marker.getResource())) {
 					return breakpoint;
 				}
 			}

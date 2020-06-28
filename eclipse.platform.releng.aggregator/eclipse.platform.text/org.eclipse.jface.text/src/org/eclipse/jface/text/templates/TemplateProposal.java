@@ -159,24 +159,22 @@ public class TemplateProposal implements ICompletionProposal, ICompletionProposa
 			fContext.setReadOnly(false);
 			int start;
 			TemplateBuffer templateBuffer;
-			{
-				int oldReplaceOffset= getReplaceOffset();
-				try {
-					// this may already modify the document (e.g. add imports)
-					templateBuffer= fContext.evaluate(fTemplate);
-				} catch (TemplateException e1) {
-					fSelectedRegion= fRegion;
-					return;
-				}
-
-				start= getReplaceOffset();
-				int shift= start - oldReplaceOffset;
-				int end= Math.max(getReplaceEndOffset(), offset + shift);
-
-				// insert template string
-				String templateString= templateBuffer.getString();
-				document.replace(start, end - start, templateString);
+			int oldReplaceOffset= getReplaceOffset();
+			try {
+				// this may already modify the document (e.g. add imports)
+				templateBuffer= fContext.evaluate(fTemplate);
+			} catch (TemplateException e1) {
+				fSelectedRegion= fRegion;
+				return;
 			}
+
+			start= getReplaceOffset();
+			int shift= start - oldReplaceOffset;
+			int end= Math.max(getReplaceEndOffset(), offset + shift);
+
+			// insert template string
+			String templateString= templateBuffer.getString();
+			document.replace(start, end - start, templateString);
 
 			// translate positions
 			LinkedModeModel model= new LinkedModeModel();
@@ -281,7 +279,7 @@ public class TemplateProposal implements ICompletionProposal, ICompletionProposa
 
 	private int getCaretOffset(TemplateBuffer buffer) {
 
-	    TemplateVariable[] variables= buffer.getVariables();
+		TemplateVariable[] variables= buffer.getVariables();
 		for (int i= 0; i != variables.length; i++) {
 			TemplateVariable variable= variables[i];
 			if (variable.getType().equals(GlobalTemplateVariables.Cursor.NAME))
@@ -336,8 +334,8 @@ public class TemplateProposal implements ICompletionProposal, ICompletionProposa
 
 	@Override
 	public String getAdditionalProposalInfo() {
-	    try {
-		    fContext.setReadOnly(true);
+		try {
+			fContext.setReadOnly(true);
 			TemplateBuffer templateBuffer;
 			try {
 				templateBuffer= fContext.evaluate(fTemplate);
@@ -347,7 +345,7 @@ public class TemplateProposal implements ICompletionProposal, ICompletionProposa
 
 			return templateBuffer.getString();
 
-	    } catch (BadLocationException e) {
+		} catch (BadLocationException e) {
 			return null;
 		}
 	}

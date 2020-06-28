@@ -82,10 +82,10 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 		}
 		return matcher;
 	}
-    
-    /* package */ boolean isIgnoresCached(IContainer container) throws CVSException {
-        return safeGetSessionProperty(container, IGNORE_SYNC_KEY) != null;
-    }
+	
+	/* package */ boolean isIgnoresCached(IContainer container) throws CVSException {
+		return safeGetSessionProperty(container, IGNORE_SYNC_KEY) != null;
+	}
 
 	/*package*/ boolean isFolderSyncInfoCached(IContainer container) throws CVSException {
 		Object info = safeGetSessionProperty(container, FOLDER_SYNC_KEY);
@@ -115,9 +115,9 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 	 */
 	FolderSyncInfo getCachedFolderSync(IContainer container, boolean threadSafeAccess) throws CVSException {
 		FolderSyncInfo info = (FolderSyncInfo)safeGetSessionProperty(container, FOLDER_SYNC_KEY);
-        // If we are not thread safe, just return whatever was found in the session property
-        if (!threadSafeAccess)
-            return info == NULL_FOLDER_SYNC_INFO ? null : info;
+		// If we are not thread safe, just return whatever was found in the session property
+		if (!threadSafeAccess)
+			return info == NULL_FOLDER_SYNC_INFO ? null : info;
 		if (info == null) {
 			// Defer to the synchronizer in case the folder was recreated
 			info = synchronizerCache.getCachedFolderSync(container, true);
@@ -154,8 +154,7 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 				EclipseSynchronizer.getInstance().adjustDirtyStateRecursively(container, RECOMPUTE_INDICATOR);
 			}
 			IResource[] members = container.members();
-			for (int i = 0; i < members.length; i++) {
-				IResource resource = members[i];
+			for (IResource resource : members) {
 				purgeResourceSyncCache(resource);
 				flushed.add(resource);
 				if (deep && resource.getType() != IResource.FILE) {
@@ -163,7 +162,7 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 					flushed.addAll(Arrays.asList(flushedChildren));
 				}
 			}
-			return (IResource[]) flushed.toArray(new IResource[flushed.size()]);
+			return flushed.toArray(new IResource[flushed.size()]);
 		} catch (CoreException e) {
 			throw CVSException.wrapException(e);
 		}
@@ -248,20 +247,24 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 				byte [] diBytes = ResourcesPlugin.getWorkspace().getSynchronizer().getSyncInfo(FOLDER_DIRTY_STATE_KEY, container);
 				if(diBytes != null && !CVSProviderPlugin.getPlugin().crashOnLastRun()) {
 					di = new String(diBytes);
-					if(di.equals(NOT_DIRTY_INDICATOR)) {
+					switch (di) {
+					case NOT_DIRTY_INDICATOR:
 						di = NOT_DIRTY_INDICATOR;
-					} else if(di.equals(IS_DIRTY_INDICATOR)) {
+						break;
+					case IS_DIRTY_INDICATOR:
 						di = IS_DIRTY_INDICATOR;
-					} else {
+						break;
+					default:
 						di = RECOMPUTE_INDICATOR;
+						break;
 					}
 				} else {
 					di = RECOMPUTE_INDICATOR;
 				}
-                // Only set the session property if we are thread safe
-                if (threadSafeAccess) {
-                    setDirtyIndicator(container, di);
-                }
+				// Only set the session property if we are thread safe
+				if (threadSafeAccess) {
+					setDirtyIndicator(container, di);
+				}
 			}
 			return di;
 		} catch (CoreException e) {
@@ -303,14 +306,11 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 		return true;
 	}
 	
-	/**
-	 * @see org.eclipse.team.internal.ccvs.core.resources.SyncInfoCache#getCachedSyncBytes(org.eclipse.core.resources.IResource, boolean)
-	 */
 	byte[] getCachedSyncBytes(IResource resource, boolean threadSafeAccess) throws CVSException {
 		byte[] bytes = (byte[])safeGetSessionProperty(resource, RESOURCE_SYNC_KEY);
 		// If we are not thread safe, just return whatever was found in the session property
-        if (!threadSafeAccess)
-            return bytes;
+		if (!threadSafeAccess)
+			return bytes;
 		if (bytes == null) {
 			// Defer to the synchronizer in case the file was recreated
 			bytes = synchronizerCache.getCachedSyncBytes(resource, true);
@@ -361,9 +361,6 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 			}
 		}
 	
-	/**
-	 * @see org.eclipse.team.internal.ccvs.core.resources.SyncInfoCache#setCachedSyncBytes(org.eclipse.core.resources.IResource, byte[])
-	 */
 	void setCachedSyncBytes(IResource resource, byte[] syncBytes, boolean canModifyWorkspace) throws CVSException {
 		// Ensure that the sync bytes do not indicate a deletion
 		if (syncBytes != null && ResourceSyncInfo.isDeletion(syncBytes)) {
@@ -377,21 +374,15 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.ISaveParticipant#doneSaving(org.eclipse.core.resources.ISaveContext)
-	 */
+	@Override
 	public void doneSaving(ISaveContext context) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.ISaveParticipant#prepareToSave(org.eclipse.core.resources.ISaveContext)
-	 */
+	@Override
 	public void prepareToSave(ISaveContext context) throws CoreException {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.resources.ISaveParticipant#rollback(org.eclipse.core.resources.ISaveContext)
-	 */
+	@Override
 	public void rollback(ISaveContext context) {			
 	}
 
@@ -418,12 +409,11 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 			} else {
 				projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 			}
-			for (int i = 0; i < projects.length; i++) {
-				IProject project = projects[i];
+			for (IProject project : projects) {
 				RepositoryProvider provider = RepositoryProvider.getProvider(
-														project,
-														CVSProviderPlugin.getTypeId());
-														
+						project,
+						CVSProviderPlugin.getTypeId());
+
 				// found a project managed by CVS, convert each session property on a
 				// folder to a sync object.
 				if (provider != null) {
@@ -474,8 +464,8 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 			if (resource.getType() != IResource.FILE) {
 				ResourcesPlugin.getWorkspace().getSynchronizer().flushSyncInfo(FOLDER_DIRTY_STATE_KEY, resource, IResource.DEPTH_INFINITE);
 				IResource[] members = ((IContainer)resource).members();
-				for (int i = 0; i < members.length; i++) {
-					purgeDirtyCache(members[i]);
+				for (IResource member : members) {
+					purgeDirtyCache(member);
 				}
 			}
 		} catch (CoreException e) {
@@ -483,9 +473,7 @@ import org.eclipse.team.internal.ccvs.core.util.SyncFileWriter;
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.internal.ccvs.core.resources.SyncInfoCache#cachesDirtyState()
-	 */
+	@Override
 	public boolean cachesDirtyState() {
 		return true;
 	}

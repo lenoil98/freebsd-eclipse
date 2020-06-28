@@ -50,10 +50,10 @@ public class MessageFactoryServiceImpl implements IMessageFactoryService {
 
 	// Cache so when multiple instance use the same message class
 	private Map<Object, Reference<Object>> SOFT_CACHE = Collections
-			.synchronizedMap(new HashMap<Object, Reference<Object>>());
+			.synchronizedMap(new HashMap<>());
 
 	private Map<Object, Reference<Object>> WEAK_CACHE = Collections
-			.synchronizedMap(new HashMap<Object, Reference<Object>>());
+			.synchronizedMap(new HashMap<>());
 
 	private int CLEANUPCOUNT = 0;
 
@@ -106,21 +106,14 @@ public class MessageFactoryServiceImpl implements IMessageFactoryService {
 		if (System.getSecurityManager() == null) {
 			instance = createInstance(locale, messages, annotation, provider);
 		} else {
-			instance = AccessController.doPrivileged(new PrivilegedAction<M>() {
-
-				@Override
-				public M run() {
-					return createInstance(locale, messages, annotation, provider);
-				}
-
-			});
+			instance = AccessController.doPrivileged((PrivilegedAction<M>) () -> createInstance(locale, messages, annotation, provider));
 		}
 
 		if (cache != null) {
 			if (type == ReferenceType.SOFT) {
-				cache.put(key, new SoftReference<Object>(instance));
+				cache.put(key, new SoftReference<>(instance));
 			} else if (type == ReferenceType.WEAK) {
-				cache.put(key, new WeakReference<Object>(instance));
+				cache.put(key, new WeakReference<>(instance));
 			}
 		}
 
@@ -133,15 +126,15 @@ public class MessageFactoryServiceImpl implements IMessageFactoryService {
 	 * {@link ResourceBundle}. As there are several options to specify the location of the
 	 * {@link ResourceBundle} to load, the following search order is used:
 	 * <ol>
-	 * <li>URI location<br/>
+	 * <li>URI location<br>
 	 * If the message class is annotated with <code>@Message</code> and the <i>contributorURI</i>
 	 * attribute is set, the {@link ResourceBundle} is searched at the specified location</li>
-	 * <li>Relative location<br/>
+	 * <li>Relative location<br>
 	 * If the message class is not annotated with <code>@Message</code> and a contributorURI
 	 * attribute value or there is no {@link ResourceBundle} found at the specified location, a
 	 * {@link ResourceBundle} with the same name in the same package as the message class is
 	 * searched.</li>
-	 * <li>Bundle localization<br/>
+	 * <li>Bundle localization<br>
 	 * If there is no {@link ResourceBundle} found by URI or relative location, the OSGi
 	 * {@link ResourceBundle} configured in the MANIFEST.MF is tried to load.</li>
 	 * </ol>
@@ -170,10 +163,10 @@ public class MessageFactoryServiceImpl implements IMessageFactoryService {
 
 		ResourceBundle resourceBundle = null;
 		if (annotation != null) {
-			if (annotation.contributionURI().length() > 0) {
+			if (!annotation.contributionURI().isEmpty()) {
 				resourceBundle = ResourceBundleHelper.getResourceBundleForUri(
 						annotation.contributionURI(), locale, rbProvider);
-			} else if (annotation.contributorURI().length() > 0) {
+			} else if (!annotation.contributorURI().isEmpty()) {
 				Logger log = this.logger;
 				if (log != null) {
 					log.warn(
@@ -217,14 +210,12 @@ public class MessageFactoryServiceImpl implements IMessageFactoryService {
 			instance = messages.newInstance();
 			Field[] fields = messages.getDeclaredFields();
 
-			for (int i = 0; i < fields.length; i++) {
-				if (!fields[i].isAccessible()) {
-					fields[i].setAccessible(true);
+			for (Field field : fields) {
+				if (!field.isAccessible()) {
+					field.setAccessible(true);
 				}
-
-				if (fields[i].getType().isAssignableFrom(String.class)) {
-					fields[i].set(instance,
-							provider.translate(fields[i].getName()));
+				if (field.getType().isAssignableFrom(String.class)) {
+					field.set(instance, provider.translate(field.getName()));
 				}
 			}
 		} catch (InstantiationException e) {

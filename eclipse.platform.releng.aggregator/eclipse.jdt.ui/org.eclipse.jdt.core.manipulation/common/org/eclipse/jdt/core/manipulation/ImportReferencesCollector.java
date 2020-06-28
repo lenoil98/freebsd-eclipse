@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -23,7 +23,6 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AnnotatableType;
-import org.eclipse.jdt.core.dom.BreakStatement;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ContinueStatement;
@@ -62,10 +61,13 @@ import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeMethodReference;
 import org.eclipse.jdt.core.dom.UsesDirective;
+import org.eclipse.jdt.core.dom.YieldStatement;
 
 import org.eclipse.jdt.internal.corext.dom.GenericVisitor;
 import org.eclipse.jdt.internal.corext.dom.ScopeAnalyzer;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
+
+import org.eclipse.jdt.internal.ui.util.ASTHelper;
 
 
 /**
@@ -291,7 +293,7 @@ public class ImportReferencesCollector extends GenericVisitor {
 		doVisitChildren(node.annotations());
 		return false;
 	}
-	
+
 	@Override
 	public boolean visit(LabeledStatement node) {
 		doVisitNode(node.getBody());
@@ -302,12 +304,15 @@ public class ImportReferencesCollector extends GenericVisitor {
 	public boolean visit(ContinueStatement node) {
 		return false;
 	}
-	
+
 	@Override
-	public boolean visit(BreakStatement node) {
+	public boolean visit(YieldStatement node) {
+		if (ASTHelper.isYieldNodeSupportedInAST(node.getAST())) {
+			evalQualifyingExpression(node.getExpression(), null);
+		}
 		return false;
 	}
-	
+
 	/*
 	 * @see ASTVisitor#visit(ThisExpression)
 	 */
@@ -316,7 +321,7 @@ public class ImportReferencesCollector extends GenericVisitor {
 		typeRefFound(node.getQualifier());
 		return false;
 	}
-	
+
 	@Override
 	public boolean visit(SuperFieldAccess node) {
 		typeRefFound(node.getQualifier());
@@ -369,7 +374,7 @@ public class ImportReferencesCollector extends GenericVisitor {
 		doVisitChildren(node.typeArguments());
 		return false;
 	}
-	
+
 	@Override
 	public boolean visit(ExpressionMethodReference node) {
 		evalQualifyingExpression(node.getExpression(), node.getName());
@@ -383,7 +388,7 @@ public class ImportReferencesCollector extends GenericVisitor {
 		doVisitChildren(node.typeArguments());
 		return false;
 	}
-	
+
 	@Override
 	public boolean visit(TypeMethodReference node) {
 		doVisitNode(node.getType());
@@ -405,7 +410,7 @@ public class ImportReferencesCollector extends GenericVisitor {
 		}
 		return false;
 	}
-	
+
 	/*
 	 * @see ASTVisitor#visit(SuperConstructorInvocation)
 	 */
@@ -488,7 +493,7 @@ public class ImportReferencesCollector extends GenericVisitor {
 			doVisitNode(node.getReturnType2());
 		}
 		// name not visited
-		
+
 		int apiLevel= node.getAST().apiLevel();
 		if (apiLevel >= AST.JLS8) {
 			doVisitNode(node.getReceiverType());
@@ -565,7 +570,7 @@ public class ImportReferencesCollector extends GenericVisitor {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public boolean visit(MethodRefParameter node) {
 		doVisitNode(node.getType());

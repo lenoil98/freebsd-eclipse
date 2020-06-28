@@ -64,7 +64,7 @@ public class AntAutoEditStrategy extends DefaultIndentLineAutoEditStrategy {
 			if (!nextNodeIsEndTag(c.offset, d)) {
 				correct.append(XmlDocumentFormatter.createIndent());
 			}
-			StringBuffer buf = new StringBuffer(c.text);
+			StringBuilder buf = new StringBuilder(c.text);
 			buf.append(correct);
 			fAccumulatedChange += buf.length();
 
@@ -102,12 +102,6 @@ public class AntAutoEditStrategy extends DefaultIndentLineAutoEditStrategy {
 		return false;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jface.text.IAutoEditStrategy#customizeDocumentCommand(org.eclipse.jface.text.IDocument,
-	 * org.eclipse.jface.text.DocumentCommand)
-	 */
 	@Override
 	public void customizeDocumentCommand(IDocument d, DocumentCommand c) {
 

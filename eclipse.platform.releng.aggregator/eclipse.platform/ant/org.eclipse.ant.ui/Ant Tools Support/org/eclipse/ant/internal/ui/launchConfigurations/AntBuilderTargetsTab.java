@@ -65,11 +65,6 @@ public class AntBuilderTargetsTab extends AbstractLaunchConfigurationTab {
 	private static final String DEFAULT_TARGET_SELECTED = AntLaunchConfigurationMessages.AntBuilderTargetsTab_10;
 
 	private SelectionListener fSelectionListener = new SelectionAdapter() {
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see org.eclipse.swt.events.SelectionListener#widgetSelected(org.eclipse.swt.events.SelectionEvent)
-		 */
 		@Override
 		public void widgetSelected(SelectionEvent e) {
 			String attribute = null;
@@ -193,7 +188,7 @@ public class AntBuilderTargetsTab extends AbstractLaunchConfigurationTab {
 			targetsSelected = configTargets;
 		}
 		String[] targets = AntUtil.parseRunTargets(targetsSelected);
-		StringBuffer result = new StringBuffer(targets[0]);
+		StringBuilder result = new StringBuilder(targets[0]);
 		for (int i = 1; i < targets.length; i++) {
 			result.append(", "); //$NON-NLS-1$
 			result.append(targets[i]);
@@ -201,11 +196,6 @@ public class AntBuilderTargetsTab extends AbstractLaunchConfigurationTab {
 		text.setText(result.toString());
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 		Composite mainComposite = new Composite(parent, SWT.NONE);
@@ -225,22 +215,12 @@ public class AntBuilderTargetsTab extends AbstractLaunchConfigurationTab {
 		createTargetsComponent(mainComposite);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#setDefaults(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
-	 */
 	@Override
 	public void setDefaults(ILaunchConfigurationWorkingCopy configuration) {
 		configuration.setAttribute(IExternalToolConstants.ATTR_TRIGGERS_CONFIGURED, true);
 		configuration.setAttribute(IAntLaunchConstants.ATTR_TARGETS_UPDATED, true);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#initializeFrom(org.eclipse.debug.core.ILaunchConfiguration)
-	 */
 	@Override
 	public void initializeFrom(ILaunchConfiguration configuration) {
 		fConfiguration = configuration;
@@ -303,9 +283,8 @@ public class AntBuilderTargetsTab extends AbstractLaunchConfigurationTab {
 		catch (CoreException e) {
 			AntUIPlugin.log("Error reading configuration", e); //$NON-NLS-1$
 		}
-		int buildTypes[] = BuilderCoreUtils.buildTypesToArray(buildKindString);
-		for (int i = 0; i < buildTypes.length; i++) {
-			switch (buildTypes[i]) {
+		for (int buildType : BuilderCoreUtils.buildTypesToArray(buildKindString)) {
+			switch (buildType) {
 				case IncrementalProjectBuilder.FULL_BUILD:
 					fAfterCleanTargetText.setEnabled(true);
 					break;
@@ -324,14 +303,9 @@ public class AntBuilderTargetsTab extends AbstractLaunchConfigurationTab {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#performApply(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
-	 */
 	@Override
 	public void performApply(ILaunchConfigurationWorkingCopy configuration) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		if (!fAfterCleanTargetText.getText().equals(NOT_ENABLED)) {
 			buffer.append(IExternalToolConstants.BUILD_TYPE_FULL).append(',');
 		}
@@ -357,21 +331,11 @@ public class AntBuilderTargetsTab extends AbstractLaunchConfigurationTab {
 		configuration.setAttribute(IAntLaunchConstants.ATTR_TARGETS_UPDATED, true);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getName()
-	 */
 	@Override
 	public String getName() {
 		return AntLaunchConfigurationMessages.AntTargetsTab_Tar_gets_14;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#getImage()
-	 */
 	@Override
 	public Image getImage() {
 		return AntUIImages.getImage(IAntUIConstants.IMG_TAB_ANT_TARGETS);

@@ -13,6 +13,10 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.concurrency;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -21,17 +25,15 @@ import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.tests.harness.TestBarrier;
 import org.eclipse.swt.widgets.Display;
+import org.junit.Test;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  * Test for an issue where a lock, held by the UI thread
  * is released while the UI thread is actually performing work
  * having acquired it...
  */
-public class Bug_262032 extends TestCase {
+public class Bug_262032 {
 
 	ISchedulingRule identityRule = new ISchedulingRule() {
 		@Override
@@ -44,32 +46,29 @@ public class Bug_262032 extends TestCase {
 		}
 	};
 
-	public static Test suite() {
-		return new TestSuite(Bug_262032.class);
-	}
-
 	volatile boolean concurrentAccess = false;
 
 	/**
 	 * Threads: UI(+asyncExec), j
 	 * Locks: lock, IDRule
-	 *
+	 * <p>
 	 * j holds identity Rule
-	 * ui tries to acquire rule => block and performs asyncMessages
+	 * ui tries to acquire rule =&gt; block and performs asyncMessages
 	 * asyncExec run and acquire()s lock
 	 * j then attempts to acquire lock.
-	 *
+	 * <p>
 	 * Deadlock manager believes that UI is waiting for IDrule while holding
 	 * lock, and Job holds IDRule while attempting lock.  Scheduling rules
 	 * are never released by the Deadlock detector, so the lock is yielded!
-	 *
+	 * <p>
 	 * The expectation is that when threads are 'waiting' they're sat
 	 * in the ordered lock acquire which can give the locks safely to whoever
 	 * is deemed to need it.  In this case that's not true as the UI
 	 * is running an async exec.
-	 *
+	 * <p>
 	 * The result is concurrent running in a locked region.
 	 */
+	@Test
 	public void testBug262032() {
 		final ILock lock = Job.getJobManager().newLock();
 		final TestBarrier tb1 = new TestBarrier(-1);

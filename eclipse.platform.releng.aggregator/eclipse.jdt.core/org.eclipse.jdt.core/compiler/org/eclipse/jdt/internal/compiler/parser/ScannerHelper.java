@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.compiler.parser;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.eclipse.jdt.core.compiler.InvalidInputException;
@@ -47,6 +46,8 @@ public class ScannerHelper {
 	private static long[][][] Tables8;
 	private static long[][][] Tables9;
 	private static long[][][] Tables11;
+	private static long[][][] Tables12;
+	private static long[][][] Tables13;
 
 	public final static int MAX_OBVIOUS = 128;
 	public final static int[] OBVIOUS_IDENT_CHAR_NATURES = new int[MAX_OBVIOUS];
@@ -151,6 +152,12 @@ static void initializeTable19() {
 static void initializeTableJava11() {
 	Tables11 = initializeTables("unicode10"); //$NON-NLS-1$
 }
+static void initializeTableJava12() {
+	Tables12 = initializeTables("unicode11"); //$NON-NLS-1$
+}
+static void initializeTableJava13() {
+	Tables13 = initializeTables("unicode12_1"); //$NON-NLS-1$
+}
 static long[][][] initializeTables(String unicode_path) {
 	long[][][] tempTable = new long[2][][];
 	tempTable[START_INDEX] = new long[3][];
@@ -161,8 +168,6 @@ static long[][][] initializeTables(String unicode_path) {
 			readValues[i] = inputStream.readLong();
 		}
 		tempTable[START_INDEX][0] = readValues;
-	} catch (FileNotFoundException e) {
-		e.printStackTrace();
 	} catch (IOException e) {
 		e.printStackTrace();
 	}
@@ -172,8 +177,6 @@ static long[][][] initializeTables(String unicode_path) {
 			readValues[i] = inputStream.readLong();
 		}
 		tempTable[START_INDEX][1] = readValues;
-	} catch (FileNotFoundException e) {
-		e.printStackTrace();
 	} catch (IOException e) {
 		e.printStackTrace();
 	}
@@ -183,8 +186,6 @@ static long[][][] initializeTables(String unicode_path) {
 			readValues[i] = inputStream.readLong();
 		}
 		tempTable[START_INDEX][2] = readValues;
-	} catch (FileNotFoundException e) {
-		e.printStackTrace();
 	} catch (IOException e) {
 		e.printStackTrace();
 	}
@@ -194,8 +195,6 @@ static long[][][] initializeTables(String unicode_path) {
 			readValues[i] = inputStream.readLong();
 		}
 		tempTable[PART_INDEX][0] = readValues;
-	} catch (FileNotFoundException e) {
-		e.printStackTrace();
 	} catch (IOException e) {
 		e.printStackTrace();
 	}
@@ -205,8 +204,6 @@ static long[][][] initializeTables(String unicode_path) {
 			readValues[i] = inputStream.readLong();
 		}
 		tempTable[PART_INDEX][1] = readValues;
-	} catch (FileNotFoundException e) {
-		e.printStackTrace();
 	} catch (IOException e) {
 		e.printStackTrace();
 	}
@@ -216,8 +213,6 @@ static long[][][] initializeTables(String unicode_path) {
 			readValues[i] = inputStream.readLong();
 		}
 		tempTable[PART_INDEX][2] = readValues;
-	} catch (FileNotFoundException e) {
-		e.printStackTrace();
 	} catch (IOException e) {
 		e.printStackTrace();
 	}
@@ -227,8 +222,6 @@ static long[][][] initializeTables(String unicode_path) {
 			readValues[i] = inputStream.readLong();
 		}
 		tempTable[PART_INDEX][3] = readValues;
-	} catch (FileNotFoundException e) {
-		e.printStackTrace();
 	} catch (IOException e) {
 		e.printStackTrace();
 	}
@@ -290,12 +283,24 @@ public static boolean isJavaIdentifierPart(long complianceLevel, int codePoint) 
 			initializeTable19();
 		}
 		return isJavaIdentifierPart0(codePoint, Tables9);
-	} else {
+	} else if (complianceLevel <= ClassFileConstants.JDK11) {
 		// java 11 supports Unicode 10
 		if (Tables11 == null) {
 			initializeTableJava11();
 		}
 		return isJavaIdentifierPart0(codePoint, Tables11);
+	} else if (complianceLevel <= ClassFileConstants.JDK12) {
+		// java 12 supports Unicode 11
+		if (Tables12 == null) {
+			initializeTableJava12();
+		}
+		return isJavaIdentifierPart0(codePoint, Tables12);
+	} else {
+		// java 13 supports Unicode 12.1
+		if (Tables13 == null) {
+			initializeTableJava13();
+		}
+		return isJavaIdentifierPart0(codePoint, Tables13);
 	}
 }
 public static boolean isJavaIdentifierPart(long complianceLevel, char high, char low) {
@@ -351,12 +356,24 @@ public static boolean isJavaIdentifierStart(long complianceLevel, int codePoint)
 			initializeTable19();
 		}
 		return isJavaIdentifierStart0(codePoint, Tables9);
-	} else {
+	} else if (complianceLevel <= ClassFileConstants.JDK11) {
 		// java 11 supports Unicode 10
 		if (Tables11 == null) {
 			initializeTableJava11();
 		}
 		return isJavaIdentifierStart0(codePoint, Tables11);
+	} else if (complianceLevel <= ClassFileConstants.JDK12) {
+		// java 12 supports Unicode 11
+		if (Tables12 == null) {
+			initializeTableJava12();
+		}
+		return isJavaIdentifierStart0(codePoint, Tables12);
+	} else {
+		// java 13 supports Unicode 12.1
+		if (Tables13 == null) {
+			initializeTableJava13();
+		}
+		return isJavaIdentifierStart0(codePoint, Tables13);
 	}
 }
 private static int toCodePoint(char high, char low) {
@@ -366,10 +383,7 @@ public static boolean isDigit(char c) throws InvalidInputException {
 	if(c < ScannerHelper.MAX_OBVIOUS) {
 		return (ScannerHelper.OBVIOUS_IDENT_CHAR_NATURES[c] & ScannerHelper.C_DIGIT) != 0;
 	}
-	if (Character.isDigit(c)) {
-		throw new InvalidInputException(Scanner.INVALID_DIGIT);
-	}
-	return false;
+	return Character.isDigit(c);
 }
 public static int digit(char c, int radix) {
 	if (c < ScannerHelper.MAX_OBVIOUS) {

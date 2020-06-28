@@ -29,20 +29,25 @@ import org.eclipse.ui.views.IStickyViewDescriptor;
 import org.eclipse.ui.views.IViewCategory;
 import org.eclipse.ui.views.IViewDescriptor;
 import org.eclipse.ui.views.IViewRegistry;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * Tests to ensure the addition of new views with dynamic plug-ins.
  */
+@RunWith(JUnit4.class)
 public class ViewTests extends DynamicTestCase {
 
-    private static final String VIEW_ID1 = "org.eclipse.newView1.newView1";
-    private static final String VIEW_ID2 = "org.eclipse.newView1.newView2";
-    private static final String CATEGORY_ID = "org.eclipse.newView1.newCategory1";
+	private static final String VIEW_ID1 = "org.eclipse.newView1.newView1";
+	private static final String VIEW_ID2 = "org.eclipse.newView1.newView2";
+	private static final String CATEGORY_ID = "org.eclipse.newView1.newCategory1";
 
-	public ViewTests(String testName) {
-        super(testName);
-    }
+	public ViewTests() {
+		super(ViewTests.class.getSimpleName());
+	}
 
+	@Test
 	public void testViewClosure() throws CoreException {
 		IWorkbenchWindow window = openTestWindow(IDE.RESOURCE_PERSPECTIVE_ID);
 		getBundle();
@@ -52,8 +57,8 @@ public class ViewTests extends DynamicTestCase {
 		// we need to ensure that the view is closed in all open perspectives but this is not currently possible.
 		// window.getActivePage().setPerspective(WorkbenchPlugin.getDefault().getPerspectiveRegistry().findPerspectiveWithId(EmptyPerspective.PERSP_ID2));
 		WeakReference<IViewPart> ref = new WeakReference<>(part, queue);
-        assertNotNull(part);
-        part = null; //null the reference
+		assertNotNull(part);
+		part = null; //null the reference
 
 		removeBundle();
 		try {
@@ -62,11 +67,12 @@ public class ViewTests extends DynamicTestCase {
 			fail(e.getMessage());
 		}
 
-        assertNull(window.getActivePage().findView(VIEW_ID1));
+		assertNull(window.getActivePage().findView(VIEW_ID1));
 	}
 
-    public void testViewWithoutCategory() {
-    		IViewRegistry registry = WorkbenchPlugin.getDefault().getViewRegistry();
+	@Test
+	public void testViewWithoutCategory() {
+			IViewRegistry registry = WorkbenchPlugin.getDefault().getViewRegistry();
 
 		assertNull(registry.find(VIEW_ID2));
 		getBundle();
@@ -83,8 +89,9 @@ public class ViewTests extends DynamicTestCase {
 		catch (RuntimeException e) {
 			// no-op
 		}
-    }
+	}
 
+	@Test
 	public void testViewWithCategory() {
 		IViewRegistry registry = WorkbenchPlugin.getDefault().getViewRegistry();
 
@@ -105,6 +112,7 @@ public class ViewTests extends DynamicTestCase {
 		}
 	}
 
+	@Test
 	public void testStickyViewProperties() {
 		ViewRegistry registry = (ViewRegistry)WorkbenchPlugin.getDefault().getViewRegistry();
 		IStickyViewDescriptor [] descs = registry.getStickyViews();
@@ -147,6 +155,7 @@ public class ViewTests extends DynamicTestCase {
 		assertEquals(IPageLayout.BOTTOM, desc.getLocation());
 	}
 
+	@Test
 	public void testCategoryViewContainmentProperties() {
 		ViewRegistry registry = (ViewRegistry)WorkbenchPlugin.getDefault().getViewRegistry();
 

@@ -14,6 +14,7 @@
 package org.eclipse.debug.core.sourcelookup.containers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -72,17 +73,14 @@ public abstract class CompositeSourceContainer extends AbstractSourceContainer {
 		if (isFindDuplicates()) {
 			results = new ArrayList<>();
 		}
-		for (int i = 0; i < containers.length; i++) {
-			ISourceContainer container = containers[i];
+		for (ISourceContainer container : containers) {
 			try {
 				Object[] objects = container.findSourceElements(name);
 				if (objects.length > 0) {
 					//it will only not be null when we care about duplicates
 					//saves the computation in isFindDuplicates()
 					if (results != null) {
-						for (int j = 0; j < objects.length; j++) {
-							results.add(objects[j]);
-						}
+						Collections.addAll(results, objects);
 					} else {
 						if (objects.length == 1) {
 							return objects;
@@ -125,8 +123,7 @@ public abstract class CompositeSourceContainer extends AbstractSourceContainer {
 	public synchronized ISourceContainer[] getSourceContainers() throws CoreException {
 		if (fContainers == null) {
 			fContainers = createSourceContainers();
-			for (int i = 0; i < fContainers.length; i++) {
-				ISourceContainer container = fContainers[i];
+			for (ISourceContainer container : fContainers) {
 				container.init(getDirector());
 			}
 		}
@@ -137,8 +134,7 @@ public abstract class CompositeSourceContainer extends AbstractSourceContainer {
 	public void dispose() {
 		super.dispose();
 		if (fContainers != null) {
-			for (int i = 0; i < fContainers.length; i++) {
-				ISourceContainer container = fContainers[i];
+			for (ISourceContainer container : fContainers) {
 				container.dispose();
 			}
 		}

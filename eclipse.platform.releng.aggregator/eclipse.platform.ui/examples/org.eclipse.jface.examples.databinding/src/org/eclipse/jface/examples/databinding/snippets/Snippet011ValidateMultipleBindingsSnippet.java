@@ -20,14 +20,12 @@ import org.eclipse.core.databinding.DataBindingContext;
 import org.eclipse.core.databinding.UpdateValueStrategy;
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
-import org.eclipse.core.databinding.observable.value.IValueChangeListener;
-import org.eclipse.core.databinding.observable.value.ValueChangeEvent;
 import org.eclipse.core.databinding.observable.value.WritableValue;
 import org.eclipse.core.databinding.validation.IValidator;
 import org.eclipse.core.databinding.validation.ValidationStatus;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.databinding.swt.DisplayRealm;
-import org.eclipse.jface.databinding.swt.WidgetProperties;
+import org.eclipse.jface.databinding.swt.typed.WidgetProperties;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -44,67 +42,59 @@ import org.eclipse.swt.widgets.Text;
  */
 public class Snippet011ValidateMultipleBindingsSnippet {
 	public static void main(String[] args) {
-		Realm.runWithDefault(DisplayRealm.getRealm(Display.getDefault()),
-				() -> Snippet011ValidateMultipleBindingsSnippet.run());
+		final Display display = new Display();
+
+		Realm.runWithDefault(DisplayRealm.getRealm(display), () -> {
+			Shell shell = createShell();
+
+			while (!shell.isDisposed()) {
+				if (!display.readAndDispatch()) {
+					display.sleep();
+				}
+			}
+			display.dispose();
+		});
+
+		display.dispose();
 	}
 
-	private static void run() {
+	private static Shell createShell() {
 		Shell shell = new Shell();
 
 		View view = new View(shell);
 		final Model model = new Model();
 
-		DataBindingContext dbc = new DataBindingContext();
-		dbc.bindValue(
-				(IObservableValue<String>) WidgetProperties.text(SWT.Modify).observe(view.text1), model.value1,
+		DataBindingContext bindingContext = new DataBindingContext();
+		bindingContext.bindValue(WidgetProperties.text(SWT.Modify).observe(view.text1), model.value1,
 				new UpdateValueStrategy<String, String>()
-						.setAfterConvertValidator(new CrossFieldValidator(model.value2)), null);
+						.setAfterConvertValidator(new CrossFieldValidator(model.value2)),
+				null);
 
-		dbc.bindValue(
-				(IObservableValue<String>) WidgetProperties.text(SWT.Modify).observe(view.text2), model.value2,
+		bindingContext.bindValue(WidgetProperties.text(SWT.Modify).observe(view.text2), model.value2,
 				new UpdateValueStrategy<String, String>()
-					.setAfterConvertValidator(new CrossFieldValidator(model.value1)), null);
+						.setAfterConvertValidator(new CrossFieldValidator(model.value1)),
+				null);
 
 		// DEBUG - print to show value change
 		model.value1.addValueChangeListener(event -> System.out.println("Value 1: " + model.value1.getValue()));
 
 		// DEBUG - print to show value change
-		model.value2.addValueChangeListener(new IValueChangeListener<Object>() {
-			@Override
-			public void handleValueChange(ValueChangeEvent<?> event) {
-				System.out.println("Value 2: " + model.value2.getValue());
-			}
-		});
+		model.value2.addValueChangeListener(event -> System.out.println("Value 2: " + model.value2.getValue()));
 
 		shell.pack();
 		shell.open();
-		Display display = shell.getDisplay();
-		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
-		}
-		display.dispose();
+		return shell;
 	}
 
-	/**
-	 * @since 3.2
-	 *
-	 */
-	private static final class CrossFieldValidator implements IValidator<Object> {
-		/**
-		 *
-		 */
-		private final IObservableValue<?> other;
+	private static final class CrossFieldValidator implements IValidator<String> {
+		private final IObservableValue<String> other;
 
-		/**
-		 * @param model
-		 */
-		private CrossFieldValidator(IObservableValue<?> other) {
+		private CrossFieldValidator(IObservableValue<String> other) {
 			this.other = other;
 		}
 
 		@Override
-		public IStatus validate(Object value) {
+		public IStatus validate(String value) {
 			if (!value.equals(other.getValue())) {
 				// DEBUG - print validation result
 				System.out.println("Validation fine");

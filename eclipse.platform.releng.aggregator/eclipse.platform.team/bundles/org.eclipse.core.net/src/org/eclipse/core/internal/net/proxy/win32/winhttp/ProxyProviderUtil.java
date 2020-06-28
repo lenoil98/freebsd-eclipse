@@ -48,9 +48,9 @@ public final class ProxyProviderUtil {
 	 * or map. <br>
 	 * The proxy list contains one or more of the following strings separated by
 	 * semicolons:<br>
-	 * <code><pre>
+	 * <pre><code>
 	 * ([&lt;scheme&gt;=][&lt;scheme&gt; &quot;://&quot; ]&lt;server&gt;[ &quot;:&quot; &lt;port&gt;])
-	 * </pre></code>
+	 * </code></pre>
 	 *
 	 * @param proxyList
 	 *            the proxy list as a string
@@ -89,7 +89,7 @@ public final class ProxyProviderUtil {
 			// The scheme of the uri is irrelevant. We add the http://
 			// scheme to enable class URI to parse the stuff
 			String augmentedURI = proxyDefinition.substring(urlStart);
-			if (augmentedURI.indexOf("://") == -1) //$NON-NLS-1$
+			if (!augmentedURI.contains("://")) //$NON-NLS-1$
 				augmentedURI = "http://" + augmentedURI; //$NON-NLS-1$
 			URI uri = new URI(augmentedURI);
 			host = uri.getHost();

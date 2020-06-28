@@ -14,6 +14,8 @@
 package org.eclipse.debug.ui.actions;
 
 
+import java.text.MessageFormat;
+
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
@@ -34,8 +36,6 @@ import org.eclipse.ui.IActionDelegate2;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.ui.PlatformUI;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Opens the launch configuration dialog in the context of a launch group.
@@ -86,31 +86,19 @@ public class OpenLaunchDialogAction extends Action implements IActionDelegate2, 
 		notifyResult(result == Window.OK);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#runWithEvent(org.eclipse.jface.action.IAction, org.eclipse.swt.widgets.Event)
-	 */
 	@Override
 	public void runWithEvent(IAction action, Event event) {
 		run();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		run();
 	}
 
-	/**
-	 * @see org.eclipse.ui.IWorkbenchWindowActionDelegate#dispose()
-	 */
 	@Override
 	public void dispose() {}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#init(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void init(IAction action) {
 		if(action != null) {
@@ -127,8 +115,7 @@ public class OpenLaunchDialogAction extends Action implements IActionDelegate2, 
 	 */
 	private boolean existsConfigTypesForMode() {
 		ILaunchConfigurationType[] configTypes = DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurationTypes();
-		for (int i = 0; i < configTypes.length; i++) {
-			ILaunchConfigurationType configType = configTypes[i];
+		for (ILaunchConfigurationType configType : configTypes) {
 			if (configType.supportsMode(getMode())) {
 				return true;
 			}
@@ -136,15 +123,9 @@ public class OpenLaunchDialogAction extends Action implements IActionDelegate2, 
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWorkbenchWindowActionDelegate#init(org.eclipse.ui.IWorkbenchWindow)
-	 */
 	@Override
 	public void init(IWorkbenchWindow window) {}
 
-	/**
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection selection) {}
 

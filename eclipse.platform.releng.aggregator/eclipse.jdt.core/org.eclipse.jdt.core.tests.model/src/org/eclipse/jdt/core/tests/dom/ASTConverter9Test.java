@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2018 IBM Corporation and others.
+ * Copyright (c) 2016, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -37,17 +37,19 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.compiler.IProblem;
 
 @SuppressWarnings({"rawtypes"})
 public class ASTConverter9Test extends ConverterTestSetup {
 
 	ICompilationUnit workingCopy;
 	private static final String jcl9lib = "CONVERTER_JCL9_LIB";
-	
 
+
+	@Override
 	public void setUpSuite() throws Exception {
 		super.setUpSuite();
-		this.ast = AST.newAST(getAST9());
+		this.ast = AST.newAST(getAST9(), false);
 	}
 	/**
 	 * @deprecated
@@ -82,6 +84,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 		return buildModelTestSuite(ASTConverter9Test.class);
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		super.tearDown();
 		if (this.workingCopy != null) {
@@ -108,9 +111,9 @@ public class ASTConverter9Test extends ConverterTestSetup {
 		checkSourceRange(simpleName, "y1", source);
 		variableDeclarationExpression = (VariableDeclarationExpression) list.get(2);
 		checkSourceRange(variableDeclarationExpression, "final Y y2 = new Y()", source);
-		
+
 	}
-	
+
 	public void testBug497719_0002() throws JavaModelException {
 		String contents =
 				"import java.io.IOException;\n" +
@@ -218,7 +221,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IJavaProject project1 = createJavaProject("ConverterTests9", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project1.open(null);
 			addClasspathEntry(project1, JavaCore.newContainerEntry(new Path("org.eclipse.jdt.MODULE_PATH")));
-			String content = 
+			String content =
 				"module first {\n" +
 				"    requires second.third;\n" +
 				"    exports pack1.X11 to org.eclipse.jdt;\n" +
@@ -313,15 +316,15 @@ public class ASTConverter9Test extends ConverterTestSetup {
 				+ "}";
 		this.workingCopies[0] = getWorkingCopy(
 				"/Converter9/src/module-info.java", content);
-		
+
 		CompilationUnit unit = (CompilationUnit) runConversion(this.ast.apiLevel(), this.workingCopies[0], false/*no bindings*/);
 		ModuleDeclaration moduleDecl = unit.getModule();
-		
+
 		assertTrue(moduleDecl.isOpen());
 		checkSourceRange(moduleDecl, content, content);
 		List<ModuleDirective> stmts = moduleDecl.moduleStatements();
 		assertTrue(stmts.size() > 0);
-		
+
 		int count = 0;
 		RequiresDirective req = (RequiresDirective) stmts.get(count++);
 		checkSourceRange(req, "requires one;", content);
@@ -350,7 +353,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IJavaProject project1 = createJavaProject("ConverterTests9", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project1.open(null);
 			addClasspathEntry(project1, JavaCore.newContainerEntry(new Path("org.eclipse.jdt.MODULE_PATH")));
-			String content = 
+			String content =
 				"module first {\n" +
 				"    requires transitive static second.third;\n" +
 				"    exports pack1.X11 to org.eclipse.jdt;\n" +
@@ -393,10 +396,10 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IJavaProject project1 = createJavaProject("ConverterTests9", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project1.open(null);
 			addClasspathEntry(project1, JavaCore.newContainerEntry(new Path("org.eclipse.jdt.MODULE_PATH")));
-			String fileContent = 
+			String fileContent =
 				"module first {\n" +
 				"    requires second;\n" +
-				"	 uses pack22.I22;\n" + 
+				"	 uses pack22.I22;\n" +
 				"    provides pack22.I22 with pack1.X11;\n" +
 				"}";
 			createFile("/ConverterTests9/src/module-info.java",	fileContent);
@@ -408,7 +411,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IJavaProject project2 = createJavaProject("second", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project2.open(null);
 			addClasspathEntry(project2, JavaCore.newContainerEntry(new Path("org.eclipse.jdt.MODULE_PATH")));
-			String secondFile = 
+			String secondFile =
 					"module second {\n" +
 					"    exports pack22 to first;\n" +
 					"}";
@@ -424,7 +427,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IJavaProject project3 = createJavaProject("third", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project3.open(null);
 			addClasspathEntry(project3, JavaCore.newContainerEntry(new Path("org.eclipse.jdt.MODULE_PATH")));
-			String thirdFile = 
+			String thirdFile =
 					"module third {\n" +
 					"    requires first;\n" +
 					"}";
@@ -452,7 +455,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			moduleBinding = (IModuleBinding) binding;
 
 			assertModuleFirstDetails(moduleBinding);
-			
+
 			// indirectly fetch the binary version of "first" via "third":
 			ICompilationUnit sourceUnit3 = getCompilationUnit("third" , "src", "", "module-info.java"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 			ASTNode unit3 = runConversion(this.ast.apiLevel(), sourceUnit3, true);
@@ -461,7 +464,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IModuleBinding firstModAsBinary = moduleDecl3.resolveBinding().getRequiredModules()[1]; // skip java.base
 
 			assertModuleFirstDetails(firstModAsBinary);
-		
+
 		} finally {
 			deleteProject("ConverterTests9");
 			deleteProject("second");
@@ -474,7 +477,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 		String name = moduleBinding.getName();
 		assertTrue("Module Name null", name != null);
 		assertTrue("Wrong Module Name", name.equals("first"));
-		
+
 		assertTrue("Module Binding null", moduleBinding != null);
 		name = moduleBinding.getName();
 		assertTrue("Module Name null", name != null);
@@ -515,7 +518,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IJavaProject project1 = createJavaProject("ConverterTests9", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project1.open(null);
 			addClasspathEntry(project1, JavaCore.newContainerEntry(new Path("org.eclipse.jdt.MODULE_PATH")));
-			String fileContent = 
+			String fileContent =
 				"module first {\n" +
 				"    requires second;\n" +
 				"    provides pack22.I22 with pack1.X11;\n" +
@@ -529,7 +532,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IJavaProject project2 = createJavaProject("second", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project2.open(null);
 			addClasspathEntry(project2, JavaCore.newContainerEntry(new Path("org.eclipse.jdt.MODULE_PATH")));
-			String secondFile = 
+			String secondFile =
 					"module second {\n" +
 					"    exports pack22 to first;\n" +
 					"}";
@@ -571,7 +574,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IJavaProject project1 = createJavaProject("ConverterTests9", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project1.open(null);
 			addClasspathEntry(project1, JavaCore.newContainerEntry(new Path("org.eclipse.jdt.MODULE_PATH")));
-			String fileContent = 
+			String fileContent =
 				"open module first {\n" +
 				"    requires second;\n" +
 				"    provides pack22.I22 with pack1.X11;\n" +
@@ -585,7 +588,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			IJavaProject project2 = createJavaProject("second", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project2.open(null);
 			addClasspathEntry(project2, JavaCore.newContainerEntry(new Path("org.eclipse.jdt.MODULE_PATH")));
-			String secondFile = 
+			String secondFile =
 					"open module second {\n" +
 					"    exports pack22 to first;\n" +
 					"}";
@@ -606,7 +609,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			assertEquals("Not a compilation unit", ASTNode.COMPILATION_UNIT, unit1.getNodeType());
 			ModuleDeclaration moduleDecl1 = ((CompilationUnit) unit1).getModule();
 			checkSourceRange(moduleDecl1, fileContent, fileContent);
-			
+
 			Name name = moduleDecl1.getName();
 			IModuleBinding moduleBinding = (IModuleBinding) name.resolveBinding();
 			assertTrue("Module Binding null", moduleBinding != null);
@@ -743,11 +746,11 @@ public class ASTConverter9Test extends ConverterTestSetup {
 		try {
 			project1 = createJavaProject("ConverterTests9", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project1.open(null);
-			String fileContent = 
+			String fileContent =
 				"open module first.module {\n" +
 				"}";
 			createFile("/ConverterTests9/src/module-info.java",	fileContent);
-	
+
 			IModuleDescription firstModule = project1.findModule("first.module", null);
 			IJavaElement[] elements = new IJavaElement[] {
 					firstModule,
@@ -773,17 +776,17 @@ public class ASTConverter9Test extends ConverterTestSetup {
 		try {
 			project1 = createJavaProject("ConverterTests9", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
 			project1.open(null);
-			String fileContent = 
+			String fileContent =
 				"module first.module { }";
 			createFile("/ConverterTests9/src/module-info.java",	fileContent);
-			
+
 			project1.getProject().build(IncrementalProjectBuilder.FULL_BUILD, null);
-	
+
 			project2 = createJavaProject("second", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
-			addClasspathEntry(project2, JavaCore.newLibraryEntry(new Path("/ConverterTests9/bin"), null, null, null, 
-					new IClasspathAttribute[] { JavaCore.newClasspathAttribute(IClasspathAttribute.MODULE, "true") }, false));		
+			addClasspathEntry(project2, JavaCore.newLibraryEntry(new Path("/ConverterTests9/bin"), null, null, null,
+					new IClasspathAttribute[] { JavaCore.newClasspathAttribute(IClasspathAttribute.MODULE, "true") }, false));
 			project2.open(null);
-	
+
 			IModuleDescription firstModule = null;
 			for (IPackageFragmentRoot root : project2.getPackageFragmentRoots()) {
 				IModuleDescription module = root.getModuleDescription();
@@ -1136,7 +1139,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			deleteProject("second");
 		}
 	}
-	// 
+	//
 	public void testBug518794_001() throws Exception {
 		try {
 
@@ -1353,7 +1356,9 @@ public class ASTConverter9Test extends ConverterTestSetup {
 
 			// part two, where we access a module via a 'requires' reference from the second:
 			IJavaProject project2 = createJavaProject("Second", new String[] {"src"}, new String[] {jcl9lib}, "bin", "9");
-			addClasspathEntry(project2, JavaCore.newProjectEntry(project1.getPath()));
+			addClasspathEntry(project2, JavaCore.newProjectEntry(project1.getPath(), null, false,
+					new IClasspathAttribute[] { JavaCore.newClasspathAttribute(IClasspathAttribute.MODULE, "true") },
+					false));
 			project2.open(null);
 			createFile("/Second/src/module-info.java",
 					"module second {\n" +
@@ -1370,7 +1375,7 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			ModuleDirective stat = (ModuleDirective) moduleDeclaration2.moduleStatements().get(0);
 			IBinding requiredModule = ((RequiresDirective) stat).getName().resolveBinding();
 			validateBinding.accept(requiredModule);
-			
+
 		} finally {
 			deleteProject("First");
 			deleteProject("Second");
@@ -1386,15 +1391,15 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			project1.open(null);
 			createFolder("/Foo/src/foo");
 			createFile("/Foo/src/foo/Foo.java",
-					"package foo;\n" + 
-					"\n" + 
-					"public class Foo {\n" + 
-					"	public interface MyInterface<T> {\n" + 
-					"		public void perform(T t);\n" + 
-					"	}\n" + 
-					"	public <T> MyInterface<T> createMyInterface() {\n" + 
+					"package foo;\n" +
+					"\n" +
+					"public class Foo {\n" +
+					"	public interface MyInterface<T> {\n" +
+					"		public void perform(T t);\n" +
+					"	}\n" +
+					"	public <T> MyInterface<T> createMyInterface() {\n" +
 					"		return new My\n" + // incomplete, use case is: completion after "My"
-					"	}\n" + 
+					"	}\n" +
 					"}\n");
 			ASTParser parser = ASTParser.newParser(this.ast.apiLevel());
 			parser.setProject(project1);
@@ -1412,6 +1417,63 @@ public class ASTConverter9Test extends ConverterTestSetup {
 			assertEquals("expected binding", key, requestor._result.getKey());
 		} finally {
 			deleteProject("Foo");
+		}
+	}
+	/**
+	 * @deprecated
+	 * @throws Exception
+	 */
+	public void testBug542795() throws Exception {
+		IJavaProject p =  createJavaProject("Foo", new String[] {"src"}, new String[] {jcl9lib}, "bin", "11");
+		try {
+			createFolder("/Foo/src/test");
+			createFile("/Foo/src/test/ReaderWarningView.java",
+					"package test;\n" +
+					"@java.lang.Deprecated\n" +
+					"public class ReaderWarningView {}\n");
+			String source =
+					"public class Test implements test.Screen.Component {}\n";
+			createFile("/Foo/src/Test.java", source);
+			createFile("/Foo/src/test/Screen.java",
+					"package test;\n" +
+					"@interface Annot{ Class<?> value(); }\n" +
+					"@Annot(test.Screen.Component.class)\n" +
+					"@java.lang.Deprecated\n" +
+					"public final class Screen {\n" +
+					"	@java.lang.Deprecated\n" +
+					"	public interface Component extends test.ReaderWarningView.Component {\n" +
+					"	}\n" +
+					"}\n");
+			ICompilationUnit cuD = getCompilationUnit("/Foo/src/Test.java");
+
+			p.setOption(JavaCore.COMPILER_PB_DEPRECATION, JavaCore.ERROR);
+			ASTParser parser = ASTParser.newParser(AST_INTERNAL_JLS11);
+			parser.setProject(p);
+			parser.setSource(cuD);
+			parser.setResolveBindings(true);
+			parser.setStatementsRecovery(true);
+			parser.setBindingsRecovery(true);
+			org.eclipse.jdt.core.dom.CompilationUnit cuAST = (org.eclipse.jdt.core.dom.CompilationUnit) parser.createAST(null);
+			IProblem[] problems = cuAST.getProblems();
+			assertProblems("Unexpected problems",
+					"1. ERROR in /Foo/src/Test.java (at line 1)\n" +
+					"	public class Test implements test.Screen.Component {}\n" +
+					"	             ^^^^\n" +
+					"The hierarchy of the type Test is inconsistent\n" +
+					"----------\n" +
+					"2. ERROR in /Foo/src/Test.java (at line 1)\n" +
+					"	public class Test implements test.Screen.Component {}\n" +
+					"	                                  ^^^^^^\n" +
+					"The type Screen is deprecated\n" +
+					"----------\n" +
+					"3. ERROR in /Foo/src/Test.java (at line 1)\n" +
+					"	public class Test implements test.Screen.Component {}\n" +
+					"	                                         ^^^^^^^^^\n" +
+					"The type Screen.Component is deprecated\n" +
+					"----------\n",
+					problems, source.toCharArray());
+		} finally {
+			deleteProject(p);
 		}
 	}
 // Add new tests here

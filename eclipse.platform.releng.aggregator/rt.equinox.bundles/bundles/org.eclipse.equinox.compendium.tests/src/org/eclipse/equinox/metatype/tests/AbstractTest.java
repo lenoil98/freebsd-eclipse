@@ -17,8 +17,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.*;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import org.eclipse.equinox.compendium.tests.Activator;
 import org.eclipse.equinox.metatype.EquinoxMetaTypeService;
 import org.eclipse.osgi.tests.bundles.BundleInstaller;
@@ -72,8 +70,7 @@ public abstract class AbstractTest {
 			} finally {
 				icon.close();
 			}
-			Icon i = new ImageIcon(baos.toByteArray());
-			Assert.assertEquals("Wrong icon size", size, i.getIconHeight() * i.getIconWidth()); //$NON-NLS-1$
+			Assert.assertEquals("Wrong size.", size, baos.size()); //$NON-NLS-1$
 		} finally {
 			baos.close();
 		}
@@ -114,7 +111,7 @@ public abstract class AbstractTest {
 		if (value == null || value.length() == 0) {
 			return value;
 		}
-		StringBuffer result = new StringBuffer(value.length() + 20);
+		StringBuilder result = new StringBuilder(value.length() + 20);
 		for (int i = 0; i < value.length(); i++) {
 			char c = value.charAt(i);
 			if (c == ',' || c == '\\' || Character.isWhitespace(c)) {
@@ -128,11 +125,12 @@ public abstract class AbstractTest {
 	protected AttributeDefinition findAttributeDefinitionById(String id, AttributeDefinition[] ads) {
 		if (id == null || ads == null)
 			return null;
-		for (int i = 0; i < ads.length; i++) {
-			if (ads[i] == null)
+		for (AttributeDefinition ad : ads) {
+			if (ad == null) {
 				continue;
-			if (id.equals(ads[i].getID())) {
-				return ads[i];
+			}
+			if (id.equals(ad.getID())) {
+				return ad;
 			}
 		}
 		return null;
@@ -146,18 +144,35 @@ public abstract class AbstractTest {
 
 	@Before
 	public void setUp() throws Exception {
+		startMetatype();
+		bundleInstaller = new BundleInstaller("bundle_tests/metatype", Activator.getBundleContext()); //$NON-NLS-1$
+	}
+
+	private void startMetatype() throws Exception {
 		Activator.getBundle(Activator.BUNDLE_METATYPE).start();
 		metaTypeReference = Activator.getBundleContext().getServiceReference(EquinoxMetaTypeService.class);
 		Assert.assertNotNull("Metatype service reference not found", metaTypeReference); //$NON-NLS-1$
 		metatype = Activator.getBundleContext().getService(metaTypeReference);
 		Assert.assertNotNull("Metatype service not found", metatype); //$NON-NLS-1$
-		bundleInstaller = new BundleInstaller("bundle_tests/metatype", Activator.getBundleContext()); //$NON-NLS-1$
 	}
 
 	@After
 	public void tearDown() throws Exception {
 		bundleInstaller.shutdown();
+		stopMetatype();
+	}
+
+	private void stopMetatype() throws Exception {
 		Activator.getBundleContext().ungetService(metaTypeReference);
 		Activator.getBundle(Activator.BUNDLE_METATYPE).stop();
+	}
+
+	public void restartMetatype() {
+		try {
+			stopMetatype();
+			startMetatype();
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
 	}
 }

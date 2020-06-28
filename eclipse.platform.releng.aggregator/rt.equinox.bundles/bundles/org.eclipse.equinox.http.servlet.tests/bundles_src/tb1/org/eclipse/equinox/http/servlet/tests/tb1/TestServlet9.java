@@ -36,6 +36,7 @@ public class TestServlet9 extends AbstractTestServlet {
 	private static final long serialVersionUID = 1L;
 
 	private final DispatchTo dispatchTo = new DispatchTo();
+	@Override
 	public void activate(ComponentContext componentContext) throws ServletException, NamespaceException {
 		HttpService service = getHttpService();
 		HttpContext context = service.createDefaultHttpContext();
@@ -55,14 +56,14 @@ public class TestServlet9 extends AbstractTestServlet {
 	}
 
 	@Override
-	protected void handleDoGet(HttpServletRequest request, PrintWriter writer) throws ServletException, IOException {
+	protected void handleDoGet(HttpServletRequest request, PrintWriter writer) {
 		//
 	}
 
 	class DispatchTo extends AbstractTestServlet {
 		private static final long serialVersionUID = 1L;
 		@Override
-		protected void handleDoGet(HttpServletRequest request, PrintWriter writer) throws ServletException, IOException {
+		protected void handleDoGet(HttpServletRequest request, PrintWriter writer) {
 			writer.print(TestServlet9.this.getProperties().get(Constants.SERVICE_DESCRIPTION));
 		}
 		

@@ -1,11 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2009, 2014 EclipseSource and others.
  *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which accompanies this distribution,
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   EclipseSource - initial API and implementation
@@ -30,6 +31,20 @@ import org.w3c.dom.css.CSSStyleDeclaration;
 import org.w3c.dom.css.CSSStyleSheet;
 import org.w3c.dom.css.ViewCSS;
 
+/**
+ * Test to ensure the that CSS honors the CSS cascading rules, i.e.:
+ *
+ * <p>
+ * !important after CSS properties.
+ * </p>
+ * <p>
+ * Specificity of CSS rule selectors
+ * </p>
+ * <p>
+ * Sequence of declaration.
+ * </p>
+ *
+ **/
 
 public class CascadeTest {
 
@@ -53,8 +68,7 @@ public class CascadeTest {
 		TestElement button = new TestElement("Button", engine);
 		CSSStyleDeclaration style = viewCSS.getComputedStyle(button, null);
 		assertEquals("black", style.getPropertyCSSValue("color").getCssText());
-		assertEquals("bold", style.getPropertyCSSValue("font-weight")
-				.getCssText());
+		assertEquals("bold", style.getPropertyCSSValue("font-weight").getCssText());
 	}
 
 	@Test
@@ -75,6 +89,34 @@ public class CascadeTest {
 		assertEquals("bold", style.getPropertyCSSValue("font-weight")
 				.getCssText());
 	}
+
+	@Test
+	public void ensureThatClassAndIdareConsideredIfOnTheSameLevel() throws Exception {
+		// Rules for elements with children. The first should take
+		// precedence because of its higher specificity
+		String css = "CTabFolder > Composite > Toolbar { color: black; }\n"
+				+ "CTabFolder > Composite > .special { color: blue; font-weight: bold; }\n"
+				+ "CTabFolder > Composite > #special { color: red; font-weight: bold; }\n";
+		ViewCSS viewCSS = createViewCss(css);
+
+		TestElement tabFolder = new TestElement("CTabFolder", engine);
+		TestElement composite = new TestElement("Composite", tabFolder, engine);
+		TestElement toolbar = new TestElement("Toolbar", composite, engine);
+
+		CSSStyleDeclaration style = viewCSS.getComputedStyle(toolbar, null);
+		assertEquals("black", style.getPropertyCSSValue("color").getCssText());
+
+		toolbar.setClass("special");
+		style = viewCSS.getComputedStyle(toolbar, null);
+		assertEquals("blue", style.getPropertyCSSValue("color").getCssText());
+
+		toolbar.setId("special");
+		style = viewCSS.getComputedStyle(toolbar, null);
+		assertEquals("red", style.getPropertyCSSValue("color").getCssText());
+
+	}
+
+
 
 	@Test
 	public void testSpecificities() throws Exception {

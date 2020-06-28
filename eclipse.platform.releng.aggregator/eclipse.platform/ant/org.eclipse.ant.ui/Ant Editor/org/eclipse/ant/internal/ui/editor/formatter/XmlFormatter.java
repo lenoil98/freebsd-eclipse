@@ -178,13 +178,13 @@ public class XmlFormatter {
 						return true;
 					}
 				});
-				for (int i = 0; i < positions.length; i++) {
+				for (Position position : positions) {
 					try {
-						doc.addPosition(POS_CATEGORY, positions[i]);
+						doc.addPosition(POS_CATEGORY, position);
 					}
 					catch (BadLocationException e) {
-						throw new IllegalArgumentException("Position outside of string. offset: " + positions[i].offset + ", length: " //$NON-NLS-1$//$NON-NLS-2$
-								+ positions[i].length + ", string size: " + string.length(), e); //$NON-NLS-1$
+						throw new IllegalArgumentException("Position outside of string. offset: " + position.offset + ", length: " //$NON-NLS-1$//$NON-NLS-2$
+								+ position.length + ", string size: " + string.length(), e); //$NON-NLS-1$
 					}
 				}
 			}
@@ -237,7 +237,7 @@ public class XmlFormatter {
 			return IAntCoreConstants.EMPTY_STRING;
 		}
 
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append(XmlDocumentFormatter.getLeadingWhitespace(node.getOffset(), document));
 		buf.append(XmlDocumentFormatter.createIndent());
 		return buf.toString();

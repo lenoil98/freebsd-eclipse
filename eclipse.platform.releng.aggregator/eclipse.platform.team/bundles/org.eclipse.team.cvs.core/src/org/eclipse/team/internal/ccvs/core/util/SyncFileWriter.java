@@ -70,12 +70,12 @@ public class SyncFileWriter {
 	 * If the folder does not have a CVS subdirectory then <code>null</code> is returned.
 	 */
 	public static byte[][] readAllResourceSync(IContainer parent) throws CVSException {
-        IFolder cvsSubDir = getCVSSubdirectory(parent);
-        
-        if (!folderExists(cvsSubDir)){
-        	return null;
-        }
-        
+		IFolder cvsSubDir = getCVSSubdirectory(parent);
+		
+		if (!folderExists(cvsSubDir)){
+			return null;
+		}
+		
 		if (Policy.DEBUG_METAFILE_CHANGES) {
 			System.out.println("Reading Entries file for " + parent.getFullPath()); //$NON-NLS-1$
 		}
@@ -84,8 +84,7 @@ public class SyncFileWriter {
 		String[] entries = readLines(cvsSubDir.getFile(ENTRIES));
 		if (entries == null) return null;
 		Map infos = new TreeMap();
-		for (int i = 0; i < entries.length; i++) {
-			String line = entries[i];
+		for (String line : entries) {
 			if(!FOLDER_TAG.equals(line) && !"".equals(line)) { //$NON-NLS-1$
 				try {
 					ResourceSyncInfo info = new ResourceSyncInfo(line, null);
@@ -93,7 +92,7 @@ public class SyncFileWriter {
 				} catch (CVSException e) {
 					// There was a problem parsing the entry line.
 					// Log the problem and skip the entry
-					CVSProviderPlugin.log(new CVSStatus(IStatus.ERROR, NLS.bind(CVSMessages.SyncFileWriter_0, new String[] { parent.getFullPath().toString() }), e)); 
+					CVSProviderPlugin.log(new CVSStatus(IStatus.ERROR, NLS.bind(CVSMessages.SyncFileWriter_0, new String[] { parent.getFullPath().toString() }), e));
 				}			
 			}
 		}
@@ -101,8 +100,7 @@ public class SyncFileWriter {
 		// process Entries.log file contents
 		String[] entriesLog = readLines(cvsSubDir.getFile(ENTRIES_LOG));
 		if (entriesLog != null) {
-			for (int i = 0; i < entriesLog.length; i++) {
-				String line = entriesLog[i];
+			for (String line : entriesLog) {
 				if (line.startsWith(ADD_TAG)) {
 					line = line.substring(ADD_TAG.length());
 					ResourceSyncInfo info = new ResourceSyncInfo(line, null);
@@ -126,14 +124,14 @@ public class SyncFileWriter {
 	}
 	
 	private static boolean folderExists(IFolder cvsSubDir) throws CVSException {
-	    try {
-	    	URI uri = cvsSubDir.getLocationURI();
-	    	if (uri != null){
+		try {
+			URI uri = cvsSubDir.getLocationURI();
+			if (uri != null){
 				IFileStore store = EFS.getStore(uri);
 				if (store != null){
 					return store.fetchInfo().exists();
 				}
-	    	}
+			}
 		} catch (CoreException e) {
 			throw CVSException.wrapException(e);
 		} 
@@ -171,11 +169,11 @@ public class SyncFileWriter {
 	public static FolderSyncInfo readFolderSync(IContainer folder) throws CVSException {
 		IFolder cvsSubDir = getCVSSubdirectory(folder);
 		
-        if (!folderExists(cvsSubDir)){
-        	return null;
-        }
+		if (!folderExists(cvsSubDir)){
+			return null;
+		}
 
-        if (Policy.DEBUG_METAFILE_CHANGES) {
+		if (Policy.DEBUG_METAFILE_CHANGES) {
 			System.out.println("Reading Root/Repository files for " + folder.getFullPath()); //$NON-NLS-1$
 		}
 		
@@ -279,8 +277,7 @@ public class SyncFileWriter {
 				return null;
 			// Split each line on spaces and tabs.
 			ArrayList/*<String>*/ entries = new ArrayList/*<String>*/();
-			for (int ln = 0; ln < lines.length; ln++) {
-				String line = lines[ln];
+			for (String line : lines) {
 				int pos = 0;
 				while (pos < line.length()) {
 					if (line.charAt(pos) == ' ' || line.charAt(pos) == '\t')
@@ -328,25 +325,24 @@ public class SyncFileWriter {
 	public static NotifyInfo[] readAllNotifyInfo(IContainer parent) throws CVSException {
 		IFolder cvsSubDir = getCVSSubdirectory(parent);
 
-        if (!folderExists(cvsSubDir)){
-        	return null;
-        }
-        
+		if (!folderExists(cvsSubDir)){
+			return null;
+		}
+		
 		// process Notify file contents
 		String[] entries = readLines(cvsSubDir.getFile(NOTIFY));
 		if (entries == null) return null;
 		Map infos = new TreeMap();
-		for (int i = 0; i < entries.length; i++) {
-			String line = entries[i];
+		for (String line : entries) {
 			if(!"".equals(line)) { //$NON-NLS-1$
 				try {
-                    NotifyInfo info = new NotifyInfo(parent, line);
-                    infos.put(info.getName(), info);
-                } catch (CVSException e) {
-                    // We couldn't parse the notify info
-                    // Log it and ignore
-                    CVSProviderPlugin.log(e);
-                }			
+					NotifyInfo info = new NotifyInfo(parent, line);
+					infos.put(info.getName(), info);
+				} catch (CVSException e) {
+					// We couldn't parse the notify info
+					// Log it and ignore
+					CVSProviderPlugin.log(e);
+				}			
 			}
 		}
 		
@@ -393,17 +389,16 @@ public class SyncFileWriter {
 	 */
 	public static BaserevInfo[] readAllBaserevInfo(IContainer parent) throws CVSException {
 		IFolder cvsSubDir = getCVSSubdirectory(parent);
-        
-        if (!folderExists(cvsSubDir)){
-        	return null;
-        }
-        
+		
+		if (!folderExists(cvsSubDir)){
+			return null;
+		}
+		
 		// process Notify file contents
 		String[] entries = readLines(cvsSubDir.getFile(BASEREV));
 		if (entries == null) return null;
 		Map infos = new TreeMap();
-		for (int i = 0; i < entries.length; i++) {
-			String line = entries[i];
+		for (String line : entries) {
 			if(!"".equals(line)) { //$NON-NLS-1$
 				BaserevInfo info = new BaserevInfo(line);
 				infos.put(info.getName(), info);
@@ -496,16 +491,13 @@ public class SyncFileWriter {
 		try {
 			InputStream in = getInputStream(file);
 			if (in != null) {
-				BufferedReader reader = new BufferedReader(new InputStreamReader(in), 512);
-				try {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(in), 512)) {
 					String line = reader.readLine();
 					if (line == null) return ""; //$NON-NLS-1$
 					return line;
-				} finally {
-					reader.close();
 				}
-            }
-            return null;
+			}
+			return null;
 		} catch (IOException e) {
 			throw CVSException.wrapException(e);
 		} catch (CoreException e) {
@@ -524,7 +516,7 @@ public class SyncFileWriter {
 
 	private static InputStream getInputStream(IFile file) throws CoreException, FileNotFoundException {
 		if (file.exists()) {
-		    return file.getContents(true);
+			return file.getContents(true);
 		}
 		
 		URI uri = file.getLocationURI();
@@ -616,8 +608,8 @@ public class SyncFileWriter {
 		byte[] lineEnd = getLineDelimiter();
 		try {
 			try {
-				for (int i = 0; i < contents.length; i++) {
-					os.write(contents[i].getBytes());
+				for (String content : contents) {
+					os.write(content.getBytes());
 					os.write(lineEnd);
 				}
 			} finally {
@@ -692,11 +684,11 @@ public class SyncFileWriter {
 		if (attrs != null && attrs.isReadOnly() != readOnly) {
 			attrs.setReadOnly(readOnly);
 			try {
-		        source.setResourceAttributes(attrs);
-		    } catch (CoreException e) {
-		    	// Just log the failure since the move may succeed anyway
-		        CVSProviderPlugin.log(e);
-		    }
+				source.setResourceAttributes(attrs);
+			} catch (CoreException e) {
+				// Just log the failure since the move may succeed anyway
+				CVSProviderPlugin.log(e);
+			}
 		}
 	}
 	

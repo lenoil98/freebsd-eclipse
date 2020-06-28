@@ -112,7 +112,7 @@ public final class Cursor extends Resource {
 		if (!new NSObject(OS.class_NSCursor).respondsToSelector(OS.sel_busyButClickableCursor)) {
 			return null;
 		}
-		long /*int*/ result = OS.objc_msgSend(OS.class_NSCursor, OS.sel_busyButClickableCursor);
+		long result = OS.objc_msgSend(OS.class_NSCursor, OS.sel_busyButClickableCursor);
 		return result != 0 ? new NSCursor(result) : null;
 	}
 
@@ -200,7 +200,14 @@ public Cursor(Device device, int style) {
 			case SWT.CURSOR_SIZESW:			handle = NSCursor.crosshairCursor(); break;
 			case SWT.CURSOR_SIZENW:			handle = NSCursor.crosshairCursor(); break;
 			case SWT.CURSOR_UPARROW:			handle = NSCursor.crosshairCursor(); break;
-			case SWT.CURSOR_IBEAM:			shouldCreateCursor = true; break;
+			case SWT.CURSOR_IBEAM:
+				// Before 10.14, I-Beam cursor is nearly invisible on a dark background
+				if (OS.VERSION < OS.VERSION(10, 14, 0)) {
+					shouldCreateCursor = true;
+				} else {
+					handle = NSCursor.IBeamCursor();
+				}
+				break;
 			case SWT.CURSOR_NO:				handle = NSCursor.operationNotAllowedCursor(); break;
 			default:
 				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -479,7 +486,7 @@ public boolean equals (Object object) {
  */
 @Override
 public int hashCode () {
-	return handle != null ? (int)/*64*/handle.id : 0;
+	return handle != null ? (int)handle.id : 0;
 }
 
 /**

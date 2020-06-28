@@ -54,7 +54,7 @@ public class TocValidator {
 	}
 
 	public static abstract class Filter {
-	     abstract public boolean isIncluded(String href);
+		abstract public boolean isIncluded(String href);
 	}
 
 	public static class PassThroughFilter extends Filter {
@@ -83,8 +83,8 @@ public class TocValidator {
 	public static ArrayList<BrokenLink> filteredValidate (String[] hrefs, Filter filter) throws IOException, SAXException, ParserConfigurationException{
 		TocValidator v = new TocValidator();
 		ArrayList<BrokenLink> result = new ArrayList<>();
-		for (int i = 0; i < hrefs.length; i++)
-			v.processToc(hrefs[i], null, result, filter);
+		for (String href : hrefs)
+			v.processToc(href, null, result, filter);
 		return result;
 	}
 
@@ -101,7 +101,7 @@ public class TocValidator {
 		String path;
 		if (href.startsWith("/")) { //$NON-NLS-1$
 			href = href.substring(1);
-			int index = href.indexOf("/"); //$NON-NLS-1$
+			int index = href.indexOf('/');
 			if (index == -1)
 				throw new IOException("Invalid parameters supplied to the validate method."); //$NON-NLS-1$
 			plugin = href.substring(0, index);

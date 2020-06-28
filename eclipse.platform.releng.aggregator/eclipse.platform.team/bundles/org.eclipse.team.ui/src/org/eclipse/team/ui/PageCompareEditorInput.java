@@ -64,9 +64,6 @@ public abstract class PageCompareEditorInput extends CompareEditorInput implemen
 		super(configuration);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.compare.CompareEditorInput#createStructureInputPane(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	protected CompareViewerPane createStructureInputPane(Composite parent) {
 		pagePane = new CompareViewerPane(parent, SWT.BORDER | SWT.FLAT) {
@@ -251,8 +248,8 @@ public abstract class PageCompareEditorInput extends CompareEditorInput implemen
 		try {
 			// TODO: we need a better progress story here (i.e. support for cancellation) bug 127075
 			manager.busyCursorWhile(monitor -> {
-			    prepareInput(input, getCompareConfiguration(), monitor);
-			    hookContentChangeListener(input);
+				prepareInput(input, getCompareConfiguration(), monitor);
+				hookContentChangeListener(input);
 			});
 		} catch (InvocationTargetException e) {
 			Utils.handle(e);
@@ -278,7 +275,7 @@ public abstract class PageCompareEditorInput extends CompareEditorInput implemen
 	 * @param input the input
 	 * @param configuration the compare configuration
 	 * @param monitor a progress monitor
-	 * @throws InvocationTargetException
+	 * @throws InvocationTargetException if an error occurs
 	 */
 	protected abstract void prepareInput(ICompareInput input, CompareConfiguration configuration, IProgressMonitor monitor) throws InvocationTargetException;
 

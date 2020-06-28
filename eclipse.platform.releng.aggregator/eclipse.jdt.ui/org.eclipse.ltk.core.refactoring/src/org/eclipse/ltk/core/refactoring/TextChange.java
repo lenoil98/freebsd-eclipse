@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -238,10 +238,10 @@ public abstract class TextChange extends TextEditBasedChange {
 			document= acquireDocument(new SubProgressMonitor(pm, 1));
 
 			UndoEdit undo= performEdits(document);
-			
+
 			commit(document, new SubProgressMonitor(pm, 1));
 			return createUndoChange(undo);
-			
+
 		} catch (BadLocationException e) {
 			throw Changes.asCoreException(e);
 		} catch (MalformedTreeException e) {
@@ -255,7 +255,7 @@ public abstract class TextChange extends TextEditBasedChange {
 	/**
 	 * Executes the text edits on the given document.
 	 * Subclasses that override this method should call <code>super.performEdits(document)</code>.
-	 * 
+	 *
 	 * @param document the document
 	 * @return an object representing the undo of the executed edits
 	 * @exception MalformedTreeException is thrown if the edit tree isn't
@@ -273,18 +273,18 @@ public abstract class TextChange extends TextEditBasedChange {
 				session= ((IDocumentExtension4)document).startRewriteSession(
 					DocumentRewriteSessionType.UNRESTRICTED);
 			}
-	
+
 			LinkedModeModel.closeAllModels(document);
 			TextEditProcessor processor= createTextEditProcessor(document, TextEdit.CREATE_UNDO, false);
 			return processor.performEdits();
-			
+
 		} finally {
 			if (session != null) {
 				((IDocumentExtension4)document).stopRewriteSession(session);
 			}
 		}
 	}
-	
+
 	//---- Method to access the current content of the text change ---------
 
 	/**
@@ -377,8 +377,8 @@ public abstract class TextChange extends TextEditBasedChange {
 		if (originals.length == 0)
 			return new TextEdit[0];
 		List<TextEdit> result= new ArrayList<>(originals.length);
-		for (int i= 0; i < originals.length; i++) {
-			TextEdit copy= fCopier.getCopy(originals[i]);
+		for (TextEdit original : originals) {
+			TextEdit copy= fCopier.getCopy(original);
 			if (copy != null)
 				result.add(copy);
 		}
@@ -497,14 +497,10 @@ public abstract class TextChange extends TextEditBasedChange {
 		// Make sure that all edits in the change groups are rooted under the edit the text change stand for.
 		TextEdit root= getEdit();
 		Assert.isNotNull(root, "No root edit"); //$NON-NLS-1$
-		for (int c= 0; c < changeGroups.length; c++) {
-			TextEditBasedChangeGroup group= changeGroups[c];
+		for (TextEditBasedChangeGroup group : changeGroups) {
 			TextEdit[] edits= group.getTextEdits();
-			for (int e= 0; e < edits.length; e++) {
-
-				// TODO: enable once following bug is fixed
-				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=130909
-				// Assert.isTrue(root == edits[e].getRoot(), "Wrong root edit"); //$NON-NLS-1$
+			for (TextEdit edit : edits) {
+				Assert.isTrue(root == edit.getRoot(), "Wrong root edit"); //$NON-NLS-1$
 			}
 		}
 		PreviewAndRegion result= getPreviewDocument(changeGroups, pm);
@@ -542,8 +538,7 @@ public abstract class TextChange extends TextEditBasedChange {
 			return new TextEditProcessor(document, new MultiTextEdit(0,0), flags);
 		List<TextEdit> excludes= new ArrayList<>(0);
 		TextEditBasedChangeGroup[] groups= getChangeGroups();
-		for (int index= 0; index < groups.length; index++) {
-			TextEditBasedChangeGroup edit= groups[index];
+		for (TextEditBasedChangeGroup edit : groups) {
 			if (!edit.isEnabled()) {
 				excludes.addAll(Arrays.asList(edit.getTextEditGroup().getTextEdits()));
 			}
@@ -572,8 +567,7 @@ public abstract class TextChange extends TextEditBasedChange {
 		if (fEdit == null)
 			return new TextEditProcessor(document, new MultiTextEdit(0,0), flags);
 		List<TextEdit> includes= new ArrayList<>(0);
-		for (int c= 0; c < changes.length; c++) {
-			TextEditBasedChangeGroup change= changes[c];
+		for (TextEditBasedChangeGroup change : changes) {
 			Assert.isTrue(change.getTextEditChange() == this);
 			if (change.isEnabled()) {
 				includes.addAll(Arrays.asList(change.getTextEditGroup().getTextEdits()));
@@ -600,10 +594,10 @@ public abstract class TextChange extends TextEditBasedChange {
 			return fEdit.getRegion();
 		} else {
 			List<TextEdit> edits= new ArrayList<>();
-			for (int i= 0; i < changes.length; i++) {
-				edits.addAll(Arrays.asList(changes[i].getTextEditGroup().getTextEdits()));
+			for (TextEditBasedChangeGroup change : changes) {
+				edits.addAll(Arrays.asList(change.getTextEditGroup().getTextEdits()));
 			}
-			if (edits.size() == 0)
+			if (edits.isEmpty())
 				return null;
 			return TextEdit.getCoverage(edits.toArray(new TextEdit[edits.size()]));
 		}
@@ -616,15 +610,15 @@ public abstract class TextChange extends TextEditBasedChange {
 			return fCopier.getCopy(fEdit).getRegion();
 		} else {
 			List<TextEdit> result= new ArrayList<>();
-			for (int c= 0; c < changes.length; c++) {
-				TextEdit[] edits= changes[c].getTextEditGroup().getTextEdits();
-				for (int e= 0; e < edits.length; e++) {
-					TextEdit copy= fCopier.getCopy(edits[e]);
+			for (TextEditBasedChangeGroup change : changes) {
+				TextEdit[] edits= change.getTextEditGroup().getTextEdits();
+				for (TextEdit edit : edits) {
+					TextEdit copy= fCopier.getCopy(edit);
 					if (copy != null)
 						result.add(copy);
 				}
 			}
-			if (result.size() == 0)
+			if (result.isEmpty())
 				return null;
 			return TextEdit.getCoverage(result.toArray(new TextEdit[result.size()]));
 		}

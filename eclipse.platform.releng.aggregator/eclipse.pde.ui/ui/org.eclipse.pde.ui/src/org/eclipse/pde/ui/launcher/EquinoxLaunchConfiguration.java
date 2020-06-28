@@ -61,9 +61,7 @@ public class EquinoxLaunchConfiguration extends AbstractPDELaunchConfiguration {
 		programArgs.add("file:" + new Path(getConfigDir(configuration).getPath()).addTrailingSeparator().toString()); //$NON-NLS-1$
 
 		String[] args = super.getProgramArguments(configuration);
-		for (String arg : args) {
-			programArgs.add(arg);
-		}
+		Collections.addAll(programArgs, args);
 		return programArgs.toArray(new String[programArgs.size()]);
 	}
 
@@ -197,12 +195,7 @@ public class EquinoxLaunchConfiguration extends AbstractPDELaunchConfiguration {
 	protected void clear(ILaunchConfiguration configuration, IProgressMonitor monitor) throws CoreException {
 		// clear config area, if necessary
 		if (configuration.getAttribute(org.eclipse.pde.launching.IPDELauncherConstants.CONFIG_CLEAR_AREA, false))
-			CoreUtility.deleteContent(getConfigDir(configuration), monitor);
-
-		if (monitor != null && monitor.isCanceled()) {
-			throw new CoreException(Status.CANCEL_STATUS);
-		}
-
+			CoreUtility.deleteContent(getConfigDir(configuration));
 	}
 
 }

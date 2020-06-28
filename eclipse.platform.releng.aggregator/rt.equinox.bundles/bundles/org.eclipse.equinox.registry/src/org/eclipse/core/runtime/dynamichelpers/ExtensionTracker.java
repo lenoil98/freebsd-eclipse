@@ -151,8 +151,8 @@ public class ExtensionTracker implements IExtensionTracker, IRegistryChangeListe
 			handlersCopy = handlers.getListeners();
 		}
 
-		for (int i = 0; i < handlersCopy.length; i++) {
-			HandlerWrapper wrapper = (HandlerWrapper) handlersCopy[i];
+		for (Object w : handlersCopy) {
+			HandlerWrapper wrapper = (HandlerWrapper) w;
 			if (wrapper.filter == null || wrapper.filter.matches(delta.getExtensionPoint())) {
 				if (objects == null)
 					applyAdd(wrapper.handler, delta.getExtension());
@@ -259,12 +259,7 @@ public class ExtensionTracker implements IExtensionTracker, IRegistryChangeListe
 	 * @return a filter
 	 */
 	public static IFilter createExtensionPointFilter(final IExtensionPoint xpt) {
-		return new IFilter() {
-			@Override
-			public boolean matches(IExtensionPoint target) {
-				return xpt.equals(target);
-			}
-		};
+		return xpt::equals;
 	}
 
 	/**
@@ -274,14 +269,13 @@ public class ExtensionTracker implements IExtensionTracker, IRegistryChangeListe
 	 * @return a filter
 	 */
 	public static IFilter createExtensionPointFilter(final IExtensionPoint[] xpts) {
-		return new IFilter() {
-			@Override
-			public boolean matches(IExtensionPoint target) {
-				for (int i = 0; i < xpts.length; i++)
-					if (xpts[i].equals(target))
-						return true;
-				return false;
+		return (IExtensionPoint target) -> {
+			for (IExtensionPoint xpt : xpts) {
+				if (xpt.equals(target)) {
+					return true;
+				}
 			}
+			return false;
 		};
 	}
 
@@ -292,12 +286,7 @@ public class ExtensionTracker implements IExtensionTracker, IRegistryChangeListe
 	 * @return a filter
 	 */
 	public static IFilter createNamespaceFilter(final String id) {
-		return new IFilter() {
-			@Override
-			public boolean matches(IExtensionPoint target) {
-				return id.equals(target.getNamespaceIdentifier());
-			}
-		};
+		return (IExtensionPoint target) -> id.equals(target.getNamespaceIdentifier());
 	}
 
 	private class HandlerWrapper {

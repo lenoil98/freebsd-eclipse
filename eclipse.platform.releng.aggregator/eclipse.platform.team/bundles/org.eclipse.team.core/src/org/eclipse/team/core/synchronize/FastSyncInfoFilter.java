@@ -73,8 +73,7 @@ public class FastSyncInfoFilter extends SyncInfoFilter {
 		}
 		@Override
 		public boolean select(SyncInfo info) {
-			for (int i = 0; i < filters.length; i++) {
-				FastSyncInfoFilter filter = filters[i];
+			for (FastSyncInfoFilter filter : filters) {
 				if (!filter.select(info)) {
 					return false;
 				}
@@ -116,8 +115,7 @@ public class FastSyncInfoFilter extends SyncInfoFilter {
 		}
 		@Override
 		public boolean select(SyncInfo info) {
-			for (int i = 0; i < filters.length; i++) {
-				FastSyncInfoFilter filter = filters[i];
+			for (FastSyncInfoFilter filter : filters) {
 				if (filter.select(info)) {
 					return true;
 				}
@@ -152,8 +150,7 @@ public class FastSyncInfoFilter extends SyncInfoFilter {
 		@Override
 		public boolean select(SyncInfo info) {
 			int syncKind = info.getKind();
-			for (int i = 0; i < changeFilters.length; i++) {
-				int filter = changeFilters[i];
+			for (int filter : changeFilters) {
 				if ((syncKind & SyncInfo.CHANGE_MASK) == filter)
 					return true;
 			}
@@ -187,8 +184,7 @@ public class FastSyncInfoFilter extends SyncInfoFilter {
 		@Override
 		public boolean select(SyncInfo info) {
 			int syncKind = info.getKind();
-			for (int i = 0; i < directionFilters.length; i++) {
-				int filter = directionFilters[i];
+			for (int filter : directionFilters) {
 				if ((syncKind & SyncInfo.DIRECTION_MASK) == filter)
 					return true;
 			}

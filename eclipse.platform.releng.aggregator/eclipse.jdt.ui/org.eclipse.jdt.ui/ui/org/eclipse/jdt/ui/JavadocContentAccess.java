@@ -62,7 +62,9 @@ public class JavadocContentAccess {
 	 */
 	public static Reader getContentReader(IMember member, boolean allowInherited) throws JavaModelException {
 		Reader contentReader= internalGetContentReader(member);
-		if (contentReader != null || !(allowInherited && (member.getElementType() == IJavaElement.METHOD)))
+		if (contentReader != null
+				|| !allowInherited
+				|| (member.getElementType() != IJavaElement.METHOD))
 			return contentReader;
 		return findDocInHierarchy((IMethod) member, false, false);
 	}
@@ -180,9 +182,7 @@ public class JavadocContentAccess {
 
 		MethodOverrideTester tester= new MethodOverrideTester(type, hierarchy);
 
-		IType[] superTypes= hierarchy.getAllSupertypes(type);
-		for (int i= 0; i < superTypes.length; i++) {
-			IType curr= superTypes[i];
+		for (IType curr : hierarchy.getAllSupertypes(type)) {
 			IMethod overridden= tester.findOverriddenMethodInType(curr, method);
 			if (overridden != null) {
 				Reader reader;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2015 Tom Schindl and others.
+ * Copyright (c) 2006, 2019 Tom Schindl and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -157,8 +157,7 @@ public class ComboBoxViewerCellEditor extends AbstractComboBoxCellEditor {
 		} else {
 			// make the comboBox 10 characters wide
 			GC gc = new GC(viewer.getControl());
-			layoutData.minimumWidth = (gc.getFontMetrics()
-					.getAverageCharWidth() * 10) + 10;
+			layoutData.minimumWidth = (int) ((gc.getFontMetrics().getAverageCharacterWidth() * 10) + 10);
 			gc.dispose();
 		}
 		return layoutData;
@@ -172,13 +171,13 @@ public class ComboBoxViewerCellEditor extends AbstractComboBoxCellEditor {
 	 */
 	@Override
 	protected void doSetValue(Object value) {
-	    Assert.isTrue(viewer != null);
-	    selectedValue = value;
-	    if (value == null) {
-	        viewer.setSelection(StructuredSelection.EMPTY);
-	    } else {
-	        viewer.setSelection(new StructuredSelection(value));
-	    }
+		Assert.isTrue(viewer != null);
+		selectedValue = value;
+		if (value == null) {
+			viewer.setSelection(StructuredSelection.EMPTY);
+		} else {
+			viewer.setSelection(new StructuredSelection(value));
+		}
 	}
 
 	/**

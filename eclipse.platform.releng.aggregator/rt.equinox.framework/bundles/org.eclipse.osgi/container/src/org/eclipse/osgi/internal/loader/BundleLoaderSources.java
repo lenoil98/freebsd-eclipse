@@ -14,8 +14,9 @@
 package org.eclipse.osgi.internal.loader;
 
 import java.security.AccessController;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.eclipse.osgi.container.ModuleCapability;
 import org.eclipse.osgi.framework.util.SecureAction;
 import org.eclipse.osgi.internal.loader.sources.FilteredSourcePackage;
@@ -25,23 +26,22 @@ import org.osgi.framework.namespace.PackageNamespace;
 
 public class BundleLoaderSources {
 	static SecureAction secureAction = AccessController.doPrivileged(SecureAction.createSecureAction());
-	private final Map<String, PackageSource> pkgSources;
+	private final ConcurrentMap<String, PackageSource> pkgSources;
 	private final BundleLoader loader;
 
 	public BundleLoaderSources(BundleLoader loader) {
-		this.pkgSources = new HashMap<>();
+		this.pkgSources = new ConcurrentHashMap<>();
 		this.loader = loader;
 	}
 
 	PackageSource getPackageSource(String pkgName) {
-		synchronized (pkgSources) {
-			PackageSource pkgSource = pkgSources.get(pkgName);
-			if (pkgSource == null) {
-				pkgSource = new SingleSourcePackage(pkgName, loader);
-				pkgSources.put(pkgSource.getId(), pkgSource);
-			}
+		PackageSource pkgSource = pkgSources.get(pkgName);
+		if (pkgSource != null) {
 			return pkgSource;
 		}
+		PackageSource newSource = new SingleSourcePackage(pkgName, loader);
+		PackageSource existingSource = pkgSources.putIfAbsent(newSource.getId(), newSource);
+		return existingSource != null ? existingSource : newSource;
 	}
 
 	boolean forceSourceCreation(ModuleCapability packageCapability) {
@@ -52,7 +52,7 @@ public class BundleLoaderSources {
 	// creates a PackageSource from an ExportPackageDescription.  This is called when initializing
 	// a BundleLoader to ensure that the proper PackageSource gets created and used for
 	// filtered and reexport packages.  The storeSource flag is used by initialize to indicate
-	// that the source for special case package sources (filtered or re-exported should be stored 
+	// that the source for special case package sources (filtered or re-exported should be stored
 	// in the cache.  if this flag is set then a normal SinglePackageSource will not be created
 	// (i.e. it will be created lazily)
 	public PackageSource createPackageSource(ModuleCapability packageCapability, boolean storeSource) {
@@ -68,10 +68,9 @@ public class BundleLoaderSources {
 
 		if (storeSource) {
 			if (pkgSource != null) {
-				synchronized (pkgSources) {
-					if (pkgSources.get(name) == null) {
-						pkgSources.put(pkgSource.getId(), pkgSource);
-					}
+				PackageSource existingSource = pkgSources.putIfAbsent(pkgSource.getId(), pkgSource);
+				if (existingSource != null) {
+					pkgSource = existingSource;
 				}
 			}
 		} else {

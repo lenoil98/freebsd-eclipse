@@ -1,11 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2013 Markus Alexander Kuppe and others.
  *
- * This program and the accompanying materials are made available under the terms
- * of the Eclipse Public License 2.0 which accompanies this distribution, and is
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   Markus Alexander Kuppe - initial API and implementation
@@ -33,6 +34,7 @@ import javax.inject.Qualifier;
  * The {@link org.osgi.framework.Bundle} injected will be the
  * {@link org.osgi.framework.Bundle} that supplied the class of the object
  * instance. For example, in:
+ * </p>
  *
  * <pre>
  * class A {
@@ -49,7 +51,7 @@ import javax.inject.Qualifier;
  * {@link org.osgi.framework.BundleContext} for the bundle that supplies class
  * B, not class A.
  *
- * </p>
+ * @since 0.16
  */
 @Qualifier
 @Documented

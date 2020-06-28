@@ -35,7 +35,7 @@ import org.eclipse.swt.widgets.*;
 public class PrintDialog extends Dialog {
 	PrinterData printerData = new PrinterData();
 
-	long /*int*/ handle;
+	long handle;
 	int index;
 	byte [] settingsData;
 
@@ -293,21 +293,21 @@ public void setPrintToFile(boolean printToFile) {
  */
 public PrinterData open() {
 	byte [] titleBytes = Converter.wcsToMbcs (getText(), true);
-	long /*int*/ topHandle = getParent().handle;
+	long topHandle = getParent().handle;
 	while (topHandle != 0 && !GTK.GTK_IS_WINDOW(topHandle)) {
 		topHandle = GTK.gtk_widget_get_parent(topHandle);
 	}
 	handle = GTK.gtk_print_unix_dialog_new(titleBytes, topHandle);
 
-	//TODO: Not currently implemented. May need new API. For now, disable 'Current' in the dialog. (see gtk bug 344519)
-	GTK.gtk_print_unix_dialog_set_current_page(handle, -1);
+	GTK.gtk_print_unix_dialog_set_support_selection(handle, true);
+	GTK.gtk_print_unix_dialog_set_has_selection(handle, true);
 
 	GTK.gtk_print_unix_dialog_set_manual_capabilities(handle,
 		GTK.GTK_PRINT_CAPABILITY_COLLATE | GTK.GTK_PRINT_CAPABILITY_COPIES | GTK.GTK_PRINT_CAPABILITY_PAGE_SET);
 
 	/* Set state into print dialog settings. */
-	long /*int*/ settings = GTK.gtk_print_settings_new();
-	long /*int*/ page_setup = GTK.gtk_page_setup_new();
+	long settings = GTK.gtk_print_settings_new();
+	long page_setup = GTK.gtk_page_setup_new();
 
 	if (printerData.otherData != null) {
 		Printer.restore(printerData.otherData, settings, page_setup);
@@ -317,7 +317,7 @@ public PrinterData open() {
 	String printerName = printerData.name;
 	if (printerName == null && printerData.printToFile) {
 		/* Find the printer name corresponding to the file backend. */
-		long /*int*/ printer = Printer.gtkPrinterFromPrinterData(printerData);
+		long printer = Printer.gtkPrinterFromPrinterData(printerData);
 		if (printer != 0) {
 			PrinterData data = Printer.printerDataFromGtkPrinter(printer);
 			printerName = data.name;
@@ -339,10 +339,6 @@ public PrinterData open() {
 			pageRange[0] = printerData.startPage - 1;
 			pageRange[1] = printerData.endPage - 1;
 			GTK.gtk_print_settings_set_page_ranges(settings, pageRange, 1);
-			break;
-		case PrinterData.SELECTION:
-			//TODO: Not correctly implemented. May need new API. For now, set to ALL. (see gtk bug 344519)
-			GTK.gtk_print_settings_set_print_pages(settings, GTK.GTK_PRINT_PAGES_ALL);
 			break;
 	}
 	if ((printerData.printToFile || Printer.GTK_FILE_BACKEND.equals(printerData.driver)) && printerData.fileName != null) {
@@ -376,7 +372,7 @@ public PrinterData open() {
 	GTK.gtk_print_unix_dialog_set_embed_page_setup(handle, true);
 	OS.g_object_unref(settings);
 	OS.g_object_unref(page_setup);
-	long /*int*/ group = GTK.gtk_window_get_group(0);
+	long group = GTK.gtk_window_get_group(0);
 	GTK.gtk_window_group_add_window (group, handle);
 	GTK.gtk_window_set_modal(handle, true);
 	PrinterData data = null;
@@ -384,7 +380,7 @@ public PrinterData open() {
 	Display display = getParent() != null ? getParent().getDisplay (): Display.getCurrent ();
 
 	int signalId = 0;
-	long /*int*/ hookId = 0;
+	long hookId = 0;
 	if ((getStyle () & SWT.RIGHT_TO_LEFT) != 0) {
 		signalId = OS.g_signal_lookup (OS.map, GTK.GTK_TYPE_WIDGET());
 		hookId = OS.g_signal_add_emission_hook (signalId, 0, ((LONG) display.getData (GET_EMISSION_PROC_KEY)).value, handle, 0);
@@ -395,6 +391,8 @@ public PrinterData open() {
 		oldModal = display.getData (GET_MODAL_DIALOG);
 		display.setData (SET_MODAL_DIALOG, this);
 	}
+	String key = "org.eclipse.swt.internal.gtk.externalEventLoop"; //$NON-NLS-1$
+	display.setData (key, Boolean.TRUE);
 	display.sendPreExternalEventDispatchEvent ();
 	int response = GTK.gtk_dialog_run (handle);
 	/*
@@ -404,6 +402,7 @@ public PrinterData open() {
 	* thread leaves the GTK lock acquired by the function above.
 	*/
 	if (!GTK.GTK4) GDK.gdk_threads_leave();
+	display.setData (key, Boolean.FALSE);
 	display.sendPostExternalEventDispatchEvent ();
 	if (GTK.gtk_window_get_modal (handle)) {
 		display.setData (SET_MODAL_DIALOG, oldModal);
@@ -412,7 +411,7 @@ public PrinterData open() {
 		OS.g_signal_remove_emission_hook (signalId, hookId);
 	}
 	if (response == GTK.GTK_RESPONSE_OK) {
-		long /*int*/ printer = GTK.gtk_print_unix_dialog_get_selected_printer(handle);
+		long printer = GTK.gtk_print_unix_dialog_get_selected_printer(handle);
 		if (printer != 0) {
 			/* Get state from print dialog. */
 			settings = GTK.gtk_print_unix_dialog_get_settings(handle); // must unref
@@ -426,7 +425,7 @@ public PrinterData open() {
 				case GTK.GTK_PRINT_PAGES_RANGES:
 					data.scope = PrinterData.PAGE_RANGE;
 					int[] num_ranges = new int[1];
-					long /*int*/ page_ranges = GTK.gtk_print_settings_get_page_ranges(settings, num_ranges);
+					long page_ranges = GTK.gtk_print_settings_get_page_ranges(settings, num_ranges);
 					int [] pageRange = new int[2];
 					int length = num_ranges[0];
 					int min = Integer.MAX_VALUE, max = 0;
@@ -440,15 +439,17 @@ public PrinterData open() {
 					data.endPage = max == 0 ? 1 : max;
 					break;
 				case GTK.GTK_PRINT_PAGES_CURRENT:
-					//TODO: Disabled in dialog (see above). This code will not run. (see gtk bug 344519)
 					data.scope = PrinterData.SELECTION;
 					data.startPage = data.endPage = GTK.gtk_print_unix_dialog_get_current_page(handle);
+					break;
+				case GTK.GTK_PRINT_PAGES_SELECTION:
+					data.scope = PrinterData.SELECTION;
 					break;
 			}
 
 			data.printToFile = Printer.GTK_FILE_BACKEND.equals(data.driver); // TODO: GTK_FILE_BACKEND is not GTK API (see gtk bug 345590)
 			if (data.printToFile) {
-				long /*int*/ address = GTK.gtk_print_settings_get(settings, GTK.GTK_PRINT_SETTINGS_OUTPUT_URI);
+				long address = GTK.gtk_print_settings_get(settings, GTK.GTK_PRINT_SETTINGS_OUTPUT_URI);
 				int length = C.strlen (address);
 				byte [] buffer = new byte [length];
 				C.memmove (buffer, address, length);
@@ -465,8 +466,7 @@ public PrinterData open() {
 
 			/* Save other print_settings data as key/value pairs in otherData. */
 			Callback printSettingsCallback = new Callback(this, "GtkPrintSettingsFunc", 3); //$NON-NLS-1$
-			long /*int*/ GtkPrintSettingsFunc = printSettingsCallback.getAddress();
-			if (GtkPrintSettingsFunc == 0) SWT.error (SWT.ERROR_NO_MORE_CALLBACKS);
+			long GtkPrintSettingsFunc = printSettingsCallback.getAddress();
 			index = 0;
 			settingsData = new byte[1024];
 			GTK.gtk_print_settings_foreach (settings, GtkPrintSettingsFunc, 0);
@@ -481,7 +481,7 @@ public PrinterData open() {
 			store("bottom_margin", GTK.gtk_page_setup_get_bottom_margin(page_setup, GTK.GTK_UNIT_MM)); //$NON-NLS-1$
 			store("left_margin", GTK.gtk_page_setup_get_left_margin(page_setup, GTK.GTK_UNIT_MM)); //$NON-NLS-1$
 			store("right_margin", GTK.gtk_page_setup_get_right_margin(page_setup, GTK.GTK_UNIT_MM)); //$NON-NLS-1$
-			long /*int*/ paper_size = GTK.gtk_page_setup_get_paper_size(page_setup); //$NON-NLS-1$
+			long paper_size = GTK.gtk_page_setup_get_paper_size(page_setup); //$NON-NLS-1$
 			storeBytes("paper_size_name", GTK.gtk_paper_size_get_name(paper_size)); //$NON-NLS-1$
 			storeBytes("paper_size_display_name", GTK.gtk_paper_size_get_display_name(paper_size)); //$NON-NLS-1$
 			storeBytes("paper_size_ppd_name", GTK.gtk_paper_size_get_ppd_name(paper_size)); //$NON-NLS-1$
@@ -498,7 +498,7 @@ public PrinterData open() {
 	return data;
 }
 
-long /*int*/ GtkPrintSettingsFunc (long /*int*/ key, long /*int*/ value, long /*int*/ data) {
+long GtkPrintSettingsFunc (long key, long value, long data) {
 	int length = C.strlen (key);
 	byte [] keyBuffer = new byte [length];
 	C.memmove (keyBuffer, key, length);
@@ -521,7 +521,7 @@ void store(String key, boolean value) {
 	store(key, String.valueOf(value));
 }
 
-void storeBytes(String key, long /*int*/ value) {
+void storeBytes(String key, long value) {
 	int length = C.strlen (value);
 	byte [] valueBuffer = new byte [length];
 	C.memmove (valueBuffer, value, length);

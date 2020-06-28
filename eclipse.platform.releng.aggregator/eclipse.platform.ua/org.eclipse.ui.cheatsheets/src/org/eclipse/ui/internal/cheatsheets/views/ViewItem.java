@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2002, 2019 IBM Corporation and others.
+ * Copyright (c) 2002, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Asma Smaoui - CEA LIST - https://bugs.eclipse.org/bugs/show_bug.cgi?id=517379
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 559885
  *******************************************************************************/
 package org.eclipse.ui.internal.cheatsheets.views;
 
@@ -54,6 +55,7 @@ import org.eclipse.ui.internal.cheatsheets.ICheatSheetResource;
 import org.eclipse.ui.internal.cheatsheets.Messages;
 import org.eclipse.ui.internal.cheatsheets.data.IParserTags;
 import org.eclipse.ui.internal.cheatsheets.data.Item;
+import org.eclipse.ui.internal.cheatsheets.views.CheatSheetHyperlinkActionFactory.CheatSheetHyperlinkAction;
 
 public abstract class ViewItem {
 
@@ -199,24 +201,38 @@ public abstract class ViewItem {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				Action copyAction = viewer.getCopyAction();
-				if (copyAction!=null)
+				if (copyAction != null) {
 					copyAction.setEnabled(bodyText.canCopy());
+				}
 			}
 		});
 		bodyText.addFocusListener(new FocusListener() {
 			@Override
 			public void focusGained(FocusEvent e) {
 				Action copyAction = viewer.getCopyAction();
-				if (copyAction!=null)
+				if (copyAction != null) {
 					copyAction.setEnabled(bodyText.canCopy());
+				}
 			}
 			@Override
 			public void focusLost(FocusEvent e) {
 				Action copyAction = viewer.getCopyAction();
-				if (copyAction!=null)
+				if (copyAction != null) {
 					copyAction.setEnabled(false);
+				}
 			}
 		});
+
+		bodyText.addHyperlinkListener(new HyperlinkAdapter() {
+			@Override
+			public void linkActivated(HyperlinkEvent event) {
+				String url = (String) event.getHref();
+				CheatSheetHyperlinkActionFactory actionFactory = new CheatSheetHyperlinkActionFactory();
+				CheatSheetHyperlinkAction cheatSheetHyperlink = actionFactory.create(url);
+				cheatSheetHyperlink.execute();
+			}
+		});
+
 //		bodyText = toolkit.createLabel(bodyWrapperComposite, item.getDescription(), SWT.WRAP);
 		bodyText.setText(item.getDescription(), item.getDescription().startsWith(IParserTags.FORM_START_TAG), false);
 
@@ -359,14 +375,14 @@ public abstract class ViewItem {
 	}
 
 	public boolean isCompletionMessageExpanded() {
-	    return completionMessageExpanded;
-    }
+		return completionMessageExpanded;
+	}
 
 	/**
-     * Returns whether or not cheat sheet viewer containing this item is in
-     * a modal dialog.
-     *
-     * @return whether the cheat sheet viewer is in a modal dialog
+	 * Returns whether or not cheat sheet viewer containing this item is in
+	 * a modal dialog.
+	 *
+	 * @return whether the cheat sheet viewer is in a modal dialog
 	 */
 	public boolean isInDialogMode() {
 		return viewer.isInDialogMode();
@@ -403,7 +419,7 @@ public abstract class ViewItem {
 			Point point = widget.getDisplay().getCursorLocation();
 			point = new Point(point.x + 15, point.y);
 			// display the help
-            PlatformUI.getWorkbench().getHelpSystem().displayContext(context, point.x, point.y);
+			PlatformUI.getWorkbench().getHelpSystem().displayContext(context, point.x, point.y);
 		}
 	}
 
@@ -618,6 +634,6 @@ public abstract class ViewItem {
 			bodyText.copy();
 	}
 
-   abstract boolean hasCompletionMessage();
+	abstract boolean hasCompletionMessage();
 
 }

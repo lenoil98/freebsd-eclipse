@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,7 +15,6 @@ package org.eclipse.jdt.internal.corext.refactoring.rename;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.eclipse.core.runtime.Assert;
@@ -23,27 +22,44 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 
+import org.eclipse.text.edits.ReplaceEdit;
+
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
+import org.eclipse.ltk.core.refactoring.participants.RenameArguments;
 
+import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.jdt.core.search.SearchMatch;
+import org.eclipse.jdt.core.search.SearchPattern;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
+import org.eclipse.jdt.internal.corext.refactoring.CuCollectingSearchRequestor;
 import org.eclipse.jdt.internal.corext.refactoring.JavaRefactoringArguments;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringScopeFactory;
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringSearchEngine;
+import org.eclipse.jdt.internal.corext.refactoring.SearchResultGroup;
 import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextChangeManager;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.corext.util.Messages;
 
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
+import org.eclipse.jdt.ui.JavaElementLabels;
 
 
 public class RenameVirtualMethodProcessor extends RenameMethodProcessor {
@@ -51,6 +67,8 @@ public class RenameVirtualMethodProcessor extends RenameMethodProcessor {
 	private IMethod fOriginalMethod;
 	private boolean fActivationChecked;
 	private ITypeHierarchy fCachedHierarchy= null;
+	private boolean fIsRecordAccessor;
+	private IField fRecordComponent;
 
 	/**
 	 * Creates a new rename method processor.
@@ -158,22 +176,21 @@ public class RenameVirtualMethodProcessor extends RenameMethodProcessor {
 				if (isSpecialCase())
 					result.addError(RefactoringCoreMessages.RenameMethodInInterfaceRefactoring_special_case);
 				pm.worked(1);
-				IMethod[] relatedMethods= relatedTypeDeclaresMethodName(new SubProgressMonitor(pm, 1), method, name);
-				for (int i= 0; i < relatedMethods.length; i++) {
-					IMethod relatedMethod= relatedMethods[i];
+				for (IMethod relatedMethod : relatedTypeDeclaresMethodName(new SubProgressMonitor(pm, 1), method, name)) {
 					RefactoringStatusContext context= JavaStatusContext.create(relatedMethod);
 					result.addError(RefactoringCoreMessages.RenameMethodInInterfaceRefactoring_already_defined, context);
 				}
 			} else {
+				if (fIsRecordAccessor && this.fRecordComponent != null) {
+					checkNewRecordComponentName(name, result);
+				}
 				if (classesDeclareOverridingNativeMethod(hierarchy.getAllSubtypes(declaring))) {
 					result.addError(Messages.format(
 						RefactoringCoreMessages.RenameVirtualMethodRefactoring_requieres_renaming_native,
 						new String[]{ BasicElementLabels.getJavaElementName(method.getElementName()), "UnsatisfiedLinkError"})); //$NON-NLS-1$
 				}
 
-				IMethod[] hierarchyMethods= hierarchyDeclaresMethodName(new SubProgressMonitor(pm, 1), hierarchy, method, name);
-				for (int i= 0; i < hierarchyMethods.length; i++) {
-					IMethod hierarchyMethod= hierarchyMethods[i];
+				for (IMethod hierarchyMethod : hierarchyDeclaresMethodName(new SubProgressMonitor(pm, 1), hierarchy, method, name)) {
 					RefactoringStatusContext context= JavaStatusContext.create(hierarchyMethod);
 					if (Checks.compareParamTypes(method.getParameterTypes(), hierarchyMethod.getParameterTypes())) {
 						result.addError(Messages.format(
@@ -200,8 +217,8 @@ public class RenameVirtualMethodProcessor extends RenameMethodProcessor {
 			Set<IMethod> result= new HashSet<>();
 			Set<IType> types= getRelatedTypes();
 			pm.beginTask("", types.size()); //$NON-NLS-1$
-			for (Iterator<IType> iter= types.iterator(); iter.hasNext(); ) {
-				final IMethod found= Checks.findMethod(method, iter.next());
+			for (IType type : types) {
+				final IMethod found= Checks.findMethod(method, type);
 				final IType declaring= found.getDeclaringType();
 				result.addAll(Arrays.asList(hierarchyDeclaresMethodName(new SubProgressMonitor(pm, 1), declaring.newTypeHierarchy(new SubProgressMonitor(pm, 1)), found, newName)));
 			}
@@ -238,8 +255,8 @@ public class RenameVirtualMethodProcessor extends RenameMethodProcessor {
 	private Set<IType> getRelatedTypes() {
 		Set<IMethod> methods= getMethodsToRename();
 		Set<IType> result= new HashSet<>(methods.size());
-		for (Iterator<IMethod> iter= methods.iterator(); iter.hasNext(); ){
-			result.add(iter.next().getDeclaringType());
+		for (IMethod method : methods) {
+			result.add(method.getDeclaringType());
 		}
 		return result;
 	}
@@ -247,13 +264,11 @@ public class RenameVirtualMethodProcessor extends RenameMethodProcessor {
 	//---- Class checks -------------------------------------
 
 	private boolean classesDeclareOverridingNativeMethod(IType[] classes) throws CoreException {
-		for (int i= 0; i < classes.length; i++){
-			IMethod[] methods= classes[i].getMethods();
-			for (int j= 0; j < methods.length; j++){
-				if ((!methods[j].equals(getMethod()))
-					&& (JdtFlags.isNative(methods[j]))
-					&& (null != Checks.findSimilarMethod(getMethod(), new IMethod[]{methods[j]})))
-						return true;
+ 		for (IType type : classes) {
+			for (IMethod method : type.getMethods()) {
+				if ((!method.equals(getMethod())) && (JdtFlags.isNative(method)) && (null != Checks.findSimilarMethod(getMethod(), new IMethod[]{method}))) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -265,5 +280,110 @@ public class RenameVirtualMethodProcessor extends RenameMethodProcessor {
 			return RefactoringCoreMessages.DelegateMethodCreator_keep_original_renamed_plural;
 		else
 			return RefactoringCoreMessages.DelegateMethodCreator_keep_original_renamed_singular;
+	}
+
+	@Override
+	protected void assignMethod(IMethod method) {
+		super.assignMethod(method);
+		IMethod sMethod= getMethod();
+		fIsRecordAccessor= false;
+		fRecordComponent= null;
+		if (sMethod != null) {
+			IJavaElement parent= sMethod.getDeclaringType();
+			try {
+				if (sMethod.getParameters().length == 0
+						&& parent instanceof IType
+						&& ((IType)parent).isRecord()
+						&& !Flags.isStatic(sMethod.getFlags())) {
+					IType record= (IType) parent;
+					IField[] fields= record.getFields();
+					for (IField field: fields) {
+						if (!Flags.isStatic(field.getFlags()) && sMethod.getElementName().equals(field.getElementName())) {
+							fRecordComponent= field;
+							fIsRecordAccessor= true;
+							break;
+						}
+					}
+				}
+			} catch (JavaModelException e) {
+				//do nothing
+			}
+		}
+	}
+
+	private void addRecordComponentOccurrences(IProgressMonitor pm, TextChangeManager changeManager, RefactoringStatus status) throws CoreException {
+		Assert.isTrue(fRecordComponent.exists());
+
+		IJavaSearchScope scope= RefactoringScopeFactory.create(fRecordComponent.getDeclaringType());
+		SearchPattern pattern= SearchPattern.createPattern(fRecordComponent.getElementName(), IJavaSearchConstants.FIELD,
+				IJavaSearchConstants.REFERENCES,SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE | SearchPattern.R_ERASURE_MATCH);
+		SearchResultGroup[] groupedResults= RefactoringSearchEngine.search(
+			pattern, scope, new CuCollectingSearchRequestor(), pm, status);
+		pm.beginTask("", groupedResults.length+1); //$NON-NLS-1$
+
+		ISourceRange nameRange= fRecordComponent.getNameRange();
+		ICompilationUnit rcu= fRecordComponent.getCompilationUnit();
+		ReplaceEdit redit= new ReplaceEdit(nameRange.getOffset(), nameRange.getLength(), getNewElementName());
+		addTextEdit(changeManager.get(rcu), RefactoringCoreMessages.RenameFieldRefactoring_Update_field_declaration, redit);
+		pm.worked(1);
+
+		for (SearchResultGroup groupedResult : groupedResults) {
+			ICompilationUnit cu= groupedResult.getCompilationUnit();
+			if (cu == null)
+				continue;
+			SearchMatch[] results= groupedResult.getSearchResults();
+			for (SearchMatch searchResult : results) {
+				ReplaceEdit edit= new ReplaceEdit(searchResult.getOffset(), searchResult.getLength(), getNewElementName());
+				addTextEdit(changeManager.get(cu), RefactoringCoreMessages.RenameFieldRefactoring_Update_field_reference, edit);
+			}
+			pm.worked(1);
+		}
+	}
+
+	public RefactoringStatus checkNewRecordComponentName(String newName,RefactoringStatus result){
+		Assert.isNotNull(newName, "new name"); //$NON-NLS-1$
+		Assert.isNotNull(fRecordComponent, "record component"); //$NON-NLS-1$
+
+		IField field= fRecordComponent.getDeclaringType().getField(newName);
+		RefactoringStatusContext context= JavaStatusContext.create(field);
+		if (Checks.isAlreadyNamed(fRecordComponent, newName))
+			result.addError(Messages.format(RefactoringCoreMessages.RenameFieldRefactoring_another_name2, new String[] { BasicElementLabels.getJavaElementName(newName), getDeclaringTypeLabel() }), context);
+
+		if (field.exists())
+			result.addError(Messages.format(RefactoringCoreMessages.RenameFieldRefactoring_field_already_defined2, new String[] { BasicElementLabels.getJavaElementName(newName), getDeclaringTypeLabel() }), context);
+		return result;
+	}
+
+	private String getDeclaringTypeLabel() {
+		return JavaElementLabels.getElementLabel(getMethod().getDeclaringType(), JavaElementLabels.ALL_DEFAULT);
+	}
+
+	@Override
+	protected TextChangeManager createChanges(IProgressMonitor pm, RefactoringStatus status) throws CoreException {
+		TextChangeManager changeManager= super.createChanges(pm, status);
+		if (this.fIsRecordAccessor && this.fRecordComponent != null) {
+			addRecordComponentOccurrences(pm, changeManager, status);
+		}
+		return changeManager;
+	}
+	/*
+	@Override
+	protected SearchPattern createOccurrenceSearchPattern() {
+		SearchPattern pattern= null;
+		if (fIsRecordAccessor) {
+			pattern= SearchPattern.createFieldOrAccessorMethodORPattern(getMethod());
+		} else {
+			pattern= super.createOccurrenceSearchPattern();
+		}
+		return pattern;
+	}*/
+
+	@Override
+	protected RenameModifications computeRenameModifications() throws CoreException {
+		RenameModifications result= super.computeRenameModifications();
+		if (fIsRecordAccessor && fRecordComponent != null) {
+			result.rename(fRecordComponent, new RenameArguments(getNewElementName(), getUpdateReferences()));
+		}
+		return result;
 	}
 }

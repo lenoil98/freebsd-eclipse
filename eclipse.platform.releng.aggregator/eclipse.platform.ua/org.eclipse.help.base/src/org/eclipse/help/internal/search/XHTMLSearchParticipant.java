@@ -17,7 +17,7 @@ import java.io.InputStream;
 
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.help.internal.base.HelpBasePlugin;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.help.internal.xhtml.DynamicXHTMLProcessor;
 import org.eclipse.help.search.SearchParticipantXML;
 import org.xml.sax.Attributes;
@@ -42,27 +42,27 @@ public class XHTMLSearchParticipant extends SearchParticipantXML {
 
 	@Override
 	protected void handleStartElement(String name, Attributes attributes, IParsedXMLContent data) {
-	    title = null;
-	    if (META_TAG.equalsIgnoreCase(name)) {
-	    	String nameAttribute = attributes.getValue(NAME_ATTRIBUTE);
-	    	if (DESCRIPTION.equalsIgnoreCase(nameAttribute)) {
-	    		String descriptionAttribute = attributes.getValue(CONTENT_ATTRIBUTE);
-	    		if (descriptionAttribute != null) {
-	    			hasDescriptionMetaTag = true;
-		    		data.addToSummary(descriptionAttribute);
-	    			data.addText(" "); //$NON-NLS-1$
-		    		data.addText(descriptionAttribute);
-	    			data.addText(" "); //$NON-NLS-1$
-	    		}
-	    	} else if (KEYWORDS.equalsIgnoreCase(nameAttribute)) {
-	    		String keywordsAttribute = attributes.getValue(CONTENT_ATTRIBUTE);
-	    		if (keywordsAttribute != null) {
-	    			data.addText(" "); //$NON-NLS-1$
-		    		data.addText(keywordsAttribute);
-	    			data.addText(" "); //$NON-NLS-1$
-	    		}
-	    	}
-	    }
+		title = null;
+		if (META_TAG.equalsIgnoreCase(name)) {
+			String nameAttribute = attributes.getValue(NAME_ATTRIBUTE);
+			if (DESCRIPTION.equalsIgnoreCase(nameAttribute)) {
+				String descriptionAttribute = attributes.getValue(CONTENT_ATTRIBUTE);
+				if (descriptionAttribute != null) {
+					hasDescriptionMetaTag = true;
+					data.addToSummary(descriptionAttribute);
+					data.addText(" "); //$NON-NLS-1$
+					data.addText(descriptionAttribute);
+					data.addText(" "); //$NON-NLS-1$
+				}
+			} else if (KEYWORDS.equalsIgnoreCase(nameAttribute)) {
+				String keywordsAttribute = attributes.getValue(CONTENT_ATTRIBUTE);
+				if (keywordsAttribute != null) {
+					data.addText(" "); //$NON-NLS-1$
+					data.addText(keywordsAttribute);
+					data.addText(" "); //$NON-NLS-1$
+				}
+			}
+		}
 	}
 
 	@Override
@@ -103,7 +103,7 @@ public class XHTMLSearchParticipant extends SearchParticipantXML {
 		}
 		catch (Throwable t) {
 			String msg = "An error occured while pre-processing help XHTML document \"" + name + "\" for search indexing"; //$NON-NLS-1$ //$NON-NLS-2$
-			HelpBasePlugin.logError(msg, t);
+			Platform.getLog(getClass()).error(msg, t);
 			return in;
 		}
 	}

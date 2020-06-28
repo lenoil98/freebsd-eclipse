@@ -41,7 +41,7 @@ import org.eclipse.core.runtime.Platform;
 public class Expressions {
 
 	/**
-	 * Cache to optimize instanceof computation. Weak Map of Class->Map(String, Boolean). Avoid
+	 * Cache to optimize instanceof computation. Weak Map of Class-&gt;Map(String, Boolean). Avoid
 	 * conflicts caused by multiple classloader contributions with the same class name. It's a rare
 	 * occurrence but is supported by the OSGi classloader.
 	 */
@@ -138,15 +138,12 @@ public class Expressions {
 			fgKnownClasses= new WeakHashMap<>();
 			fgNotFoundClasses = new WeakHashMap<>();
 			BundleContext bundleContext= ExpressionPlugin.getDefault().getBundleContext();
-			BundleListener listener= new BundleListener() {
-				@Override
-				public void bundleChanged(BundleEvent event) {
-					// Invalidate the caches if any of the bundles is stopped
-					if (event.getType() == BundleEvent.STOPPED) {
-						synchronized (Expressions.class) {
-							fgKnownClasses.clear();
-							fgNotFoundClasses.clear();
-						}
+			BundleListener listener= (BundleEvent event) -> {
+				// Invalidate the caches if any of the bundles is stopped
+				if (event.getType() == BundleEvent.STOPPED) {
+					synchronized (Expressions.class) {
+						fgKnownClasses.clear();
+						fgNotFoundClasses.clear();
 					}
 				}
 			};
@@ -211,7 +208,7 @@ public class Expressions {
 	 * @param var the variable to turn into an <code>IIterable</code>
 	 * @param expression the expression referring to the variable
 	 *
-	 * @return the <code>IIterable</code> or <code>null<code> if a corresponding adapter isn't loaded yet
+	 * @return the <code>IIterable</code> or <code>null</code> if a corresponding adapter isn't loaded yet
 	 *
 	 * @throws CoreException if the var can't be adapted to an <code>IIterable</code>
 	 */
@@ -240,7 +237,7 @@ public class Expressions {
 	 * @param var the variable to turn into an <code>ICountable</code>
 	 * @param expression the expression referring to the variable
 	 *
-	 * @return the <code>ICountable</code> or <code>null<code> if a corresponding adapter isn't loaded yet
+	 * @return the <code>ICountable</code> or <code>null</code> if a corresponding adapter isn't loaded yet
 	 *
 	 * @throws CoreException if the var can't be adapted to an <code>ICountable</code>
 	 */
@@ -271,7 +268,7 @@ public class Expressions {
 
 	public static boolean getOptionalBooleanAttribute(Element element, String attributeName) {
 		String value= element.getAttribute(attributeName);
-		if (value.length() == 0)
+		if (value.isEmpty())
 			return false;
 		return Boolean.valueOf(value).booleanValue();
 	}
@@ -291,7 +288,7 @@ public class Expressions {
 
 	public static Object[] getArguments(Element element, String attributeName) throws CoreException {
 		String args= element.getAttribute(attributeName);
-		if (args.length() > 0) {
+		if (!args.isEmpty()) {
 			return parseArguments(args);
 		} else {
 			return EMPTY_ARGS;
@@ -341,7 +338,7 @@ public class Expressions {
 	public static Object convertArgument(String arg) throws CoreException {
 		if (arg == null) {
 			return null;
-		} else if (arg.length() == 0) {
+		} else if (arg.isEmpty()) {
 			return arg;
 		} else if (arg.charAt(0) == '\'' && arg.charAt(arg.length() - 1) == '\'') {
 			return unEscapeString(arg.substring(1, arg.length() - 1));

@@ -28,11 +28,12 @@ public class Snippet298 {
 public static void main (String [] args) {
 	final Display display = new Display();
 	final Shell shell = new Shell(display);
+	shell.setText("Snippet 298");
 	shell.addListener(SWT.Paint, event -> {
 		int[] icons = new int[]{SWT.ICON_ERROR, SWT.ICON_WARNING, SWT.ICON_INFORMATION, SWT.ICON_QUESTION, SWT.ICON_WORKING};
 		int x = 10;
-		for (int i = 0; i < icons.length; i++) {
-			Image image = display.getSystemImage(icons[i]);
+		for (int icon : icons) {
+			Image image = display.getSystemImage(icon);
 			if (image != null) {
 				Transform t = new Transform(display);
 				t.translate(x, 10);

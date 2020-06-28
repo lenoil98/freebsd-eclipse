@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,17 +15,14 @@ package org.eclipse.swt.graphics;
 
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.internal.win32.*;
 
 /**
- * Instances of this class manage the operating system resources that
- * implement SWT's RGB color model. To create a color you can either
+ * Instances of this store color information. To create a color you can either
  * specify the individual color components as integers in the range
  * 0 to 255 or provide an instance of an <code>RGB</code> or <code>RGBA</code>.
  * <p>
- * Application code must explicitly invoke the <code>Color.dispose()</code>
- * method to release the operating system resources managed by each instance
- * when those instances are no longer required.
+ * Colors do not need to be disposed, however to maintain compatibility
+ * with older code, disposing a Color is not an error.
  * </p>
  *
  * @see RGB
@@ -67,9 +64,6 @@ Color(Device device) {
  * the same RGB values as the ones specified by the arguments. The
  * RGB values on the returned instance will be the color values of
  * the operating system color.
- * <p>
- * You must dispose the color when it is no longer required.
- * </p>
  *
  * @param device the device on which to allocate the color
  * @param red the amount of red in the color
@@ -80,8 +74,6 @@ Color(Device device) {
  *    <li>ERROR_NULL_ARGUMENT - if device is null and there is no current device</li>
  *    <li>ERROR_INVALID_ARGUMENT - if the red, green or blue argument is not between 0 and 255</li>
  * </ul>
- *
- * @see #dispose
  */
 public Color (Device device, int red, int green, int blue) {
 	super(device);
@@ -97,9 +89,6 @@ public Color (Device device, int red, int green, int blue) {
  * the same RGB values as the ones specified by the arguments. The
  * RGB values on the returned instance will be the color values of
  * the operating system color.
- * <p>
- * You must dispose the color when it is no longer required.
- * </p>
  *
  * @param device the device on which to allocate the color
  * @param red the amount of red in the color
@@ -112,7 +101,6 @@ public Color (Device device, int red, int green, int blue) {
  *    <li>ERROR_INVALID_ARGUMENT - if the red, green, blue or alpha argument is not between 0 and 255</li>
  * </ul>
  *
- * @see #dispose
  * @since 3.104
  */
 public Color (Device device, int red, int green, int blue, int alpha) {
@@ -128,9 +116,6 @@ public Color (Device device, int red, int green, int blue, int alpha) {
  * may not have the same RGB values as the ones specified by the
  * argument. The RGB values on the returned instance will be the color
  * values of the operating system color.
- * <p>
- * You must dispose the color when it is no longer required.
- * </p>
  *
  * @param device the device on which to allocate the color
  * @param rgb the RGB values of the desired color
@@ -140,8 +125,6 @@ public Color (Device device, int red, int green, int blue, int alpha) {
  *    <li>ERROR_NULL_ARGUMENT - if the rgb argument is null</li>
  *    <li>ERROR_INVALID_ARGUMENT - if the red, green or blue components of the argument are not between 0 and 255</li>
  * </ul>
- *
- * @see #dispose
  */
 public Color (Device device, RGB rgb) {
 	super(device);
@@ -157,9 +140,6 @@ public Color (Device device, RGB rgb) {
  * may not have the same RGBA values as the ones specified by the
  * argument. The RGBA values on the returned instance will be the color
  * values of the operating system color + alpha.
- * <p>
- * You must dispose the color when it is no longer required.
- * </p>
  *
  * @param device the device on which to allocate the color
  * @param rgba the RGBA values of the desired color. Currently, SWT only honors extreme values for alpha i.e. 0 (transparent) or 255 (opaque).
@@ -170,7 +150,6 @@ public Color (Device device, RGB rgb) {
  *    <li>ERROR_INVALID_ARGUMENT - if the red, green, blue or alpha components of the argument are not between 0 and 255</li>
  * </ul>
  *
- * @see #dispose
  * @since 3.104
  */
 public Color(Device device, RGBA rgba) {
@@ -188,9 +167,6 @@ public Color(Device device, RGBA rgba) {
  * may not have the same RGB values as the ones specified by the
  * argument. The RGB values on the returned instance will be the color
  * values of the operating system color.
- * <p>
- * You must dispose the color when it is no longer required.
- * </p>
  *
  * @param device the device on which to allocate the color
  * @param rgb the RGB values of the desired color
@@ -202,7 +178,6 @@ public Color(Device device, RGBA rgba) {
  *    <li>ERROR_INVALID_ARGUMENT - if the red, green, blue or alpha components of the argument are not between 0 and 255</li>
  * </ul>
  *
- * @see #dispose
  * @since 3.104
  */
 public Color(Device device, RGB rgb, int alpha) {
@@ -214,21 +189,16 @@ public Color(Device device, RGB rgb, int alpha) {
 
 @Override
 void destroy() {
-	/*
-	 * If this is a palette-based device,
-	 * Decrease the reference count for this color.
-	 * If the reference count reaches 0, the slot may
-	 * be reused when another color is allocated.
-	 */
-	long /*int*/ hPal = device.hPalette;
-	if (hPal != 0) {
-		int index = OS.GetNearestPaletteIndex(hPal, handle);
-		int[] colorRefCount = device.colorRefCount;
-		if (colorRefCount[index] > 0) {
-			colorRefCount[index]--;
-		}
-	}
 	handle = -1;
+}
+
+/**
+ * Colors do not need to be disposed, however to maintain compatibility
+ * with older code, disposing a Color is not an error.
+ */
+@Override
+public void dispose() {
+	super.dispose();
 }
 
 /**
@@ -371,44 +341,6 @@ void init(int red, int green, int blue, int alpha) {
 	}
 	handle = (red & 0xFF) | ((green & 0xFF) << 8) | ((blue & 0xFF) << 16);
 	this.alpha = alpha;
-
-	/* If this is not a palette-based device, return */
-	long /*int*/ hPal = device.hPalette;
-	if (hPal == 0) return;
-
-	int[] colorRefCount = device.colorRefCount;
-	/* Add this color to the default palette now */
-	/* First find out if the color already exists */
-	int index = OS.GetNearestPaletteIndex(hPal, handle);
-	/* See if the nearest color actually is the color */
-	byte[] entry = new byte[4];
-	OS.GetPaletteEntries(hPal, index, 1, entry);
-	if ((entry[0] == (byte)red) && (entry[1] == (byte)green) &&
-		(entry[2] == (byte)blue)) {
-			/* Found the color. Increment the ref count and return */
-			colorRefCount[index]++;
-			return;
-	}
-	/* Didn't find the color, allocate it now. Find the first free entry */
-	int i = 0;
-	while (i < colorRefCount.length) {
-		if (colorRefCount[i] == 0) {
-			index = i;
-			break;
-		}
-		i++;
-	}
-	if (i == colorRefCount.length) {
-		/* No free entries, use the closest one */
-		/* Remake the handle from the actual rgbs */
-		handle = (entry[0] & 0xFF) | ((entry[1] & 0xFF) << 8) |
-				 ((entry[2] & 0xFF) << 16);
-	} else {
-		/* Found a free entry */
-		entry = new byte[] { (byte)(red & 0xFF), (byte)(green & 0xFF), (byte)(blue & 0xFF), 0 };
-		OS.SetPaletteEntries(hPal, index, 1, entry);
-	}
-	colorRefCount[index]++;
 }
 
 /**

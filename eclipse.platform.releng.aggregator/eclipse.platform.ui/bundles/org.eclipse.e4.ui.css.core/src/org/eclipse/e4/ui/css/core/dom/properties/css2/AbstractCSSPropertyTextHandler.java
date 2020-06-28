@@ -20,27 +20,39 @@ import org.w3c.dom.css.CSSPrimitiveValue;
 import org.w3c.dom.css.CSSValue;
 
 public abstract class AbstractCSSPropertyTextHandler implements
-		ICSSPropertyTextHandler {
+ICSSPropertyTextHandler {
 
 	@Override
 	public boolean applyCSSProperty(Object element, String property,
 			CSSValue value, String pseudo, CSSEngine engine) throws Exception {
-		if ("color".equals(property)) {
+		if (property == null) {
+			return false;
+		}
+
+		switch (property) {
+		case "color":
 			applyCSSPropertyColor(element, value, pseudo, engine);
-		}
-		if ("text-transform".equals(property)) {
+			break;
+		case "text-transform":
 			applyCSSPropertyTextTransform(element, value, pseudo, engine);
+			break;
+		default:
+			return false;
 		}
-		return false;
+		return true;
 	}
 
 	@Override
 	public String retrieveCSSProperty(Object element, String property,
 			String pseudo, CSSEngine engine) throws Exception {
-		if ("color".equals(property)) {
-			return retrieveCSSPropertyColor(element, pseudo, engine);
+		if (property == null) {
+			return null;
 		}
-		if ("text-transform".equals(property)) {
+
+		switch (property) {
+		case "color":
+			return retrieveCSSPropertyColor(element, pseudo, engine);
+		case "text-transform":
 			return retrieveCSSPropertyTextTransform(element, pseudo, engine);
 		}
 		return null;
@@ -74,66 +86,75 @@ public abstract class AbstractCSSPropertyTextHandler implements
 			String defaultText) {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
 			CSSPrimitiveValue primitiveValue = (CSSPrimitiveValue) value;
-			String textTransform = primitiveValue.getStringValue();
-			if ("capitalize".equals(textTransform)) {
+			switch (primitiveValue.getStringValue()) {
+			case "capitalize":
 				return StringUtils.capitalize(text);
-			}
-			if ("uppercase".equals(textTransform)) {
-				if (text != null)
+			case "uppercase":
+				if (text != null) {
 					return text.toUpperCase();
-			}
-			if ("lowercase".equals(textTransform)) {
-				if (text != null)
+				}
+				break;
+			case "lowercase":
+				if (text != null) {
 					return text.toLowerCase();
-			}
-			if ("inherit".equals(textTransform)) {
+				}
+				break;
+			case "inherit":
 				return text;
+			default:
+				// TODO : manage inherit
 			}
-			// TODO : manage inherit
 		}
-		if (defaultText != null)
+		if (defaultText != null) {
 			return defaultText;
+		}
 		return text;
 	}
 
 	protected String getTextTransform(String textToInsert, String oldText,
 			CSSValue value) {
-		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-			CSSPrimitiveValue primitiveValue = (CSSPrimitiveValue) value;
-			String textTransform = primitiveValue.getStringValue();
-			if ("capitalize".equals(textTransform)) {
-				String newText = StringUtils.capitalize(oldText + textToInsert);
-				if (newText.length() > 0) {
-					return newText.substring(newText.length() - 1);
-				}
-			}
-			if ("uppercase".equals(textTransform)) {
-				if (textToInsert != null)
-					return textToInsert.toUpperCase();
-			}
-			if ("lowercase".equals(textTransform)) {
-				if (textToInsert != null)
-					return textToInsert.toLowerCase();
-			}
-			if ("inherit".equals(textTransform)) {
-				return textToInsert;
-			}
-			// TODO : manage inherit
+		if (value.getCssValueType() != CSSValue.CSS_PRIMITIVE_VALUE) {
+			return textToInsert;
 		}
-		return textToInsert;
+
+		switch (((CSSPrimitiveValue) value).getStringValue()) {
+		case "capitalize":
+			String newText = StringUtils.capitalize(oldText + textToInsert);
+			if (newText.length() > 0) {
+				return newText.substring(newText.length() - 1);
+			}
+			return textToInsert;
+		case "uppercase":
+			if (textToInsert != null) {
+				return textToInsert.toUpperCase();
+			}
+			return textToInsert;
+		case "lowercase":
+			if (textToInsert != null) {
+				return textToInsert.toLowerCase();
+			}
+			return textToInsert;
+		case "inherit":
+		default:
+			// TODO : manage inherit
+			return textToInsert;
+		}
 	}
 
 	protected boolean hasTextTransform(CSSValue value) {
-		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-			CSSPrimitiveValue primitiveValue = (CSSPrimitiveValue) value;
-			String textTransform = primitiveValue.getStringValue();
-			if ("capitalize".equals(textTransform))
-				return true;
-			if ("uppercase".equals(textTransform))
-				return true;
-			if ("lowercase".equals(textTransform))
-				return true;
+		if (value.getCssValueType() != CSSValue.CSS_PRIMITIVE_VALUE
+				|| ((CSSPrimitiveValue) value).getStringValue() == null) {
+			return false;
 		}
+
+		String textTransform = ((CSSPrimitiveValue) value).getStringValue();
+		switch (textTransform) {
+		case "capitalize":
+		case "uppercase":
+		case "lowercase":
+			return true;
+		}
+
 		return false;
 	}
 

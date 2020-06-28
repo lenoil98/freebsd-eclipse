@@ -69,8 +69,7 @@ public class AddArgumentCorrectionProposal extends LinkedCorrectionProposal {
 
 	private ChildListPropertyDescriptor getProperty() {
 		List<StructuralPropertyDescriptor> list= fCallerNode.structuralPropertiesForType();
-		for (int i= 0; i < list.size(); i++) {
-			StructuralPropertyDescriptor curr= list.get(i);
+		for (StructuralPropertyDescriptor curr : list) {
 			if (curr.isChildListProperty() && "arguments".equals(curr.getId())) { //$NON-NLS-1$
 				return (ChildListPropertyDescriptor) curr;
 			}
@@ -88,9 +87,8 @@ public class AddArgumentCorrectionProposal extends LinkedCorrectionProposal {
 		ITypeBinding bestType= null;
 
 		ScopeAnalyzer analyzer= new ScopeAnalyzer(root);
-		IBinding[] bindings= analyzer.getDeclarationsInScope(offset, ScopeAnalyzer.VARIABLES);
-		for (int i= 0; i < bindings.length; i++) {
-			IVariableBinding curr= (IVariableBinding) bindings[i];
+		for (IBinding binding : analyzer.getDeclarationsInScope(offset, ScopeAnalyzer.VARIABLES)) {
+			IVariableBinding curr= (IVariableBinding) binding;
 			ITypeBinding type= curr.getType();
 			if (type != null && canAssign(type, requiredType) && testModifier(curr)) {
 				if (best == null || isMoreSpecific(bestType, type)) {

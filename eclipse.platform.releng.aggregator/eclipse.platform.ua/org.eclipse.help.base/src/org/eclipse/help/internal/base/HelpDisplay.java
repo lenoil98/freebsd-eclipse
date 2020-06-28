@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.base;
 
@@ -151,7 +152,7 @@ public class HelpDisplay {
 	 * Display help to search view for given query and selected topic.
 	 *
 	 * @param searchQuery
-	 *            search query in URL format key=value&key=value
+	 *            search query in URL format {@literal key=value&key=value }
 	 * @param topic
 	 *            selected from the search results
 	 */
@@ -200,9 +201,8 @@ public class HelpDisplay {
 			BaseHelpSystem.getHelpBrowser(forceExternal)
 						.displayURL(helpURL);
 		} catch (Exception e) {
-			HelpBasePlugin
-					.logError(
-							"An exception occurred while launching help.  Check the log at " + Platform.getLogFileLocation().toOSString(), e); //$NON-NLS-1$
+			Platform.getLog(getClass()).error("An exception occurred while launching help.  Check the log at " //$NON-NLS-1$
+					+ Platform.getLogFileLocation().toOSString(), e);
 			BaseHelpSystem.getDefaultErrorUtil()
 					.displayError(
 							NLS.bind(HelpBaseResources.HelpDisplay_exceptionMessage, Platform.getLogFileLocation().toOSString()));
@@ -294,20 +294,20 @@ public class HelpDisplay {
 					helpDisplay = (AbstractHelpDisplay) (displayElement
 							.createExecutableExtension(HELP_DISPLAY_CLASS_ATTRIBUTE));
 				} catch (CoreException e) {
-					HelpBasePlugin.logStatus(e.getStatus());
+					Platform.getLog(HelpDisplay.class).log(e.getStatus());
 				}
 			}
 		}
 	}
 
 	private static AbstractHelpDisplay getHelpDisplay() {
-    	if (helpDisplay == null) {
-    		createHelpDisplay();
-    	}
-    	if (helpDisplay == null) {
-    		helpDisplay = new DefaultDisplay();
-    	}
-    	return helpDisplay;
-    }
+		if (helpDisplay == null) {
+			createHelpDisplay();
+		}
+		if (helpDisplay == null) {
+			helpDisplay = new DefaultDisplay();
+		}
+		return helpDisplay;
+	}
 
 }

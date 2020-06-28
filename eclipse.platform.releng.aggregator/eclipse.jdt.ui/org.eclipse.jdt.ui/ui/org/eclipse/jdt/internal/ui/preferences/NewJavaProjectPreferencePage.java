@@ -74,7 +74,7 @@ import org.eclipse.jdt.internal.ui.dialogs.StatusUtil;
  * <p>
  * See {@link PreferenceConstants} on how to access or change these values through public API.
  * </p>
- * 
+ *
  * @since 2.0
  */
 public class NewJavaProjectPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
@@ -150,7 +150,7 @@ public class NewJavaProjectPreferencePage extends PreferencePage implements IWor
 				IPath path= decodePath(tok.nextToken());
 				IPath attachPath= decodePath(tok.nextToken());
 				IPath attachRoot= decodePath(tok.nextToken());
-				boolean isExported= Boolean.valueOf(tok.nextToken()).booleanValue();
+				boolean isExported= Boolean.parseBoolean(tok.nextToken());
 				switch (kind) {
 					case IClasspathEntry.CPE_SOURCE:
 						res.add(JavaCore.newSourceEntry(path));
@@ -168,10 +168,7 @@ public class NewJavaProjectPreferencePage extends PreferencePage implements IWor
 						res.add(JavaCore.newContainerEntry(path, isExported));
 						break;
 				}
-			} catch (NumberFormatException e) {
-				String message= PreferencesMessages.NewJavaProjectPreferencePage_error_decode;
-				JavaPlugin.log(new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, IStatus.ERROR, message, e));
-			} catch (NoSuchElementException e) {
+			} catch (NumberFormatException | NoSuchElementException e) {
 				String message= PreferencesMessages.NewJavaProjectPreferencePage_error_decode;
 				JavaPlugin.log(new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, IStatus.ERROR, message, e));
 			}
@@ -182,8 +179,7 @@ public class NewJavaProjectPreferencePage extends PreferencePage implements IWor
 
 	public static String encodeJRELibrary(String desc, IClasspathEntry[] cpentries) {
 		StringBuilder buf= new StringBuilder();
-		for (int i= 0; i < cpentries.length; i++) {
-			IClasspathEntry entry= cpentries[i];
+		for (IClasspathEntry entry : cpentries) {
 			buf.append(encode(desc));
 			buf.append(' ');
 			buf.append(entry.getEntryKind());
@@ -211,13 +207,16 @@ public class NewJavaProjectPreferencePage extends PreferencePage implements IWor
 	}
 
 	private static IPath decodePath(String str) {
-		if ("#".equals(str)) { //$NON-NLS-1$
+		if (str != null)switch (str) {
+		case "#": //$NON-NLS-1$
 			return null;
-		} else if ("&".equals(str)) { //$NON-NLS-1$
+		case "&": //$NON-NLS-1$
 			return Path.EMPTY;
-		} else {
-			return Path.fromPortableString(decode(str));
+		default:
+			// intentionally fall through
+			  break;
 		}
+		return Path.fromPortableString(decode(str));
 	}
 
 
@@ -482,18 +481,15 @@ public class NewJavaProjectPreferencePage extends PreferencePage implements IWor
 	@Override
 	protected void performDefaults() {
 		IPreferenceStore store= getPreferenceStore();
-		for (int i= 0; i < fCheckBoxes.size(); i++) {
-			Button button= fCheckBoxes.get(i);
+		for (Button button : fCheckBoxes) {
 			String key= (String) button.getData();
 			button.setSelection(store.getDefaultBoolean(key));
 		}
-		for (int i= 0; i < fRadioButtons.size(); i++) {
-			Button button= fRadioButtons.get(i);
+		for (Button button : fRadioButtons) {
 			String[] info= (String[]) button.getData();
 			button.setSelection(info[1].equals(store.getDefaultString(info[0])));
 		}
-		for (int i= 0; i < fTextControls.size(); i++) {
-			Text text= fTextControls.get(i);
+		for (Text text : fTextControls) {
 			String key= (String) text.getData();
 			text.setText(store.getDefaultString(key));
 		}
@@ -511,20 +507,17 @@ public class NewJavaProjectPreferencePage extends PreferencePage implements IWor
 	@Override
 	public boolean performOk() {
 		IPreferenceStore store= getPreferenceStore();
-		for (int i= 0; i < fCheckBoxes.size(); i++) {
-			Button button= fCheckBoxes.get(i);
+		for (Button button : fCheckBoxes) {
 			String key= (String) button.getData();
 			store.setValue(key, button.getSelection());
 		}
-		for (int i= 0; i < fRadioButtons.size(); i++) {
-			Button button= fRadioButtons.get(i);
+		for (Button button : fRadioButtons) {
 			if (button.getSelection()) {
 				String[] info= (String[]) button.getData();
 				store.setValue(info[0], info[1]);
 			}
 		}
-		for (int i= 0; i < fTextControls.size(); i++) {
-			Text text= fTextControls.get(i);
+		for (Text text : fTextControls) {
 			String key= (String) text.getData();
 			store.setValue(key, text.getText());
 		}

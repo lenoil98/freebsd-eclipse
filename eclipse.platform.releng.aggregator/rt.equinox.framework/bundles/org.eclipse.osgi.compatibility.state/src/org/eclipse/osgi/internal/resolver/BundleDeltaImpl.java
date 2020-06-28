@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rob Harrop - SpringSource Inc. (bug 247522)
@@ -47,12 +47,13 @@ final class BundleDeltaImpl implements BundleDelta {
 		this.type = type;
 	}
 
+	@Override
 	public String toString() {
 		return bundleDescription.getSymbolicName() + '_' + bundleDescription.getVersion() + " (" + toTypeString(type) + ")"; //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	private static String toTypeString(int type) {
-		StringBuffer typeStr = new StringBuffer();
+		StringBuilder typeStr = new StringBuilder();
 		if ((type & BundleDelta.ADDED) != 0)
 			typeStr.append("ADDED,"); //$NON-NLS-1$
 		if ((type & BundleDelta.REMOVED) != 0)

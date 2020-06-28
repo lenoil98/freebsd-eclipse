@@ -18,9 +18,7 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.commands.ActionHandler;
-import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IWorkbenchActionConstants;
@@ -46,14 +44,14 @@ import org.eclipse.ui.navigator.LinkHelperService;
  */
 public class CommonNavigatorActionGroup extends ActionGroup implements IMementoAware {
 
-	private static final String FRAME_ACTION_SEPARATOR_ID= "FRAME_ACTION_SEPARATOR_ID"; //$NON-NLS-1$
-	private static final String FRAME_ACTION_GROUP_ID= "FRAME_ACTION_GROUP_ID"; //$NON-NLS-1$
+	private static final String FRAME_ACTION_SEPARATOR_ID = "FRAME_ACTION_SEPARATOR_ID"; //$NON-NLS-1$
+	private static final String FRAME_ACTION_GROUP_ID = "FRAME_ACTION_GROUP_ID"; //$NON-NLS-1$
 
-    private BackAction backAction;
+	private BackAction backAction;
 
-    private ForwardAction forwardAction;
+	private ForwardAction forwardAction;
 
-    private UpAction upAction;
+	private UpAction upAction;
 
 	private LinkEditorAction toggleLinkingAction;
 
@@ -69,21 +67,17 @@ public class CommonNavigatorActionGroup extends ActionGroup implements IMementoA
 
 	private CollapseAllHandler collapseAllHandler;
 
-    private boolean frameActionsShown;
-
-
+	private boolean frameActionsShown;
 
 	/**
 	 * Create a action group the common navigator actions.
 	 *
-	 * @param aNavigator
-	 *            The IViewPart for this action group
-	 * @param aViewer
-	 *            The Viewer for this action group
+	 * @param aNavigator        The IViewPart for this action group
+	 * @param aViewer           The Viewer for this action group
 	 * @param linkHelperService the link service helper
 	 */
-	public CommonNavigatorActionGroup(CommonNavigator aNavigator,
-			CommonViewer aViewer, LinkHelperService linkHelperService) {
+	public CommonNavigatorActionGroup(CommonNavigator aNavigator, CommonViewer aViewer,
+			LinkHelperService linkHelperService) {
 		super();
 		commonNavigator = aNavigator;
 		commonViewer = aViewer;
@@ -92,51 +86,40 @@ public class CommonNavigatorActionGroup extends ActionGroup implements IMementoA
 	}
 
 	/**
-	 * Returns the image descriptor with the given relative path.
-	 */
-	protected final ImageDescriptor getImageDescriptor(String relativePath) {
-		return NavigatorPlugin.getImageDescriptor("icons/full/" + relativePath); //$NON-NLS-1$
-	}
-
-	/**
 	 *
 	 */
 	private void makeActions() {
-        FrameList frameList = commonViewer.getFrameList();
-        backAction = new BackAction(frameList);
-        forwardAction = new ForwardAction(frameList);
-        upAction = new UpAction(frameList);
+		FrameList frameList = commonViewer.getFrameList();
+		backAction = new BackAction(frameList);
+		forwardAction = new ForwardAction(frameList);
+		upAction = new UpAction(frameList);
 
-		frameList.addPropertyChangeListener(new IPropertyChangeListener() {
-			@Override
-			public void propertyChange(PropertyChangeEvent event) {
-				if (event.getProperty().equals(FrameList.P_RESET)) {
-					upAction.setEnabled(false);
-					backAction.setEnabled(false);
-					forwardAction.setEnabled(false);
+		frameList.addPropertyChangeListener(event -> {
+			if (event.getProperty().equals(FrameList.P_RESET)) {
+				upAction.setEnabled(false);
+				backAction.setEnabled(false);
+				forwardAction.setEnabled(false);
 
-					upAction.update();
-				}
-				commonNavigator.updateTitle();
-				IActionBars actionBars= commonNavigator.getViewSite().getActionBars();
-				updateToolBar(actionBars.getToolBarManager());
-				actionBars.updateActionBars();
+				upAction.update();
 			}
+			commonNavigator.updateTitle();
+			IActionBars actionBars = commonNavigator.getViewSite().getActionBars();
+			updateToolBar(actionBars.getToolBarManager());
+			actionBars.updateActionBars();
 		});
 
-        IHandlerService service = commonNavigator.getSite()
-				.getService(IHandlerService.class);
+		IHandlerService service = commonNavigator.getSite().getService(IHandlerService.class);
 
-		INavigatorViewerDescriptor viewerDescriptor = commonViewer
-				.getNavigatorContentService().getViewerDescriptor();
+		INavigatorViewerDescriptor viewerDescriptor = commonViewer.getNavigatorContentService().getViewerDescriptor();
 		boolean hideLinkWithEditorAction = viewerDescriptor
 				.getBooleanConfigProperty(INavigatorViewerDescriptor.PROP_HIDE_LINK_WITH_EDITOR_ACTION);
 		if (!hideLinkWithEditorAction) {
-			toggleLinkingAction = new LinkEditorAction(commonNavigator,
-					commonViewer, linkHelperService);
-			ImageDescriptor syncIcon = getImageDescriptor("elcl16/synced.png"); //$NON-NLS-1$
-			toggleLinkingAction.setImageDescriptor(syncIcon);
-			toggleLinkingAction.setHoverImageDescriptor(syncIcon);
+			toggleLinkingAction = new LinkEditorAction(commonNavigator, commonViewer, linkHelperService);
+			String imageFilePath = "icons/full/elcl16/synced.png"; //$NON-NLS-1$
+			ResourceLocator.imageDescriptorFromBundle(getClass(), imageFilePath).ifPresent(d -> {
+				toggleLinkingAction.setImageDescriptor(d);
+				toggleLinkingAction.setHoverImageDescriptor(d);
+			});
 			service.activateHandler(toggleLinkingAction.getActionDefinitionId(),
 					new ActionHandler(toggleLinkingAction));
 		}
@@ -145,25 +128,36 @@ public class CommonNavigatorActionGroup extends ActionGroup implements IMementoA
 				.getBooleanConfigProperty(INavigatorViewerDescriptor.PROP_HIDE_COLLAPSE_ALL_ACTION);
 		if (!hideCollapseAllAction) {
 			collapseAllAction = new CollapseAllAction(commonViewer);
-			ImageDescriptor collapseAllIcon = getImageDescriptor("elcl16/collapseall.png"); //$NON-NLS-1$
-			collapseAllAction.setImageDescriptor(collapseAllIcon);
-			collapseAllAction.setHoverImageDescriptor(collapseAllIcon);
+			String imageFilePath = "icons/full/elcl16/collapseall.png"; //$NON-NLS-1$
+			ResourceLocator.imageDescriptorFromBundle(getClass(), imageFilePath).ifPresent(d -> {
+				collapseAllAction.setImageDescriptor(d);
+				collapseAllAction.setHoverImageDescriptor(d);
+			});
 			collapseAllHandler = new CollapseAllHandler(commonViewer);
 			service.activateHandler(CollapseAllHandler.COMMAND_ID, collapseAllHandler);
 		}
 
-		filterGroup = new FilterActionGroup(commonViewer);
+		filterGroup = createFilterActionGroup(commonViewer);
+	}
+
+	/**
+	 * Creates the filter action group. Subclasses may override to provide their own
+	 * implementation.
+	 *
+	 * @param pCommonViewer
+	 *
+	 * @return the {@link FilterActionGroup}
+	 */
+	protected FilterActionGroup createFilterActionGroup(CommonViewer pCommonViewer) {
+		return new FilterActionGroup(pCommonViewer);
 	}
 
 	@Override
 	public void fillActionBars(IActionBars actionBars) {
 
-        actionBars.setGlobalActionHandler(ActionFactory.BACK.getId(),
-                backAction);
-        actionBars.setGlobalActionHandler(ActionFactory.FORWARD.getId(),
-                forwardAction);
-        actionBars.setGlobalActionHandler(IWorkbenchActionConstants.UP,
-                upAction);
+		actionBars.setGlobalActionHandler(ActionFactory.BACK.getId(), backAction);
+		actionBars.setGlobalActionHandler(ActionFactory.FORWARD.getId(), forwardAction);
+		actionBars.setGlobalActionHandler(IWorkbenchActionConstants.UP, upAction);
 
 		filterGroup.fillActionBars(actionBars);
 		fillToolBar(actionBars.getToolBarManager());
@@ -177,7 +171,7 @@ public class CommonNavigatorActionGroup extends ActionGroup implements IMementoA
 			toolBar.add(forwardAction);
 			toolBar.add(upAction);
 			toolBar.add(new Separator(FRAME_ACTION_SEPARATOR_ID));
-			frameActionsShown= true;
+			frameActionsShown = true;
 		}
 		toolBar.add(new GroupMarker(FRAME_ACTION_GROUP_ID));
 		if (collapseAllAction != null) {
@@ -192,17 +186,15 @@ public class CommonNavigatorActionGroup extends ActionGroup implements IMementoA
 	protected void fillViewMenu(IMenuManager menu) {
 		menu.add(new Separator());
 		menu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
-		menu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS+"-end"));//$NON-NLS-1$
+		menu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS + "-end"));//$NON-NLS-1$
 		if (toggleLinkingAction != null) {
-			menu
-			.insertAfter(IWorkbenchActionConstants.MB_ADDITIONS
-					+ "-end", toggleLinkingAction); //$NON-NLS-1$
+			menu.insertAfter(IWorkbenchActionConstants.MB_ADDITIONS + "-end", toggleLinkingAction); //$NON-NLS-1$
 		}
 	}
 
 	private void updateToolBar(IToolBarManager toolBar) {
-		boolean hasBeenFrameActionsShown= frameActionsShown;
-		frameActionsShown= backAction.isEnabled() || upAction.isEnabled() || forwardAction.isEnabled();
+		boolean hasBeenFrameActionsShown = frameActionsShown;
+		frameActionsShown = backAction.isEnabled() || upAction.isEnabled() || forwardAction.isEnabled();
 		if (frameActionsShown != hasBeenFrameActionsShown) {
 			if (hasBeenFrameActionsShown) {
 				toolBar.remove(backAction.getId());
@@ -219,18 +211,17 @@ public class CommonNavigatorActionGroup extends ActionGroup implements IMementoA
 		}
 	}
 
-
 	@Override
 	public void dispose() {
 		super.dispose();
-        backAction.dispose();
-        forwardAction.dispose();
-        upAction.dispose();
+		backAction.dispose();
+		forwardAction.dispose();
+		upAction.dispose();
 
 		if (toggleLinkingAction != null) {
 			toggleLinkingAction.dispose();
 		}
-		if (collapseAllHandler!=null) {
+		if (collapseAllHandler != null) {
 			collapseAllHandler.dispose();
 		}
 	}

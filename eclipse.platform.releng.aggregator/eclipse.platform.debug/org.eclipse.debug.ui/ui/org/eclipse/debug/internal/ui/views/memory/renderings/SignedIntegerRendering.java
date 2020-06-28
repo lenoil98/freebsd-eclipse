@@ -42,31 +42,29 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 		String ret;
 		long result = 0;
 
-		if (columnSize == 1)
-		{
+		switch (columnSize) {
+		case 1:
 			result = byteArray[0];
-		}
-		else if (columnSize == 2)
-		{
+			break;
+		case 2:
 			result = RenderingsUtil.convertByteArrayToShort(byteArray, endianess);
-		}
-		else if (columnSize == 4)
-		{
+			break;
+		case 4:
 			result = RenderingsUtil.convertByteArrayToInt(byteArray, endianess);
-		}
-		else if (columnSize == 8)
-		{
+			break;
+		case 8:
 			result = RenderingsUtil.convertByteArrayToLong(byteArray, endianess);
-		}
-		else if (columnSize == 16)
+			break;
+		case 16:
 		{
 			BigInteger bigRet = RenderingsUtil.convertByteArrayToSignedBigInt(byteArray, endianess);
 			return bigRet.toString();
 		}
-		else
+		default:
 		{
 			BigInteger bigRet = RenderingsUtil.convertByteArrayToSignedBigInt(byteArray, endianess, columnSize);
 			return bigRet.toString();
+		}
 		}
 
 		ret = Long.valueOf(result).toString();
@@ -78,28 +76,31 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 	{
 		try {
 			byte[] bytes;
-			if (colSize == 1)
-			{
+			switch (colSize) {
+			case 1:
 				byte x = Byte.parseByte(newValue);
 				bytes = new byte[1];
 				bytes[0] = x;
-			}
-			else if (colSize == 2)
+				break;
+			case 2:
 			{
 				short i = Short.parseShort(newValue);
 				bytes = RenderingsUtil.convertShortToByteArray(i, endianess);
+				break;
 			}
-			else if (colSize == 4)
+			case 4:
 			{
 				int i = Integer.parseInt(newValue);
 				bytes = RenderingsUtil.convertIntToByteArray(i, endianess);
+				break;
 			}
-			else if (colSize == 8)
+			case 8:
 			{
 				long i = Long.parseLong(newValue);
 				bytes = RenderingsUtil.convertLongToByteArray(i, endianess);
+				break;
 			}
-			else if (colSize == 16)
+			case 16:
 			{
 				// special case for colSize == 16
 				// need to represent number in Big Integer
@@ -108,7 +109,7 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 
 				return bytes;
 			}
-			else
+			default:
 			{
 				BigInteger i = new BigInteger(newValue);
 
@@ -123,11 +124,13 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 					fMax = fMax.subtract(BigInteger.valueOf(1));
 				}
 
-				if (i.compareTo(fMax) > 0 || i.compareTo(fMin) < 0)
+				if (i.compareTo(fMax) > 0 || i.compareTo(fMin) < 0) {
 					throw new NumberFormatException();
+				}
 
 				bytes = RenderingsUtil.convertSignedBigIntToByteArray(i, endianess, colSize);
 				return bytes;
+			}
 			}
 
 			return bytes;
@@ -136,18 +139,13 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.ibm.debug.extended.ui.AbstractMemoryRenderer#getString(java.lang.String, java.math.BigInteger, byte[])
-	 */
 	@Override
 	public String getString(String dataType, BigInteger address, MemoryByte[] data) {
 
 		boolean invalid = false;
 		String paddedStr = DebugUIPlugin.getDefault().getPreferenceStore().getString(IDebugUIConstants.PREF_PADDED_STR);
-		for (int i=0; i<data.length; i++)
-		{
-			if (!data[i].isReadable())
-			{
+		for (MemoryByte memByte : data) {
+			if (!memByte.isReadable()) {
 				invalid = true;
 				break;
 			}
@@ -155,7 +153,7 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 
 		if (invalid)
 		{
-			StringBuffer strBuf = new StringBuffer();
+			StringBuilder strBuf = new StringBuilder();
 			for (int i=0; i<data.length; i++)
 			{
 				strBuf.append(paddedStr);
@@ -168,8 +166,9 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 		// if the user has not set an endianess to the rendering
 		// take default endianess from bytes
 		int endianess = getDisplayEndianess();
-		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN)
+		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN) {
 			endianess = getBytesEndianess(data);
+		}
 
 		byte[] byteArray = new byte[data.length];
 		for (int i=0; i<byteArray.length;i ++)
@@ -180,7 +179,7 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 		// if endianess is unknown, do not render, just return padded string
 		if (RenderingsUtil.ENDIANESS_UNKNOWN == endianess)
 		{
-			StringBuffer strBuf = new StringBuffer();
+			StringBuilder strBuf = new StringBuilder();
 			for (int i=0; i<byteArray.length; i++)
 			{
 				strBuf.append(paddedStr);
@@ -190,9 +189,6 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 		return convertToString(byteArray, columnSize, endianess);
 	}
 
-	/* (non-Javadoc)
-	 * @see com.ibm.debug.extended.ui.AbstractMemoryRenderer#getBytes(java.lang.String, java.math.BigInteger, java.lang.String)
-	 */
 	@Override
 	public byte[] getBytes(String dataType, BigInteger address, MemoryByte[] currentValues, String data) {
 
@@ -201,15 +197,17 @@ public class SignedIntegerRendering extends AbstractIntegerRendering {
 		// if the user has not set an endianess to the rendering
 		// take default
 		int endianess = getDisplayEndianess();
-		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN)
+		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN) {
 			endianess = getBytesEndianess(currentValues);
+		}
 
 		// if endianess is unknown, do not try to render new data to bytes
 		if (endianess == RenderingsUtil.ENDIANESS_UNKNOWN)
 		{
 			byte[] retBytes = new byte[currentValues.length];
-			for (int i=0 ;i<currentValues.length; i++)
+			for (int i=0 ;i<currentValues.length; i++) {
 				retBytes[i] = currentValues[i].getValue();
+			}
 			return retBytes;
 		}
 

@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -116,9 +115,7 @@ public final class BrowseRefactoringHistoryContentProvider extends RefactoringHi
 			fProjectRefactoringHistories= new HashMap<>();
 			Map<String, Collection<RefactoringDescriptorProxy>> projectRefactoringHistories= new HashMap<>();
 			if (fRefactoringHistory != null && !fRefactoringHistory.isEmpty()) {
-				final RefactoringDescriptorProxy[] proxies= fRefactoringHistory.getDescriptors();
-				for (int index= 0; index < proxies.length; index++) {
-					final RefactoringDescriptorProxy proxy= proxies[index];
+				for (RefactoringDescriptorProxy proxy : fRefactoringHistory.getDescriptors()) {
 					String current= proxy.getProject();
 					if (current == null || current.length() == 0)
 						current= WORKSPACE_PROJECT;
@@ -129,8 +126,7 @@ public final class BrowseRefactoringHistoryContentProvider extends RefactoringHi
 					}
 					collection.add(proxy);
 				}
-				for (final Iterator<String> iterator= new ArrayList<>(projectRefactoringHistories.keySet()).iterator(); iterator.hasNext();) {
-					final String current= iterator.next();
+				for (String current : new ArrayList<>(projectRefactoringHistories.keySet())) {
 					final Collection<RefactoringDescriptorProxy> collection= projectRefactoringHistories.get(current);
 					if (collection != null)
 						fProjectRefactoringHistories.put(current, new RefactoringHistoryImplementation(collection.toArray(new RefactoringDescriptorProxy[collection.size()])));
@@ -243,8 +239,7 @@ public final class BrowseRefactoringHistoryContentProvider extends RefactoringHi
 	public Object[] getRootElements() {
 		if (fSortProjects) {
 			final List<Object> list= new ArrayList<>(32);
-			for (final Iterator<String> iterator= getRefactoringHistories().keySet().iterator(); iterator.hasNext();) {
-				final String project= iterator.next();
+			for (String project : getRefactoringHistories().keySet()) {
 				if (project.equals(WORKSPACE_PROJECT)) {
 					final RefactoringHistory history= getRefactoringHistory(project);
 					if (history != null) {

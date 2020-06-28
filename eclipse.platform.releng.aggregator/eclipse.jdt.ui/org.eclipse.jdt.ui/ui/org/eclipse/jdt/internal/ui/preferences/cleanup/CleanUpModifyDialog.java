@@ -57,7 +57,7 @@ public class CleanUpModifyDialog extends ModifyDialog {
 
 	private final List<IModifyDialogTabPage> fTabPages= new ArrayList<>();
 	private TabFolder fTabFolder;
-	
+
 	private final String fKeyLastFocus;
 
 	/**
@@ -136,7 +136,7 @@ public class CleanUpModifyDialog extends ModifyDialog {
 			fPages[i]= page;
 		}
 	}
-	
+
 	private final void addTabPage(String title, IModifyDialogTabPage tabPage) {
 		final TabItem tabItem= new TabItem(fTabFolder, SWT.NONE);
 		applyDialogFont(tabItem.getControl());
@@ -161,8 +161,8 @@ public class CleanUpModifyDialog extends ModifyDialog {
 	@Override
 	public void updateStatus(IStatus status) {
 		int count= 0;
-		for (int i= 0; i < fPages.length; i++) {
-			count+= fPages[i].getSelectedCleanUpCount();
+		for (ICleanUpConfigurationUI fPage : fPages) {
+			count+= fPage.getSelectedCleanUpCount();
 		}
 		if (count == 0) {
 			super.updateStatus(new Status(IStatus.ERROR, JavaUI.ID_PLUGIN, CleanUpMessages.CleanUpModifyDialog_SelectOne_Error));
@@ -179,9 +179,9 @@ public class CleanUpModifyDialog extends ModifyDialog {
 
 	private void updateCountLabel() {
 		int size= 0, count= 0;
-		for (int i= 0; i < fPages.length; i++) {
-			size+= fPages[i].getCleanUpCount();
-			count+= fPages[i].getSelectedCleanUpCount();
+		for (ICleanUpConfigurationUI fPage : fPages) {
+			size+= fPage.getCleanUpCount();
+			count+= fPage.getSelectedCleanUpCount();
 		}
 
 		fCountLabel.setText(Messages.format(CleanUpMessages.CleanUpModifyDialog_XofYSelected_Label, new Object[] {Integer.valueOf(count), Integer.valueOf(size)}));

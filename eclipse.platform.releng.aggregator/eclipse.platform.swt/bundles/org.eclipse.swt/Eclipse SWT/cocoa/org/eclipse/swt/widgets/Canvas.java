@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,6 +18,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import org.eclipse.swt.internal.graphics.*;
 
 /**
  * Instances of this class provide a surface for drawing
@@ -62,7 +63,7 @@ Canvas () {
 }
 
 @Override
-long /*int*/ attributedSubstringFromRange (long /*int*/ id, long /*int*/ sel, long /*int*/ range) {
+long attributedSubstringFromRange (long id, long sel, long range) {
 	if (ime != null) return ime.attributedSubstringFromRange (id, sel, range);
 	return super.attributedSubstringFromRange(id, sel, range);
 }
@@ -111,7 +112,7 @@ public Canvas (Composite parent, int style) {
 }
 
 @Override
-long /*int*/ characterIndexForPoint (long /*int*/ id, long /*int*/ sel, long /*int*/ point) {
+long characterIndexForPoint (long id, long sel, long point) {
 	if (ime != null) return ime.characterIndexForPoint (id, sel, point);
 	return super.characterIndexForPoint (id, sel, point);
 }
@@ -142,7 +143,7 @@ public void drawBackground (GC gc, int x, int y, int width, int height) {
 }
 
 @Override
-void drawBackground (long /*int*/ id, NSGraphicsContext context, NSRect rect) {
+void drawBackground (long id, NSGraphicsContext context, NSRect rect) {
 	super.drawBackground(id, context, rect);
 	if (glcontext != null) {
 		if (isObscured()) {
@@ -150,7 +151,7 @@ void drawBackground (long /*int*/ id, NSGraphicsContext context, NSRect rect) {
 			context.saveGraphicsState();
 			context.setCompositingOperation(OS.NSCompositeClear);
 			if (visiblePath == null) {
-				long /*int*/ visibleRegion = getVisibleRegion();
+				long visibleRegion = getVisibleRegion();
 				visiblePath = getPath(visibleRegion);
 				OS.DisposeRgn(visibleRegion);
 			}
@@ -164,61 +165,61 @@ void drawBackground (long /*int*/ id, NSGraphicsContext context, NSRect rect) {
 }
 
 @Override
-void drawRect (long /*int*/ id, long /*int*/ sel, NSRect rect) {
+void drawRect (long id, long sel, NSRect rect) {
 	if (glcontext != null && glcontext.view() == null) glcontext.setView(view);
 	super.drawRect(id, sel, rect);
 }
 
 @Override
-void drawWidget (long /*int*/ id, NSGraphicsContext context, NSRect rect) {
+void drawWidget (long id, NSGraphicsContext context, NSRect rect) {
 	if (id != view.id) return;
 	super.drawWidget (id, context, rect);
 	if (caret == null) return;
 	if (caret.isShowing) {
-		long /*int*/ ctx = context.graphicsPort();
+		long ctx = context.graphicsPort();
 		OS.CGContextSaveGState (ctx);
 		OS.CGContextSetBlendMode (ctx, OS.kCGBlendModeDifference);
 		Image image = caret.image;
 		if (image != null) {
 			NSImage imageHandle = image.handle;
-			NSImageRep imageRep = imageHandle.bestRepresentationForDevice(null);
+			NSSize size = imageHandle.size();
+			NSImageRep imageRep = ImageUtil.createImageRep(image, size);
 			if (!imageRep.isKindOfClass(OS.class_NSBitmapImageRep)) return;
 			NSBitmapImageRep rep = new NSBitmapImageRep(imageRep);
 			CGRect destRect = new CGRect ();
 			destRect.origin.x = caret.x;
 			destRect.origin.y = caret.y;
-		 	NSSize size = imageHandle.size();
 			destRect.size.width = size.width;
 			destRect.size.height = size.height;
-		 	long /*int*/ data = rep.bitmapData();
-			long /*int*/ format = rep.bitmapFormat();
-		 	long /*int*/ bpr = rep.bytesPerRow();
+			long data = rep.bitmapData();
+			long format = rep.bitmapFormat();
+			long bpr = rep.bytesPerRow();
 			int alphaInfo;
 			if (rep.hasAlpha()) {
 				alphaInfo = (format & OS.NSAlphaFirstBitmapFormat) != 0 ? OS.kCGImageAlphaFirst : OS.kCGImageAlphaLast;
 			} else {
 				alphaInfo = (format & OS.NSAlphaFirstBitmapFormat) != 0 ? OS.kCGImageAlphaNoneSkipFirst : OS.kCGImageAlphaNoneSkipLast;
 			}
-		 	long /*int*/ provider = OS.CGDataProviderCreateWithData(0, data, bpr * (int)size.height, 0);
-			long /*int*/ colorspace = OS.CGColorSpaceCreateDeviceRGB();
-			long /*int*/ cgImage = OS.CGImageCreate((int)size.width, (int)size.height, rep.bitsPerSample(), rep.bitsPerPixel(), bpr, colorspace, alphaInfo, provider, 0, true, 0);
+			long provider = OS.CGDataProviderCreateWithData(0, data, bpr * (int)size.height, 0);
+			long colorspace = OS.CGColorSpaceCreateDeviceRGB();
+			long cgImage = OS.CGImageCreate((int)size.width, (int)size.height, rep.bitsPerSample(), rep.bitsPerPixel(), bpr, colorspace, alphaInfo, provider, 0, true, 0);
 			OS.CGColorSpaceRelease(colorspace);
 			OS.CGDataProviderRelease(provider);
-		 	OS.CGContextScaleCTM (ctx, 1, -1);
-		 	OS.CGContextTranslateCTM (ctx, 0, -(size.height + 2 * destRect.origin.y));
+			OS.CGContextScaleCTM (ctx, 1, -1);
+			OS.CGContextTranslateCTM (ctx, 0, -(size.height + 2 * destRect.origin.y));
 			OS.CGContextSetBlendMode (ctx, OS.kCGBlendModeDifference);
 			OS.CGContextDrawImage (ctx, destRect, cgImage);
-		 	OS.CGImageRelease(cgImage);
+			OS.CGImageRelease(cgImage);
 		} else {
 			CGRect drawRect = new CGRect();
 			drawRect.origin.x = caret.x;
 			drawRect.origin.y = caret.y;
 			drawRect.size.width = caret.width != 0 ? caret.width : Caret.DEFAULT_WIDTH;
 			drawRect.size.height = caret.height;
-			long /*int*/ colorspace = OS.CGColorSpaceCreateDeviceRGB();
+			long colorspace = OS.CGColorSpaceCreateDeviceRGB();
 			OS.CGContextSetFillColorSpace(ctx, colorspace);
 			OS.CGColorSpaceRelease(colorspace);
-			OS.CGContextSetFillColor(ctx, new double /*float*/ [] {1, 1, 1, 1});
+			OS.CGContextSetFillColor(ctx, new double [] {1, 1, 1, 1});
 			OS.CGContextFillRect(ctx, drawRect);
 		}
 		OS.CGContextRestoreGState(ctx);
@@ -226,7 +227,7 @@ void drawWidget (long /*int*/ id, NSGraphicsContext context, NSRect rect) {
 }
 
 @Override
-NSRect firstRectForCharacterRange (long /*int*/ id, long /*int*/ sel, long /*int*/ range) {
+NSRect firstRectForCharacterRange (long id, long sel, long range) {
 	if (ime != null) return ime.firstRectForCharacterRange (id, sel, range);
 	return super.firstRectForCharacterRange (id, sel, range);
 }
@@ -251,7 +252,7 @@ NSRect firstRectForCharacterRange (long /*int*/ id, long /*int*/ sel, long /*int
  */
 public Caret getCaret () {
 	checkWidget();
-    return caret;
+	return caret;
 }
 
 /**
@@ -268,11 +269,11 @@ public Caret getCaret () {
  */
 public IME getIME () {
 	checkWidget();
-    return ime;
+	return ime;
 }
 
 @Override
-boolean hasMarkedText (long /*int*/ id, long /*int*/ sel) {
+boolean hasMarkedText (long id, long sel) {
 	if (ime != null) return ime.hasMarkedText (id, sel);
 	return super.hasMarkedText (id, sel);
 }
@@ -283,7 +284,7 @@ boolean imeInComposition () {
 }
 
 @Override
-boolean insertText (long /*int*/ id, long /*int*/ sel, long /*int*/ string) {
+boolean insertText (long id, long sel, long string) {
 	if (ime != null) {
 		if (!ime.insertText (id, sel, string)) return false;
 	}
@@ -291,51 +292,51 @@ boolean insertText (long /*int*/ id, long /*int*/ sel, long /*int*/ string) {
 }
 
 @Override
-boolean isOpaque (long /*int*/ id, long /*int*/ sel) {
+boolean isOpaque (long id, long sel) {
 	if (glcontext != null) return true;
 	return super.isOpaque(id, sel);
 }
 
 @Override
-NSRange markedRange (long /*int*/ id, long /*int*/ sel) {
+NSRange markedRange (long id, long sel) {
 	if (ime != null) return ime.markedRange (id, sel);
 	return super.markedRange (id, sel);
 }
 
 @Override
-boolean readSelectionFromPasteboard(long /*int*/ id, long /*int*/ sel, long /*int*/ pasteboard) {
-    boolean result = false;
-    NSPasteboard pboard = new NSPasteboard(pasteboard);
-    NSArray availableTypes = pboard.types();
-    NSString type;
+boolean readSelectionFromPasteboard(long id, long sel, long pasteboard) {
+	boolean result = false;
+	NSPasteboard pboard = new NSPasteboard(pasteboard);
+	NSArray availableTypes = pboard.types();
+	NSString type;
 
-    for (long /*int*/ i = 0; i < supportedPboardTypes.count(); i++) {
-    	if (result) break;
-    	type = new NSString(supportedPboardTypes.objectAtIndex(i));
-        if (availableTypes.containsObject(type)) {
-            result = readSelectionFromPasteboard(pboard, type);
-        }
-    }
-    return result;
+	for (long i = 0; i < supportedPboardTypes.count(); i++) {
+		if (result) break;
+		type = new NSString(supportedPboardTypes.objectAtIndex(i));
+		if (availableTypes.containsObject(type)) {
+			result = readSelectionFromPasteboard(pboard, type);
+		}
+	}
+	return result;
 }
 
 boolean readSelectionFromPasteboard(NSPasteboard pboard, NSString type) {
-    boolean result = false;
-    NSString newSelection = null;
-    if (type.isEqualToString(OS.NSPasteboardTypeString)) {
-        NSString string = pboard.stringForType(OS.NSPasteboardTypeString);
-        if (string != null && string.length() > 0) {
-        	newSelection = string;
-        }
-    }
+	boolean result = false;
+	NSString newSelection = null;
+	if (type.isEqualToString(OS.NSPasteboardTypeString)) {
+		NSString string = pboard.stringForType(OS.NSPasteboardTypeString);
+		if (string != null && string.length() > 0) {
+			newSelection = string;
+		}
+	}
 
-    if (newSelection != null) {
-    	Accessible acc = getAccessible();
-    	acc.internal_accessibilitySetValue_forAttribute(newSelection, OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
-    	result = true;
-    }
+	if (newSelection != null) {
+		Accessible acc = getAccessible();
+		acc.internal_accessibilitySetValue_forAttribute(newSelection, OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+		result = true;
+	}
 
-    return result;
+	return result;
 }
 
 @Override
@@ -406,14 +407,14 @@ public void scroll (int destX, int destY, int x, int y, int width, int height, b
 	if (isFocus) caret.killFocus ();
 	Rectangle clientRect = getClientArea ();
 	Rectangle sourceRect = new Rectangle (x, y, width, height);
-	if (sourceRect.intersects (clientRect)) {
-		getShell().setScrolling();
-		update (all);
-	}
 	Control control = findBackgroundControl ();
 	boolean redraw = control != null && control.backgroundImage != null;
 	if (!redraw) redraw = hasRegion ();
 	if (!redraw) redraw = isObscured ();
+	if (!redraw && sourceRect.intersects (clientRect)) {
+		getShell().setScrolling();
+		redraw = !update(all);
+	}
 	if (redraw) {
 		redrawWidget (view, x, y, width, height, false);
 		redrawWidget (view, destX, destY, width, height, false);
@@ -495,7 +496,7 @@ public void scroll (int destX, int destY, int x, int y, int width, int height, b
 		}
 	}
 
-    if (all) {
+	if (all) {
 		Control [] children = _getChildren ();
 		for (int i=0; i<children.length; i++) {
 			Control child = children [i];
@@ -510,7 +511,7 @@ public void scroll (int destX, int destY, int x, int y, int width, int height, b
 }
 
 @Override
-NSRange selectedRange (long /*int*/ id, long /*int*/ sel) {
+NSRange selectedRange (long id, long sel) {
 	if (ime != null) return ime.selectedRange (id, sel);
 	return super.selectedRange (id, sel);
 }
@@ -596,7 +597,7 @@ public void setIME (IME ime) {
 }
 
 @Override
-boolean setMarkedText_selectedRange (long /*int*/ id, long /*int*/ sel, long /*int*/ string, long /*int*/ range) {
+boolean setMarkedText_selectedRange (long id, long sel, long string, long range) {
 	if (ime != null) {
 		if (!ime.setMarkedText_selectedRange (id, sel, string, range)) return false;
 	}
@@ -604,13 +605,13 @@ boolean setMarkedText_selectedRange (long /*int*/ id, long /*int*/ sel, long /*i
 }
 
 @Override
-long /*int*/ validAttributesForMarkedText (long /*int*/ id, long /*int*/ sel) {
+long validAttributesForMarkedText (long id, long sel) {
 	if (ime != null) return ime.validAttributesForMarkedText (id, sel);
 	return super.validAttributesForMarkedText(id, sel);
 }
 
 @Override
-long /*int*/ validRequestorForSendType(long /*int*/ id, long /*int*/ sel, long /*int*/ sendType, long /*int*/ returnType) {
+long validRequestorForSendType(long id, long sel, long sendType, long returnType) {
 	if (id == view.id) {
 		Accessible acc = getAccessible();
 		if (acc != null) {
@@ -637,12 +638,12 @@ long /*int*/ validRequestorForSendType(long /*int*/ id, long /*int*/ sel, long /
 }
 
 @Override
-void updateOpenGLContext(long /*int*/ id, long /*int*/ sel, long /*int*/ notification) {
+void updateOpenGLContext(long id, long sel, long notification) {
 	if (glcontext != null) ((NSOpenGLContext)glcontext).update();
 }
 
 @Override
-void viewWillMoveToWindow(long /*int*/ id, long /*int*/ sel, long /*int*/ arg0) {
+void viewWillMoveToWindow(long id, long sel, long arg0) {
 	super.viewWillMoveToWindow(id, sel, arg0);
 	if (glcontext != null && id == view.id && arg0 != 0) {
 		Widget newShell = display.getWidget(new NSWindow(arg0).contentView());
@@ -657,27 +658,27 @@ void viewWillMoveToWindow(long /*int*/ id, long /*int*/ sel, long /*int*/ arg0) 
 }
 
 @Override
-boolean writeSelectionToPasteboard(long /*int*/ id, long /*int*/ sel, long /*int*/ pasteboardObj, long /*int*/ typesObj) {
-    boolean result = false;
-    NSPasteboard pboard = new NSPasteboard(pasteboardObj);
-    NSArray types = new NSArray(typesObj);
-    NSMutableArray typesToDeclare = NSMutableArray.arrayWithCapacity(2);
-    NSString type;
+boolean writeSelectionToPasteboard(long id, long sel, long pasteboardObj, long typesObj) {
+	boolean result = false;
+	NSPasteboard pboard = new NSPasteboard(pasteboardObj);
+	NSArray types = new NSArray(typesObj);
+	NSMutableArray typesToDeclare = NSMutableArray.arrayWithCapacity(2);
+	NSString type;
 
-    for (long /*int*/ i = 0; i < supportedPboardTypes.count(); i++) {
-    	type = new NSString(supportedPboardTypes.objectAtIndex(i));
-        if (types.containsObject(type)) typesToDeclare.addObject(type);
-    }
+	for (long i = 0; i < supportedPboardTypes.count(); i++) {
+		type = new NSString(supportedPboardTypes.objectAtIndex(i));
+		if (types.containsObject(type)) typesToDeclare.addObject(type);
+	}
 
-    if (typesToDeclare.count() > 0) {
-        pboard.declareTypes(typesToDeclare, view);
-        for (long /*int*/ i = 0; i < typesToDeclare.count(); i++) {
-        	type = new NSString(typesToDeclare.objectAtIndex(i));
-            if (writeSelectionToPasteboard(pboard, type)) result = true;
-        }
-    }
+	if (typesToDeclare.count() > 0) {
+		pboard.declareTypes(typesToDeclare, view);
+		for (long i = 0; i < typesToDeclare.count(); i++) {
+			type = new NSString(typesToDeclare.objectAtIndex(i));
+			if (writeSelectionToPasteboard(pboard, type)) result = true;
+		}
+	}
 
-    return result;
+	return result;
 }
 
 boolean writeSelectionToPasteboard(NSPasteboard pboard, NSString type) {

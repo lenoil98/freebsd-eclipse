@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2017 IBM Corporation and others.
+ * Copyright (c) 2003, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,12 +14,23 @@
 
 package org.eclipse.osgi.internal.serviceregistry;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.List;
+import java.util.Map;
 import org.eclipse.osgi.internal.debug.Debug;
 import org.eclipse.osgi.internal.framework.BundleContextImpl;
 import org.eclipse.osgi.internal.loader.sources.PackageSource;
 import org.eclipse.osgi.internal.messages.Msg;
-import org.osgi.framework.*;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkEvent;
+import org.osgi.framework.PrototypeServiceFactory;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceException;
+import org.osgi.framework.ServiceFactory;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * A registered service.
@@ -35,7 +46,7 @@ import org.osgi.framework.*;
  * the service. This implies that if a
  * bundle wants to keep its service registered, it should keep the
  * ServiceRegistration object referenced.
- * 
+ *
  * @ThreadSafe
  */
 public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Comparable<ServiceRegistrationImpl<?>> {
@@ -57,7 +68,7 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 	/* @GuardedBy("registrationLock") */
 	private ServiceReferenceImpl<S> reference;
 
-	/** List of contexts using the service. 
+	/** List of contexts using the service.
 	 * List&lt;BundleContextImpl&gt;.
 	 * */
 	/* @GuardedBy("registrationLock") */
@@ -152,13 +163,14 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 	 * @exception IllegalArgumentException If the <tt>properties</tt>
 	 * parameter contains case variants of the same key name.
 	 */
+	@Override
 	public void setProperties(Dictionary<String, ?> props) {
 		final ServiceReferenceImpl<S> ref;
 		final Map<String, Object> previousProperties;
 		synchronized (registry) {
 			synchronized (registrationLock) {
 				if (state != REGISTERED) { /* in the process of unregisterING */
-					throw new IllegalStateException(Msg.SERVICE_ALREADY_UNREGISTERED_EXCEPTION);
+					throw new IllegalStateException(Msg.SERVICE_ALREADY_UNREGISTERED_EXCEPTION + ' ' + this);
 				}
 
 				ref = reference; /* used to publish event outside sync */
@@ -201,12 +213,13 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 	 * this ServiceRegistration has already been unregistered.
 	 * @see BundleContextImpl#ungetService
 	 */
+	@Override
 	public void unregister() {
 		final ServiceReferenceImpl<S> ref;
 		synchronized (registry) {
 			synchronized (registrationLock) {
 				if (state != REGISTERED) { /* in the process of unregisterING */
-					throw new IllegalStateException(Msg.SERVICE_ALREADY_UNREGISTERED_EXCEPTION);
+					throw new IllegalStateException(Msg.SERVICE_ALREADY_UNREGISTERED_EXCEPTION + ' ' + this);
 				}
 
 				/* remove this object from the service registry */
@@ -221,6 +234,7 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 			}
 		}
 
+		ungetHookInstance();
 		/* must not hold the registrationLock when this event is published */
 		registry.publishServiceEvent(new ServiceEvent(ServiceEvent.UNREGISTERING, ref));
 
@@ -256,7 +270,7 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 
 	/**
 	 * Is this registration unregistered?
-	 * 
+	 *
 	 * @return true if unregistered; otherwise false.
 	 */
 	boolean isUnregistered() {
@@ -273,8 +287,21 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 	 * this ServiceRegistration has already been unregistered.
 	 * @return A {@link ServiceReferenceImpl} object.
 	 */
+	@Override
 	public ServiceReference<S> getReference() {
 		return getReferenceImpl();
+	}
+
+	S getHookInstance() {
+		return null;
+	}
+
+	void initHookInstance() {
+		// nothing by default
+	}
+
+	void ungetHookInstance() {
+		// nothing by default
 	}
 
 	ServiceReferenceImpl<S> getReferenceImpl() {
@@ -285,7 +312,7 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 		 */
 		synchronized (registrationLock) {
 			if (reference == null) {
-				throw new IllegalStateException(Msg.SERVICE_ALREADY_UNREGISTERED_EXCEPTION);
+				throw new IllegalStateException(Msg.SERVICE_ALREADY_UNREGISTERED_EXCEPTION + ' ' + this);
 			}
 
 			return reference;
@@ -451,7 +478,7 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 	}
 
 	/**
-	 * This method returns the bundle which registered the 
+	 * This method returns the bundle which registered the
 	 * service regardless of the registration status of this
 	 * service registration.  This is not an OSGi specified
 	 * method.
@@ -526,7 +553,7 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 				}
 				S serviceObject = consumer.getService(use);
 				/* if the service factory failed to return an object and
-				 * we created the service use, then remove the 
+				 * we created the service use, then remove the
 				 * optimistically added ServiceUse. */
 				if ((serviceObject == null) && added) {
 					synchronized (servicesInUse) {
@@ -543,7 +570,7 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 
 	/**
 	 * Create a new ServiceObjects for the requesting bundle.
-	 * 
+	 *
 	 * @param user The requesting bundle.
 	 * @return A new ServiceObjects for this service and the requesting bundle.
 	 */
@@ -560,7 +587,7 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 
 	/**
 	 * Create a new ServiceUse object for this service and user.
-	 * 
+	 *
 	 * @param user The bundle using this service.
 	 * @return The ServiceUse object for the bundle using this service.
 	 */
@@ -691,6 +718,7 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 	 *
 	 * @return String representation of this object.
 	 */
+	@Override
 	public String toString() {
 		int size = clazzes.length;
 		StringBuilder sb = new StringBuilder(50 * size);
@@ -713,17 +741,18 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 	/**
 	 * Compares this <code>ServiceRegistrationImpl</code> with the specified
 	 * <code>ServiceRegistrationImpl</code> for order.
-	 * 
+	 *
 	 * <p>
 	 * This does a reverse comparison so that the highest item is sorted to the left.
 	 * We keep ServiceRegistationImpls in sorted lists such that the highest
 	 * ranked service is at element 0 for quick retrieval.
-	 * 
+	 *
 	 * @param other The <code>ServiceRegistrationImpl</code> to be compared.
 	 * @return Returns a negative integer, zero, or a positive integer if this
 	 *         <code>ServiceRegistrationImpl</code> is greater than, equal to, or
 	 *         less than the specified <code>ServiceRegistrationImpl</code>.
 	 */
+	@Override
 	public int compareTo(ServiceRegistrationImpl<?> other) {
 		final int thisRanking = this.getRanking();
 		final int otherRanking = other.getRanking();
@@ -742,5 +771,47 @@ public class ServiceRegistrationImpl<S> implements ServiceRegistration<S>, Compa
 			return -1;
 		}
 		return 1;
+	}
+
+	static class FrameworkHookRegistration<S> extends ServiceRegistrationImpl<S> {
+		private volatile boolean hookInitialized = false;
+		private volatile S hookInstance;
+		private final BundleContextImpl systemContext;
+		private final Object hookLock = new Object();
+
+		FrameworkHookRegistration(ServiceRegistry registry, BundleContextImpl context, String[] clazzes, S service,
+				BundleContextImpl systemContext) {
+			super(registry, context, clazzes, service);
+			this.systemContext = systemContext;
+		}
+
+		@Override
+		S getHookInstance() {
+			if (hookInstance != null || !hookInitialized) {
+				return hookInstance;
+			}
+			synchronized (hookLock) {
+				if (hookInstance == null) {
+					hookInstance = getSafeService(systemContext, ServiceConsumer.singletonConsumer);
+				}
+			}
+			return hookInstance;
+		}
+
+		@Override
+		void initHookInstance() {
+			ServiceReference<S> ref = getReference();
+			if (ref != null) {
+				hookInstance = getSafeService(systemContext, ServiceConsumer.singletonConsumer);
+				hookInitialized = true;
+			}
+		}
+
+		@Override
+		void ungetHookInstance() {
+			if (hookInstance != null) {
+				systemContext.ungetService(getReferenceImpl());
+			}
+		}
 	}
 }

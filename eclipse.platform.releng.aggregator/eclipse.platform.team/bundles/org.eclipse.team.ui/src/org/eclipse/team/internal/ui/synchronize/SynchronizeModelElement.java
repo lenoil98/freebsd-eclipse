@@ -159,8 +159,7 @@ public abstract class SynchronizeModelElement extends DiffNode implements IAdapt
 		}
 		boolean set = getProperty(propertyName);
 		final PropertyChangeEvent event = new PropertyChangeEvent(this, propertyName, Boolean.valueOf(!set), Boolean.valueOf(set));
-		for (int i = 0; i < allListeners.length; i++) {
-			Object object = allListeners[i];
+		for (Object object : allListeners) {
 			if (object instanceof IPropertyChangeListener) {
 				final IPropertyChangeListener listener = (IPropertyChangeListener)object;
 				SafeRunner.run(new ISafeRunnable() {
@@ -178,14 +177,21 @@ public abstract class SynchronizeModelElement extends DiffNode implements IAdapt
 	}
 
 	private int getFlag(String propertyName) {
-		if (propertyName == BUSY_PROPERTY) {
+		if (propertyName == null) {
+			return 0;
+		}
+
+		switch (propertyName) {
+		case BUSY_PROPERTY:
 			return BUSY_FLAG;
-		} else if (propertyName == PROPAGATED_CONFLICT_PROPERTY) {
+		case PROPAGATED_CONFLICT_PROPERTY:
 			return PROPAGATED_CONFLICT_FLAG;
-		} else if(propertyName == PROPAGATED_ERROR_MARKER_PROPERTY) {
+		case PROPAGATED_ERROR_MARKER_PROPERTY:
 			return PROPAGATED_ERROR_FLAG;
-		} else if(propertyName == PROPAGATED_WARNING_MARKER_PROPERTY) {
+		case PROPAGATED_WARNING_MARKER_PROPERTY:
 			return PROPAGATED_WARNING_FLAG;
+		default:
+			break;
 		}
 		return 0;
 	}
@@ -196,8 +202,7 @@ public abstract class SynchronizeModelElement extends DiffNode implements IAdapt
 
 	private boolean hasChildWithFlag(String flag) {
 		IDiffElement[] childen = getChildren();
-		for (int i = 0; i < childen.length; i++) {
-			IDiffElement element = childen[i];
+		for (IDiffElement element : childen) {
 			if (((SynchronizeModelElement)element).getProperty(flag)) {
 				return true;
 			}

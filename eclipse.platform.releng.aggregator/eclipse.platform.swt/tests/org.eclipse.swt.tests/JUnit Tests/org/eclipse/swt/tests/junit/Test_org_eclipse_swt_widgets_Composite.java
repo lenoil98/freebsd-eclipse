@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,7 @@ package org.eclipse.swt.tests.junit;
 
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -26,6 +27,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,8 +60,8 @@ public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
 	}
 
 	int[] cases = {SWT.H_SCROLL, SWT.V_SCROLL, SWT.H_SCROLL | SWT.V_SCROLL};
-	for (int i = 0; i < cases.length; i++)
-		composite = new Composite(shell, cases[i]);
+	for (int style : cases)
+		composite = new Composite(shell, style);
 }
 
 @Test
@@ -78,8 +80,8 @@ public void test_getChildren() {
 	assertArrayEquals(":e:", new Control[]{c1, c3}, composite.getChildren());
 
 	Control[] children = composite.getChildren();
-	for (int i = 0; i < children.length; i++)
-		children[i].dispose();
+	for (Control element : children)
+		element.dispose();
 
 	assertArrayEquals(":f:", new Control[]{}, composite.getChildren());
 }
@@ -115,6 +117,41 @@ public void test_setVisibility_and_sizing() {
 			compSize.x > 100 && compSize.y > 100); // If this is 1x1 or 0x0 then there was some fault in layout.
 }
 
+@Test
+public void test_setFocus_toChild_afterOpen() throws InterruptedException {
+	if (SwtTestUtil.isCocoa) {
+		//TODO Fix Cocoa failure.
+		if (SwtTestUtil.verbose) {
+			System.out.println("Excluded test_setFocus_toChild_afterOpen(org.eclipse.swt.tests.junit.Test_org_eclipse_swt_widgets_Composite)");
+		}
+		return;
+	}
+	Text focusChild = new Text(composite, SWT.NONE);
+	shell.open();
+	// Wait for the shell to become active
+	processEvents(500, () -> shell.getDisplay().getActiveShell() == shell);
+	assertEquals(shell, shell.getDisplay().getActiveShell());
+	composite.setFocus();
+	assertTrue("First child widget should have focus", focusChild.isFocusControl());
+}
+
+@Test
+public void test_setFocus_toChild_beforeOpen() throws InterruptedException {
+	if (SwtTestUtil.isCocoa) {
+		//TODO Fix Cocoa failure.
+		if (SwtTestUtil.verbose) {
+			System.out.println("Excluded test_setFocus_toChild_beforeOpen(org.eclipse.swt.tests.junit.Test_org_eclipse_swt_widgets_Composite)");
+		}
+		return;
+	}
+	Text focusChild = new Text(composite, SWT.NONE);
+	composite.setFocus();
+	shell.open();
+	// Wait for the shell to become active
+	processEvents(500, () -> shell.getDisplay().getActiveShell() == shell);
+	assertEquals(shell, shell.getDisplay().getActiveShell());
+	assertTrue("First child widget should have focus", focusChild.isFocusControl());
+}
 
 @Test
 public void test_setTabList$Lorg_eclipse_swt_widgets_Control() {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2018 IBM Corporation and others.
+ * Copyright (c) 2013, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,9 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.osgi.tests.hooks.framework;
+
+import static org.eclipse.osgi.tests.bundles.AbstractBundleTests.stop;
+import static org.eclipse.osgi.tests.bundles.AbstractBundleTests.stopQuietly;
 
 import java.io.File;
 import java.util.Collection;
@@ -32,16 +35,18 @@ public class DevClassPathWithExtensionTests extends AbstractFrameworkHookTests {
 	private Framework framework;
 	private String location;
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		location = bundleInstaller.getBundleLocation(TEST_BUNDLE);
 		File file = OSGiTestsActivator.getContext().getDataFile(getName());
-		configuration = new HashMap<String, String>();
+		configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, file.getAbsolutePath());
 		configuration.put(EquinoxConfiguration.PROP_DEV, "bin/");
 		framework = createFramework(configuration);
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		stopQuietly(framework);
 		super.tearDown();

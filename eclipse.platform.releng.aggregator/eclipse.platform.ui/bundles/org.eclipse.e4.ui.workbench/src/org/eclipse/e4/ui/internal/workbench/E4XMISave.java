@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 Christian Pontesegger and others.
+ * Copyright (c) 2018, 2019 Christian Pontesegger and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,8 +14,8 @@
 
 package org.eclipse.e4.ui.internal.workbench;
 
-import java.util.Map;
 import org.eclipse.e4.ui.model.application.MApplicationElement;
+import org.eclipse.e4.ui.model.application.ui.MUIElement;
 import org.eclipse.e4.ui.workbench.IWorkbench;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
@@ -27,14 +27,6 @@ import org.eclipse.emf.ecore.xmi.impl.XMISaveImpl;
  * not be persisted without changing the underlying model.
  */
 public class E4XMISave extends XMISaveImpl {
-
-	public E4XMISave(Map<?, ?> options, XMLHelper helper, String encoding, String xmlVersion) {
-		super(options, helper, encoding, xmlVersion);
-	}
-
-	public E4XMISave(Map<?, ?> options, XMLHelper helper, String encoding) {
-		super(options, helper, encoding);
-	}
 
 	public E4XMISave(XMLHelper helper) {
 		super(helper);
@@ -49,6 +41,12 @@ public class E4XMISave extends XMISaveImpl {
 			MApplicationElement appElement = (MApplicationElement) o;
 			String persists = appElement.getPersistedState().get(IWorkbench.PERSIST_STATE);
 			if (persists != null && !Boolean.parseBoolean(persists)) {
+				return;
+			}
+		}
+		if (o instanceof MUIElement) {
+			MUIElement uiElement = (MUIElement) o;
+			if (OpaqueElementUtil.isOpaqueElement(uiElement) || RenderedElementUtil.isRenderedElement(uiElement)) {
 				return;
 			}
 		}

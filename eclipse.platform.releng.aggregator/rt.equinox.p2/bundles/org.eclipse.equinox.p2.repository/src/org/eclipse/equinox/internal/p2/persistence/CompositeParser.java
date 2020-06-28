@@ -43,13 +43,14 @@ public class CompositeParser extends XMLParser implements XMLConstants {
 		public ChildrenHandler(AbstractHandler parentHandler, Attributes attributes) {
 			super(parentHandler, CHILDREN_ELEMENT);
 			String size = parseOptionalAttribute(attributes, COLLECTION_SIZE_ATTRIBUTE);
-			children = (size != null ? new ArrayList<URI>(Integer.parseInt(size)) : new ArrayList<URI>(4));
+			children = (size != null ? new ArrayList<>(Integer.parseInt(size)) : new ArrayList<>(4));
 		}
 
 		public URI[] getChildren() {
 			return children.toArray(new URI[children.size()]);
 		}
 
+		@Override
 		public void startElement(String name, Attributes attributes) {
 			if (name.equals(CHILD_ELEMENT)) {
 				new ChildHandler(this, attributes, children);
@@ -78,10 +79,12 @@ public class CompositeParser extends XMLParser implements XMLConstants {
 
 		}
 
+		@Override
 		public void startElement(String name, Attributes attributes) {
 			checkCancel();
 		}
 
+		@Override
 		protected void finished() {
 			if (currentRepo != null)
 				repos.add(currentRepo);
@@ -94,6 +97,7 @@ public class CompositeParser extends XMLParser implements XMLConstants {
 			super(rootName, rootHandler);
 		}
 
+		@Override
 		public void processingInstruction(String target, String data) throws SAXException {
 			if (repositoryType.equals(target)) {
 				Version repositoryVersion = extractPIVersion(target, data);
@@ -124,32 +128,41 @@ public class CompositeParser extends XMLParser implements XMLConstants {
 			return state;
 		}
 
+		@Override
 		protected void handleRootAttributes(Attributes attributes) {
 			attrValues = parseAttributes(attributes, required, optional);
 			attrValues[2] = checkVersion(REPOSITORY_ELEMENT, VERSION_ATTRIBUTE, attrValues[2]).toString();
 		}
 
+		@Override
 		public void startElement(String name, Attributes attributes) {
-			if (PROPERTIES_ELEMENT.equals(name)) {
-				if (propertiesHandler == null) {
-					propertiesHandler = new PropertiesHandler(this, attributes);
-				} else {
-					duplicateElement(this, name, attributes);
-				}
-			} else if (CHILDREN_ELEMENT.equals(name)) {
-				if (childrenHandler == null) {
-					childrenHandler = new ChildrenHandler(this, attributes);
-				} else {
-					duplicateElement(this, name, attributes);
-				}
-			} else {
+			if (name==null) {
 				invalidElement(name, attributes);
+			} else switch (name) {
+				case PROPERTIES_ELEMENT:
+					if (propertiesHandler == null) {
+						propertiesHandler = new PropertiesHandler(this, attributes);
+					} else {
+						duplicateElement(this, name, attributes);
+					}
+					break;
+				case CHILDREN_ELEMENT:
+					if (childrenHandler == null) {
+						childrenHandler = new ChildrenHandler(this, attributes);
+					} else {
+						duplicateElement(this, name, attributes);
+					}
+					break;
+				default:
+					invalidElement(name, attributes);
+					break;
 			}
 		}
 
 		/*
 		 * If we parsed valid XML then fill in our repository state object with the parsed data.
 		 */
+		@Override
 		protected void finished() {
 			if (isValidXML()) {
 				state = new CompositeRepositoryState();
@@ -208,10 +221,12 @@ public class CompositeParser extends XMLParser implements XMLConstants {
 	}
 
 	//TODO what?
+	@Override
 	protected Object getRootObject() {
 		return null;
 	}
 
+	@Override
 	protected String getErrorMessage() {
 		return Messages.io_parseError;
 	}

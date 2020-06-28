@@ -27,7 +27,6 @@ import org.eclipse.ui.forms.HyperlinkSettings;
 
 /**
  * @version 1.0
- * @author
  */
 public class Paragraph {
 	public static final String[] PROTOCOLS = {"http://", "https://", "ftp://"}; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -218,8 +217,7 @@ public class Paragraph {
 
 	public ParagraphSegment findSegmentAt(int x, int y) {
 		if (segments != null) {
-			for (int i = 0; i < segments.size(); i++) {
-				ParagraphSegment segment = segments.get(i);
+			for (ParagraphSegment segment : segments) {
 				if (segment.contains(x, y))
 					return segment;
 			}
@@ -228,8 +226,7 @@ public class Paragraph {
 	}
 	public void clearCache(String fontId) {
 		if (segments != null) {
-			for (int i = 0; i < segments.size(); i++) {
-				ParagraphSegment segment = segments.get(i);
+			for (ParagraphSegment segment : segments) {
 				segment.clearCache(fontId);
 			}
 		}

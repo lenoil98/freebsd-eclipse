@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -17,12 +17,19 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import org.eclipse.osgi.internal.loader.BundleLoader;
 import org.eclipse.osgi.internal.loader.ModuleClassLoader;
 
 public class ContextFinder extends ClassLoader implements PrivilegedAction<List<ClassLoader>> {
 	static final class Finder extends SecurityManager {
+		@Override
 		public Class<?>[] getClassContext() {
 			return super.getClassContext();
 		}
@@ -35,6 +42,7 @@ public class ContextFinder extends ClassLoader implements PrivilegedAction<List<
 	static Finder contextFinder;
 	static {
 		AccessController.doPrivileged(new PrivilegedAction<Void>() {
+			@Override
 			public Void run() {
 				finderClassLoader = ContextFinder.class.getClassLoader();
 				contextFinder = new Finder();
@@ -47,12 +55,12 @@ public class ContextFinder extends ClassLoader implements PrivilegedAction<List<
 
 	private final ClassLoader parentContextClassLoader;
 
-	public ContextFinder(ClassLoader contextClassLoader) {
+	public ContextFinder(ClassLoader contextClassLoader, ClassLoader bootLoader) {
 		super(contextClassLoader);
-		this.parentContextClassLoader = contextClassLoader != null ? contextClassLoader : EquinoxContainerAdaptor.BOOT_CLASSLOADER;
+		this.parentContextClassLoader = contextClassLoader != null ? contextClassLoader : bootLoader;
 	}
 
-	// Return a list of all classloaders on the stack that are neither the 
+	// Return a list of all classloaders on the stack that are neither the
 	// ContextFinder classloader nor the boot classloader.  The last classloader
 	// in the list is either a bundle classloader or the framework's classloader
 	// We assume that the bootclassloader never uses the context classloader to find classes in itself.
@@ -77,7 +85,7 @@ public class ContextFinder extends ClassLoader implements PrivilegedAction<List<
 		return result;
 	}
 
-	// ensures that a classloader does not have the ContextFinder as part of the 
+	// ensures that a classloader does not have the ContextFinder as part of the
 	// parent hierachy.  A classloader which has the ContextFinder as a parent must
 	// not be used as a delegate, otherwise we endup in endless recursion.
 	private boolean checkClassLoader(ClassLoader classloader) {
@@ -95,12 +103,13 @@ public class ContextFinder extends ClassLoader implements PrivilegedAction<List<
 		return AccessController.doPrivileged(this);
 	}
 
+	@Override
 	public List<ClassLoader> run() {
 		return basicFindClassLoaders();
 	}
 
 	//Return whether the request for loading "name" should proceed.
-	//False is returned when a cycle is being detected 
+	//False is returned when a cycle is being detected
 	private boolean startLoading(String name) {
 		Set<String> classesAndResources = cycleDetector.get();
 		if (classesAndResources != null && classesAndResources.contains(name))
@@ -118,6 +127,7 @@ public class ContextFinder extends ClassLoader implements PrivilegedAction<List<
 		cycleDetector.get().remove(name);
 	}
 
+	@Override
 	protected Class<?> loadClass(String arg0, boolean arg1) throws ClassNotFoundException {
 		//Shortcut cycle
 		if (startLoading(arg0) == false)
@@ -138,6 +148,7 @@ public class ContextFinder extends ClassLoader implements PrivilegedAction<List<
 		}
 	}
 
+	@Override
 	public URL getResource(String arg0) {
 		//Shortcut cycle
 		if (startLoading(arg0) == false)
@@ -156,6 +167,7 @@ public class ContextFinder extends ClassLoader implements PrivilegedAction<List<
 		}
 	}
 
+	@Override
 	public Enumeration<URL> getResources(String arg0) throws IOException {
 		//Shortcut cycle
 		if (startLoading(arg0) == false) {

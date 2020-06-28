@@ -117,7 +117,7 @@ static int checkStyle (int style) {
 public Point computeSize (int wHint, int hHint, boolean changed) {
 	checkWidget();
 	NSSlider widget = (NSSlider)view;
-	double /*float*/ thickness = widget.knobThickness();
+	double thickness = widget.knobThickness();
 	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT;
 	if ((style & SWT.HORIZONTAL) != 0) {
 		height = (int)Math.ceil(thickness);
@@ -216,7 +216,7 @@ public int getMinimum () {
  */
 public int getPageIncrement () {
 	checkWidget();
-    return pageIncrement;
+	return pageIncrement;
 }
 
 /**
@@ -231,7 +231,7 @@ public int getPageIncrement () {
  */
 public int getSelection () {
 	checkWidget();
-    return (int)((NSSlider)view).doubleValue();
+	return (int)((NSSlider)view).doubleValue();
 }
 
 @Override

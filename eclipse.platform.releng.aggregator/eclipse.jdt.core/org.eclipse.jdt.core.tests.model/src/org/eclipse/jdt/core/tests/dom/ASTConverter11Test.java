@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 IBM Corporation and others.
+ * Copyright (c) 2018, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -22,11 +22,12 @@ import org.eclipse.jdt.core.JavaModelException;
 public class ASTConverter11Test extends ConverterTestSetup {
 
 	ICompilationUnit workingCopy;
-	
 
+
+	@SuppressWarnings("deprecation")
 	public void setUpSuite() throws Exception {
 		super.setUpSuite();
-		this.ast = AST.newAST(AST_INTERNAL_JLS11);
+		this.ast = AST.newAST(AST_INTERNAL_JLS11, true);
 	}
 
 	public ASTConverter11Test(String name) {
@@ -62,7 +63,7 @@ public class ASTConverter11Test extends ConverterTestSetup {
 				"	public void apply(Integer k);\n" +
 				"}";
 			this.workingCopy = getWorkingCopy("/Converter11/src/X.java", true/*resolve*/);
-			ASTNode node = buildAST(contents, this.workingCopy); 
+			ASTNode node = buildAST(contents, this.workingCopy);
 			assertEquals("Not a compilation unit", ASTNode.COMPILATION_UNIT, node.getNodeType());
 			node = getASTNode((CompilationUnit)node, 0, 0);
 			MethodDeclaration methodDeclaration = (MethodDeclaration) node;
@@ -94,7 +95,7 @@ public class ASTConverter11Test extends ConverterTestSetup {
 				"	public void apply(Integer k, Integer l);\n" +
 				"}";
 			this.workingCopy = getWorkingCopy("/Converter11/src/X.java", true/*resolve*/);
-			ASTNode node = buildAST(contents, this.workingCopy); 
+			ASTNode node = buildAST(contents, this.workingCopy);
 			assertEquals("Not a compilation unit", ASTNode.COMPILATION_UNIT, node.getNodeType());
 			node = getASTNode((CompilationUnit)node, 0, 0);
 			MethodDeclaration methodDeclaration = (MethodDeclaration) node;
@@ -114,7 +115,7 @@ public class ASTConverter11Test extends ConverterTestSetup {
 				binding = simpleName.resolveTypeBinding();
 				assertTrue("null binding", binding != null);
 				assertTrue("Wrong Binding", "Integer".equals(simpleName.resolveBinding().getName()));
-                      
+
 			}
 	}
 // Add new tests here

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,9 +13,20 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.quickfix;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.JavaTestPlugin;
@@ -46,7 +57,7 @@ import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
+import org.eclipse.jdt.ui.tests.core.rules.ProjectTestSetup;
 import org.eclipse.jdt.ui.text.java.ClasspathFixProcessor.ClasspathFixProposal;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.correction.CUCorrectionProposal;
@@ -59,30 +70,17 @@ import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.CorrectMainTypeNameProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.CorrectPackageDeclarationProposal;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
+@RunWith(JUnit4.class)
 public class ReorgQuickFixTest extends QuickFixTest {
 
-	private static final Class<ReorgQuickFixTest> THIS= ReorgQuickFixTest.class;
+	@Rule
+    public ProjectTestSetup projectsetup = new ProjectTestSetup();
 
 	private IJavaProject fJProject1;
 	private IPackageFragmentRoot fSourceFolder;
 
-	public ReorgQuickFixTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return setUpTest(new TestSuite(THIS));
-	}
-
-	public static Test setUpTest(Test test) {
-		return new ProjectTestSetup(test);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		Hashtable<String, String> options= TestOptions.getDefaultOptions();
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.SPACE);
 		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE, "4");
@@ -97,14 +95,13 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		fSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 	}
 
-
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
 	}
 
 
-
+	@Test
 	public void testUnusedImports() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -134,6 +131,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testUnusedImportsInDefaultPackage() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -162,6 +160,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testUnusedImportOnDemand() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -199,17 +198,18 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testCollidingImports() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("\n");
-		buf.append("import java.security.Permission;\n");
-		buf.append("import java.security.acl.Permission;\n");
+		buf.append("import java.util.Date;\n");
+		buf.append("import java.sql.Date;\n");
 		buf.append("import java.util.Vector;\n");
 		buf.append("\n");
 		buf.append("public class E {\n");
-		buf.append("    Permission p;\n");
+		buf.append("    Date d;\n");
 		buf.append("    Vector v;\n");
 		buf.append("}\n");
 		ICompilationUnit cu= pack1.createCompilationUnit("E.java", buf.toString(), false, null);
@@ -230,16 +230,17 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		buf= new StringBuffer();
 		buf.append("package test1;\n");
 		buf.append("\n");
-		buf.append("import java.security.Permission;\n");
+		buf.append("import java.util.Date;\n");
 		buf.append("import java.util.Vector;\n");
 		buf.append("\n");
 		buf.append("public class E {\n");
-		buf.append("    Permission p;\n");
+		buf.append("    Date d;\n");
 		buf.append("    Vector v;\n");
 		buf.append("}\n");
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testWrongPackageStatement() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -256,8 +257,8 @@ public class ReorgQuickFixTest extends QuickFixTest {
 
 		boolean hasRename= true, hasMove= true;
 
-		for (int i= 0; i < proposals.size(); i++) {
-			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposals.get(i);
+		for (IJavaCompletionProposal proposal2 : proposals) {
+			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposal2;
 			if (curr instanceof CorrectPackageDeclarationProposal) {
 				assertTrue("Duplicated proposal", hasRename);
 				hasRename= false;
@@ -288,6 +289,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		}
 	}
 
+	@Test
 	public void testWrongPackageStatementInEnum() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -304,8 +306,8 @@ public class ReorgQuickFixTest extends QuickFixTest {
 
 		boolean hasRename= true, hasMove= true;
 
-		for (int i= 0; i < proposals.size(); i++) {
-			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposals.get(i);
+		for (IJavaCompletionProposal proposal2 : proposals) {
+			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposal2;
 			if (curr instanceof CorrectPackageDeclarationProposal) {
 				assertTrue("Duplicated proposal", hasRename);
 				hasRename= false;
@@ -336,6 +338,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		}
 	}
 
+	@Test
 	public void testWrongPackageStatementFromDefault() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -352,8 +355,8 @@ public class ReorgQuickFixTest extends QuickFixTest {
 
 		boolean hasRename= true, hasMove= true;
 
-		for (int i= 0; i < proposals.size(); i++) {
-			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposals.get(i);
+		for (IJavaCompletionProposal proposal2 : proposals) {
+			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposal2;
 			if (curr instanceof CorrectPackageDeclarationProposal) {
 				assertTrue("Duplicated proposal", hasRename);
 				hasRename= false;
@@ -384,6 +387,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		}
 	}
 
+	@Test
 	public void testWrongDefaultPackageStatement() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test2", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -398,8 +402,8 @@ public class ReorgQuickFixTest extends QuickFixTest {
 
 		boolean hasRename= true, hasMove= true;
 
-		for (int i= 0; i < proposals.size(); i++) {
-			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposals.get(i);
+		for (IJavaCompletionProposal proposal2 : proposals) {
+			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposal2;
 			if (curr instanceof CorrectPackageDeclarationProposal) {
 				assertTrue("Duplicated proposal", hasRename);
 				hasRename= false;
@@ -428,6 +432,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		}
 	}
 
+	@Test
 	public void testWrongPackageStatementButColliding() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -459,6 +464,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testWrongTypeName() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -475,8 +481,8 @@ public class ReorgQuickFixTest extends QuickFixTest {
 
 		boolean hasRename= true, hasMove= true;
 
-		for (int i= 0; i < proposals.size(); i++) {
-			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposals.get(i);
+		for (IJavaCompletionProposal proposal2 : proposals) {
+			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposal2;
 			if (curr instanceof CorrectMainTypeNameProposal) {
 				assertTrue("Duplicated proposal", hasRename);
 				hasRename= false;
@@ -506,6 +512,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		}
 	}
 
+	@Test
 	public void testWrongTypeName_bug180330() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("p", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -522,8 +529,8 @@ public class ReorgQuickFixTest extends QuickFixTest {
 
 		boolean hasRename= true, hasMove= true;
 
-		for (int i= 0; i < proposals.size(); i++) {
-			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposals.get(i);
+		for (IJavaCompletionProposal proposal2 : proposals) {
+			ChangeCorrectionProposal curr= (ChangeCorrectionProposal) proposal2;
 			if (curr instanceof CorrectMainTypeNameProposal) {
 				assertTrue("Duplicated proposal", hasRename);
 				hasRename= false;
@@ -551,6 +558,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		}
 	}
 
+	@Test
 	public void testWrongTypeNameButColliding() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -582,6 +590,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testWrongTypeNameWithConstructor() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -619,6 +628,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testWrongTypeNameInEnum() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -656,6 +666,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testWrongTypeNameInAnnot() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -687,6 +698,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testTodoTasks1() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -720,6 +732,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testTodoTasks2() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -752,6 +765,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testTodoTasks3() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -783,6 +797,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testTodoTasks4() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -816,6 +831,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testTodoTasks5() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -852,6 +868,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testTodoTasks6() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -884,6 +901,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		assertEqualString(preview, buf.toString());
 	}
 
+	@Test
 	public void testTodoTasks7() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -917,6 +935,7 @@ public class ReorgQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testAddToClasspathSourceFolder() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
 		StringBuffer buf= new StringBuffer();
@@ -949,9 +968,10 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		}
 	}
 
+	@Test
 	public void testAddToClasspathIntJAR() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import mylib.Foo;\n");
 		buf.append("public class E {\n");
@@ -962,7 +982,8 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		IJavaProject otherProject= JavaProjectHelper.createJavaProject("other", "bin");
 		try {
 			File lib= JavaTestPlugin.getDefault().getFileInPlugin(JavaProjectHelper.MYLIB);
-			assertTrue("lib does not exist",  lib != null && lib.exists());
+			assertNotNull("lib does not exist", lib);
+			assertTrue("lib does not exist", lib.exists());
 			IPackageFragmentRoot otherRoot= JavaProjectHelper.addLibraryWithImport(otherProject, Path.fromOSString(lib.getPath()), null, null);
 
 			MultiStatus status= new MultiStatus(JavaUI.ID_PLUGIN, IStatus.OK, "", null);
@@ -985,9 +1006,10 @@ public class ReorgQuickFixTest extends QuickFixTest {
 	}
 
 
+	@Test
 	public void testAddToClasspathExportedExtJAR() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import mylib.Foo;\n");
 		buf.append("public class E {\n");
@@ -998,7 +1020,8 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		IJavaProject otherProject= JavaProjectHelper.createJavaProject("other", "bin");
 		try {
 			File lib= JavaTestPlugin.getDefault().getFileInPlugin(JavaProjectHelper.MYLIB);
-			assertTrue("lib does not exist",  lib != null && lib.exists());
+			assertNotNull("lib does not exist", lib);
+			assertTrue("lib does not exist", lib.exists());
 
 			IPath path= Path.fromOSString(lib.getPath());
 
@@ -1019,9 +1042,10 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		}
 	}
 
+	@Test
 	public void testAddToClasspathContainer() throws Exception {
 		IPackageFragment pack1= fSourceFolder.createPackageFragment("test1", false, null);
-		StringBuffer buf= new StringBuffer();
+		StringBuilder buf= new StringBuilder();
 		buf.append("package test1;\n");
 		buf.append("import mylib.Foo;\n");
 		buf.append("public class E {\n");
@@ -1032,7 +1056,8 @@ public class ReorgQuickFixTest extends QuickFixTest {
 		IJavaProject otherProject= JavaProjectHelper.createJavaProject("other", "bin");
 		try {
 			File lib= JavaTestPlugin.getDefault().getFileInPlugin(JavaProjectHelper.MYLIB);
-			assertTrue("lib does not exist",  lib != null && lib.exists());
+			assertNotNull("lib does not exist", lib);
+			assertTrue("lib does not exist", lib.exists());
 			IPath path= Path.fromOSString(lib.getPath());
 			final IClasspathEntry[] entries= { JavaCore.newLibraryEntry(path, null, null) };
 			final IPath containerPath= new Path(JavaCore.USER_LIBRARY_CONTAINER_ID).append("MyUserLibrary");

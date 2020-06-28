@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.search;
 
@@ -19,7 +20,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -105,8 +105,7 @@ class IndexingOperation {
 		removeStaleDocuments(subMonitor.split(numRemoved), staleDocs);
 		checkCancelled(pm);
 		// 2. merge prebult plugin indexes and addjust
-		addNewDocuments(subMonitor.split(10 * numAdded), newDocs,
-				staleDocs.size() == 0);
+		addNewDocuments(subMonitor.split(10 * numAdded), newDocs, staleDocs.isEmpty());
 
 		pm.done();
 		BaseHelpSystem.getLocalSearchManager().clearSearchParticipants();
@@ -122,8 +121,7 @@ class IndexingOperation {
 		 */
 		Map<String, String[]> docsToDelete = prebuiltDocs;
 		ArrayList<String> prebuiltHrefs = new ArrayList<>(prebuiltDocs.keySet());
-		for (int i = 0; i < prebuiltHrefs.size(); i++) {
-			String href = prebuiltHrefs.get(i);
+		for (String href : prebuiltHrefs) {
 			URL u = SearchIndex.getIndexableURL(index.getLocale(), href);
 			if (u == null) {
 				// should never be here
@@ -158,7 +156,7 @@ class IndexingOperation {
 		Map<String, String[]> docsToDelete = calculateNewToRemove(newDocs, prebuiltDocs);
 		SubMonitor subMonitor = SubMonitor.convert(pm, 10 * docsToIndex.size() + docsToDelete.size());
 		checkCancelled(pm);
-		addDocuments(subMonitor.split(10 * docsToIndex.size()), docsToIndex, docsToDelete.size() == 0);
+		addDocuments(subMonitor.split(10 * docsToIndex.size()), docsToIndex, docsToDelete.isEmpty());
 		checkCancelled(pm);
 		removeNewDocuments(subMonitor.split(docsToDelete.size()), docsToDelete);
 		pm.done();
@@ -173,8 +171,7 @@ class IndexingOperation {
 		int newDocSize = newDocs.size();
 		if (prebuiltDocs.size() > 0) {
 			docsToIndex = new HashSet<>(newDocs);
-			for (Iterator<String> it = prebuiltDocs.keySet().iterator(); it.hasNext();) {
-				String href = it.next();
+			for (String href : prebuiltDocs.keySet()) {
 				URL u = SearchIndex.getIndexableURL(index.getLocale(), href);
 				if (u != null) {
 					docsToIndex.remove(u);
@@ -198,7 +195,7 @@ class IndexingOperation {
 	 */
 	private void removeNewDocuments(IProgressMonitor pm, Map<String, String[]> docsToDelete)
 			throws IndexingException {
-		if (docsToDelete.size() == 0) {
+		if (docsToDelete.isEmpty()) {
 			return;
 		}
 		pm = new LazyProgressMonitor(pm);
@@ -209,8 +206,7 @@ class IndexingOperation {
 			throw new IndexingException();
 		}
 		MultiStatus multiStatus = null;
-		for (Iterator<String> it = keysToDelete.iterator(); it.hasNext();) {
-			String href = it.next();
+		for (String href : keysToDelete) {
 			String[] indexIds = docsToDelete.get(href);
 			if (indexIds == null) {
 				// delete all copies
@@ -231,7 +227,7 @@ class IndexingOperation {
 			checkCancelled(pm);
 			pm.worked(1);
 			if (multiStatus != null) {
-				HelpBasePlugin.logStatus(multiStatus);
+				Platform.getLog(getClass()).log(multiStatus);
 			}
 		}
 		if (!index.endRemoveDuplicatesBatch()) {
@@ -248,8 +244,7 @@ class IndexingOperation {
 		checkCancelled(pm);
 		pm.subTask(HelpBaseResources.UpdatingIndex);
 		MultiStatus multiStatus = null;
-		for (Iterator<URL> it = addedDocs.iterator(); it.hasNext();) {
-			URL doc = it.next();
+		for (URL doc : addedDocs) {
 			IStatus status = index.addDocument(getName(doc), doc);
 			if (status.getCode() != IStatus.OK) {
 				if (multiStatus == null) {
@@ -265,7 +260,7 @@ class IndexingOperation {
 			pm.worked(1);
 		}
 		if (multiStatus != null) {
-			HelpBasePlugin.logStatus(multiStatus);
+			Platform.getLog(getClass()).log(multiStatus);
 		}
 		pm.subTask(HelpBaseResources.Writing_index);
 		if (!index.endAddBatch(addedDocs.size() > 0, lastOperation))
@@ -287,8 +282,7 @@ class IndexingOperation {
 			checkCancelled(pm);
 			pm.subTask(HelpBaseResources.UpdatingIndex);
 			MultiStatus multiStatus = null;
-			for (Iterator<URL> it = removedDocs.iterator(); it.hasNext();) {
-				URL doc = it.next();
+			for (URL doc : removedDocs) {
 				IStatus status = index.removeDocument(getName(doc));
 				if (status.getCode() != IStatus.OK) {
 					if (multiStatus == null) {
@@ -304,7 +298,7 @@ class IndexingOperation {
 				pm.worked(1);
 			}
 			if (multiStatus != null) {
-				HelpBasePlugin.logStatus(multiStatus);
+				Platform.getLog(getClass()).log(multiStatus);
 			}
 			if (!index.endDeleteBatch()) {
 				throw new IndexingException();
@@ -355,8 +349,7 @@ class IndexingOperation {
 		// get the list of all navigation urls.
 		Set<String> urls = getAllDocuments(index.getLocale());
 		Set<URL> addedDocs = new HashSet<>(urls.size());
-		for (Iterator<String> docs = urls.iterator(); docs.hasNext();) {
-			String doc = docs.next();
+		for (String doc : urls) {
 			// Assume the url is /pluginID/path_to_topic.html
 			if (doc.startsWith("//")) { //$NON-NLS-1$  Bug 225592
 				doc = doc.substring(1);
@@ -374,28 +367,31 @@ class IndexingOperation {
 		}
 		//Add documents from global search participants
 		SearchParticipant[] participants = BaseHelpSystem.getLocalSearchManager().getGlobalParticipants();
-		for (int j=0; j<participants.length; j++) {
+		for (SearchParticipant participant : participants) {
 			String participantId;
 			try {
-				participantId = participants[j].getId();
+				participantId = participant.getId();
 			}
 			catch (Throwable t) {
 				// log the error and skip this participant
-				HelpBasePlugin.logError("Failed to get help search participant id for: " + participants[j].getClass().getName() + "; skipping this one.", t); //$NON-NLS-1$ //$NON-NLS-2$
+				Platform.getLog(getClass()).error(
+						"Failed to get help search participant id for: " //$NON-NLS-1$
+						+ participant.getClass().getName() + "; skipping this one.", t); //$NON-NLS-1$
 				continue;
 			}
 			Set<String> set;
 			try {
-				set = participants[j].getAllDocuments(index.getLocale());
+				set = participant.getAllDocuments(index.getLocale());
 			}
 			catch (Throwable t) {
 				// log the error and skip this participant
-				HelpBasePlugin.logError("Failed to retrieve documents from one of the help search participants: " + participants[j].getClass().getName() + "; skipping this one.", t); //$NON-NLS-1$ //$NON-NLS-2$
+				Platform.getLog(getClass())
+						.error("Failed to retrieve documents from one of the help search participants: " //$NON-NLS-1$
+						+ participant.getClass().getName() + "; skipping this one.", t); //$NON-NLS-1$
 				continue;
 			}
 
-			for (Iterator<String> docs = set.iterator(); docs.hasNext();) {
-				String doc = docs.next();
+			for (String doc : set) {
 				String id = null;
 				int qloc = doc.indexOf('?');
 				if (qloc!= -1) {
@@ -422,8 +418,7 @@ class IndexingOperation {
 	}
 
 	private void traceAddedContributors(Collection<String> addedContributors) {
-		for (Iterator<String> iter = addedContributors.iterator(); iter.hasNext();) {
-			String id = iter.next();
+		for (String id : addedContributors) {
 			System.out.println("Updating search index for contributor :" + id); //$NON-NLS-1$
 		}
 	}
@@ -440,8 +435,8 @@ class IndexingOperation {
 		// get the list of indexed docs. This is a hashtable (url, plugin)
 		HelpProperties indexedDocs = index.getIndexedDocs();
 		Set<URL> removedDocs = new HashSet<>(indexedDocs.size());
-		for (Iterator<?> docs = indexedDocs.keySet().iterator(); docs.hasNext();) {
-			String doc = (String) docs.next();
+		for (Object name : indexedDocs.keySet()) {
+			String doc = (String) name;
 			// Assume the url is /pluginID/path_to_topic.html
 			int i = doc.indexOf('/', 1);
 			String plugin = i == -1 ? "" : doc.substring(1, i); //$NON-NLS-1$
@@ -464,13 +459,13 @@ class IndexingOperation {
 		String href = topic.getHref();
 		add(href, hrefs);
 		ITopic[] subtopics = topic.getSubtopics();
-		for (int i = 0; i < subtopics.length; i++)
-			add(subtopics[i], hrefs);
+		for (ITopic subtopic : subtopics)
+			add(subtopic, hrefs);
 	}
 
 	private void add(String href, Set<String> hrefs) {
 		if (href != null
-				&& !href.equals("") && !href.startsWith("http://") && !href.startsWith("https://")) //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				&& !href.isEmpty() && !href.startsWith("http://") && !href.startsWith("https://")) //$NON-NLS-1$ //$NON-NLS-2$
 			hrefs.add(href);
 	}
 
@@ -481,17 +476,17 @@ class IndexingOperation {
 		// Add documents from TOCs
 		HashSet<String> hrefs = new HashSet<>();
 		Toc[] tocs = index.getTocManager().getTocs(locale);
-		for (int i = 0; i < tocs.length; i++) {
-			ITopic[] topics = tocs[i].getTopics();
-			for (int j = 0; j < topics.length; j++) {
-				add(topics[j], hrefs);
+		for (Toc toc : tocs) {
+			ITopic[] topics = toc.getTopics();
+			for (ITopic topic : topics) {
+				add(topic, hrefs);
 			}
-			ITocContribution contrib = tocs[i].getTocContribution();
+			ITocContribution contrib = toc.getTocContribution();
 			String[] extraDocs = contrib.getExtraDocuments();
-			for (int j=0;j<extraDocs.length;++j) {
-				add(extraDocs[j], hrefs);
+			for (String extraDoc : extraDocs) {
+				add(extraDoc, hrefs);
 			}
-			ITopic tocDescriptionTopic = tocs[i].getTopic(null);
+			ITopic tocDescriptionTopic = toc.getTopic(null);
 			if (tocDescriptionTopic != null)
 				add(tocDescriptionTopic, hrefs);
 		}
@@ -511,8 +506,7 @@ class IndexingOperation {
 		IExtensionRegistry registry = Platform.getExtensionRegistry();
 		IConfigurationElement[] elements = registry.getConfigurationElementsFor(TocFileProvider.EXTENSION_POINT_ID_TOC);
 
-		for (int i=0;i<elements.length;++i) {
-			IConfigurationElement elem = elements[i];
+		for (IConfigurationElement elem : elements) {
 			try {
 				if (elem.getName().equals(ELEMENT_NAME_INDEX)) {
 					String pluginId = elem.getNamespaceIdentifier();
@@ -526,7 +520,7 @@ class IndexingOperation {
 						}
 						else {
 							String msg = "Element \"index\" in extension of \"org.eclipse.help.toc\" must specify a \"path\" attribute (plug-in: " + pluginId + ")"; //$NON-NLS-1$ //$NON-NLS-2$
-							HelpBasePlugin.logError(msg, null);
+							Platform.getLog(getClass()).error(msg, null);
 						}
 					}
 				}

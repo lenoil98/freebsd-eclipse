@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2018 IBM Corporation and others.
+ * Copyright (c) 2008, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,7 @@ package org.eclipse.pde.api.tools.ui.internal.markers;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.pde.api.tools.internal.problems.ApiProblemFactory;
 import org.eclipse.pde.api.tools.internal.provisional.IApiMarkerConstants;
@@ -24,7 +25,6 @@ import org.eclipse.pde.api.tools.ui.internal.ApiUIPlugin;
 import org.eclipse.pde.api.tools.ui.internal.IApiToolsConstants;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IMarkerResolution2;
-import org.eclipse.ui.progress.UIJob;
 
 /**
  * This resolution helps users to pick a default API profile when the tooling
@@ -46,6 +46,7 @@ public class VersionNumberingResolution implements IMarkerResolution2 {
 
 	@Override
 	public String getDescription() {
+		description = description.replace(System.lineSeparator(), "<br>");//$NON-NLS-1$
 		switch (this.kind) {
 			case IApiProblem.MAJOR_VERSION_CHANGE:
 				return NLS.bind(MarkerMessages.VersionNumberingResolution_major0, new String[] { this.description });
@@ -59,6 +60,10 @@ public class VersionNumberingResolution implements IMarkerResolution2 {
 				return MarkerMessages.VersionNumberingResolution_reexportedMajor0;
 			case IApiProblem.MINOR_VERSION_CHANGE_EXECUTION_ENV_CHANGED:
 				return MarkerMessages.VersionNumberingResolution_breeMinor;
+			case IApiProblem.MICRO_VERSION_CHANGE_UNNECESSARILY:
+				return MarkerMessages.VersionNumberingResolution_unnecessaryMicroIncrease;
+			case IApiProblem.MINOR_VERSION_CHANGE_UNNECESSARILY:
+				return MarkerMessages.VersionNumberingResolution_unnecessaryMinorIncrease;
 			default:
 				// reexported minor
 				return MarkerMessages.VersionNumberingResolution_reexportedMinor0;
@@ -82,10 +87,15 @@ public class VersionNumberingResolution implements IMarkerResolution2 {
 			case IApiProblem.MINOR_VERSION_CHANGE_NO_NEW_API:
 				return NLS.bind(MarkerMessages.VersionNumberingResolution_minorNoNewAPI1, this.newVersionValue);
 			case IApiProblem.REEXPORTED_MAJOR_VERSION_CHANGE:
-				return NLS.bind(MarkerMessages.VersionNumberingResolution_reexportedMajor1, this.newVersionValue);
+				return NLS.bind(MarkerMessages.VersionNumberingResolution_major1, this.newVersionValue);
+			case IApiProblem.MICRO_VERSION_CHANGE_UNNECESSARILY:
+				return MarkerMessages.VersionNumberingResolution_unnecessaryMicroIncrease;
+			case IApiProblem.MINOR_VERSION_CHANGE_UNNECESSARILY:
+				return MarkerMessages.VersionNumberingResolution_unnecessaryMinorIncrease;
+
 			default:
 				// IApiProblem.REEXPORTED_MINOR_VERSION_CHANGE
-				return NLS.bind(MarkerMessages.VersionNumberingResolution_reexportedMinor1, this.newVersionValue);
+				return NLS.bind(MarkerMessages.VersionNumberingResolution_minor1, this.newVersionValue);
 		}
 	}
 
@@ -94,27 +104,33 @@ public class VersionNumberingResolution implements IMarkerResolution2 {
 		String title = null;
 		switch (this.kind) {
 			case IApiProblem.MAJOR_VERSION_CHANGE:
-				title = NLS.bind(MarkerMessages.VersionNumberingResolution_major2, this.newVersionValue);
+				title = NLS.bind(MarkerMessages.VersionNumberingResolution_major1, this.newVersionValue);
 				break;
 			case IApiProblem.MINOR_VERSION_CHANGE:
-				title = NLS.bind(MarkerMessages.VersionNumberingResolution_minor2, this.newVersionValue);
+				title = NLS.bind(MarkerMessages.VersionNumberingResolution_minor1, this.newVersionValue);
 				break;
 			case IApiProblem.MAJOR_VERSION_CHANGE_NO_BREAKAGE:
-				title = NLS.bind(MarkerMessages.VersionNumberingResolution_major2, this.newVersionValue);
+				title = NLS.bind(MarkerMessages.VersionNumberingResolution_major1, this.newVersionValue);
 				break;
 			case IApiProblem.MINOR_VERSION_CHANGE_NO_NEW_API:
 				title = NLS.bind(MarkerMessages.VersionNumberingResolution_minorNoNewAPI2, this.newVersionValue);
 				break;
 			case IApiProblem.REEXPORTED_MAJOR_VERSION_CHANGE:
-				title = NLS.bind(MarkerMessages.VersionNumberingResolution_reexportedMajor2, this.newVersionValue);
+				title = NLS.bind(MarkerMessages.VersionNumberingResolution_major1, this.newVersionValue);
+				break;
+			case IApiProblem.MICRO_VERSION_CHANGE_UNNECESSARILY:
+				title = MarkerMessages.VersionNumberingResolution_unnecessaryMicroIncrease;
+				break;
+			case IApiProblem.MINOR_VERSION_CHANGE_UNNECESSARILY:
+				title = MarkerMessages.VersionNumberingResolution_unnecessaryMinorIncrease;
 				break;
 			default:
 				// IApiProblem.REEXPORTED_MINOR_VERSION_CHANGE
-				title = NLS.bind(MarkerMessages.VersionNumberingResolution_reexportedMinor2, this.newVersionValue);
+				title = NLS.bind(MarkerMessages.VersionNumberingResolution_minor1, this.newVersionValue);
 		}
-		UIJob job = new UIJob(title) {
+		Job job = new Job(title) {
 			@Override
-			public IStatus runInUIThread(IProgressMonitor monitor) {
+			public IStatus run(IProgressMonitor monitor) {
 				UpdateBundleVersionOperation updateBundleVersionOperation = new UpdateBundleVersionOperation(marker, VersionNumberingResolution.this.newVersionValue);
 				return updateBundleVersionOperation.run(monitor);
 			}

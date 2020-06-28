@@ -22,7 +22,7 @@ import org.eclipse.core.runtime.MultiStatus;
 
 /**
  * A <code>MultiStatus</code> implementation that copies that state of the
- * added status to this instance if it is >= the current severity.
+ * added status to this instance if it is &gt;= the current severity.
  *
  * @since 1.0
  */
@@ -30,10 +30,11 @@ public class BindingStatus extends MultiStatus {
 	/**
 	 * Constructs a new instance.
 	 *
-	 * @param pluginId
-	 * @param code
-	 * @param message
-	 * @param exception
+	 * @param pluginId  the unique identifier of the relevant plug-in
+	 * @param code      the plug-in-specific status code
+	 * @param message   a human-readable message, localized to the current locale
+	 * @param exception a low-level exception, or <code>null</code> if not
+	 *                  applicable
 	 */
 	public BindingStatus(String pluginId, int code, String message,
 			Throwable exception) {
@@ -42,7 +43,7 @@ public class BindingStatus extends MultiStatus {
 
 	/**
 	 * Adds the status to the multi status. The details of the status will be
-	 * copied to the multi status if the severity is >= the current severity.
+	 * copied to the multi status if the severity is &gt;= the current severity.
 	 *
 	 * @see org.eclipse.core.runtime.MultiStatus#add(org.eclipse.core.runtime.IStatus)
 	 */
@@ -74,23 +75,11 @@ public class BindingStatus extends MultiStatus {
 		return new BindingStatus(Policy.JFACE_DATABINDING, 0, "", null); //$NON-NLS-1$
 	}
 
-	private static int hashCode(Object[] array) {
-		final int prime = 31;
-		if (array == null)
-			return 0;
-		int result = 1;
-		for (Object element : array) {
-			result = prime * result + (element == null ? 0 : element.hashCode());
-		}
-		return result;
-	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + BindingStatus.hashCode(getChildren());
-		return result;
+		return prime * result + Arrays.hashCode(getChildren());
 	}
 
 	@Override
@@ -102,8 +91,6 @@ public class BindingStatus extends MultiStatus {
 		if (getClass() != obj.getClass())
 			return false;
 		final BindingStatus other = (BindingStatus) obj;
-		if (!Arrays.equals(getChildren(), other.getChildren()))
-			return false;
-		return true;
+		return Arrays.equals(getChildren(), other.getChildren());
 	}
 }

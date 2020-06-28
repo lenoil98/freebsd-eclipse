@@ -50,9 +50,7 @@ public class UnpackFatJarAntExporter extends FatJarAntExporter {
 
 	@Override
 	protected void buildANTScript(IPath antScriptLocation, String projectName, IPath absJarfile, String mainClass, SourceInfo[] sourceInfos) throws IOException {
-		OutputStream outputStream= null;
-		try {
-			outputStream= new FileOutputStream(antScriptLocation.toFile());
+		try (OutputStream outputStream = new FileOutputStream(antScriptLocation.toFile())) {
 			String absJarname= absJarfile.toString();
 
 			DocumentBuilder docBuilder= null;
@@ -101,8 +99,7 @@ public class UnpackFatJarAntExporter extends FatJarAntExporter {
 			attribute.setAttribute("value", "."); //$NON-NLS-1$ //$NON-NLS-2$
 			manifest.appendChild(attribute);
 
-			for (int i= 0; i < sourceInfos.length; i++) {
-				SourceInfo sourceInfo= sourceInfos[i];
+			for (SourceInfo sourceInfo : sourceInfos) {
 				if (sourceInfo.isJar) {
 					Element zipfileset= document.createElement("zipfileset"); //$NON-NLS-1$
 					zipfileset.setAttribute("src", substituteBaseDirs(sourceInfo.absPath)); //$NON-NLS-1$
@@ -127,10 +124,6 @@ public class UnpackFatJarAntExporter extends FatJarAntExporter {
 				transformer.transform(source, result);
 			} catch (TransformerException e) {
 				throw new IOException(FatJarPackagerMessages.FatJarPackageAntScript_error_couldNotTransformToXML);
-			}
-		} finally {
-			if (outputStream != null) {
-				outputStream.close();
 			}
 		}
 	}

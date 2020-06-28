@@ -141,16 +141,16 @@ public ToolItem (ToolBar parent, int style, int index) {
 }
 
 @Override
-long /*int*/ accessibleHandle() {
+long accessibleHandle() {
 	if (button != null && button.cell() != null) return button.cell().id;
 	if (view != null) return view.id;
 	return 0;
 }
 
 @Override
-long /*int*/ accessibilityActionNames(long /*int*/ id, long /*int*/ sel) {
+long accessibilityActionNames(long id, long sel) {
 
-	long /*int*/ returnValue = super.accessibilityActionNames(id, sel);
+	long returnValue = super.accessibilityActionNames(id, sel);
 
 	if (id == accessibleHandle()) {
 		if ((style & SWT.DROP_DOWN) != 0) {
@@ -167,9 +167,9 @@ long /*int*/ accessibilityActionNames(long /*int*/ id, long /*int*/ sel) {
 }
 
 @Override
-long /*int*/ accessibilityAttributeNames(long /*int*/ id, long /*int*/ sel) {
+long accessibilityAttributeNames(long id, long sel) {
 
-	long /*int*/ returnValue = super.accessibilityAttributeNames(id, sel);
+	long returnValue = super.accessibilityAttributeNames(id, sel);
 
 	if (id == accessibleHandle()) {
 		if ((style & (SWT.CHECK|SWT.RADIO)) !=0) {
@@ -192,7 +192,7 @@ long /*int*/ accessibilityAttributeNames(long /*int*/ id, long /*int*/ sel) {
 }
 
 @Override
-long /*int*/ accessibilityAttributeValue(long /*int*/ id, long /*int*/ sel, long /*int*/ arg0) {
+long accessibilityAttributeValue(long id, long sel, long arg0) {
 	NSString nsAttributeName = new NSString(arg0);
 
 	if (nsAttributeName.isEqualToString (OS.NSAccessibilityRoleAttribute) || nsAttributeName.isEqualToString (OS.NSAccessibilityRoleDescriptionAttribute)) {
@@ -205,7 +205,7 @@ long /*int*/ accessibilityAttributeValue(long /*int*/ id, long /*int*/ sel, long
 			if (nsAttributeName.isEqualToString (OS.NSAccessibilityRoleAttribute)) {
 				return roleText.id;
 			} else { // NSAccessibilityRoleDescriptionAttribute
-				long /*int*/ description = OS.NSAccessibilityRoleDescription (roleText.id, 0);
+				long description = OS.NSAccessibilityRoleDescription (roleText.id, 0);
 				return description;
 			}
 		}
@@ -242,7 +242,7 @@ long /*int*/ accessibilityAttributeValue(long /*int*/ id, long /*int*/ sel, long
 }
 
 @Override
-boolean accessibilityIsIgnored(long /*int*/ id, long /*int*/ sel) {
+boolean accessibilityIsIgnored(long id, long sel) {
 	// The interesting part of a ToolItem is its button, if it has one.
 	if (id == accessibleHandle()) return false;
 	return super.accessibilityIsIgnored(id, sel);
@@ -425,7 +425,7 @@ void destroyWidget() {
 }
 
 @Override
-void drawImageWithFrameInView (long /*int*/ id, long /*int*/ sel, long /*int*/ image, NSRect rect, long /*int*/ view) {
+void drawImageWithFrameInView (long id, long sel, long image, NSRect rect, long view) {
 	if (text.length () > 0) {
 		if ((parent.style & SWT.RIGHT) != 0) {
 			rect.x += 3;
@@ -433,7 +433,7 @@ void drawImageWithFrameInView (long /*int*/ id, long /*int*/ sel, long /*int*/ i
 			rect.y += 3;
 		}
 	}
-	long /*int*/ cgContext = NSGraphicsContext.currentContext().graphicsPort();
+	long cgContext = NSGraphicsContext.currentContext().graphicsPort();
 	NSCell cell = new NSCell(id);
 	boolean drawSelected = (parent.nsToolbar != null) && getSelection() && ((style & SWT.CHECK) != 0) && !cell.isHighlighted();
 
@@ -458,12 +458,12 @@ void drawImageWithFrameInView (long /*int*/ id, long /*int*/ sel, long /*int*/ i
 }
 
 @Override
-NSRect drawTitleWithFrameInView (long /*int*/ id, long /*int*/ sel, long /*int*/ title, NSRect titleRect, long /*int*/ view) {
-    boolean hiliteShadow = new NSButtonCell(id).isHighlighted() && text.length() > 0 && image == null;
+NSRect drawTitleWithFrameInView (long id, long sel, long title, NSRect titleRect, long view) {
+	boolean hiliteShadow = new NSButtonCell(id).isHighlighted() && text.length() > 0 && image == null;
 
-    // An unbordered cell doesn't draw any highlighting when pushed or selected, so we have to do it here.
-    if (hiliteShadow) {
-    	NSColor transWhiteColor = NSColor.colorWithDeviceRed(1.0f, 1.0f, 1.0f, .8f);
+	// An unbordered cell doesn't draw any highlighting when pushed or selected, so we have to do it here.
+	if (hiliteShadow) {
+		NSColor transWhiteColor = NSColor.colorWithDeviceRed(1.0f, 1.0f, 1.0f, .8f);
 		NSAttributedString attribStr = new NSAttributedString(title);
 		NSMutableAttributedString tmpString = new NSMutableAttributedString(attribStr.mutableCopy());
 		NSRange range = new NSRange();
@@ -472,19 +472,22 @@ NSRect drawTitleWithFrameInView (long /*int*/ id, long /*int*/ sel, long /*int*/
 		tmpString.addAttribute(OS.NSForegroundColorAttributeName, transWhiteColor, range);
 		tmpString.autorelease();
 		title = tmpString.id;
-    }
+	}
 	return super.drawTitleWithFrameInView(id, sel, title, titleRect, view);
 }
 
 @Override
-void drawWidget (long /*int*/ id, NSGraphicsContext context, NSRect rect) {
+void drawWidget (long id, NSGraphicsContext context, NSRect rect) {
 	if (id == view.id) {
 		boolean drawSelected = getSelection() && (parent.nsToolbar == null);
 		if (drawSelected) {
 			NSRect bounds = view.bounds();
 			context.saveGraphicsState();
-			NSColor.colorWithDeviceRed(0.1f, 0.1f, 0.1f, 0.1f).setFill();
-			NSColor.colorWithDeviceRed(0.2f, 0.2f, 0.2f, 0.2f).setStroke();
+			boolean isDark = OS.isAppDarkAppearance();
+			float fillColor = isDark ? 0.9f : 0.1f;
+			float strokeColor = isDark ? 0.8f : 0.2f;
+			NSColor.colorWithDeviceRed(fillColor, fillColor, fillColor, 0.1f).setFill();
+			NSColor.colorWithDeviceRed(strokeColor, strokeColor, strokeColor, 0.2f).setStroke();
 			NSBezierPath.fillRect(bounds);
 			bounds.x += 0.5f;
 			bounds.y += 0.5f;
@@ -637,24 +640,38 @@ public Image getHotImage () {
 	return hotImage;
 }
 
+/**
+ * Returns the receiver's enabled image if it has one, or null
+ * if it does not.
+ *
+ * @return the receiver's enabled image
+ *
+ * @exception SWTException <ul>
+ *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+ *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+ * </ul>
+ */
+@Override
+public Image getImage () {
+	return super.getImage();
+}
+
 NSString getItemID() {
-    NSString itemID = id;
+	NSString itemID = id;
 
-    // For separators, return a Cocoa constant for the tool item ID.
-    if ((style & SWT.SEPARATOR) != 0) {
-    	// If we are using a non-default width or control use that instead.
-    	if (control == null) {
-    		if (width == DEFAULT_SEPARATOR_WIDTH || width == 0) {
-    			if (OS.VERSION < 0x1070) itemID = OS.NSToolbarSeparatorItemIdentifier;
-    		} else if (width == SWT.DEFAULT) {
-    			itemID = OS.NSToolbarSpaceItemIdentifier;
-    		} else if (width == SWT.SEPARATOR_FILL) {
-    			itemID = OS.NSToolbarFlexibleSpaceItemIdentifier;
-    		}
-    	}
-    }
+	// For separators, return a Cocoa constant for the tool item ID.
+	if ((style & SWT.SEPARATOR) != 0) {
+		// If we are using a non-default width or control use that instead.
+		if (control == null) {
+			if (width == SWT.DEFAULT) {
+				itemID = OS.NSToolbarSpaceItemIdentifier;
+			} else if (width == SWT.SEPARATOR_FILL) {
+				itemID = OS.NSToolbarFlexibleSpaceItemIdentifier;
+			}
+		}
+	}
 
-    return itemID;
+	return itemID;
 }
 
 /**
@@ -751,12 +768,12 @@ boolean isDrawing () {
 }
 
 @Override
-long /*int*/ menuForEvent (long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+long menuForEvent (long id, long sel, long theEvent) {
 	return parent.menuForEvent (id, sel, theEvent);
 }
 
 @Override
-void mouseDown(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+void mouseDown(long id, long sel, long theEvent) {
 	if (!parent.mouseEvent(parent.view.id, sel, theEvent, SWT.MouseDown)) return;
 	Display display = this.display;
 	display.trackingControl = parent;
@@ -773,55 +790,55 @@ void mouseDown(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
 }
 
 @Override
-boolean mouseDownCanMoveWindow(long /*int*/ id, long /*int*/ sel) {
+boolean mouseDownCanMoveWindow(long id, long sel) {
 	if (id == view.id) return false;
 	return super.mouseDownCanMoveWindow(id, sel);
 }
 
 @Override
-void mouseUp(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+void mouseUp(long id, long sel, long theEvent) {
 	if (!parent.mouseEvent(parent.view.id, sel, theEvent, SWT.MouseUp)) return;
 	super.mouseUp(id, sel, theEvent);
 }
 
 @Override
-void mouseDragged(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+void mouseDragged(long id, long sel, long theEvent) {
 	if (!parent.mouseEvent(parent.view.id, sel, theEvent, SWT.MouseMove)) return;
 	super.mouseDragged(id, sel, theEvent);
 }
 
 @Override
-void rightMouseDown(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+void rightMouseDown(long id, long sel, long theEvent) {
 	if (!parent.mouseEvent(parent.view.id, sel, theEvent, SWT.MouseDown)) return;
 	super.rightMouseDown(id, sel, theEvent);
 }
 
 @Override
-void rightMouseUp(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+void rightMouseUp(long id, long sel, long theEvent) {
 	if (!parent.mouseEvent(parent.view.id, sel, theEvent, SWT.MouseUp)) return;
 	super.rightMouseUp(id, sel, theEvent);
 }
 
 @Override
-void rightMouseDragged(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+void rightMouseDragged(long id, long sel, long theEvent) {
 	if (!parent.mouseEvent(parent.view.id, sel, theEvent, SWT.MouseMove)) return;
 	super.rightMouseDragged(id, sel, theEvent);
 }
 
 @Override
-void otherMouseDown(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+void otherMouseDown(long id, long sel, long theEvent) {
 	if (!parent.mouseEvent(parent.view.id, sel, theEvent, SWT.MouseDown)) return;
 	super.otherMouseDown(id, sel, theEvent);
 }
 
 @Override
-void otherMouseUp(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+void otherMouseUp(long id, long sel, long theEvent) {
 	if (!parent.mouseEvent(parent.view.id, sel, theEvent, SWT.MouseUp)) return;
 	super.otherMouseUp(id, sel, theEvent);
 }
 
 @Override
-void otherMouseDragged(long /*int*/ id, long /*int*/ sel, long /*int*/ theEvent) {
+void otherMouseDragged(long id, long sel, long theEvent) {
 	if (!parent.mouseEvent(parent.view.id, sel, theEvent, SWT.MouseMove)) return;
 	super.otherMouseDragged(id, sel, theEvent);
 }
@@ -875,12 +892,12 @@ void releaseHandle () {
 	if (button != null) button.release ();
 	view = button = null;
 	if (nsItem != null) {
-	    nsItem.release();
-	    nsItem = null;
+		nsItem.release();
+		nsItem = null;
 	}
 	if (id != null) {
-	    id.release();
-	    id = null;
+		id.release();
+		id = null;
 	}
 	if (nsMenuRep != null) {
 		nsMenuRep.release();
@@ -978,12 +995,12 @@ public void setControl (Control control) {
 	if (this.control == control) return;
 
 	if (parent.nsToolbar == null) {
-        NSBox widget = (NSBox)view;
-        if (control == null) {
-        	widget.setBoxType(OS.NSBoxSeparator);
-        } else {
-        	widget.setBoxType(OS.NSBoxCustom);
-        }
+		NSBox widget = (NSBox)view;
+		if (control == null) {
+			widget.setBoxType(OS.NSBoxSeparator);
+		} else {
+			widget.setBoxType(OS.NSBoxCustom);
+		}
 	} else {
 		nsItem.setMenuFormRepresentation(control == null ? nsMenuRep : NSMenuItem.separatorItem());
 	}
@@ -1213,14 +1230,14 @@ public void setToolTipText (String string) {
 	checkWidget();
 	if (string == null && toolTipText == null) return;
 	if (string != null && string.equals (toolTipText)) return;
-    toolTipText = string;
+	toolTipText = string;
 	if (parent.nsToolbar != null) {
-        char[] chars = new char [toolTipText.length ()];
-        string.getChars (0, chars.length, chars, 0);
-        int length = fixMnemonic (chars);
-        nsItem.setToolTip(NSString.stringWithCharacters (chars, length));
+		char[] chars = new char [toolTipText.length ()];
+		string.getChars (0, chars.length, chars, 0);
+		int length = fixMnemonic (chars);
+		nsItem.setToolTip(NSString.stringWithCharacters (chars, length));
 	} else {
-        parent.checkToolTip (this);
+		parent.checkToolTip (this);
 	}
 }
 
@@ -1308,7 +1325,7 @@ void updateImage (boolean layout) {
 }
 
 @Override
-boolean validateMenuItem(long /*int*/ id, long /*int*/ sel, long /*int*/ menuItem) {
+boolean validateMenuItem(long id, long sel, long menuItem) {
 	return isEnabled();
 }
 

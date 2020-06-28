@@ -22,69 +22,73 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.ui.internal.WorkbenchWindow;
 import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * The DuplicateMenuItemTest is a class for testing the popups
  * and window menus for the navigator to check for duplicate menu
  * entries.
  */
+@RunWith(JUnit4.class)
 public class DuplicateMenuItemTest extends AbstractNavigatorTest {
 
-    /**
-     * Constructor for DuplicateMenuItemTest.
-     * @param testName
-     */
-    public DuplicateMenuItemTest(String testName) {
-        super(testName);
-    }
+	/**
+	 * Constructor for DuplicateMenuItemTest.
+	 */
+	public DuplicateMenuItemTest() {
+		super(DuplicateMenuItemTest.class.getSimpleName());
+	}
 
-    public void testSelection() {
+	@Test
+	public void testSelection() {
 
-        IStructuredSelection selection = new StructuredSelection(testProject);
-        checkSelection(selection);
-        selection = new StructuredSelection(testFolder);
-        checkSelection(selection);
-        selection = new StructuredSelection(testFile);
-        checkSelection(selection);
-    }
+		IStructuredSelection selection = new StructuredSelection(testProject);
+		checkSelection(selection);
+		selection = new StructuredSelection(testFolder);
+		checkSelection(selection);
+		selection = new StructuredSelection(testFile);
+		checkSelection(selection);
+	}
 
-    private void checkMenu(Menu menu, String menuName) {
+	private void checkMenu(Menu menu, String menuName) {
 
-        MenuItem[] items = menu.getItems();
+		MenuItem[] items = menu.getItems();
 		HashSet<String> labels = new HashSet<>();
-        for (MenuItem item : items) {
-            String label = item.getText();
-            System.out.println(label);
-            Assert.assertTrue("Duplicate menu entry in: " + menuName + " "
-                    + label, !labels.contains(label));
-            if (item.getMenu() != null) {
+		for (MenuItem item : items) {
+			String label = item.getText();
+			System.out.println(label);
+			Assert.assertTrue("Duplicate menu entry in: " + menuName + " "
+					+ label, !labels.contains(label));
+			if (item.getMenu() != null) {
 				checkMenu(item.getMenu(), label);
 			}
-        }
+		}
 
-    }
+	}
 
-    private void checkWorkbenchMenu() {
+	private void checkWorkbenchMenu() {
 
-        MenuManager workbenchManager = ((WorkbenchWindow) navigator
-                .getViewSite().getWorkbenchWindow()).getMenuManager();
+		MenuManager workbenchManager = ((WorkbenchWindow) navigator
+				.getViewSite().getWorkbenchWindow()).getMenuManager();
 
-        checkMenu(workbenchManager.getMenu(), "Workbench");
-    }
+		checkMenu(workbenchManager.getMenu(), "Workbench");
+	}
 
-    private void checkSelection(IStructuredSelection selection) {
-        navigator.selectReveal(selection);
-        checkWorkbenchMenu();
-    }
+	private void checkSelection(IStructuredSelection selection) {
+		navigator.selectReveal(selection);
+		checkWorkbenchMenu();
+	}
 
-    /**
-     * Sets up the hierarchy.
-     */
-    @Override
+	/**
+	 * Sets up the hierarchy.
+	 */
+	@Override
 	protected void doSetUp() throws Exception {
-        super.doSetUp();
-        createTestFile();
-        showNav();
-    }
+		super.doSetUp();
+		createTestFile();
+		showNav();
+	}
 
 }

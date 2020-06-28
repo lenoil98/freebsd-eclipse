@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -23,7 +23,7 @@ import org.eclipse.osgi.util.NLS;
 /**
  * The service implementation that allows bundleresource or bundleentry
  * URLs to be converted to native file URLs on the local file system.
- * 
+ *
  * <p>Internal class.</p>
  */
 public class BundleURLConverter implements URLConverter {
@@ -31,6 +31,7 @@ public class BundleURLConverter implements URLConverter {
 	/* (non-Javadoc)
 	 * @see org.eclipse.osgi.service.urlconversion.URLConverter#toFileURL(java.net.URL)
 	 */
+	@Override
 	public URL toFileURL(URL url) throws IOException {
 		URLConnection connection = url.openConnection();
 		if (connection instanceof BundleURLConnection) {
@@ -49,6 +50,7 @@ public class BundleURLConverter implements URLConverter {
 	/* (non-Javadoc)
 	 * @see org.eclipse.osgi.service.urlconversion.URLConverter#resolve(java.net.URL)
 	 */
+	@Override
 	public URL resolve(URL url) throws IOException {
 		URLConnection connection = url.openConnection();
 		if (connection instanceof BundleURLConnection)

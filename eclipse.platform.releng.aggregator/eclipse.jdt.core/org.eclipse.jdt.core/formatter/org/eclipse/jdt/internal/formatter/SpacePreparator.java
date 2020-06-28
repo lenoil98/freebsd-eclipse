@@ -6,12 +6,12 @@
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *     Mateusz Matela <mateusz.matela@gmail.com> - [formatter] Formatter does not format Java code correctly, especially when max line width is set - https://bugs.eclipse.org/303519
  *     Mateusz Matela <mateusz.matela@gmail.com> - [formatter] IndexOutOfBoundsException in TokenManager - https://bugs.eclipse.org/462945
  *     Mateusz Matela <mateusz.matela@gmail.com> - [formatter] follow up bug for comments - https://bugs.eclipse.org/458208
+ *     IBM Corporation - DOM AST changes for JEP 354
  *******************************************************************************/
 package org.eclipse.jdt.internal.formatter;
 
@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -78,6 +79,7 @@ import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.PostfixExpression;
 import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.ProvidesDirective;
+import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -86,6 +88,7 @@ import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodReference;
 import org.eclipse.jdt.core.dom.SwitchCase;
+import org.eclipse.jdt.core.dom.SwitchExpression;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.SynchronizedStatement;
 import org.eclipse.jdt.core.dom.ThrowStatement;
@@ -101,6 +104,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 import org.eclipse.jdt.core.dom.WildcardType;
+import org.eclipse.jdt.core.dom.YieldStatement;
 import org.eclipse.jdt.internal.compiler.parser.ScannerHelper;
 
 public class SpacePreparator extends ASTVisitor {
@@ -169,8 +173,8 @@ public class SpacePreparator extends ASTVisitor {
 
 	@Override
 	public boolean visit(TypeDeclaration node) {
-		if (node.getName().getStartPosition() == -1)
-			return true; // this is a fake type created by parsing in class body mode
+		if (this.tm.isFake(node))
+			return true;
 
 		handleToken(node.getName(), TokenNameIdentifier, true, false);
 
@@ -215,7 +219,7 @@ public class SpacePreparator extends ASTVisitor {
 			int from = this.tm.firstIndexIn(node.getName(), TokenNameIdentifier) + 1;
 			AnonymousClassDeclaration classDeclaration = node.getAnonymousClassDeclaration();
 			int to = classDeclaration != null ? this.tm.firstIndexBefore(classDeclaration, -1)
-					: this.tm.lastIndexIn(node, -1); 
+					: this.tm.lastIndexIn(node, -1);
 			for (int i = from; i <= to; i++) {
 				if (this.tm.get(i).tokenType == TokenNameLPAREN) {
 					openingParen = this.tm.get(i);
@@ -242,63 +246,102 @@ public class SpacePreparator extends ASTVisitor {
 	}
 
 	@Override
+	public boolean visit(RecordDeclaration node) {
+		handleToken(node.getName(), TokenNameIdentifier, true, false);
+
+		List<TypeParameter> typeParameters = node.typeParameters();
+		handleTypeParameters(typeParameters);
+
+		handleToken(node.getName(), TokenNameLBRACE,
+				this.options.insert_space_before_opening_brace_in_record_declaration, false);
+		List<Type> superInterfaces = node.superInterfaceTypes();
+		if (!superInterfaces.isEmpty()) {
+			handleTokenBefore(superInterfaces.get(0), TokenNameimplements, true, true);
+			handleCommas(superInterfaces, this.options.insert_space_before_comma_in_superinterfaces,
+					this.options.insert_space_after_comma_in_superinterfaces);
+		}
+
+		List<SingleVariableDeclaration> components = node.recordComponents();
+		if (handleEmptyParens(node, this.options.insert_space_between_empty_parens_in_constructor_declaration)) {
+			handleToken(node, TokenNameLPAREN,
+					this.options.insert_space_before_opening_paren_in_record_declaration, false);
+		} else {
+			handleToken(node, TokenNameLPAREN,
+					this.options.insert_space_before_opening_paren_in_record_declaration,
+					this.options.insert_space_after_opening_paren_in_record_declaration);
+
+			if (this.options.insert_space_before_closing_paren_in_record_declaration) {
+				ASTNode nodeBeforeBrace = components.isEmpty() ? node.getName() : components.get(components.size() - 1);
+				handleTokenAfter(nodeBeforeBrace, TokenNameRPAREN, true, false);
+			}
+		}
+		handleCommas(components, this.options.insert_space_before_comma_in_record_components,
+				this.options.insert_space_after_comma_in_record_components);
+		return true;
+	}
+
+	@Override
 	public boolean visit(MethodDeclaration node) {
 		handleToken(node.getName(), TokenNameIdentifier, true, false);
 
-		boolean spaceBeforeOpenParen = node.isConstructor()
-				? this.options.insert_space_before_opening_paren_in_constructor_declaration
-				: this.options.insert_space_before_opening_paren_in_method_declaration;
-		boolean spaceAfterOpenParen = node.isConstructor()
-				? this.options.insert_space_after_opening_paren_in_constructor_declaration
-				: this.options.insert_space_after_opening_paren_in_method_declaration;
-		boolean spaceBetweenEmptyParens = node.isConstructor()
-				? this.options.insert_space_between_empty_parens_in_constructor_declaration
-				: this.options.insert_space_between_empty_parens_in_method_declaration;
-		if (handleEmptyParens(node.getName(), spaceBetweenEmptyParens)) {
-			handleToken(node.getName(), TokenNameLPAREN, spaceBeforeOpenParen, false);
-		} else {
-			handleToken(node.getName(), TokenNameLPAREN, spaceBeforeOpenParen, spaceAfterOpenParen);
+		List<SingleVariableDeclaration> params = node.parameters();
+		if (!node.isCompactConstructor()) {
+			boolean beforeOpenParen = node.isConstructor()
+					? this.options.insert_space_before_opening_paren_in_constructor_declaration
+					: this.options.insert_space_before_opening_paren_in_method_declaration;
+			boolean afterOpenParen = node.isConstructor()
+					? this.options.insert_space_after_opening_paren_in_constructor_declaration
+					: this.options.insert_space_after_opening_paren_in_method_declaration;
+			boolean betweenEmptyParens = node.isConstructor()
+					? this.options.insert_space_between_empty_parens_in_constructor_declaration
+					: this.options.insert_space_between_empty_parens_in_method_declaration;
+			if (handleEmptyParens(node.getName(), betweenEmptyParens)) {
+				handleToken(node.getName(), TokenNameLPAREN, beforeOpenParen, false);
+			} else {
+				handleToken(node.getName(), TokenNameLPAREN, beforeOpenParen, afterOpenParen);
 
-			boolean spaceBeforeCloseParen = node.isConstructor()
-					? this.options.insert_space_before_closing_paren_in_constructor_declaration
-					: this.options.insert_space_before_closing_paren_in_method_declaration;
-			if (spaceBeforeCloseParen) {
-				List<SingleVariableDeclaration> params = node.parameters();
-				ASTNode beforeBrace = params.isEmpty() ? node.getName() : params.get(params.size() - 1);
-				handleTokenAfter(beforeBrace, TokenNameRPAREN, true, false);
+				boolean beforeCloseParen = node.isConstructor()
+						? this.options.insert_space_before_closing_paren_in_constructor_declaration
+						: this.options.insert_space_before_closing_paren_in_method_declaration;
+				if (beforeCloseParen) {
+					ASTNode nodeBeforeBrace = params.isEmpty() ? node.getName() : params.get(params.size() - 1);
+					handleTokenAfter(nodeBeforeBrace, TokenNameRPAREN, true, false);
+				}
 			}
+
+			boolean beforeComma = node.isConstructor()
+					? this.options.insert_space_before_comma_in_constructor_declaration_parameters
+					: this.options.insert_space_before_comma_in_method_declaration_parameters;
+			boolean afterComma = node.isConstructor()
+					? this.options.insert_space_after_comma_in_constructor_declaration_parameters
+					: this.options.insert_space_after_comma_in_method_declaration_parameters;
+			if (node.getReceiverType() != null) {
+				params = new ArrayList<>(params);
+				params.add(0, null); // space for explicit receiver, null OK - first value not read in handleCommas
+			}
+			handleCommas(params, beforeComma, afterComma);
 		}
 
-		if ((node.isConstructor() ? this.options.insert_space_before_opening_brace_in_constructor_declaration
-				: this.options.insert_space_before_opening_brace_in_method_declaration) && node.getBody() != null)
+		boolean beforeOpeningBrace = node.isCompactConstructor()
+				? this.options.insert_space_before_opening_brace_in_record_constructor
+				: node.isConstructor() ? this.options.insert_space_before_opening_brace_in_constructor_declaration
+						: this.options.insert_space_before_opening_brace_in_method_declaration;
+		if (beforeOpeningBrace && node.getBody() != null)
 			this.tm.firstTokenIn(node.getBody(), TokenNameLBRACE).spaceBefore();
 
 		if (node.getReceiverType() != null)
 			this.tm.lastTokenIn(node.getReceiverType(), -1).spaceAfter();
 
-		boolean beforeComma = node.isConstructor()
-				? this.options.insert_space_before_comma_in_constructor_declaration_parameters
-				: this.options.insert_space_before_comma_in_method_declaration_parameters;
-		boolean afterComma = node.isConstructor()
-				? this.options.insert_space_after_comma_in_constructor_declaration_parameters
-				: this.options.insert_space_after_comma_in_method_declaration_parameters;
-		List<SingleVariableDeclaration> params = node.parameters();
-		if (node.getReceiverType() != null) {
-			params = new ArrayList<>(params);
-			params.add(0, null); // space for explicit receiver, null OK - first value not read in handleCommas 
-		}
-		handleCommas(params, beforeComma, afterComma);
-
 		List<Type> thrownExceptionTypes = node.thrownExceptionTypes();
 		if (!thrownExceptionTypes.isEmpty()) {
-			this.tm.firstTokenBefore(thrownExceptionTypes.get(0), TokenNamethrows).spaceBefore();
+			handleTokenBefore(thrownExceptionTypes.get(0), TokenNamethrows, true, false);
 
-			beforeComma = node.isConstructor()
+			boolean beforeComma = node.isConstructor()
 					? this.options.insert_space_before_comma_in_constructor_declaration_throws
-					: this.options.insert_space_before_comma_in_method_declaration_throws;
-			afterComma = node.isConstructor()
+							: this.options.insert_space_before_comma_in_method_declaration_throws;
+			boolean afterComma = node.isConstructor()
 					? this.options.insert_space_after_comma_in_constructor_declaration_throws
-					: this.options.insert_space_after_comma_in_method_declaration_throws;
+							: this.options.insert_space_after_comma_in_method_declaration_throws;
 			handleCommas(thrownExceptionTypes, beforeComma, afterComma);
 		}
 
@@ -381,12 +424,46 @@ public class SpacePreparator extends ASTVisitor {
 	}
 
 	@Override
+	public boolean visit(SwitchExpression node) {
+		handleToken(node, TokenNameLPAREN, this.options.insert_space_before_opening_paren_in_switch,
+				this.options.insert_space_after_opening_paren_in_switch);
+		handleTokenAfter(node.getExpression(), TokenNameRPAREN,
+				this.options.insert_space_before_closing_paren_in_switch, false);
+		handleTokenAfter(node.getExpression(), TokenNameLBRACE,
+				this.options.insert_space_before_opening_brace_in_switch, false);
+		handleSemicolon(node.statements());
+		return true;
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
 	public boolean visit(SwitchCase node) {
-		if (node.isDefault()) {
-			handleToken(node, TokenNameCOLON, this.options.insert_space_before_colon_in_default, false);
+		if (node.getAST().apiLevel() > AST.JLS13 && node.isSwitchLabeledRule()) {
+			handleToken(this.tm.lastTokenIn(node, TokenNameARROW),
+					node.isDefault() ? this.options.insert_space_before_arrow_in_switch_default
+							: this.options.insert_space_before_arrow_in_switch_case,
+					node.isDefault() ? this.options.insert_space_after_arrow_in_switch_default
+							: this.options.insert_space_after_arrow_in_switch_case);
 		} else {
+			handleToken(this.tm.lastTokenIn(node, TokenNameCOLON),
+					node.isDefault() ? this.options.insert_space_before_colon_in_default
+							: this.options.insert_space_before_colon_in_case,
+					false);
+		}
+		if (!node.isDefault()) {
 			handleToken(node, TokenNamecase, false, true);
-			handleToken(node.getExpression(), TokenNameCOLON, this.options.insert_space_before_colon_in_case, false);
+			if (node.getAST().apiLevel() > AST.JLS13) {
+				handleCommas(node.expressions(), this.options.insert_space_before_comma_in_switch_case_expressions,
+					this.options.insert_space_after_comma_in_switch_case_expressions);
+			}
+		}
+		return true;
+	}
+
+	@Override
+	public boolean visit(YieldStatement node) {
+		if (node.getExpression() != null && !node.isImplicit()) {
+			this.tm.firstTokenIn(node, -1).spaceAfter();
 		}
 		return true;
 	}
@@ -775,8 +852,13 @@ public class SpacePreparator extends ASTVisitor {
 			handleOperator(operator.toString(), node.getOperand(),
 					this.options.insert_space_before_prefix_operator,
 					this.options.insert_space_after_prefix_operator);
+		} else if (operator.equals(PrefixExpression.Operator.NOT)) {
+			handleOperator(operator.toString(), node.getOperand(),
+					this.options.insert_space_before_unary_operator,
+					this.options.insert_space_after_not_operator);
 		} else {
-			handleOperator(operator.toString(), node.getOperand(), this.options.insert_space_before_unary_operator,
+			handleOperator(operator.toString(), node.getOperand(),
+					this.options.insert_space_before_unary_operator,
 					this.options.insert_space_after_unary_operator);
 		}
 		return true;
@@ -1025,7 +1107,7 @@ public class SpacePreparator extends ASTVisitor {
 		handleModuleStatementCommas(node.modules());
 		return true;
 	}
-	
+
 	@Override
 	public boolean visit(OpensDirective node) {
 		handleModuleStatementCommas(node.modules());

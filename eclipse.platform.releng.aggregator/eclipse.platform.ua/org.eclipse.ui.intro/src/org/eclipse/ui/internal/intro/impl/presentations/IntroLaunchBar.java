@@ -39,9 +39,7 @@ import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.util.Geometry;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
@@ -100,8 +98,6 @@ public class IntroLaunchBar {
 	@Optional
 	private IntroLaunchBarElement element;
 
-	protected boolean simple;
-
 	@Inject
 	@Optional
 	private IntroTheme theme;
@@ -137,8 +133,8 @@ public class IntroLaunchBar {
 		@Override
 		protected Point computeSize(Composite composite, int wHint, int hHint, boolean changed) {
 			boolean vertical = (getOrientation() & SWT.VERTICAL) != 0;
-			int marginWidth = vertical | isPlain() ? 1 : simple ? 3 : 7;
-			int marginHeight = !vertical | isPlain() ? 1 : simple ? 3 : 7;
+			int marginWidth = vertical ? 1 : 3;
+			int marginHeight = !vertical ? 1 : 3;
 			int width = 0;
 			int height = 0;
 
@@ -164,8 +160,8 @@ public class IntroLaunchBar {
 		@Override
 		protected void layout(Composite composite, boolean changed) {
 			boolean vertical = (getOrientation() & SWT.VERTICAL) != 0;
-			int marginWidth = vertical | isPlain() ? 1 : simple ? 4 : 7;
-			int marginHeight = !vertical | isPlain() ? 1 : simple ? 4 : 7;
+			int marginWidth = vertical ? 1 : 4;
+			int marginHeight = !vertical ? 1 : 4;
 
 			Point tsize = toolBarManager.getControl().computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);
 			Rectangle carea = composite.getClientArea();
@@ -277,7 +273,6 @@ public class IntroLaunchBar {
 
 	@PostConstruct
 	void init(Composite parent, MToolControl trimControl) {
-		simple = true;
 		this.trimControl = trimControl;
 		this.lastPageId = trimControl.getPersistedState().get(LAST_PAGE_ID);
 
@@ -299,46 +294,23 @@ public class IntroLaunchBar {
 		settings.put(S_STORED_LOCATION, toSWT(getLocation()));
 	}
 
-	/**
-	 * Not supported anymore as of the removal of the presentation API
-	 * TODO remove usage, see Bug 446171
-	 *
-	 * @return
-	 */
-	protected boolean isPlain() {
-		return true;
-	}
 
 	public void createControl(Composite parent) {
 		container = new Composite(parent, SWT.NULL);
 		computeColors(parent.getDisplay());
 		container.setLayout(new BarLayout());
-		// boolean vertical = (orientation & SWT.VERTICAL) != 0;
 		toolBarManager = new ToolBarManager(SWT.FLAT | getOrientation());
 
 
 		fillToolBar();
-		// coolBar = new CoolBar(container, SWT.NULL);
-		// CoolItem coolItem = new CoolItem(coolBar, SWT.NULL);
-		// toolBarManager.createControl(coolBar);
 		toolBarManager.createControl(container);
 		ToolBar toolBar = toolBarManager.getControl();
 
-		// coolItem.setControl(toolBar);
-		// Point toolBarSize = toolBar.computeSize(SWT.DEFAULT,
-		// SWT.DEFAULT);
-		// Set the preffered size to the size of the toolbar plus trim
-		// Point preferredSize = coolItem.computeSize(toolBarSize.x,
-		// toolBarSize.y);
-		// coolItem.setPreferredSize(preferredSize);
-
 		if (bg != null) {
 			toolBar.setBackground(bg);
-			// coolBar.setBackground(bg);
 		}
-		container.addPaintListener(e -> onPaint(e));
 		MenuManager manager = new MenuManager();
-		IMenuListener listener = manager1 -> contextMenuAboutToShow(manager1);
+		IMenuListener listener = this::contextMenuAboutToShow;
 		manager.setRemoveAllWhenShown(true);
 		manager.addMenuListener(listener);
 		Menu contextMenu = manager.createContextMenu(toolBarManager.getControl());
@@ -357,112 +329,6 @@ public class IntroLaunchBar {
 		return SideValue.BOTTOM;
 	}
 
-
-	protected void onPaint(PaintEvent e) {
-		GC gc = e.gc;
-		Color color = fg;
-		if (color == null) {
-			color = e.display.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
-		}
-		gc.setForeground(color);
-		if (bg != null)
-			gc.setBackground(bg);
-		if (isPlain()) {
-			Point size = container.getSize();
-			gc.fillRectangle(0, 0, size.x, size.y);
-			gc.drawRectangle(0, 0, size.x - 1, size.y - 1);
-		} else {
-			switch (getLocation()) {
-			case LEFT:
-				paintLeft(gc);
-				break;
-			case RIGHT:
-				paintRight(gc);
-				break;
-			case BOTTOM:
-				paintBottom(gc);
-				break;
-			case TOP:
-				break;
-			}
-		}
-	}
-
-	private void paintLeft(GC gc) {
-		int[] top = simple ? SIMPLE_TOP_RIGHT_CORNER : TOP_RIGHT_CORNER;
-		int[] bot = simple ? SIMPLE_BOTTOM_RIGHT_CORNER : BOTTOM_RIGHT_CORNER;
-		int[] shape = new int[top.length + bot.length + 4];
-		int index = 0;
-		Point size = container.getSize();
-		int x = size.x - 1;
-		int y = 0;
-		index = fillShape(shape, top, index, x, y, false);
-		y = size.y - 1;
-		index = fillShape(shape, bot, index, x, y, true);
-		shape[index++] = -1;
-		shape[index++] = size.y - 1;
-		shape[index++] = -1;
-		shape[index++] = 0;
-		gc.fillPolygon(shape);
-		gc.drawPolygon(shape);
-	}
-
-	private void paintBottom(GC gc) {
-		int[] left = simple ? SIMPLE_TOP_LEFT_CORNER : TOP_LEFT_CORNER;
-		int[] right = simple ? SIMPLE_TOP_RIGHT_CORNER : TOP_RIGHT_CORNER;
-		int[] shape = new int[left.length + right.length + 4];
-		int index = 0;
-		Point size = container.getSize();
-		int x = 0;
-		int y = 0;
-		index = fillShape(shape, left, index, x, y, false);
-		x = size.x - 1;
-		index = fillShape(shape, right, index, x, y, false);
-		shape[index++] = size.x - 1;
-		shape[index++] = size.y;
-		shape[index++] = 0;
-		shape[index++] = size.y;
-		gc.fillPolygon(shape);
-		gc.drawPolygon(shape);
-	}
-
-	private void paintRight(GC gc) {
-		int[] top = simple ? SIMPLE_TOP_LEFT_CORNER : TOP_LEFT_CORNER;
-		int[] bot = simple ? SIMPLE_BOTTOM_LEFT_CORNER : BOTTOM_LEFT_CORNER;
-		int[] shape = new int[top.length + bot.length + 4];
-		int index = 0;
-		Point size = container.getSize();
-		int x = 0;
-		int y = 0;
-		index = fillShape(shape, top, index, x, y, false);
-		shape[index++] = size.x;
-		shape[index++] = 0;
-		shape[index++] = size.x;
-		shape[index++] = size.y - 1;
-		x = 0;
-		y = size.y - 1;
-		fillShape(shape, bot, index, x, y, true);
-		gc.fillPolygon(shape);
-		gc.drawPolygon(shape);
-	}
-
-
-	private int fillShape(int[] shape, int[] points, int index, int x, int y, boolean reverse) {
-		int fill = points.length;
-		for (int i = 0; i < points.length / 2; i++) {
-			if (!reverse) {
-				shape[index++] = x + points[2 * i];
-				shape[index++] = y + points[2 * i + 1];
-			} else {
-				shape[index + fill - 2 - 2 * i] = x + points[2 * i];
-				shape[index + fill - 1 - 2 * i] = y + points[2 * i + 1];
-			}
-		}
-		if (reverse) {
-			index += fill;
-		}
-		return index;
-	}
 
 	private void computeColors(Display display) {
 		if (element.getBackground() != null) {
@@ -544,7 +410,7 @@ public class IntroLaunchBar {
 			}
 		};
 		action.setToolTipText(Messages.IntroLaunchBar_restore_tooltip);
-		action.setImageDescriptor(ImageUtil.createImageDescriptor("full/etool16/restore_welcome.gif")); //$NON-NLS-1$
+		action.setImageDescriptor(ImageUtil.createImageDescriptor("full/etool16/restore_welcome.png")); //$NON-NLS-1$
 		// toolBarManager.add(closeAction);
 		toolBarManager.add(action);
 		toolBarManager.add(new Separator());

@@ -19,6 +19,7 @@ import java.util.Map;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.jdt.core.IJavaProject;
@@ -61,6 +62,7 @@ public class JavaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	private VMRunnerConfiguration getVMRunnerConfiguration(ILaunchConfiguration configuration, String mode, IProgressMonitor monitor) throws CoreException {
 
 		monitor.beginTask(NLS.bind("{0}...", new String[]{configuration.getName()}), 3); //$NON-NLS-1$
@@ -97,15 +99,23 @@ public class JavaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
 		runConfig.setVMArguments(execArgs.getVMArgumentsArray());
 		runConfig.setWorkingDirectory(workingDirName);
 		runConfig.setVMSpecificAttributesMap(vmAttributesMap);
-		if (supportsModule()) {
-			// current module name, if so
+		runConfig.setPreviewEnabled(supportsPreviewFeatures(configuration));
+		// Module name not required for Scrapbook page
+		if (supportsModule() && !mainTypeName.equals("org.eclipse.jdt.internal.debug.ui.snippeteditor.ScrapbookMain")) { //$NON-NLS-1$
+			// Module name need not be the same as project name
 			try {
 				IJavaProject proj = JavaRuntime.getJavaProject(configuration);
 				if (proj != null) {
 					IModuleDescription module = proj == null ? null : proj.getModuleDescription();
 					String modName = module == null ? null : module.getElementName();
-					if (modName != null) {
-						runConfig.setModuleDescription(modName);
+					if (modName != null && modName.length() > 0) {
+						String defaultModuleName = null;
+						String moduleName = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MODULE_NAME, defaultModuleName);
+						if (moduleName != null) {
+							runConfig.setModuleDescription(moduleName);
+						} else {
+							runConfig.setModuleDescription(modName);
+						}
 					}
 				}
 			} catch (CoreException e) {
@@ -129,6 +139,8 @@ public class JavaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
 				runConfig.setOverrideDependencies(getModuleCLIOptions(configuration));
 			}
 		}
+		runConfig.setMergeOutput(configuration.getAttribute(DebugPlugin.ATTR_MERGE_OUTPUT, false));
+
 		// check for cancellation
 		if (monitor.isCanceled()) {
 			return null;

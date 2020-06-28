@@ -29,7 +29,6 @@ import org.eclipse.debug.internal.ui.DebugUIPlugin;
 import org.eclipse.debug.ui.IDebugUIConstants;
 import org.eclipse.debug.ui.memory.AbstractMemoryRenderingBindingsProvider;
 import org.eclipse.debug.ui.memory.IMemoryRendering;
-import org.eclipse.debug.ui.memory.IMemoryRenderingBindingsListener;
 import org.eclipse.debug.ui.memory.IMemoryRenderingManager;
 import org.eclipse.debug.ui.memory.IMemoryRenderingType;
 
@@ -74,12 +73,6 @@ public class MemoryRenderingManager extends AbstractMemoryRenderingBindingsProvi
 		initializeRenderings();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.ui.memory.IMemoryRenderingManager#createRendering(java
-	 * .lang.String)
-	 */
 	public IMemoryRendering createRendering(String id) throws CoreException {
 		IMemoryRenderingType type = getRenderingType(id);
 		if (type != null) {
@@ -88,33 +81,17 @@ public class MemoryRenderingManager extends AbstractMemoryRenderingBindingsProvi
 		return null;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.ui.memory.IMemoryRenderingManager#getRenderingTypes()
-	 */
 	@Override
 	public IMemoryRenderingType[] getRenderingTypes() {
 		Collection<MemoryRenderingType> types = fRenderingTypes.values();
 		return types.toArray(new IMemoryRenderingType[types.size()]);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.debug.ui.memory.IMemoryRenderingManager#getRenderingType(
-	 * java.lang.String)
-	 */
 	@Override
 	public IMemoryRenderingType getRenderingType(String id) {
 		return fRenderingTypes.get(id);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRenderingBindingsProvider#
-	 * getDefaultRenderingTypes(org.eclipse.debug.core.model.IMemoryBlock)
-	 */
 	@Override
 	public IMemoryRenderingType[] getDefaultRenderingTypes(IMemoryBlock block) {
 		List<IMemoryRenderingType> allTypes = new ArrayList<>();
@@ -122,8 +99,7 @@ public class MemoryRenderingManager extends AbstractMemoryRenderingBindingsProvi
 		while (iterator.hasNext()) {
 			RenderingBindings binding = iterator.next();
 			IMemoryRenderingType[] renderingTypes = binding.getDefaultRenderingTypes(block);
-			for (int i = 0; i < renderingTypes.length; i++) {
-				IMemoryRenderingType type = renderingTypes[i];
+			for (IMemoryRenderingType type : renderingTypes) {
 				if (!allTypes.contains(type)) {
 					allTypes.add(type);
 				}
@@ -132,11 +108,6 @@ public class MemoryRenderingManager extends AbstractMemoryRenderingBindingsProvi
 		return allTypes.toArray(new IMemoryRenderingType[allTypes.size()]);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRenderingBindingsProvider#
-	 * getPrimaryRenderingType(org.eclipse.debug.core.model.IMemoryBlock)
-	 */
 	@Override
 	public IMemoryRenderingType getPrimaryRenderingType(IMemoryBlock block) {
 		for (RenderingBindings binding : fBindings) {
@@ -148,18 +119,12 @@ public class MemoryRenderingManager extends AbstractMemoryRenderingBindingsProvi
 		return null;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRenderingBindingsProvider#
-	 * getRenderingTypes(org.eclipse.debug.core.model.IMemoryBlock)
-	 */
 	@Override
 	public IMemoryRenderingType[] getRenderingTypes(IMemoryBlock block) {
 		List<IMemoryRenderingType> allTypes = new ArrayList<>();
 		for (RenderingBindings binding : fBindings) {
 			IMemoryRenderingType[] renderingTypes = binding.getRenderingTypes(block);
-			for (int i = 0; i < renderingTypes.length; i++) {
-				IMemoryRenderingType type = renderingTypes[i];
+			for (IMemoryRenderingType type : renderingTypes) {
 				if (!allTypes.contains(type)) {
 					allTypes.add(type);
 				}
@@ -174,8 +139,7 @@ public class MemoryRenderingManager extends AbstractMemoryRenderingBindingsProvi
 	private void initializeRenderings() {
 		IExtensionPoint extensionPoint = Platform.getExtensionRegistry().getExtensionPoint(DebugUIPlugin.getUniqueIdentifier(), IDebugUIConstants.EXTENSION_POINT_MEMORY_RENDERINGS);
 		IConfigurationElement[] configurationElements = extensionPoint.getConfigurationElements();
-		for (int i = 0; i < configurationElements.length; i++) {
-			IConfigurationElement element = configurationElements[i];
+		for (IConfigurationElement element : configurationElements) {
 			String name = element.getName();
 			if (name.equals(ELEMENT_MEMORY_RENDERING_TYPE)) {
 				MemoryRenderingType type = new MemoryRenderingType(element);
@@ -190,12 +154,7 @@ public class MemoryRenderingManager extends AbstractMemoryRenderingBindingsProvi
 				try {
 					bindings.validate();
 					fBindings.add(bindings);
-					bindings.addListener(new IMemoryRenderingBindingsListener() {
-						@Override
-						public void memoryRenderingBindingsChanged() {
-							fireBindingsChanged();
-						}
-					});
+					bindings.addListener(this::fireBindingsChanged);
 				} catch (CoreException e) {
 					DebugUIPlugin.log(e);
 				}

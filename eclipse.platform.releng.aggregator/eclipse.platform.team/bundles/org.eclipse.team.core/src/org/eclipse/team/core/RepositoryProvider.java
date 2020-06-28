@@ -83,7 +83,7 @@ import org.eclipse.team.internal.core.TeamPlugin;
  * repository provider with a project by invoking
  * <code>RepositoryProvider.map()</code>.
  * </p>
- * 
+ *
  * @see RepositoryProvider#map(IProject, String)
  *
  * @since 2.0
@@ -100,8 +100,8 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 	// lock to ensure that map/unmap and getProvider support concurrency
 	private static final ILock mappingLock = Job.getJobManager().newLock();
 
-    // Session property used to identify projects that are not mapped
-    private static final Object NOT_MAPPED = new Object();
+	// Session property used to identify projects that are not mapped
+	private static final Object NOT_MAPPED = new Object();
 
 	/**
 	 * Instantiate a new RepositoryProvider with concrete class by given providerID
@@ -222,8 +222,7 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 		if (!provider.canHandleLinkedResources()) {
 			try {
 				IResource[] members = project.members();
-				for (int i = 0; i < members.length; i++) {
-					IResource resource = members[i];
+				for (IResource resource : members) {
 					if (resource.isLinked()) {
 						throw new TeamException(new Status(IStatus.ERROR, TeamPlugin.ID, IResourceStatus.LINKING_NOT_ALLOWED, NLS.bind(Messages.RepositoryProvider_linkedResourcesExist, new String[] { project.getName(), id }), null));
 					}
@@ -272,7 +271,7 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 	}
 	/**
 	 * Disassociates project with the repository provider its currently mapped to.
-	 * @param project
+	 * @param project project to unmap
 	 * @throws TeamException The project isn't associated with any repository provider.
 	 */
 	public static void unmap(IProject project) throws TeamException {
@@ -330,10 +329,10 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 	 */
 	private static RepositoryProvider lookupProviderProp(IProject project) throws CoreException {
 		Object provider = project.getSessionProperty(TeamPlugin.PROVIDER_PROP_KEY);
-        if (provider instanceof RepositoryProvider) {
-            return (RepositoryProvider) provider;
-        }
-        return null;
+		if (provider instanceof RepositoryProvider) {
+			return (RepositoryProvider) provider;
+		}
+		return null;
 	}
 
 
@@ -394,12 +393,12 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 
 	/**
 	 * Returns an <code>IFileModificationValidator</code> for pre-checking operations
- 	 * that modify the contents of files.
- 	 * Returns <code>null</code> if the provider does not wish to participate in
- 	 * file modification validation.
+	 * that modify the contents of files.
+	 * Returns <code>null</code> if the provider does not wish to participate in
+	 * file modification validation.
 	 * @return an <code>IFileModificationValidator</code> for pre-checking operations
- 	 * that modify the contents of files
- 	 *
+	 * that modify the contents of files
+	 *
 	 * @see org.eclipse.core.resources.IFileModificationValidator
 	 * @deprecated use {@link #getFileModificationValidator2()}
 	 */
@@ -460,7 +459,7 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 	 * @since 3.2
 	 */
 	public IFileHistoryProvider getFileHistoryProvider(){
-	   return null;
+		return null;
 	}
 
 	/**
@@ -502,13 +501,12 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 		Set<String> teamSet = new HashSet<>();
 
 		teamSet.addAll(AllProviderTypeIds);	// add in all the ones we know via extension point
-
 		//fall back to old method of nature ID to find any for backwards compatibility
-		for (int i = 0; i < desc.length; i++) {
-			String[] setIds = desc[i].getNatureSetIds();
-			for (int j = 0; j < setIds.length; j++) {
-				if(setIds[j].equals(TEAM_SETID)) {
-					teamSet.add(desc[i].getNatureId());
+		for (IProjectNatureDescriptor d : desc) {
+			String[] setIds = d.getNatureSetIds();
+			for (String setId : setIds) {
+				if (setId.equals(TEAM_SETID)) {
+					teamSet.add(d.getNatureId());
 				}
 			}
 		}
@@ -532,10 +530,10 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 				RepositoryProvider provider = lookupProviderProp(project);
 				if(provider != null)
 					return provider;
-                // Do a quick check to see it the project is known to be unshared.
-                // This is done to avoid accessing the persistent property store
-                if (isMarkedAsUnshared(project))
-                    return null;
+				// Do a quick check to see it the project is known to be unshared.
+				// This is done to avoid accessing the persistent property store
+				if (isMarkedAsUnshared(project))
+					return null;
 
 				// -----------------------------
 				//Next, check if it has the ID as a persistent property, if yes then instantiate provider
@@ -550,14 +548,14 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 				IWorkspace workspace = ResourcesPlugin.getWorkspace();
 				// for every nature id on this project, find it's natures sets and check if it is
 				// in the team set.
-				for (int i = 0; i < natureIds.length; i++) {
-					IProjectNatureDescriptor desc = workspace.getNatureDescriptor(natureIds[i]);
+				for (String natureId : natureIds) {
+					IProjectNatureDescriptor desc = workspace.getNatureDescriptor(natureId);
 					// The descriptor can be null if the nature doesn't exist
 					if (desc != null) {
 						String[] setIds = desc.getNatureSetIds();
-						for (int j = 0; j < setIds.length; j++) {
-							if(setIds[j].equals(TEAM_SETID)) {
-								return getProvider(project, natureIds[i]);
+						for (String setId : setIds) {
+							if (setId.equals(TEAM_SETID)) {
+								return getProvider(project, natureId);
 							}
 						}
 					}
@@ -603,10 +601,10 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 						return null;
 					}
 				}
-                // Do a quick check to see it the project is known to be unshared.
-                // This is done to avoid accessing the persistent property store
-                if (isMarkedAsUnshared(project))
-                    return null;
+				// Do a quick check to see it the project is known to be unshared.
+				// This is done to avoid accessing the persistent property store
+				if (isMarkedAsUnshared(project))
+					return null;
 
 				// There isn't one so check the persistent property
 				String existingID = project.getPersistentProperty(TeamPlugin.PROVIDER_PROP_KEY);
@@ -631,8 +629,8 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 					return null;
 
 				String[] setIds = desc.getNatureSetIds();
-				for (int i = 0; i < setIds.length; i++) {
-					if(setIds[i].equals(TEAM_SETID)) {
+				for (String setId : setIds) {
+					if (setId.equals(TEAM_SETID)) {
 						return (RepositoryProvider)project.getNature(id);
 					}
 				}
@@ -666,14 +664,14 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 		if (!project.isAccessible()) return false;
 		try {
 			if (lookupProviderProp(project) != null) return true;
-            // Do a quick check to see it the project is known to be unshared.
-            // This is done to avoid accessing the persistent property store
-            if (isMarkedAsUnshared(project))
-                return false;
+			// Do a quick check to see it the project is known to be unshared.
+			// This is done to avoid accessing the persistent property store
+			if (isMarkedAsUnshared(project))
+				return false;
 			boolean shared = project.getPersistentProperty(TeamPlugin.PROVIDER_PROP_KEY) != null;
-            if (!shared)
-                markAsUnshared(project);
-            return shared;
+			if (!shared)
+				markAsUnshared(project);
+			return shared;
 		} catch (CoreException e) {
 			TeamPlugin.log(e);
 			return false;
@@ -681,20 +679,20 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 	}
 
 	private static boolean isMarkedAsUnshared(IProject project) {
-        try {
-            return project.getSessionProperty(TeamPlugin.PROVIDER_PROP_KEY) == NOT_MAPPED;
-        } catch (CoreException e) {
-            return false;
-        }
-    }
+		try {
+			return project.getSessionProperty(TeamPlugin.PROVIDER_PROP_KEY) == NOT_MAPPED;
+		} catch (CoreException e) {
+			return false;
+		}
+	}
 
-    private static void markAsUnshared(IProject project) {
-        try {
-            project.setSessionProperty(TeamPlugin.PROVIDER_PROP_KEY, NOT_MAPPED);
-        } catch (CoreException e) {
-            // Just ignore the error as this is just an optimization
-        }
-    }
+	private static void markAsUnshared(IProject project) {
+		try {
+			project.setSessionProperty(TeamPlugin.PROVIDER_PROP_KEY, NOT_MAPPED);
+		} catch (CoreException e) {
+			// Just ignore the error as this is just an optimization
+		}
+	}
 
 	@Override
 	public IProject getProject() {
@@ -714,10 +712,10 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 			IExtensionPoint extension = Platform.getExtensionRegistry().getExtensionPoint(TeamPlugin.ID, TeamPlugin.REPOSITORY_EXTENSION);
 			if (extension != null) {
 				IExtension[] extensions =  extension.getExtensions();
-				for (int i = 0; i < extensions.length; i++) {
-					IConfigurationElement [] configElements = extensions[i].getConfigurationElements();
-					for (int j = 0; j < configElements.length; j++) {
-						String extensionId = configElements[j].getAttribute("id"); //$NON-NLS-1$
+				for (IExtension e : extensions) {
+					IConfigurationElement[] configElements = e.getConfigurationElements();
+					for (IConfigurationElement configElement : configElements) {
+						String extensionId = configElement.getAttribute("id"); //$NON-NLS-1$
 						allIDs.add(extensionId);
 					}
 				}
@@ -732,17 +730,17 @@ public abstract class RepositoryProvider implements IProjectNature, IAdaptable {
 			IExtensionPoint extension = Platform.getExtensionRegistry().getExtensionPoint(TeamPlugin.ID, TeamPlugin.REPOSITORY_EXTENSION);
 			if (extension != null) {
 				IExtension[] extensions =  extension.getExtensions();
-				for (int i = 0; i < extensions.length; i++) {
-					IConfigurationElement [] configElements = extensions[i].getConfigurationElements();
-					for (int j = 0; j < configElements.length; j++) {
-						String extensionId = configElements[j].getAttribute("id"); //$NON-NLS-1$
+				for (IExtension ext : extensions) {
+					IConfigurationElement[] configElements = ext.getConfigurationElements();
+					for (IConfigurationElement configElement : configElements) {
+						String extensionId = configElement.getAttribute("id"); //$NON-NLS-1$
 						if (extensionId != null && extensionId.equals(id)) {
 							try {
-								return (RepositoryProvider) configElements[j].createExecutableExtension("class"); //$NON-NLS-1$
+								return (RepositoryProvider) configElement.createExecutableExtension("class"); //$NON-NLS-1$
 							} catch (CoreException e) {
 								TeamPlugin.log(e);
 							} catch (ClassCastException e) {
-								String className = configElements[j].getAttribute("class"); //$NON-NLS-1$
+								String className = configElement.getAttribute("class"); //$NON-NLS-1$
 								TeamPlugin.log(IStatus.ERROR, NLS.bind(Messages.RepositoryProvider_invalidClass, new String[] { id, className }), e);
 							}
 							return null;

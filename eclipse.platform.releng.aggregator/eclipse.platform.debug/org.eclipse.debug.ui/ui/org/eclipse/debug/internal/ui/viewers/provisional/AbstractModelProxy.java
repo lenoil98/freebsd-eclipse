@@ -52,9 +52,6 @@ public abstract class AbstractModelProxy implements IModelProxy2 {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.IModelProxy#addModelChangedListener(org.eclipse.debug.internal.ui.viewers.IModelChangedListener)
-	 */
 	@Override
 	public void addModelChangedListener(IModelChangedListener listener) {
 		synchronized (fListeners) {
@@ -62,9 +59,6 @@ public abstract class AbstractModelProxy implements IModelProxy2 {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.IModelProxy#removeModelChangedListener(org.eclipse.debug.internal.ui.viewers.IModelChangedListener)
-	 */
 	@Override
 	public void removeModelChangedListener(IModelChangedListener listener) {
 		synchronized (fListeners) {
@@ -78,9 +72,11 @@ public abstract class AbstractModelProxy implements IModelProxy2 {
 	 * @param delta model delta to broadcast
 	 */
 	public void fireModelChanged(IModelDelta delta) {
-	    synchronized(this) {
-	        if (!fInstalled || fDisposed) return;
-	    }
+		synchronized(this) {
+			if (!fInstalled || fDisposed) {
+				return;
+			}
+		}
 
 		final IModelDelta root = getRootDelta(delta);
 		for (IModelChangedListener iModelChangedListener : getListeners()) {
@@ -97,7 +93,7 @@ public abstract class AbstractModelProxy implements IModelProxy2 {
 				}
 
 			};
-            SafeRunner.run(safeRunnable);
+			SafeRunner.run(safeRunnable);
 		}
 	}
 
@@ -116,66 +112,63 @@ public abstract class AbstractModelProxy implements IModelProxy2 {
 		return delta;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.IModelProxy#dispose()
-	 */
 	@Override
 	public synchronized void dispose() {
-	    if (fInstallJob != null) {
-	        fInstallJob.cancel();
-	        fInstallJob = null;
-	    }
+		if (fInstallJob != null) {
+			fInstallJob.cancel();
+			fInstallJob = null;
+		}
 		fDisposed = true;
 		fContext = null;
 		fViewer = null;
 	}
 
 	protected synchronized void setInstalled(boolean installed) {
-	    fInstalled = installed;
+		fInstalled = installed;
 	}
 
 	protected synchronized boolean isInstalled() {
-	    return fInstalled;
+		return fInstalled;
 	}
 
 	protected synchronized void setDisposed(boolean disposed) {
-	    fDisposed = disposed;
+		fDisposed = disposed;
 	}
 
 	@Override
 	public void initialize(ITreeModelViewer viewer) {
-        setDisposed(false);
+		setDisposed(false);
 
-        synchronized(this) {
-    	    fViewer = viewer;
-    	    fContext = viewer.getPresentationContext();
-            fInstallJob = new Job("Model Proxy installed notification job") {//$NON-NLS-1$
-                @Override
+		synchronized(this) {
+			fViewer = viewer;
+			fContext = viewer.getPresentationContext();
+			fInstallJob = new Job("Model Proxy installed notification job") {//$NON-NLS-1$
+				@Override
 				protected IStatus run(IProgressMonitor monitor) {
-                    synchronized(this) {
-                        fInstallJob = null;
-                    }
-                    if (!monitor.isCanceled()) {
-                        init(getTreeModelViewer().getPresentationContext());
-                        setInstalled(true);
-                        installed(getViewer());
-                    }
-                    return Status.OK_STATUS;
-                }
+					synchronized(AbstractModelProxy.this) {
+						fInstallJob = null;
+					}
+					if (!monitor.isCanceled()) {
+						init(getTreeModelViewer().getPresentationContext());
+						setInstalled(true);
+						installed(getViewer());
+					}
+					return Status.OK_STATUS;
+				}
 
-                @Override
+				@Override
 				public boolean belongsTo(Object family) {
 					return AbstractModelProxy.this == family;
 				}
 
 				@Override
 				public boolean shouldRun() {
-                    return !isDisposed();
-                }
-            };
-            fInstallJob.setSystem(true);
-        }
-        fInstallJob.schedule();
+					return !isDisposed();
+				}
+			};
+			fInstallJob.setSystem(true);
+		}
+		fInstallJob.schedule();
 	}
 
 	/**
@@ -188,18 +181,12 @@ public abstract class AbstractModelProxy implements IModelProxy2 {
 		return fContext;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.IModelProxy#init(org.eclipse.debug.internal.ui.viewers.IPresentationContext)
-	 */
 	@Override
 	public void init(IPresentationContext context) {
 	}
 
-	/* (non-Javadoc)
-	 *
+	/*
 	 * Subclasses should override as required.
-	 *
-	 * @see org.eclipse.debug.internal.ui.viewers.provisional.IModelProxy#installed(org.eclipse.jface.viewers.Viewer)
 	 */
 	@Override
 	public void installed(Viewer viewer) {
@@ -214,18 +201,15 @@ public abstract class AbstractModelProxy implements IModelProxy2 {
 		return (Viewer)fViewer;
 	}
 
-    /**
-     * Returns the viewer this proxy is installed in.
-     *
-     * @return viewer or <code>null</code> if not installed
-     */
-    protected ITreeModelViewer getTreeModelViewer() {
-        return fViewer;
-    }
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.provisional.IModelProxy#isDisposed()
+	/**
+	 * Returns the viewer this proxy is installed in.
+	 *
+	 * @return viewer or <code>null</code> if not installed
 	 */
+	protected ITreeModelViewer getTreeModelViewer() {
+		return fViewer;
+	}
+
 	@Override
 	public synchronized boolean isDisposed() {
 		return fDisposed;

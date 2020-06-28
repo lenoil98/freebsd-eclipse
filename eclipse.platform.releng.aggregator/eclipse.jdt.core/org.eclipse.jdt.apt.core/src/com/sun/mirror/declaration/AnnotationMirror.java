@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -41,7 +41,7 @@ import com.sun.mirror.util.SourcePosition;
  * each element of an annotation type.
  *
  * <p> Annotations should not be compared using reference-equality
- * ("<tt>==</tt>").  There is no guarantee that any particular
+ * ("<code>==</code>").  There is no guarantee that any particular
  * annotation will always be represented by the same object.
  *
  * @author Joseph D. Darcy

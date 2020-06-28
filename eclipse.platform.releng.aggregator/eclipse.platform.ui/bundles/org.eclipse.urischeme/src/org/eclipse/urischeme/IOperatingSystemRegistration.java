@@ -20,7 +20,7 @@ import org.eclipse.urischeme.internal.registration.RegistrationWindows;
 
 /**
  * Interface for registration or uri schemes in the different operating systems
- * (MacOSX, Linux and Windows)<br />
+ * (macOS, Linux and Windows)<br>
  * Call <code>getInstance()</code> to get an OS specific instance.
  *
  */
@@ -56,9 +56,13 @@ public interface IOperatingSystemRegistration {
 
 	/**
 	 * Takes the given schemes and fills information like whether they are
-	 * registered for this instance and the handler location.
+	 * registered for this instance and the handler location. <br>
+	 * <br>
+	 * <strong>Note:</strong> On macOS this is a long running operation any may need
+	 * multiple seconds to finish. <strong>So this should not be called in the UI
+	 * thread</strong>.
 	 *
-	 * @param schemes
+	 * @param schemes The schemes that should be checked for registrations.
 	 * @return schemes with information
 	 * @throws Exception something went wrong
 	 */
@@ -68,5 +72,18 @@ public interface IOperatingSystemRegistration {
 	 * @return the Eclipse executable
 	 */
 	String getEclipseLauncher();
+
+	/**
+	 *
+	 * This method returns if the current operating system allows to register an uri
+	 * scheme that this already handled by another application.
+	 *
+	 * If the operating system does store this information in de-central way the
+	 * implementation should return false.
+	 *
+	 * @return <code>true</code> if registering of other application's uri scheme is
+	 *         supported - <code>false</code> otherwise.
+	 */
+	boolean canOverwriteOtherApplicationsRegistration();
 
 }

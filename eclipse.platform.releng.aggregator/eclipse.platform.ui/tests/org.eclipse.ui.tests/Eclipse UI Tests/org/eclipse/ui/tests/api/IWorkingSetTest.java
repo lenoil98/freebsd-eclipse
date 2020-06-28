@@ -30,100 +30,110 @@ import org.eclipse.ui.tests.harness.util.UITestCase;
 import org.eclipse.ui.tests.menus.ObjectContributionClasses.IA;
 import org.eclipse.ui.tests.menus.ObjectContributionClasses.ICommon;
 import org.eclipse.ui.tests.menus.ObjectContributionClasses.IModelElement;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
 public class IWorkingSetTest extends UITestCase {
-    static final String WORKING_SET_NAME_1 = "ws1";
+	static final String WORKING_SET_NAME_1 = "ws1";
 
-    static final String WORKING_SET_NAME_2 = "ws2";
+	static final String WORKING_SET_NAME_2 = "ws2";
 
-    IWorkspace fWorkspace;
+	IWorkspace fWorkspace;
 
-    IWorkingSet fWorkingSet;
+	IWorkingSet fWorkingSet;
 
-    public IWorkingSetTest(String testName) {
-        super(testName);
-    }
+	public IWorkingSetTest() {
+		super(IWorkingSetTest.class.getSimpleName());
+	}
 
-    @Override
+	@Override
 	protected void doSetUp() throws Exception {
-        super.doSetUp();
-        IWorkingSetManager workingSetManager = fWorkbench
-                .getWorkingSetManager();
+		super.doSetUp();
+		IWorkingSetManager workingSetManager = fWorkbench
+				.getWorkingSetManager();
 
-        fWorkspace = ResourcesPlugin.getWorkspace();
-        fWorkingSet = workingSetManager.createWorkingSet(WORKING_SET_NAME_1,
-                new IAdaptable[] { fWorkspace.getRoot() });
+		fWorkspace = ResourcesPlugin.getWorkspace();
+		fWorkingSet = workingSetManager.createWorkingSet(WORKING_SET_NAME_1,
+				new IAdaptable[] { fWorkspace.getRoot() });
 
-        workingSetManager.addWorkingSet(fWorkingSet);
-    }
+		workingSetManager.addWorkingSet(fWorkingSet);
+	}
 	@Override
 	protected void doTearDown() throws Exception {
 		IWorkingSetManager workingSetManager = fWorkbench
-        .getWorkingSetManager();
-		 workingSetManager.removeWorkingSet(fWorkingSet);
+		.getWorkingSetManager();
+		workingSetManager.removeWorkingSet(fWorkingSet);
 		super.doTearDown();
 	}
-    public void testGetElements() throws Throwable {
-        assertEquals(fWorkspace.getRoot(), fWorkingSet.getElements()[0]);
-    }
+	@Test
+	public void testGetElements() throws Throwable {
+		assertEquals(fWorkspace.getRoot(), fWorkingSet.getElements()[0]);
+	}
 
-    public void testGetId() throws Throwable {
-        assertEquals(null, fWorkingSet.getId());
-        fWorkingSet.setId("bogusId");
-        assertEquals("bogusId", fWorkingSet.getId());
-        fWorkingSet.setId(null);
-        assertEquals(null, fWorkingSet.getId());
-    }
+	@Test
+	public void testGetId() throws Throwable {
+		assertEquals(null, fWorkingSet.getId());
+		fWorkingSet.setId("bogusId");
+		assertEquals("bogusId", fWorkingSet.getId());
+		fWorkingSet.setId(null);
+		assertEquals(null, fWorkingSet.getId());
+	}
 
-    public void testGetName() throws Throwable {
-        assertEquals(WORKING_SET_NAME_1, fWorkingSet.getName());
-    }
+	@Test
+	public void testGetName() throws Throwable {
+		assertEquals(WORKING_SET_NAME_1, fWorkingSet.getName());
+	}
 
-    public void testSetElements() throws Throwable {
-        boolean exceptionThrown = false;
+	@Test
+	public void testSetElements() throws Throwable {
+		boolean exceptionThrown = false;
 
-        try {
-            fWorkingSet.setElements(null);
-        } catch (RuntimeException exception) {
-            exceptionThrown = true;
-        }
-        assertTrue(exceptionThrown);
+		try {
+			fWorkingSet.setElements(null);
+		} catch (RuntimeException exception) {
+			exceptionThrown = true;
+		}
+		assertTrue(exceptionThrown);
 
-        IProject p1 = FileUtil.createProject("TP1");
-        IFile f1 = FileUtil.createFile("f1.txt", p1);
-        IAdaptable[] elements = new IAdaptable[] { f1, p1 };
-        fWorkingSet.setElements(elements);
-        assertTrue(ArrayUtil.equals(elements, fWorkingSet.getElements()));
+		IProject p1 = FileUtil.createProject("TP1");
+		IFile f1 = FileUtil.createFile("f1.txt", p1);
+		IAdaptable[] elements = new IAdaptable[] { f1, p1 };
+		fWorkingSet.setElements(elements);
+		assertTrue(ArrayUtil.equals(elements, fWorkingSet.getElements()));
 
-        fWorkingSet.setElements(new IAdaptable[] { f1 });
-        assertEquals(f1, fWorkingSet.getElements()[0]);
+		fWorkingSet.setElements(new IAdaptable[] { f1 });
+		assertEquals(f1, fWorkingSet.getElements()[0]);
 
-        fWorkingSet.setElements(new IAdaptable[] {});
-        assertEquals(0, fWorkingSet.getElements().length);
-    }
+		fWorkingSet.setElements(new IAdaptable[] {});
+		assertEquals(0, fWorkingSet.getElements().length);
+	}
 
-    public void testSetId() throws Throwable {
-        assertEquals(null, fWorkingSet.getId());
-        fWorkingSet.setId("bogusId");
-        assertEquals("bogusId", fWorkingSet.getId());
-        fWorkingSet.setId(null);
-        assertEquals(null, fWorkingSet.getId());
-    }
+	@Test
+	public void testSetId() throws Throwable {
+		assertEquals(null, fWorkingSet.getId());
+		fWorkingSet.setId("bogusId");
+		assertEquals("bogusId", fWorkingSet.getId());
+		fWorkingSet.setId(null);
+		assertEquals(null, fWorkingSet.getId());
+	}
 
-    public void testSetName() throws Throwable {
-        boolean exceptionThrown = false;
+	@Test
+	public void testSetName() throws Throwable {
+		boolean exceptionThrown = false;
 
-        try {
-            fWorkingSet.setName(null);
-        } catch (RuntimeException exception) {
-            exceptionThrown = true;
-        }
-        assertTrue(exceptionThrown);
+		try {
+			fWorkingSet.setName(null);
+		} catch (RuntimeException exception) {
+			exceptionThrown = true;
+		}
+		assertTrue(exceptionThrown);
 
-        fWorkingSet.setName(WORKING_SET_NAME_2);
-        assertEquals(WORKING_SET_NAME_2, fWorkingSet.getName());
+		fWorkingSet.setName(WORKING_SET_NAME_2);
+		assertEquals(WORKING_SET_NAME_2, fWorkingSet.getName());
 
-        exceptionThrown = false;
+		exceptionThrown = false;
 		try {
 			String name = fWorkingSet.getName();
 			// set same name
@@ -134,13 +144,14 @@ public class IWorkingSetTest extends UITestCase {
 		assertFalse("Failed to setName when new name is same as old name",
 				exceptionThrown);
 
-        fWorkingSet.setName("");
-        assertEquals("", fWorkingSet.getName());
+		fWorkingSet.setName("");
+		assertEquals("", fWorkingSet.getName());
 
-        fWorkingSet.setName(" ");
-        assertEquals(" ", fWorkingSet.getName());
-    }
+		fWorkingSet.setName(" ");
+		assertEquals(" ", fWorkingSet.getName());
+	}
 
+	@Test
 	public void testNoDuplicateWorkingSetName() throws Throwable {
 		/* get workingSetManager */
 		IWorkingSetManager workingSetManager = fWorkbench
@@ -178,6 +189,7 @@ public class IWorkingSetTest extends UITestCase {
 		workingSetManager.removeWorkingSet(wSet);
 	}
 
+	@Test
 	public void testNoDuplicateWorkingSetNamesDifferentLabels()
 			throws Throwable {
 		/* get workingSetManager */
@@ -209,7 +221,8 @@ public class IWorkingSetTest extends UITestCase {
 		assertTrue(exceptionThrown);
 	}
 
-    public void testIsEmpty() {
+	@Test
+	public void testIsEmpty() {
 		fWorkingSet.setElements(new IAdaptable[] {});
 		assertTrue(fWorkingSet.isEmpty());
 		fWorkingSet.setElements(new IAdaptable[] { new IAdaptable() {
@@ -222,7 +235,8 @@ public class IWorkingSetTest extends UITestCase {
 	}
 
 
-    public void testApplicableTo_ResourceWorkingSet() {
+	@Test
+	public void testApplicableTo_ResourceWorkingSet() {
 		fWorkingSet.setId("org.eclipse.ui.resourceWorkingSetPage");
 		assertEquals("org.eclipse.ui.resourceWorkingSetPage", fWorkingSet
 				.getId());
@@ -230,54 +244,60 @@ public class IWorkingSetTest extends UITestCase {
 				.getRoot()});
 		assertEquals(1, adapted.length);
 		assertTrue(adapted[0] instanceof IWorkspaceRoot);
-    }
+	}
 
-    public void testApplicableTo_DirectComparison() {
+	@Test
+	public void testApplicableTo_DirectComparison() {
 
 		fWorkingSet.setId("org.eclipse.ui.tests.api.MockWorkingSet");
 		Foo myFoo = new Foo();
 		IAdaptable[] adapted = fWorkingSet.adaptElements(new IAdaptable[] {myFoo});
 		assertEquals(1, adapted.length);
 		assertTrue(adapted[0] instanceof Foo);
-    }
+	}
 
-    public void testApplicableTo_Inheritance() {
-    	fWorkingSet.setId("org.eclipse.ui.tests.api.MockWorkingSet");
+	@Test
+	public void testApplicableTo_Inheritance() {
+		fWorkingSet.setId("org.eclipse.ui.tests.api.MockWorkingSet");
 		Bar myBar = new Bar();
 		IAdaptable[] adapted = fWorkingSet.adaptElements(new IAdaptable[] {myBar});
 		assertEquals(1, adapted.length);
 		assertTrue(adapted[0] instanceof Bar);
 	}
 
-    public void testApplicableTo_Adapter1() {
-    	fWorkingSet.setId("org.eclipse.ui.tests.api.MockWorkingSet");
-    	ToFoo tc = new ToFoo();
-    	IAdaptable[] adapted = fWorkingSet.adaptElements(new IAdaptable[] {tc});
+	@Test
+	public void testApplicableTo_Adapter1() {
+		fWorkingSet.setId("org.eclipse.ui.tests.api.MockWorkingSet");
+		ToFoo tc = new ToFoo();
+		IAdaptable[] adapted = fWorkingSet.adaptElements(new IAdaptable[] {tc});
 		assertEquals(1, adapted.length);
 		assertTrue(adapted[0] instanceof Foo);
-    }
+	}
 
-    public void testApplicableTo_AdapterManager1() {
-    	fWorkingSet.setId("org.eclipse.ui.tests.api.MockWorkingSet");
-    	IAImpl ia = new IAImpl();
-    	IAdaptable[] adapted = fWorkingSet.adaptElements(new IAdaptable[] {ia});
+	@Test
+	public void testApplicableTo_AdapterManager1() {
+		fWorkingSet.setId("org.eclipse.ui.tests.api.MockWorkingSet");
+		IAImpl ia = new IAImpl();
+		IAdaptable[] adapted = fWorkingSet.adaptElements(new IAdaptable[] {ia});
 		assertEquals(1, adapted.length);
 		assertTrue(adapted[0] instanceof ICommon);
-    }
+	}
 
-    /**
-     * Tests that adaptable=false is working.  ModelElement has a registered adapter to IResource that should not be used.
-     */
-    public void testApplicableTo_AdapterManager2() {
-    	fWorkingSet.setId("org.eclipse.ui.tests.api.MockWorkingSet");
-    	ModelElement element = new ModelElement();
-    	assertTrue(fWorkingSet.adaptElements(new IAdaptable[] {element}).length == 0);
-    }
+	/**
+	 * Tests that adaptable=false is working.  ModelElement has a registered adapter to IResource that should not be used.
+	 */
+	@Test
+	public void testApplicableTo_AdapterManager2() {
+		fWorkingSet.setId("org.eclipse.ui.tests.api.MockWorkingSet");
+		ModelElement element = new ModelElement();
+		assertTrue(fWorkingSet.adaptElements(new IAdaptable[] {element}).length == 0);
+	}
 
-    /**
+	/**
 	 * Tests to verify that we don't fall down in the event that the factory
 	 * throws an exception while restoring a working set.
 	 */
+	@Test
 	public void testBadFactory_Restore() {
 		fWorkingSet
 				.setElements(new IAdaptable[] { new BadElementFactory.BadElementInstance() });
@@ -300,6 +320,7 @@ public class IWorkingSetTest extends UITestCase {
 	 * Tests to verify that we don't fall down in the event that the persistable
 	 * throws an exception while saving a working set.
 	 */
+	@Test
 	public void testBadFactory_Save() {
 		fWorkingSet
 				.setElements(new IAdaptable[] { new BadElementFactory.BadElementInstance() });
@@ -314,19 +335,19 @@ public class IWorkingSetTest extends UITestCase {
 		}
 	}
 
-    public static class Foo implements IAdaptable {
+	public static class Foo implements IAdaptable {
 
 		@Override
 		public <T> T getAdapter(Class<T> adapter) {
 			return null;
 		}
-    }
+	}
 
-    public static class Bar extends Foo {
+	public static class Bar extends Foo {
 
-    }
+	}
 
-    public class ToFoo implements IAdaptable {
+	public class ToFoo implements IAdaptable {
 
 		@SuppressWarnings("unchecked")
 		@Override
@@ -338,22 +359,22 @@ public class IWorkingSetTest extends UITestCase {
 			return null;
 		}
 
-    }
+	}
 
-    public static class IAImpl implements IA, IAdaptable {
-
-		@Override
-		public <T> T getAdapter(Class<T> adapter) {
-			return null;
-		}
-    }
-
-    public static class ModelElement implements IModelElement, IAdaptable {
+	public static class IAImpl implements IA, IAdaptable {
 
 		@Override
 		public <T> T getAdapter(Class<T> adapter) {
 			return null;
 		}
+	}
 
-    }
+	public static class ModelElement implements IModelElement, IAdaptable {
+
+		@Override
+		public <T> T getAdapter(Class<T> adapter) {
+			return null;
+		}
+
+	}
 }

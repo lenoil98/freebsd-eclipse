@@ -7,34 +7,30 @@
  *  https://www.eclipse.org/legal/epl-2.0/
  *
  *  SPDX-License-Identifier: EPL-2.0
- * 
+ *
  *  Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.equinox.frameworkadmin.tests;
 
+import static org.junit.Assert.fail;
+
 import java.io.*;
 import java.net.URI;
 import java.net.URL;
-import java.util.List;
 import java.util.Properties;
-import junit.framework.TestCase;
 import org.eclipse.core.runtime.*;
 import org.eclipse.equinox.frameworkadmin.BundleInfo;
-import org.eclipse.equinox.internal.frameworkadmin.equinox.ParserUtils;
-import org.eclipse.equinox.internal.frameworkadmin.equinox.utils.FileUtils;
 import org.eclipse.equinox.internal.provisional.frameworkadmin.*;
 import org.eclipse.osgi.service.datalocation.Location;
+import org.junit.After;
+import org.junit.Before;
 import org.osgi.framework.*;
 import org.osgi.util.tracker.ServiceTracker;
 
-public abstract class AbstractFwkAdminTest extends TestCase {
+public abstract class AbstractFwkAdminTest {
 	private ServiceTracker<Object, FrameworkAdmin> fwAdminTracker;
 	private File testFolder;
-
-	public AbstractFwkAdminTest(String name) {
-		super(name);
-	}
 
 	/**
 	 * Copy an input stream to an output stream.
@@ -69,8 +65,9 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 			return true;
 		if (file.isDirectory()) {
 			File[] children = file.listFiles();
-			for (int i = 0; i < children.length; i++)
-				delete(children[i]);
+			for (File child : children) {
+				delete(child);
+			}
 		}
 		return file.delete();
 	}
@@ -104,7 +101,7 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 	protected File getTestFolder(String name) {
 		return getTestFolder(name, true);
 	}
-	
+
 	protected File getTestFolder(String name, boolean clean) {
 		Location instanceLocation = Platform.getInstanceLocation();
 		URL url = instanceLocation != null ? instanceLocation.getURL() : null;
@@ -120,10 +117,8 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 		return testFolder;
 	}
 
-	@Override
-	protected void runTest() throws Throwable {
-		super.runTest();
-
+	@Before
+	public void runTest() throws Throwable {
 		//clean up after success
 		if (testFolder != null && testFolder.exists()) {
 			delete(testFolder);
@@ -131,31 +126,11 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 		}
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
-		super.tearDown();
+	@After
+	public void tearDown() throws Exception {
 		if (fwAdminTracker != null) {
 			fwAdminTracker.close();
 		}
-	}
-
-	public void assertIsFile(File file) {
-		if (!file.exists())
-			fail("File: " + file.toString() + " can't be found.");
-		if (!file.isFile())
-			fail("File: " + file.toString() + " is expected to be a file.");
-	}
-
-	public void assertIsDirectory(File file) {
-		if (!file.exists())
-			fail("Directory: " + file.toString() + " can't be found.");
-		if (!file.isDirectory())
-			fail("Directory: " + file.toString() + " is expected to be a directory.");
-	}
-
-	public void assertNothing(File file) {
-		if (file.exists())
-			fail("No file or directory should be there: " + file);
 	}
 
 	public void assertNotContent(File file, String search) {
@@ -188,24 +163,10 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 		}
 	}
 
-	public void assertIniFileNotContain(File file, String argument, String value) {
-		List<String> args = null;
-		try {
-			args = FileUtils.loadFile(file);
-		} catch (IOException e) {
-			fail("Can't read file " + file);
-		}
-		String tmp = ParserUtils.getValueForArgument(argument, args);
-		if (tmp == null)
-			return;
-
-		assertTrue(tmp.indexOf(value) == -1);
-	}
-
 	private String getProperty(File file, String property) {
 		Properties p = new Properties();
 		try (FileInputStream fis = new FileInputStream(file)) {
-			p.load(fis);			
+			p.load(fis);
 		} catch (FileNotFoundException e) {
 			fail("Can't find file " + file);
 		} catch (IOException e) {
@@ -213,12 +174,12 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 		}
 		return p.getProperty(property);
 	}
-	
+
 	public void assertPropertyContains(File file, String property, String text) {
 		String value = getProperty(file, property);
 		if (value == null)
 			fail("property: " + property + " not found in: " +file);
-		
+
 		int index = value.indexOf(text);
 		if (index == -1)
 			fail(text + " not found in property:" + property + " for file: " +file);
@@ -228,22 +189,10 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 		String value = getProperty(file, property);
 		if (value == null)
 			return;
-		
+
 		int index = value.indexOf(text);
 		if (index != -1)
 			fail(text + " found in property:" + property + " for file: " +file);
-	}
-
-	public void assertEquals(String[] array1, String[] array2) {
-		if (array1 == null || array2 == null) {
-			if (array1 == array2)
-				return;
-			fail(array1 + " not equal to " + array2);
-		}
-		assertEquals(array1.length, array2.length);
-		for (int i = 0; i < array1.length; i++) {
-			assertEquals(array1[i], array2[i]);
-		}
 	}
 
 	public void assertContent(File file, String... search) {
@@ -286,18 +235,6 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 		}
 	}
 
-	public void stopSimpleConfiguratorManipulator() {
-		final String SIMPLECONFIGURATOR_MANIPULATOR = "org.eclipse.equinox.simpleconfigurator.manipulator";
-		Bundle manipulatorBundle = Platform.getBundle(SIMPLECONFIGURATOR_MANIPULATOR);
-		if (manipulatorBundle == null)
-			return;
-		try {
-			manipulatorBundle.stop();
-		} catch (BundleException e) {
-			fail("Exception while starting up " + SIMPLECONFIGURATOR_MANIPULATOR + ' ' + e.getMessage());
-		}
-	}
-
 	/*
 	 * Copy
 	 * - if we have a file, then copy the file
@@ -313,11 +250,12 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 			if (!target.exists())
 				target.mkdirs();
 			File[] children = source.listFiles();
-			for (int i = 0; i < children.length; i++)
-				copy(message, children[i], new File(target, children[i].getName()));
+			for (File child : children) {
+				copy(message, child, new File(target, child.getName()));
+			}
 			return;
 		}
-		try (InputStream input = new BufferedInputStream(new FileInputStream(source)); 
+		try (InputStream input = new BufferedInputStream(new FileInputStream(source));
 				OutputStream output = new BufferedOutputStream(new FileOutputStream(target))) {
 
 			byte[] buffer = new byte[8192];
@@ -367,9 +305,9 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 	protected void writeEclipseIni(File location, String[] lines) {
 		location.getParentFile().mkdirs();
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(location))){
-			
-			for (int j = 0; j < lines.length; j++) {
-				bw.write(lines[j]);
+
+			for (String line : lines) {
+				bw.write(line);
 				bw.newLine();
 			}
 			bw.flush();
@@ -400,9 +338,10 @@ public abstract class AbstractFwkAdminTest extends TestCase {
 	}
 
 	public void assertContains(String message, BundleInfo[] bundles, URI location) {
-		for (int i = 0; i < bundles.length; i++) {
-			if (bundles[i].getLocation().equals(location))
+		for (BundleInfo bundle : bundles) {
+			if (bundle.getLocation().equals(location)) {
 				return;
+			}
 		}
 		fail(message + " Can't find the bundle info " + location);
 	}

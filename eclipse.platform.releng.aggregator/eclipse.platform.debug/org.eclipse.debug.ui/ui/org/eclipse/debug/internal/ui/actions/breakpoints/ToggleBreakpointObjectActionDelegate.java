@@ -39,20 +39,15 @@ public abstract class ToggleBreakpointObjectActionDelegate implements IObjectAct
 	private IWorkbenchPart fPart;
 	private IStructuredSelection fSelection;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IObjectActionDelegate#setActivePart(org.eclipse.jface.action.IAction, org.eclipse.ui.IWorkbenchPart)
-	 */
 	@Override
 	public void setActivePart(IAction action, IWorkbenchPart targetPart) {
 		fPart = targetPart;
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
+
 	@Override
 	public void run(IAction action) {
 		IToggleBreakpointsTarget target =
-		    DebugUITools.getToggleBreakpointsTargetManager().getToggleBreakpointsTarget(fPart, fSelection);
+			DebugUITools.getToggleBreakpointsTargetManager().getToggleBreakpointsTarget(fPart, fSelection);
 		if (target != null) {
 			try {
 				performAction(target, fPart, fSelection);
@@ -72,9 +67,6 @@ public abstract class ToggleBreakpointObjectActionDelegate implements IObjectAct
 	 */
 	protected abstract void performAction(IToggleBreakpointsTarget target, IWorkbenchPart part, ISelection selection) throws CoreException;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
 		boolean enabled = false;
@@ -84,31 +76,24 @@ public abstract class ToggleBreakpointObjectActionDelegate implements IObjectAct
 			// selectionChagned() can sometimes be called before setActivePart().
 			// Guard here against that possibility.
 			if (fPart != null) {
-			    IToggleBreakpointsTarget target =
-			        DebugUITools.getToggleBreakpointsTargetManager().getToggleBreakpointsTarget(fPart, fSelection);
-			    enabled = target != null;
+				IToggleBreakpointsTarget target =
+					DebugUITools.getToggleBreakpointsTargetManager().getToggleBreakpointsTarget(fPart, fSelection);
+				enabled = target != null;
 			}
 		}
 		action.setEnabled(enabled);
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#init(org.eclipse.jface.action.IAction)
-	 */
+
 	@Override
 	public void init(IAction action) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#dispose()
-	 */
 	@Override
 	public void dispose() {
 		fSelection = null;
 		fPart = null;
 	}
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#runWithEvent(org.eclipse.jface.action.IAction, org.eclipse.swt.widgets.Event)
-	 */
+
 	@Override
 	public void runWithEvent(IAction action, Event event) {
 		run(action);

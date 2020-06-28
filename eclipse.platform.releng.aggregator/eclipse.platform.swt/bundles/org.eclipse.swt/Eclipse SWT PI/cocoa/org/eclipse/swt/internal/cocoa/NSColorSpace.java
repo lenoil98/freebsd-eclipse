@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2012 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -19,7 +19,7 @@ public NSColorSpace() {
 	super();
 }
 
-public NSColorSpace(long /*int*/ id) {
+public NSColorSpace(long id) {
 	super(id);
 }
 
@@ -27,13 +27,8 @@ public NSColorSpace(id id) {
 	super(id);
 }
 
-public long /*int*/ colorSpaceModel() {
+public long colorSpaceModel() {
 	return OS.objc_msgSend(this.id, OS.sel_colorSpaceModel);
-}
-
-public static NSColorSpace genericRGBColorSpace() {
-	long /*int*/ result = OS.objc_msgSend(OS.class_NSColorSpace, OS.sel_genericRGBColorSpace);
-	return result != 0 ? new NSColorSpace(result) : null;
 }
 
 }

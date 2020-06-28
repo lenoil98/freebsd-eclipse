@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -41,7 +41,7 @@ import com.sun.mirror.declaration.*;
  * a kind of interface.
  *
  * <p> While an {@link InterfaceDeclaration} represents the
- * <i>declaration</i> of an interface, an <tt>InterfaceType</tt>
+ * <i>declaration</i> of an interface, an <code>InterfaceType</code>
  * represents an interface <i>type</i>.
  * See {@link TypeDeclaration} for more on this distinction.
  *

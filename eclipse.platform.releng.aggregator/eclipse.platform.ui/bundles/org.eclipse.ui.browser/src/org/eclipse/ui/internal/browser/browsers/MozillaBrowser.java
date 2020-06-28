@@ -45,8 +45,8 @@ public class MozillaBrowser extends AbstractWebBrowser {
 	/**
 	 * Constructor
 	 *
-	 * @executable executable filename to launch
-	 * @executableName name of the program to display when error occurs
+	 * @param executable executable filename to launch
+	 * @param executableName name of the program to display when error occurs
 	 */
 	public MozillaBrowser(String id, String executable, String parameters) {
 		super(id);
@@ -54,7 +54,7 @@ public class MozillaBrowser extends AbstractWebBrowser {
 		if (parameters == null) {
 			this.parameters = ""; //$NON-NLS-1$
 		} else {
-		    this.parameters = parameters;
+			this.parameters = parameters;
 		}
 	}
 
@@ -134,32 +134,27 @@ public class MozillaBrowser extends AbstractWebBrowser {
 
 		/**
 		 * On some OSes 0 is always returned by netscape -remote. It is
-		 * necessary to examine ouput to find out failure
+		 * necessary to examine output to find out failure
 		 *
 		 * @param outputs
 		 * @param errors
-		 * @return @throws
-		 *         InterruptedException
+		 * @return
 		 */
 		private boolean errorsInOutput(StreamConsumer outputs,
 				StreamConsumer errors) {
 			try {
 				outputs.join(1000);
 				if (outputs.getLastLine() != null
-						&& (outputs.getLastLine().indexOf(
-								"No running window found") //$NON-NLS-1$
-						>= 0 || outputs.getLastLine().indexOf(
-								"not running on display") //$NON-NLS-1$
-						>= 0)) {
+						&& (outputs.getLastLine().contains("No running window found") //$NON-NLS-1$
+				 || outputs.getLastLine().contains("not running on display") //$NON-NLS-1$
+				)) {
 					return true;
 				}
 				errors.join(1000);
 				if (errors.getLastLine() != null
-						&& (errors.getLastLine().indexOf(
-								"No running window found") //$NON-NLS-1$
-						>= 0 || errors.getLastLine().indexOf(
-								"not running on display") //$NON-NLS-1$
-						>= 0)) {
+						&& (errors.getLastLine().contains("No running window found") //$NON-NLS-1$
+				 || errors.getLastLine().contains("not running on display") //$NON-NLS-1$
+				)) {
 					return true;
 				}
 			} catch (InterruptedException ie) {

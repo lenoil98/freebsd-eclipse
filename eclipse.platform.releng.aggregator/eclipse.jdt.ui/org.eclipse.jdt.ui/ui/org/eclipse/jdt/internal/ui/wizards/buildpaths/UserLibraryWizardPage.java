@@ -117,8 +117,7 @@ public class UserLibraryWizardPage extends NewElementWizardPage implements IClas
 		HashSet<String> oldNames= new HashSet<>();
 		HashSet<String> oldCheckedNames= new HashSet<>();
 		List<CPUserLibraryElement> oldElements= fLibrarySelector.getElements();
-		for (int i= 0; i < oldElements.size(); i++) {
-			CPUserLibraryElement curr= oldElements.get(i);
+		for (CPUserLibraryElement curr : oldElements) {
 			oldNames.add(curr.getName());
 			if (fLibrarySelector.isChecked(curr)) {
 				oldCheckedNames.add(curr.getName());
@@ -131,8 +130,7 @@ public class UserLibraryWizardPage extends NewElementWizardPage implements IClas
 		Arrays.sort(names, Collator.getInstance());
 
 		ArrayList<CPUserLibraryElement> elements= new ArrayList<>(names.length);
-		for (int i= 0; i < names.length; i++) {
-			String curr= names[i];
+		for (String curr : names) {
 			IPath path= new Path(JavaCore.USER_LIBRARY_CONTAINER_ID).append(curr);
 			try {
 				IClasspathContainer container= JavaCore.getClasspathContainer(path, fProject);
@@ -183,8 +181,7 @@ public class UserLibraryWizardPage extends NewElementWizardPage implements IClas
 		} else if (fIsEditMode && nSelected > 1) {
 			return new StatusInfo(IStatus.ERROR, NewWizardMessages.UserLibraryWizardPage_error_selectonlyone);
 		}
-		for (int i= 0; i < selected.size(); i++) {
-			CPUserLibraryElement curr= selected.get(i);
+		for (CPUserLibraryElement curr : selected) {
 			if (fUsedPaths.contains(curr.getPath())) {
 				return new StatusInfo(IStatus.ERROR, NewWizardMessages.UserLibraryWizardPage_error_alreadyoncp);
 			}
@@ -249,7 +246,7 @@ public class UserLibraryWizardPage extends NewElementWizardPage implements IClas
 			fLibrarySelector.setFocus();
 		}
 	}
-	
+
 	@Override
 	public boolean finish() {
 		return true;
@@ -297,8 +294,7 @@ public class UserLibraryWizardPage extends NewElementWizardPage implements IClas
 		updateLibraryList();
 		if (selected != null) {
 			List<CPUserLibraryElement> elements= fLibrarySelector.getElements();
-			for (int i= 0; i < elements.size(); i++) {
-				CPUserLibraryElement curr= elements.get(i);
+			for (CPUserLibraryElement curr : elements) {
 				if (curr.getName().equals(selected)) {
 					fLibrarySelector.setChecked(curr, true);
 					return;
@@ -334,8 +330,7 @@ public class UserLibraryWizardPage extends NewElementWizardPage implements IClas
 
 	@Override
 	public void initialize(IJavaProject project, IClasspathEntry[] currentEntries) {
-		for (int i= 0; i < currentEntries.length; i++) {
-			IClasspathEntry curr= currentEntries[i];
+		for (IClasspathEntry curr : currentEntries) {
 			if (curr.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
 				fUsedPaths.add(curr.getPath());
 			}

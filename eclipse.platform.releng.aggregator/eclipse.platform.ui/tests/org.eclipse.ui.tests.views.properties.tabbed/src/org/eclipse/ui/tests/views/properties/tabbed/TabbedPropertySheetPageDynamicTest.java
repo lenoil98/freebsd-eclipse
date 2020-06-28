@@ -16,8 +16,6 @@ package org.eclipse.ui.tests.views.properties.tabbed;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.eclipse.jface.viewers.IContentProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.widgets.Display;
@@ -33,6 +31,8 @@ import org.eclipse.ui.tests.views.properties.tabbed.dynamic.views.DynamicTestsVi
 import org.eclipse.ui.tests.views.properties.tabbed.dynamic.views.DynamicTestsViewContentProvider;
 import org.eclipse.ui.tests.views.properties.tabbed.views.TestsPerspective;
 import org.eclipse.ui.views.properties.tabbed.ITabDescriptor;
+
+import junit.framework.TestCase;
 
 /**
  * Tests for the dynamic tab and section support.
@@ -146,21 +146,19 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 	 * When the three blue nodes are selected, two tabs display.
 	 */
 	public void select_all_blue() {
-		List blueList = new ArrayList();
-		for (int i = 0; i < treeNodes.length; i++) {
-			if (DynamicTestsColor.BLUE.equals(treeNodes[i]
-					.getDynamicTestsElement().getPropertyValue(
-							DynamicTestsElement.ID_COLOR))) {
-				blueList.add(treeNodes[i]);
+		List<DynamicTestsTreeNode> blueList = new ArrayList<>();
+		for (DynamicTestsTreeNode treeNode : treeNodes) {
+			if (DynamicTestsColor.BLUE
+					.equals(treeNode.getDynamicTestsElement().getPropertyValue(DynamicTestsElement.ID_COLOR))) {
+				blueList.add(treeNode);
 			}
 		}
-		DynamicTestsTreeNode[] selectNodes = (DynamicTestsTreeNode[]) blueList
-				.toArray(new DynamicTestsTreeNode[blueList.size()]);
+		DynamicTestsTreeNode[] selectNodes = blueList.toArray(new DynamicTestsTreeNode[blueList.size()]);
 		assertEquals(blueList.size(), 3);
 
 		setSelection(selectNodes);
 
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * First tab is Element
 		 */
@@ -172,7 +170,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		/**
 		 * No other tab
 		 */
-        assertEquals(2, tabDescriptors.length);
+		assertEquals(2, tabDescriptors.length);
 	}
 
 	/**
@@ -206,21 +204,19 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 	 * When the three triangle nodes are selected, two tabs display.
 	 */
 	public void select_all_triangle() {
-		List triangleList = new ArrayList();
-		for (int i = 0; i < treeNodes.length; i++) {
-			if (DynamicTestsShape.TRIANGLE.equals(treeNodes[i]
-					.getDynamicTestsElement().getPropertyValue(
-							DynamicTestsElement.ID_SHAPE))) {
-				triangleList.add(treeNodes[i]);
+		List<DynamicTestsTreeNode> triangleList = new ArrayList<>();
+		for (DynamicTestsTreeNode treeNode : treeNodes) {
+			if (DynamicTestsShape.TRIANGLE
+					.equals(treeNode.getDynamicTestsElement().getPropertyValue(DynamicTestsElement.ID_SHAPE))) {
+				triangleList.add(treeNode);
 			}
 		}
-		DynamicTestsTreeNode[] selectNodes = (DynamicTestsTreeNode[]) triangleList
-				.toArray(new DynamicTestsTreeNode[triangleList.size()]);
+		DynamicTestsTreeNode[] selectNodes = triangleList.toArray(new DynamicTestsTreeNode[triangleList.size()]);
 		assertEquals(triangleList.size(), 4);
 
 		setSelection(selectNodes);
 
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * First tab is Element
 		 */
@@ -232,7 +228,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		/**
 		 * No other tab
 		 */
-        assertEquals(2, tabDescriptors.length);
+		assertEquals(2, tabDescriptors.length);
 	}
 
 	/**
@@ -242,11 +238,11 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		dynamicTestsView
 				.setContributorId(DynamicTestsView.DYNAMIC_TESTS_VIEW_STATIC);
 		select_blackTriangle();
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * Only three tabs displayed for static contribution.
 		 */
-        assertEquals(3, tabDescriptors.length);
+		assertEquals(3, tabDescriptors.length);
 	}
 
 	/**
@@ -256,7 +252,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		dynamicTestsView
 				.setContributorId(DynamicTestsView.DYNAMIC_TESTS_VIEW_DYNAMIC_TABS);
 		select_blackTriangle();
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * Fourth tab is Black
 		 */
@@ -264,7 +260,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		/**
 		 * No other tab
 		 */
-        assertEquals(4, tabDescriptors.length);
+		assertEquals(4, tabDescriptors.length);
 	}
 
 	/**
@@ -274,11 +270,11 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		dynamicTestsView
 				.setContributorId(DynamicTestsView.DYNAMIC_TESTS_VIEW_DYNAMIC_SECTIONS);
 		select_blackTriangle();
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * Only three tabs displayed for dynamic section contribution.
 		 */
-        assertEquals(3, tabDescriptors.length);
+		assertEquals(3, tabDescriptors.length);
 	}
 
 	/**
@@ -286,11 +282,10 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 	 */
 	public void select_blackTriangle() {
 		DynamicTestsTreeNode blackTriangleNode = null;
-		for (int i = 0; i < treeNodes.length; i++) {
-			if (DynamicTestsColor.BLACK.equals(treeNodes[i]
-					.getDynamicTestsElement().getPropertyValue(
-							DynamicTestsElement.ID_COLOR))) {
-				blackTriangleNode = treeNodes[i];
+		for (DynamicTestsTreeNode treeNode : treeNodes) {
+			if (DynamicTestsColor.BLACK
+					.equals(treeNode.getDynamicTestsElement().getPropertyValue(DynamicTestsElement.ID_COLOR))) {
+				blackTriangleNode = treeNode;
 				break;
 			}
 		}
@@ -298,7 +293,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 
 		setSelection(new DynamicTestsTreeNode[] { blackTriangleNode });
 
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * First tab is Element
 		 */
@@ -320,7 +315,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		dynamicTestsView
 				.setContributorId(DynamicTestsView.DYNAMIC_TESTS_VIEW_STATIC);
 		select_RedStar();
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * Third tab is Advanced
 		 */
@@ -328,7 +323,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		/**
 		 * No other tab
 		 */
-        assertEquals(3, tabDescriptors.length);
+		assertEquals(3, tabDescriptors.length);
 	}
 
 	/**
@@ -338,7 +333,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		dynamicTestsView
 				.setContributorId(DynamicTestsView.DYNAMIC_TESTS_VIEW_DYNAMIC_TABS);
 		select_RedStar();
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * Third tab is Advanced
 		 */
@@ -346,7 +341,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		/**
 		 * No other tab
 		 */
-        assertEquals(3, tabDescriptors.length);
+		assertEquals(3, tabDescriptors.length);
 	}
 
 	/**
@@ -356,7 +351,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		dynamicTestsView
 				.setContributorId(DynamicTestsView.DYNAMIC_TESTS_VIEW_DYNAMIC_SECTIONS);
 		select_RedStar();
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * Third tab is Star
 		 */
@@ -368,7 +363,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 		/**
 		 * No other tab
 		 */
-        assertEquals(4, tabDescriptors.length);
+		assertEquals(4, tabDescriptors.length);
 	}
 
 	/**
@@ -376,11 +371,10 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 	 */
 	public void select_RedStar() {
 		DynamicTestsTreeNode redStarNode = null;
-		for (int i = 0; i < treeNodes.length; i++) {
-			if (DynamicTestsShape.STAR.equals(treeNodes[i]
-					.getDynamicTestsElement().getPropertyValue(
-							DynamicTestsElement.ID_SHAPE))) {
-				redStarNode = treeNodes[i];
+		for (DynamicTestsTreeNode treeNode : treeNodes) {
+			if (DynamicTestsShape.STAR
+					.equals(treeNode.getDynamicTestsElement().getPropertyValue(DynamicTestsElement.ID_SHAPE))) {
+				redStarNode = treeNode;
 				break;
 			}
 		}
@@ -388,7 +382,7 @@ public class TabbedPropertySheetPageDynamicTest extends TestCase {
 
 		setSelection(new DynamicTestsTreeNode[] { redStarNode });
 
-        ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
+		ITabDescriptor[] tabDescriptors = dynamicTestsView.getTabbedPropertySheetPage().getActiveTabs();
 		/**
 		 * First tab is Element
 		 */

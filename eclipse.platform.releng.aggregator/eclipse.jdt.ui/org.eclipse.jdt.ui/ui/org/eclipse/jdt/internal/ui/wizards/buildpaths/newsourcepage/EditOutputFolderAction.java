@@ -15,7 +15,6 @@ package org.eclipse.jdt.internal.ui.wizards.buildpaths.newsourcepage;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Shell;
@@ -181,18 +180,17 @@ public class EditOutputFolderAction extends BuildpathModifierAction {
 	}
 
 	private IFolder getOldOutputFolder(final BuildpathDelta delta) {
-	    IResource[] deletedResources= delta.getDeletedResources();
 	    List<IResource> existingFolders= new ArrayList<>();
-	    for (int i= 0; i < deletedResources.length; i++) {
-	        if (deletedResources[i] instanceof IFolder && deletedResources[i].exists()) {
-	        	existingFolders.add(deletedResources[i]);
-	        }
-	    }
+		for (IResource deletedResource : delta.getDeletedResources()) {
+			if (deletedResource instanceof IFolder && deletedResource.exists()) {
+				existingFolders.add(deletedResource);
+			}
+		}
 	    if (existingFolders.size() > 0) {
 	    	if (existingFolders.size() > 1) {
 	    		String message= "Found more then one existing folders:"; //$NON-NLS-1$
-	    		for (Iterator<IResource> iterator= existingFolders.iterator(); iterator.hasNext();) {
-	                IFolder folder= (IFolder)iterator.next();
+	    		for (IResource iResource : existingFolders) {
+	                IFolder folder= (IFolder)iResource;
 	                message+= "\n" + folder.toString(); //$NON-NLS-1$
 	            }
 	    		Assert.isTrue(false, message);
@@ -234,7 +232,7 @@ public class EditOutputFolderAction extends BuildpathModifierAction {
 				return true;
 			} else if (element instanceof CPListElementAttribute) {
 				CPListElementAttribute attribute= (CPListElementAttribute)element;
-				if (attribute.getKey() != CPListElement.OUTPUT)
+				if (!CPListElement.OUTPUT.equals(attribute.getKey()))
 					return false;
 
 				return true;

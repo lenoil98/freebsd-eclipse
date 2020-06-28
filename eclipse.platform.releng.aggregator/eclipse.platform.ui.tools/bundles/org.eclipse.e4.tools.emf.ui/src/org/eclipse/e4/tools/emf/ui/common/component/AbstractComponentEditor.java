@@ -19,13 +19,17 @@ package org.eclipse.e4.tools.emf.ui.common.component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
 import org.eclipse.core.databinding.observable.list.IObservableList;
 import org.eclipse.core.databinding.observable.value.WritableValue;
+import org.eclipse.core.databinding.property.value.IValueProperty;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.e4.core.di.annotations.Optional;
@@ -65,12 +69,17 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 
-public abstract class AbstractComponentEditor {
+/**
+ * @param <M> type of the master object
+ */
+public abstract class AbstractComponentEditor<M> {
 	private static final String GREY_SUFFIX = "Grey"; //$NON-NLS-1$
 
 	private static final String CSS_CLASS_KEY = "org.eclipse.e4.ui.css.CssClassName"; //$NON-NLS-1$
 
-	private final WritableValue master = new WritableValue();
+	private static final int MAX_IMG_SIZE = 16;
+
+	private final WritableValue<M> master = new WritableValue<>();
 
 	public static final int SEARCH_IMAGE = 0;
 	public static final int TABLE_ADD_IMAGE = 1;
@@ -79,6 +88,8 @@ public abstract class AbstractComponentEditor {
 	public static final int ARROW_DOWN = 4;
 
 	protected static final int VERTICAL_LIST_WIDGET_INDENT = 10;
+
+	private final List<Image> createdImages = new ArrayList<>();
 
 	@Inject
 	private EditingDomain editingDomain;
@@ -112,7 +123,7 @@ public abstract class AbstractComponentEditor {
 		return editor;
 	}
 
-	public WritableValue getMaster() {
+	public WritableValue<M> getMaster() {
 		return master;
 	}
 
@@ -246,7 +257,22 @@ public abstract class AbstractComponentEditor {
 	 * @return
 	 */
 	private ImageDescriptor getImageDescriptorFromUri(String uri) {
+		ImageDescriptor result = null;
 
+		URL url = findPlatformImage(uri);
+
+		if (url != null) {
+			ImageDescriptor imageDesc = ImageDescriptor.createFromURL(url);
+			Image scaled = Util.scaleImage(imageDesc.createImage(), MAX_IMG_SIZE);
+			createdImages.add(scaled);
+			result = ImageDescriptor.createFromImage(scaled);
+		}
+
+		return result;
+	}
+
+	@SuppressWarnings("resource")
+	private static URL findPlatformImage(String uri) {
 		// SEVERAL CASES are possible here :
 		// * uri = platform:/plugin/myplugin/icons/image.gif
 		// * uri = platform:/resource/myplugin/icons/image.gif
@@ -259,7 +285,6 @@ public abstract class AbstractComponentEditor {
 		// case, we must rather use platform:/resource/.
 		// Used ideas from the ImageTooltip code around line 70 to fix this
 
-		ImageDescriptor result = null;
 		InputStream stream = null;
 		URL url = null;
 
@@ -301,17 +326,13 @@ public abstract class AbstractComponentEditor {
 			} catch (final IOException ex) {
 			}
 		}
-
-		if (url != null) {
-			result = ImageDescriptor.createFromURL(url);
-		}
-
-		return result;
+		return url;
 	}
 
 	public Image getImage(Object element) {
 		return null;
 	}
+
 
 	public abstract String getLabel(Object element);
 
@@ -330,7 +351,7 @@ public abstract class AbstractComponentEditor {
 
 	protected abstract Composite doGetEditor(Composite parent, Object object);
 
-	public abstract IObservableList getChildList(Object element);
+	public abstract IObservableList<?> getChildList(Object element);
 
 	public FeaturePath[] getLabelProperties() {
 		return new FeaturePath[] {};
@@ -433,8 +454,8 @@ public abstract class AbstractComponentEditor {
 		return contentContainer;
 	}
 
-	protected void createContributedEditorTabs(CTabFolder folder, EMFDataBindingContext context, WritableValue master,
-			Class<?> clazz) {
+	protected void createContributedEditorTabs(CTabFolder folder, EMFDataBindingContext context,
+			WritableValue<M> master, Class<? super M> clazz) {
 		final List<AbstractElementEditorContribution> contributionList = editor.getTabContributionsForClass(clazz);
 
 		for (final AbstractElementEditorContribution eec : contributionList) {
@@ -465,9 +486,17 @@ public abstract class AbstractComponentEditor {
 		}
 		if (getEditor().isAutoCreateElementId()) {
 			generator = new IdGenerator();
-			generator.bind(getMaster(), EMFEditProperties.value(getEditingDomain(), attSource),
-					EMFEditProperties.value(getEditingDomain(), attId), control);
+			@SuppressWarnings("unchecked")
+			IValueProperty<M, String> addSourceProp = EMFEditProperties.value(getEditingDomain(), attSource);
+			@SuppressWarnings("unchecked")
+			IValueProperty<M, String> attIdProp = EMFEditProperties.value(getEditingDomain(), attId);
+			generator.bind(getMaster(), addSourceProp, attIdProp, control);
 		}
+	}
+
+	@PreDestroy
+	public void dispose() {
+		createdImages.stream().filter(Objects::nonNull).filter(i -> !i.isDisposed()).forEach(Image::dispose);
 	}
 
 }

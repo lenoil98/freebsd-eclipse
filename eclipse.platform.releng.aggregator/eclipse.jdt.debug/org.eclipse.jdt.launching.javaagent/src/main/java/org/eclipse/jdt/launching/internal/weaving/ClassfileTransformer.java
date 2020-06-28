@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014 Igor Fedorenko
+ * Copyright (c) 2014, 2019 Igor Fedorenko
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *      Igor Fedorenko - initial API and implementation
+ *      IBM Corporation - ASM version update
  *******************************************************************************/
 package org.eclipse.jdt.launching.internal.weaving;
 
@@ -24,15 +25,15 @@ public class ClassfileTransformer {
 	private static final String STRATA_ID = "jdt"; //$NON-NLS-1$
 
 	/** max supported java class format major version, must match {@link #ASM_API} below **/
-	public static final int MAX_CLASS_MAJOR = Opcodes.V11;
+	public static final int MAX_CLASS_MAJOR = Opcodes.V15;
 
 	/** supported ASM API version, must match {@link #MAX_CLASS_MAJOR} above */
-	private static final int ASM_API = Opcodes.ASM7;
+	private static final int ASM_API = Opcodes.ASM8;
 
 	public byte[] transform(byte[] classfileBuffer, final String location) {
 
 		final ClassReader r = new ClassReader(classfileBuffer, 0, classfileBuffer.length);
-		final ClassWriter w = new ClassWriter(0);
+		final ClassWriter w = new ClassWriter(r, 0);
 
 		r.accept(new ClassVisitor(ASM_API, w) {
 			@Override

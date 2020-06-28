@@ -136,8 +136,7 @@ public class RegistryObjectManager implements IObjectManager {
 	// Also can return null if empty array is passed in or objects are of an unexpected type
 	private String findCommonNamespaceIdentifier(RegistryObject[] registryObjects) {
 		String namespaceName = null;
-		for (int i = 0; i < registryObjects.length; i++) {
-			RegistryObject currentObject = registryObjects[i];
+		for (RegistryObject currentObject : registryObjects) {
 			String tmp = null;
 			if (currentObject instanceof ExtensionPoint)
 				tmp = ((ExtensionPoint) currentObject).getNamespace();
@@ -661,14 +660,14 @@ public class RegistryObjectManager implements IObjectManager {
 		int[] xpts = getExtensionPointsFrom(contributionId);
 		int[] exts = getExtensionsFrom(contributionId);
 		Map<Integer, RegistryObject> actualObjects = new HashMap<>(xpts.length + exts.length);
-		for (int i = 0; i < exts.length; i++) {
-			Extension tmp = (Extension) basicGetObject(exts[i], RegistryObjectManager.EXTENSION);
-			actualObjects.put(Integer.valueOf(exts[i]), tmp);
+		for (int ext : exts) {
+			Extension tmp = (Extension) basicGetObject(ext, RegistryObjectManager.EXTENSION);
+			actualObjects.put(Integer.valueOf(ext), tmp);
 			collectChildren(tmp, 0, actualObjects);
 		}
-		for (int i = 0; i < xpts.length; i++) {
-			ExtensionPoint xpt = (ExtensionPoint) basicGetObject(xpts[i], RegistryObjectManager.EXTENSION_POINT);
-			actualObjects.put(Integer.valueOf(xpts[i]), xpt);
+		for (int xpt2 : xpts) {
+			ExtensionPoint xpt = (ExtensionPoint) basicGetObject(xpt2, RegistryObjectManager.EXTENSION_POINT);
+			actualObjects.put(Integer.valueOf(xpt2), xpt);
 		}
 
 		return actualObjects;
@@ -687,8 +686,7 @@ public class RegistryObjectManager implements IObjectManager {
 	 */
 	synchronized void addNavigableObjects(Map<Integer, RegistryObject> associatedObjects) {
 		Map<Integer, RegistryObject> result = new HashMap<>();
-		for (Iterator<RegistryObject> iter = associatedObjects.values().iterator(); iter.hasNext();) {
-			RegistryObject object = iter.next();
+		for (RegistryObject object : associatedObjects.values()) {
 			if (object instanceof Extension) {
 				// add extension point
 				ExtensionPoint extPoint = getExtensionPointObject(((Extension) object).getExtensionPointIdentifier());
@@ -700,12 +698,11 @@ public class RegistryObjectManager implements IObjectManager {
 					result.put(Integer.valueOf(extPoint.getKeyHashCode()), extPoint);
 
 				// add all extensions for the extension point
-				int[] extensions = extPoint.getRawChildren();
-				for (int j = 0; j < extensions.length; j++) {
-					Extension tmp = (Extension) basicGetObject(extensions[j], RegistryObjectManager.EXTENSION);
+				for (int childId : extPoint.getRawChildren()) {
+					Extension tmp = (Extension) basicGetObject(childId, RegistryObjectManager.EXTENSION);
 					if (tmp == null) // already removed
 						continue;
-					Integer extensionIndex = Integer.valueOf(extensions[j]);
+					Integer extensionIndex = Integer.valueOf(childId);
 					if (!associatedObjects.containsKey(extensionIndex)) {
 						result.put(extensionIndex, tmp);
 						collectChildren(tmp, 0, result);
@@ -717,11 +714,11 @@ public class RegistryObjectManager implements IObjectManager {
 				String name = ((ExtensionPoint) object).getUniqueIdentifier();
 				int[] extensions = orphans.get(name);
 				if (extensions != null) {
-					for (int j = 0; j < extensions.length; j++) {
-						Extension tmp = (Extension) basicGetObject(extensions[j], RegistryObjectManager.EXTENSION);
+					for (int orphanId : extensions) {
+						Extension tmp = (Extension) basicGetObject(orphanId, RegistryObjectManager.EXTENSION);
 						if (tmp == null) // already removed
 							continue;
-						Integer extensionIndex = Integer.valueOf(extensions[j]);
+						Integer extensionIndex = Integer.valueOf(orphanId);
 						if (!associatedObjects.containsKey(extensionIndex)) {
 							result.put(extensionIndex, tmp);
 							collectChildren(tmp, 0, result);
@@ -735,9 +732,8 @@ public class RegistryObjectManager implements IObjectManager {
 
 	synchronized void removeObjects(Map<?, ?> associatedObjects) {
 		//Remove the objects from the main object manager so they can no longer be accessed.
-		Collection<?> allValues = associatedObjects.values();
-		for (Iterator<?> iter = allValues.iterator(); iter.hasNext();) {
-			RegistryObject toRemove = (RegistryObject) iter.next();
+		for (Object registryObject : associatedObjects.values()) {
+			RegistryObject toRemove = (RegistryObject) registryObject;
 			remove((toRemove).getObjectId(), true);
 			if (toRemove instanceof ExtensionPoint)
 				removeExtensionPoint(((ExtensionPoint) toRemove).getUniqueIdentifier());
@@ -750,9 +746,9 @@ public class RegistryObjectManager implements IObjectManager {
 
 	private void collectChildren(RegistryObject ce, int level, Map<Integer, RegistryObject> collector) {
 		ConfigurationElement[] children = (ConfigurationElement[]) getObjects(ce.getRawChildren(), level == 0 || ce.noExtraData() ? RegistryObjectManager.CONFIGURATION_ELEMENT : RegistryObjectManager.THIRDLEVEL_CONFIGURATION_ELEMENT);
-		for (int j = 0; j < children.length; j++) {
-			collector.put(Integer.valueOf(children[j].getObjectId()), children[j]);
-			collectChildren(children[j], level + 1, collector);
+		for (ConfigurationElement child : children) {
+			collector.put(Integer.valueOf(child.getObjectId()), child);
+			collectChildren(child, level + 1, collector);
 		}
 	}
 
@@ -767,8 +763,8 @@ public class RegistryObjectManager implements IObjectManager {
 
 	// Called from a synchronized method only
 	private boolean unlinkChildFromContributions(KeyedElement[] contributions, int id) {
-		for (int i = 0; i < contributions.length; i++) {
-			Contribution candidate = (Contribution) contributions[i];
+		for (KeyedElement contribution : contributions) {
+			Contribution candidate = (Contribution) contribution;
 			if (candidate == null)
 				continue;
 			if (candidate.hasChild(id)) {
@@ -801,9 +797,10 @@ public class RegistryObjectManager implements IObjectManager {
 		// filter extensions with no extension point (orphan extensions)
 		List<Handle> tmp = new ArrayList<>();
 		Extension[] exts = (Extension[]) getObjects(namespaceExtensions, EXTENSION);
-		for (int i = 0; i < exts.length; i++) {
-			if (getExtensionPointObject(exts[i].getExtensionPointIdentifier()) != null)
-				tmp.add(getHandle(exts[i].getObjectId(), EXTENSION));
+		for (Extension ext : exts) {
+			if (getExtensionPointObject(ext.getExtensionPointIdentifier()) != null) {
+				tmp.add(getHandle(ext.getObjectId(), EXTENSION));
+			}
 		}
 		if (tmp.size() == 0)
 			return EMPTY_EXTENSIONS_ARRAY;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,9 +14,6 @@
  *     Samrat Dhillon <samrat.dhillon@gmail.com> -  [extract method] Extracted method should be declared static if extracted expression is also used in another static method https://bugs.eclipse.org/bugs/show_bug.cgi?id=393098
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.refactoring.code;
-
-import java.util.Iterator;
-import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -47,6 +44,7 @@ import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.EnumConstantDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 
+import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.ParameterInfo;
 import org.eclipse.jdt.internal.corext.refactoring.code.ExtractMethodRefactoring;
@@ -63,7 +61,6 @@ import org.eclipse.jdt.internal.ui.refactoring.InputPageUtil;
 import org.eclipse.jdt.internal.ui.refactoring.RefactoringMessages;
 import org.eclipse.jdt.internal.ui.util.RowLayouter;
 import org.eclipse.jdt.internal.ui.util.SWTUtil;
-import org.eclipse.jdt.internal.core.manipulation.util.BasicElementLabels;
 
 
 public class ExtractMethodInputPage extends UserInputWizardPage {
@@ -109,6 +106,11 @@ public class ExtractMethodInputPage extends UserInputWizardPage {
 
 		fTextField= createTextInputField(result, SWT.BORDER);
 		fTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		String methodName= fRefactoring.getMethodName();
+		if (methodName != null && !methodName.trim().isEmpty()) {
+			fTextField.setText(methodName);
+			fTextField.setSelection(0, methodName.length());
+		}
 
 		layouter.perform(label, fTextField, 1);
 
@@ -118,8 +120,7 @@ public class ExtractMethodInputPage extends UserInputWizardPage {
 			label.setText(RefactoringMessages.ExtractMethodInputPage_destination_type);
 			final Combo combo= new Combo(result, SWT.READ_ONLY | SWT.DROP_DOWN);
 			SWTUtil.setDefaultVisibleItemCount(combo);
-			for (int i= 0; i < destinations.length; i++) {
-				ASTNode declaration= destinations[i];
+			for (ASTNode declaration : destinations) {
 				combo.add(getLabel(declaration));
 			}
 			combo.select(0);
@@ -218,14 +219,18 @@ public class ExtractMethodInputPage extends UserInputWizardPage {
 
 		int duplicates= fRefactoring.getNumberOfDuplicates();
 		checkBox= new Button(result, SWT.CHECK);
-		if (duplicates == 0) {
+		switch (duplicates) {
+		case 0:
 			checkBox.setText(RefactoringMessages.ExtractMethodInputPage_duplicates_none);
-		} else  if (duplicates == 1) {
+			break;
+		case 1:
 			checkBox.setText(RefactoringMessages.ExtractMethodInputPage_duplicates_single);
-		} else {
+			break;
+		default:
 			checkBox.setText(Messages.format(
 				RefactoringMessages.ExtractMethodInputPage_duplicates_multi,
 				Integer.valueOf(duplicates)));
+			break;
 		}
 		checkBox.setSelection(fRefactoring.getReplaceDuplicates());
 		checkBox.setEnabled(duplicates > 0);
@@ -247,35 +252,35 @@ public class ExtractMethodInputPage extends UserInputWizardPage {
 		Dialog.applyDialogFont(result);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(getControl(), IJavaHelpContextIds.EXTRACT_METHOD_WIZARD_PAGE);
 	}
-	
+
 	private void updateAccessModifiers() {
 		final Control[] radioButtons= accessModifiersGroup.getChildren();
 		if (fRefactoring.isDestinationInterface()) {
 			Integer visibility= Integer.valueOf(Modifier.PUBLIC);
 			fRefactoring.setVisibility(visibility.intValue());
-			for (int i= 0; i < radioButtons.length; i++) {
-				radioButtons[i].setEnabled(false);
-				if (radioButtons[i].getData().equals(visibility)) {
-					((Button) radioButtons[i]).setSelection(true);
+			for (Control radioButton : radioButtons) {
+				radioButton.setEnabled(false);
+				if (radioButton.getData().equals(visibility)) {
+					((Button) radioButton).setSelection(true);
 				} else {
-					((Button) radioButtons[i]).setSelection(false);
+					((Button) radioButton).setSelection(false);
 				}
 			}
 		} else {
 			final String accessModifier= fSettings.get(ACCESS_MODIFIER);
 			Integer visibility= accessModifier != null ? Integer.valueOf(accessModifier) : Integer.valueOf(fRefactoring.getVisibility());
 			fRefactoring.setVisibility(visibility.intValue());
-			for (int i= 0; i < radioButtons.length; i++) {
-				radioButtons[i].setEnabled(true);
-				if (radioButtons[i].getData().equals(visibility)) {
-					((Button) radioButtons[i]).setSelection(true);
+			for (Control radioButton : radioButtons) {
+				radioButton.setEnabled(true);
+				if (radioButton.getData().equals(visibility)) {
+					((Button) radioButton).setSelection(true);
 				} else {
-					((Button) radioButtons[i]).setSelection(false);
+					((Button) radioButton).setSelection(false);
 				}
 			}
 		}
 	}
-	
+
 	private String getLabel(ASTNode node) {
 		if (node instanceof AbstractTypeDeclaration) {
 			return ((AbstractTypeDeclaration)node).getName().getIdentifier();
@@ -342,7 +347,7 @@ public class ExtractMethodInputPage extends UserInputWizardPage {
 		Label previewLabel= new Label(composite, SWT.NONE);
 		previewLabel.setText(RefactoringMessages.ExtractMethodInputPage_signature_preview);
 		layouter.perform(previewLabel);
-		
+
 		fSignaturePreview= InputPageUtil.createSignaturePreview(composite);
 		layouter.perform(fSignaturePreview.getControl());
 	}
@@ -387,7 +392,7 @@ public class ExtractMethodInputPage extends UserInputWizardPage {
 		if (visible) {
 			if (fFirstTime) {
 				fFirstTime= false;
-				setPageComplete(false);
+				setPageComplete(validatePage(true));
 				updatePreview(getText());
 				fTextField.setFocus();
 			} else {
@@ -438,9 +443,7 @@ public class ExtractMethodInputPage extends UserInputWizardPage {
 
 	private RefactoringStatus validateParameters() {
 		RefactoringStatus result= new RefactoringStatus();
-		List<ParameterInfo> parameters= fRefactoring.getParameterInfos();
-		for (Iterator<ParameterInfo> iter= parameters.iterator(); iter.hasNext();) {
-			ParameterInfo info= iter.next();
+		for (ParameterInfo info : fRefactoring.getParameterInfos()) {
 			if ("".equals(info.getNewName())) { //$NON-NLS-1$
 				result.addFatalError(RefactoringMessages.ExtractMethodInputPage_validation_emptyParameterName);
 				return result;

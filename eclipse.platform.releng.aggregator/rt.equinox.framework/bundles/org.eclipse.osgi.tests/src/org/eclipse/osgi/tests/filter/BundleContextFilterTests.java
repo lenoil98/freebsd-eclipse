@@ -13,17 +13,13 @@
  *******************************************************************************/
 package org.eclipse.osgi.tests.filter;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.osgi.tests.OSGiTestsActivator;
 import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 
 public class BundleContextFilterTests extends FilterTests {
-	public static Test suite() {
-		return new TestSuite(BundleContextFilterTests.class);
-	}
 
+	@Override
 	public Filter createFilter(String filterString) throws InvalidSyntaxException {
 		return OSGiTestsActivator.getContext().createFilter(filterString);
 	}

@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -19,9 +19,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -33,18 +33,18 @@ import org.osgi.framework.BundleException;
 /**
  * This class represents a single manifest element.  A manifest element must consist of a single
  * {@link String} value.  The {@link String} value may be split up into component values each
- * separated by a semi-colon (';').  A manifest element may optionally have a set of 
+ * separated by a semi-colon (';').  A manifest element may optionally have a set of
  * attribute and directive values associated with it. The general syntax of a manifest element is as follows:
  * <pre>
  * ManifestElement ::= component (';' component)* (';' parameter)*
  * component ::= ([^;,:="\#x0D#x0A#x00])+ | quoted-string
  * quoted-string::= '"' ( [^"\#x0D#x0A#x00] | '\"'| '\\')* '"'
- * parameter ::= directive | attribute 
+ * parameter ::= directive | attribute
  * directive ::= token ':=' argument
  * attribute ::= token '=' argument
  * argument ::= extended  | quoted-string
- * token ::= ( alphanum | '_' | '-' )+ 
- * extended ::= ( alphanum | '_' | '-' | '.' )+ 
+ * token ::= ( alphanum | '_' | '-' )+
+ * extended ::= ( alphanum | '_' | '-' | '.' )+
  * </pre>
  * <p>
  * For example, the following is an example of a manifest element to the <code>Export-Package</code> header:
@@ -53,37 +53,37 @@ import org.osgi.framework.BundleException;
  * org.osgi.framework; specification-version="1.2"; another-attr="examplevalue"
  * </pre>
  * <p>
- * This manifest element has a value of <code>org.osgi.framework</code> and it has two attributes, 
- * <code>specification-version</code> and <code>another-attr</code>. 
+ * This manifest element has a value of <code>org.osgi.framework</code> and it has two attributes,
+ * <code>specification-version</code> and <code>another-attr</code>.
  * </p>
  * <p>
  * The following manifest element is an example of a manifest element that has multiple
- * components to its value: 
+ * components to its value:
  * </p>
  * <pre>
  * code1.jar;code2.jar;code3.jar;attr1=value1;attr2=value2;attr3=value3
  * </pre>
  * <p>
- * This manifest element has a value of <code>code1.jar;code2.jar;code3.jar</code>.  
+ * This manifest element has a value of <code>code1.jar;code2.jar;code3.jar</code>.
  * This is an example of a multiple component value.  This value has three
  * components: <code>code1.jar</code>, <code>code2.jar</code>, and <code>code3.jar</code>.
  * </p>
  * <p>
  * If components contain delimiter characters (e.g ';', ',' ':' "=") then it must be
- * a quoted string.  For example, the following is an example of a manifest element 
+ * a quoted string.  For example, the following is an example of a manifest element
  * that has multiple components containing delimiter characters:
  * </p>
  * <pre>
  * "component ; 1"; "component , 2"; "component : 3"; attr1=value1; attr2=value2; attr3=value3
  * </pre>
  * <p>
- * This manifest element has a value of <code>"component ; 1"; "component , 2"; "component : 3"</code>.  
+ * This manifest element has a value of <code>"component ; 1"; "component , 2"; "component : 3"</code>.
  * This value has three components: <code>"component ; 1"</code>, <code>"component , 2"</code>, <code>"component : 3"</code>.
  * </p>
  * <p>
  * This class is not intended to be subclassed by clients.
  * </p>
- * 
+ *
  * @since 3.0
  * @noextend This class is not intended to be subclassed by clients.
  */
@@ -102,12 +102,12 @@ public class ManifestElement {
 	/**
 	 * The table of attributes for the manifest element.
 	 */
-	private Hashtable<String, Object> attributes;
+	private HashMap<String, Object> attributes;
 
 	/**
 	 * The table of directives for the manifest element.
 	 */
-	private Hashtable<String, Object> directives;
+	private HashMap<String, Object> directives;
 
 	/**
 	 * Constructs an empty manifest element with no value or attributes.
@@ -119,15 +119,15 @@ public class ManifestElement {
 
 	/**
 	 * Returns the value of the manifest element.  The value returned is the
-	 * complete value up to the first attribute or directive.  For example, the 
-	 * following manifest element: 
+	 * complete value up to the first attribute or directive.  For example, the
+	 * following manifest element:
 	 * <pre>
 	 * test1.jar;test2.jar;test3.jar;selection-filter="(os.name=Windows XP)"
 	 * </pre>
 	 * <p>
 	 * This manifest element has a value of <code>test1.jar;test2.jar;test3.jar</code>
 	 * </p>
-	 * 
+	 *
 	 * @return the value of the manifest element.
 	 */
 	public String getValue() {
@@ -136,18 +136,18 @@ public class ManifestElement {
 
 	/**
 	 * Returns the value components of the manifest element. The value
-	 * components returned are the complete list of value components up to 
-	 * the first attribute or directive.  
-	 * For example, the following manifest element: 
+	 * components returned are the complete list of value components up to
+	 * the first attribute or directive.
+	 * For example, the following manifest element:
 	 * <pre>
 	 * test1.jar;test2.jar;test3.jar;selection-filter="(os.name=Windows XP)"
 	 * </pre>
 	 * <p>
-	 * This manifest element has the value components array 
+	 * This manifest element has the value components array
 	 * <code>{ "test1.jar", "test2.jar", "test3.jar" }</code>
 	 * Each value component is delemited by a semi-colon (<code>';'</code>).
 	 * </p>
-	 * 
+	 *
 	 * @return the String[] of value components
 	 */
 	public String[] getValueComponents() {
@@ -155,9 +155,9 @@ public class ManifestElement {
 	}
 
 	/**
-	 * Returns the value for the specified attribute or <code>null</code> if it does 
-	 * not exist.  If the attribute has multiple values specified then the last value 
-	 * specified is returned. For example the following manifest element: 
+	 * Returns the value for the specified attribute or <code>null</code> if it does
+	 * not exist.  If the attribute has multiple values specified then the last value
+	 * specified is returned. For example the following manifest element:
 	 * <pre>
 	 * elementvalue; myattr="value1"; myattr="value2"
 	 * </pre>
@@ -166,7 +166,7 @@ public class ManifestElement {
 	 * will be returned because it is the last value specified for the attribute
 	 * <code>myattr</code>.
 	 * </p>
-	 * 
+	 *
 	 * @param key the attribute key to return the value for
 	 * @return the attribute value or <code>null</code>
 	 */
@@ -175,11 +175,11 @@ public class ManifestElement {
 	}
 
 	/**
-	 * Returns an array of values for the specified attribute or 
+	 * Returns an array of values for the specified attribute or
 	 * <code>null</code> if the attribute does not exist.
-	 * 
+	 *
 	 * @param key the attribute key to return the values for
-	 * @return the array of attribute values or <code>null</code> 
+	 * @return the array of attribute values or <code>null</code>
 	 * @see #getAttribute(String)
 	 */
 	public String[] getAttributes(String key) {
@@ -189,7 +189,7 @@ public class ManifestElement {
 	/**
 	 * Returns an enumeration of attribute keys for this manifest element or
 	 * <code>null</code> if none exist.
-	 * 
+	 *
 	 * @return the enumeration of attribute keys or null if none exist.
 	 */
 	public Enumeration<String> getKeys() {
@@ -198,7 +198,7 @@ public class ManifestElement {
 
 	/**
 	 * Add an attribute to this manifest element.
-	 * 
+	 *
 	 * @param key the key of the attribute
 	 * @param value the value of the attribute
 	 */
@@ -207,9 +207,9 @@ public class ManifestElement {
 	}
 
 	/**
-	 * Returns the value for the specified directive or <code>null</code> if it 
-	 * does not exist.  If the directive has multiple values specified then the 
-	 * last value specified is returned. For example the following manifest element: 
+	 * Returns the value for the specified directive or <code>null</code> if it
+	 * does not exist.  If the directive has multiple values specified then the
+	 * last value specified is returned. For example the following manifest element:
 	 * <pre>
 	 * elementvalue; mydir:="value1"; mydir:="value2"
 	 * </pre>
@@ -217,7 +217,7 @@ public class ManifestElement {
 	 * specifies two values for the directive key <code>mydir</code>.  In this case <code>value2</code>
 	 * will be returned because it is the last value specified for the directive <code>mydir</code>.
 	 * </p>
-	 * 
+	 *
 	 * @param key the directive key to return the value for
 	 * @return the directive value or <code>null</code>
 	 */
@@ -226,9 +226,9 @@ public class ManifestElement {
 	}
 
 	/**
-	 * Returns an array of string values for the specified directives or 
+	 * Returns an array of string values for the specified directives or
 	 * <code>null</code> if it does not exist.
-	 * 
+	 *
 	 * @param key the directive key to return the values for
 	 * @return the array of directive values or <code>null</code>
 	 * @see #getDirective(String)
@@ -240,7 +240,7 @@ public class ManifestElement {
 	/**
 	 * Return an enumeration of directive keys for this manifest element or
 	 * <code>null</code> if there are none.
-	 * 
+	 *
 	 * @return the enumeration of directive keys or <code>null</code>
 	 */
 	public Enumeration<String> getDirectiveKeys() {
@@ -249,7 +249,7 @@ public class ManifestElement {
 
 	/**
 	 * Add a directive to this manifest element.
-	 * 
+	 *
 	 * @param key the key of the attribute
 	 * @param value the value of the attribute
 	 */
@@ -260,12 +260,14 @@ public class ManifestElement {
 	/*
 	 * Return the last value associated with the given key in the specified table.
 	 */
-	private String getTableValue(Hashtable<String, Object> table, String key) {
-		if (table == null)
+	private String getTableValue(HashMap<String, Object> table, String key) {
+		if (table == null) {
 			return null;
+		}
 		Object result = table.get(key);
-		if (result == null)
+		if (result == null) {
 			return null;
+		}
 		if (result instanceof String)
 			return (String) result;
 
@@ -278,12 +280,14 @@ public class ManifestElement {
 	/*
 	 * Return the values associated with the given key in the specified table.
 	 */
-	private String[] getTableValues(Hashtable<String, Object> table, String key) {
-		if (table == null)
+	private String[] getTableValues(HashMap<String, Object> table, String key) {
+		if (table == null) {
 			return null;
+		}
 		Object result = table.get(key);
-		if (result == null)
+		if (result == null) {
 			return null;
+		}
 		if (result instanceof String)
 			return new String[] {(String) result};
 		@SuppressWarnings("unchecked")
@@ -292,12 +296,12 @@ public class ManifestElement {
 	}
 
 	/*
-	 * Return an enumeration of table keys for the specified table. 
+	 * Return an enumeration of table keys for the specified table.
 	 */
-	private Enumeration<String> getTableKeys(Hashtable<String, Object> table) {
+	private Enumeration<String> getTableKeys(HashMap<String, Object> table) {
 		if (table == null)
 			return null;
-		return table.keys();
+		return Collections.enumeration(table.keySet());
 	}
 
 	/*
@@ -306,9 +310,9 @@ public class ManifestElement {
 	 * append the new value to the end of the list.
 	 */
 	@SuppressWarnings("unchecked")
-	private Hashtable<String, Object> addTableValue(Hashtable<String, Object> table, String key, String value) {
+	private HashMap<String, Object> addTableValue(HashMap<String, Object> table, String key, String value) {
 		if (table == null) {
-			table = new Hashtable<>(7);
+			table = new HashMap<>(7);
 		}
 		Object curValue = table.get(key);
 		if (curValue != null) {
@@ -331,7 +335,7 @@ public class ManifestElement {
 	/**
 	 * Parses a manifest header value into an array of ManifestElements.  Each
 	 * ManifestElement returned will have a non-null value returned by getValue().
-	 * 
+	 *
 	 * @param header the header name to parse.  This is only specified to provide error messages
 	 * 	when the header value is invalid.
 	 * @param value the header value to parse.
@@ -350,7 +354,7 @@ public class ManifestElement {
 			if (next == null)
 				throw new BundleException(NLS.bind(Msg.MANIFEST_INVALID_HEADER_EXCEPTION, header, value), BundleException.MANIFEST_ERROR);
 			List<String> headerValues = new ArrayList<>();
-			StringBuffer headerValue = new StringBuffer(next);
+			StringBuilder headerValue = new StringBuilder(next);
 			headerValues.add(next);
 
 			if (SupplementDebug.STATIC_DEBUG_MANIFEST)
@@ -449,7 +453,7 @@ public class ManifestElement {
 
 	/**
 	 * Returns the result of converting a list of comma-separated tokens into an array.
-	 * 
+	 *
 	 * @return the array of string tokens or <code>null</code> if there are none
 	 * @param stringList the initial comma-separated string
 	 */
@@ -461,7 +465,7 @@ public class ManifestElement {
 	/**
 	 * Returns the result of converting a list of tokens into an array.  The tokens
 	 * are split using the specified separator.
-	 * 
+	 *
 	 * @return the array of string tokens.  If there are none then an empty array
 	 * is returned.
 	 * @param stringList the initial string list
@@ -484,7 +488,7 @@ public class ManifestElement {
 	/**
 	 * Parses a bundle manifest and puts the header/value pairs into the supplied Map.
 	 * Only the main section of the manifest is parsed (up to the first blank line).  All
-	 * other sections are ignored.  If a header is duplicated then only the last  
+	 * other sections are ignored.  If a header is duplicated then only the last
 	 * value is stored in the map.
 	 * <p>
 	 * The supplied input stream is consumed by this method and will be closed.
@@ -524,7 +528,8 @@ public class ManifestElement {
 				}
 				String header = line.substring(0, colon).trim();
 				String value = line.substring(colon + 1).trim();
-				headers.put(header, value);
+				// intern the header here because they likely have constants for them anyway
+				headers.put(header.intern(), value);
 			}
 		} finally {
 			try {
@@ -542,7 +547,7 @@ public class ManifestElement {
 		// This method reads all the line continuations into a single string.
 		// Care must be taken for cases where double byte UTF characters are split
 		// across line continuations.
-		// This is why BufferedReader.readLine is not used here.  We must process the 
+		// This is why BufferedReader.readLine is not used here.  We must process the
 		// CR LF chars ourselves
 		lineLoop: while (true) {
 			int c = input.read();
@@ -583,12 +588,13 @@ public class ManifestElement {
 		return result;
 	}
 
+	@Override
 	public String toString() {
 		Enumeration<String> attrKeys = getKeys();
 		Enumeration<String> directiveKeys = getDirectiveKeys();
 		if (attrKeys == null && directiveKeys == null)
 			return mainValue;
-		StringBuffer result = new StringBuffer(mainValue);
+		StringBuilder result = new StringBuilder(mainValue);
 		if (attrKeys != null) {
 			while (attrKeys.hasMoreElements()) {
 				String key = attrKeys.nextElement();
@@ -604,14 +610,14 @@ public class ManifestElement {
 		return result.toString();
 	}
 
-	private void addValues(boolean directive, String key, String[] values, StringBuffer result) {
+	private void addValues(boolean directive, String key, String[] values, StringBuilder result) {
 		if (values == null)
 			return;
-		for (int i = 0; i < values.length; i++) {
+		for (String value : values) {
 			result.append(';').append(key);
 			if (directive)
 				result.append(':');
-			result.append("=\"").append(values[i]).append('\"'); //$NON-NLS-1$			
+			result.append("=\"").append(value).append('\"'); //$NON-NLS-1$
 		}
 	}
 }

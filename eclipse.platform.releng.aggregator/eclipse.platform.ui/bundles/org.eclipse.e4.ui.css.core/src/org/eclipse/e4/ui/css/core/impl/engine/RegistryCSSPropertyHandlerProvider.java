@@ -17,6 +17,7 @@ package org.eclipse.e4.ui.css.core.impl.engine;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -49,20 +50,15 @@ public class RegistryCSSPropertyHandlerProvider extends AbstractCSSPropertyHandl
 
 	private static final String PROPERTY_HANDLERS_EXTPOINT = "org.eclipse.e4.ui.css.core.propertyHandler";
 
-	/* the handlers extension point was originally in .swt */
-	private static final String DEPRECATED_PROPERTY_HANDLERS_EXTPOINT = "org.eclipse.e4.ui.css.swt.property.handler";
-
 	private IExtensionRegistry registry;
 	private boolean hasDeprecatedProperties = false; // mild optimization for getCSSProperties()
 
-	private Map<String, Map<String, ICSSPropertyHandler>> propertyHandlerMap = new HashMap<>();;
+	private Map<String, Map<String, ICSSPropertyHandler>> propertyHandlerMap = new HashMap<>();
+	// for performance hold a map of handlers to singleton list
+	private Map<ICSSPropertyHandler, List<ICSSPropertyHandler>> propertyHandlerInstanceMap = new HashMap<>();
 
 	public RegistryCSSPropertyHandlerProvider(IExtensionRegistry registry) {
 		this.registry = registry;
-		if (configure(DEPRECATED_PROPERTY_HANDLERS_EXTPOINT)) {
-			System.err.println("Extension point " + DEPRECATED_PROPERTY_HANDLERS_EXTPOINT
-					+ " is deprecated; use " + PROPERTY_HANDLERS_EXTPOINT);
-		}
 		configure(PROPERTY_HANDLERS_EXTPOINT);
 	}
 
@@ -188,13 +184,22 @@ public class RegistryCSSPropertyHandlerProvider extends AbstractCSSPropertyHandl
 
 	@Override
 	public Collection<ICSSPropertyHandler> getCSSPropertyHandlers(Object element, String property) throws Exception {
-		List<ICSSPropertyHandler> handlers = new ArrayList<>();
+		List<ICSSPropertyHandler> handlers = Collections.emptyList();
 		Class<?> clazz = element.getClass();
 		while (clazz != Object.class) {
 			if (propertyHandlerMap.containsKey(clazz.getName())) {
 				ICSSPropertyHandler handler = propertyHandlerMap.get(clazz.getName()).get(property);
 				if (handler != null) {
-					handlers.add(handler);
+					switch (handlers.size()) {
+					case 0:
+						handlers = propertyHandlerInstanceMap.computeIfAbsent(handler,
+								Collections::singletonList);
+						break;
+					case 1:
+						handlers = new ArrayList<>(handlers);
+					default:
+						handlers.add(handler);
+					}
 				}
 			}
 			clazz = clazz.getSuperclass();

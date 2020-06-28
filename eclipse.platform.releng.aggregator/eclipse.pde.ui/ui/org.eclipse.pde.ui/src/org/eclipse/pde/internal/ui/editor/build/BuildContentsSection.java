@@ -107,7 +107,7 @@ public abstract class BuildContentsSection extends TableSection implements IReso
 	@Override
 	protected void createViewerPartControl(Composite parent, int style, int span, FormToolkit toolkit) {
 		MenuManager popupMenuManager = new MenuManager();
-		IMenuListener listener = mng -> fillContextMenu(mng);
+		IMenuListener listener = this::fillContextMenu;
 		popupMenuManager.addMenuListener(listener);
 		popupMenuManager.setRemoveAllWhenShown(true);
 		Control control = fTreeViewer.getControl();
@@ -238,7 +238,7 @@ public abstract class BuildContentsSection extends TableSection implements IReso
 		fTreeViewer.getTree().getDisplay().asyncExec(() -> BusyIndicator.showWhile(Display.getCurrent(), () -> {
 			if (fTreeViewer.getTree().isDisposed())
 				return;
-			Vector<String> fileExt = new Vector<>();
+			ArrayList<String> fileExt = new ArrayList<>();
 			String[] inclTokens, exclTokens = new String[0];
 			if (fBundleRoot == null || includes == null)
 				return;
@@ -246,10 +246,8 @@ public abstract class BuildContentsSection extends TableSection implements IReso
 			if (excludes != null)
 				exclTokens = excludes.getTokens();
 			Set<String> temp = new TreeSet<>();
-			for (String inclToken : inclTokens)
-				temp.add(inclToken);
-			for (String exclToken : exclTokens)
-				temp.add(exclToken);
+			Collections.addAll(temp, inclTokens);
+			Collections.addAll(temp, exclTokens);
 			Iterator<String> iter = temp.iterator();
 			while (iter.hasNext()) {
 				String resource = iter.next().toString();

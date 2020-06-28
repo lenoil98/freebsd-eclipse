@@ -15,6 +15,8 @@
 
 package org.eclipse.ui.tests.services;
 
+import java.util.Objects;
+
 import org.eclipse.core.expressions.EvaluationResult;
 import org.eclipse.core.expressions.Expression;
 import org.eclipse.core.expressions.ExpressionInfo;
@@ -30,17 +32,22 @@ import org.eclipse.ui.ISources;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.ide.IDE;
-import org.eclipse.ui.internal.util.Util;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.services.IEvaluationService;
 import org.eclipse.ui.tests.api.MockReusableEditorPart;
 import org.eclipse.ui.tests.harness.util.FileUtil;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * @since 3.5
  *
  */
+@RunWith(JUnit4.class)
+@Ignore("See bug 436755 and commit 0d6ce84b3d3a588733bdae43224c612239a0a9a7")
 public class EditorSourceTest extends UITestCase {
 
 	private static class MyEval implements IPropertyChangeListener {
@@ -73,7 +80,7 @@ public class EditorSourceTest extends UITestCase {
 		@Override
 		public EvaluationResult evaluate(IEvaluationContext context) {
 			stateInput = context.getVariable(ISources.ACTIVE_EDITOR_INPUT_NAME);
-			return EvaluationResult.valueOf(Util
+			return EvaluationResult.valueOf(Objects
 					.equals(stateInput, editorInput));
 		}
 
@@ -83,8 +90,8 @@ public class EditorSourceTest extends UITestCase {
 	private IFile test1;
 	private IFile test2;
 
-	public EditorSourceTest(String testName) {
-		super(testName);
+	public EditorSourceTest() {
+		super(EditorSourceTest.class.getSimpleName());
 	}
 
 	@Override
@@ -95,6 +102,7 @@ public class EditorSourceTest extends UITestCase {
 		test2 = FileUtil.createFile("test2.mockr1", project);
 	}
 
+	@Test
 	public void testActiveEditor() throws Exception {
 		IWorkbenchWindow window = openTestWindow();
 		IEvaluationService es = window

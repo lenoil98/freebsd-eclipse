@@ -49,7 +49,7 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 
 	/**
 	 * @param kind the kind of clean up to configure
-	 * 
+	 *
 	 * @see CleanUpConstants#DEFAULT_CLEAN_UP_OPTIONS
 	 * @see CleanUpConstants#DEFAULT_SAVE_ACTION_OPTIONS
 	 */
@@ -130,7 +130,7 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 
 	/**
 	 * Connects master and slave checkboxes.
-	 * 
+	 *
 	 * @param master the master
 	 * @param slaves direct slaves of the master
 	 * @param subSlaves indirect slaves, i.e. a slave is a master of its subSlave).
@@ -143,8 +143,7 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 		if (subSlaves != null) {
 			for (int i= 0; i < slaves.length; i++) {
 				final CheckboxPreference slave= slaves[i];
-				for (int j= 0; j < subSlaves[i].length; j++) {
-					final CheckboxPreference subSlave= subSlaves[i][j];
+				for (CheckboxPreference subSlave : subSlaves[i]) {
 					master.addObserver(new Observer() {
 						@Override
 						public void update(Observable o, Object arg) {
@@ -155,7 +154,7 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 				}
 			}
 		}
-		
+
 		master.addObserver(new Observer() {
 			@Override
 			public void update(Observable o, Object arg) {
@@ -164,8 +163,8 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 					if (slaves[i].getChecked()) {
 						setSelectedCleanUpCount(fSelectedCount + (masterChecked ? 1 : -1));
 						if (subSlaves != null) {
-							for (int j= 0; j < subSlaves[i].length; j++) {
-								if (subSlaves[i][j].getChecked()) {
+							for (CheckboxPreference subSlave : subSlaves[i]) {
+								if (subSlave.getChecked()) {
 									setSelectedCleanUpCount(fSelectedCount + (masterChecked ? 1 : -1));
 								}
 							}
@@ -174,9 +173,8 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 				}
 			}
 		});
-		
-		for (int i= 0; i < slaves.length; i++) {
-			final CheckboxPreference slave= slaves[i];
+
+		for (CheckboxPreference slave : slaves) {
 			slave.addObserver(new Observer() {
 				@Override
 				public void update(Observable o, Object arg) {
@@ -184,10 +182,10 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
 				}
 			});
 		}
-		
+
 		if (master.getChecked()) {
-			for (int i= 0; i < slaves.length; i++) {
-				if (slaves[i].getChecked() && master.getEnabled()) {
+			for (CheckboxPreference slave : slaves) {
+				if (slave.getChecked() && master.getEnabled()) {
 					setSelectedCleanUpCount(fSelectedCount + 1);
 				}
 			}
@@ -198,20 +196,20 @@ public abstract class CleanUpTabPage extends ModifyDialogTabPage implements ICle
     	master.addObserver( new Observer() {
     		@Override
 			public void update(Observable o, Object arg) {
-    			for (int i= 0; i < slaves.length; i++) {
-					slaves[i].setEnabled(master.getChecked());
+				for (ButtonPreference slave : slaves) {
+					slave.setEnabled(master.getChecked());
 				}
     		}
     	});
 
-    	for (int i= 0; i < slaves.length; i++) {
-			slaves[i].setEnabled(master.getChecked());
+		for (ButtonPreference slave : slaves) {
+			slave.setEnabled(master.getChecked());
 		}
 	}
 
 	/**
 	 * Creates a spacer control with a pre-defined width.
-	 * 
+	 *
 	 * @param parent the parent composite
 	 */
 	// should be called "createSpacer"

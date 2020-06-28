@@ -17,7 +17,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -200,16 +199,17 @@ public final class PushDownWizard extends RefactoringWizard {
 
 		private static int countEditableInfos(final MemberActionInfo[] infos) {
 			int result= 0;
-			for (int index= 0; index < infos.length; index++) {
-				if (infos[index].isEditable())
+			for (MemberActionInfo info : infos) {
+				if (info.isEditable()) {
 					result++;
+				}
 			}
 			return result;
 		}
 
 		private static void setInfoAction(final MemberActionInfo[] infos, final int action) {
-			for (int index= 0; index < infos.length; index++) {
-				infos[index].setAction(action);
+			for (MemberActionInfo info : infos) {
+				info.setAction(action);
 			}
 		}
 
@@ -250,10 +250,8 @@ public final class PushDownWizard extends RefactoringWizard {
 		}
 
 		private int countInfosForAction(final int action) {
-			final MemberActionInfo[] infos= (MemberActionInfo[]) fTableViewer.getInput();
 			int count= 0;
-			for (int index= 0; index < infos.length; index++) {
-				final MemberActionInfo info= infos[index];
+			for (MemberActionInfo info : (MemberActionInfo[]) fTableViewer.getInput()) {
 				if (info.getAction() == action)
 					count++;
 			}
@@ -365,7 +363,7 @@ public final class PushDownWizard extends RefactoringWizard {
 
 			fTableViewer= new PullPushCheckboxTableViewer(table);
 			fTableViewer.setUseHashlookup(true);
-			fTableViewer.setContentProvider(new ArrayContentProvider());
+			fTableViewer.setContentProvider(ArrayContentProvider.getInstance());
 			fTableViewer.setLabelProvider(new MemberActionInfoLabelProvider());
 			fTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 
@@ -447,7 +445,7 @@ public final class PushDownWizard extends RefactoringWizard {
 						selectedMembers[0].getMember(), JavaElementLabels.M_PARAMETER_TYPES)) : Messages.format(RefactoringMessages.PushDownInputPage_Mark_selected_members_plural, String
 						.valueOf(selectedMembers.length));
 				final Map<String, Integer> stringMapping= createStringMappingForSelectedElements();
-				final String[] keys= stringMapping.keySet().toArray(new String[stringMapping.keySet().size()]);
+				final String[] keys= stringMapping.keySet().toArray(new String[stringMapping.size()]);
 				Arrays.sort(keys);
 				final int initialSelectionIndex= getInitialSelectionIndexForEditDialog(stringMapping, keys);
 
@@ -471,8 +469,7 @@ public final class PushDownWizard extends RefactoringWizard {
 		private MemberActionInfo[] getActiveInfos() {
 			final MemberActionInfo[] infos= fProcessor.getMemberActionInfos();
 			final List<MemberActionInfo> result= new ArrayList<>(infos.length);
-			for (int index= 0; index < infos.length; index++) {
-				final MemberActionInfo info= infos[index];
+			for (MemberActionInfo info : infos) {
 				if (info.isActive())
 					result.add(info);
 			}
@@ -485,9 +482,10 @@ public final class PushDownWizard extends RefactoringWizard {
 				return -1;
 
 			final int code= infos[0].getAction();
-			for (int index= 0; index < infos.length; index++) {
-				if (code != infos[index].getAction())
+			for (MemberActionInfo info : infos) {
+				if (code != info.getAction()) {
 					return -1;
+				}
 			}
 			return code;
 		}
@@ -496,8 +494,7 @@ public final class PushDownWizard extends RefactoringWizard {
 			final int commonActionCode= getCommonActionCodeForSelectedInfos();
 			if (commonActionCode == -1)
 				return 0;
-			for (final Iterator<String> iterator= mapping.keySet().iterator(); iterator.hasNext();) {
-				final String key= iterator.next();
+			for (String key : mapping.keySet()) {
 				final int action= mapping.get(key).intValue();
 				if (commonActionCode == action) {
 					for (int index= 0; index < keys.length; index++) {
@@ -513,8 +510,8 @@ public final class PushDownWizard extends RefactoringWizard {
 		private IMember[] getMembers() {
 			final MemberActionInfo[] infos= (MemberActionInfo[]) fTableViewer.getInput();
 			final List<IMember> result= new ArrayList<>(infos.length);
-			for (int index= 0; index < infos.length; index++) {
-				result.add(infos[index].getMember());
+			for (MemberActionInfo info : infos) {
+				result.add(info.getMember());
 			}
 			return result.toArray(new IMember[result.size()]);
 		}
@@ -550,10 +547,11 @@ public final class PushDownWizard extends RefactoringWizard {
 
 		private void setActionForMembers(final IMember[] members, final int action) {
 			final MemberActionInfo[] infos= (MemberActionInfo[]) fTableViewer.getInput();
-			for (int offset= 0; offset < members.length; offset++) {
-				for (int index= 0; index < infos.length; index++) {
-					if (infos[index].getMember().equals(members[offset]))
-						infos[index].setAction(action);
+			for (IMember member : members) {
+				for (MemberActionInfo info : infos) {
+					if (info.getMember().equals(member)) {
+						info.setAction(action);
+					}
 				}
 			}
 		}
@@ -566,7 +564,7 @@ public final class PushDownWizard extends RefactoringWizard {
 
 				@Override
 				public void selectionChanged(final SelectionChangedEvent event) {
-					if (comboBoxCellEditor.getControl() == null & !table.isDisposed())
+					if (comboBoxCellEditor.getControl() == null && !table.isDisposed())
 						comboBoxCellEditor.create(table);
 					Assert.isTrue(event.getSelection() instanceof IStructuredSelection);
 					final IStructuredSelection ss= (IStructuredSelection) event.getSelection();

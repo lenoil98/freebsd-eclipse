@@ -14,6 +14,7 @@
 package org.eclipse.search.internal.ui.text;
 
 import java.net.URI;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,8 +26,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import com.ibm.icu.text.Collator;
 
 import org.eclipse.core.filesystem.URIUtil;
 
@@ -206,7 +205,7 @@ public class ReplaceRefactoring extends Refactoring {
 	@Override
 	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		String searchString= getQuery().getSearchString();
-		if (searchString.length() == 0) {
+		if (searchString.isEmpty()) {
 			return RefactoringStatus.createFatalErrorStatus(SearchMessages.ReplaceRefactoring_error_illegal_search_string);
 		}
 		fMatches.clear();
@@ -260,7 +259,7 @@ public class ReplaceRefactoring extends Refactoring {
 	}
 
 	public int getNumberOfFiles() {
-		return fMatches.keySet().size();
+		return fMatches.size();
 	}
 
 	public int getNumberOfMatches() {
@@ -476,15 +475,15 @@ public class ReplaceRefactoring extends Refactoring {
 				replacementText= PatternConstructor.interpretReplaceEscapes(replacementText, originalText, lineDelimiter);
 
 				Matcher matcher= pattern.matcher(originalText);
-		        StringBuffer sb = new StringBuffer();
-		        matcher.reset();
-		        if (matcher.find()) {
-		        	matcher.appendReplacement(sb, replacementText);
-		        } else {
-		        	return null;
-		        }
-		        matcher.appendTail(sb);
-		        return sb.toString();
+				StringBuffer sb = new StringBuffer();
+				matcher.reset();
+				if (matcher.find()) {
+					matcher.appendReplacement(sb, replacementText);
+				} else {
+					return null;
+				}
+				matcher.appendTail(sb);
+				return sb.toString();
 			} catch (IndexOutOfBoundsException ex) {
 				throw new PatternSyntaxException(ex.getLocalizedMessage(), replacementText, -1);
 			}

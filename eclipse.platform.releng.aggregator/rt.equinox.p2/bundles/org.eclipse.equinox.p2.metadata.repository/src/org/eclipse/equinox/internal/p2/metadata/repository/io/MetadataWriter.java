@@ -21,7 +21,7 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.equinox.internal.p2.core.helpers.LogHelper;
 import org.eclipse.equinox.internal.p2.metadata.RequiredCapability;
 import org.eclipse.equinox.internal.p2.metadata.RequiredPropertiesMatch;
-import org.eclipse.equinox.internal.p2.metadata.repository.Activator;
+import org.eclipse.equinox.internal.p2.metadata.repository.Constants;
 import org.eclipse.equinox.internal.p2.persistence.XMLWriter;
 import org.eclipse.equinox.p2.metadata.*;
 import org.eclipse.equinox.p2.metadata.expression.*;
@@ -223,9 +223,9 @@ public class MetadataWriter extends XMLWriter implements XMLConstants {
 
 	protected void writeApplicabilityScope(IRequirement[][] capabilities) {
 		start(APPLICABILITY_SCOPE);
-		for (int i = 0; i < capabilities.length; i++) {
+		for (IRequirement[] capability : capabilities) {
 			start(APPLY_ON);
-			writeRequirements(Arrays.asList(capabilities[i]));
+			writeRequirements(Arrays.asList(capability));
 			end(APPLY_ON);
 		}
 		end(APPLICABILITY_SCOPE);
@@ -233,8 +233,8 @@ public class MetadataWriter extends XMLWriter implements XMLConstants {
 
 	protected void writeRequirementsChange(List<IRequirementChange> changes) {
 		start(REQUIREMENT_CHANGES);
-		for (int i = 0; i < changes.size(); i++) {
-			writeRequirementChange(changes.get(i));
+		for (IRequirementChange change : changes) {
+			writeRequirementChange(change);
 		}
 		end(REQUIREMENT_CHANGES);
 	}
@@ -422,7 +422,7 @@ public class MetadataWriter extends XMLWriter implements XMLConstants {
 					}
 				}
 			} catch (IllegalStateException ise) {
-				LogHelper.log(new Status(IStatus.INFO, Activator.ID, "Error writing the copyright URL: " + copyright.getLocation())); //$NON-NLS-1$
+				LogHelper.log(new Status(IStatus.INFO, Constants.ID, "Error writing the copyright URL: " + copyright.getLocation())); //$NON-NLS-1$
 			}
 			cdata(copyright.getBody(), true);
 			end(COPYRIGHT_ELEMENT);

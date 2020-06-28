@@ -43,18 +43,15 @@ public class RemoveExpressionAction extends AbstractSelectionActionDelegate {
 			if (segment instanceof IExpression) {
 				expressions.add((IExpression) segment);
 			} else if (segment instanceof IAdaptable) {
-			    IExpression expression = ((IAdaptable)segment).getAdapter(IExpression.class);
-			    if (expression != null) {
-			        expressions.add(expression);
-			    }
+				IExpression expression = ((IAdaptable)segment).getAdapter(IExpression.class);
+				if (expression != null) {
+					expressions.add(expression);
+				}
 			}
 		}
 		return expressions.toArray(new IExpression[expressions.size()]);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		WorkbenchJob job = new WorkbenchJob("remove expression") { //$NON-NLS-1$
@@ -72,9 +69,6 @@ public class RemoveExpressionAction extends AbstractSelectionActionDelegate {
 		schedule(job);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.actions.AbstractSelectionActionDelegate#isEnabledFor(java.lang.Object)
-	 */
 	@Override
 	protected boolean isEnabledFor(Object element) {
 		return DebugPlugin.getAdapter(element, IExpression.class) != null;

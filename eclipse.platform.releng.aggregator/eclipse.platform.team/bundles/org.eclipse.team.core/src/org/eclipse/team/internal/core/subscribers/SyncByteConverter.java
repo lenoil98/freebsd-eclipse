@@ -53,7 +53,7 @@ public class SyncByteConverter {
 
 	/**
 	 * Method startOfSlot returns the index of the slash that occurs before the
-	 * given slot index. The provided index should be >= 1 which assumes that
+	 * given slot index. The provided index should be &gt;= 1 which assumes that
 	 * slot zero occurs before the first slash.
 	 *
 	 * @param syncBytes
@@ -123,8 +123,7 @@ public class SyncByteConverter {
 
 	public static byte[] toBytes(String[] slots) {
 		StringBuilder buffer = new StringBuilder();
-		for (int i = 0; i < slots.length; i++) {
-			String string = slots[i];
+		for (String string : slots) {
 			buffer.append(string);
 			buffer.append(new String(new byte[] {SyncByteConverter.SEPARATOR_BYTE }));
 		}

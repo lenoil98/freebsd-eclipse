@@ -33,6 +33,8 @@ import org.eclipse.jface.wizard.WizardDialog;
 
 import org.eclipse.jface.text.IDocument;
 
+import org.eclipse.ui.PlatformUI;
+
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -187,7 +189,7 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 						}
 					}
 				} else {
-					setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewenum_inpackage_description, containerLabel));					
+					setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewenum_inpackage_description, containerLabel));
 				}
 				break;
 			case K_ANNOTATION:
@@ -207,7 +209,7 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 						}
 					}
 				} else {
-					setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewannotation_inpackage_description, containerLabel));					
+					setDisplayName(Messages.format(CorrectionMessages.NewCUCompletionUsingWizardProposal_createnewannotation_inpackage_description, containerLabel));
 				}
 				break;
 			default:
@@ -248,7 +250,7 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 	public void apply(IDocument document) {
 		StructuredSelection selection= new StructuredSelection(fCompilationUnit);
 		NewElementWizard wizard= createWizard(selection);
-		wizard.init(JavaPlugin.getDefault().getWorkbench(), selection);
+		wizard.init(PlatformUI.getWorkbench(), selection);
 
 		IType createdType= null;
 
@@ -407,9 +409,8 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 				break;
 			case ASTNode.VARIABLE_DECLARATION_STATEMENT:
 			case ASTNode.FIELD_DECLARATION:
+			case ASTNode.PARAMETERIZED_TYPE: // Inheritance doesn't help: A<X> z= new A<String>(); ->
 				return null; // no guessing for LHS types, cannot be a supertype of a known type
-			case ASTNode.PARAMETERIZED_TYPE:
-				return null; // Inheritance doesn't help: A<X> z= new A<String>(); ->
 			case ASTNode.PROVIDES_DIRECTIVE:
 				if (node.getLocationInParent() == ProvidesDirective.IMPLEMENTATIONS_PROPERTY) {
 					Name serviceName= ((ProvidesDirective) parent).getName();
@@ -502,12 +503,16 @@ public class NewCUUsingWizardProposal extends ChangeCorrectionProposal {
 	private void nameToHTML(String name, StringBuilder buf) {
 		for (int i= 0; i < name.length(); i++) {
 			char ch= name.charAt(i);
-			if (ch == '>') {
+			switch (ch) {
+			case '>':
 				buf.append("&gt;"); //$NON-NLS-1$
-			} else if (ch == '<') {
+				break;
+			case '<':
 				buf.append("&lt;"); //$NON-NLS-1$
-			} else {
+				break;
+			default:
 				buf.append(ch);
+				break;
 			}
 		}
 	}

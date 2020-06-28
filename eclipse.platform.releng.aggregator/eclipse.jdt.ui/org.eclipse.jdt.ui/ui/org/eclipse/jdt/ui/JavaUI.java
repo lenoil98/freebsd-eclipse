@@ -42,6 +42,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceReference;
 import org.eclipse.jdt.core.ITypeRoot;
+import org.eclipse.jdt.core.IWorkingCopy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
@@ -163,7 +164,7 @@ public final class JavaUI {
 	/**
 	 * The editor part id of the module-info.java editor (value
 	 * <code>"org.eclipse.jdt.ui.ModuleInfoEditor"</code>).
-	 * 
+	 *
 	 * @since 3.14
 	 */
 	public static final String ID_MODULE_INFO_EDITOR= 	"org.eclipse.jdt.ui.ModuleInfoEditor"; //$NON-NLS-1$
@@ -171,7 +172,7 @@ public final class JavaUI {
 	/**
 	 * The editor part id of the module-info.class editor (value
 	 * <code>"org.eclipse.jdt.ui.ModuleInfoClassFileEditor"</code>).
-	 * 
+	 *
 	 * @since 3.14
 	 */
 	public static final String ID_MODULE_INFO_CF_EDITOR= "org.eclipse.jdt.ui.ModuleInfoClassFileEditor"; //$NON-NLS-1$
@@ -179,7 +180,7 @@ public final class JavaUI {
 	/**
 	 * The editor part id of the module-info.class editor with no source (value
 	 * <code>"org.eclipse.jdt.ui.ModuleInfoClassFileEditorNoSource"</code>).
-	 * 
+	 *
 	 * @since 3.14
 	 */
 	public static final String ID_MODULE_INFO_CF_EDITOR_NO_SOURCE= "org.eclipse.jdt.ui.ModuleInfoClassFileEditorNoSource"; //$NON-NLS-1$
@@ -298,18 +299,18 @@ public final class JavaUI {
 	 * @since 3.15
 	 */
 	public static final String ID_COMPILER_COMPLIANCE_PROPERTY_PAGE= "org.eclipse.jdt.ui.propertyPages.CompliancePreferencePage"; //$NON-NLS-1$
-	
+
 	/**
 	 * @since 3.15
 	 */
 	public static final String ID_JAVA_BUILD_PREFERENCE_PROPERTY_PAGE= "org.eclipse.jdt.ui.propertyPages.JavaBuildPreferencePage"; //$NON-NLS-1$
-	
+
 	/**
 	 * The class org.eclipse.debug.core.model.IProcess allows attaching String properties to
 	 * processes. The Java UI contributes a property page for IProcess that will show the contents
 	 * of the property with this key. The intent of this property is to show the command line a
 	 * process was launched with.
-	 * 
+	 *
 	 * @deprecated As of 1.0
 	 */
 	@Deprecated
@@ -373,11 +374,9 @@ public final class JavaUI {
 			consideredRoots= Arrays.asList(roots);
 		} else {
 			consideredRoots= new ArrayList<>(roots.length);
-			for (int i= 0; i < roots.length; i++) {
-				IPackageFragmentRoot root= roots[i];
+			for (IPackageFragmentRoot root : roots) {
 				if (root.getKind() != IPackageFragmentRoot.K_BINARY)
 					consideredRoots.add(root);
-
 			}
 		}
 
@@ -615,25 +614,33 @@ public final class JavaUI {
 	public static SelectionDialog createTypeDialog(Shell parent, IRunnableContext context, IJavaSearchScope scope, int style,
 			boolean multipleSelection, String filter, TypeSelectionExtension extension) throws JavaModelException {
 		int elementKinds= 0;
-		if (style == IJavaElementSearchConstants.CONSIDER_ALL_TYPES) {
+		switch (style) {
+		case IJavaElementSearchConstants.CONSIDER_ALL_TYPES:
 			elementKinds= IJavaSearchConstants.TYPE;
-		} else if (style == IJavaElementSearchConstants.CONSIDER_INTERFACES) {
+			break;
+		case IJavaElementSearchConstants.CONSIDER_INTERFACES:
 			elementKinds= IJavaSearchConstants.INTERFACE;
-		} else if (style == IJavaElementSearchConstants.CONSIDER_CLASSES) {
+			break;
+		case IJavaElementSearchConstants.CONSIDER_CLASSES:
 			elementKinds= IJavaSearchConstants.CLASS;
-		} else if (style == IJavaElementSearchConstants.CONSIDER_ANNOTATION_TYPES) {
+			break;
+		case IJavaElementSearchConstants.CONSIDER_ANNOTATION_TYPES:
 			elementKinds= IJavaSearchConstants.ANNOTATION_TYPE;
-		} else if (style == IJavaElementSearchConstants.CONSIDER_ENUMS) {
+			break;
+		case IJavaElementSearchConstants.CONSIDER_ENUMS:
 			elementKinds= IJavaSearchConstants.ENUM;
-		} else if (style == IJavaElementSearchConstants.CONSIDER_CLASSES_AND_INTERFACES) {
+			break;
+		case IJavaElementSearchConstants.CONSIDER_CLASSES_AND_INTERFACES:
+		case DEPRECATED_CONSIDER_TYPES:
 			elementKinds= IJavaSearchConstants.CLASS_AND_INTERFACE;
-		} else if (style == IJavaElementSearchConstants.CONSIDER_CLASSES_AND_ENUMS) {
+			break;
+		case IJavaElementSearchConstants.CONSIDER_CLASSES_AND_ENUMS:
 			elementKinds= IJavaSearchConstants.CLASS_AND_ENUM;
-		} else if (style == DEPRECATED_CONSIDER_TYPES) {
-			elementKinds= IJavaSearchConstants.CLASS_AND_INTERFACE;
-		} else if (style == IJavaElementSearchConstants.CONSIDER_INTERFACES_AND_ANNOTATIONS) {
+			break;
+		case IJavaElementSearchConstants.CONSIDER_INTERFACES_AND_ANNOTATIONS:
 			elementKinds= IJavaSearchConstants.INTERFACE_AND_ANNOTATION;
-		} else {
+			break;
+		default:
 			throw new IllegalArgumentException("Invalid style constant."); //$NON-NLS-1$
 		}
 		FilteredTypesSelectionDialog dialog= new FilteredTypesSelectionDialog(parent, multipleSelection,
@@ -854,8 +861,7 @@ public final class JavaUI {
 	public static org.eclipse.jdt.core.IWorkingCopy[] getSharedWorkingCopiesOnClasspath() {
 		org.eclipse.jdt.core.IWorkingCopy[] wcs= getSharedWorkingCopies();
 		List<org.eclipse.jdt.core.IWorkingCopy> result= new ArrayList<>(wcs.length);
-		for (int i = 0; i < wcs.length; i++) {
-			org.eclipse.jdt.core.IWorkingCopy wc= wcs[i];
+		for (IWorkingCopy wc : wcs) {
 			if (wc instanceof IJavaElement) {
 				IJavaElement je= (IJavaElement)wc;
 				if (je.getJavaProject().isOnClasspath(je)) {

@@ -15,6 +15,7 @@
 package org.eclipse.ant.internal.ui.debug.model;
 
 import java.io.File;
+import java.text.MessageFormat;
 
 import org.eclipse.ant.internal.core.IAntCoreConstants;
 import org.eclipse.ant.internal.launching.debug.model.AntLineBreakpoint;
@@ -43,28 +44,16 @@ import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 
-import com.ibm.icu.text.MessageFormat;
-
 /**
  * Renders Ant debug elements
  */
 public class AntDebugModelPresentation extends LabelProvider implements IDebugModelPresentationExtension {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.IDebugModelPresentation#setAttribute(java.lang.String, java.lang.Object)
-	 */
 	@Override
 	public void setAttribute(String attribute, Object value) {
 		// do nothing
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jface.viewers.ILabelProvider#getImage(java.lang.Object)
-	 */
 	@Override
 	public Image getImage(Object element) {
 		if (element instanceof AntProperty) {
@@ -75,11 +64,6 @@ public class AntDebugModelPresentation extends LabelProvider implements IDebugMo
 		return null;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
-	 */
 	@Override
 	public String getText(Object element) {
 		if (element instanceof AntStackFrame) {
@@ -101,7 +85,7 @@ public class AntDebugModelPresentation extends LabelProvider implements IDebugMo
 	private String getThreadText(AntThread thread) {
 		String name = thread.getName();
 		if (name != null) {
-			StringBuffer text = new StringBuffer(name);
+			StringBuilder text = new StringBuilder(name);
 			if (thread.isSuspended()) {
 				IBreakpoint[] breakpoints = thread.getBreakpoints();
 				if (breakpoints.length > 0) {
@@ -111,9 +95,11 @@ public class AntDebugModelPresentation extends LabelProvider implements IDebugMo
 					String lineNumber = Integer.toString(marker.getAttribute(IMarker.LINE_NUMBER, -1));
 					String breakpointString = null;
 					if (breakpoint.isRunToLine()) {
-						breakpointString = MessageFormat.format(DebugModelMessages.AntDebugModelPresentation_5, new Object[] { lineNumber, fileName });
+						breakpointString = MessageFormat.format(DebugModelMessages.AntDebugModelPresentation_5, new Object[] { lineNumber,
+								fileName });
 					} else {
-						breakpointString = MessageFormat.format(DebugModelMessages.AntDebugModelPresentation_2, new Object[] { lineNumber, fileName });
+						breakpointString = MessageFormat.format(DebugModelMessages.AntDebugModelPresentation_2, new Object[] { lineNumber,
+								fileName });
 					}
 					text.append(MessageFormat.format(DebugModelMessages.AntDebugModelPresentation_3, new Object[] { breakpointString }));
 				} else {
@@ -129,7 +115,7 @@ public class AntDebugModelPresentation extends LabelProvider implements IDebugMo
 	private String getStackFrameText(AntStackFrame frame) {
 		String name = frame.getName();
 		if (name != null) {
-			StringBuffer text = new StringBuffer(name);
+			StringBuilder text = new StringBuilder(name);
 			int lineNumber = frame.getLineNumber();
 			String lineNumberString = null;
 			if (lineNumber == 0) {
@@ -143,11 +129,6 @@ public class AntDebugModelPresentation extends LabelProvider implements IDebugMo
 		return null;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.IDebugModelPresentation#computeDetail(org.eclipse.debug.core.model.IValue, org.eclipse.debug.ui.IValueDetailListener)
-	 */
 	@Override
 	public void computeDetail(IValue value, IValueDetailListener listener) {
 		String detail = IAntCoreConstants.EMPTY_STRING;
@@ -160,11 +141,6 @@ public class AntDebugModelPresentation extends LabelProvider implements IDebugMo
 		listener.detailComputed(value, detail);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.ISourcePresentation#getEditorInput(java.lang.Object)
-	 */
 	@Override
 	public IEditorInput getEditorInput(Object element) {
 		if (element instanceof IFile) {
@@ -188,21 +164,11 @@ public class AntDebugModelPresentation extends LabelProvider implements IDebugMo
 		return null;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.ISourcePresentation#getEditorId(org.eclipse.ui.IEditorInput, java.lang.Object)
-	 */
 	@Override
 	public String getEditorId(IEditorInput input, Object element) {
 		return "org.eclipse.ant.ui.internal.editor.AntEditor"; //$NON-NLS-1$
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.debug.ui.IDebugModelPresentationExtension#requiresUIThread(java.lang.Object)
-	 */
 	@Override
 	public boolean requiresUIThread(Object element) {
 		return !AntUIImages.isInitialized();

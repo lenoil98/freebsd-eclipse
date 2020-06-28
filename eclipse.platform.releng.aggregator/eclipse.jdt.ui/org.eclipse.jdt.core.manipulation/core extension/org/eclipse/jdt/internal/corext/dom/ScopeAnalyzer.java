@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -42,9 +42,11 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SwitchCase;
+import org.eclipse.jdt.core.dom.SwitchExpression;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclarationStatement;
@@ -54,6 +56,8 @@ import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
+
+import org.eclipse.jdt.internal.ui.util.ASTHelper;
 
 /**
  * Evaluates all fields, methods and types available (declared) at a given offset
@@ -161,7 +165,7 @@ public class ScopeAnalyzer {
 		if (binding != null) {
 			switch (binding.getKind()) {
 				case IBinding.METHOD:
-					StringBuffer buf= new StringBuffer();
+					StringBuilder buf= new StringBuilder();
 					buf.append('M');
 					buf.append(binding.getName()).append('(');
 					ITypeBinding[] parameters= ((IMethodBinding) binding).getParameterTypes();
@@ -174,6 +178,7 @@ public class ScopeAnalyzer {
 					}
 					buf.append(')');
 					return buf.toString();
+
 				case IBinding.VARIABLE:
 					if (hasFlag(NO_FIELDS, flags) && ((IVariableBinding) binding).isField()) {
 						return 'F' + binding.getName();
@@ -206,17 +211,15 @@ public class ScopeAnalyzer {
 			return false;
 		}
 		if (hasFlag(VARIABLES, flags)) {
-			IVariableBinding[] variableBindings= binding.getDeclaredFields();
-			for (int i= 0; i < variableBindings.length; i++) {
-				if (requestor.acceptBinding(variableBindings[i]))
+			for (IVariableBinding variableBinding : binding.getDeclaredFields()) {
+				if (requestor.acceptBinding(variableBinding)) {
 					return true;
+				}
 			}
 		}
 
 		if (hasFlag(METHODS, flags)) {
-			IMethodBinding[] methodBindings= binding.getDeclaredMethods();
-			for (int i= 0; i < methodBindings.length; i++) {
-				IMethodBinding curr= methodBindings[i];
+			for (IMethodBinding curr : binding.getDeclaredMethods()) {
 				if (isSuperInterfaceBinding && Modifier.isStatic(curr.getModifiers())) {
 					continue;
 				}
@@ -228,9 +231,7 @@ public class ScopeAnalyzer {
 		}
 
 		if (hasFlag(TYPES, flags)) {
-			ITypeBinding[] typeBindings= binding.getDeclaredTypes();
-			for (int i= 0; i < typeBindings.length; i++) {
-				ITypeBinding curr= typeBindings[i];
+			for (ITypeBinding curr : binding.getDeclaredTypes()) {
 				if (requestor.acceptBinding(curr))
 					return true;
 			}
@@ -246,10 +247,10 @@ public class ScopeAnalyzer {
 				return true;
 		}
 
-		ITypeBinding[] interfaces= binding.getInterfaces(); // includes looking for methods: abstract, unimplemented methods
-		for (int i= 0; i < interfaces.length; i++) {
-			if (addInherited(interfaces[i], true, flags, requestor)) // recursive
+		for (ITypeBinding intf : binding.getInterfaces()) {// includes looking for methods: abstract, unimplemented methods
+			if (addInherited(intf, true, flags, requestor)) {
 				return true;
+			}
 		}
 		return false;
 	}
@@ -267,10 +268,10 @@ public class ScopeAnalyzer {
 			if (requestor.acceptBinding(binding))
 				return true;
 
-			ITypeBinding[] typeParameters= binding.getTypeParameters();
-			for (int i= 0; i < typeParameters.length; i++) {
-				if (requestor.acceptBinding(typeParameters[i]))
+			for (ITypeBinding typeParameter : binding.getTypeParameters()) {
+				if (requestor.acceptBinding(typeParameter)) {
 					return true;
+				}
 			}
 		}
 
@@ -286,8 +287,8 @@ public class ScopeAnalyzer {
 			} else if (hasFlag(TYPES, flags)) {
 				if (fRoot.findDeclaringNode(binding) != null) {
 					List<AbstractTypeDeclaration> types= fRoot.types();
-					for (int i= 0; i < types.size(); i++) {
-						if (requestor.acceptBinding(types.get(i).resolveBinding()))
+					for (AbstractTypeDeclaration type : types) {
+						if (requestor.acceptBinding(type.resolveBinding()))
 							return true;
 					}
 				}
@@ -375,8 +376,15 @@ public class ScopeAnalyzer {
 	public IBinding[] getDeclarationsInScope(SimpleName selector, int flags) {
 		try {
 			// special case for switch on enum
-			if (selector.getLocationInParent() == SwitchCase.EXPRESSION_PROPERTY) {
-				ITypeBinding binding= ((SwitchStatement) selector.getParent().getParent()).getExpression().resolveTypeBinding();
+			StructuralPropertyDescriptor locationInParent= selector.getLocationInParent();
+			if (locationInParent == SwitchCase.EXPRESSION_PROPERTY || locationInParent == SwitchCase.EXPRESSIONS2_PROPERTY) {
+				ASTNode caseParent= selector.getParent().getParent();
+				ITypeBinding binding= null;
+				if (caseParent instanceof SwitchStatement) {
+					binding= ((SwitchStatement) caseParent).getExpression().resolveTypeBinding();
+				} else if (caseParent instanceof SwitchExpression) {
+					binding= ((SwitchExpression) caseParent).getExpression().resolveTypeBinding();
+				}
 				if (binding != null && binding.isEnum()) {
 					return getEnumContants(binding);
 				}
@@ -466,8 +474,15 @@ public class ScopeAnalyzer {
 	public boolean isDeclaredInScope(IBinding declaration, SimpleName selector, int flags) {
 		try {
 			// special case for switch on enum
-			if (selector.getLocationInParent() == SwitchCase.EXPRESSION_PROPERTY) {
-				ITypeBinding binding= ((SwitchStatement) selector.getParent().getParent()).getExpression().resolveTypeBinding();
+			StructuralPropertyDescriptor locationInParent= selector.getLocationInParent();
+			if (locationInParent == SwitchCase.EXPRESSION_PROPERTY || locationInParent == SwitchCase.EXPRESSIONS2_PROPERTY) {
+				ASTNode caseParent= selector.getParent().getParent();
+				ITypeBinding binding= null;
+				if (caseParent instanceof SwitchStatement) {
+					binding= ((SwitchStatement) caseParent).getExpression().resolveTypeBinding();
+				} else if (caseParent instanceof SwitchExpression) {
+					binding= ((SwitchExpression) caseParent).getExpression().resolveTypeBinding();
+				}
 				if (binding != null && binding.isEnum()) {
 					return hasEnumContants(declaration, binding.getTypeDeclaration());
 				}
@@ -499,8 +514,7 @@ public class ScopeAnalyzer {
 	private IVariableBinding[] getEnumContants(ITypeBinding binding) {
 		IVariableBinding[] declaredFields= binding.getDeclaredFields();
 		ArrayList<IVariableBinding> res= new ArrayList<>(declaredFields.length);
-		for (int i= 0; i < declaredFields.length; i++) {
-			IVariableBinding curr= declaredFields[i];
+		for (IVariableBinding curr : declaredFields) {
 			if (curr.isEnumConstant()) {
 				res.add(curr);
 			}
@@ -509,9 +523,7 @@ public class ScopeAnalyzer {
 	}
 
 	private boolean hasEnumContants(IBinding declaration, ITypeBinding binding) {
-		IVariableBinding[] declaredFields= binding.getDeclaredFields();
-		for (int i= 0; i < declaredFields.length; i++) {
-			IVariableBinding curr= declaredFields[i];
+		for (IVariableBinding curr : binding.getDeclaredFields()) {
 			if (curr == declaration)
 				return true;
 		}
@@ -577,6 +589,13 @@ public class ScopeAnalyzer {
 		declaring= declaring.getTypeDeclaration();
 
 		int modifiers= binding.getModifiers();
+		int contextModifiers= context.getModifiers();
+		if (context.isClass() && Modifier.isStatic(contextModifiers)) {
+			if (binding.getKind() == IBinding.VARIABLE && !Modifier.isStatic(modifiers)) {
+				return context == declaring;
+			}
+		}
+
 		if (Modifier.isPublic(modifiers) || declaring.isInterface()) {
 			return true;
 		} else if (Modifier.isProtected(modifiers) || !Modifier.isPrivate(modifiers)) {
@@ -614,9 +633,8 @@ public class ScopeAnalyzer {
 			}
 		}
 		if (possibleSuperTypeDecl.isInterface()) {
-			ITypeBinding[] superInterfaces= type.getInterfaces();
-			for (int i= 0; i < superInterfaces.length; i++) {
-				if (isInSuperTypeHierarchy(possibleSuperTypeDecl, superInterfaces[i].getTypeDeclaration())) {
+			for (ITypeBinding superInterface : type.getInterfaces()) {
+				if (isInSuperTypeHierarchy(possibleSuperTypeDecl, superInterface.getTypeDeclaration())) {
 					return true;
 				}
 			}
@@ -698,22 +716,41 @@ public class ScopeAnalyzer {
 		@Override
 		public boolean visit(SwitchCase node) {
 			// switch on enum allows to use enum constants without qualification
-			if (hasFlag(VARIABLES, fFlags) && !node.isDefault() && isInside(node.getExpression())) {
-				SwitchStatement switchStatement= (SwitchStatement) node.getParent();
-				ITypeBinding binding= switchStatement.getExpression().resolveTypeBinding();
+			if (hasFlag(VARIABLES, fFlags) && !node.isDefault()) {
+				if (ASTHelper.isSwitchCaseExpressionsSupportedInAST(node.getAST())) {
+					List<Expression> expressions= node.expressions();
+					for (Expression expression : expressions) {
+						visitExpression(node, expression);
+					}
+				} else {
+					Expression expression= node.getExpression();
+					visitExpression(node, expression);
+				}
+			}
+			return false;
+		}
+
+		private void visitExpression(SwitchCase node, Expression expression) {
+			if (isInside(expression)) {
+				ASTNode caseParent= node.getParent();
+				ITypeBinding binding= null;
+				if (caseParent instanceof SwitchStatement) {
+					SwitchStatement switchStatement= (SwitchStatement) caseParent;
+					binding= switchStatement.getExpression().resolveTypeBinding();
+				} else if (caseParent instanceof SwitchExpression) {
+					SwitchExpression switchExpression= (SwitchExpression) caseParent;
+					binding= switchExpression.getExpression().resolveTypeBinding();
+				}
 				if (binding != null && binding.isEnum()) {
-					IVariableBinding[] declaredFields= binding.getDeclaredFields();
-					for (int i= 0; i < declaredFields.length; i++) {
-						IVariableBinding curr= declaredFields[i];
+					for (IVariableBinding curr : binding.getDeclaredFields()) {
 						if (curr.isEnumConstant()) {
 							fBreak= fRequestor.acceptBinding(curr);
 							if (fBreak)
-								return false;
+								return;
 						}
 					}
 				}
 			}
-			return false;
 		}
 
 		@Override
@@ -725,7 +762,7 @@ public class ScopeAnalyzer {
 		public boolean visit(FieldDeclaration node) {
 			return !fBreak && isInside(node);
 		}
-		
+
 		@Override
 		public boolean visit(Expression node) {
 			return !fBreak && isInside(node);
@@ -868,17 +905,14 @@ public class ScopeAnalyzer {
 
 	public Collection<String> getUsedVariableNames(int offset, int length) {
 		HashSet<String> result= new HashSet<>();
-		IBinding[] bindingsBefore= getDeclarationsInScope(offset, VARIABLES);
-		for (int i= 0; i < bindingsBefore.length; i++) {
-			result.add(bindingsBefore[i].getName());
+		for (IBinding b : getDeclarationsInScope(offset, VARIABLES | CHECK_VISIBILITY)) {
+			result.add(b.getName());
 		}
-		IBinding[] bindingsAfter= getDeclarationsAfter(offset + length, VARIABLES);
-		for (int i= 0; i < bindingsAfter.length; i++) {
-			result.add(bindingsAfter[i].getName());
+		for (IBinding b : getDeclarationsAfter(offset + length, VARIABLES | CHECK_VISIBILITY)) {
+			result.add(b.getName());
 		}
 		List<ImportDeclaration> imports= fRoot.imports();
-		for (int i= 0; i < imports.size(); i++) {
-			ImportDeclaration decl= imports.get(i);
+		for (ImportDeclaration decl : imports) {
 			if (decl.isStatic() && !decl.isOnDemand()) {
 				result.add(ASTNodes.getSimpleNameIdentifier(decl.getName()));
 			}

@@ -34,7 +34,7 @@ public class HistoryBucket extends Bucket {
 	 */
 	public static final class HistoryEntry extends Bucket.Entry {
 
-		final static Comparator<byte[]> COMPARATOR = (state1, state2) -> compareStates(state1, state2);
+		final static Comparator<byte[]> COMPARATOR = HistoryEntry::compareStates;
 
 		// the length of each component of the data array
 		private final static byte[][] EMPTY_DATA = new byte[0][];
@@ -162,9 +162,11 @@ public class HistoryBucket extends Bucket {
 			if (!isDirty())
 				return;
 			int occurrences = 0;
-			for (int i = 0; i < data.length; i++)
-				if (data[i] != null)
-					data[occurrences++] = data[i];
+			for (byte[] d : data) {
+				if (d != null) {
+					data[occurrences++] = d;
+				}
+			}
 			if (occurrences == data.length)
 				// no states deleted
 				return;
@@ -222,6 +224,7 @@ public class HistoryBucket extends Bucket {
 	 * Version number for the current implementation file's format.
 	 * <p>
 	 * Version 2 (3.1 M5):
+	 * </p>
 	 * <pre>
 	 * FILE ::= VERSION_ID ENTRY+
 	 * ENTRY ::= PATH STATE_COUNT STATE+
@@ -231,9 +234,9 @@ public class HistoryBucket extends Bucket {
 	 * UUID	 ::= byte[16]
 	 * LAST_MODIFIED ::= byte[8]
 	 * </pre>
-	 * </p>
 	 * <p>
 	 * Version 1 (3.1 M4):
+	 * </p>
 	 * <pre>
 	 * FILE ::= VERSION_ID ENTRY+
 	 * ENTRY ::= PATH STATE_COUNT STATE+
@@ -243,7 +246,6 @@ public class HistoryBucket extends Bucket {
 	 * UUID	 ::= byte[16]
 	 * LAST_MODIFIED ::= byte[8]
 	 * </pre>
-	 * </p>
 	 */
 	public final static byte VERSION = 2;
 

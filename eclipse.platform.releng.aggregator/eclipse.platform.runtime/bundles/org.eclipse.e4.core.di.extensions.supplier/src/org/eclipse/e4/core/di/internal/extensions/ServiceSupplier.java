@@ -132,10 +132,10 @@ public class ServiceSupplier extends ExtendedObjectSupplier implements EventHand
 			}
 		}
 
-		return handleSingle(b, desiredType, requestor, descriptor, track && qualifier.dynamic(), qualifier);
+		return handleSingle(b, desiredType, requestor, track && qualifier.dynamic(), qualifier);
 	}
 
-	private Object handleSingle(Bundle bundle, Type t, IRequestor requestor, IObjectDescriptor descriptor, boolean track, Service qualifier) {
+	private Object handleSingle(Bundle bundle, Type t, IRequestor requestor, boolean track, Service qualifier) {
 		BundleContext context = bundle.getBundleContext();
 		if (context == null) {
 			context = FrameworkUtil.getBundle(getClass()).getBundleContext();
@@ -204,8 +204,8 @@ public class ServiceSupplier extends ExtendedObjectSupplier implements EventHand
 	}
 
 	private synchronized void trackService(BundleContext context, Class<?> serviceClass, IRequestor requestor) {
-		Map<Class<?>, ServiceHandler> map = this.handlerList.computeIfAbsent(context, (k) -> new ConcurrentHashMap<>());
-		ServiceHandler handler = map.computeIfAbsent(serviceClass, (cl) -> {
+		Map<Class<?>, ServiceHandler> map = this.handlerList.computeIfAbsent(context, k -> new ConcurrentHashMap<>());
+		ServiceHandler handler = map.computeIfAbsent(serviceClass, cl -> {
 			ServiceHandler h = new ServiceHandler(this,context, serviceClass);
 			context.addServiceListener(h);
 			return h;

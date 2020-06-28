@@ -30,115 +30,123 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
 public class EnableTestPreferencePage extends FieldEditorPreferencePage
-        implements IWorkbenchPreferencePage {
+		implements IWorkbenchPreferencePage {
 
-    private BooleanFieldEditor be;
+	private BooleanFieldEditor be;
 
-    private ColorFieldEditor ce;
+	private ColorFieldEditor ce;
 
-    private FontFieldEditor fe;
+	private FontFieldEditor fe;
 
-    private PathEditor pe;
+	private PathEditor pe;
 
-    private RadioGroupFieldEditor rg;
+	private RadioGroupFieldEditor rg;
 
-    private StringFieldEditor se;
+	private StringFieldEditor se;
 
-    private Composite beParent;
+	private StringFieldEditor mlse;
 
-    private Composite ceParent;
+	private Composite beParent;
 
-    private Composite feParent;
+	private Composite ceParent;
 
-    private Composite peParent;
+	private Composite feParent;
 
-    private Composite rgParent;
+	private Composite peParent;
 
-    private Composite seParent;
+	private Composite rgParent;
 
-    private boolean enabledState = true;
+	private Composite seParent;
 
-    public EnableTestPreferencePage() {
-        super(GRID);
-    }
+	private Composite mlseParent;
 
-    public void flipState() {
-        if (enabledState) {
+	private boolean enabledState = true;
+
+	public EnableTestPreferencePage() {
+		super(GRID);
+	}
+
+	public void flipState() {
+		if (enabledState) {
 			enabledState = false;
 		} else {
 			enabledState = true;
 		}
 
-        be.setEnabled(enabledState, beParent);
-        ce.setEnabled(enabledState, ceParent);
-        fe.setEnabled(enabledState, feParent);
-        pe.setEnabled(enabledState, peParent);
-        rg.setEnabled(enabledState, rgParent);
-        se.setEnabled(enabledState, seParent);
+		be.setEnabled(enabledState, beParent);
+		ce.setEnabled(enabledState, ceParent);
+		fe.setEnabled(enabledState, feParent);
+		pe.setEnabled(enabledState, peParent);
+		rg.setEnabled(enabledState, rgParent);
+		se.setEnabled(enabledState, seParent);
+		mlse.setEnabled(enabledState, mlseParent);
+	}
 
-    }
-
-    /**
-     * @see org.eclipse.jface.preference.FieldEditorPreferencePage#createFieldEditors()
-     */
-    @Override
+	/**
+	 * @see org.eclipse.jface.preference.FieldEditorPreferencePage#createFieldEditors()
+	 */
+	@Override
 	protected void createFieldEditors() {
 
-        String[][] labelsAndValues = new String[][] { { "Label 1", "Value 1" },
-                { "Label 2", "Value 2" } };
+		String[][] labelsAndValues = new String[][] { { "Label 1", "Value 1" },
+				{ "Label 2", "Value 2" } };
 
-        beParent = getFieldEditorParent();
-        be = new BooleanFieldEditor("BooleanValue", "BooleanTest", beParent);
-        addField(be);
+		beParent = getFieldEditorParent();
+		be = new BooleanFieldEditor("BooleanValue", "BooleanTest", beParent);
+		addField(be);
 
-        ceParent = getFieldEditorParent();
-        ce = new ColorFieldEditor("ColorValue", "Color Test", ceParent);
-        addField(ce);
+		ceParent = getFieldEditorParent();
+		ce = new ColorFieldEditor("ColorValue", "Color Test", ceParent);
+		addField(ce);
 
-        feParent = getFieldEditorParent();
-        fe = new FontFieldEditor("FontValue", "Font Test", feParent);
-        addField(fe);
+		feParent = getFieldEditorParent();
+		fe = new FontFieldEditor("FontValue", "Font Test", feParent);
+		addField(fe);
 
-        peParent = getFieldEditorParent();
-        pe = new PathEditor("PathValue", "Path Test", "C:\temp", peParent);
-        addField(pe);
+		peParent = getFieldEditorParent();
+		pe = new PathEditor("PathValue", "Path Test", "C:\temp", peParent);
+		addField(pe);
 
-        rgParent = getFieldEditorParent();
-        rg = new RadioGroupFieldEditor("Radio Value", "Radio Test", 2,
-                labelsAndValues, rgParent);
-        addField(rg);
+		rgParent = getFieldEditorParent();
+		rg = new RadioGroupFieldEditor("Radio Value", "Radio Test", 2,
+				labelsAndValues, rgParent);
+		addField(rg);
 
-        seParent = getFieldEditorParent();
-        se = new StringFieldEditor("String Value", "String Editor", seParent);
-        addField(se);
+		seParent = getFieldEditorParent();
+		se = new StringFieldEditor("String Value", "String Editor", seParent);
+		addField(se);
 
-    }
+		mlseParent = getFieldEditorParent();
+		mlse = new StringFieldEditor("Multiline String Value", "Multiline String Editor", StringFieldEditor.UNLIMITED,
+				3, StringFieldEditor.VALIDATE_ON_KEY_STROKE, mlseParent);
+		addField(mlse);
+	}
 
-    @Override
+	@Override
 	protected Control createContents(Composite parent) {
-        Composite composite = (Composite) super.createContents(parent);
-        Button enabledButton = new Button(parent, SWT.PUSH);
-        enabledButton.setText("Switch Enabled State");
+		Composite composite = (Composite) super.createContents(parent);
+		Button enabledButton = new Button(parent, SWT.PUSH);
+		enabledButton.setText("Switch Enabled State");
 
-        enabledButton.addSelectionListener(new SelectionListener() {
-            @Override
+		enabledButton.addSelectionListener(new SelectionListener() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
-                flipState();
-            }
+				flipState();
+			}
 
-            @Override
+			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
-                flipState();
-            }
-        });
-        return composite;
-    }
+				flipState();
+			}
+		});
+		return composite;
+	}
 
-    /**
-     * @see org.eclipse.ui.IWorkbenchPreferencePage#init(IWorkbench)
-     */
-    @Override
+	/**
+	 * @see org.eclipse.ui.IWorkbenchPreferencePage#init(IWorkbench)
+	 */
+	@Override
 	public void init(IWorkbench workbench) {
-    }
+	}
 
 }

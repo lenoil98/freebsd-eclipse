@@ -26,10 +26,14 @@ import org.eclipse.ui.internal.intro.IntroDescriptor;
 import org.eclipse.ui.internal.registry.IWorkbenchRegistryConstants;
 import org.eclipse.ui.intro.IIntroPart;
 import org.eclipse.ui.tests.leaks.LeakTests;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * @since 3.1
  */
+@RunWith(JUnit4.class)
 public class IntroTests extends DynamicTestCase {
 
 	private static final String PRODUCT_ID = "org.eclipse.ui.tests.someProduct";
@@ -39,32 +43,34 @@ public class IntroTests extends DynamicTestCase {
 	/**
 	 * @param testName
 	 */
-	public IntroTests(String testName) {
-		super(testName);
+	public IntroTests() {
+		super(IntroTests.class.getSimpleName());
 	}
 
+	@Test
 	public void testIntroClosure() {
 		getBundle();
 		Workbench workbench = Workbench.getInstance();
-        IntroDescriptor testDesc = (IntroDescriptor) WorkbenchPlugin
-        .getDefault().getIntroRegistry().getIntro(
-        		INTRO_ID);
-        workbench.setIntroDescriptor(testDesc);
+		IntroDescriptor testDesc = (IntroDescriptor) WorkbenchPlugin
+		.getDefault().getIntroRegistry().getIntro(
+				INTRO_ID);
+		workbench.setIntroDescriptor(testDesc);
 
 		ReferenceQueue<IIntroPart> queue = new ReferenceQueue<>();
 		IIntroPart intro = workbench.getIntroManager().showIntro(window, false);
 		WeakReference<IIntroPart> ref = new WeakReference<>(intro, queue);
-        assertNotNull(intro);
-        intro = null; //null the reference
-        removeBundle();
-        try {
+		assertNotNull(intro);
+		intro = null; //null the reference
+		removeBundle();
+		try {
 			LeakTests.checkRef(queue, ref);
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
-        assertNull(workbench.getIntroManager().getIntro());
+		assertNull(workbench.getIntroManager().getIntro());
 	}
 
+	@Test
 	public void testIntroProperties() {
 		IIntroRegistry registry = WorkbenchPlugin.getDefault().getIntroRegistry();
 		assertNull(registry.getIntroForProduct(PRODUCT_ID));
@@ -123,18 +129,18 @@ public class IntroTests extends DynamicTestCase {
 		return "data/org.eclipse.newIntro1";
 	}
 
-    @Override
+	@Override
 	protected void doSetUp() throws Exception {
-        super.doSetUp();
-        oldDesc = Workbench.getInstance().getIntroDescriptor();
-        window = openTestWindow();
-    }
+		super.doSetUp();
+		oldDesc = Workbench.getInstance().getIntroDescriptor();
+		window = openTestWindow();
+	}
 
-    @Override
+	@Override
 	protected void doTearDown() throws Exception {
-        super.doTearDown();
-        Workbench.getInstance().setIntroDescriptor(oldDesc);
-    }
+		super.doTearDown();
+		Workbench.getInstance().setIntroDescriptor(oldDesc);
+	}
 
 	@Override
 	protected String getMarkerClass() {

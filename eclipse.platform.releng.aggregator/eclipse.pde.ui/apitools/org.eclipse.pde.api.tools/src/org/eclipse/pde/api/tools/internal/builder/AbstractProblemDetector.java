@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2018 IBM Corporation and others.
+ * Copyright (c) 2008, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -250,10 +250,7 @@ public abstract class AbstractProblemDetector implements IApiProblemDetector {
 								lineNumber = document.getLineOfOffset(charStart);
 							}
 						}
-					} catch (CoreException e) {
-						ApiPlugin.log(e);
-						return null;
-					} catch (BadLocationException e) {
+					} catch (CoreException | BadLocationException e) {
 						ApiPlugin.log(e);
 						return null;
 					}
@@ -504,7 +501,7 @@ public abstract class AbstractProblemDetector implements IApiProblemDetector {
 	public List<IApiProblem> createProblems(IProgressMonitor monitor) {
 		List<IReference> references = getRetainedReferences();
 		if (references.isEmpty()) {
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 		}
 		List<IApiProblem> problems = new LinkedList<>();
 		Iterator<IReference> iterator = references.iterator();
@@ -680,7 +677,7 @@ public abstract class AbstractProblemDetector implements IApiProblemDetector {
 			String name = apitype.getSimpleName();
 			ICompilationUnit cunit = type.getCompilationUnit();
 			if (cunit.isWorkingCopy()) {
-				cunit.reconcile(AST.JLS10, false, null, null);
+				cunit.reconcile(AST.JLS14, false, null, null);
 			}
 			IMethod method = getEnclosingMethod(type, reference, doc);
 			if (method != null) {
@@ -738,7 +735,7 @@ public abstract class AbstractProblemDetector implements IApiProblemDetector {
 				if (method == null) {
 					// look it up the hard way
 					ISourceRange range = jtype.getCompilationUnit().getSourceRange();
-					ASTParser parser = ASTParser.newParser(AST.JLS10);
+					ASTParser parser = ASTParser.newParser(AST.JLS14);
 					parser.setSource(jtype.getCompilationUnit());
 					parser.setSourceRange(range.getOffset(), range.getLength());
 					parser.setResolveBindings(true);

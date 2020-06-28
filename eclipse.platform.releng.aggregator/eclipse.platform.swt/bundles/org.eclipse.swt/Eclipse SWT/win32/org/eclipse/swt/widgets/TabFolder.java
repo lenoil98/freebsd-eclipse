@@ -53,7 +53,7 @@ import org.eclipse.swt.internal.win32.*;
 public class TabFolder extends Composite {
 	TabItem [] items;
 	ImageList imageList;
-	static final long /*int*/ TabFolderProc;
+	static final long TabFolderProc;
 	static final TCHAR TabFolderClass = new TCHAR (0, OS.WC_TABCONTROL, true);
 	boolean createdAsRTL;
 
@@ -159,7 +159,7 @@ public void addSelectionListener(SelectionListener listener) {
 }
 
 @Override
-long /*int*/ callWindowProc (long /*int*/ hwnd, int msg, long /*int*/ wParam, long /*int*/ lParam) {
+long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
 	if (handle == 0) return 0;
 	return OS.CallWindowProc (TabFolderProc, hwnd, msg, wParam, lParam);
 }
@@ -188,7 +188,7 @@ protected void checkSubclass () {
 	RECT insetRect = new RECT (), itemRect = new RECT ();
 	OS.SendMessage (handle, OS.TCM_ADJUSTRECT, 0, insetRect);
 	int width = insetRect.left - insetRect.right;
-	int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	if (count != 0) {
 		OS.SendMessage (handle, OS.TCM_GETITEMRECT, count - 1, itemRect);
 		width = Math.max (width, itemRect.right - insetRect.right);
@@ -217,7 +217,7 @@ protected void checkSubclass () {
 }
 
 void createItem (TabItem item, int index) {
-	int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	if (!(0 <= index && index <= count)) error (SWT.ERROR_INVALID_RANGE);
 	if (count == items.length) {
 		TabItem [] newItems = new TabItem [items.length + 4];
@@ -256,7 +256,7 @@ void createHandle () {
 	* is set.  The fix is to set TTM_SETMAXTIPWIDTH to
 	* a large value.
 	*/
-	long /*int*/ hwndToolTip = OS.SendMessage (handle, OS.TCM_GETTOOLTIPS, 0, 0);
+	long hwndToolTip = OS.SendMessage (handle, OS.TCM_GETTOOLTIPS, 0, 0);
 	OS.SendMessage (hwndToolTip, OS.TTM_SETMAXTIPWIDTH, 0, 0x7FFF);
 
 	createdAsRTL = (style & SWT.RIGHT_TO_LEFT) != 0;
@@ -269,14 +269,14 @@ void createWidget () {
 }
 
 void destroyItem (TabItem item) {
-	int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	int index = 0;
 	while (index < count) {
 		if (items [index] == item) break;
 		index++;
 	}
 	if (index == count) return;
-	int selectionIndex = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
+	int selectionIndex = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 	if (OS.SendMessage (handle, OS.TCM_DELETEITEM, index, 0) == 0) {
 		error (SWT.ERROR_ITEM_NOT_REMOVED);
 	}
@@ -296,7 +296,7 @@ void destroyItem (TabItem item) {
 }
 
 @Override
-void drawThemeBackground (long /*int*/ hDC, long /*int*/ hwnd, RECT rect) {
+void drawThemeBackground (long hDC, long hwnd, RECT rect) {
 	RECT rect2 = new RECT ();
 	OS.GetClientRect (handle, rect2);
 	OS.MapWindowPoints (handle, hwnd, rect2, 2);
@@ -339,7 +339,7 @@ Control findThemeControl () {
  */
 public TabItem getItem (int index) {
 	checkWidget ();
-	int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	if (!(0 <= index && index < count)) error (SWT.ERROR_INVALID_RANGE);
 	return items [index];
 }
@@ -368,7 +368,7 @@ public TabItem getItem (Point point) {
 	TCHITTESTINFO pinfo = new TCHITTESTINFO ();
 	pinfo.x = point.x;
 	pinfo.y = point.y;
-	int index = (int)/*64*/OS.SendMessage (handle, OS.TCM_HITTEST, 0, pinfo);
+	int index = (int)OS.SendMessage (handle, OS.TCM_HITTEST, 0, pinfo);
 	if (index == -1) return null;
 	return items [index];
 }
@@ -385,7 +385,7 @@ public TabItem getItem (Point point) {
  */
 public int getItemCount () {
 	checkWidget ();
-	return (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+	return (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 }
 
 /**
@@ -406,7 +406,7 @@ public int getItemCount () {
  */
 public TabItem [] getItems () {
 	checkWidget ();
-	int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	TabItem [] result = new TabItem [count];
 	System.arraycopy (items, 0, result, 0, count);
 	return result;
@@ -430,7 +430,7 @@ public TabItem [] getItems () {
  */
 public TabItem [] getSelection () {
 	checkWidget ();
-	int index = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
+	int index = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 	if (index == -1) return new TabItem [0];
 	return new TabItem [] {items [index]};
 }
@@ -448,7 +448,7 @@ public TabItem [] getSelection () {
  */
 public int getSelectionIndex () {
 	checkWidget ();
-	return (int)/*64*/OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
+	return (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 }
 
 int imageIndex (Image image) {
@@ -461,7 +461,7 @@ int imageIndex (Image image) {
 		Rectangle bounds = image.getBoundsInPixels ();
 		imageList = display.getImageList (style & SWT.RIGHT_TO_LEFT, bounds.width, bounds.height);
 		int index = imageList.add (image);
-		long /*int*/ hImageList = imageList.getHandle ();
+		long hImageList = imageList.getHandle ();
 		OS.SendMessage (handle, OS.TCM_SETIMAGELIST, 0, hImageList);
 		return index;
 	}
@@ -494,7 +494,7 @@ int imageIndex (Image image) {
 public int indexOf (TabItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	for (int i=0; i<count; i++) {
 		if (items [i] == item) return i;
 	}
@@ -503,12 +503,10 @@ public int indexOf (TabItem item) {
 
 @Override
 Point minimumSize (int wHint, int hHint, boolean flushCache) {
-	Control [] children = _getChildren ();
 	int width = 0, height = 0;
-	for (int i=0; i<children.length; i++) {
-		Control child = children [i];
+	for (Control child : _getChildren ()) {
 		int index = 0;
-		int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+		int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 		while (index < count) {
 			if (items [index].control == child) break;
 			index++;
@@ -549,8 +547,7 @@ boolean mnemonicHit (char key) {
 
 @Override
 boolean mnemonicMatch (char key) {
-	for (int i=0; i<items.length; i++) {
-		TabItem item = items [i];
+	for (TabItem item : items) {
 		if (item != null) {
 			char ch = findMnemonic (item.getText ());
 			if (Character.toUpperCase (key) == Character.toUpperCase (ch)) {
@@ -564,7 +561,7 @@ boolean mnemonicMatch (char key) {
 @Override
 void releaseChildren (boolean destroy) {
 	if (items != null) {
-		int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+		int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 		for (int i=0; i<count; i++) {
 			TabItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
@@ -589,7 +586,7 @@ void releaseWidget () {
 @Override
 void removeControl (Control control) {
 	super.removeControl (control);
-	int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	for (int i=0; i<count; i++) {
 		TabItem item = items [i];
 		if (item.control == control) item.setControl (null);
@@ -625,7 +622,7 @@ public void removeSelectionListener (SelectionListener listener) {
 @Override
 void reskinChildren (int flags) {
 	if (items != null) {
-		int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+		int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 		for (int i=0; i<count; i++) {
 			TabItem item = items [i];
 			if (item != null) item.reskin (flags);
@@ -693,7 +690,7 @@ public void setFont (Font font) {
 	Rectangle newRect = getClientAreaInPixels ();
 	if (!oldRect.equals (newRect)) {
 		sendResize ();
-		int index = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
+		int index = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 		if (index != -1) {
 			TabItem item = items [index];
 			Control control = item.control;
@@ -719,13 +716,13 @@ public void setFont (Font font) {
  */
 public void setSelection (int index) {
 	checkWidget ();
-	int count = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
+	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	if (!(0 <= index && index < count)) return;
 	setSelection (index, false);
 }
 
 void setSelection (int index, boolean notify) {
-	int oldIndex = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
+	int oldIndex = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 	if (oldIndex == index) return;
 	if (oldIndex != -1) {
 		TabItem item = items [oldIndex];
@@ -735,7 +732,7 @@ void setSelection (int index, boolean notify) {
 		}
 	}
 	OS.SendMessage (handle, OS.TCM_SETCURSEL, index, 0);
-	int newIndex = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
+	int newIndex = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 	if (newIndex != -1) {
 		TabItem item = items [newIndex];
 		Control control = item.control;
@@ -770,8 +767,8 @@ String toolTipText (NMTTDISPINFO hdr) {
 	if ((hdr.uFlags & OS.TTF_IDISHWND) != 0) {
 		return null;
 	}
-	int index = (int)/*64*/hdr.idFrom;
-	long /*int*/ hwndToolTip = OS.SendMessage (handle, OS.TCM_GETTOOLTIPS, 0, 0);
+	int index = (int)hdr.idFrom;
+	long hwndToolTip = OS.SendMessage (handle, OS.TCM_GETTOOLTIPS, 0, 0);
 	if (hwndToolTip == hdr.hwndFrom) {
 		/*
 		* Bug in Windows. For some reason the reading order
@@ -817,11 +814,11 @@ boolean traversePage (boolean next) {
 @Override
 void updateOrientation () {
 	super.updateOrientation ();
-	long /*int*/ hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
+	long hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
 	while (hwndChild != 0) {
-		TCHAR buffer = new TCHAR (0, 128);
-		OS.GetClassName (hwndChild, buffer, buffer.length ());
-		String className = buffer.toString (0, buffer.strlen ());
+		char [] buffer = new char [128];
+		int length = OS.GetClassName (hwndChild, buffer, buffer.length);
+		String className = new String (buffer, 0, length);
 		if (className.equals ("msctls_updown32")) { //$NON-NLS-1$
 			int bits = OS.GetWindowLong (hwndChild, OS.GWL_EXSTYLE);
 			if ((style & SWT.RIGHT_TO_LEFT) != 0) {
@@ -845,7 +842,7 @@ void updateOrientation () {
 		Point size = imageList.getImageSize ();
 		display.releaseImageList (imageList);
 		imageList = display.getImageList (style & SWT.RIGHT_TO_LEFT, size.x, size.y);
-		long /*int*/ hImageList = imageList.getHandle ();
+		long hImageList = imageList.getHandle ();
 		OS.SendMessage (handle, OS.TCM_SETIMAGELIST, 0, hImageList);
 		TCITEM tcItem = new TCITEM ();
 		tcItem.mask = OS.TCIF_IMAGE;
@@ -882,12 +879,12 @@ TCHAR windowClass () {
 }
 
 @Override
-long /*int*/ windowProc () {
+long windowProc () {
 	return TabFolderProc;
 }
 
 @Override
-LRESULT WM_GETDLGCODE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_GETDLGCODE (long wParam, long lParam) {
 	LRESULT result = super.WM_GETDLGCODE (wParam, lParam);
 	/*
 	* Return DLGC_BUTTON so that mnemonics will be
@@ -899,7 +896,7 @@ LRESULT WM_GETDLGCODE (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_GETOBJECT (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_GETOBJECT (long wParam, long lParam) {
 	/*
 	* Ensure that there is an accessible object created for this
 	* control because support for publishing the keyboard shortcut
@@ -910,10 +907,10 @@ LRESULT WM_GETOBJECT (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_KEYDOWN (long wParam, long lParam) {
 	LRESULT result = super.WM_KEYDOWN (wParam, lParam);
 	if (result != null) return result;
-	switch ((int)/*64*/wParam) {
+	switch ((int)wParam) {
 		case OS.VK_LEFT:
 		case OS.VK_RIGHT:
 			/*
@@ -922,10 +919,10 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 			* The fix is to replace VK_LEFT by VK_RIGHT and VK_RIGHT by VK_LEFT
 			* when the current orientation differs from the orientation used to
 			* create the control.
-		    */
+			*/
 			boolean isRTL = (style & SWT.RIGHT_TO_LEFT) != 0;
 			if (isRTL != createdAsRTL) {
-				long /*int*/ code = callWindowProc (handle, OS.WM_KEYDOWN, wParam == OS.VK_RIGHT ? OS.VK_LEFT : OS.VK_RIGHT, lParam);
+				long code = callWindowProc (handle, OS.WM_KEYDOWN, wParam == OS.VK_RIGHT ? OS.VK_LEFT : OS.VK_RIGHT, lParam);
 				return new LRESULT (code);
 			}
 			break;
@@ -934,7 +931,7 @@ LRESULT WM_KEYDOWN (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_MOUSELEAVE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_MOUSELEAVE (long wParam, long lParam) {
 	LRESULT result = super.WM_MOUSELEAVE (wParam, lParam);
 	if (result != null) return result;
 	/*
@@ -950,7 +947,7 @@ LRESULT WM_MOUSELEAVE (long /*int*/ wParam, long /*int*/ lParam) {
 	*/
 	TOOLINFO lpti = new TOOLINFO ();
 	lpti.cbSize = TOOLINFO.sizeof;
-	long /*int*/ hwndToolTip = OS.SendMessage (handle, OS.TCM_GETTOOLTIPS, 0, 0);
+	long hwndToolTip = OS.SendMessage (handle, OS.TCM_GETTOOLTIPS, 0, 0);
 	if (OS.SendMessage (hwndToolTip, OS.TTM_GETCURRENTTOOL, 0, lpti) != 0) {
 		if ((lpti.uFlags & OS.TTF_IDISHWND) == 0) {
 			OS.SendMessage (hwndToolTip, OS.TTM_DELTOOL, 0, lpti);
@@ -961,7 +958,7 @@ LRESULT WM_MOUSELEAVE (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_NCHITTEST (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_NCHITTEST (long wParam, long lParam) {
 	LRESULT result = super.WM_NCHITTEST (wParam, lParam);
 	if (result != null) return result;
 	/*
@@ -976,12 +973,12 @@ LRESULT WM_NCHITTEST (long /*int*/ wParam, long /*int*/ lParam) {
 	* default window proc that returns HTCLIENT when
 	* the mouse is in the client area.
 	*/
-	long /*int*/ hittest = OS.DefWindowProc (handle, OS.WM_NCHITTEST, wParam, lParam);
+	long hittest = OS.DefWindowProc (handle, OS.WM_NCHITTEST, wParam, lParam);
 	return new LRESULT (hittest);
 }
 
 @Override
-LRESULT WM_NOTIFY (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_NOTIFY (long wParam, long lParam) {
 	/*
 	* Feature in Windows.  When the tab folder window
 	* proc processes WM_NOTIFY, it forwards this
@@ -1006,7 +1003,7 @@ LRESULT WM_NOTIFY (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_PARENTNOTIFY (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_PARENTNOTIFY (long wParam, long lParam) {
 	LRESULT result = super.WM_PARENTNOTIFY (wParam, lParam);
 	if (result != null) return result;
 	/*
@@ -1022,7 +1019,7 @@ LRESULT WM_PARENTNOTIFY (long /*int*/ wParam, long /*int*/ lParam) {
 		switch (code) {
 			case OS.WM_CREATE: {
 				int id = OS.HIWORD (wParam);
- 				long /*int*/ hwnd = lParam;
+				long hwnd = lParam;
 				if (id == ID_UPDOWN) {
 					int bits = OS.GetWindowLong (hwnd, OS.GWL_EXSTYLE);
 					OS.SetWindowLong (hwnd, OS.GWL_EXSTYLE,	bits | OS.WS_EX_LAYOUTRTL);
@@ -1035,7 +1032,7 @@ LRESULT WM_PARENTNOTIFY (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_SIZE (long wParam, long lParam) {
 	LRESULT result = super.WM_SIZE (wParam, lParam);
 	/*
 	* It is possible (but unlikely), that application
@@ -1045,7 +1042,7 @@ LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
 	* WM_SIZE message.
 	*/
 	if (isDisposed ()) return result;
-	int index = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
+	int index = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 	if (index != -1) {
 		TabItem item = items [index];
 		Control control = item.control;
@@ -1057,7 +1054,7 @@ LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_WINDOWPOSCHANGING (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_WINDOWPOSCHANGING (long wParam, long lParam) {
 	LRESULT result = super.WM_WINDOWPOSCHANGING (wParam, lParam);
 	if (result != null) return result;
 	if (!OS.IsWindowVisible (handle)) return result;
@@ -1107,13 +1104,13 @@ LRESULT WM_WINDOWPOSCHANGING (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT wmNotifyChild (NMHDR hdr, long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 	int code = hdr.code;
 	switch (code) {
 		case OS.TCN_SELCHANGE:
 		case OS.TCN_SELCHANGING:
 			TabItem item = null;
-			int index = (int)/*64*/OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
+			int index = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 			if (index != -1) item = items [index];
 			if (item != null) {
 				Control control = item.control;

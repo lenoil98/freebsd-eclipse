@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -30,7 +30,7 @@ public class TestRFC79_005 extends AbstractStateTest {
 	BundleDescription bundle_2 = null;
 	BundleDescription bundle_3 = null;
 
-	
+
 	public void testTest_005() {
 		State state = buildEmptyState();
 		StateObjectFactory sof = StateObjectFactory.defaultFactory;
@@ -55,17 +55,17 @@ public class TestRFC79_005 extends AbstractStateTest {
 		checkWiring_a();
 	} // end of method
 
-	
+
 	public void checkWiringState_1() {
 		ExportPackageDescription[] exports = bundle_1.getResolvedImports();
 		assertNotNull("export array is unexpectedly null", exports);
 		assertTrue("export array is unexpectedly empty", exports.length > 0);
-		for (int i = 0; i < exports.length; i++) {
-			String exportPackageName = exports[i].getName();
+		for (ExportPackageDescription export : exports) {
+			String exportPackageName = export.getName();
 			assertNotNull("package name is null", exportPackageName);
 			if (exportPackageName.equals("javax.servlet")) {
-				assertNotNull("Package [javax.servlet] is not wired when it should be ", exports[i].getExporter());
-				assertEquals("Package [javax.servlet] is wired incorrectly ", exports[i].getExporter(), bundle_2);
+				assertNotNull("Package [javax.servlet] is not wired when it should be ", export.getExporter());
+				assertEquals("Package [javax.servlet] is wired incorrectly ", export.getExporter(), bundle_2);
 			}
 		} // end for
 	} // end method
@@ -74,19 +74,19 @@ public class TestRFC79_005 extends AbstractStateTest {
 		ExportPackageDescription[] exports = bundle_2.getResolvedImports();
 		assertNotNull("export array is unexpectedly null", exports);
 		assertTrue("export array is unexpectedly empty", exports.length > 0);
-		for (int i = 0; i < exports.length; i++) {
-			String exportPackageName = exports[i].getName();
+		for (ExportPackageDescription export : exports) {
+			String exportPackageName = export.getName();
 			assertNotNull("package name is null", exportPackageName);
 			if (exportPackageName.equals("javax.servlet")) {
-				assertNotNull("Package [javax.servlet] is not wired when it should be ", exports[i].getExporter());
-				assertEquals("Package [javax.servlet] is wired incorrectly ", exports[i].getExporter(), bundle_2);
+				assertNotNull("Package [javax.servlet] is not wired when it should be ", export.getExporter());
+				assertEquals("Package [javax.servlet] is wired incorrectly ", export.getExporter(), bundle_2);
 			}
 		} // end for
 	} // end method
 
 	public void checkWiringState_3() {
 	} // end method
-	
+
 
 	public void checkWiring_a() {
 		checkWiringState_1();
@@ -94,7 +94,7 @@ public class TestRFC79_005 extends AbstractStateTest {
 		checkWiringState_3();
 	} // end method
 
-	
+
 	public void addBundlesToState_a(State state) {
 		boolean added = false;
 		added = state.addBundle(bundle_1);
@@ -105,14 +105,14 @@ public class TestRFC79_005 extends AbstractStateTest {
 		assertTrue("failed to add bundle ", added);
 	} // end method
 
-	
+
 	public void checkBundlesResolved_a() {
 		assertTrue("unexpected bundle resolution state", bundle_1.isResolved());
 		assertTrue("unexpected bundle resolution state", bundle_2.isResolved());
 		assertTrue("unexpected bundle resolution state", !bundle_3.isResolved());
 	} // end method
 
-	
+
 	public BundleDescription create_bundle_1(StateObjectFactory sof) {
 		java.util.Dictionary dictionary_1 = new java.util.Properties();
 		BundleDescription bundle = null;

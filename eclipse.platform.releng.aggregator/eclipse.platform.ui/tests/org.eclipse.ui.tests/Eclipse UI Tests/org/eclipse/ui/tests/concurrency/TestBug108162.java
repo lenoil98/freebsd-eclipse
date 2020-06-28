@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2008 IBM Corporation and others.
+ * Copyright (c) 2005, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,14 +13,20 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.concurrency;
 
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.InvocationTargetException;
-import junit.framework.TestCase;
-import org.eclipse.core.resources.*;
+
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceRunnable;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.actions.WorkspaceModifyOperation;
+import org.junit.Test;
 
 /**
  * Tests the following sequence of events:
@@ -31,7 +37,7 @@ import org.eclipse.ui.actions.WorkspaceModifyOperation;
  * This sequence would cause a deadlock, so an exception is thrown by ModalContext.
  * This test asserts that the exception is thrown and that deadlock does not occur.
  */
-public class TestBug108162 extends TestCase {
+public class TestBug108162 {
 	class LockAcquiringOperation extends WorkspaceModifyOperation {
 		@Override
 		public void execute(final IProgressMonitor pm) {
@@ -45,29 +51,20 @@ public class TestBug108162 extends TestCase {
 		super();
 	}
 
-	public TestBug108162(String name) {
-		super(name);
-	}
-
 	/**
 	 * Performs the test
 	 */
+	@Test
 	public void testBug() throws CoreException {
-		workspace.run(new IWorkspaceRunnable() {
-			@Override
-			public void run(IProgressMonitor monitor) {
-				ProgressMonitorDialog dialog = new ProgressMonitorDialog(new Shell());
-				try {
-					dialog.run(true, false, new LockAcquiringOperation());
-					//should not succeed
-					assertTrue("Should not get here", false);
-				} catch (InvocationTargetException e) {
-					//this failure is expected because it tried to fork and block while owning a lock.
-				} catch (InterruptedException e) {
-					//ignore
-				} catch (IllegalStateException e) {
-					//this failure is expected because it tried to fork and block while owning a lock.
-				}
+		workspace.run((IWorkspaceRunnable) monitor -> {
+			ProgressMonitorDialog dialog = new ProgressMonitorDialog(new Shell());
+			try {
+				dialog.run(true, false, new LockAcquiringOperation());
+				// should not succeed
+				assertTrue("Should not get here", false);
+			} catch (InvocationTargetException | InterruptedException | IllegalStateException e) {
+				// this failure is expected because it tried to fork and block while owning a
+				// lock.
 			}
 		}, workspace.getRoot(), IResource.NONE, null);
 	}

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -48,7 +48,7 @@ import java.io.*;
  * file system) where newly created files are placed:
  * one for new source files, and one for new class files.
  * (These might be specified on a tool's command line, for example,
- * using flags such as <tt>-s</tt> and <tt>-d</tt>.)
+ * using flags such as <code>-s</code> and <code>-d</code>.)
  * Auxiliary files may be created in either location.
  *
  * <p> During each run of an annotation processing tool, a file
@@ -74,7 +74,7 @@ public interface Filer {
      *
      * <p> The {@linkplain java.nio.charset.Charset charset} used to
      * encode the file is determined by the implementation.
-     * An annotation processing tool may have an <tt>-encoding</tt>
+     * An annotation processing tool may have an <code>-encoding</code>
      * flag or the like for specifying this.  It will typically use
      * the platform's default encoding if none is specified.
      *
@@ -103,7 +103,7 @@ public interface Filer {
      * named relative to some package (as are source and binary files),
      * and from there by an arbitrary pathname.  In a loose sense, the
      * pathname of the new file will be the concatenation of
-     * <tt>loc</tt>, <tt>pkg</tt>, and <tt>relPath</tt>.
+     * <code>loc</code>, <code>pkg</code>, and <code>relPath</code>.
      *
      * <p> A {@linkplain java.nio.charset.Charset charset} for
      * encoding the file may be provided.  If none is given, the
@@ -131,7 +131,7 @@ public interface Filer {
      * named relative to some package (as are source and binary files),
      * and from there by an arbitrary pathname.  In a loose sense, the
      * pathname of the new file will be the concatenation of
-     * <tt>loc</tt>, <tt>pkg</tt>, and <tt>relPath</tt>.
+     * <code>loc</code>, <code>pkg</code>, and <code>relPath</code>.
      *
      * @param loc location of the new file
      * @param pkg package relative to which the file should be named,

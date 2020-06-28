@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -37,18 +37,18 @@ public class DevClassLoadingHook extends ClassLoaderHook implements KeyedElement
 	@Override
 	public boolean addClassPathEntry(ArrayList<ClasspathEntry> cpEntries, String cp, ClasspathManager hostmanager, Generation sourceGeneration) {
 		// first check that we are in devmode for this sourcedata
-		String[] devClassPath = !configuration.inDevelopmentMode() ? null : configuration.getDevClassPath(sourceGeneration.getRevision().getSymbolicName());
-		if (devClassPath == null || devClassPath.length == 0)
+		String[] devClassPaths = !configuration.inDevelopmentMode() ? null : configuration.getDevClassPath(sourceGeneration.getRevision().getSymbolicName());
+		if (devClassPaths == null || devClassPaths.length == 0)
 			return false; // not in dev mode return
 		// check that dev classpath entries have not already been added; we mark this in the first entry below
 		if (cpEntries.size() > 0 && cpEntries.get(0).getUserObject(KEY) != null)
 			return false; // this source has already had its dev classpath entries added.
 		boolean result = false;
-		for (int i = 0; i < devClassPath.length; i++) {
-			if (hostmanager.addClassPathEntry(cpEntries, devClassPath[i], hostmanager, sourceGeneration))
+		for (String devClassPath : devClassPaths) {
+			if (hostmanager.addClassPathEntry(cpEntries, devClassPath, hostmanager, sourceGeneration)) {
 				result = true;
-			else {
-				String devCP = devClassPath[i];
+			} else {
+				String devCP = devClassPath;
 				boolean fromFragment = devCP.endsWith(FRAGMENT);
 				if (!fromFragment && devCP.indexOf("..") >= 0) { //$NON-NLS-1$
 					// if in dev mode, try using cp as a relative path from the base bundle file
@@ -77,7 +77,7 @@ public class DevClassLoadingHook extends ClassLoaderHook implements KeyedElement
 				}
 			}
 		}
-		// mark the first entry of the list.  
+		// mark the first entry of the list.
 		// This way we can quickly tell that dev classpath entries have been added to the list
 		if (result && cpEntries.size() > 0)
 			cpEntries.get(0).addUserObject(this);
@@ -91,24 +91,28 @@ public class DevClassLoadingHook extends ClassLoaderHook implements KeyedElement
 		File file = new File(cp);
 		if (!file.isAbsolute())
 			return hostGeneration;
-		FragmentClasspath[] fragCP = manager.getFragmentClasspaths();
-		for (int i = 0; i < fragCP.length; i++) {
-			BundleFile fragBase = fragCP[i].getGeneration().getBundleFile();
+		FragmentClasspath[] fragCPs = manager.getFragmentClasspaths();
+		for (FragmentClasspath fragCP : fragCPs) {
+			BundleFile fragBase = fragCP.getGeneration().getBundleFile();
 			File fragFile = fragBase.getBaseFile();
-			if (fragFile != null && file.getPath().startsWith(fragFile.getPath()))
-				return fragCP[i].getGeneration();
+			if (fragFile != null && file.getPath().startsWith(fragFile.getPath())) {
+				return fragCP.getGeneration();
+			}
 		}
 		return fromFragment ? null : hostGeneration;
 	}
 
+	@Override
 	public boolean compare(KeyedElement other) {
 		return other.getKey() == KEY;
 	}
 
+	@Override
 	public Object getKey() {
 		return KEY;
 	}
 
+	@Override
 	public int getKeyHashCode() {
 		return HASHCODE;
 	}

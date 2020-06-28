@@ -23,10 +23,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 
 import org.eclipse.core.databinding.observable.IDiff;
-import org.eclipse.core.internal.databinding.observable.Util;
 
 /**
  * @param <K>
@@ -82,7 +82,7 @@ public abstract class MapDiff<K, V> implements IDiff {
 	 * @since 1.3
 	 */
 	public Map<K, V> simulateOn(Map<K, V> map) {
-		return new DeltaMap<K, V>(map, this);
+		return new DeltaMap<>(map, this);
 	}
 
 	private static class DeltaMap<K, V> extends AbstractMap<K, V> {
@@ -113,7 +113,7 @@ public abstract class MapDiff<K, V> implements IDiff {
 		@Override
 		public Set<Entry<K, V>> entrySet() {
 			if (entrySet == null) {
-				entrySet = new DeltaMapEntrySet<K, V>(map, diff);
+				entrySet = new DeltaMapEntrySet<>(map, diff);
 			}
 			return entrySet;
 		}
@@ -194,13 +194,13 @@ public abstract class MapDiff<K, V> implements IDiff {
 							if (diff.getRemovedKeys().contains(candidateKey)) {
 								continue;
 							} else if (diff.getChangedKeys().contains(candidateKey)) {
-								candidateEntry = new DeltaMapEntry<K, V>(candidateKey, diff);
+								candidateEntry = new DeltaMapEntry<>(candidateKey, diff);
 							} else {
-								candidateEntry = new MapEntryWrapper<K, V>(candidateEntry);
+								candidateEntry = new MapEntryWrapper<>(candidateEntry);
 							}
 						} else if (addedKeys.hasNext()) {
 							candidateKey = addedKeys.next();
-							candidateEntry = new DeltaMapEntry<K, V>(candidateKey, diff);
+							candidateEntry = new DeltaMapEntry<>(candidateKey, diff);
 						} else {
 							return false;
 						}
@@ -237,19 +237,14 @@ public abstract class MapDiff<K, V> implements IDiff {
 			if (!(obj instanceof Map.Entry))
 				return false;
 			Map.Entry<?, ?> that = (Map.Entry<?, ?>) obj;
-			return Util.equals(this.getKey(), that.getKey()) && Util.equals(this.getValue(), that.getValue());
+			return Objects.equals(this.getKey(), that.getKey()) && Objects.equals(this.getValue(), that.getValue());
 		}
 
 		@Override
 		public int hashCode() {
-			Object key = getKey();
-			Object value = getValue();
-			return hash(key) ^ hash(value);
+			return Objects.hashCode(getKey()) ^ Objects.hashCode(getValue());
 		}
 
-		private int hash(Object key) {
-			return key == null ? 0 : key.hashCode();
-		}
 	}
 
 	private static class MapEntryWrapper<K, V> extends AbstractMapEntry<K, V> {
@@ -311,7 +306,7 @@ public abstract class MapDiff<K, V> implements IDiff {
 	 * Returns the old value for the given key, which must be an element of
 	 * {@link #getRemovedKeys()} or {@link #getChangedKeys()}.
 	 *
-	 * @param key
+	 * @param key the key
 	 * @return the old value for the given key.
 	 */
 	public abstract V getOldValue(Object key);
@@ -320,7 +315,7 @@ public abstract class MapDiff<K, V> implements IDiff {
 	 * Returns the new value for the given key, which must be an element of
 	 * {@link #getChangedKeys()} or {@link #getAddedKeys()}.
 	 *
-	 * @param key
+	 * @param key the key
 	 * @return the new value for the given key.
 	 */
 	public abstract V getNewValue(Object key);

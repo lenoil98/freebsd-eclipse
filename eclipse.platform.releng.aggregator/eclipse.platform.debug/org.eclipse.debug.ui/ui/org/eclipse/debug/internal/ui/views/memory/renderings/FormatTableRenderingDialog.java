@@ -108,9 +108,8 @@ public class FormatTableRenderingDialog extends TrayDialog
 			Label rowLabel = new Label(composite, SWT.NONE);
 			rowLabel.setText(DebugUIMessages.FormatTableRenderingAction_2);
 			fRowControl = new Combo(composite, SWT.READ_ONLY);
-			for (int i=0; i<fRowSizes.length; i++)
-			{
-				fRowControl.add(String.valueOf(fRowSizes[i]));
+			for (int size : fRowSizes) {
+				fRowControl.add(String.valueOf(size));
 			}
 
 			fRowControl.addSelectionListener(new SelectionListener() {
@@ -140,9 +139,8 @@ public class FormatTableRenderingDialog extends TrayDialog
 			Label columnLabel = new Label(composite, SWT.NONE);
 			columnLabel.setText(DebugUIMessages.FormatTableRenderingAction_4);
 			fColumnControl = new Combo(composite, SWT.READ_ONLY);
-			for (int i=0; i<fColumnSizes.length; i++)
-			{
-				fColumnControl.add(String.valueOf(fColumnSizes[i]));
+			for (int size : fColumnSizes) {
+				fColumnControl.add(String.valueOf(size));
 			}
 
 			fColumnControl.addSelectionListener(new SelectionListener() {
@@ -304,7 +302,7 @@ public class FormatTableRenderingDialog extends TrayDialog
 			if (!isValid(rowSize, colSize))
 			{
 				Label label = new Label(parent, SWT.NONE);
-				StringBuffer errorMsg = new StringBuffer();
+				StringBuilder errorMsg = new StringBuilder();
 				errorMsg.append(DebugUIMessages.FormatTableRenderingAction_9);
 				errorMsg.append("\n"); //$NON-NLS-1$
 				errorMsg.append(DebugUIMessages.FormatTableRenderingAction_11);
@@ -333,7 +331,7 @@ public class FormatTableRenderingDialog extends TrayDialog
 				columns[i] = new TableColumn(table, SWT.NONE);
 			}
 
-			StringBuffer buf = new StringBuffer();
+			StringBuilder buf = new StringBuilder();
 			for (int j=0; j<colSize; j++)
 			{
 				buf.append("X"); //$NON-NLS-1$
@@ -353,9 +351,8 @@ public class FormatTableRenderingDialog extends TrayDialog
 			}
 
 			addressCol.pack();
-			for (int i=0; i<columns.length; i++)
-			{
-				columns[i].pack();
+			for (TableColumn column : columns) {
+				column.pack();
 			}
 
 

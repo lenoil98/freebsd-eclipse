@@ -13,20 +13,18 @@
  *******************************************************************************/
 package org.eclipse.jface.examples.databinding.contentprovider.test;
 
-import java.util.Iterator;
 import java.util.Random;
+import java.util.Set;
 
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.core.databinding.observable.set.MappedSet;
 import org.eclipse.core.databinding.observable.set.WritableSet;
 import org.eclipse.core.databinding.observable.value.ComputedValue;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
-import org.eclipse.core.databinding.observable.value.IValueChangeListener;
-import org.eclipse.core.databinding.observable.value.ValueChangeEvent;
 import org.eclipse.core.databinding.observable.value.WritableValue;
 import org.eclipse.jface.databinding.swt.DisplayRealm;
 import org.eclipse.jface.databinding.viewers.ObservableSetContentProvider;
-import org.eclipse.jface.databinding.viewers.ViewersObservables;
+import org.eclipse.jface.databinding.viewers.typed.ViewerProperties;
 import org.eclipse.jface.internal.databinding.provisional.swt.ControlUpdater;
 import org.eclipse.jface.internal.databinding.provisional.viewers.ViewerLabelProvider;
 import org.eclipse.jface.viewers.ListViewer;
@@ -84,19 +82,19 @@ public class StructuredContentProviderTest {
 	 * inputSet stores a set of Doubles. The user is allowed to add and remove
 	 * Doubles from this set.
 	 */
-	private WritableSet inputSet;
+	private WritableSet<Double> inputSet;
 
 	/**
 	 * currentFunction is an Integer, set to one of the SomeMathFunction.OP_*
 	 * constants. It identifies which function will be applied to inputSet.
 	 */
-	private WritableValue currentFunction;
+	private WritableValue<Integer> currentFunction;
 
 	/**
 	 * mathFunction is the transformation. It can multiply by 2, round down to
 	 * the nearest integer, or do nothing (identity)
 	 */
-	private SomeMathFunction mathFunction;
+	private SomeMathFunction<Double> mathFunction;
 
 	/**
 	 * Set of Doubles. Holds the result of applying mathFunction to the
@@ -107,7 +105,7 @@ public class StructuredContentProviderTest {
 	/**
 	 * A Double. Stores the sum of the Doubles in outputSet
 	 */
-	private IObservableValue sumOfOutputSet;
+	private IObservableValue<Double> sumOfOutputSet;
 
 	/**
 	 * Creates the test dialog as a top-level shell.
@@ -118,68 +116,65 @@ public class StructuredContentProviderTest {
 		createDataModel();
 
 		shell = new Shell(Display.getCurrent(), SWT.SHELL_TRIM);
-		{ // Initialize shell
-			final Label someDoubles = new Label(shell, SWT.NONE);
-			someDoubles.setText("A list of random Doubles"); //$NON-NLS-1$
-			someDoubles.setLayoutData(new GridData(
-					GridData.HORIZONTAL_ALIGN_FILL
-							| GridData.VERTICAL_ALIGN_FILL));
 
-			Control addRemoveComposite = createInputControl(shell, inputSet);
+		// Initialize shell
+		final Label someDoubles = new Label(shell, SWT.NONE);
+		someDoubles.setText("A list of random Doubles"); //$NON-NLS-1$
+		someDoubles.setLayoutData(new GridData(
+				GridData.HORIZONTAL_ALIGN_FILL
+						| GridData.VERTICAL_ALIGN_FILL));
 
-			GridData addRemoveData = new GridData(GridData.FILL_BOTH);
-			addRemoveData.minimumHeight = 1;
-			addRemoveData.minimumWidth = 1;
+		Control addRemoveComposite = createInputControl(shell, inputSet);
 
-			addRemoveComposite.setLayoutData(addRemoveData);
+		GridData addRemoveData = new GridData(GridData.FILL_BOTH);
+		addRemoveData.minimumHeight = 1;
+		addRemoveData.minimumWidth = 1;
 
-			Group operation = new Group(shell, SWT.NONE);
-			{ // Initialize operation group
-				operation.setText("Select transformation"); //$NON-NLS-1$
+		addRemoveComposite.setLayoutData(addRemoveData);
 
-				createRadioButton(operation, currentFunction, "f(x) = x", //$NON-NLS-1$
-						Integer.valueOf(SomeMathFunction.OP_IDENTITY));
-				createRadioButton(operation, currentFunction, "f(x) = 2 * x", //$NON-NLS-1$
-						Integer.valueOf(SomeMathFunction.OP_MULTIPLY));
-				createRadioButton(operation, currentFunction,
-						"f(x) = floor(x)", Integer.valueOf( //$NON-NLS-1$
-								SomeMathFunction.OP_ROUND));
+		Group operation = new Group(shell, SWT.NONE);
+		// Initialize operation group
+		operation.setText("Select transformation"); //$NON-NLS-1$
 
-				GridLayout layout = new GridLayout();
-				layout.numColumns = 1;
-				operation.setLayout(layout);
+		createRadioButton(operation, currentFunction, "f(x) = x", //$NON-NLS-1$
+				SomeMathFunction.OP_IDENTITY);
+		createRadioButton(operation, currentFunction, "f(x) = 2 * x", //$NON-NLS-1$
+				SomeMathFunction.OP_MULTIPLY);
+		createRadioButton(operation, currentFunction, "f(x) = floor(x)", //$NON-NLS-1$
+				SomeMathFunction.OP_ROUND);
+
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 1;
+		operation.setLayout(layout);
+		operation.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL
+				| GridData.VERTICAL_ALIGN_FILL));
+
+		Control outputControl = createOutputComposite(shell);
+		GridData outputData = new GridData(GridData.FILL_BOTH);
+		outputData.minimumHeight = 1;
+		outputData.minimumWidth = 1;
+		outputData.widthHint = 300;
+		outputData.heightHint = 150;
+
+		outputControl.setLayoutData(outputData);
+
+		final Label sumLabel = new Label(shell, SWT.NONE);
+		new ControlUpdater(sumLabel) {
+			@Override
+			protected void updateControl() {
+				double sum = sumOfOutputSet.getValue();
+				int size = outputSet.size();
+
+				sumLabel.setText("The sum of the above " + size //$NON-NLS-1$
+						+ " doubles is " + sum); //$NON-NLS-1$
 			}
-			operation.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL
-					| GridData.VERTICAL_ALIGN_FILL));
+		};
+		sumLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL
+				| GridData.VERTICAL_ALIGN_FILL));
 
-			Control outputControl = createOutputComposite(shell);
-			GridData outputData = new GridData(GridData.FILL_BOTH);
-			outputData.minimumHeight = 1;
-			outputData.minimumWidth = 1;
-			outputData.widthHint = 300;
-			outputData.heightHint = 150;
-
-			outputControl.setLayoutData(outputData);
-
-			final Label sumLabel = new Label(shell, SWT.NONE);
-			new ControlUpdater(sumLabel) {
-				@Override
-				protected void updateControl() {
-					double sum = ((Double) sumOfOutputSet.getValue())
-							.doubleValue();
-					int size = outputSet.size();
-
-					sumLabel.setText("The sum of the above " + size //$NON-NLS-1$
-							+ " doubles is " + sum); //$NON-NLS-1$
-				}
-			};
-			sumLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL
-					| GridData.VERTICAL_ALIGN_FILL));
-
-			GridLayout layout = new GridLayout();
-			layout.numColumns = 1;
-			shell.setLayout(layout);
-		}
+		GridLayout shellLayout = new GridLayout();
+		layout.numColumns = 1;
+		shell.setLayout(shellLayout);
 
 	}
 
@@ -194,27 +189,18 @@ public class StructuredContentProviderTest {
 		// inputSet will be a writable set of doubles. The user will add and
 		// remove entries from this set
 		// through the UI.
-		inputSet = new WritableSet(realm);
+		inputSet = new WritableSet<>(realm);
 
 		// currentFunction holds the ID currently selected function to apply to
 		// elements in the inputSet.
 		// We will allow the user to change the current function through a set
 		// of radio buttons
-		currentFunction = new WritableValue(realm, Integer.valueOf(
-				SomeMathFunction.OP_MULTIPLY), null);
+		currentFunction = new WritableValue<>(realm, SomeMathFunction.OP_MULTIPLY, null);
 
 		// mathFunction implements the selected function
-		mathFunction = new SomeMathFunction(inputSet);
-		currentFunction.addValueChangeListener(new IValueChangeListener() {
-			@Override
-			public void handleValueChange(ValueChangeEvent event) {
-				mathFunction
-						.setOperation(((Integer) currentFunction.getValue())
-								.intValue());
-			}
-		});
-		mathFunction.setOperation(((Integer) currentFunction.getValue())
-				.intValue());
+		mathFunction = new SomeMathFunction<>(inputSet);
+		currentFunction.addValueChangeListener(event -> mathFunction.setOperation(currentFunction.getValue()));
+		mathFunction.setOperation(currentFunction.getValue());
 
 		// outputSet holds the result. It displays the result of applying the
 		// currently-selected
@@ -223,16 +209,15 @@ public class StructuredContentProviderTest {
 
 		// sumOfOutputSet stores the current sum of the the Doubles in the
 		// output set
-		sumOfOutputSet = new ComputedValue(realm) {
+		sumOfOutputSet = new ComputedValue<Double>(realm) {
 			@Override
-			protected Object calculate() {
+			protected Double calculate() {
 				double sum = 0.0;
-				for (Iterator iter = outputSet.iterator(); iter.hasNext();) {
-					Double next = (Double) iter.next();
-
-					sum += next.doubleValue();
+				Set<Double> elems = outputSet;
+				for (double elem : elems) {
+					sum += elem;
 				}
-				return new Double(sum);
+				return sum;
 			}
 		};
 	}
@@ -252,8 +237,8 @@ public class StructuredContentProviderTest {
 	 *            value of this radio button (SettableValue will hold this value
 	 *            when the radio button is selected)
 	 */
-	private void createRadioButton(Composite parent, final WritableValue model,
-			String string, final Object value) {
+	private void createRadioButton(Composite parent, final WritableValue<Integer> model, String string,
+			final int value) {
 		final Button button = new Button(parent, SWT.RADIO);
 		button.setText(string);
 		button.addSelectionListener(new SelectionAdapter() {
@@ -277,7 +262,7 @@ public class StructuredContentProviderTest {
 		ListViewer listOfInts = new ListViewer(parent, SWT.BORDER
 				| SWT.V_SCROLL | SWT.H_SCROLL);
 
-		listOfInts.setContentProvider(new ObservableSetContentProvider());
+		listOfInts.setContentProvider(new ObservableSetContentProvider<>());
 		listOfInts.setLabelProvider(new ViewerLabelProvider());
 		listOfInts.setInput(outputSet);
 		return listOfInts.getControl();
@@ -295,90 +280,85 @@ public class StructuredContentProviderTest {
 	 *         set and allows the user to add and remove entries
 	 */
 	private Control createInputControl(Composite parent,
-			final WritableSet inputSet) {
+			final WritableSet<Double> inputSet) {
 		Composite addRemoveComposite = new Composite(parent, SWT.NONE);
-		{ // Initialize addRemoveComposite
-			ListViewer listOfInts = new ListViewer(addRemoveComposite,
-					SWT.BORDER);
+		ListViewer listOfInts = new ListViewer(addRemoveComposite,
+				SWT.BORDER);
 
-			listOfInts.setContentProvider(new ObservableSetContentProvider());
-			listOfInts.setLabelProvider(new ViewerLabelProvider());
-			listOfInts.setInput(inputSet);
+		listOfInts.setContentProvider(new ObservableSetContentProvider<>());
+		listOfInts.setLabelProvider(new ViewerLabelProvider());
+		listOfInts.setInput(inputSet);
 
-			final IObservableValue selectedInt = ViewersObservables.observeSingleSelection(listOfInts);
+		final IObservableValue<Double> selectedInt = ViewerProperties.singleSelection(Double.class)
+				.observe(listOfInts);
 
-			GridData listData = new GridData(GridData.FILL_BOTH);
-			listData.minimumHeight = 1;
-			listData.minimumWidth = 1;
-			listData.widthHint = 150;
-			listData.heightHint = 150;
-			listOfInts.getControl().setLayoutData(listData);
+		GridData listData = new GridData(GridData.FILL_BOTH);
+		listData.minimumHeight = 1;
+		listData.minimumWidth = 1;
+		listData.widthHint = 150;
+		listData.heightHint = 150;
+		listOfInts.getControl().setLayoutData(listData);
 
-			Composite buttonBar = new Composite(addRemoveComposite, SWT.NONE);
-			{ // Initialize button bar
+		Composite buttonBar = new Composite(addRemoveComposite, SWT.NONE);
+		Button add = new Button(buttonBar, SWT.PUSH);
+		add.setText("Add"); //$NON-NLS-1$
+		add.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				inputSet.add(random.nextDouble() * 100.0);
+				super.widgetSelected(e);
+			}
+		});
+		add.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL
+				| GridData.VERTICAL_ALIGN_FILL));
 
-				Button add = new Button(buttonBar, SWT.PUSH);
-				add.setText("Add"); //$NON-NLS-1$
-				add.addSelectionListener(new SelectionAdapter() {
-					@Override
-					public void widgetSelected(SelectionEvent e) {
-						inputSet.add(new Double(random.nextDouble() * 100.0));
-						super.widgetSelected(e);
-					}
-				});
-				add.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL
+		final Button remove = new Button(buttonBar, SWT.PUSH);
+		remove.setText("Remove"); //$NON-NLS-1$
+		// Enable the Remove button if and only if there is currently an
+		// element selected.
+		new ControlUpdater(remove) {
+			@Override
+			protected void updateControl() {
+				// This block demonstrates auto-listening.
+				// When updateControl is running, the framework
+				// remembers each
+				// updatable that gets touched. Since we're calling
+				// selectedInt.getValue()
+				// here, this updator will be flagged as dependant on
+				// selectedInt. This
+				// means that whenever selectedInt changes, this block
+				// of code will re-run
+				// itself.
+
+				// The result is that the remove button will recompute
+				// its enablement
+				// whenever the selection in the listbox changes, and it
+				// was not necessary
+				// to attach any listeners.
+				remove.setEnabled(selectedInt.getValue() != null);
+			}
+		};
+
+		remove.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				inputSet.remove(selectedInt.getValue());
+				super.widgetSelected(e);
+			}
+		});
+		remove.setLayoutData(new GridData(
+				GridData.HORIZONTAL_ALIGN_FILL
 						| GridData.VERTICAL_ALIGN_FILL));
 
-				final Button remove = new Button(buttonBar, SWT.PUSH);
-				remove.setText("Remove"); //$NON-NLS-1$
-				// Enable the Remove button if and only if there is currently an
-				// element selected.
-				new ControlUpdater(remove) {
-					@Override
-					protected void updateControl() {
-						// This block demonstrates auto-listening.
-						// When updateControl is running, the framework
-						// remembers each
-						// updatable that gets touched. Since we're calling
-						// selectedInt.getValue()
-						// here, this updator will be flagged as dependant on
-						// selectedInt. This
-						// means that whenever selectedInt changes, this block
-						// of code will re-run
-						// itself.
+		GridLayout buttonLayout = new GridLayout();
+		buttonLayout.numColumns = 1;
+		buttonBar.setLayout(buttonLayout); // End button bar
+		buttonBar.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL
+				| GridData.VERTICAL_ALIGN_BEGINNING));
 
-						// The result is that the remove button will recompute
-						// its enablement
-						// whenever the selection in the listbox changes, and it
-						// was not necessary
-						// to attach any listeners.
-						remove.setEnabled(selectedInt.getValue() != null);
-					}
-				};
-
-				remove.addSelectionListener(new SelectionAdapter() {
-					@Override
-					public void widgetSelected(SelectionEvent e) {
-						inputSet.remove(selectedInt.getValue());
-						super.widgetSelected(e);
-					}
-				});
-				remove.setLayoutData(new GridData(
-						GridData.HORIZONTAL_ALIGN_FILL
-								| GridData.VERTICAL_ALIGN_FILL));
-
-				GridLayout buttonLayout = new GridLayout();
-				buttonLayout.numColumns = 1;
-				buttonBar.setLayout(buttonLayout);
-
-			} // End button bar
-			buttonBar.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL
-					| GridData.VERTICAL_ALIGN_BEGINNING));
-
-			GridLayout addRemoveLayout = new GridLayout();
-			addRemoveLayout.numColumns = 2;
-			addRemoveComposite.setLayout(addRemoveLayout);
-		}
+		GridLayout addRemoveLayout = new GridLayout();
+		addRemoveLayout.numColumns = 2;
+		addRemoveComposite.setLayout(addRemoveLayout);
 		return addRemoveComposite;
 	}
 

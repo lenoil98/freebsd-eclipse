@@ -15,6 +15,7 @@
 package org.eclipse.ui.ide.undo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.resources.IResource;
@@ -157,9 +158,7 @@ public class CopyResourcesOperation extends
 					resourcesAtDestination, subMonitor.split(1), uiInfo, true, fCreateGroups, fCreateLinks,
 					fRelativeToVariable);
 			// Accumulate the overwrites into the full list
-			for (ResourceDescription overwrite : overwrites) {
-				overwrittenResources.add(overwrite);
-			}
+			overwrittenResources.addAll(Arrays.asList(overwrites));
 		}
 
 		// Are there any previously overwritten resources to restore now?
@@ -245,8 +244,8 @@ public class CopyResourcesOperation extends
 			markInvalid();
 			return getErrorStatus(UndoMessages.CopyResourcesOperation_NotAllowedDueToDataLoss);
 		}
-		for (int i = 0; i < snapshotResourceDescriptions.length; i++) {
-			if (!snapshotResourceDescriptions[i].verifyExistence(true)) {
+		for (ResourceDescription snapshotResourceDescription : snapshotResourceDescriptions) {
+			if (!snapshotResourceDescription.verifyExistence(true)) {
 				markInvalid();
 				return getErrorStatus(UndoMessages.CopyResourcesOperation_NotAllowedDueToDataLoss);
 			}

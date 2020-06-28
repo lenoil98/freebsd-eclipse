@@ -14,9 +14,7 @@
 package org.eclipse.ui.internal.handlers;
 
 import java.lang.reflect.Method;
-
 import org.eclipse.core.commands.ExecutionEvent;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -34,16 +32,16 @@ public class TraversePageHandler extends WidgetMethodHandler {
 	/**
 	 * The parameters for traverse(int).
 	 */
-	private static final Class[] METHOD_PARAMETERS = { int.class };
+	private static final Class<?>[] METHOD_PARAMETERS = { int.class };
 
 	@Override
 	public final Object execute(final ExecutionEvent event) {
 		Control focusControl = Display.getCurrent().getFocusControl();
 		if (focusControl != null) {
-			int traversal= "next".equals(methodName) ? SWT.TRAVERSE_PAGE_NEXT : SWT.TRAVERSE_PAGE_PREVIOUS; //$NON-NLS-1$
+			int traversal = "next".equals(methodName) ? SWT.TRAVERSE_PAGE_NEXT : SWT.TRAVERSE_PAGE_PREVIOUS; //$NON-NLS-1$
 			Control control = focusControl;
 			do {
-				if (control.traverse (traversal))
+				if (control.traverse(traversal))
 					return null;
 				if (control instanceof Shell)
 					return null;

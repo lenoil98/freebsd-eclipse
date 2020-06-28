@@ -13,6 +13,10 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.api;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -21,8 +25,7 @@ import java.io.StringWriter;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.WorkbenchException;
 import org.eclipse.ui.XMLMemento;
-
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Testing XMLMemento (see bug 93262). Emphasis is on ensuring that the 3.1
@@ -31,7 +34,7 @@ import junit.framework.TestCase;
  * @since 3.1
  *
  */
-public class XMLMementoTest extends TestCase {
+public class XMLMementoTest {
 
 	private static final String[] TEST_STRINGS = { "value",
 			" value with spaces ", "value.with.many.dots",
@@ -47,6 +50,7 @@ public class XMLMementoTest extends TestCase {
 	/*
 	 * Class under test for XMLMemento createReadRoot(Reader)
 	 */
+	@Test
 	public void testCreateReadRootReaderExceptionCases() {
 		try {
 			XMLMemento.createReadRoot(new StringReader("Invalid format"));
@@ -81,6 +85,7 @@ public class XMLMementoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testCreateReadRootReader() throws WorkbenchException {
 		XMLMemento memento = XMLMemento
 				.createReadRoot(new StringReader(
@@ -91,11 +96,13 @@ public class XMLMementoTest extends TestCase {
 	/*
 	 * Class under test for XMLMemento createReadRoot(Reader, String)
 	 */
+	@Test
 	public void testCreateReadRootReaderString() {
 		// TODO - I don't know how to test this. The method is not called by
 		// anyone as of 2005/04/05.
 	}
 
+	@Test
 	public void testCreateWriteRoot() {
 		String[] rootTypes = { "type", "type.with.dots",
 				"type_with_underscores" };
@@ -105,6 +112,7 @@ public class XMLMementoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testSpacesInRootAreIllegal() {
 		try {
 			XMLMemento.createWriteRoot("with space");
@@ -114,6 +122,7 @@ public class XMLMementoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testSpacesInKeysAreIllegal() {
 		XMLMemento memento = XMLMemento.createWriteRoot("foo");
 		try {
@@ -130,6 +139,7 @@ public class XMLMementoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testCopyChild() throws WorkbenchException, IOException {
 
 		testPutAndGet(new MementoChecker() {
@@ -200,6 +210,7 @@ public class XMLMementoTest extends TestCase {
 		assertEquals("child2id2", children[1].getID());
 	}
 
+	@Test
 	public void testCreateAndGetChild() throws WorkbenchException, IOException {
 		final String type1 = "type1";
 		final String type2 = "type2";
@@ -237,6 +248,7 @@ public class XMLMementoTest extends TestCase {
 		});
 	}
 
+	@Test
 	public void testGetChildren() throws WorkbenchException, IOException {
 		final String type = "type";
 		final String id1 = "id";
@@ -277,6 +289,7 @@ public class XMLMementoTest extends TestCase {
 		});
 	}
 
+	@Test
 	public void testGetID() throws WorkbenchException, IOException {
 		final String type = "type";
 
@@ -306,14 +319,15 @@ public class XMLMementoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testPutAndGetFloat() throws WorkbenchException, IOException {
 		final String key = "key";
 
-		final Float[] values = new Float[] { new Float(-3.1415), new Float(1),
-				new Float(0), new Float(4554.45235),
-				new Float(Float.MAX_VALUE), new Float(Float.MIN_VALUE),
-				new Float(Float.NaN), new Float(Float.POSITIVE_INFINITY),
-				new Float(Float.NEGATIVE_INFINITY) };
+		final Float[] values = new Float[] { Float.valueOf((float) -3.1415), Float.valueOf(1),
+				Float.valueOf(0), Float.valueOf((float) 4554.45235),
+				Float.valueOf(Float.MAX_VALUE), Float.valueOf(Float.MIN_VALUE),
+				Float.valueOf(Float.NaN), Float.valueOf(Float.POSITIVE_INFINITY),
+				Float.valueOf(Float.NEGATIVE_INFINITY) };
 
 		for (final Float value : values) {
 			testPutAndGet(new MementoChecker() {
@@ -335,6 +349,7 @@ public class XMLMementoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testPutAndGetInteger() throws WorkbenchException, IOException {
 		final String key = "key";
 
@@ -363,6 +378,7 @@ public class XMLMementoTest extends TestCase {
 
 	}
 
+	@Test
 	public void testPutMemento() throws WorkbenchException, IOException {
 		testPutAndGet(new MementoChecker() {
 
@@ -400,6 +416,7 @@ public class XMLMementoTest extends TestCase {
 		});
 	}
 
+	@Test
 	public void testPutAndGetString() throws IOException, WorkbenchException {
 		final String key = "key";
 
@@ -426,6 +443,7 @@ public class XMLMementoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testPutAndGetTextData() throws WorkbenchException, IOException {
 		String[] values = TEST_STRINGS;
 
@@ -443,7 +461,7 @@ public class XMLMementoTest extends TestCase {
 				@Override
 				public void checkAfterDeserialization(
 						XMLMemento deserializedMemento) {
-					if (data.equals("")) {
+					if (data.isEmpty()) {
 						// this comes back as null...
 						assertEquals(null, deserializedMemento.getTextData());
 					} else {
@@ -454,6 +472,7 @@ public class XMLMementoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testLegalKeys() throws WorkbenchException, IOException {
 		String[] legalKeys = { "value", "value.with.many.dots",
 				"value_with_underscores" };
@@ -486,6 +505,7 @@ public class XMLMementoTest extends TestCase {
 
 	}
 
+	@Test
 	public void testIllegalKeys() {
 		String[] illegalKeys = { "", " ", " key", "key ", "key key", "\t",
 				"\tkey", "key\t", "key\tkey", "\n", "\nkey", "key\n",
@@ -503,6 +523,7 @@ public class XMLMementoTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testPutTextDataWithChildrenBug93718()
 			throws WorkbenchException, IOException {
 		final String textData = "\n\tThis is\ntext data\n\t\twith newlines and \ttabs\t\n\t ";
@@ -548,15 +569,16 @@ public class XMLMementoTest extends TestCase {
 
 	}
 
-	   public void testMementoWithTextContent113659() throws Exception {
-	        IMemento memento = XMLMemento.createWriteRoot("root");
-	        IMemento mementoWithChild = XMLMemento.createWriteRoot("root");
-	        IMemento child = mementoWithChild.createChild("child");
-	        child.putTextData("text");
-	        memento.putMemento(mementoWithChild);
-	        IMemento copiedChild = memento.getChild("child");
-	        assertEquals("text", copiedChild.getTextData());
-	    }
+		@Test
+		public void testMementoWithTextContent113659() throws Exception {
+			IMemento memento = XMLMemento.createWriteRoot("root");
+			IMemento mementoWithChild = XMLMemento.createWriteRoot("root");
+			IMemento child = mementoWithChild.createChild("child");
+			child.putTextData("text");
+			memento.putMemento(mementoWithChild);
+			IMemento copiedChild = memento.getChild("child");
+			assertEquals("text", copiedChild.getTextData());
+		}
 
 
 

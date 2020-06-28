@@ -18,6 +18,8 @@ package org.eclipse.jdt.internal.core.builder;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.function.Predicate;
@@ -47,6 +49,7 @@ import org.eclipse.jdt.internal.core.util.Util;
 
 @SuppressWarnings("rawtypes")
 public class ClasspathJar extends ClasspathLocation {
+final boolean isOnModulePath;
 
 static class PackageCacheEntry {
 	long lastModified;
@@ -249,7 +252,7 @@ public boolean equals(Object o) {
 	if (!Util.equalOrNull(this.compliance, jar.compliance)) {
 		return false;
 	}
-	return this.zipFilename.equals(jar.zipFilename) 
+	return this.zipFilename.equals(jar.zipFilename)
 			&& lastModified() == jar.lastModified()
 			&& this.isOnModulePath == jar.isOnModulePath
 			&& areAllModuleOptionsEqual(jar);
@@ -290,12 +293,11 @@ public NameEnvironmentAnswer findClass(String binaryFileName, String qualifiedPa
 			}
 			if (this.accessRuleSet == null)
 				return new NameEnvironmentAnswer(reader, null, modName);
-			return new NameEnvironmentAnswer(reader, 
-					this.accessRuleSet.getViolatedRestriction(fileNameWithoutExtension.toCharArray()), 
+			return new NameEnvironmentAnswer(reader,
+					this.accessRuleSet.getViolatedRestriction(fileNameWithoutExtension.toCharArray()),
 					modName);
 		}
-	} catch (IOException e) { // treat as if class file is missing
-	} catch (ClassFormatException e) { // treat as if class file is missing
+	} catch (IOException | ClassFormatException e) { // treat as if class file is missing
 	}
 	return null;
 }
@@ -323,13 +325,25 @@ public boolean isPackage(String qualifiedPackageName, String moduleName) {
 }
 @Override
 public boolean hasCompilationUnit(String pkgName, String moduleName) {
-	for (Enumeration<? extends ZipEntry> e = this.zipFile.entries(); e.hasMoreElements(); ) {
-		String fileName = e.nextElement().getName();
-		if (fileName.startsWith(pkgName)
-				&& fileName.toLowerCase().endsWith(SuffixConstants.SUFFIX_STRING_class)
-				&& fileName.indexOf('/', pkgName.length()+1) == -1)
-			return true;
-	}	
+	if (scanContent()) {
+		if (!this.knownPackageNames.includes(pkgName)) {
+			// Don't waste time walking through the zip if we know that it doesn't
+			// contain a directory that matches pkgName
+			return false;
+		}
+
+		// Even if knownPackageNames contained the pkg we're looking for, we still need to verify
+		// that the package in this jar actually contains at least one .class file (since
+		// knownPackageNames includes empty packages)
+		for (Enumeration<? extends ZipEntry> e = this.zipFile.entries(); e.hasMoreElements(); ) {
+			String fileName = e.nextElement().getName();
+			if (fileName.startsWith(pkgName)
+					&& fileName.toLowerCase().endsWith(SuffixConstants.SUFFIX_STRING_class)
+					&& fileName.indexOf('/', pkgName.length()+1) == -1)
+				return true;
+		}
+	}
+
 	return false;
 }
 
@@ -384,19 +398,35 @@ public IModule getModule() {
 
 @Override
 public NameEnvironmentAnswer findClass(String typeName, String qualifiedPackageName, String moduleName, String qualifiedBinaryFileName) {
-	// 
+	//
 	return findClass(typeName, qualifiedPackageName, moduleName, qualifiedBinaryFileName, false, null);
 }
 public Manifest getManifest() {
 	if (!scanContent()) // ensure zipFile is initialized
 		return null;
 	ZipEntry entry = this.zipFile.getEntry(TypeConstants.META_INF_MANIFEST_MF);
-	try {
-		if (entry != null)
-			return new Manifest(this.zipFile.getInputStream(entry));
+	try(InputStream is = entry != null ? this.zipFile.getInputStream(entry) : null) {
+		if (is != null)
+			return new Manifest(is);
 	} catch (IOException e) {
 		// cannot use manifest
 	}
 	return null;
+}
+@Override
+public char[][] listPackages() {
+	if (!scanContent()) // ensure zipFile is initialized
+		return null;
+	char[][] result = new char[this.knownPackageNames.elementSize][];
+	int count = 0;
+	for (int i=0; i<this.knownPackageNames.values.length; i++) {
+		String string = (String) this.knownPackageNames.values[i];
+		if (string != null &&!string.isEmpty()) {
+			result[count++] = string.replace('/', '.').toCharArray();
+		}
+	}
+	if (count < result.length)
+		return Arrays.copyOf(result, count);
+	return result;
 }
 }

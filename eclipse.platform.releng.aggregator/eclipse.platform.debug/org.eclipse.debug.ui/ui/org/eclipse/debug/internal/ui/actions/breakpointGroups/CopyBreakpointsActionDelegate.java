@@ -14,6 +14,7 @@
 package org.eclipse.debug.internal.ui.actions.breakpointGroups;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -41,9 +42,6 @@ public class CopyBreakpointsActionDelegate extends VirtualCopyToClipboardActionD
 
 	private long fStamp;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.VirtualCopyToClipboardActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		super.run(action);
@@ -51,44 +49,32 @@ public class CopyBreakpointsActionDelegate extends VirtualCopyToClipboardActionD
 		fStamp = System.currentTimeMillis();
 		LocalSelectionTransfer.getTransfer().setSelectionSetTime(fStamp);
 		IAction pasteAction = ((AbstractDebugView)getView()).getAction(IDebugView.PASTE_ACTION);
-        // update the enablement of the paste action
-        // workaround since the clipboard does not suppot callbacks
-        if (pasteAction instanceof PasteBreakpointsAction) {
-        	PasteBreakpointsAction pba = (PasteBreakpointsAction) pasteAction;
-        	if (pba.getStructuredSelection() != null) {
-        		pba.selectionChanged(pba.getStructuredSelection());
-        	}
-        }
+		// update the enablement of the paste action
+		// workaround since the clipboard does not suppot callbacks
+		if (pasteAction instanceof PasteBreakpointsAction) {
+			PasteBreakpointsAction pba = (PasteBreakpointsAction) pasteAction;
+			if (pba.getStructuredSelection() != null) {
+				pba.selectionChanged(pba.getStructuredSelection());
+			}
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.actions.AbstractDebugActionDelegate#init(org.eclipse.ui.IViewPart)
-	 */
 	@Override
 	public void init(IViewPart view) {
 		super.init(view);
 		DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.actions.AbstractDebugActionDelegate#dispose()
-	 */
 	@Override
 	public void dispose() {
 		DebugPlugin.getDefault().getBreakpointManager().removeBreakpointListener(this);
 		super.dispose();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.IBreakpointsListener#breakpointsAdded(org.eclipse.debug.core.model.IBreakpoint[])
-	 */
 	@Override
 	public void breakpointsAdded(IBreakpoint[] breakpoints) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.IBreakpointsListener#breakpointsRemoved(org.eclipse.debug.core.model.IBreakpoint[], org.eclipse.core.resources.IMarkerDelta[])
-	 */
 	@Override
 	public void breakpointsRemoved(IBreakpoint[] breakpoints, IMarkerDelta[] deltas) {
 		// remove deleted breakpoints from drag/drop clipboard
@@ -96,9 +82,7 @@ public class CopyBreakpointsActionDelegate extends VirtualCopyToClipboardActionD
 			ISelection selection = LocalSelectionTransfer.getTransfer().getSelection();
 			if (selection instanceof IStructuredSelection) {
 				Set<IBreakpoint> removed = new HashSet<>();
-				for (int i = 0; i < breakpoints.length; i++) {
-					removed.add(breakpoints[i]);
-				}
+				Collections.addAll(removed, breakpoints);
 				boolean modified = false;
 				List<Object> remain = new ArrayList<>();
 				IStructuredSelection ss = (IStructuredSelection) selection;
@@ -120,9 +104,6 @@ public class CopyBreakpointsActionDelegate extends VirtualCopyToClipboardActionD
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.IBreakpointsListener#breakpointsChanged(org.eclipse.debug.core.model.IBreakpoint[], org.eclipse.core.resources.IMarkerDelta[])
-	 */
 	@Override
 	public void breakpointsChanged(IBreakpoint[] breakpoints, IMarkerDelta[] deltas) {
 	}

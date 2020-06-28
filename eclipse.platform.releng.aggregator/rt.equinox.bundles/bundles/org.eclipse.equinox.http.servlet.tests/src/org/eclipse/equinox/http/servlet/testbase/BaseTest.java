@@ -66,10 +66,12 @@ import org.osgi.service.http.runtime.HttpServiceRuntimeConstants;
 import org.osgi.service.http.runtime.dto.ErrorPageDTO;
 import org.osgi.service.http.runtime.dto.FailedErrorPageDTO;
 import org.osgi.service.http.runtime.dto.FailedFilterDTO;
+import org.osgi.service.http.runtime.dto.FailedListenerDTO;
 import org.osgi.service.http.runtime.dto.FailedResourceDTO;
 import org.osgi.service.http.runtime.dto.FailedServletContextDTO;
 import org.osgi.service.http.runtime.dto.FailedServletDTO;
 import org.osgi.service.http.runtime.dto.FilterDTO;
+import org.osgi.service.http.runtime.dto.ListenerDTO;
 import org.osgi.service.http.runtime.dto.RequestInfoDTO;
 import org.osgi.service.http.runtime.dto.ResourceDTO;
 import org.osgi.service.http.runtime.dto.ServletContextDTO;
@@ -85,7 +87,7 @@ public class BaseTest {
 	@Before
 	public void setUp() throws Exception {
 		// Quiet logging for tests
-		System.setProperty("/.LEVEL", "OFF");
+		System.setProperty("log.LEVEL", "OFF");
 		System.setProperty("org.eclipse.jetty.server.LEVEL", "OFF");
 		System.setProperty("org.eclipse.jetty.servlet.LEVEL", "OFF");
 		System.setProperty("org.osgi.service.http.port", "0");
@@ -226,7 +228,7 @@ public class BaseTest {
 			return Arrays.asList((String[])property);
 		}
 		else if (Collection.class.isInstance(property)) {
-			List<String> list = new ArrayList<String>();
+			List<String> list = new ArrayList<>();
 			for (@SuppressWarnings("rawtypes")
 				Iterator i = ((Collection)property).iterator(); i.hasNext();) {
 
@@ -244,6 +246,7 @@ public class BaseTest {
 		return installer.installBundle(bundle);
 	}
 
+	@SuppressWarnings("unused")
 	protected void startBundles() throws BundleException {
 	}
 
@@ -293,6 +296,7 @@ public class BaseTest {
 		requestAdvisor = new ServletRequestAdvisor(port, contextPath, ksPath, ksPassword);
 	}
 
+	@SuppressWarnings("unused")
 	protected void stopBundles() throws BundleException {
 	}
 
@@ -337,6 +341,22 @@ public class BaseTest {
 		assertNotNull(serviceReference);
 
 		return getBundleContext().getService(serviceReference);
+	}
+
+	protected ListenerDTO getListenerDTOByServiceId(String contextName, long serviceId) {
+		ServletContextDTO servletContextDTO = getServletContextDTOByName(contextName);
+
+		if (servletContextDTO == null) {
+			return null;
+		}
+
+		for (ListenerDTO listenerDTO : servletContextDTO.listenerDTOs) {
+			if (serviceId == listenerDTO.serviceId) {
+				return listenerDTO;
+			}
+		}
+
+		return null;
 	}
 
 	protected long getServiceId(ServiceRegistration<?> sr) {
@@ -439,6 +459,20 @@ public class BaseTest {
 
 	protected FailedFilterDTO[] getFailedFilterDTOs() {
 		return getHttpServiceRuntime().getRuntimeDTO().failedFilterDTOs;
+	}
+
+	protected FailedListenerDTO getFailedListenerDTOByServiceId(long serviceId) {
+		for (FailedListenerDTO failedListenerDTO : getFailedListenerDTOs()) {
+			if (serviceId == failedListenerDTO.serviceId) {
+				return failedListenerDTO;
+			}
+		}
+
+		return null;
+	}
+
+	protected FailedListenerDTO[] getFailedListenerDTOs() {
+		return getHttpServiceRuntime().getRuntimeDTO().failedListenerDTOs;
 	}
 
 	protected FailedServletContextDTO getFailedServletContextDTOByName(String name) {
@@ -603,7 +637,7 @@ public class BaseTest {
 	protected BundleInstaller installer;
 	protected BundleAdvisor advisor;
 	protected ServletRequestAdvisor requestAdvisor;
-	protected final Collection<ServiceRegistration<? extends Object>> registrations = new ArrayList<ServiceRegistration<? extends Object>>();
+	protected final Collection<ServiceRegistration<? extends Object>> registrations = new ArrayList<>();
 	protected ServiceTracker<HttpServiceRuntime, ServiceReference<HttpServiceRuntime>> runtimeTracker;
 
 	protected static class TestFilter implements Filter {
@@ -612,7 +646,7 @@ public class BaseTest {
 		public TestFilter() {}
 
 		@Override
-		public void init(FilterConfig filterConfig) throws ServletException {
+		public void init(FilterConfig filterConfig) {
 			// nothing
 		}
 
@@ -645,7 +679,7 @@ public class BaseTest {
 		static class TestServletContextHelper extends ServletContextHelper {
 			public TestServletContextHelper(Bundle bundle) {
 				super(bundle);
-			}};
+			}}
 
 		public TestServletContextHelperFactory() {}
 
@@ -662,10 +696,10 @@ public class BaseTest {
 
 	}
 
-	protected static class TestContextPathAdaptor extends ContextPathCustomizer {
-		private final String defaultFilter;
-		private final String contextPrefix;
-		private final String testName;
+	protected class TestContextPathAdaptor extends ContextPathCustomizer {
+		protected final String defaultFilter;
+		protected final String contextPrefix;
+		protected final String testName;
 
 		/**
 		 * @param defaultFilter
@@ -708,7 +742,7 @@ public class BaseTest {
 		@Override
 		protected void service(
 				HttpServletRequest request, HttpServletResponse response)
-			throws ServletException ,IOException {
+			throws IOException {
 
 			if (response.isCommitted()) {
 				System.out.println("Problem?");
@@ -724,6 +758,6 @@ public class BaseTest {
 			writer.print(errorCode + " : " + status + " : ERROR : " + requestURI);
 		}
 
-	};
+	}
 
 }

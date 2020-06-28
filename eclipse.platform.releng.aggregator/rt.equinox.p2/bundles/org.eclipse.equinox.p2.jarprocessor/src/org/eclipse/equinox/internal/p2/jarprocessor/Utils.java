@@ -100,16 +100,20 @@ public class Utils {
 		String[] locations = null;
 		String prop = System.getProperty(PACK200_PROPERTY);
 		String javaHome = System.getProperty("java.home"); //$NON-NLS-1$
-		if (NONE.equals(prop)) {
-			return null;
-		} else if (JRE.equals(prop)) {
-			locations = new String[] {javaHome + "/bin/" + cmd}; //$NON-NLS-1$
-		} else if (PATH.equals(prop)) {
-			locations = new String[] {cmd};
-		} else if (prop == null) {
+		if (null == prop) {
 			locations = new String[] {javaHome + "/bin/" + cmd, cmd}; //$NON-NLS-1$ 
-		} else {
-			locations = new String[] {prop + "/" + cmd}; //$NON-NLS-1$
+		} else switch (prop) {
+			case NONE:
+				return null;
+			case JRE:
+				locations = new String[] {javaHome + "/bin/" + cmd}; //$NON-NLS-1$
+				break;
+			case PATH:
+				locations = new String[] {cmd};
+				break;
+			default:
+				locations = new String[] {prop + "/" + cmd}; //$NON-NLS-1$
+				break;
 		}
 		return locations;
 	}
@@ -176,8 +180,9 @@ public class Utils {
 			// for some unknown reason, list() can return null.  
 			// Just skip the children If it does.
 			if (list != null)
-				for (int i = 0; i < list.length; i++)
-					result &= clear(new java.io.File(root, list[i]));
+				for (String list1 : list) {
+					result &= clear(new java.io.File(root, list1));
+			}
 		}
 		return result;
 	}
@@ -190,8 +195,8 @@ public class Utils {
 		if (packExcludes != null) {
 			String[] excludes = toStringArray(packExcludes, ","); //$NON-NLS-1$
 			Set<String> packExclusions = new HashSet<>();
-			for (int i = 0; i < excludes.length; i++) {
-				packExclusions.add(excludes[i]);
+			for (String exclude : excludes) {
+				packExclusions.add(exclude);
 			}
 			return packExclusions;
 		}
@@ -205,8 +210,8 @@ public class Utils {
 		if (signExcludes != null) {
 			String[] excludes = toStringArray(signExcludes, ","); //$NON-NLS-1$
 			Set<String> signExclusions = new HashSet<>();
-			for (int i = 0; i < excludes.length; i++) {
-				signExclusions.add(excludes[i]);
+			for (String exclude : excludes) {
+				signExclusions.add(exclude);
 			}
 			return signExclusions;
 		}
@@ -214,7 +219,7 @@ public class Utils {
 	}
 
 	public static String concat(String[] array) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		for (int i = 0; i < array.length; i++) {
 			if (i > 0)
 				buffer.append(' ');
@@ -302,8 +307,8 @@ public class Utils {
 		PrintStream printStream = new PrintStream(stream);
 		printStream.print("#Processed using Jarprocessor\n"); //$NON-NLS-1$
 		SortedMap<Object, Object> sorted = new TreeMap<>(props);
-		for (Iterator<Object> iter = sorted.keySet().iterator(); iter.hasNext();) {
-			String key = (String) iter.next();
+		for (Object object : sorted.keySet()) {
+			String key = (String) object;
 			printStream.print(key);
 			printStream.print(" = "); //$NON-NLS-1$
 			printStream.print(sorted.get(key));

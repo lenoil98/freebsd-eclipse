@@ -14,9 +14,9 @@
 package org.eclipse.swt.widgets;
 
 
+import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
-import org.eclipse.swt.*;
 
 /**
  * Instances of this class allow the user to navigate
@@ -197,20 +197,20 @@ public boolean getOverwrite () {
 	return overwrite;
 }
 
-long /*int*/ OFNHookProc (long /*int*/ hdlg, long /*int*/ uiMsg, long /*int*/ wParam, long /*int*/ lParam) {
-	switch ((int)/*64*/uiMsg) {
+long OFNHookProc (long hdlg, long uiMsg, long wParam, long lParam) {
+	switch ((int)uiMsg) {
 		case OS.WM_NOTIFY:
 			OFNOTIFY ofn = new OFNOTIFY ();
 			OS.MoveMemory (ofn, lParam, OFNOTIFY.sizeof);
 			if (ofn.code == OS.CDN_SELCHANGE) {
-				int lResult = (int)/*64*/OS.SendMessage (ofn.hwndFrom, OS.CDM_GETSPEC, 0, 0);
+				int lResult = (int)OS.SendMessage (ofn.hwndFrom, OS.CDM_GETSPEC, 0, 0);
 				if (lResult > 0) {
 					lResult += OS.MAX_PATH;
 					OPENFILENAME lpofn = new OPENFILENAME ();
 					OS.MoveMemory (lpofn, ofn.lpOFN, OPENFILENAME.sizeof);
 					if (lpofn.nMaxFile < lResult) {
-						long /*int*/ hHeap = OS.GetProcessHeap ();
-						long /*int*/ lpstrFile = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, lResult * TCHAR.sizeof);
+						long hHeap = OS.GetProcessHeap ();
+						long lpstrFile = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, lResult * TCHAR.sizeof);
 						if (lpstrFile != 0) {
 							if (lpofn.lpstrFile != 0) OS.HeapFree (hHeap, 0, lpofn.lpstrFile);
 							lpofn.lpstrFile = lpstrFile;
@@ -218,9 +218,9 @@ long /*int*/ OFNHookProc (long /*int*/ hdlg, long /*int*/ uiMsg, long /*int*/ wP
 							OS.MoveMemory (ofn.lpOFN, lpofn, OPENFILENAME.sizeof);
 						}
 					}
-			  }
-		  }
-		  break;
+				}
+			}
+		break;
 	}
 	return 0;
 }
@@ -238,11 +238,11 @@ long /*int*/ OFNHookProc (long /*int*/ hdlg, long /*int*/ uiMsg, long /*int*/ wP
  * </ul>
  */
 public String open () {
-	long /*int*/ hHeap = OS.GetProcessHeap ();
+	long hHeap = OS.GetProcessHeap ();
 
 	/* Get the owner HWND for the dialog */
-	long /*int*/ hwndOwner = parent.handle;
-	long /*int*/ hwndParent = parent.handle;
+	long hwndOwner = parent.handle;
+	long hwndParent = parent.handle;
 
 	/*
 	* Feature in Windows.  There is no API to set the orientation of a
@@ -272,10 +272,9 @@ public String open () {
 
 	/* Convert the title and copy it into lpstrTitle */
 	if (title == null) title = "";
-	/* Use the character encoding for the default locale */
 	TCHAR buffer3 = new TCHAR (0, title, true);
 	int byteCount3 = buffer3.length () * TCHAR.sizeof;
-	long /*int*/ lpstrTitle = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount3);
+	long lpstrTitle = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount3);
 	OS.MoveMemory (lpstrTitle, buffer3, byteCount3);
 
 	/* Compute filters and copy into lpstrFilter */
@@ -290,15 +289,13 @@ public String open () {
 	if (filterExtensions.length == 0) {
 		strFilter = strFilter + FILTER + '\0' + FILTER + '\0';
 	}
-	/* Use the character encoding for the default locale */
 	TCHAR buffer4 = new TCHAR (0, strFilter, true);
 	int byteCount4 = buffer4.length () * TCHAR.sizeof;
-	long /*int*/ lpstrFilter = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount4);
+	long lpstrFilter = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount4);
 	OS.MoveMemory (lpstrFilter, buffer4, byteCount4);
 
 	/* Convert the fileName and filterName to C strings */
 	if (fileName == null) fileName = "";
-	/* Use the character encoding for the default locale */
 	TCHAR name = new TCHAR (0, fileName, true);
 
 	/*
@@ -308,7 +305,7 @@ public String open () {
 	int nMaxFile = OS.MAX_PATH;
 	if ((style & SWT.MULTI) != 0) nMaxFile = Math.max (nMaxFile, BUFFER_SIZE);
 	int byteCount = nMaxFile * TCHAR.sizeof;
-	long /*int*/ lpstrFile = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
+	long lpstrFile = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
 	int byteCountFile = Math.min (name.length () * TCHAR.sizeof, byteCount - TCHAR.sizeof);
 	OS.MoveMemory (lpstrFile, name, byteCountFile);
 
@@ -317,10 +314,9 @@ public String open () {
 	* the last byte is NULL and the buffer does not overrun.
 	*/
 	if (filterPath == null) filterPath = "";
-	/* Use the character encoding for the default locale */
 	TCHAR path = new TCHAR (0, filterPath.replace ('/', '\\'), true);
 	int byteCount5 = OS.MAX_PATH * TCHAR.sizeof;
-	long /*int*/ lpstrInitialDir = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount5);
+	long lpstrInitialDir = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount5);
 	int byteCountDir = Math.min (path.length () * TCHAR.sizeof, byteCount5 - TCHAR.sizeof);
 	OS.MoveMemory (lpstrInitialDir, path, byteCountDir);
 
@@ -335,9 +331,7 @@ public String open () {
 		struct.Flags |= OS.OFN_ALLOWMULTISELECT | OS.OFN_EXPLORER | OS.OFN_ENABLESIZING;
 		if (USE_HOOK) {
 			callback = new Callback (this, "OFNHookProc", 4); //$NON-NLS-1$
-			long /*int*/ lpfnHook = callback.getAddress ();
-			if (lpfnHook == 0) error (SWT.ERROR_NO_MORE_CALLBACKS);
-			struct.lpfnHook = lpfnHook;
+			struct.lpfnHook = callback.getAddress ();
 			struct.Flags |= OS.OFN_ENABLEHOOK;
 		}
 	}
@@ -355,7 +349,7 @@ public String open () {
 	* empty, Windows uses the current value of the filter
 	* extension at the time that the dialog is closed.
 	*/
-	long /*int*/ lpstrDefExt = 0;
+	long lpstrDefExt = 0;
 	if (save) {
 		lpstrDefExt = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, TCHAR.sizeof);
 		struct.lpstrDefExt = lpstrDefExt;
@@ -377,18 +371,22 @@ public String open () {
 	*/
 	boolean oldRunMessagesInIdle = display.runMessagesInIdle;
 	display.runMessagesInIdle = true;
+	display.externalEventLoop = true;
 	display.sendPreExternalEventDispatchEvent ();
 	/*
 	* Open the dialog.  If the open fails due to an invalid
 	* file name, use an empty file name and open it again.
 	*/
 	boolean success = (save) ? OS.GetSaveFileName (struct) : OS.GetOpenFileName (struct);
+	display.externalEventLoop = false;
 	display.sendPostExternalEventDispatchEvent ();
 	switch (OS.CommDlgExtendedError ()) {
 		case OS.FNERR_INVALIDFILENAME:
-			OS.MoveMemory (lpstrFile, new TCHAR (0, "", true), TCHAR.sizeof);
+			OS.MoveMemory (lpstrFile, new char [1], TCHAR.sizeof);
+			display.externalEventLoop = true;
 			display.sendPreExternalEventDispatchEvent ();
 			success = (save) ? OS.GetSaveFileName (struct) : OS.GetOpenFileName (struct);
+			display.externalEventLoop = false;
 			display.sendPostExternalEventDispatchEvent ();
 			break;
 		case OS.FNERR_BUFFERTOOSMALL:
@@ -410,19 +408,11 @@ public String open () {
 	fileNames = new String [0];
 	String fullPath = null;
 	if (success) {
-
-		/* Use the character encoding for the default locale */
-		TCHAR buffer = new TCHAR (0, struct.nMaxFile);
-		int byteCount1 = buffer.length () * TCHAR.sizeof;
-		OS.MoveMemory (buffer, lpstrFile, byteCount1);
+		char [] buffer = new char [struct.nMaxFile];
+		OS.MoveMemory (buffer, lpstrFile, buffer.length * TCHAR.sizeof);
 		int nFileOffset = struct.nFileOffset;
 		if (nFileOffset > 0) {
-
-			/* Use the character encoding for the default locale */
-			TCHAR prefix = new TCHAR (0, nFileOffset - 1);
-			int byteCount2 = prefix.length () * TCHAR.sizeof;
-			OS.MoveMemory (prefix, lpstrFile, byteCount2);
-			filterPath = prefix.toString (0, prefix.length ());
+			filterPath = new String (buffer, 0, nFileOffset - 1);
 
 			/*
 			* Get each file from the buffer.  Files are delimited
@@ -433,9 +423,9 @@ public String open () {
 			int start = nFileOffset;
 			do {
 				int end = start;
-				while (end < buffer.length () && buffer.tcharAt (end) != 0) end++;
-				String string = buffer.toString (start, end - start);
-				start = end;
+				while (end < buffer.length && buffer [end] != 0) end++;
+				String string = new String (buffer, start, end - start);
+				start = end + 1;
 				if (count == fileNames.length) {
 					String [] newFileNames = new String [fileNames.length + 4];
 					System.arraycopy (fileNames, 0, newFileNames, 0, fileNames.length);
@@ -443,8 +433,7 @@ public String open () {
 				}
 				fileNames [count++] = string;
 				if ((style & SWT.MULTI) == 0) break;
-				start++;
-			} while (start < buffer.length () && buffer.tcharAt (start) != 0);
+			} while (start < buffer.length && buffer[start] != 0);
 
 			if (fileNames.length > 0) fileName = fileNames  [0];
 			String separator = "";
@@ -475,14 +464,6 @@ public String open () {
 		OS.SetActiveWindow (hwndParent);
 		OS.DestroyWindow (hwndOwner);
 	}
-
-	/*
-	* This code is intentionally commented.  On some
-	* platforms, the owner window is repainted right
-	* away when a dialog window exits.  This behavior
-	* is currently unspecified.
-	*/
-//	if (hwndOwner != 0) OS.UpdateWindow (hwndOwner);
 
 	/* Answer the full path or null */
 	return fullPath;

@@ -40,9 +40,6 @@ public class AddToBranchAction extends CVSAction {
 		return status.getMessage();
 	};
 	
-	/**
-	 * @see org.eclipse.team.internal.ccvs.ui.actions.CVSAction#execute(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	protected void execute(IAction action) throws InvocationTargetException, InterruptedException {
 		run((IRunnableWithProgress) monitor -> {
@@ -68,9 +65,6 @@ public class AddToBranchAction extends CVSAction {
 		}, false, PROGRESS_BUSYCURSOR); 
 	}
 
-	/**
-	 * @see org.eclipse.team.internal.ui.actions.TeamAction#isEnabled()
-	 */
 	@Override
 	public boolean isEnabled() {
 		return getSelectedRootFolder() != null;
@@ -79,8 +73,7 @@ public class AddToBranchAction extends CVSAction {
 	protected ICVSRemoteFolder getSelectedRootFolder() {
 		ICVSRemoteFolder[] folders = getSelectedRemoteFolders();
 		ICVSRemoteFolder selectedFolder = null;
-		for (int i = 0; i < folders.length; i++) {
-			ICVSRemoteFolder folder = folders[i];
+		for (ICVSRemoteFolder folder : folders) {
 			if (folder.isDefinedModule() || new Path(null, folder.getRepositoryRelativePath()).segmentCount()==1) {
 				// only return a folder if one valid one is selected.
 				if (selectedFolder != null) return null;

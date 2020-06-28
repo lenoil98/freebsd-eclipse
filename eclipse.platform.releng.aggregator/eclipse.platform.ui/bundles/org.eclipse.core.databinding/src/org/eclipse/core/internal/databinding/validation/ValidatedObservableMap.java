@@ -17,7 +17,6 @@ package org.eclipse.core.internal.databinding.validation;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.core.databinding.observable.Diffs;
@@ -97,7 +96,7 @@ public class ValidatedObservableMap<K, V> extends ObservableMap<K, V> {
 	 * @param validationStatus
 	 */
 	public ValidatedObservableMap(final IObservableMap<K, V> target, final IObservableValue<IStatus> validationStatus) {
-		super(target.getRealm(), new HashMap<K, V>(target));
+		super(target.getRealm(), new HashMap<>(target));
 		Assert.isNotNull(validationStatus,
 				"Validation status observable cannot be null"); //$NON-NLS-1$
 		Assert.isTrue(target.getRealm().equals(validationStatus.getRealm()),
@@ -121,14 +120,13 @@ public class ValidatedObservableMap<K, V> extends ObservableMap<K, V> {
 	}
 
 	private void applyDiff(MapDiff<? extends K, ? extends V> diff, Map<K, V> map) {
-		for (Iterator<? extends K> iterator = diff.getRemovedKeys().iterator(); iterator.hasNext();)
-			map.remove(iterator.next());
-		for (Iterator<? extends K> iterator = diff.getChangedKeys().iterator(); iterator.hasNext();) {
-			K key = iterator.next();
+		for (K key : diff.getRemovedKeys()) {
+			map.remove(key);
+		}
+		for (K key : diff.getChangedKeys()) {
 			map.put(key, diff.getNewValue(key));
 		}
-		for (Iterator<? extends K> iterator = diff.getAddedKeys().iterator(); iterator.hasNext();) {
-			K key = iterator.next();
+		for (K key : diff.getAddedKeys()) {
 			map.put(key, diff.getNewValue(key));
 		}
 	}

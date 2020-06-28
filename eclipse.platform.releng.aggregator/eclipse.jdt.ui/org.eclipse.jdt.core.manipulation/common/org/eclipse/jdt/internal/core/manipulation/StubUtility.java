@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -38,6 +39,8 @@ import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.text.edits.DeleteEdit;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.MultiTextEdit;
+import org.eclipse.text.templates.TemplatePersistenceData;
+import org.eclipse.text.templates.TemplateStoreCore;
 
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -46,8 +49,6 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.templates.Template;
 import org.eclipse.jface.text.templates.TemplateBuffer;
 import org.eclipse.jface.text.templates.TemplateException;
-import org.eclipse.text.templates.TemplatePersistenceData;
-import org.eclipse.text.templates.TemplateStoreCore;
 import org.eclipse.jface.text.templates.TemplateVariable;
 
 import org.eclipse.jdt.core.Flags;
@@ -97,20 +98,20 @@ import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeParameter;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.formatter.IndentManipulation;
+import org.eclipse.jdt.core.manipulation.CodeGeneration;
 import org.eclipse.jdt.core.manipulation.CodeStyleConfiguration;
 import org.eclipse.jdt.core.manipulation.JavaManipulation;
 
-import org.eclipse.jdt.internal.corext.dom.ASTNodes;
-import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.manipulation.util.Strings;
-
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
+import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
 
 /**
  * Implementations for {@link CodeGeneration} APIs, and other helper methods
  * to create source code stubs based on {@link IJavaElement}s.
- * 
+ *
  * See StubUtility2
  * See JDTUIHelperClasses
  */
@@ -125,6 +126,7 @@ public class StubUtility {
 		VALID_TYPE_BODY_TEMPLATES.add(CodeTemplateContextType.INTERFACEBODY_ID);
 		VALID_TYPE_BODY_TEMPLATES.add(CodeTemplateContextType.ENUMBODY_ID);
 		VALID_TYPE_BODY_TEMPLATES.add(CodeTemplateContextType.ANNOTATIONBODY_ID);
+		VALID_TYPE_BODY_TEMPLATES.add(CodeTemplateContextType.RECORDBODY_ID);
 	}
 
 	//COPIED from org.eclipse.jdt.ui.PreferenceConstants
@@ -273,7 +275,7 @@ public class StubUtility {
 	 * Don't use this method directly, use CodeGeneration.
 	 * @see CodeGeneration#getTypeComment(ICompilationUnit, String, String[], String)
 	 */
-	public static String getTypeComment(ICompilationUnit cu, String typeQualifiedName, String[] typeParameterNames, String lineDelim) throws CoreException {
+	public static String getTypeComment(ICompilationUnit cu, String typeQualifiedName, String[] typeParameterNames, String[] params, String lineDelim) throws CoreException {
 		Template template= getCodeTemplate(CodeTemplateContextType.TYPECOMMENT_ID, cu.getJavaProject());
 		if (template == null) {
 			return null;
@@ -305,7 +307,7 @@ public class StubUtility {
 		int[] tagOffsets= position.getOffsets();
 		for (int i= tagOffsets.length - 1; i >= 0; i--) { // from last to first
 			try {
-				insertTag(document, tagOffsets[i], position.getLength(), EMPTY, EMPTY, null, typeParameterNames, false, lineDelim);
+				insertTag(document, tagOffsets[i], position.getLength(), params, EMPTY, null, typeParameterNames, false, lineDelim);
 			} catch (BadLocationException e) {
 				throw new CoreException(new Status(IStatus.ERROR, JavaManipulationPlugin.getPluginId(), IStatus.ERROR, e.getMessage(), e));
 			}
@@ -377,7 +379,7 @@ public class StubUtility {
 
 	/**
 	 * Don't use this method directly, use CodeGeneration.
-	 * 
+	 *
 	 * @param templateID the template id of the type body to get. Valid id's are
 	 *            {@link CodeTemplateContextType#CLASSBODY_ID},
 	 *            {@link CodeTemplateContextType#INTERFACEBODY_ID},
@@ -485,14 +487,13 @@ public class StubUtility {
 		int nLines= doc.getNumberOfLines();
 		MultiTextEdit edit= new MultiTextEdit();
 		HashSet<Integer> removedLines= new HashSet<>();
-		for (int i= 0; i < variables.length; i++) {
-			TemplateVariable position= findVariable(buffer, variables[i]); // look if Javadoc tags have to be added
+		for (String variable : variables) {
+			TemplateVariable position= findVariable(buffer, variable); // look if Javadoc tags have to be added
 			if (position == null || position.getLength() > 0) {
 				continue;
 			}
-			int[] offsets= position.getOffsets();
-			for (int k= 0; k < offsets.length; k++) {
-				int line= doc.getLineOfOffset(offsets[k]);
+			for (int offset2 : position.getOffsets()) {
+				int line= doc.getLineOfOffset(offset2);
 				IRegion lineInfo= doc.getLineInformation(line);
 				int offset= lineInfo.getOffset();
 				String str= doc.get(offset, lineInfo.getLength());
@@ -504,6 +505,85 @@ public class StubUtility {
 		}
 		edit.apply(doc, 0);
 		return doc.get();
+	}
+
+	/*
+	 * Don't use this method directly, use CodeGeneration.
+	 * @see CodeGeneration#getModuleComment(IJavaProject, String, String, String[], String[], String[], String[], String[], String)
+	 */
+	public static String getModuleComment(ICompilationUnit cu, String moduleName, String[] providesNames,
+			String[] usesNames, String lineDelimiter) throws CoreException {
+		String templateName= CodeTemplateContextType.MODULECOMMENT_ID;
+		Template template= getCodeTemplate(templateName, cu.getJavaProject());
+		if (template == null) {
+			return null;
+		}
+		CodeTemplateContext context= new CodeTemplateContext(template.getContextTypeId(), cu.getJavaProject(), lineDelimiter);
+		context.setCompilationUnitVariables(cu);
+		context.setVariable(CodeTemplateContextType.ENCLOSING_MODULE, moduleName);
+		TemplateBuffer buffer;
+		try {
+			buffer= context.evaluate(template);
+		} catch (BadLocationException e) {
+			throw new CoreException(Status.CANCEL_STATUS);
+		} catch (TemplateException e) {
+			throw new CoreException(Status.CANCEL_STATUS);
+		}
+		String str= buffer.getString();
+		if (Strings.containsOnlyWhitespaces(str)) {
+			return null;
+		}
+
+		TemplateVariable position= findVariable(buffer, CodeTemplateContextType.TAGS); // look if Javadoc tags have to be added
+		if (position == null) {
+			return str;
+		}
+
+		IDocument document= new Document(str);
+		int[] tagOffsets= position.getOffsets();
+		for (int i= tagOffsets.length - 1; i >= 0; i--) { // from last to first
+			try {
+				insertModuleTags(document, tagOffsets[i], position.getLength(), providesNames, usesNames,
+						lineDelimiter);
+			} catch (BadLocationException e) {
+				throw new CoreException(new Status(IStatus.ERROR, JavaManipulationPlugin.getPluginId(), IStatus.ERROR, e.getMessage(), e));
+			}
+		}
+		return document.get();
+	}
+
+	private static void insertModuleTags(IDocument textBuffer, int offset, int length, String[] providesNames,
+			String[] usesNames, String lineDelimiter) throws BadLocationException {
+		IRegion region= textBuffer.getLineInformationOfOffset(offset);
+		if (region == null) {
+			return;
+		}
+		String lineStart= textBuffer.get(region.getOffset(), offset - region.getOffset());
+
+		StringBuilder buf= new StringBuilder();
+		for (String providesName : providesNames) {
+			if (buf.length() > 0) {
+				buf.append(lineDelimiter).append(lineStart);
+			}
+			buf.append("@provides ").append(providesName); //$NON-NLS-1$
+		}
+		for (String usesName : usesNames) {
+			if (buf.length() > 0) {
+				buf.append(lineDelimiter).append(lineStart);
+			}
+			buf.append("@uses ").append(usesName); //$NON-NLS-1$
+		}
+		if (buf.length() == 0 && isAllCommentWhitespace(lineStart)) {
+			int prevLine= textBuffer.getLineOfOffset(offset) - 1;
+			if (prevLine > 0) {
+				IRegion prevRegion= textBuffer.getLineInformation(prevLine);
+				int prevLineEnd= prevRegion.getOffset() + prevRegion.getLength();
+				// clear full line
+				textBuffer.replace(prevLineEnd, offset + length - prevLineEnd, ""); //$NON-NLS-1$
+				return;
+			}
+		}
+		textBuffer.replace(offset, length, buf.toString());
 	}
 
 	/*
@@ -730,9 +810,7 @@ public class StubUtility {
 
 
 	private static TemplateVariable findVariable(TemplateBuffer buffer, String variable) {
-		TemplateVariable[] positions= buffer.getVariables();
-		for (int i= 0; i < positions.length; i++) {
-			TemplateVariable curr= positions[i];
+		for (TemplateVariable curr : buffer.getVariables()) {
 			if (variable.equals(curr.getType())) {
 				return curr;
 			}
@@ -749,17 +827,17 @@ public class StubUtility {
 		String lineStart= textBuffer.get(region.getOffset(), offset - region.getOffset());
 
 		StringBuilder buf= new StringBuilder();
-		for (int i= 0; i < typeParameterNames.length; i++) {
+		for (String typeParameterName : typeParameterNames) {
 			if (buf.length() > 0) {
 				buf.append(lineDelimiter).append(lineStart);
 			}
-			buf.append("@param <").append(typeParameterNames[i]).append('>'); //$NON-NLS-1$
+			buf.append("@param <").append(typeParameterName).append('>'); //$NON-NLS-1$
 		}
-		for (int i= 0; i < paramNames.length; i++) {
+		for (String paramName : paramNames) {
 			if (buf.length() > 0) {
 				buf.append(lineDelimiter).append(lineStart);
 			}
-			buf.append("@param ").append(paramNames[i]); //$NON-NLS-1$
+			buf.append("@param ").append(paramName); //$NON-NLS-1$
 		}
 		if (returnType != null && !returnType.equals("void")) { //$NON-NLS-1$
 			if (buf.length() > 0) {
@@ -768,11 +846,11 @@ public class StubUtility {
 			buf.append("@return"); //$NON-NLS-1$
 		}
 		if (exceptionNames != null) {
-			for (int i= 0; i < exceptionNames.length; i++) {
+			for (String exceptionName : exceptionNames) {
 				if (buf.length() > 0) {
 					buf.append(lineDelimiter).append(lineStart);
 				}
-				buf.append("@throws ").append(exceptionNames[i]); //$NON-NLS-1$
+				buf.append("@throws ").append(exceptionName); //$NON-NLS-1$
 			}
 		}
 		if (isDeprecated) {
@@ -795,18 +873,18 @@ public class StubUtility {
 	}
 
 	private static boolean isAllCommentWhitespace(String lineStart) {
-		for (int i= 0; i < lineStart.length(); i++) {
-			char ch= lineStart.charAt(i);
+		for (char ch : lineStart.toCharArray()) {
 			if (!Character.isWhitespace(ch) && ch != '*') {
 				return false;
 			}
 		}
+
 		return true;
 	}
 
 	/**
 	 * Returns the line delimiter which is used in the specified project.
-	 * 
+	 *
 	 * @param project the java project, or <code>null</code>
 	 * @return the used line delimiter
 	 */
@@ -860,7 +938,7 @@ public class StubUtility {
 
 	/**
 	 * Evaluates the indentation used by a Java element. (in tabulators)
-	 * 
+	 *
 	 * @param elem the element to get the indent of
 	 * @return return the indent unit
 	 * @throws JavaModelException thrown if the element could not be accessed
@@ -890,7 +968,7 @@ public class StubUtility {
 
 	/**
 	 * Returns the element after the give element.
-	 * 
+	 *
 	 * @param member a Java element
 	 * @return the next sibling of the given element or <code>null</code>
 	 * @throws JavaModelException thrown if the element could not be accessed
@@ -991,9 +1069,7 @@ public class StubUtility {
 		}
 		if (expectedType != null) {
 			String[] names= getVariableNameSuggestions(variableKind, project, expectedType, excluded, false);
-			for (int i= 0; i < names.length; i++) {
-				res.add(names[i]);
-			}
+			res.addAll(Arrays.asList(names));
 		}
 		if (res.isEmpty()) {
 			return getDefaultVariableNameSuggestions(variableKind, excluded);
@@ -1032,7 +1108,7 @@ public class StubUtility {
 	/**
 	 * Returns variable name suggestions for the given base name. This is a layer over the JDT.Core
 	 * NamingConventions API to fix its shortcomings. JDT UI code should only use this API.
-	 * 
+	 *
 	 * @param variableKind specifies what type the variable is: {@link NamingConventions#VK_LOCAL},
 	 *            {@link NamingConventions#VK_PARAMETER}, {@link NamingConventions#VK_STATIC_FIELD},
 	 *            {@link NamingConventions#VK_INSTANCE_FIELD}, or
@@ -1045,7 +1121,7 @@ public class StubUtility {
 	 *            are excluded
 	 * @param evaluateDefault if set, the result is guaranteed to contain at least one result. If
 	 *            not, the result can be an empty array.
-	 * 
+	 *
 	 * @return the name suggestions sorted by relevance (best proposal first). If
 	 *         <code>evaluateDefault</code> is set to true, the returned array is never empty. If
 	 *         <code>evaluateDefault</code> is set to false, an empty array is returned if there is
@@ -1069,9 +1145,7 @@ public class StubUtility {
 
 
 	private static void add(String[] names, Set<String> result) {
-		for (int i= 0; i < names.length; i++) {
-			result.add(names[i]);
-		}
+		result.addAll(Arrays.asList(names));
 	}
 
 	private static String getBaseNameFromExpression(IJavaProject project, Expression assignedExpression, int variableKind) {
@@ -1096,8 +1170,7 @@ public class StubUtility {
 			String string= assignedExpression instanceof StringLiteral ? ((StringLiteral)assignedExpression).getLiteralValue() : ((NumberLiteral)assignedExpression).getToken();
 			StringBuilder res= new StringBuilder();
 			boolean needsUnderscore= false;
-			for (int i= 0; i < string.length(); i++) {
-				char ch= string.charAt(i);
+			for (char ch : string.toCharArray()) {
 				if (Character.isJavaIdentifierPart(ch)) {
 					if (res.length() == 0 && !Character.isJavaIdentifierStart(ch) || needsUnderscore) {
 						res.append('_');
@@ -1113,8 +1186,7 @@ public class StubUtility {
 			}
 		}
 		if (name != null) {
-			for (int i= 0; i < KNOWN_METHOD_NAME_PREFIXES.length; i++) {
-				String curr= KNOWN_METHOD_NAME_PREFIXES[i];
+			for (String curr : KNOWN_METHOD_NAME_PREFIXES) {
 				if (name.startsWith(curr)) {
 					if (name.equals(curr)) {
 						return null; // don't suggest 'get' as variable name
@@ -1238,9 +1310,7 @@ public class StubUtility {
 				// make the existing name to favorite
 				LinkedHashSet<String> updatedNames= new LinkedHashSet<>();
 				updatedNames.add(curr);
-				for (int k= 0; k < proposedNames.length; k++) {
-					updatedNames.add(proposedNames[k]);
-				}
+				updatedNames.addAll(Arrays.asList(proposedNames));
 				proposedNames= updatedNames.toArray(new String[updatedNames.size()]);
 			}
 			newNames[i]= proposedNames;
@@ -1284,8 +1354,7 @@ public class StubUtility {
 						String[] namesArray= EMPTY;
 						ArrayList<String> newNames= new ArrayList<>(paramNames.length);
 						// Ensure that the code generation preferences are respected
-						for (int i= 0; i < paramNames.length; i++) {
-							String curr= paramNames[i];
+						for (String curr : paramNames) {
 							String baseName= NamingConventions.getBaseName(NamingConventions.VK_PARAMETER, curr, method.getJavaProject());
 							if (!curr.equals(baseName)) {
 								// make the existing name the favorite
@@ -1308,7 +1377,7 @@ public class StubUtility {
 		}
 		return names;
 	}
-	
+
 	public static String getBaseName(IField field) throws JavaModelException {
 		return NamingConventions.getBaseName(getFieldKind(field.getFlags()), field.getElementName(), field.getJavaProject());
 	}
@@ -1319,7 +1388,7 @@ public class StubUtility {
 
 	/**
 	 * Returns the kind of the given binding.
-	 * 
+	 *
 	 * @param binding variable binding
 	 * @return one of the <code>NamingConventions.VK_*</code> constants
 	 * @since 3.5
@@ -1456,7 +1525,7 @@ public class StubUtility {
 
 	/**
 	 * Only to be used by tests
-	 * 
+	 *
 	 * @param templateId the template id
 	 * @param pattern the new pattern
 	 * @param project not used
@@ -1507,6 +1576,9 @@ public class StubUtility {
 			rewrite.setUseContextToFilterImplicitImports(true);
 		}
 		return rewrite;
+	}
+
+	private StubUtility() {
 	}
 
 }

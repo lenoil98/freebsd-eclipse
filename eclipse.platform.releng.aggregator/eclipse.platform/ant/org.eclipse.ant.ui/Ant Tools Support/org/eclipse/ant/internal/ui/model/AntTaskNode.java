@@ -15,10 +15,8 @@
 package org.eclipse.ant.internal.ui.model;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.RuntimeConfigurable;
@@ -159,16 +157,14 @@ public class AntTaskNode extends AntElementNode {
 	public boolean containsOccurrence(String identifier) {
 		RuntimeConfigurable wrapper = getTask().getRuntimeConfigurableWrapper();
 		Map<String, Object> attributeMap = wrapper.getAttributeMap();
-		Set<String> keys = attributeMap.keySet();
 		boolean lookingForProperty = identifier.startsWith("${") && identifier.endsWith("}"); //$NON-NLS-1$ //$NON-NLS-2$
-		for (Iterator<String> iter = keys.iterator(); iter.hasNext();) {
-			String key = iter.next();
+		for (String key : attributeMap.keySet()) {
 			String value = (String) attributeMap.get(key);
 			if (lookingForProperty && (key.equals("if") || key.equals("unless"))) { //$NON-NLS-1$ //$NON-NLS-2$
-				if (value.indexOf(identifier.substring(2, identifier.length() - 1)) != -1) {
+				if (value.contains(identifier.substring(2, identifier.length() - 1))) {
 					return true;
 				}
-			} else if (value.indexOf(identifier) != -1) {
+			} else if (value.contains(identifier)) {
 				return true;
 			}
 		}
@@ -191,13 +187,11 @@ public class AntTaskNode extends AntElementNode {
 		List<Integer> results = new ArrayList<>();
 		RuntimeConfigurable wrapper = getTask().getRuntimeConfigurableWrapper();
 		Map<String, Object> attributeMap = wrapper.getAttributeMap();
-		Set<String> keys = attributeMap.keySet();
 		String lineSep = System.getProperty("line.separator"); //$NON-NLS-1$
-		for (Iterator<String> iter = keys.iterator(); iter.hasNext();) {
-			String key = iter.next();
+		for (String key : attributeMap.keySet()) {
 			String value = (String) attributeMap.get(key);
 			int identifierCorrection = 1;
-			if (value.indexOf(identifier) != -1) {
+			if (value.contains(identifier)) {
 				int keyOffset = textToSearch.indexOf(key);
 				while (keyOffset > 0 && !Character.isWhitespace(textToSearch.charAt(keyOffset - 1))) {
 					keyOffset = textToSearch.indexOf(key, keyOffset + 1);

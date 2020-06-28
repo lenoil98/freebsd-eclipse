@@ -31,11 +31,11 @@ import org.eclipse.osgi.storage.bundlefile.BundleFileWrapper;
 
 /**
  * Wraps an actual BundleFile object for purposes of loading classes from the
- * shared classes cache. 
+ * shared classes cache.
  */
 public class CDSBundleFile extends BundleFileWrapper {
 	private final static String classFileExt = ".class"; //$NON-NLS-1$
-	private URL url; // the URL to the content of the real bundle file
+	private final URL url; // the URL to the content of the real bundle file
 	private SharedClassURLHelper urlHelper; // the url helper set by the classloader
 	private boolean primed = false;
 
@@ -46,11 +46,13 @@ public class CDSBundleFile extends BundleFileWrapper {
 	public CDSBundleFile(BundleFile wrapped) {
 		super(wrapped);
 		// get the url to the content of the real bundle file
+		URL content = null;
 		try {
-			this.url = new URL("file", "", wrapped.getBaseFile().getAbsolutePath()); //$NON-NLS-1$ //$NON-NLS-2$
+			content = new URL("file", "", wrapped.getBaseFile().getAbsolutePath()); //$NON-NLS-1$ //$NON-NLS-2$
 		} catch (MalformedURLException e) {
 			// do nothing
 		}
+		this.url = content;
 	}
 
 	public CDSBundleFile(BundleFile bundleFile, SharedClassURLHelper urlHelper) {
@@ -61,28 +63,32 @@ public class CDSBundleFile extends BundleFileWrapper {
 	/*
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgi.storage.bundlefile.BundleFile#getEntry(java.lang.String)
-	 * 
-	 * If path is not for a class then just use the wrapped bundle file to answer the call. 
+	 *
+	 * If path is not for a class then just use the wrapped bundle file to answer the call.
 	 * If the path is for a class, it returns a CDSBundleEntry object.
-	 * If the path is for a class, it will look for the magic cookie in the 
+	 * If the path is for a class, it will look for the magic cookie in the
 	 * shared classes cache. If found, the bytes representing the magic cookie are stored in CDSBundleEntry object.
 	 */
+	@Override
 	public BundleEntry getEntry(String path) {
-		BundleEntry wrappedEntry = super.getEntry(path);
-		if (wrappedEntry == null) {
-			return null;
-		}
 		if (!primed || !path.endsWith(classFileExt)) {
-			return wrappedEntry;
+			return super.getEntry(path);
+		}
+		byte[] classbytes = getClassBytes(path.substring(0, path.length() - classFileExt.length()));
+		if (classbytes == null) {
+			return super.getEntry(path);
 		}
 
-		byte[] classbytes = getClassBytes(path.substring(0, path.length() - classFileExt.length()));
-		BundleEntry be = new CDSBundleEntry(path, classbytes, wrappedEntry);
+		BundleEntry be = new CDSBundleEntry(path, classbytes, this);
 		return be;
 	}
 
+	BundleEntry getWrappedEntry(String path) {
+		return super.getEntry(path);
+	}
+
 	/**
-	 * Returns the file url to the content of the actual bundle file 
+	 * Returns the file url to the content of the actual bundle file
 	 * @return the file url to the content of the actual bundle file
 	 */
 	URL getURL() {
@@ -90,7 +96,7 @@ public class CDSBundleFile extends BundleFileWrapper {
 	}
 
 	/**
-	 * Returns the url helper for this bundle file.  This is set by the 
+	 * Returns the url helper for this bundle file.  This is set by the
 	 * class loading hook
 	 * @return the url helper for this bundle file
 	 */
@@ -99,7 +105,7 @@ public class CDSBundleFile extends BundleFileWrapper {
 	}
 
 	/**
-	 * Sets the url helper for this bundle file.  This is called by the 
+	 * Sets the url helper for this bundle file.  This is called by the
 	 * class loading hook.
 	 * @param urlHelper the url helper
 	 */
@@ -109,8 +115,8 @@ public class CDSBundleFile extends BundleFileWrapper {
 	}
 
 	/**
-	 * Sets the primed flag for the bundle file.  This is called by the 
-	 * class loading hook after the first class has been loaded from disk for 
+	 * Sets the primed flag for the bundle file.  This is called by the
+	 * class loading hook after the first class has been loaded from disk for
 	 * this bundle file.
 	 * @param primed the primed flag
 	 */

@@ -13,7 +13,7 @@
  *******************************************************************************/
 package org.eclipse.pde.internal.ui.correction.java;
 
-import com.ibm.icu.text.MessageFormat;
+import java.text.MessageFormat;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.*;
@@ -183,9 +183,8 @@ public class JavaResolutionFactory {
 						return;
 					IPluginModelBase base = (IPluginModelBase) model;
 					String[] pluginIdStrings = null;
-					String[] junit5PluginIDList = getJUnit5Bundles();
-					if (getChangeObject() instanceof String && getChangeObject().equals("JUnit 5 bundles")) { //$NON-NLS-1$
-						pluginIdStrings = junit5PluginIDList;
+					if ("JUnit 5 bundles".equals(getChangeObject())) { //$NON-NLS-1$
+						pluginIdStrings = getJUnit5Bundles();
 					}
 					if (getChangeObject() instanceof ExportPackageDescription) {
 						pluginIdStrings = new String[1];
@@ -210,13 +209,7 @@ public class JavaResolutionFactory {
 				}
 
 				private String[] getJUnit5Bundles() {
-					String[] junit5PluginIDList = { "org.junit", "org.junit.jupiter.api", "org.junit.jupiter.engine", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-							"org.junit.jupiter.migrationsupport", "org.junit.jupiter.params", //$NON-NLS-1$ //$NON-NLS-2$
-							"org.junit.platform.commons", "org.junit.platform.engine", //$NON-NLS-1$ //$NON-NLS-2$
-							"org.junit.platform.launcher", "org.junit.platform.runner", //$NON-NLS-1$ //$NON-NLS-2$
-							 "org.junit.platform.suite.api","org.junit.vintage.engine",  //$NON-NLS-1$ //$NON-NLS-2$
-							"org.hamcrest.core", "org.opentest4j", "org.apiguardian" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-					return junit5PluginIDList;
+					return new String[] { "org.junit", "org.junit.jupiter.api" }; //$NON-NLS-1$ //$NON-NLS-2$
 				}
 			}, new NullProgressMonitor());
 

@@ -47,8 +47,8 @@ public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
 	}
 
 	int[] cases = {SWT.SHADOW_IN, SWT.SHADOW_OUT, SWT.SHADOW_ETCHED_IN, SWT.SHADOW_ETCHED_OUT};
-	for (int i = 0; i < cases.length; i++)
-		group = new Group(shell, cases[i]);
+	for (int style : cases)
+		group = new Group(shell, style);
 }
 
 @Override
@@ -76,12 +76,12 @@ Group group;
 
 @Test
 public void test_consistency_MenuDetect () {
-    consistencyEvent(10, 5, 3, 0, ConsistencyUtility.MOUSE_CLICK);
+	consistencyEvent(10, 5, 3, 0, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Test
 public void test_consistency_DragDetect () {
-    consistencyEvent(10, 5, 20, 10, ConsistencyUtility.MOUSE_DRAG);
+	consistencyEvent(10, 5, 20, 10, ConsistencyUtility.MOUSE_DRAG);
 }
 
 }

@@ -39,6 +39,7 @@ static TaskItem getTaskBarItem () {
 public static void main(String[] args) {
 	display = new Display();
 	shell = new Shell(display);
+	shell.setText("Snippet 336");
 	shell.setLayout(new GridLayout());
 	TabFolder folder = new TabFolder(shell, SWT.NONE);
 	folder.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -141,12 +142,12 @@ public static void main(String[] args) {
 	button.addListener(SWT.Selection, listener3);
 	button.setSelection(true);
 	String[] images = {"eclipse.png", "pause.gif", "run.gif", "warning.gif"};
-	for (int i = 0; i < images.length; i++) {
+	for (String image : images) {
 		button = new Button(group, SWT.RADIO);
-		button.setText(images[i]);
+		button.setText(image);
 		button.addListener(SWT.Selection, listener3);
 	}
-    shell.pack();
+	shell.pack();
 	shell.open();
 	while (!shell.isDisposed()) {
 		if (!display.readAndDispatch()) display.sleep();

@@ -87,8 +87,8 @@ public class AsynchronousTestSet extends ObservableSet<Object> {
 	}
 
 	public static void recomputeAll() {
-		for (Iterator<Object> iter = allSets.iterator(); iter.hasNext();) {
-			AsynchronousTestSet next = (AsynchronousTestSet) iter.next();
+		for (Object object : allSets) {
+			AsynchronousTestSet next = (AsynchronousTestSet) object;
 
 			next.recompute();
 		}
@@ -100,7 +100,7 @@ public class AsynchronousTestSet extends ObservableSet<Object> {
 		removed.retainAll(wrappedSet);
 
 		wrappedSet.removeAll(removed);
-		fireSetChange(Diffs.createSetDiff(Collections.EMPTY_SET, removed));
+		fireSetChange(Diffs.createSetDiff(Collections.emptySet(), removed));
 	}
 
 	@Override

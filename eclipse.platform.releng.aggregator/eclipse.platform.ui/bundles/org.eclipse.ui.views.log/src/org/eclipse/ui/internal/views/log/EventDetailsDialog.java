@@ -16,9 +16,9 @@
  *******************************************************************************/
 package org.eclipse.ui.internal.views.log;
 
-import com.ibm.icu.text.DateFormat;
 import java.io.*;
 import java.text.Collator;
+import java.text.DateFormat;
 import java.util.*;
 import java.util.List;
 import org.eclipse.core.runtime.IAdaptable;
@@ -219,6 +219,7 @@ public class EventDetailsDialog extends TrayDialog {
 
 		applyDialogFont(buttonBar);
 		getButton(IDialogConstants.OK_ID).setFocus();
+		getButton(IDialogConstants.OK_ID).setText(IDialogConstants.CLOSE_LABEL);
 	}
 
 	@Override
@@ -738,7 +739,7 @@ public class EventDetailsDialog extends TrayDialog {
 
 	/**
 	 * Loads filters from preferences.
-	 * 
+	 *
 	 * @return filters from preferences or empty array
 	 *
 	 * @since 3.4
@@ -767,7 +768,7 @@ public class EventDetailsDialog extends TrayDialog {
 	 * Filters stack trace. Every stack trace line is compared against all patterns.
 	 * If line contains any of pattern strings, it's excluded from output.
 	 *
-	 * @returns filtered stack trace
+	 * @return filtered stack trace
 	 * @since 3.4
 	 */
 	private String filterStack(String stack) {
@@ -783,7 +784,7 @@ public class EventDetailsDialog extends TrayDialog {
 			boolean filtered = false;
 			int i = 0;
 			while ((!filtered) && (i < stackFilterPatterns.length)) {
-				filtered = stackElement.indexOf(stackFilterPatterns[i]) >= 0;
+				filtered = stackElement.contains(stackFilterPatterns[i]);
 				i++;
 			}
 
@@ -799,7 +800,7 @@ public class EventDetailsDialog extends TrayDialog {
 
 	/**
 	 * Stores the current state in the dialog settings.
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	private void storeSettings() {
@@ -864,7 +865,7 @@ public class EventDetailsDialog extends TrayDialog {
 
 	/**
 	 * Utility method to get all top level elements of the Log View
-	 * 
+	 *
 	 * @return top level elements of the Log View
 	 */
 	private AbstractEntry[] getElements() {

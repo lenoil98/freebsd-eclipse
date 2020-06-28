@@ -23,12 +23,8 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.viewers.DoubleClickEvent;
-import org.eclipse.jface.viewers.IDoubleClickListener;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
@@ -61,7 +57,7 @@ public class FileSelectionDialog extends MessageDialog {
 
 	private boolean allowMultiselection= false;
 
-    private Pattern fPattern;
+	private Pattern fPattern;
 	/**
 	 * Creates a resource selection dialog rooted at the given element.
 	 *
@@ -94,15 +90,15 @@ public class FileSelectionDialog extends MessageDialog {
 	 *            this argument is ignored.
 	 */
 	public void setFileFilter(String pattern, boolean ignoreCase) {
-	    if (pattern != null) {
-	        if (ignoreCase) {
-	            fPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
-	        } else {
-	            fPattern = Pattern.compile(pattern);
-	        }
-	    } else {
-	        fPattern = null;
-	    }
+		if (pattern != null) {
+			if (ignoreCase) {
+				fPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+			} else {
+				fPattern = Pattern.compile(pattern);
+			}
+		} else {
+			fPattern = null;
+		}
 	}
 
 	@Override
@@ -149,8 +145,8 @@ public class FileSelectionDialog extends MessageDialog {
 				//Also try and reset the size of the columns as appropriate
 				TableColumn[] columns =
 					selectionGroup.getListTable().getColumns();
-				for (int i = 0; i < columns.length; i++) {
-					columns[i].pack();
+				for (TableColumn column : columns) {
+					column.pack();
 				}
 			}
 		});
@@ -170,8 +166,7 @@ public class FileSelectionDialog extends MessageDialog {
 					try {
 						members = ((IContainer) o).members();
 						List<IResource> accessibleMembers = new ArrayList<>(members.length);
-						for (int i = 0; i < members.length; i++) {
-							IResource resource = members[i];
+						for (IResource resource : members) {
 							if (resource.isAccessible()) {
 								accessibleMembers.add(resource);
 							}
@@ -184,16 +179,14 @@ public class FileSelectionDialog extends MessageDialog {
 
 					//filter out the desired resource types
 					ArrayList<IResource> results = new ArrayList<>();
-					for (int i = 0; i < members.length; i++) {
+					for (IResource member : members) {
 						//And the test bits with the resource types to see if
 						// they are what we want
-						if ((members[i].getType() & resourceType) > 0) {
-							if (members[i].getType() == IResource.FILE
-								&& fPattern != null
-								&& !fPattern.matcher(members[i].getName()).find()) {
+						if ((member.getType() & resourceType) > 0) {
+							if (member.getType() == IResource.FILE && fPattern != null && !fPattern.matcher(member.getName()).find()) {
 								continue;
 							}
-							results.add(members[i]);
+							results.add(member);
 						}
 					}
 					return results.toArray();
@@ -208,19 +201,9 @@ public class FileSelectionDialog extends MessageDialog {
 	 */
 	private void initializeDialog() {
 		selectionGroup
-			.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				getButton(IDialogConstants.OK_ID).setEnabled(
-					!selectionGroup.getListTableSelection().isEmpty());
-			}
-		});
-		selectionGroup.addDoubleClickListener(new IDoubleClickListener() {
-			@Override
-			public void doubleClick(DoubleClickEvent event) {
-				buttonPressed(IDialogConstants.OK_ID);
-			}
-		});
+			.addSelectionChangedListener(event -> getButton(IDialogConstants.OK_ID).setEnabled(
+				!selectionGroup.getListTableSelection().isEmpty()));
+		selectionGroup.addDoubleClickListener(event -> buttonPressed(IDialogConstants.OK_ID));
 
 		getButton(IDialogConstants.OK_ID).setEnabled(false);
 	}

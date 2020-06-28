@@ -202,7 +202,7 @@ public class ExtractInterfaceWizard extends RefactoringWizard {
 			fTableViewer= CheckboxTableViewer.newCheckList(composite, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 			fTableViewer.getTable().setLayoutData(new GridData(GridData.FILL_BOTH));
 			fTableViewer.setLabelProvider(createLabelProvider());
-			fTableViewer.setContentProvider(new ArrayContentProvider());
+			fTableViewer.setContentProvider(ArrayContentProvider.getInstance());
 			try {
 				fTableViewer.setInput(getExtractableMembers());
 			} catch (JavaModelException e) {
@@ -243,9 +243,10 @@ public class ExtractInterfaceWizard extends RefactoringWizard {
 		}
 
 		private static boolean containsMethods(IMember[] members) {
-			for (int i= 0; i < members.length; i++) {
-				if (members[i].getElementType() == IJavaElement.METHOD)
+			for (IMember member : members) {
+				if (member.getElementType() == IJavaElement.METHOD) {
 					return true;
+				}
 			}
 			return false;
 		}

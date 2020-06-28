@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -62,7 +61,7 @@ public class WorkingSetModel {
 
 	/**
 	 * Key associated with the sort state of working sets.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private static final String TAG_SORT_WORKING_SETS= "sortWorkingSets"; //$NON-NLS-1$
@@ -79,13 +78,13 @@ public class WorkingSetModel {
 
 	/**
 	 * Value of the sorted state of working sets.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private boolean fIsSortingEnabled;
 
 	/**
-	 * List of all working sets. 
+	 * List of all working sets.
 	 * @since 3.7
 	 */
 	private List<IWorkingSet> fAllWorkingSets;
@@ -122,8 +121,8 @@ public class WorkingSetModel {
 		}
 		public void rebuild(IWorkingSet[] workingSets) {
 			clear();
-			for (int i= 0; i < workingSets.length; i++) {
-				put(workingSets[i]);
+			for (IWorkingSet workingSet : workingSets) {
+				put(workingSet);
 			}
 		}
 		public IAdaptable[] refresh(IWorkingSet ws) {
@@ -134,22 +133,22 @@ public class WorkingSetModel {
 			List<IAdaptable> toRemove= new ArrayList<>(Arrays.asList(oldElements));
 			List<IAdaptable> toAdd= new ArrayList<>(Arrays.asList(newElements));
 			computeDelta(toRemove, toAdd, oldElements, newElements);
-			for (Iterator<IAdaptable> iter= toAdd.iterator(); iter.hasNext();) {
-				addElement(iter.next(), ws);
+			for (IAdaptable iAdaptable : toAdd) {
+				addElement(iAdaptable, ws);
 			}
-			for (Iterator<IAdaptable> iter= toRemove.iterator(); iter.hasNext();) {
-				removeElement(iter.next(), ws);
+			for (IAdaptable iAdaptable : toRemove) {
+				removeElement(iAdaptable, ws);
 			}
 			if (toRemove.size() > 0 || toAdd.size() > 0)
 				fWorkingSetToElement.put(ws, newElements);
 			return oldElements;
 		}
 		private void computeDelta(List<IAdaptable> toRemove, List<IAdaptable> toAdd, IAdaptable[] oldElements, IAdaptable[] newElements) {
-			for (int i= 0; i < oldElements.length; i++) {
-				toAdd.remove(oldElements[i]);
+			for (IAdaptable oldElement : oldElements) {
+				toAdd.remove(oldElement);
 			}
-			for (int i= 0; i < newElements.length; i++) {
-				toRemove.remove(newElements[i]);
+			for (IAdaptable newElement : newElements) {
+				toRemove.remove(newElement);
 			}
 
 		}
@@ -175,8 +174,7 @@ public class WorkingSetModel {
 				return;
 			IAdaptable[] elements= ws.getElements();
 			fWorkingSetToElement.put(ws, elements);
-			for (int i= 0; i < elements.length; i++) {
-				IAdaptable element= elements[i];
+			for (IAdaptable element : elements) {
 				addElement(element, ws);
 				if (!(element instanceof IProject) && !(element instanceof IJavaProject)) {
 					fNonProjectTopLevelElements.add(element);
@@ -319,8 +317,7 @@ public class WorkingSetModel {
 
 	public Object[] addWorkingSets(Object[] elements) {
 		List<? super IWorkingSet> result= null;
-		for (int i= 0; i < elements.length; i++) {
-			Object element= elements[i];
+		for (Object element : elements) {
 			List<IWorkingSet> sets= null;
 			if (element instanceof IResource) {
 				sets= fElementMapper.getAllWorkingSetsForResource((IResource)element);
@@ -373,7 +370,7 @@ public class WorkingSetModel {
 
 	/**
 	 * Returns the array of all working sets.
-	 * 
+	 *
 	 * @return the array of all working sets
 	 * @since 3.7
 	 */
@@ -385,22 +382,22 @@ public class WorkingSetModel {
 
 	/**
 	 * Returns the list containing active and all working sets from the working set managers.
-	 * 
+	 *
 	 * @return the list of all the working sets
 	 * @since 3.7
 	 */
 	private List<IWorkingSet> getActiveAndAllWorkingSetsFromManagers() {
 		List<IWorkingSet> result= new ArrayList<>();
 		result.addAll(fActiveWorkingSets);
-		IWorkingSet[] locals= fLocalWorkingSetManager.getWorkingSets();
-		for (int i= 0; i < locals.length; i++) {
-			if (!result.contains(locals[i]) && isSupportedAsTopLevelElement(locals[i]))
-				result.add(locals[i]);
+		for (IWorkingSet local : fLocalWorkingSetManager.getWorkingSets()) {
+			if (!result.contains(local) && isSupportedAsTopLevelElement(local)) {
+				result.add(local);
+			}
 		}
-		IWorkingSet[] globals= PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets();
-		for (int i= 0; i < globals.length; i++) {
-			if (!result.contains(globals[i]) && isSupportedAsTopLevelElement(globals[i]))
-				result.add(globals[i]);
+		for (IWorkingSet global : PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets()) {
+			if (!result.contains(global) && isSupportedAsTopLevelElement(global)) {
+				result.add(global);
+			}
 		}
 
 		if (fIsSortingEnabled)
@@ -410,13 +407,12 @@ public class WorkingSetModel {
 
 	/**
 	 * Adds newly created working sets to the list of all working sets.
-	 * 
+	 *
 	 * @param result the list of all working sets from the working set managers
 	 * @since 3.7
 	 */
 	private void addNewlyCreatedWorkingSets(List<IWorkingSet> result) {
-		for (Iterator<IWorkingSet> iter= result.iterator(); iter.hasNext();) {
-			IWorkingSet set= iter.next();
+		for (IWorkingSet set : result) {
 			if (!fAllWorkingSets.contains(set))
 				fAllWorkingSets.add(set);
 		}
@@ -429,7 +425,7 @@ public class WorkingSetModel {
 	 * ordering of the active working sets must be same in both allWorkingSets and activeWorkingSets
 	 * arrays, else the method throws an <code>IllegalArgumentException</code.
 	 * </p>
-	 * 
+	 *
 	 * @param allWorkingSets the array of all working sets
 	 * @param isSortingEnabled <code>true</code> if sorting is enabled, <code>false</code> otherwise
 	 * @param activeWorkingSets the array of active working sets
@@ -450,9 +446,9 @@ public class WorkingSetModel {
 	 * Note: If the relative ordering of the active working sets is not same in both fAllWorkingSets
 	 * and fActiveWorkingSets, fAllWorkingSets is re-ordered according to fActiveWorkingSets.
 	 * </p>
-	 * 
+	 *
 	 * @param workingSets the active working sets to be set
-	 * 
+	 *
 	 */
 	public void setActiveWorkingSets(IWorkingSet[] workingSets) {
 		Assert.isLegal(Arrays.asList(getAllWorkingSets()).containsAll(Arrays.asList(workingSets)));
@@ -471,13 +467,12 @@ public class WorkingSetModel {
 	/**
 	 * Adjusts the relative ordering of the active working sets in fAllWorkingSets according to
 	 * fActiveWorkingSets.
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	private void adjustOrderingOfAllWorkingSets() {
 		int countActive= 0;
-		for (Iterator<IWorkingSet> iter= fAllWorkingSets.iterator(); iter.hasNext();) {
-			IWorkingSet set= iter.next();
+		for (IWorkingSet set : fAllWorkingSets) {
 			if (fActiveWorkingSets.contains(set)) {
 				IWorkingSet workingSet= fActiveWorkingSets.get(countActive++);
 				if (!workingSet.equals(set)) {
@@ -494,7 +489,7 @@ public class WorkingSetModel {
 	/**
 	 * Checks if the order of active working sets is different in the active and all working set
 	 * lists.
-	 * 
+	 *
 	 * @param allWorkingSets the list of all working sets
 	 * @param activeWorkingSets the list of active working sets
 	 * @return <code>true</code> if the order is different, <code>false</code> otherwise
@@ -502,8 +497,7 @@ public class WorkingSetModel {
 	 */
 	private boolean isOrderDifferentInWorkingSetLists(List<IWorkingSet> allWorkingSets, List<IWorkingSet> activeWorkingSets) {
 		int count= 0;
-		for (Iterator<IWorkingSet> iter= allWorkingSets.iterator(); iter.hasNext();) {
-			IWorkingSet set= iter.next();
+		for (IWorkingSet set : allWorkingSets) {
 			if (activeWorkingSets.contains(set)) {
 				if (!activeWorkingSets.get(count++).equals(set))
 					return true;
@@ -514,7 +508,7 @@ public class WorkingSetModel {
 
 	/**
 	 * Sets the active working sets.
-	 * 
+	 *
 	 * @param workingSets the array of working sets
 	 * @param isSortingEnabled <code>true</code> if sorting is enabled, <code>false</code> otherwise
 	 * @since 3.5
@@ -528,14 +522,12 @@ public class WorkingSetModel {
 		memento.putBoolean(TAG_SORT_WORKING_SETS, fIsSortingEnabled);
 		memento.putBoolean(TAG_CONFIGURED, fConfigured);
 		fLocalWorkingSetManager.saveState(memento.createChild(TAG_LOCAL_WORKING_SET_MANAGER));
-		for (Iterator<IWorkingSet> iter= fActiveWorkingSets.iterator(); iter.hasNext();) {
+		for (IWorkingSet workingSet : fActiveWorkingSets) {
 			IMemento active= memento.createChild(TAG_ACTIVE_WORKING_SET);
-			IWorkingSet workingSet= iter.next();
 			active.putString(TAG_WORKING_SET_NAME, workingSet.getName());
 		}
-		for (Iterator<IWorkingSet> iter= Arrays.asList(getAllWorkingSets()).iterator(); iter.hasNext();) {
+		for (IWorkingSet workingSet : Arrays.asList(getAllWorkingSets())) {
 			IMemento allWorkingSet= memento.createChild(TAG_ALL_WORKING_SETS);
-			IWorkingSet workingSet= iter.next();
 			if (isSupportedAsTopLevelElement(workingSet))
 				allWorkingSet.putString(TAG_WORKING_SET_NAME, workingSet.getName());
 		}
@@ -547,7 +539,7 @@ public class WorkingSetModel {
 
 	/**
 	 * Restore localWorkingSetManager and active working sets.
-	 * 
+	 *
 	 * @param memento a memento
 	 * @return whether the restore was successful
 	 */
@@ -556,11 +548,9 @@ public class WorkingSetModel {
 		if (configured == null)
 			return false;
 
-		fConfigured= Boolean.valueOf(configured).booleanValue();
+		fConfigured= Boolean.parseBoolean(configured);
 		fLocalWorkingSetManager.restoreState(memento.getChild(TAG_LOCAL_WORKING_SET_MANAGER));
-		IWorkingSet[] allLocalWorkingSets= fLocalWorkingSetManager.getAllWorkingSets();
-		for (int i= 0; i < allLocalWorkingSets.length; i++) {
-			IWorkingSet ws= allLocalWorkingSets[i];
+		for (IWorkingSet ws : fLocalWorkingSetManager.getAllWorkingSets()) {
 			if (IWorkingSetIDs.OTHERS.equals(ws.getId())) {
 				// have to set the label again, since the locale could have been changed (bug 272737)
 				String otherProjectsLabel= WorkingSetMessages.WorkingSetModel_others_name;
@@ -569,17 +559,16 @@ public class WorkingSetModel {
 				}
 			}
 		}
-		
+
 		String isSortingEnabled= memento.getString(TAG_SORT_WORKING_SETS);
 		if (isSortingEnabled == null) {
 			fIsSortingEnabled= false;
 		} else {
-			fIsSortingEnabled= Boolean.valueOf(isSortingEnabled).booleanValue();
+			fIsSortingEnabled= Boolean.parseBoolean(isSortingEnabled);
 		}
 
-		IMemento[] actives= memento.getChildren(TAG_ACTIVE_WORKING_SET);
-		for (int i= 0; i < actives.length; i++) {
-			String name= actives[i].getString(TAG_WORKING_SET_NAME);
+		for (IMemento active : memento.getChildren(TAG_ACTIVE_WORKING_SET)) {
+			String name= active.getString(TAG_WORKING_SET_NAME);
 			if (name != null) {
 				IWorkingSet ws= fLocalWorkingSetManager.getWorkingSet(name);
 				if (ws == null) {
@@ -590,9 +579,8 @@ public class WorkingSetModel {
 				}
 			}
 		}
-		IMemento[] allWorkingSets= memento.getChildren(TAG_ALL_WORKING_SETS);
-		for (int i= 0; i < allWorkingSets.length; i++) {
-			String name= allWorkingSets[i].getString(TAG_WORKING_SET_NAME);
+		for (IMemento allWorkingSet : memento.getChildren(TAG_ALL_WORKING_SETS)) {
+			String name= allWorkingSet.getString(TAG_WORKING_SET_NAME);
 			if (name != null) {
 				IWorkingSet ws= fLocalWorkingSetManager.getWorkingSet(name);
 				if (ws == null) {
@@ -668,22 +656,24 @@ public class WorkingSetModel {
 
 	/**
 	 * Tells whether the given working set is supported as top-level element
-	 * 
+	 *
 	 * @param workingSet the working set to test
 	 * @return <code>true</code> if the given working set is supported as top-level element
 	 * @since 3.6
 	 */
 	public static boolean isSupportedAsTopLevelElement(IWorkingSet workingSet) {
 		Object id= workingSet.getId();
-		if (IWorkingSetIDs.OTHERS.equals(id) || IWorkingSetIDs.JAVA.equals(id) || IWorkingSetIDs.RESOURCE.equals(id))
+		if (IWorkingSetIDs.OTHERS.equals(id) || IWorkingSetIDs.JAVA.equals(id) || IWorkingSetIDs.RESOURCE.equals(id)) {
 			return true;
-
-		if (!workingSet.isSelfUpdating() || workingSet.isAggregateWorkingSet())
+		}
+		if(IWorkingSetIDs.DYNAMIC_SOURCES.equals(id)) {
 			return false;
+		}
+		if (!workingSet.isSelfUpdating() || workingSet.isAggregateWorkingSet()) {
+			return false;
+		}
 
-		IAdaptable[] elements= workingSet.getElements();
-		for (int i= 0; i < elements.length; i++) {
-			IAdaptable element= elements[i];
+		for (IAdaptable element : workingSet.getElements()) {
 			IProject p= element.getAdapter(IProject.class);
 			if (p != null && p.exists())
 				return true;
@@ -724,7 +714,7 @@ public class WorkingSetModel {
 
 	/**
 	 * Returns whether sorting is enabled for working sets.
-	 * 
+	 *
 	 * @return <code>true</code> if sorting is enabled, <code>false</code> otherwise
 	 * @since 3.5
 	 */

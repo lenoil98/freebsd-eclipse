@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,7 +21,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.*;
 
 class DefaultContent implements StyledTextContent {
-	private final static String LineDelimiter = System.getProperty("line.separator");
+	private final static String LineDelimiter = System.lineSeparator();
 
 	List<StyledTextListener> textListeners = new ArrayList<>(); // stores text listeners for event sending
 	char[] textStore = new char[0];	// stores the actual text
@@ -37,7 +37,7 @@ class DefaultContent implements StyledTextContent {
 	int replaceExpandExp = 1; 	// the expansion exponent, used to increase the lines array exponentially
 
 /**
- * Creates a new DefaultContent and initializes it.  A <code>StyledTextContent</> will always have
+ * Creates a new DefaultContent and initializes it.  A <code>StyledTextContent</code> will always have
  * at least one empty line.
  */
 DefaultContent() {
@@ -759,12 +759,12 @@ public void removeTextChangeListener(TextChangeListener listener){
  * lines that are going to be inserted and <code>replaceLineCount</code> is
  * the number of lines that are going to be deleted, based on the change
  * that occurs visually.  For example:
- * <ul>
- * <li>(replaceText,newText) ==> (replaceLineCount,newLineCount)
- * <li>("","\n") ==> (0,1)
- * <li>("\n\n","a") ==> (2,0)
- * </ul>
  * </p>
+ * <ul>
+ * <li>(replaceText,newText) ==&gt; (replaceLineCount,newLineCount)
+ * <li>("","\n") ==&gt; (0,1)
+ * <li>("\n\n","a") ==&gt; (2,0)
+ * </ul>
  *
  * @param start	start offset of text to replace
  * @param replaceLength start offset of text to replace
@@ -806,8 +806,8 @@ public void replaceTextRange(int start, int replaceLength, String newText){
  * Sends the text listeners the TextChanged event.
  */
 void sendTextEvent(StyledTextEvent event) {
-	for (int i = 0; i < textListeners.size(); i++) {
-		textListeners.get(i).handleEvent(event);
+	for (StyledTextListener textListener : textListeners) {
+		textListener.handleEvent(event);
 	}
 }
 /**

@@ -8,6 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Jesper Steen Moller - bug 341232
@@ -103,6 +104,7 @@ import org.eclipse.jdt.core.dom.SwitchCase;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.SynchronizedStatement;
 import org.eclipse.jdt.core.dom.TagElement;
+import org.eclipse.jdt.core.dom.TextBlock;
 import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.ThrowStatement;
@@ -425,8 +427,7 @@ public class SourceBasedSourceGenerator extends ASTVisitor {
 			fSnippetStartPosition += source.length();
 			source.append(buffer.toString());
 		}
-		for (Iterator<BodyDeclaration> iterator = list.iterator(); iterator.hasNext();) {
-			BodyDeclaration bodyDeclaration = iterator.next();
+		for (BodyDeclaration bodyDeclaration : list) {
 			if (bodyDeclaration instanceof FieldDeclaration) {
 				source.append(buildFieldDeclaration((FieldDeclaration) bodyDeclaration));
 			} else if (bodyDeclaration instanceof MethodDeclaration) {
@@ -1861,6 +1862,14 @@ public class SourceBasedSourceGenerator extends ASTVisitor {
 	 */
 	@Override
 	public boolean visit(StringLiteral node) {
+		if (rightTypeFound()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public boolean visit(TextBlock node) {
 		if (rightTypeFound()) {
 			return false;
 		}

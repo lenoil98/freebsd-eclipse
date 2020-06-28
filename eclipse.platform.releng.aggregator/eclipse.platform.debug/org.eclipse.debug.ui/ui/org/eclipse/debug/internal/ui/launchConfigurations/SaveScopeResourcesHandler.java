@@ -86,57 +86,36 @@ public class SaveScopeResourcesHandler implements IStatusHandler {
 			setShowSelectAllButtons(true);
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getContentProvider()
-		 */
 		@Override
 		protected IContentProvider getContentProvider() {
 			return fContentProvider;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getLabelProvider()
-		 */
 		@Override
 		protected IBaseLabelProvider getLabelProvider() {
 			return fLabelProvider;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getDialogSettingsId()
-		 */
 		@Override
 		protected String getDialogSettingsId() {
 			return SETTINGS_ID;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getHelpContextId()
-		 */
 		@Override
 		protected String getHelpContextId() {
 			return IDebugHelpContextIds.SELECT_RESOURCES_TO_SAVE_DIALOG;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getViewerInput()
-		 */
 		@Override
 		protected Object getViewerInput() {
 			return fInput;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugSelectionDialog#getViewerLabel()
-		 */
 		@Override
 		protected String getViewerLabel() {
 			return LaunchConfigurationsMessages.SaveScopeResourcesHandler_2;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugCheckboxSelectionDialog#addCustomFooterControls(org.eclipse.swt.widgets.Composite)
-		 */
 		@Override
 		protected void addCustomFooterControls(Composite parent) {
 			super.addCustomFooterControls(parent);
@@ -150,9 +129,6 @@ public class SaveScopeResourcesHandler implements IStatusHandler {
 			});
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugCheckboxSelectionDialog#okPressed()
-		 */
 		@Override
 		protected void okPressed() {
 			IPreferenceStore store = DebugUIPlugin.getDefault().getPreferenceStore();
@@ -161,17 +137,11 @@ public class SaveScopeResourcesHandler implements IStatusHandler {
 			super.okPressed();
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.launchConfigurations.AbstractDebugCheckboxSelectionDialog#addViewerListeners(org.eclipse.jface.viewers.StructuredViewer)
-		 */
 		@Override
 		protected void addViewerListeners(StructuredViewer viewer) {
 			// Override to remove listener that affects the ok button
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.debug.internal.ui.AbstractDebugCheckboxSelectionDialog#isValid()
-		 */
 		@Override
 		protected boolean isValid() {
 			return true;
@@ -183,11 +153,9 @@ public class SaveScopeResourcesHandler implements IStatusHandler {
 	 */
 	IResource[] fSaves = null;
 
-	/* (non-Javadoc)
-	 *
-	 * Source object is an array - a launch configuration and an array of projects to save resources for.
-	 *
-	 * @see org.eclipse.debug.core.IStatusHandler#handleStatus(org.eclipse.core.runtime.IStatus, java.lang.Object)
+	/*
+	 * Source object is an array - a launch configuration and an array of projects
+	 * to save resources for.
 	 */
 	@Override
 	public Object handleStatus(IStatus status, Object source) throws CoreException {
@@ -201,27 +169,27 @@ public class SaveScopeResourcesHandler implements IStatusHandler {
 				 projects = (IProject[]) objects[1];
 			}
 		}
-        if (config != null) {
-            if (DebugUITools.isPrivate(config)) {
-                return Boolean.TRUE;
-            }
-        }
-        if (projects != null && projects.length > 0) {
-            IPreferenceStore store = DebugUIPlugin.getDefault().getPreferenceStore();
-            String save = store.getString(IInternalDebugUIConstants.PREF_SAVE_DIRTY_EDITORS_BEFORE_LAUNCH);
-            int ret = showSaveDialog(projects, !save.equals(MessageDialogWithToggle.NEVER), save.equals(MessageDialogWithToggle.PROMPT));
-            if(ret == IDialogConstants.OK_ID) {
-            	doSave();
-            	return Boolean.TRUE;
-            }
-            return Boolean.FALSE;
-        }
-        else {
+		if (config != null) {
+			if (DebugUITools.isPrivate(config)) {
+				return Boolean.TRUE;
+			}
+		}
+		if (projects != null && projects.length > 0) {
+			IPreferenceStore store = DebugUIPlugin.getDefault().getPreferenceStore();
+			String save = store.getString(IInternalDebugUIConstants.PREF_SAVE_DIRTY_EDITORS_BEFORE_LAUNCH);
+			int ret = showSaveDialog(projects, !save.equals(MessageDialogWithToggle.NEVER), save.equals(MessageDialogWithToggle.PROMPT));
+			if(ret == IDialogConstants.OK_ID) {
+				doSave();
+				return Boolean.TRUE;
+			}
+			return Boolean.FALSE;
+		}
+		else {
 			@SuppressWarnings("deprecation")
 			boolean cancel = DebugUIPlugin.preLaunchSave();
-            return Boolean.valueOf(cancel);
-        }
-    }
+			return Boolean.valueOf(cancel);
+		}
+	}
 
 	/**
 	 *
@@ -233,15 +201,15 @@ public class SaveScopeResourcesHandler implements IStatusHandler {
 	protected IResource[] getScopedDirtyResources(IProject[] projects) {
 		HashSet<IResource> dirtyres = new HashSet<>();
 		IWorkbenchWindow[] windows = PlatformUI.getWorkbench().getWorkbenchWindows();
-		for(int l = 0; l < windows.length; l++) {
-			IWorkbenchPage[] pages = windows[l].getPages();
-			for(int i = 0; i < pages.length; i++) {
-				IEditorPart[] eparts = pages[i].getDirtyEditors();
-				for(int j = 0; j < eparts.length; j++) {
-					IResource resource = eparts[j].getEditorInput().getAdapter(IResource.class);
-					if(resource != null) {
-						for(int k = 0; k < projects.length; k++) {
-							if(projects[k].equals(resource.getProject())) {
+		for (IWorkbenchWindow window : windows) {
+			IWorkbenchPage[] pages = window.getPages();
+			for (IWorkbenchPage page : pages) {
+				IEditorPart[] eparts = page.getDirtyEditors();
+				for (IEditorPart epart : eparts) {
+					IResource resource = epart.getEditorInput().getAdapter(IResource.class);
+					if (resource != null) {
+						for (IProject project : projects) {
+							if (project.equals(resource.getProject())) {
 								dirtyres.add(resource);
 							}
 						}

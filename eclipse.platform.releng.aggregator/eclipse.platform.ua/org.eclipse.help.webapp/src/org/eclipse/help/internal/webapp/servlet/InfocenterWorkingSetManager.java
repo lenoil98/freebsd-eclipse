@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,7 +16,6 @@ package org.eclipse.help.internal.webapp.servlet;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -180,7 +179,7 @@ public class InfocenterWorkingSetManager implements IHelpWorkingSetManager {
 					if (suffixStart > 0) {
 						previousToc = decodedName.substring(0, suffixStart);
 					} else if (suffixStart == 0) {
-					    decodedName = previousToc + decodedName;
+						decodedName = previousToc + decodedName;
 					}
 					elements[e] = getAdaptableTopic(decodedName);
 				}
@@ -211,14 +210,14 @@ public class InfocenterWorkingSetManager implements IHelpWorkingSetManager {
 				continue;
 			}
 			String name = URLCoder.decode(nameAndCriteria[0]);
-		    List<CriterionResource> criteriaResource = new ArrayList<>();
+			List<CriterionResource> criteriaResource = new ArrayList<>();
 			for (int j = 1; j < nameAndCriteria.length; ++j) {
 				String criterion = nameAndCriteria[j];
 				String[] keyAndValue = criterion.split("#", -1); //$NON-NLS-1$
 				if(keyAndValue.length != 2)
 					continue;
 				String key = URLCoder.decode(keyAndValue[0]);
-			    String value = URLCoder.decode(keyAndValue[1]);
+				String value = URLCoder.decode(keyAndValue[1]);
 				String[] criterionValues = value.split(",", -1); //$NON-NLS-1$
 				if(criterionValues.length < 1)
 					continue;
@@ -241,7 +240,7 @@ public class InfocenterWorkingSetManager implements IHelpWorkingSetManager {
 	/***************************************************************************
 	 * Persists all working sets. Should only be called by the webapp working
 	 * set dialog. Saves the working sets in the persistence store (cookie)
-	 * format: curentWorkingSetName|name1&href11&href12|name2&href22
+	 * format: {@literal curentWorkingSetName|name1&href11&href12|name2&href22}
 	 */
 	private void saveState() throws IOException {
 		saveContents();
@@ -426,7 +425,7 @@ public class InfocenterWorkingSetManager implements IHelpWorkingSetManager {
 					continue;
 				criterionIds.add(criterion);
 			}
-			Collections.sort(criterionIds);
+			criterionIds.sort(null);
 		}
 		String[] ids = new String[criterionIds.size()];
 		criterionIds.toArray(ids);
@@ -444,7 +443,7 @@ public class InfocenterWorkingSetManager implements IHelpWorkingSetManager {
 			Set<String> criterionValues = allCriteriaValues.get(criterionName);
 			if(null != criterionValues && !criterionValues.isEmpty()) {
 				valueIds.addAll(criterionValues);
-				Collections.sort(valueIds);
+				valueIds.sort(null);
 				valueIds.add(UNCATEGORIZED);
 			}
 		}

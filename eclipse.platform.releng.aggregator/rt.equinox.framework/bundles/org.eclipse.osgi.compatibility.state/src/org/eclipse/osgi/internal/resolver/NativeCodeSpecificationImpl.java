@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Rob Harrop - SpringSource Inc. (bug 247522)
@@ -53,6 +53,7 @@ public class NativeCodeSpecificationImpl extends VersionConstraintImpl implement
 	}
 
 	@SuppressWarnings("unchecked")
+	@Override
 	public boolean isSatisfiedBy(BaseDescription supplier) {
 		if (!(supplier instanceof NativeCodeDescription))
 			return false;
@@ -171,8 +172,9 @@ public class NativeCodeSpecificationImpl extends VersionConstraintImpl implement
 		return true;
 	}
 
+	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		NativeCodeDescription[] suppliers = getPossibleSuppliers();
 		for (int i = 0; i < suppliers.length; i++) {
 			if (i > 0)
@@ -183,10 +185,12 @@ public class NativeCodeSpecificationImpl extends VersionConstraintImpl implement
 		return sb.toString();
 	}
 
+	@Override
 	protected Map<String, String> getInternalDirectives() {
 		return Collections.<String, String> emptyMap();
 	}
 
+	@Override
 	protected Map<String, Object> getInteralAttributes() {
 		return Collections.<String, Object> emptyMap();
 	}

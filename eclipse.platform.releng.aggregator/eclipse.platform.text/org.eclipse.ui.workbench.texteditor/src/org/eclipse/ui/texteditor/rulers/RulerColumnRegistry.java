@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.ui.texteditor.rulers;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,8 +24,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-
-import com.ibm.icu.text.MessageFormat;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
@@ -207,19 +206,15 @@ public final class RulerColumnRegistry {
 		sorter.sort(array);
 
 		Map<String, RulerColumnDescriptor> descriptorsById= new HashMap<>();
-		for (int i= 0; i < array.length; i++) {
-			RulerColumnDescriptor desc= array[i];
+		for (RulerColumnDescriptor desc : array) {
 			descriptorsById.put(desc.getId(), desc);
 		}
 
 		DAG<RulerColumnDescriptor> dag= new DAG<>();
-		for (int i= 0; i < array.length; i++) {
-			RulerColumnDescriptor desc= array[i];
+		for (RulerColumnDescriptor desc : array) {
 			dag.addVertex(desc);
-
 			Set<RulerColumnPlacementConstraint> before= desc.getPlacement().getConstraints();
-			for (Iterator<RulerColumnPlacementConstraint> it= before.iterator(); it.hasNext();) {
-				RulerColumnPlacementConstraint constraint= it.next();
+			for (RulerColumnPlacementConstraint constraint : before) {
 				String id= constraint.getId();
 				RulerColumnDescriptor target= descriptorsById.get(id);
 				if (target == null) {
@@ -265,22 +260,25 @@ public final class RulerColumnRegistry {
 	}
 
 	private void noteInvalidExtension(IConfigurationElement element, InvalidRegistryObjectException x) {
-		String message= MessageFormat.format(RulerColumnMessages.RulerColumnRegistry_invalid_msg, new Object[] {ExtensionPointHelper.findId(element)});
+		String message= MessageFormat.format(RulerColumnMessages.RulerColumnRegistry_invalid_msg, ExtensionPointHelper.findId(element));
 		warnUser(message, x);
 	}
 
 	private void noteUnknownTarget(RulerColumnDescriptor desc, String referencedId) {
-		String message= MessageFormat.format(RulerColumnMessages.RulerColumnRegistry_unresolved_placement_msg, new Object[] {QUALIFIED_EXTENSION_POINT, referencedId, desc.getName(), desc.getContributor()});
+		String message= MessageFormat.format(RulerColumnMessages.RulerColumnRegistry_unresolved_placement_msg,
+				QUALIFIED_EXTENSION_POINT, referencedId, desc.getName(), desc.getContributor());
 		warnUser(message, null);
 	}
 
 	private void noteCycle(RulerColumnDescriptor desc, RulerColumnDescriptor target) {
-		String message= MessageFormat.format(RulerColumnMessages.RulerColumnRegistry_cyclic_placement_msg, new Object[] {QUALIFIED_EXTENSION_POINT, target.getName(), desc.getName(), desc.getContributor()});
+		String message= MessageFormat.format(RulerColumnMessages.RulerColumnRegistry_cyclic_placement_msg, QUALIFIED_EXTENSION_POINT,
+				target.getName(), desc.getName(), desc.getContributor());
 		warnUser(message, null);
 	}
 
 	private void noteDuplicateId(RulerColumnDescriptor desc) {
-		String message= MessageFormat.format(RulerColumnMessages.RulerColumnRegistry_duplicate_id_msg, new Object[] {QUALIFIED_EXTENSION_POINT, desc.getId(), desc.getContributor()});
+		String message= MessageFormat.format(RulerColumnMessages.RulerColumnRegistry_duplicate_id_msg, QUALIFIED_EXTENSION_POINT,
+				desc.getId(), desc.getContributor());
 		warnUser(message, null);
 	}
 

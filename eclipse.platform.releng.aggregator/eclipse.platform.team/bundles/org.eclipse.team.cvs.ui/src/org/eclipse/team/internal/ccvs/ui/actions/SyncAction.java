@@ -65,24 +65,24 @@ public class SyncAction extends WorkspaceTraversalAction {
 			TeamUI.getSynchronizeManager().addSynchronizeParticipants(new ISynchronizeParticipant[] {participant});
 			participant.run(getTargetPart());
 		} else {
-	        IResource[] resources = getResourcesToCompare(getWorkspaceSubscriber());
+			IResource[] resources = getResourcesToCompare(getWorkspaceSubscriber());
 			if (resources == null || resources.length == 0) return;
 			// First check if there is an existing matching participant
 			WorkspaceSynchronizeParticipant participant = (WorkspaceSynchronizeParticipant)SubscriberParticipant.getMatchingParticipant(WorkspaceSynchronizeParticipant.ID, resources);
 			// If there isn't, create one and add to the manager
 			if (participant == null) {
-                ISynchronizeScope scope;
-                if (includesAllCVSProjects(resources)) {
-                    scope = new WorkspaceScope();
-                } else {
-                    IWorkingSet[] sets = getSelectedWorkingSets();            
-                    if (sets != null) {
-                        scope = new WorkingSetScope(sets);
-                    } else {
-                        scope = new ResourceScope(resources);
-                    }
-                }
-                participant = new WorkspaceSynchronizeParticipant(scope);
+				ISynchronizeScope scope;
+				if (includesAllCVSProjects(resources)) {
+					scope = new WorkspaceScope();
+				} else {
+					IWorkingSet[] sets = getSelectedWorkingSets();            
+					if (sets != null) {
+						scope = new WorkingSetScope(sets);
+					} else {
+						scope = new ResourceScope(resources);
+					}
+				}
+				participant = new WorkspaceSynchronizeParticipant(scope);
 				TeamUI.getSynchronizeManager().addSynchronizeParticipants(new ISynchronizeParticipant[] {participant});
 			}
 			participant.refresh(resources, getTargetPart().getSite());
@@ -98,58 +98,54 @@ public class SyncAction extends WorkspaceTraversalAction {
 	}
 
 	private IWorkingSet[] getSelectedWorkingSets() {
-        ResourceMapping[] mappings = getCVSResourceMappings();
+		ResourceMapping[] mappings = getCVSResourceMappings();
 		List<IWorkingSet> sets = new ArrayList<>();
-        for (int i = 0; i < mappings.length; i++) {
-            ResourceMapping mapping = mappings[i];
-            if (mapping.getModelObject() instanceof IWorkingSet) {
-                IWorkingSet set = (IWorkingSet) mapping.getModelObject();
-                sets.add(set);
-            } else {
-                return null;
-            }
-        }
-        if (sets.isEmpty())
-            return null;
-        return sets.toArray(new IWorkingSet[sets.size()]);
-    }
+		for (ResourceMapping mapping : mappings) {
+			if (mapping.getModelObject() instanceof IWorkingSet) {
+				IWorkingSet set = (IWorkingSet) mapping.getModelObject();
+				sets.add(set);
+			} else {
+				return null;
+			}
+		}
+		if (sets.isEmpty())
+			return null;
+		return sets.toArray(new IWorkingSet[sets.size()]);
+	}
 
-    private boolean includesAllCVSProjects(IResource[] resources) {
-        // First, make sure all the selected thinsg are projects
-        for (int i = 0; i < resources.length; i++) {
-            IResource resource = resources[i];
-            if (resource.getType() != IResource.PROJECT)
-                return false;
-        }
-        IProject[] cvsProjects = getAllCVSProjects();
-        return cvsProjects.length == resources.length;
-    }
+	private boolean includesAllCVSProjects(IResource[] resources) {
+		// First, make sure all the selected thinsg are projects
+		for (IResource resource : resources) {
+			if (resource.getType() != IResource.PROJECT)
+				return false;
+		}
+		IProject[] cvsProjects = getAllCVSProjects();
+		return cvsProjects.length == resources.length;
+	}
 
-    private IProject[] getAllCVSProjects() {
-        IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+	private IProject[] getAllCVSProjects() {
+		IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 		Set<IProject> cvsProjects = new HashSet<>();
-        for (int i = 0; i < projects.length; i++) {
-            IProject project = projects[i];
-            if (RepositoryProvider.isShared(project) && RepositoryProvider.getProvider(project, CVSProviderPlugin.getTypeId()) != null) {
-                cvsProjects.add(project);
-            }
-        }
-        return cvsProjects.toArray(new IProject[cvsProjects.size()]);
-    }
+		for (IProject project : projects) {
+			if (RepositoryProvider.isShared(project) && RepositoryProvider.getProvider(project, CVSProviderPlugin.getTypeId()) != null) {
+				cvsProjects.add(project);
+			}
+		}
+		return cvsProjects.toArray(new IProject[cvsProjects.size()]);
+	}
 
-    /**
-     * Return whether it is OK to open the selected file directly in a compare editor.
-     * It is not OK to show the single file if the file is part of a logical model element
-     * that spans files.
-     * @param file the file
-     * @return whether it is OK to open the selected file directly in a compare editor
-     */
-    public static boolean isOKToShowSingleFile(IFile file) {
+	/**
+	 * Return whether it is OK to open the selected file directly in a compare editor.
+	 * It is not OK to show the single file if the file is part of a logical model element
+	 * that spans files.
+	 * @param file the file
+	 * @return whether it is OK to open the selected file directly in a compare editor
+	 */
+	public static boolean isOKToShowSingleFile(IFile file) {
 		if (!isShowModelSync())
 			return true;
 		IModelProviderDescriptor[] descriptors = ModelProvider.getModelProviderDescriptors();
-		for (int i = 0; i < descriptors.length; i++) {
-			IModelProviderDescriptor descriptor = descriptors[i];
+		for (IModelProviderDescriptor descriptor : descriptors) {
 			try {
 				IResource[] resources = descriptor.getMatchingResources(new IResource[] { file });
 				if (resources.length > 0) {
@@ -158,14 +154,11 @@ public class SyncAction extends WorkspaceTraversalAction {
 					// However, we do not have a progress monitor so we'll just use a local context since,
 					// it is unlikely that a model element will consist of one file locally but multiple files remotely
 					ResourceMapping[] mappings = provider.getMappings(file, ResourceMappingContext.LOCAL_CONTEXT, null);
-					for (int j = 0; j < mappings.length; j++) {
-						ResourceMapping mapping = mappings[j];
+					for (ResourceMapping mapping : mappings) {
 						ResourceTraversal[] traversals = mapping.getTraversals(ResourceMappingContext.LOCAL_CONTEXT, null);
-						for (int k = 0; k < traversals.length; k++) {
-							ResourceTraversal traversal = traversals[k];
+						for (ResourceTraversal traversal : traversals) {
 							IResource[] tResources = traversal.getResources();
-							for (int index = 0; index < tResources.length; index++) {
-								IResource tr = tResources[index];
+							for (IResource tr : tResources) {
 								if (!tr.equals(file))
 									return false;
 							}
@@ -178,8 +171,8 @@ public class SyncAction extends WorkspaceTraversalAction {
 		}
 		return true;
 	}
-    
-    /**
+	
+	/**
 	 * Refresh the subscriber directly and show the resulting synchronization state in a compare editor. If there
 	 * is no difference the user is prompted.
 	 * 
@@ -269,12 +262,11 @@ public class SyncAction extends WorkspaceTraversalAction {
 		if(sets == null) 
 			return projects;
 		
-		for (int i = 0; i < sets.length; i++) {
-			IAdaptable ad[] = sets[i].getElements();
+		for (IWorkingSet set : sets) {
+			IAdaptable[] ad = set.getElements();
 			if (ad != null) {
-				for (int j = 0; j < ad.length; j++) {
-					IResource resource = ad[j]
-							.getAdapter(IResource.class);
+				for (IAdaptable a : ad) {
+					IResource resource = a.getAdapter(IResource.class);
 					if (resource != null) {
 						projects.add(resource.getProject());
 					}

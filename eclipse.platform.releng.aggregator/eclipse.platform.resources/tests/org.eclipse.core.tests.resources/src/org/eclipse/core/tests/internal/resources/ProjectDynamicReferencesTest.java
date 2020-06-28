@@ -14,8 +14,6 @@
 package org.eclipse.core.tests.internal.resources;
 
 import java.util.*;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.resources.IWorkspace.ProjectOrder;
 import org.eclipse.core.runtime.CoreException;
@@ -24,7 +22,7 @@ import org.eclipse.core.tests.resources.ResourceTest;
 
 /**
  * Test project dynamic references provided by extension point
- * <code>org.eclipse.core.resources.builders<code> and dynamicReference
+ * <code>org.eclipse.core.resources.builders</code> and dynamicReference
  * {@link IDynamicReferenceProvider}
  */
 public class ProjectDynamicReferencesTest extends ResourceTest {
@@ -36,14 +34,6 @@ public class ProjectDynamicReferencesTest extends ResourceTest {
 	private IProject project0;
 	private IProject project1;
 	private IProject project2;
-
-	public static Test suite() {
-		return new TestSuite(ProjectDynamicReferencesTest.class);
-	}
-
-	public ProjectDynamicReferencesTest(String name) {
-		super(name);
-	}
 
 	@Override
 	public void setUp() throws Exception {
@@ -124,12 +114,12 @@ public class ProjectDynamicReferencesTest extends ResourceTest {
 				project1.getReferencedBuildConfigs(IBuildConfiguration.DEFAULT_CONFIG_NAME, false));
 		assertEquals("Project2 must not have referenced projects", EMPTY_BUILD_CONFIGURATIONS,
 				project2.getReferencedBuildConfigs(IBuildConfiguration.DEFAULT_CONFIG_NAME, false));
-	
+
 		DynamicReferenceProvider.addReference(project0, project1);
 		DynamicReferenceProvider.addReference(project1, project2);
 		DynamicReferenceProvider.addReference(project0, project2);
 		clearCache();
-	
+
 		IBuildConfiguration buildConfigProject1 = project1.getBuildConfig(IBuildConfiguration.DEFAULT_CONFIG_NAME);
 		IBuildConfiguration buildConfigProject2 = project2.getBuildConfig(IBuildConfiguration.DEFAULT_CONFIG_NAME);
 		assertEquals("Build configuration of Project0 must reference build configuration of project1 and project2",

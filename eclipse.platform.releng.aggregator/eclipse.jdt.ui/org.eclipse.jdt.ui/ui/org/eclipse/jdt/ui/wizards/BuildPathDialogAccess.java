@@ -94,7 +94,7 @@ public final class BuildPathDialogAccess {
 	 * Shows the UI for configuring source attachments, with editing of source attachment encoding
 	 * disabled. <code>null</code> is returned if the user cancels the dialog. The dialog does not
 	 * apply any changes.
-	 * 
+	 *
 	 * @param shell The parent shell for the dialog
 	 * @param initialEntry The entry to edit. The kind of the classpath entry must be either
 	 *            <code>IClasspathEntry.CPE_LIBRARY</code> or
@@ -114,7 +114,7 @@ public final class BuildPathDialogAccess {
 	 * Shows the UI for configuring source attachments. The source attachment encoding can be edited
 	 * depending on the parameter <code>canEditEncoding</code>. <code>null</code> is returned if the
 	 * user cancels the dialog. The dialog does not apply any changes.
-	 * 
+	 *
 	 * @param shell The parent shell for the dialog
 	 * @param initialEntry The entry to edit. The kind of the classpath entry must be either
 	 *            <code>IClasspathEntry.CPE_LIBRARY</code> or
@@ -143,7 +143,7 @@ public final class BuildPathDialogAccess {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Shows the UI for configuring an external annotations attachment. <code>null</code> is
 	 * returned when the user cancels the dialog. The dialog does not apply any changes.
@@ -181,7 +181,7 @@ public final class BuildPathDialogAccess {
 		if (libraryName == null) {
 			throw new IllegalArgumentException();
 		}
-		
+
 		if (initialURL != null) {
 			try {
 				initialURL.toURI();
@@ -363,10 +363,9 @@ public final class BuildPathDialogAccess {
 
 		ArrayList<IResource> usedJars= new ArrayList<>(usedEntries.length);
 		IWorkspaceRoot root= ResourcesPlugin.getWorkspace().getRoot();
-		for (int i= 0; i < usedEntries.length; i++) {
-			IPath curr= usedEntries[i];
+		for (IPath curr : usedEntries) {
 			if (!curr.equals(initialEntry)) {
-				IResource resource= root.findMember(usedEntries[i]);
+				IResource resource= root.findMember(curr);
 				if (resource instanceof IFile) {
 					usedJars.add(resource);
 				}
@@ -413,8 +412,8 @@ public final class BuildPathDialogAccess {
 		TypedElementSelectionValidator validator= new TypedElementSelectionValidator(acceptedClasses, true);
 		ArrayList<IResource> usedJars= new ArrayList<>(usedEntries.length);
 		IWorkspaceRoot root= ResourcesPlugin.getWorkspace().getRoot();
-		for (int i= 0; i < usedEntries.length; i++) {
-			IResource resource= root.findMember(usedEntries[i]);
+		for (IPath usedEntry : usedEntries) {
+			IResource resource= root.findMember(usedEntry);
 			if (resource instanceof IFile) {
 				usedJars.add(resource);
 			}
@@ -623,8 +622,8 @@ public final class BuildPathDialogAccess {
 
 		ArrayList<IResource> usedContainers= new ArrayList<>(usedEntries.length);
 		IWorkspaceRoot root= ResourcesPlugin.getWorkspace().getRoot();
-		for (int i= 0; i < usedEntries.length; i++) {
-			IResource resource= root.findMember(usedEntries[i]);
+		for (IPath usedEntry : usedEntries) {
+			IResource resource= root.findMember(usedEntry);
 			if (resource instanceof IContainer) {
 				usedContainers.add(resource);
 			}

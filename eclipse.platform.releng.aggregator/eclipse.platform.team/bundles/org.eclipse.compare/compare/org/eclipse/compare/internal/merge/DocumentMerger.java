@@ -16,6 +16,7 @@ package org.eclipse.compare.internal.merge;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -47,8 +48,6 @@ import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.TextUtilities;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.progress.IProgressService;
 
 /**
  * A document merger manages the differences between two documents
@@ -302,8 +301,7 @@ public class DocumentMerger {
 		public Diff[] getChangeDiffs(int contributor, IRegion region) {
 			if (fDiffs != null && intersectsRegion(contributor, region)) {
 				List<Diff> result = new ArrayList<>();
-				for (Iterator<Diff> iterator = fDiffs.iterator(); iterator.hasNext();) {
-					Diff diff = iterator.next();
+				for (Diff diff : fDiffs) {
 					if (diff.intersectsRegion(contributor, region)) {
 						result.add(diff);
 					}
@@ -450,9 +448,7 @@ public class DocumentMerger {
 					Boolean.FALSE);
 
 		ArrayList<Diff> newAllDiffs = new ArrayList<>();
-		for (int i= 0; i < e.length; i++) {
-			RangeDifference es= e[i];
-
+		for (RangeDifference es : e) {
 			int ancestorStart= 0;
 			int ancestorEnd= 0;
 			if (sancestor != null) {
@@ -576,11 +572,10 @@ public class DocumentMerger {
 			}
 			monitor.done();
 		};
-		IProgressService progressService= PlatformUI.getWorkbench().getProgressService();
 
 		RangeDifference[] e= null;
 		try {
-			progressService.run(true, true, runnable);
+			Utilities.executeRunnable(runnable);
 			e= (RangeDifference[]) result[0];
 		} catch (InvocationTargetException ex) {
 			throw new CoreException(new Status(IStatus.ERROR, CompareUIPlugin.PLUGIN_ID, 0, CompareMessages.DocumentMerger_3, ex.getTargetException()));
@@ -589,9 +584,7 @@ public class DocumentMerger {
 		}
 
 		if (e != null) {
-			for (int i= 0; i < e.length; i++) {
-				RangeDifference es= e[i];
-
+			for (RangeDifference es : e) {
 				int kind= es.kind();
 
 				int ancestorStart= 0;
@@ -864,8 +857,7 @@ public class DocumentMerger {
 		ITokenComparator sy= createTokenComparator(s);
 
 		RangeDifference[] e= RangeDifferencer.findRanges(sa, sy, sm);
-		for (int i= 0; i < e.length; i++) {
-			RangeDifference es= e[i];
+		for (RangeDifference es : e) {
 			int kind= es.kind();
 			if (kind != RangeDifference.NOCHANGE) {
 
@@ -976,9 +968,8 @@ public class DocumentMerger {
 		return region;
 	}
 
-    public Diff findDiff(Position p, boolean left) {
-		for (Iterator<Diff> iterator = fAllDiffs.iterator(); iterator.hasNext();) {
-			Diff diff = iterator.next();
+	public Diff findDiff(Position p, boolean left) {
+		for (Diff diff : fAllDiffs) {
 			Position diffPos;
 			if (left) {
 				diffPos = diff.fLeftPos;
@@ -1127,13 +1118,9 @@ public class DocumentMerger {
 		if (fChangeDiffs == null)
 			return new Diff[0];
 		List<Diff> intersectingDiffs = new ArrayList<>();
-		for (Iterator<Diff> iterator = fChangeDiffs.iterator(); iterator.hasNext();) {
-			Diff diff = iterator.next();
+		for (Diff diff : fChangeDiffs) {
 			Diff[] changeDiffs = diff.getChangeDiffs(contributor, region);
-			for (int i = 0; i < changeDiffs.length; i++) {
-				Diff changeDiff = changeDiffs[i];
-				intersectingDiffs.add(changeDiff);
-			}
+			Collections.addAll(intersectingDiffs, changeDiffs);
 		}
 		return intersectingDiffs.toArray(new Diff[intersectingDiffs.size()]);
 	}
@@ -1150,7 +1137,7 @@ public class DocumentMerger {
 			while (e.hasNext()) {
 				Diff diff= e.next();
 				int h= synchronizedScrolling ? diff.getMaxDiffHeight()
-											  : diff.getRightHeight();
+											: diff.getRightHeight();
 				if (useChange(diff.getKind()) && !diff.fIsWhitespace) {
 
 					yy= (y*size.y)/virtualHeight;
@@ -1282,7 +1269,7 @@ public class DocumentMerger {
 			for (Iterator<Diff> iterator = changesIterator(); iterator.hasNext();) {
 				Diff diff = iterator.next();
 				if (diff.isDeleted() || diff.getKind() == RangeDifference.NOCHANGE)
-				    continue;
+					continue;
 				if (diff.overlaps(contributor, rangeStart, rangeEnd, getDocument(contributor).getLength()))
 					return diff;
 			}
@@ -1303,8 +1290,7 @@ public class DocumentMerger {
 	private Diff findNext(char contributor, List<Diff> v, int start, int end, boolean deep) {
 		if (v == null)
 			return null;
-		for (int i= 0; i < v.size(); i++) {
-			Diff diff= v.get(i);
+		for (Diff diff : v) {
 			Position p= diff.getPosition(contributor);
 			if (p != null) {
 				int startOffset= p.getOffset();

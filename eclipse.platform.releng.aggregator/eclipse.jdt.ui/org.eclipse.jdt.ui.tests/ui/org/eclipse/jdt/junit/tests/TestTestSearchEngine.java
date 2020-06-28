@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2010 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,16 +13,21 @@
  *******************************************************************************/
 package org.eclipse.jdt.junit.tests;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
+import org.eclipse.jdt.junit.JUnitCore;
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
-
-import org.eclipse.core.runtime.Path;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -30,6 +35,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 
 import org.eclipse.jdt.internal.junit.launcher.ITestKind;
@@ -40,27 +46,24 @@ import org.eclipse.jdt.internal.junit.util.TestSearchEngine;
 import org.eclipse.jdt.internal.ui.util.BusyIndicatorRunnableContext;
 
 
-public class TestTestSearchEngine extends TestCase {
+public class TestTestSearchEngine {
 	private IJavaProject fProject;
 	private IPackageFragmentRoot fRoot;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		fProject= JavaProjectHelper.createJavaProject("TestProject", "bin");
 		JavaProjectHelper.addRTJar(fProject);
-		JavaProjectHelper.addVariableEntry(fProject, new Path(
-			"JUNIT_HOME/junit.jar"), null, null);
+		JavaProjectHelper.addToClasspath(fProject, JavaCore.newContainerEntry(JUnitCore.JUNIT4_CONTAINER_PATH));
 		fRoot= JavaProjectHelper.addSourceContainer(fProject, "src");
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		JavaProjectHelper.delete(fProject);
-		super.tearDown();
 	}
 
-
+	@Test
 	public void testOnePackage() throws Exception {
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		ICompilationUnit test1= createCompilationUnit(p, 1);
@@ -72,6 +75,7 @@ public class TestTestSearchEngine extends TestCase {
 			}, result);
 	}
 
+	@Test
 	public void testTwoPackages() throws Exception {
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		ICompilationUnit test1= createCompilationUnit(p, 1);
@@ -86,6 +90,7 @@ public class TestTestSearchEngine extends TestCase {
 			}, result);
 	}
 
+	@Test
 	public void testTwoPackagesSearchingInOne() throws Exception {
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		ICompilationUnit test1= createCompilationUnit(p, 1);
@@ -100,6 +105,7 @@ public class TestTestSearchEngine extends TestCase {
 			}, result);
 	}
 
+	@Test
 	public void testPackageFragmentRoot() throws Exception {
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		ICompilationUnit test1= createCompilationUnit(p, 1);
@@ -114,6 +120,7 @@ public class TestTestSearchEngine extends TestCase {
 			}, result);
 	}
 
+	@Test
 	public void testTwoPackageFragmentRoots() throws Exception {
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		ICompilationUnit test1= createCompilationUnit(p, 1);
@@ -135,6 +142,7 @@ public class TestTestSearchEngine extends TestCase {
 			}, result);
 	}
 
+	@Test
 	public void testTwoPackageFragmentRootsSearchingInOne() throws Exception {
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		createCompilationUnit(p, 1);
@@ -155,6 +163,7 @@ public class TestTestSearchEngine extends TestCase {
 			}, result);
 	}
 
+	@Test
 	public void testTwoPackageFragmentRootsSearchingInOneNoSupertype() throws Exception {
 		// regression test for https://bugs.eclipse.org/bugs/show_bug.cgi?id=139961
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
@@ -172,6 +181,7 @@ public class TestTestSearchEngine extends TestCase {
 		assertEqualTypes("Test case not found", new IType[] { testSub.getType("TestSub") }, result);
 	}
 
+	@Test
 	public void testProject() throws Exception {
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		ICompilationUnit test1= createCompilationUnit(p, 1);
@@ -193,6 +203,7 @@ public class TestTestSearchEngine extends TestCase {
 			}, result);
 	}
 
+	@Test
 	public void testSubPackage() throws Exception {
 		IPackageFragment p= fRoot.createPackageFragment("p", true, null);
 		ICompilationUnit test1= createCompilationUnit(p, 1);
@@ -213,16 +224,15 @@ public class TestTestSearchEngine extends TestCase {
 
 	private IType[] findTests(IJavaElement[] elements) throws InvocationTargetException, InterruptedException {
 		HashSet<IType> res= new HashSet<>();
-		for (int i= 0; i < elements.length; i++) {
-			IType[] types= findTests(elements[i]);
-			for (int k= 0; k < types.length; k++) {
-				res.add(types[k]);
-			}
+		for (IJavaElement element : elements) {
+			IType[] types= findTests(element);
+			res.addAll(Arrays.asList(types));
 		}
 		return res.toArray(new IType[res.size()]);
 	}
 
 
+	@Test
 	public void testJUnit4NoSrc() throws Exception {
 		//regression test for https://bugs.eclipse.org/bugs/show_bug.cgi?id=151003
 		IType noTest= fProject.findType("java.lang.Integer");

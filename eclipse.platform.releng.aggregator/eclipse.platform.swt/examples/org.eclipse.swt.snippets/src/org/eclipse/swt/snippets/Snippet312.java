@@ -57,6 +57,7 @@ static void createMenuItem(Menu parent, final TreeColumn column) {
 public static void main (String[] args) {
 	final Display display = new Display();
 	Shell shell = new Shell(display);
+	shell.setText("Snippet 312");
 	shell.setLayout(new FillLayout());
 
 	final Tree tree = new Tree(shell, SWT.V_SCROLL|SWT.H_SCROLL| SWT.BORDER);
@@ -84,9 +85,9 @@ public static void main (String[] args) {
 	columnOwner.setResizable(false);
 	createMenuItem(headerMenu, columnOwner);
 
-	for (int i = 0; i < files.length; i++) {
+	for (String[] file : files) {
 		TreeItem item = new TreeItem(tree, SWT.NONE);
-		item.setText(files[i]);
+		item.setText(file);
 		TreeItem subItem = new TreeItem(item, SWT.NONE);
 		subItem.setText("node");
 	}

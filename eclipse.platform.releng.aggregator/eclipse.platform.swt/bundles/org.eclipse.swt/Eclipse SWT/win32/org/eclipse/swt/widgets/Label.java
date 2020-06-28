@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Paul Pazderski - Bug 205199: setImage(null) on Label overrides text
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
@@ -54,9 +55,9 @@ import org.eclipse.swt.internal.win32.*;
 public class Label extends Control {
 	String text = "";
 	Image image;
+	boolean isImageMode;	// Resolves ambiguity when both image and text are set
 	static final int MARGIN = 4;
-	static /*final*/ boolean IMAGE_AND_TEXT = false;
-	static final long /*int*/ LabelProc;
+	static final long LabelProc;
 	static final TCHAR LabelClass = new TCHAR (0, "STATIC", true);
 	static {
 		WNDCLASS lpWndClass = new WNDCLASS ();
@@ -106,7 +107,7 @@ public Label (Composite parent, int style) {
 }
 
 @Override
-long /*int*/ callWindowProc (long /*int*/ hwnd, int msg, long /*int*/ wParam, long /*int*/ lParam) {
+long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
 	if (handle == 0) return 0;
 	/*
 	* Feature in Windows 7.  When the user double clicks
@@ -146,25 +147,14 @@ static int checkStyle (int style) {
 		width += border * 2; height += border * 2;
 		return new Point (width, height);
 	}
-	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
-	boolean drawText = true;
-	boolean drawImage = (bits & OS.SS_OWNERDRAW) == OS.SS_OWNERDRAW;
-	if (drawImage) {
-		if (image != null) {
-			Rectangle rect = image.getBoundsInPixels();
-			width += rect.width;
-			height += rect.height;
-			if (IMAGE_AND_TEXT) {
-				if (text.length () != 0) width += MARGIN;
-			} else {
-				drawText = false;
-			}
-		}
-	}
-	if (drawText) {
-		long /*int*/ hDC = OS.GetDC (handle);
-		long /*int*/ newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
-		long /*int*/ oldFont = OS.SelectObject (hDC, newFont);
+	if (isImageMode) {
+		Rectangle rect = image.getBoundsInPixels();
+		width += rect.width;
+		height += rect.height;
+	} else {
+		long hDC = OS.GetDC (handle);
+		long newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
+		long oldFont = OS.SelectObject (hDC, newFont);
 		int length = OS.GetWindowTextLength (handle);
 		if (length == 0) {
 			TEXTMETRIC tm = new TEXTMETRIC ();
@@ -177,7 +167,7 @@ static int checkStyle (int style) {
 				flags |= OS.DT_WORDBREAK;
 				rect.right = Math.max (0, wHint - width);
 			}
-			TCHAR buffer = new TCHAR (getCodePage (), length + 1);
+			char [] buffer = new char [length + 1];
 			OS.GetWindowText (handle, buffer, length + 1);
 			OS.DrawText (hDC, buffer, length, rect, flags);
 			width += rect.right - rect.left;
@@ -262,6 +252,11 @@ public String getText () {
 }
 
 @Override
+boolean isUseWsBorder () {
+	return super.isUseWsBorder () || ((display != null) && display.useWsBorderLabel);
+}
+
+@Override
 boolean mnemonicHit (char key) {
 	Control control = this;
 	while (control.parent != null) {
@@ -318,21 +313,22 @@ public void setAlignment (int alignment) {
 	if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0) return;
 	style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
 	style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
-	if ((bits & OS.SS_OWNERDRAW) != OS.SS_OWNERDRAW) {
-		bits &= ~(OS.SS_LEFTNOWORDWRAP | OS.SS_CENTER | OS.SS_RIGHT);
-		if ((style & SWT.LEFT) != 0) {
-			if ((style & SWT.WRAP) != 0) {
-				bits |= OS.SS_LEFT;
-			} else {
-				bits |= OS.SS_LEFTNOWORDWRAP;
-			}
-		}
-		if ((style & SWT.CENTER) != 0) bits |= OS.SS_CENTER;
-		if ((style & SWT.RIGHT) != 0) bits |= OS.SS_RIGHT;
-		OS.SetWindowLong (handle, OS.GWL_STYLE, bits);
-	}
+	updateStyleBits(getEnabled());
 	OS.InvalidateRect (handle, null, true);
+}
+
+@Override
+public void setEnabled (boolean enabled) {
+	/*
+	 * Style may need to be changed if Display#disabledLabelForegroundPixel
+	 * is active. At the same time, #setEnabled() will cause a repaint with
+	 * current style. Therefore, style needs to be changed before #setEnabled().
+	 * Note that adding redraw() after #setEnabled() is a worse solution
+	 * because it still causes brief old style painting in #setEnabled().
+	 */
+	updateStyleBits(enabled);
+
+	super.setEnabled(enabled);
 }
 
 /**
@@ -354,12 +350,8 @@ public void setImage (Image image) {
 	if ((style & SWT.SEPARATOR) != 0) return;
 	if (image != null && image.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	this.image = image;
-	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
-	if ((bits & OS.SS_OWNERDRAW) != OS.SS_OWNERDRAW) {
-		bits &= ~(OS.SS_LEFTNOWORDWRAP | OS.SS_CENTER | OS.SS_RIGHT);
-		bits |= OS.SS_OWNERDRAW;
-		OS.SetWindowLong (handle, OS.GWL_STYLE, bits);
-	}
+	isImageMode = (image != null);
+	updateStyleBits(getEnabled());
 	OS.InvalidateRect (handle, null, true);
 }
 
@@ -398,6 +390,8 @@ public void setText (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if ((style & SWT.SEPARATOR) != 0) return;
+	isImageMode = false;
+	updateStyleBits(getEnabled());
 	/*
 	* Feature in Windows.  For some reason, SetWindowText() for
 	* static controls redraws the control, even when the text has
@@ -406,9 +400,29 @@ public void setText (String string) {
 	*/
 	if (string.equals (text)) return;
 	text = string;
-	if (image == null || !IMAGE_AND_TEXT) {
-		int oldBits = OS.GetWindowLong (handle, OS.GWL_STYLE), newBits = oldBits;
-		newBits &= ~OS.SS_OWNERDRAW;
+	string = Display.withCrLf (string);
+	TCHAR buffer = new TCHAR (getCodePage (), string, true);
+	OS.SetWindowText (handle, buffer);
+	if ((state & HAS_AUTO_DIRECTION) != 0) {
+		updateTextDirection (AUTO_TEXT_DIRECTION);
+	}
+}
+
+void updateStyleBits(boolean isEnabled) {
+	boolean useOwnerDraw = isImageMode;
+
+	if (!useOwnerDraw && (display.disabledLabelForegroundPixel != -1) && !isEnabled)
+		useOwnerDraw = true;
+
+	int oldBits = OS.GetWindowLong(handle, OS.GWL_STYLE);
+
+	int newBits = oldBits;
+	newBits &= ~OS.SS_OWNERDRAW;
+	newBits &= ~(OS.SS_LEFTNOWORDWRAP | OS.SS_CENTER | OS.SS_RIGHT);
+
+	if (useOwnerDraw) {
+		newBits |= OS.SS_OWNERDRAW;
+	} else {
 		if ((style & SWT.LEFT) != 0) {
 			if ((style & SWT.WRAP) != 0) {
 				newBits |= OS.SS_LEFT;
@@ -418,14 +432,9 @@ public void setText (String string) {
 		}
 		if ((style & SWT.CENTER) != 0) newBits |= OS.SS_CENTER;
 		if ((style & SWT.RIGHT) != 0) newBits |= OS.SS_RIGHT;
-		if (oldBits != newBits) OS.SetWindowLong (handle, OS.GWL_STYLE, newBits);
 	}
-	string = Display.withCrLf (string);
-	TCHAR buffer = new TCHAR (getCodePage (), string, true);
-	OS.SetWindowText (handle, buffer);
-	if ((state & HAS_AUTO_DIRECTION) != 0) {
-		updateTextDirection (AUTO_TEXT_DIRECTION);
-	}
+
+	if (oldBits != newBits) OS.SetWindowLong (handle, OS.GWL_STYLE, newBits);
 }
 
 @Override
@@ -452,12 +461,12 @@ TCHAR windowClass () {
 }
 
 @Override
-long /*int*/ windowProc () {
+long windowProc () {
 	return LabelProc;
 }
 
 @Override
-LRESULT WM_ERASEBKGND (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_ERASEBKGND (long wParam, long lParam) {
 	LRESULT result = super.WM_ERASEBKGND (wParam, lParam);
 	if (result != null) return result;
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
@@ -468,7 +477,7 @@ LRESULT WM_ERASEBKGND (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_SIZE (long wParam, long lParam) {
 	LRESULT result = super.WM_SIZE (wParam, lParam);
 	if (isDisposed ()) return result;
 	if ((style & SWT.SEPARATOR) != 0) {
@@ -495,7 +504,7 @@ LRESULT WM_SIZE (long /*int*/ wParam, long /*int*/ lParam) {
 }
 
 @Override
-LRESULT WM_UPDATEUISTATE (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT WM_UPDATEUISTATE (long wParam, long lParam) {
 	LRESULT result = super.WM_UPDATEUISTATE (wParam, lParam);
 	if (result != null) return result;
 	/*
@@ -516,90 +525,98 @@ LRESULT WM_UPDATEUISTATE (long /*int*/ wParam, long /*int*/ lParam) {
 	}
 	if (redraw) {
 		OS.InvalidateRect (handle, null, false);
-		long /*int*/ code = OS.DefWindowProc (handle, OS.WM_UPDATEUISTATE, wParam, lParam);
+		long code = OS.DefWindowProc (handle, OS.WM_UPDATEUISTATE, wParam, lParam);
 		return new LRESULT (code);
 	}
 	return result;
 }
 
+void wmDrawChildSeparator(DRAWITEMSTRUCT struct) {
+	if ((style & SWT.SHADOW_NONE) != 0) return;
+
+	RECT rect = new RECT ();
+	int lineWidth = OS.GetSystemMetrics (OS.SM_CXBORDER);
+	int flags = (style & SWT.SHADOW_IN) != 0 ? OS.EDGE_SUNKEN : OS.EDGE_ETCHED;
+	if ((style & SWT.HORIZONTAL) != 0) {
+		int bottom = struct.top + Math.max (lineWidth * 2, (struct.bottom - struct.top) / 2);
+		OS.SetRect (rect, struct.left, struct.top, struct.right, bottom);
+		OS.DrawEdge (struct.hDC, rect, flags, OS.BF_BOTTOM);
+	} else {
+		int right = struct.left + Math.max (lineWidth * 2, (struct.right - struct.left) / 2);
+		OS.SetRect (rect, struct.left, struct.top, right, struct.bottom);
+		OS.DrawEdge (struct.hDC, rect, flags, OS.BF_RIGHT);
+	}
+}
+
+void wmDrawChildImage(DRAWITEMSTRUCT struct) {
+	int width = struct.right - struct.left;
+	int height = struct.bottom - struct.top;
+	if (width == 0 || height == 0) return;
+
+	Rectangle imageRect = image.getBoundsInPixels ();
+
+	int x = 0;
+	if ((style & SWT.CENTER) != 0) {
+		x = Math.max (0, (width - imageRect.width) / 2);
+	} else if ((style & SWT.RIGHT) != 0) {
+		x = width - imageRect.width;
+	}
+
+	GCData data = new GCData();
+	data.device = display;
+	GC gc = GC.win32_new (struct.hDC, data);
+	Image image = getEnabled () ? this.image : new Image (display, this.image, SWT.IMAGE_DISABLE);
+	gc.drawImage (image, DPIUtil.autoScaleDown(x), DPIUtil.autoScaleDown(Math.max (0, (height - imageRect.height) / 2)));
+	if (image != this.image) image.dispose ();
+	gc.dispose ();
+}
+
+void wmDrawChildText(DRAWITEMSTRUCT struct) {
+	int width = struct.right - struct.left;
+	int height = struct.bottom - struct.top;
+	if (width == 0 || height == 0) return;
+
+	RECT rect = new RECT ();
+	rect.left = struct.left;
+	rect.top = struct.top;
+	rect.right = struct.right;
+	rect.bottom = struct.bottom;
+
+	int flags = OS.DT_EDITCONTROL | OS.DT_EXPANDTABS;
+	if ((style & SWT.LEFT) != 0)   flags |= OS.DT_LEFT;
+	if ((style & SWT.CENTER) != 0) flags |= OS.DT_CENTER;
+	if ((style & SWT.RIGHT) != 0)  flags |= OS.DT_RIGHT;
+	if ((style & SWT.WRAP) != 0)   flags |= OS.DT_WORDBREAK;
+
+	// Mnemonics are usually not shown on Labels until Alt is pressed.
+	long uiState = OS.SendMessage (handle, OS.WM_QUERYUISTATE, 0, 0);
+	if ((uiState & OS.UISF_HIDEACCEL) != 0)
+		flags |= OS.DT_HIDEPREFIX;
+
+	if (!getEnabled()) {
+		int foregroundPixel = OS.GetSysColor(OS.COLOR_GRAYTEXT);
+		if (display.disabledLabelForegroundPixel != -1)
+			foregroundPixel = display.disabledLabelForegroundPixel;
+
+		OS.SetTextColor(struct.hDC, foregroundPixel);
+	}
+
+	char [] buffer = text.toCharArray ();
+	OS.DrawText (struct.hDC, buffer, buffer.length, rect, flags);
+}
+
 @Override
-LRESULT wmDrawChild (long /*int*/ wParam, long /*int*/ lParam) {
+LRESULT wmDrawChild (long wParam, long lParam) {
 	DRAWITEMSTRUCT struct = new DRAWITEMSTRUCT ();
 	OS.MoveMemory (struct, lParam, DRAWITEMSTRUCT.sizeof);
 	drawBackground (struct.hDC);
-	if ((style & SWT.SEPARATOR) != 0) {
-		if ((style & SWT.SHADOW_NONE) != 0) return null;
-		RECT rect = new RECT ();
-		int lineWidth = OS.GetSystemMetrics (OS.SM_CXBORDER);
-		int flags = (style & SWT.SHADOW_IN) != 0 ? OS.EDGE_SUNKEN : OS.EDGE_ETCHED;
-		if ((style & SWT.HORIZONTAL) != 0) {
-			int bottom = struct.top + Math.max (lineWidth * 2, (struct.bottom - struct.top) / 2);
-			OS.SetRect (rect, struct.left, struct.top, struct.right, bottom);
-			OS.DrawEdge (struct.hDC, rect, flags, OS.BF_BOTTOM);
-		} else {
-			int right = struct.left + Math.max (lineWidth * 2, (struct.right - struct.left) / 2);
-			OS.SetRect (rect, struct.left, struct.top, right, struct.bottom);
-			OS.DrawEdge (struct.hDC, rect, flags, OS.BF_RIGHT);
-		}
-	} else {
-		int width = struct.right - struct.left;
-		int height = struct.bottom - struct.top;
-		if (width != 0 && height != 0) {
-			boolean drawImage = image != null;
-			boolean drawText = IMAGE_AND_TEXT && text.length () != 0;
-			int margin = drawText && drawImage ? MARGIN : 0;
-			int imageWidth = 0, imageHeight = 0;
-			if (drawImage) {
-				Rectangle rect = image.getBoundsInPixels ();
-				imageWidth = rect.width;
-				imageHeight = rect.height;
-			}
-			RECT rect = null;
-			TCHAR buffer = null;
-			int textWidth = 0, textHeight = 0, flags = 0;
-			if (drawText) {
-				rect = new RECT ();
-				flags = OS.DT_CALCRECT | OS.DT_EDITCONTROL | OS.DT_EXPANDTABS;
-				if ((style & SWT.LEFT) != 0) flags |= OS.DT_LEFT;
-				if ((style & SWT.CENTER) != 0) flags |= OS.DT_CENTER;
-				if ((style & SWT.RIGHT) != 0) flags |= OS.DT_RIGHT;
-				if ((style & SWT.WRAP) != 0) {
-					flags |= OS.DT_WORDBREAK;
-					rect.right = Math.max (0, width - imageWidth - margin);
-				}
-				buffer = new TCHAR (getCodePage (), text, true);
-				OS.DrawText (struct.hDC, buffer, -1, rect, flags);
-				textWidth = rect.right - rect.left;
-				textHeight = rect.bottom - rect.top;
-			}
-			int x = 0;
-			if ((style & SWT.CENTER) != 0) {
-				x = Math.max (0, (width - imageWidth - textWidth - margin) / 2);
-			} else {
-				if ((style & SWT.RIGHT) != 0) {
-					x = width - imageWidth - textWidth - margin;
-				}
-			}
-			if (drawImage) {
-				GCData data = new GCData();
-				data.device = display;
-				GC gc = GC.win32_new (struct.hDC, data);
-				Image image = getEnabled () ? this.image : new Image (display, this.image, SWT.IMAGE_DISABLE);
-				gc.drawImage (image, DPIUtil.autoScaleDown(x), DPIUtil.autoScaleDown(Math.max (0, (height - imageHeight) / 2)));
-				if (image != this.image) image.dispose ();
-				gc.dispose ();
-				x += imageWidth + margin;
-			}
-			if (drawText) {
-				flags &= ~OS.DT_CALCRECT;
-				rect.left = x;
-				rect.right += rect.left;
-				rect.top = Math.max (0, (height - textHeight) / 2);
-				rect.bottom += rect.top;
-				OS.DrawText (struct.hDC, buffer, -1, rect, flags);
-			}
-		}
-	}
+	if ((style & SWT.SEPARATOR) != 0)
+		wmDrawChildSeparator(struct);
+	else if (isImageMode)
+		wmDrawChildImage(struct);
+	else
+		wmDrawChildText(struct);
+
 	return null;
 }
 

@@ -13,22 +13,10 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources.usecase;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 
-/**
- *
- */
 public class IFileTest extends IResourceTest {
-	public IFileTest() {
-		super(null);
-	}
-
-	public IFileTest(String name) {
-		super(name);
-	}
 
 	/**
 	 * Tests failure on get/set methods invoked on a nonexistent file.
@@ -62,16 +50,10 @@ public class IFileTest extends IResourceTest {
 
 	}
 
-	public static Test suite() {
-		TestSuite suite = new TestSuite(IFileTest.class.getName());
-		suite.addTest(new IFileTest("testFile"));
-		return suite;
-	}
-
 	/**
 	 * Create a folder in an open project.
-	 * Contruct a file handle "in" the folder & check its initial state.
-	 * Create the file & check its state further.
+	 * Contruct a file handle "in" the folder &amp; check its initial state.
+	 * Create the file &amp; check its state further.
 	 * Delete the file.
 	 *
 	 * TBD:

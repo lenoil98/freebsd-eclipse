@@ -36,33 +36,21 @@ public class SortBreakpointsByAction extends AbstractBreakpointsViewAction imple
 	public SortBreakpointsByAction() {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.action.IMenuCreator#dispose()
-     */
-    @Override
+	@Override
 	public void dispose() {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Control)
-     */
-    @Override
+	@Override
 	public Menu getMenu(Control parent) {
-        // Never called
-        return null;
-    }
+		// Never called
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Menu)
-     */
-    @Override
+	@Override
 	public Menu getMenu(Menu parent) {
 		Menu menu = new Menu(parent);
 		menu.addMenuListener(new MenuAdapter() {
@@ -70,16 +58,16 @@ public class SortBreakpointsByAction extends AbstractBreakpointsViewAction imple
 			public void menuShown(MenuEvent e) {
 				Menu m = (Menu)e.widget;
 				MenuItem[] items = m.getItems();
-				for (int i=0; i < items.length; i++) {
-					items[i].dispose();
+				for (MenuItem item : items) {
+					item.dispose();
 				}
 				fillMenu(m);
 			}
 		});
 		return menu;
-    }
+	}
 
- 	/**
+	/**
 	 * Fill pull down menu with the "group by" options
 	 */
 	private void fillMenu(Menu menu) {
@@ -96,15 +84,11 @@ public class SortBreakpointsByAction extends AbstractBreakpointsViewAction imple
 
 	}
 
-
-    /* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
-	    if (action != fAction) {
-	        action.setMenuCreator(this);
-	        fAction= action;
-	    }
+		if (action != fAction) {
+			action.setMenuCreator(this);
+			fAction= action;
+		}
 	}
 }

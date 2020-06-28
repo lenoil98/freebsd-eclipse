@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2018 IBM Corporation and others.
+ * Copyright (c) 2008, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,8 +21,10 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -72,6 +74,7 @@ import org.eclipse.osgi.service.resolver.VersionRange;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.pde.api.tools.internal.ApiBaselineManager;
 import org.eclipse.pde.api.tools.internal.ApiFilterStore;
+import org.eclipse.pde.api.tools.internal.IApiCoreConstants;
 import org.eclipse.pde.api.tools.internal.comparator.Delta;
 import org.eclipse.pde.api.tools.internal.model.ProjectComponent;
 import org.eclipse.pde.api.tools.internal.model.StubApiComponent;
@@ -113,8 +116,6 @@ import org.eclipse.pde.api.tools.internal.util.SinceTagVersion;
 import org.eclipse.pde.api.tools.internal.util.Util;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Base implementation of the analyzer used in the {@link ApiAnalysisBuilder}
@@ -229,6 +230,10 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 			if (bcontext == null) {
 				bcontext = new BuildContext();
 			}
+			boolean isNested = checkIfNested(component);
+			if (isNested) {
+				return;
+			}
 			boolean checkfilters = false;
 			if (baseline != null) {
 				IApiComponent reference = baseline.getApiComponent(component.getSymbolicName());
@@ -305,6 +310,26 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 		}
 	}
 
+
+	private boolean checkIfNested(IApiComponent component) {
+		if (fJavaProject != null) {
+			return false;
+		}
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		IProject[] projects = root.getProjects();
+		Path componentLocation = new Path(component.getLocation());
+		for (IProject project : projects) {
+			if (project.getLocation().isPrefixOf(componentLocation)) {
+				// if same project, skipped here
+				if (componentLocation.segmentCount() == project.getLocation().segmentCount()
+						+ 1) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 
 	private IApiComponent getBestMatchFromMultipleComponents(Set<IApiComponent> baselineAllComponents, IApiComponent component) {
 		// baseline already sorted from higher to lower version. see
@@ -406,6 +431,10 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 				System.out.println("Checking use scan dependencies for: " + Arrays.asList(apiUseTypes)); //$NON-NLS-1$
 			}
 		}
+		boolean checkState = hasCheckedAPIScanLocation();
+		if (checkState == false) {
+			return;
+		}
 		SubMonitor localmonitor = SubMonitor.convert(monitor, BuilderMessages.checking_external_dependencies, 10);
 		IReferenceDescriptor[] externalDependencies = UseScanManager.getInstance().getExternalDependenciesFor(apiComponent, apiUseTypes, localmonitor.split(10));
 		try {
@@ -461,6 +490,25 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 		} finally {
 			localmonitor.done();
 		}
+	}
+
+	private boolean hasCheckedAPIScanLocation() {
+		IEclipsePreferences node = InstanceScope.INSTANCE.getNode(ApiPlugin.PLUGIN_ID);
+		String location = node.get(IApiCoreConstants.API_USE_SCAN_LOCATION, null);
+		if (location == null || location.length() == 0) {
+			return false;
+		}
+		ArrayList<String> checkedLocations = new ArrayList<>();
+		if (location != null && location.length() > 0) {
+			String[] locations = location.split(UseScanManager.ESCAPE_REGEX + UseScanManager.LOCATION_DELIM);
+			for (String locationString : locations) {
+				String values[] = locationString.split(UseScanManager.ESCAPE_REGEX + UseScanManager.STATE_DELIM);
+				if (Boolean.parseBoolean(values[1])) {
+					checkedLocations.add(values[0]);
+				}
+			}
+		}
+		return checkedLocations.size() > 0;
 	}
 
 	public boolean isSeverityEnabled(Properties properties) {
@@ -648,9 +696,7 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 					if (resource != null) {
 						filters = store.getUnusedFilters(resource, type, null);
 						if (autoremove) {
-							for (IApiProblemFilter filter : filters) {
-								toremove.add(filter);
-							}
+							Collections.addAll(toremove, filters);
 							continue;
 						}
 						createUnusedApiFilterProblems(filters);
@@ -662,9 +708,7 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 			} else {
 				filters = store.getUnusedFilters(null, null, null);
 				if (autoremove) {
-					for (IApiProblemFilter filter : filters) {
-						toremove.add(filter);
-					}
+					Collections.addAll(toremove, filters);
 					removeUnusedProblemFilters(store, toremove, monitor);
 				} else {
 					// full build, clean up all old markers
@@ -747,8 +791,6 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 							// ignore
 						}
 					}
-				} catch (JavaModelException e) {
-					ApiPlugin.log(e);
 				} catch (CoreException e) {
 					ApiPlugin.log(e);
 				}
@@ -860,7 +902,7 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 		if (fJavaProject == null) {
 			return null;
 		}
-		ASTParser parser = ASTParser.newParser(AST.JLS10);
+		ASTParser parser = ASTParser.newParser(AST.JLS14);
 		parser.setFocalPosition(offset);
 		parser.setResolveBindings(false);
 		parser.setSource(root);
@@ -1034,7 +1076,7 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 		return ApiPlugin.getDefault().getSeverityLevel(IApiProblemTypes.INCOMPATIBLE_API_COMPONENT_VERSION, fJavaProject.getProject().getProject()) == ApiPlugin.SEVERITY_IGNORE;
 	}
 
-	private boolean reportMinorVersionCheckWithoutApiChange() {
+	private boolean reportUnnecessaryMinorMicroVersionCheck() {
 		if (fJavaProject == null) {
 			// we ignore it for non-OSGi case
 			return true;
@@ -1806,6 +1848,17 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 				}
 				IProject project = fJavaProject.getProject();
 				resource = Util.getResource(project, type);
+				IProject project2 = resource.getProject();
+				if (!project2.equals(project)) {
+					// marker should be on the same project as fJavaProject
+					int flag = delta.getFlags();
+					if (flag == IDelta.REEXPORTED_API_TYPE) {
+						resource = project.findMember(new Path(JarFile.MANIFEST_NAME));
+						charStart = 0;
+						charEnd = 0;
+						lineNumber = 1;
+					}
+				}
 				if (resource == null) {
 					return null;
 				}
@@ -1964,6 +2017,10 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 							}
 							break;
 						}
+						case IDelta.REMOVED:{
+							this.fBuildState.addCompatibleChange(delta);
+							break;
+						}
 						default:
 							break;
 					}
@@ -2070,6 +2127,7 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 			System.out.println("component version of " + component.getSymbolicName() + " : " + compversion); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		IDelta[] breakingChanges = fBuildState.getBreakingChanges();
+		IDelta[] compatibleChanges = fBuildState.getCompatibleChanges();
 		if (breakingChanges.length != 0) {
 			// make sure that the major version has been incremented
 			if (compversion.getMajor() <= refversion.getMajor()) {
@@ -2078,7 +2136,6 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 						compversionval, refversionval }, String.valueOf(newversion), collectDetails(breakingChanges));
 			}
 		} else {
-			IDelta[] compatibleChanges = fBuildState.getCompatibleChanges();
 			if (compatibleChanges.length != 0) {
 				// only new API have been added
 				if (compversion.getMajor() != refversion.getMajor()) {
@@ -2103,7 +2160,7 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 				}
 			} else if (compversion.getMinor() != refversion.getMinor()) {
 				// the minor version should not be incremented
-				if (reportMinorVersionCheckWithoutApiChange() && !hasExecutionEnvironmentChanged(reference, component)) {
+				if (reportUnnecessaryMinorMicroVersionCheck() && !hasExecutionEnvironmentChanged(reference, component)) {
 					newversion = new Version(refversion.getMajor(), refversion.getMinor(), refversion.getMicro(), refversion.getQualifier() != null ? QUALIFIER : null);
 					problem = createVersionProblem(IApiProblem.MINOR_VERSION_CHANGE_NO_NEW_API, new String[] {
 							compversionval, refversionval }, String.valueOf(newversion), Util.EMPTY_STRING);
@@ -2231,6 +2288,73 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 		if (problem != null) {
 			addProblem(problem);
 		}
+		if (problem == null) {
+			if (breakingChanges.length > 0 || compatibleChanges.length > 0) {
+				// check if major or minor version is increased
+				if (reportUnnecessaryMinorMicroVersionCheck()
+						&& checkIfMajorOrMinorVersionIncreased(compversion, refversion)) {
+					if (hasMicroVersionIncreased(compversion)) {
+						newversion = new Version(compversion.getMajor(), compversion.getMinor(), 0,
+								compversion.getQualifier() != null ? QUALIFIER : null);
+						problem = createVersionProblem(IApiProblem.MICRO_VERSION_CHANGE_UNNECESSARILY,
+								new String[] { compversionval, refversionval }, String.valueOf(newversion),
+								Util.EMPTY_STRING);
+						if (problem != null) {
+							addProblem(problem);
+						}
+					}
+				}
+			}
+			if (breakingChanges.length > 0) {
+				// check if major version is increased
+				if (reportUnnecessaryMinorMicroVersionCheck()
+						&& checkIfMajorVersionIncreased(compversion, refversion)) {
+					if (hasMinorVersionIncreased(compversion)) {
+						newversion = new Version(compversion.getMajor(), 0, 0,
+								compversion.getQualifier() != null ? QUALIFIER : null);
+						problem = createVersionProblem(IApiProblem.MINOR_VERSION_CHANGE_UNNECESSARILY,
+								new String[] { compversionval, refversionval }, String.valueOf(newversion),
+								Util.EMPTY_STRING);
+						if (problem != null) {
+							addProblem(problem);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private boolean hasMinorVersionIncreased(Version compversion) {
+		if (compversion.getMinor() > 0) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean checkIfMajorVersionIncreased(Version compversion, Version refversion) {
+		if (compversion.getMajor() > refversion.getMajor()) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private boolean hasMicroVersionIncreased(Version compversion) {
+		if (compversion.getMicro() > 0) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean checkIfMajorOrMinorVersionIncreased(Version compversion, Version refversion) {
+		if (compversion.getMajor() > refversion.getMajor()) {
+			return true;
+		}
+		if (compversion.getMinor() > refversion.getMinor()) {
+			return true;
+		}
+		return false;
+
 	}
 
 	/**
@@ -2298,9 +2422,7 @@ public class BaseApiAnalyzer implements IApiAnalyzer {
 						break loop;
 					}
 				}
-			} catch (CoreException e) {
-				// ignore
-			} catch (IOException e) {
+			} catch (CoreException | IOException e) {
 				// ignore
 			} finally {
 				try {

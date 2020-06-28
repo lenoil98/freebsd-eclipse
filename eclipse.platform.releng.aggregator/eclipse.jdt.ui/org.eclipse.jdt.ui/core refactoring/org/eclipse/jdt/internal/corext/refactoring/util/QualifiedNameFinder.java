@@ -122,7 +122,7 @@ public class QualifiedNameFinder {
 		}
 	}
 
-	public QualifiedNameFinder() {
+	private QualifiedNameFinder() {
 	}
 
 	public static void process(QualifiedNameSearchResult result, String pattern, String newValue, String filePatterns, IProject root, IProgressMonitor monitor) {
@@ -168,9 +168,7 @@ public class QualifiedNameFinder {
 	}
 
 	private static void addReferencingProjects(IProject root, Set<IProject> res) {
-		IProject[] projects= root.getReferencingProjects();
-		for (int i= 0; i < projects.length; i++) {
-			IProject project= projects[i];
+		for (IProject project : root.getReferencingProjects()) {
 			if (res.add(project)) {
 				addReferencingProjects(project, res);
 			}

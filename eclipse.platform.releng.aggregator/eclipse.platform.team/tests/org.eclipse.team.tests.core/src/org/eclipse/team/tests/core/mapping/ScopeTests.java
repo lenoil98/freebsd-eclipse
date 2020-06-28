@@ -42,6 +42,7 @@ public class ScopeTests extends TeamTest {
 		super(name);
 	}
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		project1 = createProject("p1", new String[]{"file.txt"});
@@ -52,6 +53,7 @@ public class ScopeTests extends TeamTest {
 		manager.addWorkingSet(workingSet);
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		super.tearDown();
 		this.manager.dispose();
@@ -85,8 +87,7 @@ public class ScopeTests extends TeamTest {
 
 	private boolean isInWorkingSet(IProject project) {
 		IAdaptable[] elements = workingSet.getElements();
-		for (int i = 0; i < elements.length; i++) {
-			IAdaptable adaptable = elements[i];
+		for (IAdaptable adaptable : elements) {
 			if (adaptable.equals(project))
 				return true;
 		}

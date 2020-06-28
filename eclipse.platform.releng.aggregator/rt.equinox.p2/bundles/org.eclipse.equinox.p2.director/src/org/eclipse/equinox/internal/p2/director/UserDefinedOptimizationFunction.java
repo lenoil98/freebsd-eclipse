@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2017 Daniel Le Berre and others.
+ * Copyright (c) 2009, 2020 Daniel Le Berre and others.
  *
  * This
  * program and the accompanying materials are made available under the terms of
@@ -9,7 +9,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *
- * Contributors: 
+ * Contributors:
  *     Daniel Le Berre - initial API and implementation
  *     Red Hat, Inc. - support for remediation page
  ******************************************************************************/
@@ -41,32 +41,32 @@ public class UserDefinedOptimizationFunction extends OptimizationFunction {
 		List<WeightedObject<?>> weightedObjects = new ArrayList<>();
 		List<Object> objects = new ArrayList<>();
 		BigInteger weight = BigInteger.valueOf(slice.size() + 1);
-		String[] criteria = new String[] {"+new", "-notuptodate", "-changed", "-removed"}; //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$
-		BigInteger currentWeight = weight.pow(criteria.length - 1);
+		String[] criterias = new String[] {"+new", "-notuptodate", "-changed", "-removed"}; //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$
+		BigInteger currentWeight = weight.pow(criterias.length - 1);
 		boolean maximizes;
 		Object thing;
-		for (int i = 0; i < criteria.length; i++) {
-			if (criteria[i].endsWith("new")) { //$NON-NLS-1$
+		for (String criteria : criterias) {
+			if (criteria.endsWith("new")) { //$NON-NLS-1$
 				weightedObjects.clear();
-				newRoots(weightedObjects, criteria[i].startsWith("+") ? currentWeight.negate() : currentWeight, metaIu); //$NON-NLS-1$
+				newRoots(weightedObjects, criteria.startsWith("+") ? currentWeight.negate() : currentWeight, metaIu); //$NON-NLS-1$
 				currentWeight = currentWeight.divide(weight);
-			} else if (criteria[i].endsWith("removed")) { //$NON-NLS-1$
+			} else if (criteria.endsWith("removed")) { //$NON-NLS-1$
 				weightedObjects.clear();
-				removedRoots(weightedObjects, criteria[i].startsWith("+") ? currentWeight.negate() : currentWeight, metaIu); //$NON-NLS-1$
+				removedRoots(weightedObjects, criteria.startsWith("+") ? currentWeight.negate() : currentWeight, metaIu); //$NON-NLS-1$
 				currentWeight = currentWeight.divide(weight);
-			} else if (criteria[i].endsWith("notuptodate")) { //$NON-NLS-1$
+			} else if (criteria.endsWith("notuptodate")) { //$NON-NLS-1$
 				weightedObjects.clear();
-				notuptodate(weightedObjects, criteria[i].startsWith("+") ? currentWeight.negate() : currentWeight, metaIu); //$NON-NLS-1$
+				notuptodate(weightedObjects, criteria.startsWith("+") ? currentWeight.negate() : currentWeight, metaIu); //$NON-NLS-1$
 				currentWeight = currentWeight.divide(weight);
-			} else if (criteria[i].endsWith("changed")) { //$NON-NLS-1$
+			} else if (criteria.endsWith("changed")) { //$NON-NLS-1$
 				weightedObjects.clear();
-				changedRoots(weightedObjects, criteria[i].startsWith("+") ? currentWeight.negate() : currentWeight, metaIu); //$NON-NLS-1$
+				changedRoots(weightedObjects, criteria.startsWith("+") ? currentWeight.negate() : currentWeight, metaIu); //$NON-NLS-1$
 				currentWeight = currentWeight.divide(weight);
 			}
 			objects.clear();
-			maximizes = criteria[i].startsWith("+"); //$NON-NLS-1$
-			for (Iterator<WeightedObject<?>> it = weightedObjects.iterator(); it.hasNext();) {
-				thing = it.next().thing;
+			maximizes = criteria.startsWith("+"); //$NON-NLS-1$
+			for (WeightedObject<?> weightedObject : weightedObjects) {
+				thing = weightedObject.thing;
 				if (maximizes) {
 					thing = dependencyHelper.not(thing);
 				}
@@ -152,14 +152,14 @@ public class UserDefinedOptimizationFunction extends OptimizationFunction {
 			IQuery<IInstallableUnit> query = QueryUtil.createMatchQuery(req.getMatches());
 			IQueryResult<IInstallableUnit> matches = picker.query(query, null);
 			List<IInstallableUnit> toSort = new ArrayList<>(matches.toUnmodifiableSet());
-			Collections.sort(toSort, Collections.reverseOrder());
-			if (toSort.size() == 0)
+			toSort.sort(Collections.reverseOrder());
+			if (toSort.isEmpty())
 				continue;
 
 			Projector.AbstractVariable abs = new Projector.AbstractVariable();
 			Object notlatest = dependencyHelper.not(toSort.get(0));
 			try {
-				// notuptodate <=> not iuvn and (iuv1 or iuv2 or ... iuvn-1) 
+				// notuptodate <=> not iuvn and (iuv1 or iuv2 or ... iuvn-1)
 				dependencyHelper.implication(new Object[] {abs}).implies(notlatest).named(FakeExplanation.getInstance());
 				Object[] clause = new Object[toSort.size()];
 				toSort.toArray(clause);

@@ -18,9 +18,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.*;
+import java.security.AllPermission;
+import java.security.CodeSource;
+import java.security.PermissionCollection;
+import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
-import java.util.*;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.eclipse.osgi.container.ModuleRevision;
 import org.eclipse.osgi.internal.debug.Debug;
 import org.eclipse.osgi.internal.framework.EquinoxConfiguration;
@@ -43,6 +50,7 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 			this.generation = generation;
 		}
 
+		@Override
 		public Bundle getBundle() {
 			return generation.getRevision().getBundle();
 		}
@@ -52,7 +60,16 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 	 * A PermissionCollection for AllPermissions; shared across all ProtectionDomains when security is disabled
 	 */
 	protected static final PermissionCollection ALLPERMISSIONS;
-	protected static final boolean REGISTERED_AS_PARALLEL = ClassLoader.registerAsParallelCapable();
+	protected static final boolean REGISTERED_AS_PARALLEL;
+	static {
+		boolean registered;
+		try {
+			registered = ClassLoader.registerAsParallelCapable();
+		} catch (Throwable t) {
+			registered = false;
+		}
+		REGISTERED_AS_PARALLEL = registered;
+	}
 
 	static {
 		AllPermission allPerm = new AllPermission();
@@ -137,14 +154,15 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 	/**
 	 * Loads a class for the bundle.  First delegate.findClass(name) is called.
 	 * The delegate will query the system class loader, bundle imports, bundle
-	 * local classes, bundle hosts and fragments.  The delegate will call 
-	 * BundleClassLoader.findLocalClass(name) to find a class local to this 
-	 * bundle.  
+	 * local classes, bundle hosts and fragments.  The delegate will call
+	 * BundleClassLoader.findLocalClass(name) to find a class local to this
+	 * bundle.
 	 * @param name the name of the class to load.
 	 * @param resolve indicates whether to resolve the loaded class or not.
 	 * @return The Class object.
 	 * @throws ClassNotFoundException if the class is not found.
 	 */
+	@Override
 	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 		if (getDebug().DEBUG_LOADER)
 			Debug.println("ModuleClassLoader[" + getBundleLoader() + "].loadClass(" + name + ")"); //$NON-NLS-1$ //$NON-NLS-2$//$NON-NLS-3$
@@ -155,13 +173,7 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 			if (resolve)
 				resolveClass(clazz);
 			return (clazz);
-		} catch (Error e) {
-			if (getDebug().DEBUG_LOADER) {
-				Debug.println("ModuleClassLoader[" + getBundleLoader() + "].loadClass(" + name + ") failed."); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-				Debug.printStackTrace(e);
-			}
-			throw e;
-		} catch (ClassNotFoundException e) {
+		} catch (Error | ClassNotFoundException e) {
 			// If the class is not found do not try to look for it locally.
 			// The delegate would have already done that for us.
 			if (getDebug().DEBUG_LOADER) {
@@ -187,14 +199,15 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 	}
 
 	/**
-	 * Gets a resource for the bundle.  First delegate.findResource(name) is 
+	 * Gets a resource for the bundle.  First delegate.findResource(name) is
 	 * called. The delegate will query the system class loader, bundle imports,
-	 * bundle local resources, bundle hosts and fragments.  The delegate will 
-	 * call BundleClassLoader.findLocalResource(name) to find a resource local 
-	 * to this bundle.  
+	 * bundle local resources, bundle hosts and fragments.  The delegate will
+	 * call BundleClassLoader.findLocalResource(name) to find a resource local
+	 * to this bundle.
 	 * @param name The resource path to get.
 	 * @return The URL of the resource or null if it does not exist.
 	 */
+	@Override
 	public URL getResource(String name) {
 		if (getDebug().DEBUG_LOADER) {
 			Debug.println("ModuleClassLoader[" + getBundleLoader() + "].getResource(" + name + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -230,6 +243,7 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 	 * @param name The resource path to get.
 	 * @return The Enumeration of the resource URLs.
 	 */
+	@Override
 	public Enumeration<URL> getResources(String name) throws IOException {
 		if (getDebug().DEBUG_LOADER) {
 			Debug.println("ModuleClassLoader[" + getBundleLoader() + "].getResources(" + name + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -249,11 +263,12 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 	}
 
 	/**
-	 * Finds a library for this bundle.  Simply calls 
+	 * Finds a library for this bundle.  Simply calls
 	 * manager.findLibrary(libname) to find the library.
 	 * @param libname The library to find.
 	 * @return The absolution path to the library or null if not found
 	 */
+	@Override
 	protected String findLibrary(String libname) {
 		// let the manager find the library for us
 		return getClasspathManager().findLibrary(libname);
@@ -335,7 +350,7 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 	 * Creates a ProtectionDomain which uses specified BundleFile and the permissions of the baseDomain
 	 * @param bundlefile The source bundlefile the domain is for.
 	 * @param domainGeneration the source generation for the domain
-	 * @return a ProtectionDomain which uses specified BundleFile and the permissions of the baseDomain 
+	 * @return a ProtectionDomain which uses specified BundleFile and the permissions of the baseDomain
 	 */
 	@SuppressWarnings("deprecation")
 	protected ProtectionDomain createProtectionDomain(BundleFile bundlefile, Generation domainGeneration) {
@@ -354,10 +369,7 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 			Certificate[] certs = null;
 			SignedContent signedContent = null;
 			if (bundlefile instanceof BundleFileWrapperChain) {
-				BundleFileWrapperChain wrapper = (BundleFileWrapperChain) bundlefile;
-				while (wrapper != null && (!(wrapper.getWrapped() instanceof SignedContent)))
-					wrapper = wrapper.getNext();
-				signedContent = wrapper == null ? null : (SignedContent) wrapper.getWrapped();
+				signedContent = ((BundleFileWrapperChain) bundlefile).getWrappedType(SignedContent.class);
 			}
 			if (getConfiguration().CLASS_CERTIFICATE && signedContent != null && signedContent.isSigned()) {
 				SignerInfo[] signers = signedContent.getSignerInfos();
@@ -374,6 +386,7 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 		}
 	}
 
+	@Override
 	public Bundle getBundle() {
 		return getGeneration().getRevision().getBundle();
 	}
@@ -390,9 +403,10 @@ public abstract class ModuleClassLoader extends ClassLoader implements BundleRef
 		return getClasspathManager().listLocalResources(path, filePattern, options);
 	}
 
+	@Override
 	public String toString() {
 		Bundle b = getBundle();
-		StringBuffer result = new StringBuffer(super.toString());
+		StringBuilder result = new StringBuilder(super.toString());
 		if (b == null)
 			return result.toString();
 		return result.append('[').append(b.getSymbolicName()).append(':').append(b.getVersion()).append("(id=").append(b.getBundleId()).append(")]").toString(); //$NON-NLS-1$//$NON-NLS-2$

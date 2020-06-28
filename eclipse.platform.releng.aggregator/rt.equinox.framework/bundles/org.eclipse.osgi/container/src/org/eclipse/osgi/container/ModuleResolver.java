@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -150,11 +150,11 @@ final class ModuleResolver {
 
 	/**
 	 * Attempts to resolve all unresolved modules installed in the specified module database.
-	 * returns a delta containing the new wirings or modified wirings that should be 
+	 * returns a delta containing the new wirings or modified wirings that should be
 	 * merged into the specified moduleDatabase.
 	 * <p>
 	 * This method only does read operations on the database no wirings are modified
-	 * directly by this method.  The returned wirings need to be merged into 
+	 * directly by this method.  The returned wirings need to be merged into
 	 * the database.
 	 * @param triggers the triggers that caused the resolver operation to occur
 	 * @param triggersMandatory true if the triggers must be resolved by the resolve process
@@ -365,6 +365,10 @@ final class ModuleResolver {
 				if (NON_PAYLOAD_CAPABILITIES.contains(fragmentCapability.getNamespace())) {
 					continue; // don't include, not a payload capability
 				}
+				Object effective = fragmentCapability.getDirectives().get(Namespace.CAPABILITY_EFFECTIVE_DIRECTIVE);
+				if (effective != null && !Namespace.EFFECTIVE_RESOLVE.equals(effective)) {
+					continue; // don't include, not effective
+				}
 				if (!fragmentCapability.getNamespace().equals(currentNamespace)) {
 					currentNamespace = fragmentCapability.getNamespace();
 					fastForward(iCapabilities);
@@ -382,7 +386,11 @@ final class ModuleResolver {
 			List<ModuleRequirement> fragmentRequriements = hostWire.getRequirer().getModuleRequirements(null);
 			for (ModuleRequirement fragmentRequirement : fragmentRequriements) {
 				if (NON_PAYLOAD_REQUIREMENTS.contains(fragmentRequirement.getNamespace())) {
-					continue; // don't inlcude, not a payload requirement
+					continue; // don't include, not a payload requirement
+				}
+				Object effective = fragmentRequirement.getDirectives().get(Namespace.REQUIREMENT_EFFECTIVE_DIRECTIVE);
+				if (effective != null && !Namespace.EFFECTIVE_RESOLVE.equals(effective)) {
+					continue; // don't include, not effective
 				}
 				if (!fragmentRequirement.getNamespace().equals(currentNamespace)) {
 					currentNamespace = fragmentRequirement.getNamespace();
@@ -481,7 +489,8 @@ final class ModuleResolver {
 		addRequiredWires(requiredWires, existingRequiredWires, existingRequirements);
 
 		InternalUtils.filterCapabilityPermissions(existingCapabilities);
-		return new ModuleWiring(revision, existingCapabilities, existingRequirements, existingProvidedWires, existingRequiredWires, Collections.EMPTY_LIST);
+		return new ModuleWiring(revision, existingCapabilities, existingRequirements, existingProvidedWires,
+				existingRequiredWires, existingWiring.getSubstitutedNames());
 	}
 
 	static boolean isSingleton(ModuleRevision revision) {
@@ -563,12 +572,12 @@ final class ModuleResolver {
 		private final Collection<ModuleRevision> unresolved;
 		/*
 		 * Contains unresolved revisions that should not be resolved as part of
-		 * this process. The reasons they should not be resolved will vary. For 
+		 * this process. The reasons they should not be resolved will vary. For
 		 * example, some might have been filtered out by the resolver hook while
 		 * others represent singleton collisions. It is assumed that all
 		 * unresolved revisions are disabled at the start of the resolve
 		 * process (see initialization in constructors). Any not filtered out
-		 * by ResolverHook.filterResolvable are then removed but may be added 
+		 * by ResolverHook.filterResolvable are then removed but may be added
 		 * back later for other reasons.
 		 */
 		private final Collection<ModuleRevision> disabled;
@@ -589,7 +598,7 @@ final class ModuleResolver {
 		private AtomicReference<ScheduledFuture<?>> timoutFuture = new AtomicReference<>();
 		/*
 		 * Used to generate the UNRESOLVED_PROVIDER resolution report entries.
-		 * 
+		 *
 		 * The inner map associates a requirement to the set of all matching
 		 * capabilities that were found. The outer map associates the requiring
 		 * resource to the inner map so that its contents may easily be looked
@@ -894,8 +903,7 @@ final class ModuleResolver {
 				List<ModuleCapability> candidates = moduleDatabase.findCapabilities(fragmentRequirement);
 				// filter out disabled fragments and singletons
 				filterDisabled(candidates.listIterator());
-				for (Iterator<ModuleCapability> iCandidates = candidates.iterator(); iCandidates.hasNext();) {
-					ModuleCapability candidate = iCandidates.next();
+				for (ModuleCapability candidate : candidates) {
 					ModuleRequirement hostReq = candidate.getRevision().getModuleRequirements(HostNamespace.HOST_NAMESPACE).get(0);
 					for (ModuleCapability hostCap : hostCaps) {
 						if (hostReq.matches(hostCap)) {
@@ -974,7 +982,7 @@ final class ModuleResolver {
 						Map<Resource, List<Wire>> dynamicAttachWirings = resolveNonPayLoadFragments();
 						applyInterimResultToWiringCopy(dynamicAttachWirings);
 						if (!dynamicAttachWirings.isEmpty()) {
-							// be sure to remove the revisions from the optional and triggers 
+							// be sure to remove the revisions from the optional and triggers
 							// so they no longer attempt to be resolved
 							Set<Resource> fragmentResources = dynamicAttachWirings.keySet();
 							triggers.removeAll(fragmentResources);
@@ -1303,6 +1311,9 @@ final class ModuleResolver {
 			}
 
 			private boolean failToWire(ModuleRequirement requirement, ModuleRevision requirer, List<Wire> wires) {
+				if (!isEffective(requirement)) {
+					return false;
+				}
 				List<ModuleCapability> matching = moduleDatabase.findCapabilities(requirement);
 				List<Wire> newWires = new ArrayList<>(0);
 				filterProviders(requirement, matching, false);

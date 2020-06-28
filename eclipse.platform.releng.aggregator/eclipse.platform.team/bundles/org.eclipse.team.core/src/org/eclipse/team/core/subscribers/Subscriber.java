@@ -99,7 +99,7 @@ abstract public class Subscriber {
 	 * @param resource the resource being tested
 	 * @return <code>true</code> if this resource is supervised, and <code>false</code>
 	 *               otherwise
-	 * @throws TeamException
+	 * @throws TeamException if an error occurs
 	 */
 	abstract public boolean isSupervised(IResource resource) throws TeamException;
 
@@ -114,7 +114,7 @@ abstract public class Subscriber {
 	 * </p>
 	 * @param resource the resource
 	 * @return a list of member resources
-	 * @throws TeamException
+	 * @throws TeamException if an error occurs
 	 */
 	abstract public IResource[] members(IResource resource) throws TeamException;
 
@@ -150,7 +150,7 @@ abstract public class Subscriber {
 	 *
 	 * @param resource the resource of interest
 	 * @return sync info
-	 * @throws TeamException
+	 * @throws TeamException if an error occurs
 	 * @see #getDiff(IResource)
 	 */
 	abstract public SyncInfo getSyncInfo(IResource resource) throws TeamException;
@@ -265,8 +265,7 @@ abstract public class Subscriber {
 	public void collectOutOfSync(IResource[] resources, int depth, SyncInfoSet set, IProgressMonitor monitor) {
 		try {
 			monitor.beginTask(null, 100 * resources.length);
-			for (int i = 0; i < resources.length; i++) {
-				IResource resource = resources[i];
+			for (IResource resource : resources) {
 				IProgressMonitor subMonitor = Policy.subMonitorFor(monitor, 100);
 				subMonitor.beginTask(null, IProgressMonitor.UNKNOWN);
 				collect(resource, depth, set, subMonitor);
@@ -290,8 +289,7 @@ abstract public class Subscriber {
 			allListeners = listeners.toArray(new ISubscriberChangeListener[listeners.size()]);
 		}
 		// Notify the listeners safely so all will receive notification
-		for (int i = 0; i < allListeners.length; i++) {
-			final ISubscriberChangeListener listener = allListeners[i];
+		for (ISubscriberChangeListener listener : allListeners) {
 			SafeRunner.run(new ISafeRunnable() {
 				@Override
 				public void handleException(Throwable exception) {
@@ -322,14 +320,10 @@ abstract public class Subscriber {
 			&& depth != IResource.DEPTH_ZERO) {
 			try {
 				IResource[] members = members(resource);
-				for (int i = 0; i < members.length; i++) {
-					collect(
-						members[i],
-						depth == IResource.DEPTH_INFINITE
+				for (IResource member : members) {
+					collect(member, depth == IResource.DEPTH_INFINITE
 							? IResource.DEPTH_INFINITE
-							: IResource.DEPTH_ZERO,
-						set,
-						monitor);
+							: IResource.DEPTH_ZERO, set, monitor);
 				}
 			} catch (TeamException e) {
 				set.addError(new TeamStatus(IStatus.ERROR, TeamPlugin.ID, ITeamStatus.SYNC_INFO_SET_ERROR, NLS.bind(Messages.SubscriberEventHandler_8, new String[] { resource.getFullPath().toString(), e.getMessage() }), e, resource));
@@ -378,7 +372,7 @@ abstract public class Subscriber {
 	 *
 	 * @param resource the resource of interest
 	 * @return the diff for the resource or <code>null</code>
-	 * @throws CoreException
+	 * @throws CoreException if an error occurs
 	 * @throws TeamException if errors occur
 	 * @since 3.2
 	 */
@@ -401,13 +395,12 @@ abstract public class Subscriber {
 	 * </ul>
 	 * @param traversals the traversals to be visited
 	 * @param visitor the visitor
-	 * @throws CoreException
+	 * @throws CoreException if an error occurs
 	 * @throws TeamException if errors occur
 	 * @since 3.2
 	 */
 	public void accept(ResourceTraversal[] traversals, IDiffVisitor visitor) throws CoreException {
-		for (int i = 0; i < traversals.length; i++) {
-			ResourceTraversal traversal = traversals[i];
+		for (ResourceTraversal traversal : traversals) {
 			accept(traversal.getResources(), traversal.getDepth(), visitor);
 		}
 	}
@@ -434,8 +427,7 @@ abstract public class Subscriber {
 	 * @since 3.2
 	 */
 	public void accept(IResource[] resources, int depth, IDiffVisitor visitor) throws CoreException {
-		for (int i = 0; i < resources.length; i++) {
-			IResource resource = resources[i];
+		for (IResource resource : resources) {
 			accept(resource, depth, visitor);
 		}
 	}
@@ -449,8 +441,7 @@ abstract public class Subscriber {
 		if (depth != IResource.DEPTH_ZERO) {
 			IResource[] members = members(resource);
 			int newDepth = depth == IResource.DEPTH_INFINITE ? IResource.DEPTH_INFINITE : IResource.DEPTH_ZERO;
-			for (int i = 0; i < members.length; i++) {
-				IResource member = members[i];
+			for (IResource member : members) {
 				accept(member, newDepth, visitor);
 			}
 		}
@@ -476,8 +467,7 @@ abstract public class Subscriber {
 	 */
 	public void refresh(ResourceTraversal[] traversals, IProgressMonitor monitor) throws TeamException {
 		monitor.beginTask(null, 100 * traversals.length);
-		for (int i = 0; i < traversals.length; i++) {
-			ResourceTraversal traversal = traversals[i];
+		for (ResourceTraversal traversal : traversals) {
 			refresh(traversal.getResources(), traversal.getDepth(), Policy.subMonitorFor(monitor, 100));
 		}
 		monitor.done();
@@ -505,7 +495,7 @@ abstract public class Subscriber {
 	 * @param stateMask the mask that identifies the state flags of interested
 	 * @param monitor a progress monitor
 	 * @return the synchronization state of the given resource mapping
-	 * @throws CoreException
+	 * @throws CoreException if an error occurs
 	 * @since 3.2
 	 * @see IDiff
 	 * @see IThreeWayDiff
@@ -514,23 +504,20 @@ abstract public class Subscriber {
 		ResourceTraversal[] traversals = mapping.getTraversals(new SubscriberResourceMappingContext(this, true), monitor);
 		final int[] direction = new int[] { 0 };
 		final int[] kind = new int[] { 0 };
-		accept(traversals, new IDiffVisitor() {
-			@Override
-			public boolean visit(IDiff diff) {
-				if (diff instanceof IThreeWayDiff) {
-					IThreeWayDiff twd = (IThreeWayDiff) diff;
-					direction[0] |= twd.getDirection();
-				}
-				// If the traversals contain a combination of kinds, return a CHANGE
-				int diffKind = diff.getKind();
-				if (kind[0] == 0)
-					kind[0] = diffKind;
-				if (kind[0] != diffKind) {
-					kind[0] = IDiff.CHANGE;
-				}
-				// Only need to visit the children of a change
-				return diffKind == IDiff.CHANGE;
+		accept(traversals, diff -> {
+			if (diff instanceof IThreeWayDiff) {
+				IThreeWayDiff twd = (IThreeWayDiff) diff;
+				direction[0] |= twd.getDirection();
 			}
+			// If the traversals contain a combination of kinds, return a CHANGE
+			int diffKind = diff.getKind();
+			if (kind[0] == 0)
+				kind[0] = diffKind;
+			if (kind[0] != diffKind) {
+				kind[0] = IDiff.CHANGE;
+			}
+			// Only need to visit the children of a change
+			return diffKind == IDiff.CHANGE;
 		});
 		return (direction[0] | kind[0]) & stateMask;
 	}

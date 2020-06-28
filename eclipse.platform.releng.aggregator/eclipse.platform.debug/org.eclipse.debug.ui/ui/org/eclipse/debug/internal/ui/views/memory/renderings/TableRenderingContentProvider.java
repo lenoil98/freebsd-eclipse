@@ -16,6 +16,7 @@ package org.eclipse.debug.internal.ui.views.memory.renderings;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -88,9 +89,6 @@ public class TableRenderingContentProvider extends BasicDebugViewContentProvider
 		fViewer = viewer;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-	 */
 	@Override
 	public void inputChanged(Viewer v, Object oldInput, Object newInput) {
 		try {
@@ -117,9 +115,6 @@ public class TableRenderingContentProvider extends BasicDebugViewContentProvider
 		super.dispose();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-	 */
 	@Override
 	public Object[] getElements(Object parent) {
 
@@ -410,10 +405,9 @@ public class TableRenderingContentProvider extends BasicDebugViewContentProvider
 
 				// fill buffer with memory returned by debug adapter
 				int j = prefillNumBytes; 							// counter for memoryBuffer
-				for (int i=0; i<memory.length; i++)
-				{
+				for (byte element : memory) {
 					MemoryByte tmp = new MemoryByte();
-					tmp.setValue(memory[i]);
+					tmp.setValue(element);
 					tmp.setReadable(true);
 					tmp.setWritable(true);
 					tmp.setEndianessKnown(false);
@@ -454,10 +448,7 @@ public class TableRenderingContentProvider extends BasicDebugViewContentProvider
 		{
 			ArrayList<MemoryByte> newBuffer = new ArrayList<>();
 
-			for (int i=0; i<memoryBuffer.length; i++)
-			{
-				newBuffer.add(memoryBuffer[i]);
-			}
+			Collections.addAll(newBuffer, memoryBuffer);
 
 			for (int i=memoryBuffer.length; i<reqNumBytes; i++)
 			{
@@ -635,9 +626,6 @@ public class TableRenderingContentProvider extends BasicDebugViewContentProvider
 		return memoryBuffer;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.internal.views.BasicDebugViewContentProvider#doHandleDebugEvent(org.eclipse.debug.core.DebugEvent)
-	 */
 	@Override
 	protected void doHandleDebugEvent(DebugEvent event) {
 
@@ -737,10 +725,9 @@ public class TableRenderingContentProvider extends BasicDebugViewContentProvider
 		// content.
 		if (!getTableRendering(fInput).isDisplayingError())
 		{
-			for (int i=0; i<lines.length; i++)
-			{
-				contentCache.put(lines[i].getAddress(), lines[i]);
-				lines[i].isMonitored = true;
+			for (TableRenderingLine line : lines) {
+				contentCache.put(line.getAddress(), line);
+				line.isMonitored = true;
 			}
 		}
 
@@ -944,9 +931,8 @@ public class TableRenderingContentProvider extends BasicDebugViewContentProvider
 		TableRenderingLine[] convertedLines = convertBytesToLines(bytes, bytesPerLine, new BigInteger(fContentCacheStartAddress, 16));
 
 		contentCache.clear();
-		for (int i=0; i<convertedLines.length; i++)
-		{
-			contentCache.put(convertedLines[i].getAddress(), convertedLines[i]);
+		for (TableRenderingLine convertedLine : convertedLines) {
+			contentCache.put(convertedLine.getAddress(), convertedLine);
 		}
 	}
 

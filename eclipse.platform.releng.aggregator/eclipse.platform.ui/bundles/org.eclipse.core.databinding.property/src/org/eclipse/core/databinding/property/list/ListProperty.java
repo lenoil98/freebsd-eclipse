@@ -34,10 +34,10 @@ import org.eclipse.core.internal.databinding.property.ListPropertyDetailValuesLi
 /**
  * Abstract implementation of IListProperty.
  *
- * @param <S>
- *            type of the source object
- * @param <E>
- *            type of the elements in the list
+ * @param <S> type of the source object
+ * @param <E> type of the elements in the list
+ * @implNote If methods are added to the interface which this class implements
+ *           then implementations of those methods must be added to this class.
  * @since 1.2
  */
 public abstract class ListProperty<S, E> implements IListProperty<S, E> {
@@ -141,7 +141,7 @@ public abstract class ListProperty<S, E> implements IListProperty<S, E> {
 
 	@Override
 	public IObservableFactory<S, IObservableList<E>> listFactory() {
-		return target -> observe(target);
+		return this::observe;
 	}
 
 	@Override
@@ -156,6 +156,6 @@ public abstract class ListProperty<S, E> implements IListProperty<S, E> {
 
 	@Override
 	public final <T> IListProperty<S, T> values(IValueProperty<? super E, T> detailValue) {
-		return new ListPropertyDetailValuesList<S, E, T>(this, detailValue);
+		return new ListPropertyDetailValuesList<>(this, detailValue);
 	}
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 IBM Corporation and others.
+ * Copyright (c) 2007, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -48,11 +48,9 @@ import org.eclipse.osgi.util.NLS;
  * <li><code>class</code> Wizard page implementation. Must be a subclass of
  *  <code>org.eclipse.jdt.debug.ui.launchConfigurations.AbstractVMInstallPage</code>.</li>
  * </ul>
- * </p>
  * <p>
  * Clients contributing a custom VM install page via the <code>vmInstallPages</code>
  * extension point must subclass this class.
- * </p>
  * @since 3.3
  */
 public abstract class AbstractVMInstallPage extends WizardPage {
@@ -120,14 +118,35 @@ public abstract class AbstractVMInstallPage extends WizardPage {
 	}
 
 	/**
-	 * Updates the name status based on the new name. This method should be called
-	 * by the page each time the VM name changes.
+	 * Updates the name status based on the new name. This method should be called by the page each time the VM name changes.
 	 *
-	 * @param newName new name of VM
+	 * Use nameChanged(String newName, boolean init)
+	 *
+	 * @param newName
+	 *            new name of VM
+	 *
 	 */
+	@Deprecated
 	protected void nameChanged(String newName) {
+		nameChanged(newName, false);
+	}
+
+	/**
+	 * Updates the name status based on the new name. This method should be called by the page each time the VM name changes.
+	 *
+	 * @param newName
+	 *            new name of VM
+	 * @param init
+	 *            <code>true</code> if page is getting initialized else <code>false</code>
+	 *
+	 * @since 3.11
+	 */
+	protected void nameChanged(String newName, boolean init) {
 		fNameStatus = Status.OK_STATUS;
 		if (newName == null || newName.trim().length() == 0) {
+			if (init) {
+				return;
+			}
 			int sev = IStatus.ERROR;
 			if (fOriginalName == null || fOriginalName.length() == 0) {
 				sev = IStatus.WARNING;
@@ -154,8 +173,8 @@ public abstract class AbstractVMInstallPage extends WizardPage {
 	 */
 	private boolean isDuplicateName(String name) {
 		if (fExistingNames != null) {
-			for (int i = 0; i < fExistingNames.length; i++) {
-				if (name.equals(fExistingNames[i])) {
+			for (String n : fExistingNames) {
+				if (name.equals(n)) {
 					return true;
 				}
 			}
@@ -221,9 +240,7 @@ public abstract class AbstractVMInstallPage extends WizardPage {
 	 */
 	protected void updatePageStatus() {
 		IStatus max = Status.OK_STATUS;
-		IStatus[] vmStatus = getVMStatus();
-		for (int i = 0; i < vmStatus.length; i++) {
-			IStatus status = vmStatus[i];
+		for (IStatus status : getVMStatus()) {
 			if (status.getSeverity() > max.getSeverity()) {
 				max = status;
 			}

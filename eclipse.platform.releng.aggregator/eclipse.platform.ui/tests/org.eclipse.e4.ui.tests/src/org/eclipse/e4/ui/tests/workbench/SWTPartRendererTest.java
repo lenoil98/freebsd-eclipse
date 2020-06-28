@@ -18,7 +18,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
@@ -35,8 +34,10 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class SWTPartRendererTest {
 	private SWTPartRenderer renderer;
 	private Shell shell;
@@ -54,19 +55,13 @@ public class SWTPartRendererTest {
 		};
 
 		shell = Display.getDefault().getActiveShell();
-		stylingEngineExecutedMethods = new HashMap<String, Object[]>();
+		stylingEngineExecutedMethods = new HashMap<>();
 
 		context = EclipseContextFactory.create();
-		context.set(IStylingEngine.class, (IStylingEngine) Proxy.newProxyInstance(
-				getClass().getClassLoader(),
-				new Class<?>[] { IStylingEngine.class },
-				new InvocationHandler() {
-					@Override
-					public Object invoke(Object proxy, Method method,
-							Object[] args) throws Throwable {
-						stylingEngineExecutedMethods.put(method.getName(), args);
-						return null;
-					}
+		context.set(IStylingEngine.class, (IStylingEngine) Proxy.newProxyInstance(getClass().getClassLoader(),
+				new Class<?>[] { IStylingEngine.class }, (Object proxy, Method method, Object[] args) -> {
+					stylingEngineExecutedMethods.put(method.getName(), args);
+					return null;
 				}));
 
 		part = MBasicFactory.INSTANCE.createPart();

@@ -43,8 +43,10 @@ public class TestUnitRegistrationMacOsX {
 	private static final String OTHER_APP_BUNDLE_PATH = "/Users/myuser/Applications/OtherApp.app";
 
 	private static final IScheme ADT_SCHEME = new Scheme("adt", "");
+	private static final IScheme ADT_DEMO_SCHEME = new Scheme("adt+demo", "");
 	private static final ISchemeInformation OTHER_SCHEME_INFO = new SchemeInformation("other", "");
 	private static final ISchemeInformation ADT_SCHEME_INFO = new SchemeInformation("adt", "");
+	private static final ISchemeInformation ADT_DEMO_SCHEME_INFO = new SchemeInformation("adt+demo", "");
 
 	private IOperatingSystemRegistration registration;
 	private FileProviderMock fileProvider;
@@ -53,6 +55,8 @@ public class TestUnitRegistrationMacOsX {
 	private static String originalEclipseLauncher;
 	private String lsregisterDumpForOtherApp;
 	private String lsregisterDumpForOwnApp;
+	private String lsregisterDumpForOwnAppPlus;
+	private String lsregisterDumpMacOS10_15_3;
 
 	@Before
 	public void setup() {
@@ -70,6 +74,10 @@ public class TestUnitRegistrationMacOsX {
 		lsregisterDumpForOtherApp = convert(inputStream);
 		inputStream = getClass().getResourceAsStream("lsregisterForOwnApp.txt");
 		lsregisterDumpForOwnApp = convert(inputStream);
+		inputStream = getClass().getResourceAsStream("lsregisterForOwnAppPlus.txt");
+		lsregisterDumpForOwnAppPlus = convert(inputStream);
+		inputStream = getClass().getResourceAsStream("lsreigsterForOwnApp_macOS_10_15_3.txt");
+		lsregisterDumpMacOS10_15_3 = convert(inputStream);
 
 	}
 
@@ -107,6 +115,20 @@ public class TestUnitRegistrationMacOsX {
 	}
 
 	@Test
+	public void handlesAddOnlyPlus() throws Exception {
+		fileProvider.readAnswers.put(OWN_APP_PLIST_PATH, getPlistFileReader());
+
+		registration.handleSchemes(Arrays.asList(ADT_DEMO_SCHEME_INFO), Collections.emptyList());
+
+		assertFilePathIs(OWN_APP_PLIST_PATH);
+
+		assertSchemeInFile("adt+demo");
+
+		assertLsRegisterCallWithOptionAtIndex("-u", 0);
+		assertLsRegisterCallWithOptionAtIndex("-r", 1);
+	}
+
+	@Test
 	public void handlesAddAndRemoveAtOnce() throws Exception {
 		fileProvider.readAnswers.put(OWN_APP_PLIST_PATH, getPlistFileReaderWithAdtScheme());
 
@@ -116,6 +138,21 @@ public class TestUnitRegistrationMacOsX {
 
 		assertSchemeInFile("other");
 		assertSchemeNotInFile("adt");
+
+		assertLsRegisterCallWithOptionAtIndex("-u", 0);
+		assertLsRegisterCallWithOptionAtIndex("-r", 1);
+	}
+
+	@Test
+	public void handlesAddAndRemoveAtOncePlus() throws Exception {
+		fileProvider.readAnswers.put(OWN_APP_PLIST_PATH, getPlistFileReaderWithAdtSchemePlus());
+
+		registration.handleSchemes(Arrays.asList(OTHER_SCHEME_INFO), Arrays.asList(ADT_DEMO_SCHEME_INFO));
+
+		assertFilePathIs(OWN_APP_PLIST_PATH);
+
+		assertSchemeInFile("other");
+		assertSchemeNotInFile("adt+demo");
 
 		assertLsRegisterCallWithOptionAtIndex("-u", 0);
 		assertLsRegisterCallWithOptionAtIndex("-r", 1);
@@ -136,6 +173,20 @@ public class TestUnitRegistrationMacOsX {
 	}
 
 	@Test
+	public void handlesRemoveOnlyPlus() throws Exception {
+		fileProvider.readAnswers.put(OWN_APP_PLIST_PATH, getPlistFileReaderWithAdtSchemePlus());
+
+		registration.handleSchemes(Collections.emptyList(), Arrays.asList(ADT_DEMO_SCHEME_INFO));
+
+		assertFilePathIs(OWN_APP_PLIST_PATH);
+
+		assertSchemeNotInFile("adt+demo");
+
+		assertLsRegisterCallWithOptionAtIndex("-u", 0);
+		assertLsRegisterCallWithOptionAtIndex("-r", 1);
+	}
+
+	@Test
 	public void returnsRegisteredSchemes() throws Exception {
 		fileProvider.readAnswers.put(OWN_APP_PLIST_PATH, getPlistFileReaderWithAdtScheme());
 
@@ -145,6 +196,45 @@ public class TestUnitRegistrationMacOsX {
 
 		assertEquals(1, infos.size());
 		assertEquals("adt", infos.get(0).getName());
+		assertTrue(infos.get(0).isHandled());
+	}
+
+	@Test
+	public void returnsRegisteredSchemesOnMacOS_10_15_3() throws Exception {
+		fileProvider.readAnswers.put(OWN_APP_PLIST_PATH, getPlistFileReaderWithAdtScheme());
+
+		processStub.result = lsregisterDumpMacOS10_15_3;
+
+		List<ISchemeInformation> infos = registration.getSchemesInformation(Arrays.asList(ADT_SCHEME));
+
+		assertEquals(1, infos.size());
+		assertEquals("adt", infos.get(0).getName());
+		assertTrue(infos.get(0).isHandled());
+	}
+
+	@Test
+	public void returnsRegisteredSchemesOnMacOS10_15_3() throws Exception {
+		fileProvider.readAnswers.put(OWN_APP_PLIST_PATH, getPlistFileReaderWithAdtScheme());
+
+		processStub.result = lsregisterDumpForOwnApp;
+
+		List<ISchemeInformation> infos = registration.getSchemesInformation(Arrays.asList(ADT_SCHEME));
+
+		assertEquals(1, infos.size());
+		assertEquals("adt", infos.get(0).getName());
+		assertTrue(infos.get(0).isHandled());
+	}
+
+	@Test
+	public void returnsRegisteredSchemesPlus() throws Exception {
+		fileProvider.readAnswers.put(OWN_APP_PLIST_PATH, getPlistFileReaderWithAdtSchemePlus());
+
+		processStub.result = lsregisterDumpForOwnAppPlus;
+
+		List<ISchemeInformation> infos = registration.getSchemesInformation(Arrays.asList(ADT_DEMO_SCHEME));
+
+		assertEquals(1, infos.size());
+		assertEquals("adt+demo", infos.get(0).getName());
 		assertTrue(infos.get(0).isHandled());
 	}
 
@@ -226,6 +316,29 @@ public class TestUnitRegistrationMacOsX {
 				"				<key>CFBundleURLSchemes</key>\n" + //
 				"					<array>\n" + //
 				"						<string>adt</string>\n" + //
+				"					</array>\n" + //
+				"			</dict>\n" + //
+				"		</array>\n" + //
+				"</dict>\n" + //
+				"</plist>\n";
+
+		return new StringReader(xml);
+	}
+
+	private Reader getPlistFileReaderWithAdtSchemePlus() {
+		String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" + //
+				"<plist version=\"1.0\">\n" + //
+				"<dict>\n" + //
+				"	<key>CFBundleExecutable</key>\n" + //
+				"		<string>eclipse</string>\n" + //
+				"	<key>CFBundleURLTypes</key>\n" + //
+				"		<array>\n" + //
+				"			<dict>\n" + //
+				"				<key>CFBundleURLName</key>\n" + //
+				"					<string>AdtScheme</string>\n" + //
+				"				<key>CFBundleURLSchemes</key>\n" + //
+				"					<array>\n" + //
+				"						<string>adt+demo</string>\n" + //
 				"					</array>\n" + //
 				"			</dict>\n" + //
 				"		</array>\n" + //

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -49,10 +49,10 @@ import com.sun.mirror.type.ReferenceType;
 public interface ExecutableDeclaration extends MemberDeclaration {
 
     /**
-     * Returns <tt>true</tt> if this method or constructor accepts a variable
+     * Returns <code>true</code> if this method or constructor accepts a variable
      * number of arguments.
      *
-     * @return <tt>true</tt> if this method or constructor accepts a variable
+     * @return <code>true</code> if this method or constructor accepts a variable
      * number of arguments
      */
     boolean isVarArgs();
@@ -77,10 +77,10 @@ public interface ExecutableDeclaration extends MemberDeclaration {
 
     /**
      * Returns the exceptions and other throwables listed in this
-     * method or constructor's <tt>throws</tt> clause.
+     * method or constructor's <code>throws</code> clause.
      *
      * @return the exceptions and other throwables listed in the
-     * <tt>throws</tt> clause, or an empty collection if there are none
+     * <code>throws</code> clause, or an empty collection if there are none
      */
     Collection<ReferenceType> getThrownTypes();
 }

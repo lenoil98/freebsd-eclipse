@@ -13,22 +13,10 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources.usecase;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 
-/**
- *
- */
 public class IFolderTest extends IResourceTest {
-	public IFolderTest() {
-		super(null);
-	}
-
-	public IFolderTest(String name) {
-		super(name);
-	}
 
 	/**
 	 * Tests failure on get/set methods invoked on a nonexistent folder.
@@ -53,20 +41,14 @@ public class IFolderTest extends IResourceTest {
 		assertTrue(method + "5", !wb.getRoot().exists(folder.getFullPath()));
 	}
 
-	public static Test suite() {
-		TestSuite suite = new TestSuite(IFolderTest.class.getName());
-		suite.addTest(new IFolderTest("testFolder"));
-		return suite;
-	}
-
 	/**
 	 * Create a project in an open solution. Don't open the project.
-	 * Contruct a folder handle & check its initial state.
+	 * Contruct a folder handle &amp; check its initial state.
 	 * Try creating the folder in the unopened project.
 	 * Open the project.
-	 * Create the folder & check its state further.
-	 * Construct a nested folder handle & check its initial state.
-	 * Create the nested folder & check its further.
+	 * Create the folder &amp; check its state further.
+	 * Construct a nested folder handle &amp; check its initial state.
+	 * Create the nested folder &amp; check its further.
 	 * Delete the nested folder.
 	 * Delete the parent folder.
 	 * Close the workspace.

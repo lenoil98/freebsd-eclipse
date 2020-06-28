@@ -595,14 +595,6 @@ public class SaveablesCompareEditorInput extends CompareEditorInput implements
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * org.eclipse.compare.CompareEditorInput#addCompareInputChangeListener(
-	 * org.eclipse.compare.structuremergeviewer.ICompareInput,
-	 * org.eclipse.compare.structuremergeviewer.ICompareInputChangeListener)
-	 */
 	@Override
 	public void addCompareInputChangeListener(ICompareInput input,
 			ICompareInputChangeListener listener) {
@@ -613,14 +605,6 @@ public class SaveablesCompareEditorInput extends CompareEditorInput implements
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * org.eclipse.compare.CompareEditorInput#removeCompareInputChangeListener
-	 * (org.eclipse.compare.structuremergeviewer.ICompareInput,
-	 * org.eclipse.compare.structuremergeviewer.ICompareInputChangeListener)
-	 */
 	@Override
 	public void removeCompareInputChangeListener(ICompareInput input,
 			ICompareInputChangeListener listener) {
@@ -635,8 +619,8 @@ public class SaveablesCompareEditorInput extends CompareEditorInput implements
 		if (!inputChangeListeners.isEmpty()) {
 			Object[] allListeners = inputChangeListeners.getListeners();
 			final ICompareInput compareResult = (ICompareInput) getCompareResult();
-			for (int i = 0; i < allListeners.length; i++) {
-				final ICompareInputChangeListener listener = (ICompareInputChangeListener) allListeners[i];
+			for (Object l : allListeners) {
+				final ICompareInputChangeListener listener = (ICompareInputChangeListener) l;
 				SafeRunner.run(new ISafeRunnable() {
 					@Override
 					public void run() throws Exception {
@@ -652,11 +636,6 @@ public class SaveablesCompareEditorInput extends CompareEditorInput implements
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.compare.CompareEditorInput#getTitleImage()
-	 */
 	@Override
 	public Image getTitleImage() {
 		ImageRegistry reg = TeamUIPlugin.getPlugin().getImageRegistry();
@@ -668,11 +647,6 @@ public class SaveablesCompareEditorInput extends CompareEditorInput implements
 		return image;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.ui.IEditorInput#getImageDescriptor()
-	 */
 	@Override
 	public ImageDescriptor getImageDescriptor() {
 		return TeamUIPlugin.getImageDescriptor(ITeamUIImages.IMG_SYNC_VIEW);

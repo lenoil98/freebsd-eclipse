@@ -45,9 +45,7 @@ public class BuildCleanupListener implements IResourceDeltaVisitor, IResourceCha
 		return destination;
 	}
 	
-	/**
-	 * @see IResourceDeltaVisitor#visit(IResourceDelta)
-	 */
+	@Override
 	public boolean visit(IResourceDelta delta) throws CoreException {
 		IResource resource = delta.getResource();
 		boolean movedFrom = (delta.getFlags() & IResourceDelta.MOVED_FROM) > 0;
@@ -102,8 +100,7 @@ public class BuildCleanupListener implements IResourceDeltaVisitor, IResourceCha
 		try {
 			IResourceDelta root = event.getDelta();
 			IResourceDelta[] projectDeltas = root.getAffectedChildren();
-			for (int i = 0; i < projectDeltas.length; i++) {							
-				final IResourceDelta delta = projectDeltas[i];
+			for (IResourceDelta delta : projectDeltas) {
 				IResource resource = delta.getResource();
 				
 				if (resource.getType() == IResource.PROJECT) {
@@ -111,8 +108,8 @@ public class BuildCleanupListener implements IResourceDeltaVisitor, IResourceCha
 					if (!resource.isAccessible()) continue;
 				}
 				
-				RepositoryProvider provider = RepositoryProvider.getProvider(resource.getProject(), CVSProviderPlugin.getTypeId());	
-
+				RepositoryProvider provider = RepositoryProvider.getProvider(resource.getProject(), CVSProviderPlugin.getTypeId());
+				
 				// Make sure that the project is a CVS folder.
 				ICVSFolder folder = CVSWorkspaceRoot.getCVSFolderFor(resource.getProject());
 				if (provider != null) {
@@ -127,7 +124,7 @@ public class BuildCleanupListener implements IResourceDeltaVisitor, IResourceCha
 				}
 				
 				// if a project is moved the originating project will not be associated with the CVS provider
-				// however listeners will probably still be interested in the move delta.	
+				// however listeners will probably still be interested in the move delta.
 				if ((delta.getFlags() & IResourceDelta.MOVED_TO) > 0) {																
 					IResource destination = getResourceFor(resource.getProject(), resource, delta.getMovedToPath());
 					provider = RepositoryProvider.getProvider(destination.getProject());

@@ -13,17 +13,15 @@
  *******************************************************************************/
 package org.eclipse.ltk.internal.core.refactoring;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
-
-import com.ibm.icu.text.Collator;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
@@ -97,8 +95,7 @@ public final class RefactoringSessionTransformer {
 		final NamedNodeMap map= node.getAttributes();
 		if (map != null) {
 			Collections.sort(list, new AttributeComparator());
-			for (final Iterator<Attr> iterator= list.iterator(); iterator.hasNext();) {
-				final Attr attribute= iterator.next();
+			for (Attr attribute : list) {
 				map.setNamedItem(attribute);
 			}
 		}
@@ -139,9 +136,7 @@ public final class RefactoringSessionTransformer {
 		try {
 			if (fDocument == null)
 				fDocument= DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-		} catch (ParserConfigurationException exception) {
-			throw new CoreException(new Status(IStatus.ERROR, RefactoringCorePlugin.getPluginId(), IRefactoringCoreStatusCodes.REFACTORING_HISTORY_IO_ERROR, exception.getLocalizedMessage(), null));
-		} catch (FactoryConfigurationError exception) {
+		} catch (ParserConfigurationException | FactoryConfigurationError exception) {
 			throw new CoreException(new Status(IStatus.ERROR, RefactoringCorePlugin.getPluginId(), IRefactoringCoreStatusCodes.REFACTORING_HISTORY_IO_ERROR, exception.getLocalizedMessage(), null));
 		}
 		if (fRefactoring == null) {

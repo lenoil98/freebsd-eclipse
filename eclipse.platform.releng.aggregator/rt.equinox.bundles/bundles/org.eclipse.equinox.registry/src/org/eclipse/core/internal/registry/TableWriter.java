@@ -14,6 +14,7 @@
 package org.eclipse.core.internal.registry;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
 import org.eclipse.core.runtime.*;
@@ -143,8 +144,8 @@ public class TableWriter {
 	private void saveExtensionRegistry(long timestamp) throws IOException {
 		ExtensionPointHandle[] points = objectManager.getExtensionPointsHandles();
 		offsets = new OffsetTable(objectManager.getNextId());
-		for (int i = 0; i < points.length; i++) {
-			saveExtensionPoint(points[i]);
+		for (ExtensionPointHandle point : points) {
+			saveExtensionPoint(point);
 		}
 		saveOrphans();
 		saveContributions(objectManager.getContributions());
@@ -162,25 +163,27 @@ public class TableWriter {
 
 		// get count of contributions that will be cached
 		int cacheSize = 0;
-		for (int i = 0; i < newElements.length; i++) {
-			if (((Contribution) newElements[i]).shouldPersist())
+		for (KeyedElement newElement : newElements) {
+			if (((Contribution) newElement).shouldPersist()) {
 				cacheSize++;
+			}
 		}
-		for (int i = 0; i < formerElements.length; i++) {
-			if (((Contribution) formerElements[i]).shouldPersist())
+		for (KeyedElement formerElement : formerElements) {
+			if (((Contribution) formerElement).shouldPersist()) {
 				cacheSize++;
+			}
 		}
 		outputNamespace.writeInt(cacheSize);
 
-		for (int i = 0; i < newElements.length; i++) {
-			Contribution element = (Contribution) newElements[i];
+		for (KeyedElement newElement : newElements) {
+			Contribution element = (Contribution) newElement;
 			if (element.shouldPersist()) {
 				writeStringOrNull(element.getContributorId(), outputNamespace);
 				saveArray(filterContributionChildren(element), outputNamespace);
 			}
 		}
-		for (int i = 0; i < formerElements.length; i++) {
-			Contribution element = (Contribution) formerElements[i];
+		for (KeyedElement formerElement : formerElements) {
+			Contribution element = (Contribution) formerElement;
 			if (element.shouldPersist()) {
 				writeStringOrNull(element.getContributorId(), outputNamespace);
 				saveArray(filterContributionChildren(element), outputNamespace);
@@ -211,8 +214,8 @@ public class TableWriter {
 
 		KeyedElement[] cachedElements = new KeyedElement[elements.length];
 		int cacheSize = 0;
-		for (int i = 0; i < elements.length; i++) {
-			RegistryIndexElement element = (RegistryIndexElement) elements[i];
+		for (KeyedElement e : elements) {
+			RegistryIndexElement element = (RegistryIndexElement) e;
 			int[] extensionPoints = filter(element.getExtensionPoints());
 			int[] extensions = filter(element.getExtensions());
 			if (extensionPoints.length == 0 && extensions.length == 0)
@@ -241,8 +244,8 @@ public class TableWriter {
 		Collection<?> entries = contributors.values();
 		outputContributors.writeInt(entries.size());
 
-		for (Iterator<?> i = entries.iterator(); i.hasNext();) {
-			RegistryContributor contributor = (RegistryContributor) i.next();
+		for (Object entry : entries) {
+			RegistryContributor contributor = (RegistryContributor) entry;
 			writeStringOrNull(contributor.getActualId(), outputContributors);
 			writeStringOrNull(contributor.getActualName(), outputContributors);
 			writeStringOrNull(contributor.getId(), outputContributors);
@@ -288,8 +291,8 @@ public class TableWriter {
 			return;
 		}
 		out.writeInt(array.length);
-		for (int i = 0; i < array.length; i++) {
-			out.writeInt(array[i]);
+		for (int element : array) {
+			out.writeInt(element);
 		}
 	}
 
@@ -371,21 +374,21 @@ public class TableWriter {
 		}
 
 		ConfigurationElementHandle[] childrenCEs = (ConfigurationElementHandle[]) element.getChildren();
-		for (int i = 0; i < childrenCEs.length; i++) {
-			saveConfigurationElement(childrenCEs[i], outputStream, extraOutputStream, depth + 1);
+		for (ConfigurationElementHandle childrenCE : childrenCEs) {
+			saveConfigurationElement(childrenCE, outputStream, extraOutputStream, depth + 1);
 		}
 
 	}
 
 	private void saveExtensions(IExtension[] exts, DataOutputStream outputStream) throws IOException {
-		for (int i = 0; i < exts.length; i++) {
-			saveExtension((ExtensionHandle) exts[i], outputStream);
+		for (IExtension ext : exts) {
+			saveExtension((ExtensionHandle) ext, outputStream);
 		}
-
-		for (int i = 0; i < exts.length; i++) {
-			if (!((ExtensionHandle) exts[i]).shouldPersist())
+		for (IExtension ext : exts) {
+			if (!((ExtensionHandle) ext).shouldPersist()) {
 				continue;
-			IConfigurationElement[] ces = exts[i].getConfigurationElements();
+			}
+			IConfigurationElement[] ces = ext.getConfigurationElements();
 			int countCElements = 0;
 			boolean[] save = new boolean[ces.length];
 			for (int j = 0; j < ces.length; j++) {
@@ -421,7 +424,7 @@ public class TableWriter {
 		if (string == null)
 			out.writeByte(TableReader.NULL);
 		else {
-			byte[] data = string.getBytes(TableReader.UTF_8);
+			byte[] data = string.getBytes(StandardCharsets.UTF_8);
 			if (data.length > 65535) {
 				out.writeByte(TableReader.LOBJECT);
 				out.writeInt(data.length);
@@ -436,8 +439,7 @@ public class TableWriter {
 	private void saveOrphans() throws IOException {
 		Map<String, int[]> orphans = objectManager.getOrphanExtensions();
 		Map<String, int[]> filteredOrphans = new HashMap<>();
-		for (Iterator<Entry<String, int[]>> iter = orphans.entrySet().iterator(); iter.hasNext();) {
-			Entry<String, int[]> entry = iter.next();
+		for (Entry<String, int[]> entry : orphans.entrySet()) {
 			int[] filteredValue = filter(entry.getValue());
 			if (filteredValue.length != 0)
 				filteredOrphans.put(entry.getKey(), filteredValue);
@@ -446,13 +448,11 @@ public class TableWriter {
 		DataOutputStream outputOrphan = new DataOutputStream(new BufferedOutputStream(fosOrphan));
 		outputOrphan.writeInt(filteredOrphans.size());
 		Set<Entry<String, int[]>> elements = filteredOrphans.entrySet();
-		for (Iterator<Entry<String, int[]>> iter = elements.iterator(); iter.hasNext();) {
-			Entry<String, int[]> entry = iter.next();
+		for (Entry<String, int[]> entry : elements) {
 			outputOrphan.writeUTF(entry.getKey());
 			saveArray(entry.getValue(), outputOrphan);
 		}
-		for (Iterator<Entry<String, int[]>> iter = elements.iterator(); iter.hasNext();) {
-			Entry<String, int[]> entry = iter.next();
+		for (Entry<String, int[]> entry : elements) {
 			mainOutput.writeInt(entry.getValue().length);
 			saveExtensions((IExtension[]) objectManager.getHandles(entry.getValue(), RegistryObjectManager.EXTENSION), mainOutput);
 		}

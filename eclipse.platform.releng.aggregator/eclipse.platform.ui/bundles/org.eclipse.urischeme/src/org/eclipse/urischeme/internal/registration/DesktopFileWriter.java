@@ -30,7 +30,7 @@ import java.util.function.Function;
  */
 public class DesktopFileWriter {
 
-	private static final String LINE_SEPARATOR = System.getProperty("line.separator"); //$NON-NLS-1$
+	private static final String LINE_SEPARATOR = System.lineSeparator();
 	private static final String EQUAL_SIGN = "="; //$NON-NLS-1$
 	private static final String KEY_MIME_TYPE = "MimeType"; //$NON-NLS-1$
 	private static final String KEY_EXEC = "Exec"; //$NON-NLS-1$
@@ -144,15 +144,11 @@ public class DesktopFileWriter {
 
 		addUriPlaceholderToExecProperty();
 
-		Function<Entry<String, String>, String> toList = new Function<Map.Entry<String, String>, String>() {
-
-			@Override
-			public String apply(Entry<String, String> e) {
-				if (e.getValue() == null) {
-					return e.getKey();
-				}
-				return String.join(EQUAL_SIGN, e.getKey(), e.getValue());
+		Function<Entry<String, String>, String> toList = (Entry<String, String> e) -> {
+			if (e.getValue() == null) {
+				return e.getKey();
 			}
+			return String.join(EQUAL_SIGN, e.getKey(), e.getValue());
 		};
 		String result = this.properties.entrySet().stream() //
 				.map(toList) //
@@ -163,7 +159,7 @@ public class DesktopFileWriter {
 
 	/**
 	 * Returns the minimal content for a .desktop file needed for registering mime
-	 * types in Linux.<br />
+	 * types in Linux.<br>
 	 *
 	 * The caller can call {@link #DesktopFileWriter(List)} afterwards to create an
 	 * instance.

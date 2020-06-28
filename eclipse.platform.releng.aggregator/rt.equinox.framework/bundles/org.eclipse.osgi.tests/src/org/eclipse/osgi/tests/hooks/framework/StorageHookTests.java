@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2017 IBM Corporation and others.
+ * Copyright (c) 2013, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,8 +13,11 @@
  *******************************************************************************/
 package org.eclipse.osgi.tests.hooks.framework;
 
+import static org.eclipse.osgi.tests.bundles.AbstractBundleTests.stop;
+import static org.eclipse.osgi.tests.bundles.AbstractBundleTests.stopQuietly;
 import static org.junit.Assert.assertNotEquals;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.net.URL;
 import java.util.HashMap;
@@ -25,12 +28,14 @@ import org.eclipse.osgi.internal.hookregistry.HookRegistry;
 import org.eclipse.osgi.tests.OSGiTestsActivator;
 import org.eclipse.osgi.tests.bundles.SystemBundleTests;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
+import org.osgi.framework.namespace.BundleNamespace;
+import org.osgi.framework.wiring.BundleCapability;
 import org.osgi.framework.wiring.BundleRevision;
 import org.osgi.resource.Capability;
+import org.osgi.service.packageadmin.PackageAdmin;
 
 public class StorageHookTests extends AbstractFrameworkHookTests {
 	private static final String TEST_BUNDLE = "test";
@@ -43,14 +48,17 @@ public class StorageHookTests extends AbstractFrameworkHookTests {
 	private static final String HOOK_CONFIGURATOR_FIELD_VALIDATE_CALLED = "validateCalled";
 	private static final String HOOK_CONFIGURATOR_FIELD_DELETING_CALLED = "deletingGenerationCalled";
 	private static final String HOOK_CONFIGURATOR_FIELD_ADAPT_MANIFEST = "adaptManifest";
+	private static final String HOOK_CONFIGURATOR_FIELD_ADAPT_CAPABILITY_ATTRIBUTE = "adaptCapabilityAttribute";
 	private static final String HOOK_CONFIGURATOR_FIELD_REPLACE_BUILDER = "replaceModuleBuilder";
+	private static final String HOOK_CONFIGURATOR_FIELD_HANDLE_CONTENT = "handleContentConnection";
+	private static final String HOOK_CONFIGURATOR_FIELD_NULL_STORAGE_HOOK = "returnNullStorageHook";
 
 	private Map<String, String> configuration;
 	private Framework framework;
 	private String location;
 
 	/*
-	 * Bundles must be discarded if a storage hook throws an 
+	 * Bundles must be discarded if a storage hook throws an
 	 * IllegalStateException during validation.
 	 */
 	public void testBundleDiscardedWhenClasspathStorageHookInvalidates() throws Exception {
@@ -193,8 +201,7 @@ public class StorageHookTests extends AbstractFrameworkHookTests {
 
 		assertNotEquals("Path of updated bundle is the same.", path1, path2);
 
-		framework.stop();
-		framework.waitForStop(5000);
+		stop(framework);
 
 		// create new framework object to test loading of persistent capability.
 		framework = createFramework(configuration);
@@ -220,15 +227,89 @@ public class StorageHookTests extends AbstractFrameworkHookTests {
 		assertEquals("Wrong BSN.", "replace", b.getSymbolicName());
 		testCaps = b.adapt(BundleRevision.class).getCapabilities("replace");
 		assertEquals("Wrong number of capabilities.", 1, testCaps.size());
+
+		setFactoryClassReplaceBuilder(false);
+		setFactoryClassAdaptCapabilityAttribute(true);
+		b.uninstall();
+		installBundle();
+		b = framework.getBundleContext().getBundle(location);
+		BundleCapability bundleCap = b.adapt(BundleRevision.class).getDeclaredCapabilities(BundleNamespace.BUNDLE_NAMESPACE).iterator().next();
+		assertEquals("Wrong attribute value", "testAttribute", bundleCap.getAttributes().get("matching.attribute"));
+		assertEquals("Wrong attribute value", "testDirective", bundleCap.getDirectives().get("matching.directive"));
 	}
 
+	@SuppressWarnings("deprecation")
 	public void testFrameworkUtilHelper() throws Exception {
 		initAndStartFramework();
 		Class<?> frameworkUtilClass = classLoader.loadClass("org.osgi.framework.FrameworkUtil");
-		Bundle b = (Bundle) frameworkUtilClass.getMethod("getBundle", Class.class).invoke(null, BundleContext.class);
+		Bundle b = (Bundle) frameworkUtilClass.getMethod("getBundle", Class.class).invoke(null, String.class);
+		assertEquals("Wrong bundle found.", framework.getBundleContext().getBundle(Constants.SYSTEM_BUNDLE_LOCATION), b);
+		PackageAdmin packageAdmin = framework.getBundleContext().getService(framework.getBundleContext().getServiceReference(PackageAdmin.class));
+		b = packageAdmin.getBundle(String.class);
 		assertEquals("Wrong bundle found.", framework.getBundleContext().getBundle(Constants.SYSTEM_BUNDLE_LOCATION), b);
 	}
 
+	public void testHandleContent() throws Exception {
+		initAndStartFramework();
+
+		// install with an empty stream, the hook will replace it will content to a real bundle
+		setFactoryClassHandleContent(true);
+		Bundle b = framework.getBundleContext().installBundle("testBundle", new ByteArrayInputStream(new byte[0]));
+		assertEquals("Wrong symbolicName", "testHandleContentConnection", b.getSymbolicName());
+		b.uninstall();
+
+		// install with no stream, the hook will supply the real content of the bundle
+		b = framework.getBundleContext().installBundle("testBundle");
+		assertEquals("Wrong symbolicName", "testHandleContentConnection", b.getSymbolicName());
+		b.uninstall();
+
+		// tell the hook to no longer handle content, the default behavior of the framework will be used
+		setFactoryClassHandleContent(false);
+		b = installBundle();
+		assertEquals("Wrong symbolicName", "test1", b.getSymbolicName());
+
+		// tell the hook to handle content again, update will update to the content supplied from the hook
+		setFactoryClassHandleContent(true);
+		b.update(new ByteArrayInputStream(new byte[0]));
+		assertEquals("Wrong symbolicName", "testHandleContentConnection", b.getSymbolicName());
+
+		// tell the hook to no longer handle content, update will go back to using content derived from the original location
+		setFactoryClassHandleContent(false);
+		b.update();
+		assertEquals("Wrong symbolicName", "test1", b.getSymbolicName());
+
+		// now update again with hook handling content
+		setFactoryClassHandleContent(true);
+		b.update();
+		assertEquals("Wrong symbolicName", "testHandleContentConnection", b.getSymbolicName());
+	}
+
+	public void testNullStorageHook() throws Exception {
+
+		initAndStartFramework();
+		File bundlesBase = new File(OSGiTestsActivator.getContext().getDataFile(getName()), "bundles");
+		bundlesBase.mkdirs();
+		String initialBundleLoc = SystemBundleTests.createBundle(bundlesBase, getName(), false, false).toURI().toString();
+		Bundle initialBundle = framework.getBundleContext().installBundle(initialBundleLoc);
+		assertNotNull("Expected to have an initial bundle.", initialBundle);
+
+		// Have storage hook factory return null StorageHook
+		setFactoryNullStorageHook(true);
+		Bundle b = installBundle();
+		assertNotNull("Expected to have a bundle after install.", b);
+		stop(framework);
+
+		// create new framework to make sure null storage hook works from persistence also.
+		framework = createFramework(configuration);
+		framework.init();
+
+		initialBundle = framework.getBundleContext().getBundle(initialBundleLoc);
+		assertNotNull("Expected to have initial bundle after restart.", initialBundle);
+		b = framework.getBundleContext().getBundle(location);
+		assertNotNull("Expected to have a bundle after restart.", b);
+	}
+
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		String loc = bundleInstaller.getBundleLocation(HOOK_CONFIGURATOR_BUNDLE);
@@ -236,13 +317,14 @@ public class StorageHookTests extends AbstractFrameworkHookTests {
 		classLoader.addURL(new URL(loc));
 		location = bundleInstaller.getBundleLocation(TEST_BUNDLE);
 		File file = OSGiTestsActivator.getContext().getDataFile(getName());
-		configuration = new HashMap<String, String>();
+		configuration = new HashMap<>();
 		configuration.put(Constants.FRAMEWORK_STORAGE, file.getAbsolutePath());
 		configuration.put(HookRegistry.PROP_HOOK_CONFIGURATORS_INCLUDE, HOOK_CONFIGURATOR_CLASS);
 		framework = createFramework(configuration);
 		resetStorageHook();
 	}
 
+	@Override
 	protected void tearDown() throws Exception {
 		stopQuietly(framework);
 		super.tearDown();
@@ -283,8 +365,8 @@ public class StorageHookTests extends AbstractFrameworkHookTests {
 		initAndStart(framework);
 	}
 
-	private void installBundle() throws Exception {
-		framework.getBundleContext().installBundle(location);
+	private Bundle installBundle() throws Exception {
+		return framework.getBundleContext().installBundle(location);
 	}
 
 	private void resetStorageHook() throws Exception {
@@ -296,6 +378,9 @@ public class StorageHookTests extends AbstractFrameworkHookTests {
 		clazz.getField(HOOK_CONFIGURATOR_FIELD_DELETING_CALLED).set(null, false);
 		clazz.getField(HOOK_CONFIGURATOR_FIELD_ADAPT_MANIFEST).set(null, false);
 		clazz.getField(HOOK_CONFIGURATOR_FIELD_FAIL_LOAD).set(null, false);
+		clazz.getField(HOOK_CONFIGURATOR_FIELD_HANDLE_CONTENT).set(null, false);
+		clazz.getField(HOOK_CONFIGURATOR_FIELD_REPLACE_BUILDER).set(null, false);
+		clazz.getField(HOOK_CONFIGURATOR_FIELD_NULL_STORAGE_HOOK).set(null, false);
 	}
 
 	private void restartFramework() throws Exception {
@@ -317,6 +402,11 @@ public class StorageHookTests extends AbstractFrameworkHookTests {
 		clazz.getField(HOOK_CONFIGURATOR_FIELD_ADAPT_MANIFEST).set(null, value);
 	}
 
+	private void setFactoryClassAdaptCapabilityAttribute(boolean value) throws Exception {
+		Class<?> clazz = classLoader.loadClass(HOOK_CONFIGURATOR_CLASS);
+		clazz.getField(HOOK_CONFIGURATOR_FIELD_ADAPT_CAPABILITY_ATTRIBUTE).set(null, value);
+	}
+
 	private void setFactoryClassReplaceBuilder(boolean value) throws Exception {
 		Class<?> clazz = classLoader.loadClass(HOOK_CONFIGURATOR_CLASS);
 		clazz.getField(HOOK_CONFIGURATOR_FIELD_REPLACE_BUILDER).set(null, value);
@@ -325,6 +415,16 @@ public class StorageHookTests extends AbstractFrameworkHookTests {
 	private void setFactoryHookFailLoad(boolean value) throws Exception {
 		Class<?> clazz = classLoader.loadClass(HOOK_CONFIGURATOR_CLASS);
 		clazz.getField(HOOK_CONFIGURATOR_FIELD_FAIL_LOAD).set(null, value);
+	}
+
+	private void setFactoryClassHandleContent(boolean value) throws Exception {
+		Class<?> clazz = classLoader.loadClass(HOOK_CONFIGURATOR_CLASS);
+		clazz.getField(HOOK_CONFIGURATOR_FIELD_HANDLE_CONTENT).set(null, value);
+	}
+
+	private void setFactoryNullStorageHook(boolean value) throws Exception {
+		Class<?> clazz = classLoader.loadClass(HOOK_CONFIGURATOR_CLASS);
+		clazz.getField(HOOK_CONFIGURATOR_FIELD_NULL_STORAGE_HOOK).set(null, value);
 	}
 
 	private void updateBundle() throws Exception {

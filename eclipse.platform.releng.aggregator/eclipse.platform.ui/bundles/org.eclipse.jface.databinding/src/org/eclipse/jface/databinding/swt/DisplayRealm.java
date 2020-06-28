@@ -15,6 +15,7 @@ package org.eclipse.jface.databinding.swt;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.swt.widgets.Display;
@@ -27,12 +28,12 @@ import org.eclipse.swt.widgets.Display;
  */
 public class DisplayRealm extends Realm {
 
-	private static List<DisplayRealm> realms = new ArrayList<DisplayRealm>();
+	private static List<DisplayRealm> realms = new ArrayList<>();
 
 	/**
 	 * Returns the realm representing the UI thread for the given display.
 	 *
-	 * @param display
+	 * @param display the display to get realm for
 	 * @return the realm representing the UI thread for the given display
 	 */
 	public static Realm getRealm(final Display display) {
@@ -80,7 +81,7 @@ public class DisplayRealm extends Realm {
 
 	@Override
 	public int hashCode() {
-		return (display == null) ? 0 : display.hashCode();
+		return Objects.hashCode(display);
 	}
 
 	@Override
@@ -92,11 +93,6 @@ public class DisplayRealm extends Realm {
 		if (getClass() != obj.getClass())
 			return false;
 		final DisplayRealm other = (DisplayRealm) obj;
-		if (display == null) {
-			if (other.display != null)
-				return false;
-		} else if (!display.equals(other.display))
-			return false;
-		return true;
+		return Objects.equals(display, other.display);
 	}
 }

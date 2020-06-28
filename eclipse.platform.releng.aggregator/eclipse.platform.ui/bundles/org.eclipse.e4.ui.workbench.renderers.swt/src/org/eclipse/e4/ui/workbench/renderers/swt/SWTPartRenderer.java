@@ -46,7 +46,7 @@ import org.eclipse.swt.widgets.Widget;
 
 public abstract class SWTPartRenderer extends AbstractPartRenderer {
 
-	private static final String ICON_URI_FOR_PART = "IconUriForPart"; //$NON-NLS-1$
+	private static final String ADORN_ICON_IMAGE_KEY = "previouslyAdorned"; //$NON-NLS-1$
 
 	private String pinURI = "platform:/plugin/org.eclipse.e4.ui.workbench.renderers.swt/icons/full/ovr16/pinned_ovr.png"; //$NON-NLS-1$
 	private Image pinImage;
@@ -67,8 +67,7 @@ public abstract class SWTPartRenderer extends AbstractPartRenderer {
 			// this is *not* the correct place for this
 			// hope that the ADD event will pick up the new part.
 			IPresentationEngine renderer = context.get(IPresentationEngine.class);
-			for (int i = 0; i < parts.size(); i++) {
-				MUIElement childME = parts.get(i);
+			for (MUIElement childME : parts) {
 				renderer.createGui(childME);
 			}
 		}
@@ -165,7 +164,7 @@ public abstract class SWTPartRenderer extends AbstractPartRenderer {
 
 	@Override
 	public void disposeWidget(MUIElement element) {
-
+		disposeAdornedImage(element);
 		if (element.getWidget() instanceof Widget) {
 			Widget curWidget = (Widget) element.getWidget();
 
@@ -240,22 +239,17 @@ public abstract class SWTPartRenderer extends AbstractPartRenderer {
 	private String getIconURI(MUILabel element) {
 		if (element instanceof MPart) {
 			MPart part = (MPart) element;
-			String iconURI = (String) part.getTransientData().get(
-					ICON_URI_FOR_PART);
-			if (iconURI != null) {
-				return iconURI;
+			String iconURI = part.getIconURI();
+
+			if (iconURI == null) {
+				MPartDescriptor desc = modelService.getPartDescriptor(part.getElementId());
+				iconURI = desc != null ? desc.getIconURI() : null;
 			}
-
-			MPartDescriptor desc = modelService.getPartDescriptor(part
-					.getElementId());
-			iconURI = desc != null && desc.getIconURI() != null ? desc
-					.getIconURI() : element.getIconURI();
-			part.getTransientData().put(ICON_URI_FOR_PART, iconURI);
-
 			return iconURI;
 		}
 		return element.getIconURI();
 	}
+
 
 	/**
 	 * @param element
@@ -263,23 +257,22 @@ public abstract class SWTPartRenderer extends AbstractPartRenderer {
 	 * @return
 	 */
 	private Image adornImage(MUIElement element, Image image) {
-		// Remove and dispose any previous adorned image
-		Image previouslyAdornedImage = (Image) element.getTransientData().get(
-				"previouslyAdorned"); //$NON-NLS-1$
-		if (previouslyAdornedImage != null
-				&& !previouslyAdornedImage.isDisposed())
-			previouslyAdornedImage.dispose();
-		element.getTransientData().remove(IPresentationEngine.ADORNMENT_PIN);
-
-		Image adornedImage = image;
-		if (element.getTags().contains(IPresentationEngine.ADORNMENT_PIN)) {
-			adornedImage = resUtils.adornImage(image, pinImage);
-			if (adornedImage != image)
-				element.getTransientData().put(
-						"previouslyAdorned", adornedImage); //$NON-NLS-1$
+		if (imageChanged()) {
+			disposeAdornedImage(element);// Need to dispose old image.If image changed
 		}
-
-		return adornedImage;
+		if (element.getTags().contains(IPresentationEngine.ADORNMENT_PIN)) {
+			Image previousImage = (Image) element.getTransientData().get(ADORN_ICON_IMAGE_KEY);
+			boolean exist = previousImage != null && !previousImage.isDisposed(); // Cached image exist
+			if (!exist) {
+				Image adornedImage = resUtils.adornImage(image, pinImage);
+				if (adornedImage != image) {
+					element.getTransientData().put(ADORN_ICON_IMAGE_KEY, adornedImage);
+				}
+				return adornedImage;
+			}
+			return previousImage;
+		}
+		return image;
 	}
 
 	/**
@@ -385,4 +378,15 @@ public abstract class SWTPartRenderer extends AbstractPartRenderer {
 		}
 	}
 
+	private void disposeAdornedImage(MUIElement element) {
+		Image previouslyAdornedImage = (Image) element.getTransientData().get(ADORN_ICON_IMAGE_KEY);
+		if (previouslyAdornedImage != null) {
+			previouslyAdornedImage.dispose();
+			previouslyAdornedImage = null;
+		}
+	}
+
+	protected boolean imageChanged() {
+		return false;
+	}
 }

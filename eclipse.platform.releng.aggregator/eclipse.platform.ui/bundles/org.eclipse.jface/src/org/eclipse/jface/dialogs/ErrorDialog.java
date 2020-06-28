@@ -134,8 +134,7 @@ public class ErrorDialog extends IconAndMessageDialog {
 	 *                    as per <code>IStatus.matches</code>
 	 * @see org.eclipse.core.runtime.IStatus#matches(int)
 	 */
-	public ErrorDialog(Shell parentShell, String dialogTitle, String message,
-			IStatus status, int displayMask) {
+	public ErrorDialog(Shell parentShell, String dialogTitle, String message, IStatus status, int displayMask) {
 		super(parentShell);
 		this.title = dialogTitle == null ? JFaceResources
 				.getString("Problem_Occurred") : //$NON-NLS-1$
@@ -172,8 +171,7 @@ public class ErrorDialog extends IconAndMessageDialog {
 	@Override
 	protected void createButtonsForButtonBar(Composite parent) {
 		// create OK and Details buttons
-		createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL,
-				true);
+		createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL, true);
 		createDetailsButton(parent);
 	}
 
@@ -366,10 +364,9 @@ public class ErrorDialog extends IconAndMessageDialog {
 	 *         button was pressed, or <code>Dialog.CANCEL</code> if this
 	 *         dialog's close window decoration or the ESC key was used.
 	 */
-	public static int openError(Shell parent, String dialogTitle,
-			String message, IStatus status) {
-		return openError(parent, dialogTitle, message, status, IStatus.OK
-				| IStatus.INFO | IStatus.WARNING | IStatus.ERROR);
+	public static int openError(Shell parent, String dialogTitle, String message, IStatus status) {
+		return openError(parent, dialogTitle, message, status,
+				IStatus.OK | IStatus.INFO | IStatus.WARNING | IStatus.ERROR);
 	}
 
 	/**
@@ -395,10 +392,8 @@ public class ErrorDialog extends IconAndMessageDialog {
 	 *         decoration or the ESC key was used.
 	 * @see org.eclipse.core.runtime.IStatus#matches(int)
 	 */
-	public static int openError(Shell parentShell, String title,
-			String message, IStatus status, int displayMask) {
-		ErrorDialog dialog = new ErrorDialog(parentShell, title, message,
-				status, displayMask);
+	public static int openError(Shell parentShell, String title, String message, IStatus status, int displayMask) {
+		ErrorDialog dialog = new ErrorDialog(parentShell, title, message, status, displayMask);
 		return dialog.open();
 	}
 
@@ -414,8 +409,7 @@ public class ErrorDialog extends IconAndMessageDialog {
 	 * @see #listContentExists()
 	 */
 	private void populateList(List listToPopulate) {
-		populateList(listToPopulate, status, 0,
-				shouldIncludeTopLevelErrorInDetails);
+		populateList(listToPopulate, status, 0, shouldIncludeTopLevelErrorInDetails);
 	}
 
 	/**
@@ -496,7 +490,7 @@ public class ErrorDialog extends IconAndMessageDialog {
 			IStatus eStatus = ce.getStatus();
 			// Only print the exception message if it is not contained in the
 			// parent message
-			if (message == null || message.indexOf(eStatus.getMessage()) == -1) {
+			if (message == null || !message.contains(eStatus.getMessage())) {
 				populateList(listToPopulate, eStatus, nesting, true);
 			}
 		}
@@ -559,7 +553,7 @@ public class ErrorDialog extends IconAndMessageDialog {
 			IStatus eStatus = ce.getStatus();
 			// Gets exception message if it is not contained in the
 			// parent message
-			if (message == null || message.indexOf(eStatus.getMessage()) == -1) {
+			if (message == null || !message.contains(eStatus.getMessage())) {
 				result |= listContentExists(eStatus, true);
 			}
 		}
@@ -757,9 +751,9 @@ public class ErrorDialog extends IconAndMessageDialog {
 		return 3;
 	}
 
-    @Override
+	@Override
 	protected boolean isResizable() {
-    	return true;
-    }
+		return true;
+	}
 
 }

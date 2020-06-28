@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2003, 2019 IBM Corporation and others.
+ * Copyright (c) 2003, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -78,7 +78,6 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 	// this internally to be Solaris.
 	private static final String INTERNAL_OS_SUNOS = "SunOS"; //$NON-NLS-1$
 	private static final String INTERNAL_OS_LINUX = "Linux"; //$NON-NLS-1$
-	private static final String INTERNAL_OS_FREEBSD = "FreeBSD"; //$NON-NLS-1$
 	private static final String INTERNAL_OS_MACOSX = "Mac OS"; //$NON-NLS-1$
 	private static final String INTERNAL_OS_AIX = "AIX"; //$NON-NLS-1$
 	private static final String INTERNAL_OS_HPUX = "HP-UX"; //$NON-NLS-1$
@@ -86,6 +85,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 	private static final String INTERNAL_OS_OS400 = "OS/400"; //$NON-NLS-1$
 	private static final String INTERNAL_OS_OS390 = "OS/390"; //$NON-NLS-1$
 	private static final String INTERNAL_OS_ZOS = "z/OS"; //$NON-NLS-1$
+	private static final String INTERNAL_OS_FREEBSD = "FreeBSD"; //$NON-NLS-1$
 	// While we recognize the i386 architecture, we change
 	// this internally to be x86.
 	private static final String INTERNAL_ARCH_I386 = "i386"; //$NON-NLS-1$
@@ -160,7 +160,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 	public static final String ECLIPSE_FRAMEWORK_VENDOR = "Eclipse"; //$NON-NLS-1$
 
 	public static final String PROP_OSGI_JAVA_PROFILE = "osgi.java.profile"; //$NON-NLS-1$
-	public static final String PROP_OSGI_JAVA_PROFILE_NAME = "osgi.java.profile.name"; //$NON-NLS-1$ 
+	public static final String PROP_OSGI_JAVA_PROFILE_NAME = "osgi.java.profile.name"; //$NON-NLS-1$
 	// OSGi java profile bootdelegation; used to indicate how the org.osgi.framework.bootdelegation
 	// property defined in the java profile should be processed, (ingnore, override, none). default is ignore
 	public static final String PROP_OSGI_JAVA_PROFILE_BOOTDELEGATION = "osgi.java.profile.bootdelegation"; //$NON-NLS-1$
@@ -186,7 +186,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 
 	public static final String PROP_ROOT_LOCALE = "equinox.root.locale"; //$NON-NLS-1$
 
-	public static final String PROP_PARENT_CLASSLOADER = "osgi.parentClassloader"; //$NON-NLS-1$	
+	public static final String PROP_PARENT_CLASSLOADER = "osgi.parentClassloader"; //$NON-NLS-1$
 	// A parent classloader type that specifies the framework classlaoder
 	public static final String PARENT_CLASSLOADER_FWK = "fwk"; //$NON-NLS-1$
 	// System property used to set the context classloader parent classloader type (ccl is the default)
@@ -223,8 +223,13 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 	public static final String PROP_MODULE_AUTO_START_ON_RESOLVE = "osgi.module.auto.start.on.resolve"; //$NON-NLS-1$
 	public static final String PROP_ALLOW_RESTRICTED_PROVIDES = "osgi.equinox.allow.restricted.provides"; //$NON-NLS-1$
 	public static final String PROP_LOG_HISTORY_MAX = "equinox.log.history.max"; //$NON-NLS-1$
+	public static final String PROP_LOG_CAPTURE_ENTRY_LOCATION = "equinox.log.capture.entry.location"; //$NON-NLS-1$
 
+	@Deprecated
 	public static final String PROP_RESOLVER_THREAD_COUNT = "equinox.resolver.thead.count"; //$NON-NLS-1$
+	public static final String PROP_EQUINOX_RESOLVER_THREAD_COUNT = "equinox.resolver.thread.count"; //$NON-NLS-1$
+	public static final String PROP_EQUINOX_START_LEVEL_THREAD_COUNT = "equinox.start.level.thread.count"; //$NON-NLS-1$
+	public static final String PROP_EQUINOX_START_LEVEL_RESTRICT_PARALLEL = "equinox.start.level.restrict.parallel"; //$NON-NLS-1$
 	public static final String PROP_RESOLVER_REVISION_BATCH_SIZE = "equinox.resolver.revision.batch.size"; //$NON-NLS-1$
 	public static final String PROP_RESOLVER_BATCH_TIMEOUT = "equinox.resolver.batch.timeout"; //$NON-NLS-1$
 
@@ -388,7 +393,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 		}
 
 		public String substituteVars(String path, boolean preserveDelimiters) {
-			StringBuffer buf = new StringBuffer(path.length());
+			StringBuilder buf = new StringBuilder(path.length());
 			StringTokenizer st = new StringTokenizer(path, VARIABLE_DELIM_STRING, true);
 			boolean varStarted = false; // indicates we are processing a var subtitute
 			String var = null; // the current var key
@@ -410,7 +415,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 								Method getenv = System.class.getMethod("getenv", new Class[] {String.class}); //$NON-NLS-1$
 								prop = (String) getenv.invoke(null, new Object[] {var});
 							} catch (Throwable t) {
-								// do nothing; 
+								// do nothing;
 								// on 1.4 VMs this throws an error
 								// on J2ME this method does not exist
 							}
@@ -680,38 +685,47 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 		return inCheckConfigurationMode;
 	}
 
+	@Override
 	public boolean inDevelopmentMode() {
 		return inDevelopmentMode;
 	}
 
+	@Override
 	public boolean inDebugMode() {
 		return debugOptions.isDebugEnabled();
 	}
 
+	@Override
 	public String[] getCommandLineArgs() {
 		return allArgs;
 	}
 
+	@Override
 	public String[] getFrameworkArgs() {
 		return frameworkArgs;
 	}
 
+	@Override
 	public String[] getNonFrameworkArgs() {
 		return appArgs;
 	}
 
+	@Override
 	public String getOSArch() {
 		return getConfiguration(PROP_OSGI_ARCH);
 	}
 
+	@Override
 	public String getNL() {
 		return getConfiguration(PROP_OSGI_NL);
 	}
 
+	@Override
 	public String getOS() {
 		return getConfiguration(PROP_OSGI_OS);
 	}
 
+	@Override
 	public String getWS() {
 		return getConfiguration(PROP_OSGI_WS);
 	}
@@ -735,7 +749,9 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 		// setup default values for known OSes if nothing was specified
 		if (osName.equals(Constants.OS_WIN32))
 			return Constants.WS_WIN32;
-		if (osName.equals(Constants.OS_LINUX) || osName.equals(Constants.OS_FREEBSD))
+		if (osName.equals(Constants.OS_LINUX))
+			return Constants.WS_GTK;
+		if (osName.equals(Constants.OS_FREEBSD))
 			return Constants.WS_GTK;
 		if (osName.equals(Constants.OS_MACOSX))
 			return Constants.WS_COCOA;
@@ -758,8 +774,6 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 		// EXCEPTION: All mappings of SunOS convert to Solaris
 		if (osName.equalsIgnoreCase(INTERNAL_OS_SUNOS))
 			return Constants.OS_SOLARIS;
-		if (osName.equalsIgnoreCase(INTERNAL_OS_FREEBSD))
-			return Constants.OS_FREEBSD;
 		if (osName.equalsIgnoreCase(INTERNAL_OS_LINUX))
 			return Constants.OS_LINUX;
 		if (osName.equalsIgnoreCase(INTERNAL_OS_QNX))
@@ -774,6 +788,8 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 			return Constants.OS_OS390;
 		if (osName.equalsIgnoreCase(INTERNAL_OS_ZOS))
 			return Constants.OS_ZOS;
+		if (osName.equalsIgnoreCase(INTERNAL_OS_FREEBSD))
+			return Constants.OS_FREEBSD;
 		// os.name on Mac OS can be either Mac OS or Mac OS X
 		if (osName.regionMatches(true, 0, INTERNAL_OS_MACOSX, 0, INTERNAL_OS_MACOSX.length()))
 			return Constants.OS_MACOSX;
@@ -941,8 +957,15 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 				setConfiguration(PROP_FRAMEWORK, externalForm);
 			}
 			if (getConfiguration(EquinoxLocations.PROP_INSTALL_AREA) == null) {
-				String filePart = getFrameworkPath(url.getPath(), true);
-				setConfiguration(EquinoxLocations.PROP_INSTALL_AREA, filePart);
+				String installArea;
+				if ("file".equals(url.getProtocol())) { //$NON-NLS-1$
+					installArea = getFrameworkPath(url.getPath(), true);
+				} else {
+					// likely not a full eclipse install, and probably not loaded out of a typical
+					// URL class loader. Just default to the user dir.
+					installArea = System.getProperty("user.dir"); //$NON-NLS-1$
+				}
+				setConfiguration(EquinoxLocations.PROP_INSTALL_AREA, installArea);
 			}
 		}
 		// always decode these properties
@@ -1020,7 +1043,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 		/*
 		 * Initializes the execution context for this run of the platform.  The context
 		 * includes information about the locale, operating system and window system.
-		 * 
+		 *
 		 * NOTE: The OS, WS, and ARCH values should never be null. The executable should
 		 * be setting these values and therefore this code path is obsolete for Eclipse
 		 * when run from the executable.
@@ -1037,7 +1060,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 		nlValue = Locale.getDefault().toString();
 		setConfiguration(PROP_OSGI_NL, nlValue);
 
-		// if the user didn't set the operating system with a command line 
+		// if the user didn't set the operating system with a command line
 		// argument then use the default.
 		String osValue = getConfiguration(PROP_OSGI_OS);
 		if (osValue == null) {
@@ -1045,7 +1068,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 			setConfiguration(PROP_OSGI_OS, osValue);
 		}
 
-		// if the user didn't set the window system with a command line 
+		// if the user didn't set the window system with a command line
 		// argument then use the default.
 		String wsValue = getConfiguration(PROP_OSGI_WS);
 		if (wsValue == null) {
@@ -1053,7 +1076,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 			setConfiguration(PROP_OSGI_WS, wsValue);
 		}
 
-		// if the user didn't set the system architecture with a command line 
+		// if the user didn't set the system architecture with a command line
 		// argument then use the default.
 		String archValue = getConfiguration(PROP_OSGI_ARCH);
 		if (archValue == null) {
@@ -1097,7 +1120,7 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 			return Integer.parseInt(value);
 		} catch (NumberFormatException e) {
 			// try up to the first non-number char
-			StringBuffer sb = new StringBuffer(value.length());
+			StringBuilder sb = new StringBuilder(value.length());
 			char[] chars = value.toCharArray();
 			for (int i = 0; i < chars.length; i++) {
 				if (!Character.isDigit(chars[i]))
@@ -1122,22 +1145,22 @@ public class EquinoxConfiguration implements EnvironmentInfo {
 	 * <p>
 	 * Converts a String to a Locale.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method takes the string format of a locale and creates the locale object from it.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method validates the input strictly. The language code must be lowercase. The country
 	 * code must be uppercase. The separator must be an underscore. The length must be correct.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method is inspired by <code>org.apache.commons.lang.LocaleUtils.toLocale(String)</code>
 	 * by fixing the parsing error for uncommon Locales like having a language and a variant code
 	 * but no country code, or a Locale that only consists of a country code.
 	 * </p>
-	 * 
+	 *
 	 * @param str
 	 *            the locale String to convert
 	 * @param defaultLocale

@@ -16,8 +16,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.filesystem.URIUtil;
 import org.eclipse.core.internal.resources.ProjectDescription;
 import org.eclipse.core.resources.*;
@@ -32,10 +30,6 @@ import org.eclipse.core.tests.resources.ResourceTest;
 public class Bug_185247_recursiveLinks extends ResourceTest {
 
 	private final List<IProject> testProjects = new ArrayList<>();
-
-	public static Test suite() {
-		return new TestSuite(Bug_185247_recursiveLinks.class);
-	}
 
 	@Override
 	protected void tearDown() throws Exception {
@@ -60,7 +54,7 @@ public class Bug_185247_recursiveLinks extends ResourceTest {
 	 *   |
 	 *   |-- directory
 	 *         |
-	 *         |-- link_current -> ./ (links "directory")
+	 *         |-- link_current -&gt; ./ (links "directory")
 	 * </pre>
 	 */
 	public void test1_linkCurrentDirectory() throws Exception {
@@ -79,7 +73,7 @@ public class Bug_185247_recursiveLinks extends ResourceTest {
 	 *   |
 	 *   |-- directory
 	 *         |
-	 *         |-- link_parent -> ../ (links "project root")
+	 *         |-- link_parent -&gt; ../ (links "project root")
 	 * </pre>
 	 */
 	public void test2_linkParentDirectory() throws Exception {
@@ -100,7 +94,7 @@ public class Bug_185247_recursiveLinks extends ResourceTest {
 	 *         |
 	 *         |-- subdirectory
 	 *              |
-	 *              |-- link_grandparent -> ../../ (links "project root")
+	 *              |-- link_grandparent -&gt; ../../ (links "project root")
 	 * </pre>
 	 */
 	public void test3_linkGrandparentDirectory() throws Exception {
@@ -123,11 +117,11 @@ public class Bug_185247_recursiveLinks extends ResourceTest {
 	 *         |
 	 *         |-- subdirectory1
 	 *         |    |
-	 *         |    |-- link_parent -> ../ (links directory)
+	 *         |    |-- link_parent -&gt; ../ (links directory)
 	 *         |
 	 *         |-- subdirectory2
 	 *              |
-	 *              |-- link_parent -> ../ (links directory)
+	 *              |-- link_parent -&gt; ../ (links directory)
 	 * </pre>
 	 */
 	public void test4_linkParentDirectoryTwice() throws Exception {
@@ -153,11 +147,11 @@ public class Bug_185247_recursiveLinks extends ResourceTest {
 	 *         |
 	 *         |-- subdirectory1
 	 *         |    |
-	 *         |    |-- link_parent -> /tmp/<random string>/bug185247recursive/test5_linkParentDirectoyTwiceWithAbsolutePath/directory
+	 *         |    |-- link_parent -&gt; /tmp/&lt;random string&gt;/bug185247recursive/test5_linkParentDirectoyTwiceWithAbsolutePath/directory
 	 *         |
 	 *         |-- subdirectory2
 	 *              |
-	 *              |-- link_parent -> /tmp/<random string>/bug185247recursive/test5_linkParentDirectoyTwiceWithAbsolutePath/directory
+	 *              |-- link_parent -&gt; /tmp/&lt;random string&gt;/bug185247recursive/test5_linkParentDirectoyTwiceWithAbsolutePath/directory
 	 * </pre>
 	 */
 	public void test5_linkParentDirectoyTwiceWithAbsolutePath() throws Exception {

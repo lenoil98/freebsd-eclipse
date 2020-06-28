@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Karsten Thoms (itemis) - Consider devmode for effective status computation
@@ -33,6 +33,7 @@ public class GenericCapability extends VersionSupplier {
 		effective = effectiveDirective == null || Constants.EFFECTIVE_RESOLVE.equals(effectiveDirective) || (Constants.EFFECTIVE_ACTIVE.equals(effectiveDirective) && developmentMode);
 	}
 
+	@Override
 	public BundleDescription getBundleDescription() {
 		return getBaseDescription().getSupplier();
 	}
@@ -41,6 +42,7 @@ public class GenericCapability extends VersionSupplier {
 		return (GenericDescription) getBaseDescription();
 	}
 
+	@Override
 	public ResolverBundle getResolverBundle() {
 		return resolverBundle;
 	}

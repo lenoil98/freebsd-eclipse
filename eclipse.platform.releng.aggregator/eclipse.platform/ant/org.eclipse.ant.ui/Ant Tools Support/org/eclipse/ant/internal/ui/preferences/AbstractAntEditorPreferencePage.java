@@ -16,17 +16,18 @@ package org.eclipse.ant.internal.ui.preferences;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.ibm.icu.text.MessageFormat;
-
 import org.eclipse.ant.internal.ui.AntUIPlugin;
-
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.jface.dialogs.DialogPage;
+import org.eclipse.jface.dialogs.IMessageProvider;
+import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -37,13 +38,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
-
-import org.eclipse.core.runtime.IStatus;
-
-import org.eclipse.jface.dialogs.DialogPage;
-import org.eclipse.jface.dialogs.IMessageProvider;
-import org.eclipse.jface.preference.PreferencePage;
-
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.PlatformUI;
@@ -69,23 +63,17 @@ public abstract class AbstractAntEditorPreferencePage extends PreferencePage imp
 	};
 
 	private Map<Text, String> fTextFields = new HashMap<>();
-	private ModifyListener fTextFieldListener = new ModifyListener() {
-		@Override
-		public void modifyText(ModifyEvent e) {
-			if (fInitialized) {
-				Text text = (Text) e.widget;
-				fOverlayStore.setValue(fTextFields.get(text), text.getText());
-			}
+	private ModifyListener fTextFieldListener = e -> {
+		if (fInitialized) {
+			Text text = (Text) e.widget;
+			fOverlayStore.setValue(fTextFields.get(text), text.getText());
 		}
 	};
 
 	private Map<Text, String[]> fNumberFields = new HashMap<>();
-	private ModifyListener fNumberFieldListener = new ModifyListener() {
-		@Override
-		public void modifyText(ModifyEvent e) {
-			if (fInitialized) {
-				numberFieldChanged((Text) e.widget);
-			}
+	private ModifyListener fNumberFieldListener = e -> {
+		if (fInitialized) {
+			numberFieldChanged((Text) e.widget);
 		}
 	};
 
@@ -97,19 +85,11 @@ public abstract class AbstractAntEditorPreferencePage extends PreferencePage imp
 
 	protected abstract OverlayPreferenceStore createOverlayStore();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.ui.IWorkbenchPreferencePage#init(org.eclipse.ui.IWorkbench)
-	 */
 	@Override
 	public void init(IWorkbench workbench) {
 		// do nothing
 	}
 
-	/*
-	 * @see org.eclipse.jface.preference.PreferencePage#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 		super.createControl(parent);
@@ -132,11 +112,6 @@ public abstract class AbstractAntEditorPreferencePage extends PreferencePage imp
 		fInitialized = true;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jface.preference.IPreferencePage#performOk()
-	 */
 	@SuppressWarnings("deprecation")
 	@Override
 	public boolean performOk() {
@@ -165,11 +140,6 @@ public abstract class AbstractAntEditorPreferencePage extends PreferencePage imp
 		return fNumberFields;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jface.preference.PreferencePage#performDefaults()
-	 */
 	@Override
 	protected void performDefaults() {
 		getOverlayStore().loadDefaults();
@@ -180,11 +150,6 @@ public abstract class AbstractAntEditorPreferencePage extends PreferencePage imp
 
 	protected abstract void handleDefaults();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jface.dialogs.IDialogPage#dispose()
-	 */
 	@Override
 	public void dispose() {
 		if (getOverlayStore() != null) {
@@ -291,8 +256,7 @@ public abstract class AbstractAntEditorPreferencePage extends PreferencePage imp
 	 */
 	private IStatus getMostSevere(List<IStatus> statusList) {
 		IStatus max = null;
-		for (int i = 0; i < statusList.size(); i++) {
-			IStatus curr = statusList.get(i);
+		for (IStatus curr : statusList) {
 			if (curr.matches(IStatus.ERROR)) {
 				return curr;
 			}
@@ -367,7 +331,7 @@ public abstract class AbstractAntEditorPreferencePage extends PreferencePage imp
 	protected String loadPreviewContentFromFile(String filename) {
 		String line;
 		String separator = System.getProperty("line.separator"); //$NON-NLS-1$
-		StringBuffer buffer = new StringBuffer(512);
+		StringBuilder buffer = new StringBuilder(512);
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(filename)));

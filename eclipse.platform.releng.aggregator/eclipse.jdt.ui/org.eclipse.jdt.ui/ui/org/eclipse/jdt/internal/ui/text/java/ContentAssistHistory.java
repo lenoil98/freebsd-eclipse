@@ -94,15 +94,12 @@ public final class ContentAssistHistory {
 				rootElement.setAttribute(ATTRIBUTE_MAX_RHS, Integer.toString(history.fMaxRHS));
 				document.appendChild(rootElement);
 
-				for (Iterator<String> leftHandSides= history.fLHSCache.keySet().iterator(); leftHandSides.hasNext();) {
-					String lhs= leftHandSides.next();
+				for (Entry<String, MRUSet<String>> entry : history.fLHSCache.entrySet()) {
+					String lhs = entry.getKey();
 					Element lhsElement= document.createElement(NODE_LHS);
 					lhsElement.setAttribute(ATTRIBUTE_NAME, lhs);
 					rootElement.appendChild(lhsElement);
-
-					MRUSet<String> rightHandSides= history.fLHSCache.get(lhs);
-					for (Iterator<String> rhsIterator= rightHandSides.iterator(); rhsIterator.hasNext();) {
-						String rhs= rhsIterator.next();
+					for (String rhs : entry.getValue()) {
 						Element rhsElement= document.createElement(NODE_RHS);
 						rhsElement.setAttribute(ATTRIBUTE_NAME, rhs);
 						lhsElement.appendChild(rhsElement);
@@ -116,9 +113,7 @@ public final class ContentAssistHistory {
 				DOMSource source = new DOMSource(document);
 
 				transformer.transform(source, result);
-			} catch (TransformerException e) {
-				throw createException(e, JavaTextMessages.ContentAssistHistory_serialize_error);
-			} catch (ParserConfigurationException e) {
+			} catch (TransformerException | ParserConfigurationException e) {
 				throw createException(e, JavaTextMessages.ContentAssistHistory_serialize_error);
 			}
 		}
@@ -129,11 +124,7 @@ public final class ContentAssistHistory {
 				DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 				parser.setErrorHandler(new DefaultHandler());
 				root = parser.parse(source).getDocumentElement();
-			} catch (SAXException e) {
-				throw createException(e, JavaTextMessages.ContentAssistHistory_deserialize_error);
-			} catch (ParserConfigurationException e) {
-				throw createException(e, JavaTextMessages.ContentAssistHistory_deserialize_error);
-			} catch (IOException e) {
+			} catch (SAXException | ParserConfigurationException | IOException e) {
 				throw createException(e, JavaTextMessages.ContentAssistHistory_deserialize_error);
 			}
 
@@ -380,10 +371,10 @@ public final class ContentAssistHistory {
 			ITypeHierarchy hierarchy= rhs.newSupertypeHierarchy(getProgressMonitor());
 			if (hierarchy.contains(lhs)) {
 				// TODO remember for every member of the LHS hierarchy or not? Yes for now.
-				IType[] allLHSides= hierarchy.getAllSupertypes(lhs);
 				String rhsQualifiedName= rhs.getFullyQualifiedName();
-				for (int i= 0; i < allLHSides.length; i++)
-					rememberInternal(allLHSides[i], rhsQualifiedName);
+				for (IType lhSide : hierarchy.getAllSupertypes(lhs)) {
+					rememberInternal(lhSide, rhsQualifiedName);
+				}
 				rememberInternal(lhs, rhsQualifiedName);
 			}
 		} catch (JavaModelException x) {
@@ -422,8 +413,7 @@ public final class ContentAssistHistory {
 	 */
 	public Map<String, RHSHistory> getEntireHistory() {
 		HashMap<String, RHSHistory> map= new HashMap<>((int) (fLHSCache.size() / 0.75));
-		for ( Iterator<Entry<String, MRUSet<String>>> it= fLHSCache.entrySet().iterator(); it.hasNext();) {
-			Entry<String, MRUSet<String>> entry= it.next();
+		for (Entry<String, MRUSet<String>> entry : fLHSCache.entrySet()) {
 			String lhs= entry.getKey();
 			map.put(lhs, getHistory(lhs));
 		}

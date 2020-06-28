@@ -19,7 +19,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * Represents a directory entry in a ZipBundleFile.  This object is used to 
+ * Represents a directory entry in a ZipBundleFile.  This object is used to
  * reference a directory entry in a ZipBundleFile when the directory entries are
  * not included in the zip file.
  */
@@ -40,25 +40,30 @@ public class DirZipBundleEntry extends BundleEntry {
 	}
 
 	/**
-	 * @throws IOException  
+	 * @throws IOException
 	 */
+	@Override
 	public InputStream getInputStream() throws IOException {
 		return new ByteArrayInputStream(new byte[0]);
 	}
 
+	@Override
 	public long getSize() {
 		return 0;
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
 
+	@Override
 	public long getTime() {
 		return 0;
 	}
 
 	@SuppressWarnings("deprecation")
+	@Override
 	public URL getLocalURL() {
 		try {
 			return new URL("jar:" + bundleFile.basefile.toURL() + "!/" + name); //$NON-NLS-1$ //$NON-NLS-2$
@@ -69,6 +74,7 @@ public class DirZipBundleEntry extends BundleEntry {
 	}
 
 	@SuppressWarnings("deprecation")
+	@Override
 	public URL getFileURL() {
 		try {
 			return bundleFile.extractDirectory(name).toURL();

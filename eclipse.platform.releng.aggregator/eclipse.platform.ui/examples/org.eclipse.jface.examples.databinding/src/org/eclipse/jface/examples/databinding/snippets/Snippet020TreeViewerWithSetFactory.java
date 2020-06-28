@@ -21,15 +21,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.core.databinding.DataBindingContext;
-import org.eclipse.core.databinding.beans.BeanProperties;
+import org.eclipse.core.databinding.beans.typed.BeanProperties;
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.core.databinding.observable.value.ComputedValue;
 import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.observable.value.WritableValue;
 import org.eclipse.jface.databinding.swt.DisplayRealm;
-import org.eclipse.jface.databinding.swt.WidgetProperties;
+import org.eclipse.jface.databinding.swt.typed.WidgetProperties;
 import org.eclipse.jface.databinding.viewers.ViewerSupport;
-import org.eclipse.jface.databinding.viewers.ViewersObservables;
+import org.eclipse.jface.databinding.viewers.typed.ViewerProperties;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -53,7 +53,6 @@ public class Snippet020TreeViewerWithSetFactory {
 
 	private Button pasteButton;
 	private Button copyButton;
-	private Shell shell;
 	private Button addChildBeanButton;
 	private Button removeBeanButton;
 	private TreeViewer beanViewer;
@@ -62,45 +61,33 @@ public class Snippet020TreeViewerWithSetFactory {
 	private DataBindingContext m_bindingContext;
 
 	private Bean input = createBean("input");
-	private IObservableValue clipboard;
+	private IObservableValue<Bean> clipboard;
 	static int counter = 0;
 
 	/**
-	 * Launch the application
-	 *
-	 * @param args
+	 * Launch the application.
 	 */
 	public static void main(String[] args) {
 		Display display = Display.getDefault();
+
 		Realm.runWithDefault(DisplayRealm.getRealm(display), () -> {
-			try {
-				Snippet020TreeViewerWithSetFactory window = new Snippet020TreeViewerWithSetFactory();
-				window.open();
-			} catch (Exception e) {
-				e.printStackTrace();
+			Shell shell = new Snippet020TreeViewerWithSetFactory().createShell();
+
+			while (!shell.isDisposed()) {
+				if (!display.readAndDispatch()) {
+					display.sleep();
+				}
 			}
 		});
+
+		display.dispose();
 	}
 
 	/**
-	 * Open the window
+	 * Create contents of the window.
 	 */
-	public void open() {
-		final Display display = Display.getDefault();
-		createContents();
-		shell.open();
-		shell.layout();
-		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
-		}
-	}
-
-	/**
-	 * Create contents of the window
-	 */
-	protected void createContents() {
-		shell = new Shell();
+	protected Shell createShell() {
+		Shell shell = new Shell();
 		final GridLayout gridLayout_1 = new GridLayout();
 		gridLayout_1.numColumns = 2;
 		shell.setLayout(gridLayout_1);
@@ -115,15 +102,13 @@ public class Snippet020TreeViewerWithSetFactory {
 		rowLayout.marginBottom = 0;
 		rowLayout.pack = false;
 		group.setLayout(rowLayout);
-		group
-				.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false,
-						2, 1));
+		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 2, 1));
 
 		final Button addRootButton = new Button(group, SWT.NONE);
 		addRootButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				Set set = input.getSet();
+				Set<Bean> set = input.getSet();
 				Bean root = createBean("root");
 				set.add(root);
 				input.setSet(set);
@@ -140,11 +125,12 @@ public class Snippet020TreeViewerWithSetFactory {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
 				Bean parent = getSelectedBean();
-				Set set = new HashSet(parent.getSet());
+				Set<Bean> set = new HashSet<>(parent.getSet());
 				Bean child = createBean("child" + (counter++));
 				set.add(child);
 				parent.setSet(set);
 
+				// TODO: Remove?
 				// beanViewer.setSelection(new StructuredSelection(parent));
 				// beanText.selectAll();
 				// beanText.setFocus();
@@ -160,12 +146,13 @@ public class Snippet020TreeViewerWithSetFactory {
 				Bean bean = (Bean) selectedItem.getData();
 				TreeItem parentItem = selectedItem.getParentItem();
 				Bean parent;
-				if (parentItem == null)
+				if (parentItem == null) {
 					parent = input;
-				else
+				} else {
 					parent = (Bean) parentItem.getData();
+				}
 
-				Set set = new HashSet(parent.getSet());
+				Set<Bean> set = new HashSet<>(parent.getSet());
 				set.remove(bean);
 				parent.setSet(set);
 			}
@@ -185,14 +172,16 @@ public class Snippet020TreeViewerWithSetFactory {
 		pasteButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				Bean copy = (Bean) clipboard.getValue();
-				if (copy == null)
+				Bean copy = clipboard.getValue();
+				if (copy == null) {
 					return;
+				}
 				Bean parent = getSelectedBean();
-				if (parent == null)
+				if (parent == null) {
 					parent = input;
+				}
 
-				Set set = new HashSet(parent.getSet());
+				Set<Bean> set = new HashSet<>(parent.getSet());
 				set.add(copy);
 				parent.setSet(set);
 
@@ -222,12 +211,15 @@ public class Snippet020TreeViewerWithSetFactory {
 		itemNameLabel.setText("Item Name");
 
 		beanText = new Text(shell, SWT.BORDER);
-		final GridData gd_beanValue = new GridData(SWT.FILL, SWT.CENTER, true,
-				false);
+		final GridData gd_beanValue = new GridData(SWT.FILL, SWT.CENTER, true, false);
 		beanText.setLayoutData(gd_beanValue);
 		m_bindingContext = initDataBindings();
 		//
 		initExtraBindings(m_bindingContext);
+
+		shell.open();
+
+		return shell;
 	}
 
 	private static Bean createBean(String name) {
@@ -235,65 +227,51 @@ public class Snippet020TreeViewerWithSetFactory {
 	}
 
 	protected DataBindingContext initDataBindings() {
-		IObservableValue treeViewerSelectionObserveSelection = ViewersObservables
-				.observeSingleSelection(beanViewer);
-		IObservableValue textTextObserveWidget = WidgetProperties.text(SWT.Modify).observe(beanText);
-		IObservableValue treeViewerValueObserveDetailValue = BeanProperties.value(
-				(Class) treeViewerSelectionObserveSelection.getValueType(), "text", String.class)
-				.observeDetail(treeViewerSelectionObserveSelection);
+		IObservableValue<Bean> treeViewerSelectionObserveSelection = ViewerProperties.singleSelection(Bean.class)
+				.observe(beanViewer);
+		IObservableValue<String> textTextObserveWidget = WidgetProperties.text(SWT.Modify).observe(beanText);
+		IObservableValue<String> treeViewerValueObserveDetailValue = BeanProperties
+				.value(Bean.class, "text", String.class).observeDetail(treeViewerSelectionObserveSelection);
 
 		DataBindingContext bindingContext = new DataBindingContext();
 
-		bindingContext.bindValue(textTextObserveWidget,
-				treeViewerValueObserveDetailValue);
+		bindingContext.bindValue(textTextObserveWidget, treeViewerValueObserveDetailValue);
 
 		return bindingContext;
 	}
 
 	private Bean getSelectedBean() {
 		IStructuredSelection selection = beanViewer.getStructuredSelection();
-		if (selection.isEmpty())
+		if (selection.isEmpty()) {
 			return null;
+		}
 		return (Bean) selection.getFirstElement();
 	}
 
-	private void initExtraBindings(DataBindingContext dbc) {
-		final IObservableValue beanViewerSelection = ViewersObservables
-				.observeSingleSelection(beanViewer);
-		IObservableValue beanSelected = new ComputedValue(Boolean.TYPE) {
-			@Override
-			protected Object calculate() {
-				return Boolean.valueOf(beanViewerSelection.getValue() != null);
-			}
-		};
-		dbc.bindValue(WidgetProperties.enabled().observe(addChildBeanButton),
-				beanSelected);
-		dbc.bindValue(WidgetProperties.enabled().observe(removeBeanButton),
-				beanSelected);
+	private void initExtraBindings(DataBindingContext bindingContext) {
+		final IObservableValue<Bean> beanViewerSelection = ViewerProperties.singleSelection(Bean.class)
+				.observe(beanViewer);
+		IObservableValue<Boolean> beanSelected = ComputedValue.create(() -> beanViewerSelection.getValue() != null);
+		bindingContext.bindValue(WidgetProperties.enabled().observe(addChildBeanButton), beanSelected);
+		bindingContext.bindValue(WidgetProperties.enabled().observe(removeBeanButton), beanSelected);
 
-		clipboard = new WritableValue();
-		dbc.bindValue(WidgetProperties.enabled().observe(copyButton), beanSelected);
-		dbc.bindValue(WidgetProperties.enabled().observe(pasteButton),
-				new ComputedValue(Boolean.TYPE) {
-					@Override
-					protected Object calculate() {
-						return Boolean.valueOf(clipboard.getValue() != null);
-					}
-				});
+		clipboard = new WritableValue<>();
+		bindingContext.bindValue(WidgetProperties.enabled().observe(copyButton), beanSelected);
+		bindingContext.bindValue(WidgetProperties.enabled().observe(pasteButton),
+				ComputedValue.create(() -> clipboard.getValue() != null));
 
-		ViewerSupport.bind(beanViewer, input, BeanProperties.set("set",
-				Bean.class), BeanProperties.value(Bean.class, "text"));
+		ViewerSupport.bind(beanViewer, input, BeanProperties.set("set", Bean.class),
+				BeanProperties.value(Bean.class, "text"));
 	}
 
 	static class Bean {
-		/* package */PropertyChangeSupport changeSupport = new PropertyChangeSupport(
-				this);
+		/* package */PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
 		private String text;
-		private Set set;
+		private Set<Bean> set;
 
 		public Bean(String text) {
 			this.text = text;
-			set = new HashSet();
+			set = new HashSet<>();
 		}
 
 		public void addPropertyChangeListener(PropertyChangeListener listener) {
@@ -309,19 +287,20 @@ public class Snippet020TreeViewerWithSetFactory {
 		}
 
 		public void setText(String value) {
-			changeSupport.firePropertyChange("text", this.text,
-					this.text = value);
+			changeSupport.firePropertyChange("text", this.text, this.text = value);
 		}
 
-		public Set getSet() {
-			if (set == null)
+		public Set<Bean> getSet() {
+			if (set == null) {
 				return null;
-			return new HashSet(set);
+			}
+			return new HashSet<>(set);
 		}
 
-		public void setSet(Set set) {
-			if (set != null)
-				set = new HashSet(set);
+		public void setSet(Set<Bean> set) {
+			if (set != null) {
+				set = new HashSet<>(set);
+			}
 			changeSupport.firePropertyChange("set", this.set, this.set = set);
 		}
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2015 IBM Corporation and others.
+ * Copyright (c) 2008, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -45,10 +45,9 @@ import org.eclipse.jdt.launching.LibraryLocation;
 import org.eclipse.osgi.util.NLS;
 
 /**
- * Helper class to parse and retrieve properties from execution environment description
- * files. An execution environment description file can be used to define attributes relevant
- * the launching of a specific JRE configuration. The format of the file is defined by
- * code>http://wiki.eclipse.org/Execution_Environment_Descriptions</code>.
+ * Helper class to parse and retrieve properties from execution environment description files. An execution environment description file can be used
+ * to define attributes relevant the launching of a specific JRE configuration. The format of the file is defined by
+ * <code>http://wiki.eclipse.org/Execution_Environment_Descriptions</code>.
  *
  * @since 3.5
  */
@@ -181,8 +180,8 @@ public final class ExecutionEnvironmentDescription {
 	private static final String EE_ARG_FILTER = "-Dee."; //$NON-NLS-1$
 
 	// Regex constants for handling the source mapping
-	private static final Character WILDCARD_SINGLE_CHAR = new Character('?');
-	private static final Character WILDCARD_MULTI_CHAR = new Character('*');
+	private static final Character WILDCARD_SINGLE_CHAR = Character.valueOf('?');
+	private static final Character WILDCARD_MULTI_CHAR = Character.valueOf('*');
 	private static final String REGEX_SPECIAL_CHARS = "+()^$.{}[]|\\"; //$NON-NLS-1$
 
 	/**
@@ -310,7 +309,7 @@ public final class ExecutionEnvironmentDescription {
 			boolean appendArgument = !key.startsWith(EE_ARG_FILTER);
 			if (appendArgument) {
 				arguments.append(key);
-				if (!value.equals("")) { //$NON-NLS-1$
+				if (!value.isEmpty()) {
 					arguments.append('=');
 					value = resolveHome(value);
 					if (value.indexOf(' ') > -1){

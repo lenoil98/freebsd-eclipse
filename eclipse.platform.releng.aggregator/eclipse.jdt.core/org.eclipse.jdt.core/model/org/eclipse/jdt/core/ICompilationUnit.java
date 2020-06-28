@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -418,11 +418,11 @@ IImportDeclaration[] getImports() throws JavaModelException;
  */
 ICompilationUnit getPrimary();
 /**
- * Returns <tt>null</tt> if this <code>ICompilationUnit</code> is the primary
+ * Returns <code>null</code> if this <code>ICompilationUnit</code> is the primary
  * working copy, or this <code>ICompilationUnit</code> is not a working copy,
  * otherwise the <code>WorkingCopyOwner</code>
- * 
- * @return <tt>null</tt> if this <code>ICompilationUnit</code> is the primary
+ *
+ * @return <code>null</code> if this <code>ICompilationUnit</code> is the primary
  * working copy, or this <code>ICompilationUnit</code> is not a working copy,
  * otherwise the <code>WorkingCopyOwner</code>
  * @since 3.0
@@ -602,7 +602,7 @@ boolean isWorkingCopy();
  * </p>
  *
  * @param astLevel either {@link #NO_AST} if no AST is wanted,
- * or the {@linkplain AST#newAST(int) AST API level} of the AST if one is wanted
+ * or the {@linkplain AST#newAST(int, boolean) AST API level} of the AST if one is wanted
  * @param forceProblemDetection boolean indicating whether problem should be
  *   recomputed even if the source hasn't changed
  * @param owner the owner of working copies that take precedence over the
@@ -671,7 +671,7 @@ CompilationUnit reconcile(int astLevel, boolean forceProblemDetection, WorkingCo
  * </p>
  *
  * @param astLevel either {@link #NO_AST} if no AST is wanted,
- * or the {@linkplain AST#newAST(int) AST API level} of the AST if one is wanted
+ * or the {@linkplain AST#newAST(int, boolean) AST API level} of the AST if one is wanted
  * @param forceProblemDetection boolean indicating whether problem should be
  *   recomputed even if the source hasn't changed
  * @param enableStatementsRecovery if <code>true</code> statements recovery is enabled.
@@ -736,7 +736,6 @@ CompilationUnit reconcile(int astLevel, boolean forceProblemDetection, boolean e
  *   <li>the requested level of AST API is not supported</li>
  *   <li>the working copy was already consistent and problem detection is not forced</li>
  * </ul>
- * </p>
  *
  * <p>
  * If statements recovery is enabled by passing the {@link #ENABLE_STATEMENTS_RECOVERY} bit in the given reconcile flag
@@ -751,7 +750,7 @@ CompilationUnit reconcile(int astLevel, boolean forceProblemDetection, boolean e
  * </p>
  *
  * @param astLevel either {@link #NO_AST} if no AST is wanted,
- * or the {@linkplain AST#newAST(int) AST API level} of the AST if one is wanted
+ * or the {@linkplain AST#newAST(int, boolean) AST API level} of the AST if one is wanted
  * @param reconcileFlags the given reconcile flags
  * @param owner the owner of working copies that take precedence over the
  *   original compilation units, or <code>null</code> if the primary working

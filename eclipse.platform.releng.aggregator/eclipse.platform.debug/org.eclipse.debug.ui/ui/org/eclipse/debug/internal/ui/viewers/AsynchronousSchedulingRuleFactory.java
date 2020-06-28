@@ -43,25 +43,19 @@ public class AsynchronousSchedulingRuleFactory {
 		}
 	}
 
-   class SerialPerObjectRule implements ISchedulingRule {
+	class SerialPerObjectRule implements ISchedulingRule {
 
-    	private Object fObject = null;
+		private Object fObject = null;
 
-    	public SerialPerObjectRule(Object lock) {
-    		fObject = lock;
-    	}
+		public SerialPerObjectRule(Object lock) {
+			fObject = lock;
+		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.core.runtime.jobs.ISchedulingRule#contains(org.eclipse.core.runtime.jobs.ISchedulingRule)
-		 */
 		@Override
 		public boolean contains(ISchedulingRule rule) {
 			return rule == this;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.core.runtime.jobs.ISchedulingRule#isConflicting(org.eclipse.core.runtime.jobs.ISchedulingRule)
-		 */
 		@Override
 		public boolean isConflicting(ISchedulingRule rule) {
 			if (rule instanceof SerialPerObjectRule) {
@@ -71,7 +65,7 @@ public class AsynchronousSchedulingRuleFactory {
 			return false;
 		}
 
-    }
+	}
 
 	private AsynchronousSchedulingRuleFactory() {}
 

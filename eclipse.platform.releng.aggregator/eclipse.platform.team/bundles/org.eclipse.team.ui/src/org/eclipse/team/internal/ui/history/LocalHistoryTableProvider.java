@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.team.internal.ui.history;
 
+import java.text.DateFormat;
 import java.util.Date;
 
 import org.eclipse.compare.IModificationDate;
@@ -49,8 +50,6 @@ import org.eclipse.team.internal.ui.TeamUIMessages;
 import org.eclipse.team.internal.ui.TeamUIPlugin;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.themes.ITheme;
-
-import com.ibm.icu.text.DateFormat;
 
 public class LocalHistoryTableProvider {
 	/* private */ static final int COL_DATE = 0;
@@ -164,8 +163,8 @@ public class LocalHistoryTableProvider {
 			if (currentRevisionFont == null) {
 				Font defaultFont = JFaceResources.getDefaultFont();
 				FontData[] data = defaultFont.getFontData();
-				for (int i = 0; i < data.length; i++) {
-					data[i].setStyle(SWT.BOLD);
+				for (FontData d : data) {
+					d.setStyle(SWT.BOLD);
 				}
 				currentRevisionFont = new Font(viewer.getTree().getDisplay(), data);
 			}
@@ -208,9 +207,8 @@ public class LocalHistoryTableProvider {
 			if (date1 == -1 || date2 == -1) {
 				result = super.compare(compareViewer, o1, o2);
 			} else {
-				int[] columnSortOrder = SORT_ORDERS_BY_COLUMN[columnNumber];
-				for (int i = 0; i < columnSortOrder.length; ++i) {
-					result = compareColumnValue(columnSortOrder[i], date1, date2);
+				for (int columnSortOrder : SORT_ORDERS_BY_COLUMN[columnNumber]) {
+					result = compareColumnValue(columnSortOrder, date1, date2);
 					if (result != 0)
 						break;
 				}

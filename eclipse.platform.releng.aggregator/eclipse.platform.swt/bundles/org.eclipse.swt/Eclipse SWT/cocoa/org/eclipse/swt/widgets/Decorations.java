@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -403,6 +403,9 @@ void releaseChildren (boolean destroy) {
 		menuBar = null;
 	}
 	Display display = this.display;
+	if (display == null || display.isDisposed()) {
+		return;
+	}
 	super.releaseChildren (destroy);
 	Menu [] menus = display.getMenus (this);
 	if (menus != null) {
@@ -440,7 +443,7 @@ void reskinChildren (int flags) {
 boolean restoreFocus () {
 	if (savedFocus != null && savedFocus.isDisposed ()) savedFocus = null;
 	if (savedFocus == null) return false;
-	return savedFocus.forceFocus ();
+	return savedFocus.setFocus ();
 }
 
 void saveFocus () {
@@ -634,7 +637,7 @@ public void setMenuBar (Menu menu) {
  * always. This should be avoided if possible.
  * </p>
  *
- * @param minimized the new maximized state
+ * @param minimized the new minimized state
  *
  * @exception SWTException <ul>
  *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
@@ -688,16 +691,16 @@ void sort (Image [] images) {
 	for (int gap=length/2; gap>0; gap/=2) {
 		for (int i=gap; i<length; i++) {
 			for (int j=i-gap; j>=0; j-=gap) {
-		   		if (compare (datas [j], datas [j + gap]) >= 0) {
+				if (compare (datas [j], datas [j + gap]) >= 0) {
 					Image swap = images [j];
 					images [j] = images [j + gap];
 					images [j + gap] = swap;
 					ImageData swapData = datas [j];
 					datas [j] = datas [j + gap];
 					datas [j + gap] = swapData;
-		   		}
-	    	}
-	    }
+				}
+			}
+		}
 	}
 }
 

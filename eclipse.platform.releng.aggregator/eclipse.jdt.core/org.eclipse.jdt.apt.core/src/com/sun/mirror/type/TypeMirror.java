@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2004, Sun Microsystems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -15,7 +15,7 @@
  *     * Neither the name of the Sun Microsystems, Inc. nor the names of
  *       its contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -41,7 +41,7 @@ import com.sun.mirror.util.TypeVisitor;
  * Represents a type in the Java programming language.
  * Types include primitive types, class and interface types, array
  * types, and type variables.  Wildcard type arguments, and the
- * pseudo-type representing the type of <tt>void</tt>, are represented
+ * pseudo-type representing the type of <code>void</code>, are represented
  * by type mirrors as well.
  *
  * <p> Types may be compared using the utility methods in
@@ -73,7 +73,7 @@ public interface TypeMirror {
      * Tests whether two types represent the same type.
      *
      * @param obj the object to be compared with this type
-     * @return <tt>true</tt> if the specified object represents the same
+     * @return <code>true</code> if the specified object represents the same
      *		type as this.
      */
     @Override

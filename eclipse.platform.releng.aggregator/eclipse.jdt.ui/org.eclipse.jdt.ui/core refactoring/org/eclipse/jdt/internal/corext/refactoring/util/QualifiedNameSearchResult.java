@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.corext.refactoring.util;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,14 +58,14 @@ public class QualifiedNameSearchResult {
 
 	public Change getSingleChange(IFile[] alreadyTouchedFiles) {
 		Collection<TextChange> values= fChanges.values();
-		if (values.size() == 0)
+		if (values.isEmpty())
 			return null;
 
 		CompositeChange result= new CompositeChange(RefactoringCoreMessages.QualifiedNameSearchResult_change_name);
 		result.markAsSynthetic();
 		List<IFile> files= Arrays.asList(alreadyTouchedFiles);
-		for (Iterator<TextChange> iter= values.iterator(); iter.hasNext();) {
-			TextFileChange change= (TextFileChange)iter.next();
+		for (TextChange textChange : values) {
+			TextFileChange change= (TextFileChange)textChange;
 			if (!files.contains(change.getFile())) {
 				result.add(change);
 			}

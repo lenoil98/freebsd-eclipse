@@ -151,21 +151,21 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 			final ITypeBinding binding= node.resolveTypeBinding();
 			if (binding != null && binding.isTypeVariable()) {
 				String name= null;
-				for (int index= 0; index < fMapping.length; index++) {
+				for (TypeVariableMaplet mapping : fMapping) {
 					name= binding.getName();
-					if (fMapping[index].getSourceName().equals(name) && node.getIdentifier().equals(name)) {
+					if (mapping.getSourceName().equals(name) && node.getIdentifier().equals(name)) {
 						final MethodDeclaration declaration= ASTNodes.getParent(node, MethodDeclaration.class);
 						if (declaration != null) {
 							final IMethodBinding method= declaration.resolveBinding();
 							if (method != null) {
-								final ITypeBinding[] bindings= method.getTypeParameters();
-								for (int offset= 0; offset < bindings.length; offset++) {
-									if (bindings[offset].isEqualTo(binding))
+								for (ITypeBinding b : method.getTypeParameters()) {
+									if (b.isEqualTo(binding)) {
 										return true;
+									}
 								}
 							}
 						}
-						fRewrite.set(node, SimpleName.IDENTIFIER_PROPERTY, fMapping[index].getTargetName(), null);
+						fRewrite.set(node, SimpleName.IDENTIFIER_PROPERTY, mapping.getTargetName(), null);
 					}
 				}
 			}
@@ -174,25 +174,21 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 	}
 
 	protected static boolean areAllFragmentsDeleted(final FieldDeclaration declaration, final List<ASTNode> declarationNodes) {
-		for (final Iterator<VariableDeclarationFragment> iterator= declaration.fragments().iterator(); iterator.hasNext();) {
-			if (!declarationNodes.contains(iterator.next()))
-				return false;
-		}
-		return true;
+		return declarationNodes.containsAll(declaration.fragments());
 	}
 
 	protected static RefactoringStatus checkProjectCompliance(CompilationUnitRewrite sourceRewriter, IType destination, IMember[] members) {
 		RefactoringStatus status= new RefactoringStatus();
 		if (!JavaModelUtil.is50OrHigher(destination.getJavaProject())) {
-			for (int index= 0; index < members.length; index++) {
+			for (IMember member : members) {
 				try {
-					BodyDeclaration decl= ASTNodeSearchUtil.getBodyDeclarationNode(members[index], sourceRewriter.getRoot());
+					BodyDeclaration decl= ASTNodeSearchUtil.getBodyDeclarationNode(member, sourceRewriter.getRoot());
 					if (decl != null) {
 						for (final Iterator<IExtendedModifier> iterator= decl.modifiers().iterator(); iterator.hasNext();) {
 							boolean reported= false;
 							final IExtendedModifier modifier= iterator.next();
 							if (!reported && modifier.isAnnotation()) {
-								status.merge(RefactoringStatus.createErrorStatus(Messages.format(RefactoringCoreMessages.PullUpRefactoring_incompatible_langauge_constructs, new String[] { JavaElementLabels.getTextLabel(members[index], JavaElementLabels.ALL_FULLY_QUALIFIED), JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_DEFAULT)}), JavaStatusContext.create(members[index])));
+								status.merge(RefactoringStatus.createErrorStatus(Messages.format(RefactoringCoreMessages.PullUpRefactoring_incompatible_langauge_constructs, new String[]{JavaElementLabels.getTextLabel(member, JavaElementLabels.ALL_FULLY_QUALIFIED), JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_DEFAULT)}), JavaStatusContext.create(member)));
 								reported= true;
 							}
 						}
@@ -200,11 +196,12 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 				} catch (JavaModelException exception) {
 					JavaPlugin.log(exception);
 				}
-				if (members[index] instanceof IMethod) {
-					final IMethod method= (IMethod) members[index];
+				if (member instanceof IMethod) {
+					final IMethod method= (IMethod) member;
 					try {
-						if (Flags.isVarargs(method.getFlags()))
-							status.merge(RefactoringStatus.createErrorStatus(Messages.format(RefactoringCoreMessages.PullUpRefactoring_incompatible_language_constructs1, new String[] { JavaElementLabels.getTextLabel(members[index], JavaElementLabels.ALL_FULLY_QUALIFIED), JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_DEFAULT)}), JavaStatusContext.create(members[index])));
+						if (Flags.isVarargs(method.getFlags())) {
+							status.merge(RefactoringStatus.createErrorStatus(Messages.format(RefactoringCoreMessages.PullUpRefactoring_incompatible_language_constructs1, new String[]{JavaElementLabels.getTextLabel(member, JavaElementLabels.ALL_FULLY_QUALIFIED), JavaElementLabels.getTextLabel(destination, JavaElementLabels.ALL_DEFAULT)}), JavaStatusContext.create(member)));
+						}
 					} catch (JavaModelException exception) {
 						JavaPlugin.log(exception);
 					}
@@ -216,20 +213,22 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 
 	protected static void copyExtraDimensions(final VariableDeclaration oldVarDeclaration, final VariableDeclaration newVarDeclaration) {
 		final AST ast= newVarDeclaration.getAST();
-		for (int index= 0, n= oldVarDeclaration.extraDimensions().size(); index < n; index++)
-			newVarDeclaration.extraDimensions().add(ASTNode.copySubtree(ast, (Dimension) oldVarDeclaration.extraDimensions().get(index)));
+		for (Object extraDimension : oldVarDeclaration.extraDimensions()) {
+			newVarDeclaration.extraDimensions().add(ASTNode.copySubtree(ast, (Dimension) extraDimension));
+		}
 	}
 
 	protected static void copyExtraDimensions(final MethodDeclaration oldMethod, final MethodDeclaration newMethod) {
 		final AST ast= newMethod.getAST();
-		for (int index= 0, n= oldMethod.extraDimensions().size(); index < n; index++)
-			newMethod.extraDimensions().add(ASTNode.copySubtree(ast, (Dimension) oldMethod.extraDimensions().get(index)));
+		for (Object extraDimension : oldMethod.extraDimensions()) {
+			newMethod.extraDimensions().add(ASTNode.copySubtree(ast, (Dimension) extraDimension));
+		}
 	}
 
 	protected static void copyAnnotations(final FieldDeclaration oldField, final FieldDeclaration newField) {
 		final AST ast= newField.getAST();
-		for (int index= 0, n= oldField.modifiers().size(); index < n; index++) {
-			final IExtendedModifier modifier= (IExtendedModifier) oldField.modifiers().get(index);
+		for (Object element : oldField.modifiers()) {
+			final IExtendedModifier modifier= (IExtendedModifier) element;
 			final List<IExtendedModifier> modifiers= newField.modifiers();
 			if (modifier.isAnnotation() && !modifiers.contains(modifier))
 				modifiers.add((IExtendedModifier) ASTNode.copySubtree(ast, (Annotation) modifier));
@@ -238,8 +237,8 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 
 	protected static void copyAnnotations(final MethodDeclaration oldMethod, final MethodDeclaration newMethod) {
 		final AST ast= newMethod.getAST();
-		for (int index= 0, n= oldMethod.modifiers().size(); index < n; index++) {
-			final IExtendedModifier modifier= (IExtendedModifier) oldMethod.modifiers().get(index);
+		for (Object element : oldMethod.modifiers()) {
+			final IExtendedModifier modifier= (IExtendedModifier) element;
 			final List<IExtendedModifier> modifiers= newMethod.modifiers();
 			if (modifier.isAnnotation() && !modifiers.contains(modifier))
 				modifiers.add((IExtendedModifier) ASTNode.copySubtree(ast, (Annotation) modifier));
@@ -258,14 +257,16 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 
 	protected static void copyThrownExceptions(final MethodDeclaration oldMethod, final MethodDeclaration newMethod) {
 		final AST ast= newMethod.getAST();
-		for (int index= 0, n= oldMethod.thrownExceptionTypes().size(); index < n; index++)
-			newMethod.thrownExceptionTypes().add(ASTNode.copySubtree(ast, (Type) oldMethod.thrownExceptionTypes().get(index)));
+		for (Object thrownExceptionType : oldMethod.thrownExceptionTypes()) {
+			newMethod.thrownExceptionTypes().add(ASTNode.copySubtree(ast, (Type) thrownExceptionType));
+		}
 	}
 
 	protected static void copyTypeParameters(final MethodDeclaration oldMethod, final MethodDeclaration newMethod) {
 		final AST ast= newMethod.getAST();
-		for (int index= 0, n= oldMethod.typeParameters().size(); index < n; index++)
-			newMethod.typeParameters().add(ASTNode.copySubtree(ast, (TypeParameter) oldMethod.typeParameters().get(index)));
+		for (Object typeParameter : oldMethod.typeParameters()) {
+			newMethod.typeParameters().add(ASTNode.copySubtree(ast, (TypeParameter) typeParameter));
+		}
 	}
 
 	protected static String createLabel(final IMember member) {
@@ -445,8 +446,7 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 
 	protected static void deleteDeclarationNodes(final CompilationUnitRewrite sourceRewriter, final boolean sameCu, final CompilationUnitRewrite unitRewriter, final List<IMember> members, final GroupCategorySet set) throws JavaModelException {
 		final List<ASTNode> declarationNodes= getDeclarationNodes(unitRewriter.getRoot(), members);
-		for (final Iterator<ASTNode> iterator= declarationNodes.iterator(); iterator.hasNext();) {
-			final ASTNode node= iterator.next();
+		for (ASTNode node : declarationNodes) {
 			final ASTRewrite rewriter= unitRewriter.getASTRewrite();
 			final ImportRemover remover= unitRewriter.getImportRemover();
 			if (node instanceof VariableDeclarationFragment) {
@@ -472,8 +472,7 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 
 	protected static List<ASTNode> getDeclarationNodes(final CompilationUnit cuNode, final List<IMember> members) throws JavaModelException {
 		final List<ASTNode> result= new ArrayList<>(members.size());
-		for (final Iterator<IMember> iterator= members.iterator(); iterator.hasNext();) {
-			final IMember member= iterator.next();
+		for (IMember member : members) {
 			ASTNode node= null;
 			if (member instanceof IField) {
 				if (Flags.isEnum(member.getFlags()))
@@ -568,18 +567,13 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 		try {
 			monitor.beginTask(RefactoringCoreMessages.PullUpRefactoring_checking, 2);
 			final RefactoringStatus result= new RefactoringStatus();
-			final SearchResultGroup[] groups= ConstructorReferenceFinder.getConstructorReferences(type, fOwner, new SubProgressMonitor(monitor, 1), result);
 			final String message= Messages.format(RefactoringCoreMessages.HierarchyRefactoring_gets_instantiated, new Object[] { JavaElementLabels.getTextLabel(type, JavaElementLabels.ALL_FULLY_QUALIFIED)});
 
-			ICompilationUnit unit= null;
-			for (int index= 0; index < groups.length; index++) {
-				unit= groups[index].getCompilationUnit();
+			for (SearchResultGroup group : ConstructorReferenceFinder.getConstructorReferences(type, fOwner, new SubProgressMonitor(monitor, 1), result)) {
+				ICompilationUnit unit= group.getCompilationUnit();
 				if (unit != null) {
 					final CompilationUnit cuNode= RefactoringASTParser.parseWithASTProvider(unit, false, new SubProgressMonitor(monitor, 1));
-					final ASTNode[] references= ASTNodeSearchUtil.getAstNodes(groups[index].getSearchResults(), cuNode);
-					ASTNode node= null;
-					for (int offset= 0; offset < references.length; offset++) {
-						node= references[offset];
+					for (ASTNode node : ASTNodeSearchUtil.getAstNodes(group.getSearchResults(), cuNode)) {
 						if ((node instanceof ClassInstanceCreation) || ConstructorReferenceFinder.isImplicitConstructorReferenceNodeInClassCreations(node)) {
 							final RefactoringStatusContext context= JavaStatusContext.create(unit, node);
 							result.addError(message, context);
@@ -615,9 +609,7 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 
 	protected RefactoringStatus checkIfMembersExist() {
 		final RefactoringStatus result= new RefactoringStatus();
-		IMember member= null;
-		for (int index= 0; index < fMembersToMove.length; index++) {
-			member= fMembersToMove[index];
+		for (IMember member : fMembersToMove) {
 			if (member == null || !member.exists())
 				result.addFatalError(RefactoringCoreMessages.HierarchyRefactoring_does_not_exist);
 		}
@@ -630,8 +622,8 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 
 	protected void copyParameters(final ASTRewrite rewrite, final ICompilationUnit unit, final MethodDeclaration oldMethod, final MethodDeclaration newMethod, final TypeVariableMaplet[] mapping) throws JavaModelException {
 		SingleVariableDeclaration newDeclaration= null;
-		for (int index= 0, size= oldMethod.parameters().size(); index < size; index++) {
-			final SingleVariableDeclaration oldDeclaration= (SingleVariableDeclaration) oldMethod.parameters().get(index);
+		for (Object parameter : oldMethod.parameters()) {
+			final SingleVariableDeclaration oldDeclaration= (SingleVariableDeclaration) parameter;
 			if (mapping.length > 0)
 				newDeclaration= createPlaceholderForSingleVariableDeclaration(oldDeclaration, unit, mapping, rewrite);
 			else
@@ -672,9 +664,10 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 			final IType[] types= ReferenceFinderUtil.getTypesReferencedIn(fMembersToMove, fOwner, monitor);
 			final List<IType> result= new ArrayList<>(types.length);
 			final List<IMember> members= Arrays.asList(fMembersToMove);
-			for (int index= 0; index < types.length; index++) {
-				if (!members.contains(types[index]) && !types[index].equals(getDeclaringType()))
-					result.add(types[index]);
+			for (IType type : types) {
+				if (!members.contains(type) && !type.equals(getDeclaringType())) {
+					result.add(type);
+				}
 			}
 			fCachedReferencedTypes= new IType[result.size()];
 			result.toArray(fCachedReferencedTypes);
@@ -700,18 +693,17 @@ public abstract class HierarchyProcessor extends SuperTypeRefactoringProcessor {
 		final ICompilationUnit unit= groups[0].getCompilationUnit();
 		if (!getDeclaringType().getCompilationUnit().equals(unit))
 			return true;
-		final SearchMatch[] matches= groups[0].getSearchResults();
-		for (int index= 0; index < matches.length; index++) {
-			if (!isMovedReference(matches[index]))
+		for (SearchMatch match : groups[0].getSearchResults()) {
+			if (!isMovedReference(match)) {
 				return true;
+			}
 		}
 		return false;
 	}
 
 	protected boolean isMovedReference(final SearchMatch match) throws JavaModelException {
-		ISourceRange range= null;
-		for (int index= 0; index < fMembersToMove.length; index++) {
-			range= fMembersToMove[index].getSourceRange();
+		for (IMember m : fMembersToMove) {
+			ISourceRange range= m.getSourceRange();
 			if (range.getOffset() <= match.getOffset() && range.getOffset() + range.getLength() >= match.getOffset())
 				return true;
 		}

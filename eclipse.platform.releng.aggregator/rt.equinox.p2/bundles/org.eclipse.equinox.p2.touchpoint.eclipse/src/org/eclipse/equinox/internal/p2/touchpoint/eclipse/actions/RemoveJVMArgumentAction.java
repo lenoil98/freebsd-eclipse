@@ -28,6 +28,7 @@ import org.eclipse.osgi.util.NLS;
 public class RemoveJVMArgumentAction extends ProvisioningAction {
 	public static final String ID = "removeJvmArg"; //$NON-NLS-1$
 
+	@Override
 	public IStatus execute(Map<String, Object> parameters) {
 		String jvmArg = (String) parameters.get(ActionConstants.PARM_JVM_ARG);
 		if (jvmArg == null)
@@ -36,6 +37,7 @@ public class RemoveJVMArgumentAction extends ProvisioningAction {
 		return Status.OK_STATUS;
 	}
 
+	@Override
 	public IStatus undo(Map<String, Object> parameters) {
 		String jvmArg = (String) parameters.get(ActionConstants.PARM_JVM_ARG);
 		if (jvmArg == null)
@@ -45,7 +47,8 @@ public class RemoveJVMArgumentAction extends ProvisioningAction {
 	}
 
 	public static IStatus removeArg(String arg, Map<String, Object> parameters) {
-		LauncherData launcherData = ((Manipulator) parameters.get(EclipseTouchpoint.PARM_MANIPULATOR)).getLauncherData();
+		LauncherData launcherData = ((Manipulator) parameters.get(EclipseTouchpoint.PARM_MANIPULATOR))
+				.getLauncherData();
 		File storageArea = (File) parameters.get(ActionConstants.PARM_PROFILE_DATA_DIRECTORY);
 
 		try {
@@ -66,7 +69,8 @@ public class RemoveJVMArgumentAction extends ProvisioningAction {
 		return Status.OK_STATUS;
 	}
 
-	private static void removeByteArg(String arg, String flag, LauncherData launcherData, File storageArea) throws IOException {
+	private static void removeByteArg(String arg, String flag, LauncherData launcherData, File storageArea)
+			throws IOException {
 		Properties storedValues = AddJVMArgumentAction.load(storageArea);
 
 		String argValue = arg.substring(flag.length());
@@ -101,9 +105,11 @@ public class RemoveJVMArgumentAction extends ProvisioningAction {
 		else {
 			// Build a comma separated list of values for this flag
 			String argString = ""; //$NON-NLS-1$
-			for (int i = 0; i < args.length; i++)
-				if (args[i] != null)
-					argString += args[i] + ',';
+			for (String arg : args) {
+				if (arg != null) {
+					argString += arg + ',';
+				}
+			}
 
 			if (argString.length() > 0)
 				// Strip the trailing comma

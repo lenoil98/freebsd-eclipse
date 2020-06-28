@@ -138,8 +138,8 @@ public class GenerateConstructorUsingFieldsSelectionDialog extends SourceActionD
 		BindingLabelProvider provider= new BindingLabelProvider();
 		final Combo combo= new Combo(composite, SWT.READ_ONLY);
 		SWTUtil.setDefaultVisibleItemCount(combo);
-		for (int i= 0; i < fSuperConstructors.length; i++) {
-			combo.add(provider.getText(fSuperConstructors[i]));
+		for (IMethodBinding binding : fSuperConstructors) {
+			combo.add(provider.getText(binding));
 		}
 
 		// TODO: Can we be a little more intelligent about guessing the super() ?
@@ -367,12 +367,9 @@ public class GenerateConstructorUsingFieldsSelectionDialog extends SourceActionD
 
 	List<?> getElementList() {
 		IStructuredSelection selection= (IStructuredSelection) getTreeViewer().getSelection();
-		List<?> elements= selection.toList();
-		ArrayList<Object> elementList= new ArrayList<>();
+		@SuppressWarnings("unchecked")
+		ArrayList<?> elementList= new ArrayList<>(selection.toList());
 
-		for (int i= 0; i < elements.size(); i++) {
-			elementList.add(elements.get(i));
-		}
 		return elementList;
 	}
 

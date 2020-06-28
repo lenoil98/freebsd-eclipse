@@ -31,18 +31,20 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.internal.registry.IWorkbenchRegistryConstants;
 import org.eclipse.ui.tests.leaks.LeakTests;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * @since 3.1
  */
+@RunWith(JUnit4.class)
 public class EditorTests extends DynamicTestCase {
 
 	private static final String EDITOR_ID = "org.eclipse.newEditor1.newEditor1";
-	/**
-	 * @param testName
-	 */
-	public EditorTests(String testName) {
-		super(testName);
+
+	public EditorTests() {
+		super(EditorTests.class.getSimpleName());
 	}
 
 	@Override
@@ -60,6 +62,7 @@ public class EditorTests extends DynamicTestCase {
 		return "data/org.eclipse.newEditor1";
 	}
 
+	@Test
 	public void testEditorClosure() throws CoreException {
 		IWorkbenchWindow window = openTestWindow(IDE.RESOURCE_PERSPECTIVE_ID);
 		IFile file = getFile();
@@ -68,8 +71,8 @@ public class EditorTests extends DynamicTestCase {
 		ReferenceQueue<IEditorPart> queue = new ReferenceQueue<>();
 		IEditorPart part = IDE.openEditor(window.getActivePage(), file, EDITOR_ID);
 		WeakReference<IEditorPart> ref = new WeakReference<>(part, queue);
-        assertNotNull(part);
-        part = null; //null the reference
+		assertNotNull(part);
+		part = null; //null the reference
 
 		removeBundle();
 		try {
@@ -78,9 +81,10 @@ public class EditorTests extends DynamicTestCase {
 			fail(e.getMessage());
 		}
 
-        assertEquals(0, window.getActivePage().getEditors().length);
+		assertEquals(0, window.getActivePage().getEditors().length);
 	}
 
+	@Test
 	public void testEditorProperties() throws Exception {
 		IEditorRegistry registry = WorkbenchPlugin.getDefault().getEditorRegistry();
 
@@ -125,14 +129,14 @@ public class EditorTests extends DynamicTestCase {
 	 *
 	 */
 	private IFile getFile(String fileName) throws CoreException {
-        IWorkspace workspace = ResourcesPlugin.getWorkspace();
-        IProject testProject = workspace.getRoot().getProject(getName());
-        testProject.create(null);
-        testProject.open(null);
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IProject testProject = workspace.getRoot().getProject(getName());
+		testProject.create(null);
+		testProject.open(null);
 
-        IFile iFile = testProject.getFile(fileName);
-        iFile.create(new ByteArrayInputStream(new byte[] { '\n' }), true, null);
-        return iFile;
+		IFile iFile = testProject.getFile(fileName);
+		iFile.create(new ByteArrayInputStream(new byte[] { '\n' }), true, null);
+		return iFile;
 	}
 
 

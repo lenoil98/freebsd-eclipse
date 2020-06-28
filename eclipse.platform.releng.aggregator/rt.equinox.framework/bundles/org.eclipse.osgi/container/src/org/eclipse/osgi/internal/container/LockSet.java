@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2018 IBM Corporation and others.
+ * Copyright (c) 2012, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -25,7 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * over and over then new ReentrantLocks are created each time.  This set should be
  * used with care.  If the same object is going to be locked/unlocked over and over then
  * consider using a different locking strategy.
- * 
+ *
  * Previous implementations of this class attempted to use a WeakHashMap to cache
  * the locks, but this proved to be a flawed approach because of the unpredictable
  * timing of garbage collection, particularly with autoboxed types (e.g. bundle
@@ -52,6 +52,7 @@ public class LockSet<T> {
 			lock.unlock();
 		}
 
+		@Override
 		public String toString() {
 			return lock.toString();
 		}
@@ -97,7 +98,7 @@ public class LockSet<T> {
 		synchronized (locks) {
 			LockHolder lock = locks.get(t);
 			if (lock == null)
-				throw new IllegalStateException("No lock found."); //$NON-NLS-1$
+				throw new IllegalStateException("No lock found: " + t); //$NON-NLS-1$
 			lock.unlock();
 			// If, after unlocking, no other thread is using the lock, discard it.
 			if (lock.decremementUseCount() == 0) {

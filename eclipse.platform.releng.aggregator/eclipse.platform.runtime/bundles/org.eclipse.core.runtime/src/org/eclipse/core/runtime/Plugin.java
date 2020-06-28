@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,14 +11,14 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Lars Vogel <Lars.Vogel@vogella.com> - Bug 476403, 478769, 490586
+ *     Christoph Läubrich - remove reference to InternalPlatform.getDefault().log
  *******************************************************************************/
 package org.eclipse.core.runtime;
 
 import java.io.*;
 import java.net.URL;
 import java.util.Map;
-import org.eclipse.core.internal.runtime.InternalPlatform;
-import org.eclipse.core.internal.runtime.Messages;
+import org.eclipse.core.internal.runtime.*;
 import org.eclipse.core.runtime.preferences.*;
 import org.eclipse.osgi.service.datalocation.Location;
 import org.eclipse.osgi.service.debug.DebugOptions;
@@ -102,18 +102,6 @@ import org.osgi.util.tracker.ServiceTracker;
  * default constructor of the plug-in class is used and
  * {@link #start(BundleContext)} and {@link #stop(BundleContext)} are called as
  * life cycle methods.
- * </p>
- * <p>
- * The {@link #Plugin(IPluginDescriptor)} constructor was called only for
- * plug-ins which explicitly require the org.eclipse.core.runtime.compatibility
- * plug-in. It is not called anymore as Eclipse 4.6 removed this plug-in.
- *
- * </p>
- * <p>
- * If the plugin.xml of your plug-in does <b>not</b> indicate &lt;?eclipse
- * version="3.0"?&gt; it is therefore not a 3.0 plug-in. Consequently the
- * {@link #Plugin(IPluginDescriptor)} is used and {@link #startup()} and
- * {@link #shutdown()} are called as life cycle methods.
  * </p>
  * <p>
  * Since Eclipse 3.0 APIs of the Plugin class can be called only when the Plugin
@@ -205,25 +193,6 @@ public abstract class Plugin implements BundleActivator {
 		super();
 	}
 
-	/**
-	 * As the org.eclipse.core.runtime.compatibility plug-in has been removed in
-	 * Eclipse 4.6 this method is not supported anymore.
-	 *
-	 * In Eclipse 3.0 this constructor has been replaced by {@link #Plugin()}.
-	 * Implementations of <code>MyPlugin(IPluginDescriptor descriptor)</code> should be changed to
-	 * <code>MyPlugin()</code> and call <code>super()</code> instead of <code>super(descriptor)</code>.
-	 *
-	 * The <code>MyPlugin(IPluginDescriptor descriptor)</code> constructor was called only for plug-ins
-	 * which explicitly require the org.eclipse.core.runtime.compatibility plug-in. It is not called anymore.
-	 *
-	 * @param descriptor Due to org.eclipse.core.runtime.compatibility plug-in removal it is ignored.
-	 *
-	 * @deprecated
-	 */
-	@Deprecated
-	public Plugin(IPluginDescriptor descriptor) {
-		// intentionally left empty
-	}
 
 	/**
 	 * Returns a URL for the given path.  Returns <code>null</code> if the URL
@@ -257,24 +226,6 @@ public abstract class Plugin implements BundleActivator {
 		return FileLocator.find(getBundle(), path, override);
 	}
 
-	/**
-	 * As the org.eclipse.core.runtime.compatibility plug-in has been removed in
-	 * Eclipse 4.6 this method is not supported anymore.
-	 *
-	 * <code>IPluginDescriptor</code> was refactored in Eclipse 3.0.
-	 *
-	 * The <code>getDescriptor()</code> method was only be called by plug-ins
-	 * which explicitly require the org.eclipse.core.runtime.compatibility
-	 * plug-in. It is not called anymore.
-	 *
-	 * @return Always null.
-	 *
-	 * @deprecated
-	 */
-	@Deprecated
-	public final IPluginDescriptor getDescriptor() {
-		return null;
-	}
 
 	/**
 	 * Returns the log for this plug-in.  If no such log exists, one is created.
@@ -407,7 +358,7 @@ public abstract class Plugin implements BundleActivator {
 			} catch (org.osgi.service.prefs.BackingStoreException e) {
 				IStatus status = new Status(IStatus.ERROR, Platform.PI_RUNTIME, IStatus.ERROR,
 						Messages.preferences_saveProblems, e);
-				InternalPlatform.getDefault().log(status);
+				RuntimeLog.log(status);
 			}
 		};
 		innerCall.run();

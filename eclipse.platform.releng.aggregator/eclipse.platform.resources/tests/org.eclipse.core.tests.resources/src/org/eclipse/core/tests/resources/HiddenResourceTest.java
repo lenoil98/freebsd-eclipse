@@ -13,24 +13,10 @@
  *******************************************************************************/
 package org.eclipse.core.tests.resources;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
 
 public class HiddenResourceTest extends ResourceTest {
-	public HiddenResourceTest() {
-		super();
-	}
-
-	public HiddenResourceTest(String name) {
-		super(name);
-	}
-
-	public static Test suite() {
-		return new TestSuite(HiddenResourceTest.class);
-	}
-
 	public void testRefreshLocal() {
 		IWorkspaceRoot root = getWorkspace().getRoot();
 		IProject project = root.getProject(getUniqueString());
@@ -746,7 +732,7 @@ public class HiddenResourceTest extends ResourceTest {
 	/**
 	 * Tests whether {@link IFile#create(java.io.InputStream, int, IProgressMonitor)},
 	 * {@link IFolder#create(int, boolean, IProgressMonitor)}
-	 * and {@link IProject#create(IProjectDescription, int, IProgressMonitor)
+	 * and {@link IProject#create(IProjectDescription, int, IProgressMonitor)}
 	 * handles {@link IResource#HIDDEN} flag properly.
 	 */
 	public void testCreateHiddenResources() {

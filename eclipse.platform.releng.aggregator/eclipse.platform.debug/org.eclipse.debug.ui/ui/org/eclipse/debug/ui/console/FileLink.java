@@ -30,6 +30,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.ITextEditor;
@@ -73,9 +74,6 @@ public class FileLink implements IConsoleHyperlink {
 		fEditorId = editorId;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.console.IConsoleHyperlink#linkActivated()
-	 */
 	@Override
 	public void linkActivated() {
 		IWorkbenchWindow window = DebugUIPlugin.getActiveWorkbenchWindow();
@@ -104,7 +102,7 @@ public class FileLink implements IConsoleHyperlink {
 								}
 								IDocument document = provider.getDocument(input);
 								try {
-	                                IRegion region= document.getLineInformation(fFileLineNumber - 1);
+									IRegion region= document.getLineInformation(fFileLineNumber - 1);
 									fFileOffset = region.getOffset();
 									fFileLength = region.getLength();
 								} catch (BadLocationException e) {
@@ -125,23 +123,17 @@ public class FileLink implements IConsoleHyperlink {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.console.IConsoleHyperlink#linkEntered()
-	 */
 	@Override
 	public void linkEntered() {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.console.IConsoleHyperlink#linkExited()
-	 */
 	@Override
 	public void linkExited() {
 	}
 
 	private String getEditorId() {
 		if (fEditorId == null) {
-			IWorkbench workbench= DebugUIPlugin.getDefault().getWorkbench();
+			IWorkbench workbench= PlatformUI.getWorkbench();
 			// If there is a registered editor for the file use it.
 			IEditorDescriptor desc = workbench.getEditorRegistry().getDefaultEditor(fFile.getName(), getFileContentType());
 			if (desc == null) {
@@ -153,14 +145,14 @@ public class FileLink implements IConsoleHyperlink {
 		return fEditorId;
 	}
 
-    private IContentType getFileContentType() {
-        try {
-            IContentDescription description= fFile.getContentDescription();
-            if (description != null) {
-                return description.getContentType();
-            }
-        } catch (CoreException e) {
-        }
-        return null;
-    }
+	private IContentType getFileContentType() {
+		try {
+			IContentDescription description= fFile.getContentDescription();
+			if (description != null) {
+				return description.getContentType();
+			}
+		} catch (CoreException e) {
+		}
+		return null;
+	}
 }

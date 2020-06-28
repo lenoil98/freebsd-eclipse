@@ -13,13 +13,18 @@
  *******************************************************************************/
 package org.eclipse.pde.internal.ds.tests;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import org.eclipse.pde.internal.ds.core.IDSComponent;
 import org.eclipse.pde.internal.ds.core.IDSDocumentFactory;
 import org.eclipse.pde.internal.ds.core.IDSProvide;
 import org.eclipse.pde.internal.ds.core.IDSService;
+import org.junit.Test;
 
 public class DSProvideTestCase extends AbstractDSModelTestCase {
-
+	@Test
 	public void testAddCompleteProvidedService() {
 		StringBuilder buffer = new StringBuilder();
 		buffer.append("<service servicefactory=\"true\" >");
@@ -47,7 +52,7 @@ public class DSProvideTestCase extends AbstractDSModelTestCase {
 		provide.setInterface(interfaceName);
 
 		String content = fModel.getDSComponent().toString();
-		assertTrue(content.indexOf(interfaceName) != -1);
+		assertTrue(content.contains(interfaceName));
 
 		assertEquals(provide.getName(), interfaceName);
 
@@ -56,6 +61,7 @@ public class DSProvideTestCase extends AbstractDSModelTestCase {
 	/**
 	 * Tests to add a provided service by DSDocumentFactory
 	 */
+	@Test
 	public void testAddProvidedServicebyFactory() {
 		StringBuilder buffer = new StringBuilder();
 			setXMLContents(buffer , LF);
@@ -74,7 +80,7 @@ public class DSProvideTestCase extends AbstractDSModelTestCase {
 
 			String content = component.toString();
 
-			assertTrue(content.indexOf("interface=\"java.lang.Runnable\"") != -1);
+			assertTrue(content.contains("interface=\"java.lang.Runnable\""));
 
 			IDSService service0 = component.getService();
 			assertNotNull(service0);

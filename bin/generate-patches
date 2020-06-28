@@ -3,25 +3,6 @@
 #
 # Generate patches
 #
-INSPECT="
-	eclipse-platform-parent
-	production
-	eclipse.pde.build
-	eclipse.pde.ui
-	eclipse.platform.releng
-	eclipse.platform.releng.prereqs.sdk
-	eclipse.platform.releng.tychoeclipsebuilder
-	eclipse.platform.resources
-	eclipse.platform.runtime
-	eclipse.platform.swt
-	eclipse.platform.swt.binaries
-	eclipse.platform.team
-	eclipse.platform.ua
-	eclipse.platform.ui
-	rt.equinox.bundles
-	rt.equinox.framework
-	rt.equinox.p2
-"
 if [ ! -x bin/$(basename $0) ]
 then
 	echo "ERROR: Run this from top level"
@@ -29,11 +10,17 @@ then
 fi
 . ./config.sh
 
+# Overrides
+if [ $# -gt 0 ]
+then
+	PATCHED_DIRS="$*"
+fi
+
 AGGR_MODULE=$(basename $ECLIPSE_TOP)
 BASELINE=".baseline.${AGGR_MODULE}"
 if [ ! -d ${BASELINE} ]
 then
-	echo "ERROR: run bin/prepare-tree"
+	echo "ERROR: run bin/unpack-distfiles"
 	exit 1
 fi
 
@@ -44,11 +31,17 @@ scrub_patches ()
 "s|../${BASELINE}/||
 s/^(-{3} .*	)[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{9} .[0-9]{4}/\10000-00-00 00:00:00.000000000 +0000/
 s/^(\+{3} .*	)[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{9} .[0-9]{4}/\10000-00-00 00:00:00.000000000 +0000/
-/^Only in ${1}.*/d"
+/^Only in ${1}.*/d
+/^Binary files.* differ/d"
 }
 
-for DIR in ${INSPECT}
+for DIR in ${PATCHED_DIRS}
 do
+	if [ ! -d ${AGGR_MODULE}/${DIR} ]
+	then
+		echo "ERROR: ${AGGR_MODULE}/${DIR} not found"
+		exit 1
+	fi
 	echo "INFO: Inspecting ${DIR}"
 	(
 		cd ${AGGR_MODULE}

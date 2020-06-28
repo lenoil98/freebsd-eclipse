@@ -117,8 +117,7 @@ public class ProjectSetExportWizard extends Wizard implements IExportWizard {
 					// Hash the projects by provider
 					IProject[] projects = mainPage.getSelectedProjects();
 					Map<String, Set<IProject>> map = new HashMap<>();
-					for (int i = 0; i < projects.length; i++) {
-						IProject project = projects[i];
+					for (IProject project : projects) {
 						RepositoryProvider provider = RepositoryProvider.getProvider(project);
 						if (provider != null) {
 							String id = provider.getID();
@@ -144,7 +143,7 @@ public class ProjectSetExportWizard extends Wizard implements IExportWizard {
 						//
 						XMLMemento xmlMemento = getXMLMementoRoot();
 						Iterator it = map.keySet().iterator();
-						monitor.beginTask(null, 1000 * map.keySet().size());
+						monitor.beginTask(null, 1000 * map.size());
 						while (it.hasNext()) {
 							String id = (String)it.next();
 							IMemento memento = xmlMemento.createChild("provider"); //$NON-NLS-1$
@@ -156,16 +155,16 @@ public class ProjectSetExportWizard extends Wizard implements IExportWizard {
 							ProjectSetCapability.ensureBackwardsCompatible(providerType, serializer);
 							if (serializer != null) {
 								String[] references = serializer.asReference(projectArray, context, SubMonitor.convert(monitor, 990));
-								for (int i = 0; i < references.length; i++) {
+								for (String reference : references) {
 									IMemento proj = memento.createChild("project"); //$NON-NLS-1$
-									proj.putString("reference", references[i]); //$NON-NLS-1$
+									proj.putString("reference", reference); //$NON-NLS-1$
 								}
 							}
 						}
 						if (workingSets != null){
-							for (int i = 0; i < workingSets.length; i++) {
+							for (IWorkingSet workingSet : workingSets) {
 								IMemento memento =xmlMemento.createChild("workingSets"); //$NON-NLS-1$
-								workingSets[i].saveState(memento);
+								workingSet.saveState(memento);
 							}
 						}
 						xmlMemento.save(writer);
@@ -193,8 +192,7 @@ public class ProjectSetExportWizard extends Wizard implements IExportWizard {
 						}
 
 					// notify provider types of the project set write
-					for (Iterator iter = map.keySet().iterator();iter.hasNext();) {
-						String id = (String) iter.next();
+					for (String id : map.keySet()) {
 						RepositoryProviderType type = RepositoryProviderType.getProviderType(id);
 						if (type != null) {
 							ProjectSetCapability capability = type.getProjectSetCapability();
@@ -209,16 +207,16 @@ public class ProjectSetExportWizard extends Wizard implements IExportWizard {
 
 				private XMLMemento getXMLMementoRoot() {
 					Document document;
-			        try {
-			            document = DocumentBuilderFactory.newInstance()
-			                    .newDocumentBuilder().newDocument();
-			            Element element = document.createElement("psf"); //$NON-NLS-1$
-			            element.setAttribute("version", "2.0"); //$NON-NLS-1$ //$NON-NLS-2$
-			            document.appendChild(element);
-			            return new XMLMemento(document, element);
-			        } catch (ParserConfigurationException e) {
-			            throw new Error(e.getMessage());
-			        }
+					try {
+						document = DocumentBuilderFactory.newInstance()
+								.newDocumentBuilder().newDocument();
+						Element element = document.createElement("psf"); //$NON-NLS-1$
+						element.setAttribute("version", "2.0"); //$NON-NLS-1$ //$NON-NLS-2$
+						document.appendChild(element);
+						return new XMLMemento(document, element);
+					} catch (ParserConfigurationException e) {
+						throw new Error(e.getMessage());
+					}
 				}
 
 			});

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,11 +12,11 @@
  *     IBM Corporation - initial API and implementation
  *     Julian Chen - fix for bug #92572, jclRM
  *     Benjamin Cabe <benjamin.cabe@anyware-tech.com> - fix for bug 265532
+ *     Christoph Läubrich - remove InternalPlatform.getDefault().log (bug 55083)
  *******************************************************************************/
 package org.eclipse.core.internal.runtime;
 
-import java.io.*;
-import java.net.MalformedURLException;
+import java.io.File;
 import java.net.URL;
 import java.util.*;
 import org.eclipse.core.internal.preferences.exchange.ILegacyPreferences;
@@ -30,13 +30,17 @@ import org.eclipse.equinox.app.IApplicationContext;
 import org.eclipse.equinox.internal.app.*;
 import org.eclipse.equinox.internal.app.Activator;
 import org.eclipse.equinox.log.*;
+import org.eclipse.osgi.container.ModuleContainer;
 import org.eclipse.osgi.framework.log.FrameworkLog;
 import org.eclipse.osgi.service.datalocation.Location;
 import org.eclipse.osgi.service.debug.DebugOptions;
 import org.eclipse.osgi.service.environment.EnvironmentInfo;
 import org.eclipse.osgi.service.resolver.PlatformAdmin;
 import org.osgi.framework.*;
-import org.osgi.service.packageadmin.PackageAdmin;
+import org.osgi.framework.namespace.HostNamespace;
+import org.osgi.framework.namespace.IdentityNamespace;
+import org.osgi.framework.wiring.*;
+import org.osgi.resource.Namespace;
 import org.osgi.util.tracker.ServiceTracker;
 
 /**
@@ -45,7 +49,7 @@ import org.osgi.util.tracker.ServiceTracker;
  */
 public final class InternalPlatform {
 
-	private static final String[] ARCH_LIST = { Platform.ARCH_X86 };
+	private static final String[] ARCH_LIST = { Platform.ARCH_X86, Platform.ARCH_X86_64 };
 
 	// debug support:  set in loadOptions()
 	public static boolean DEBUG = false;
@@ -62,8 +66,6 @@ public final class InternalPlatform {
 	private static final String[] OS_LIST = { Platform.OS_FREEBSD, Platform.OS_LINUX, Platform.OS_MACOSX, Platform.OS_WIN32 };
 	private String password = ""; //$NON-NLS-1$
 	private static final String PASSWORD = "-password"; //$NON-NLS-1$
-
-	private static final String PLUGIN_PATH = ".plugin-path"; //$NON-NLS-1$
 
 	public static final String PROP_APPLICATION = "eclipse.application"; //$NON-NLS-1$
 	public static final String PROP_ARCH = "osgi.arch"; //$NON-NLS-1$
@@ -88,6 +90,7 @@ public final class InternalPlatform {
 	private Path cachedInstanceLocation; // Cache the path of the instance location
 	private ServiceTracker<Location,Location> configurationLocation = null;
 	private BundleContext context;
+	private FrameworkWiring fwkWiring;
 
 	private Map<IBundleGroupProvider,ServiceRegistration<IBundleGroupProvider>> groupProviders = new HashMap<>(3);
 	private ServiceTracker<Location,Location> installLocation = null;
@@ -101,7 +104,7 @@ public final class InternalPlatform {
 
 	private ServiceTracker<EnvironmentInfo,EnvironmentInfo> environmentTracker = null;
 	private ServiceTracker<FrameworkLog,FrameworkLog> logTracker = null;
-	private ServiceTracker<PackageAdmin,PackageAdmin> bundleTracker = null;
+	private ServiceTracker<PlatformAdmin, PlatformAdmin> platformTracker = null;
 	private ServiceTracker<DebugOptions,DebugOptions> debugTracker = null;
 	private ServiceTracker<IContentTypeManager,IContentTypeManager> contentTracker = null;
 	private ServiceTracker<IPreferencesService,IPreferencesService> preferencesTracker = null;
@@ -169,23 +172,7 @@ public final class InternalPlatform {
 		String value = getOption(option);
 		if (value == null)
 			return defaultValue;
-		return value.equalsIgnoreCase("true"); //$NON-NLS-1$
-	}
-
-	public Bundle getBundle(String symbolicName) {
-		PackageAdmin packageAdmin = getBundleAdmin();
-		if (packageAdmin == null)
-			return null;
-		Bundle[] bundles = packageAdmin.getBundles(symbolicName, null);
-		if (bundles == null)
-			return null;
-		//Return the first bundle that is not installed or uninstalled
-		for (Bundle bundle : bundles) {
-			if ((bundle.getState() & (Bundle.INSTALLED | Bundle.UNINSTALLED)) == 0) {
-				return bundle;
-			}
-		}
-		return null;
+		return "true".equalsIgnoreCase(value); //$NON-NLS-1$
 	}
 
 	public BundleContext getBundleContext() {
@@ -231,31 +218,45 @@ public final class InternalPlatform {
 		registration.unregister();
 	}
 
-	public Bundle[] getBundles(String symbolicName, String version) {
-		PackageAdmin packageAdmin = getBundleAdmin();
-		if (packageAdmin == null)
-			return null;
-		Bundle[] bundles = packageAdmin.getBundles(symbolicName, version);
-		if (bundles == null)
-			return null;
-		// optimize for common case; length==1
-		if (bundles.length == 1 && (bundles[0].getState() & (Bundle.INSTALLED | Bundle.UNINSTALLED)) == 0)
-			return bundles;
-		//Remove all the bundles that are installed or uninstalled
-		Bundle[] selectedBundles = new Bundle[bundles.length];
-		int added = 0;
-		for (Bundle bundle : bundles) {
-			if ((bundle.getState() & (Bundle.INSTALLED | Bundle.UNINSTALLED)) == 0) {
-				selectedBundles[added++] = bundle;
-			}
-		}
-		if (added == 0)
-			return null;
+	public Bundle getBundle(String symbolicName) {
+		Bundle[] bundles = getBundles(symbolicName, null);
+		return bundles != null && bundles.length > 0 ? bundles[0] : null;
+	}
 
-		//return an array of the correct size
-		Bundle[] results = new Bundle[added];
-		System.arraycopy(selectedBundles, 0, results, 0, added);
-		return results;
+	public Bundle[] getBundles(String symbolicName, String versionRange) {
+		if (Constants.SYSTEM_BUNDLE_SYMBOLICNAME.equals(symbolicName)) {
+			symbolicName = context.getBundle(Constants.SYSTEM_BUNDLE_LOCATION).getSymbolicName();
+		}
+		Map<String, String> directives = Collections.singletonMap(Namespace.REQUIREMENT_FILTER_DIRECTIVE,
+				getRequirementFilter(symbolicName, versionRange));
+		Collection<BundleCapability> matchingBundleCapabilities = fwkWiring.findProviders(ModuleContainer
+				.createRequirement(IdentityNamespace.IDENTITY_NAMESPACE, directives, Collections.emptyMap()));
+
+		if (matchingBundleCapabilities.isEmpty()) {
+			return null;
+		}
+
+		Bundle[] results = matchingBundleCapabilities.stream().map(c -> c.getRevision().getBundle())
+				// Remove all the bundles that are installed or uninstalled
+				.filter(bundle -> (bundle.getState() & (Bundle.INSTALLED | Bundle.UNINSTALLED)) == 0)
+				.sorted((b1, b2) -> b2.getVersion().compareTo(b1.getVersion())) // highest version first
+				.toArray(Bundle[]::new);
+
+		return results.length > 0 ? results : null;
+	}
+
+	private String getRequirementFilter(String symbolicName, String versionRange) {
+		VersionRange range = versionRange == null ? null : new VersionRange(versionRange);
+		StringBuilder filter = new StringBuilder();
+		if (range != null) {
+			filter.append("(&"); //$NON-NLS-1$
+		}
+		filter.append('(').append(IdentityNamespace.IDENTITY_NAMESPACE).append('=').append(symbolicName).append(')');
+
+		if (range != null) {
+			filter.append(range.toFilterString(IdentityNamespace.CAPABILITY_VERSION_ATTRIBUTE)).append(')');
+		}
+		return filter.toString();
 	}
 
 	public String[] getCommandLineArgs() {
@@ -271,29 +272,45 @@ public final class InternalPlatform {
 	 * Lazy initialize ContentTypeManager - it can only be used after the registry is up and running
 	 */
 	public IContentTypeManager getContentTypeManager() {
-		return contentTracker == null ? null : (IContentTypeManager) contentTracker.getService();
+		return contentTracker == null ? null : contentTracker.getService();
 	}
 
 	public EnvironmentInfo getEnvironmentInfoService() {
-		return  environmentTracker == null ? null : (EnvironmentInfo) environmentTracker.getService();
-	}
-
-	public Bundle[] getFragments(Bundle bundle) {
-		PackageAdmin packageAdmin = getBundleAdmin();
-		if (packageAdmin == null)
-			return null;
-		return packageAdmin.getFragments(bundle);
+		return environmentTracker == null ? null : environmentTracker.getService();
 	}
 
 	public FrameworkLog getFrameworkLog() {
-		return logTracker == null ? null : (FrameworkLog) logTracker.getService();
+		return logTracker == null ? null : logTracker.getService();
+	}
+
+	public Bundle[] getFragments(Bundle bundle) {
+		BundleWiring wiring = bundle.adapt(BundleWiring.class);
+		if (wiring == null) {
+			return null;
+		}
+		List<BundleWire> hostWires = wiring.getProvidedWires(HostNamespace.HOST_NAMESPACE);
+		if (hostWires == null) {
+			// we don't hold locks while checking the graph, just return if no longer valid
+			return null;
+		}
+		Bundle[] result = hostWires.stream().map(wire -> wire.getRequirer().getBundle()).filter(Objects::nonNull)
+				.toArray(Bundle[]::new);
+		return result.length > 0 ? result : null;
 	}
 
 	public Bundle[] getHosts(Bundle bundle) {
-		PackageAdmin packageAdmin = getBundleAdmin();
-		if (packageAdmin == null)
+		BundleWiring wiring = bundle.adapt(BundleWiring.class);
+		if (wiring == null) {
 			return null;
-		return packageAdmin.getHosts(bundle);
+		}
+		List<BundleWire> hostWires = wiring.getRequiredWires(HostNamespace.HOST_NAMESPACE);
+		if (hostWires == null) {
+			// we don't hold locks while checking the graph, just return if no longer valid
+			return null;
+		}
+		Bundle[] result = hostWires.stream().map(wire -> wire.getProvider().getBundle()).filter(Objects::nonNull)
+				.toArray(Bundle[]::new);
+		return result.length > 0 ? result : null;
 	}
 
 	public Location getInstallLocation() {
@@ -342,21 +359,12 @@ public final class InternalPlatform {
 		if (result != null)
 			return result;
 		ExtendedLogService logService = extendedLogTracker.getService();
-		Logger logger = logService == null ? null : logService.getLogger(bundle, PlatformLogWriter.EQUINOX_LOGGER_NAME);
+		Logger logger = logService != null ? logService.getLogger(bundle, PlatformLogWriter.EQUINOX_LOGGER_NAME) : null;
 		result = new Log(bundle, logger);
 		ExtendedLogReaderService logReader = logReaderTracker.getService();
 		logReader.addLogListener(result, result);
 		logs.put(bundle, result);
 		return result;
-	}
-
-	/**
-	 * Returns the object which defines the location and organization
-	 * of the platform's meta area.
-	 */
-	public DataArea getMetaArea() {
-		// TODO: deprecate?
-		return MetaDataKeeper.getMetaArea();
 	}
 
 	public String getNL() {
@@ -395,63 +403,12 @@ public final class InternalPlatform {
 	}
 
 	public PlatformAdmin getPlatformAdmin() {
-		if (context == null)
-			return null;
-		ServiceReference<PlatformAdmin> platformAdminReference = context.getServiceReference(PlatformAdmin.class);
-		if (platformAdminReference == null)
-			return null;
-		return context.getService(platformAdminReference);
+		return platformTracker == null ? null : platformTracker.getService();
 	}
 
-	//TODO I guess it is now time to get rid of that
-	/*
-	 * This method is retained for R1.0 compatibility because it is defined as API.
-	 * Its function matches the API description (returns <code>null</code> when
-	 * argument URL is <code>null</code> or cannot be read).
-	 */
-	public URL[] getPluginPath(URL pluginPathLocation /*R1.0 compatibility*/
-	) {
-		InputStream input = null;
-		// first try and see if the given plugin path location exists.
-		if (pluginPathLocation == null)
-			return null;
-		try {
-			input = pluginPathLocation.openStream();
-		} catch (IOException e) {
-			//fall through
-		}
-
-		// if the given path was null or did not exist, look for a plugin path
-		// definition in the install location.
-		if (input == null)
-			try {
-				URL url = new URL("platform:/base/" + PLUGIN_PATH); //$NON-NLS-1$
-				input = url.openStream();
-			} catch (MalformedURLException e) {
-				//fall through
-			} catch (IOException e) {
-				//fall through
-			}
-
-		// nothing was found at the supplied location or in the install location
-		if (input == null)
-			return null;
-		// if we found a plugin path definition somewhere so read it and close the location.
-		URL[] result = null;
-		try {
-			try {
-				result = readPluginPath(input);
-			} finally {
-				input.close();
-			}
-		} catch (IOException e) {
-			//let it return null on failure to read
-		}
-		return result;
-	}
 
 	public IPreferencesService getPreferencesService() {
-		return preferencesTracker == null ? null : (IPreferencesService) preferencesTracker.getService();
+		return preferencesTracker == null ? null : preferencesTracker.getService();
 	}
 
 	/*
@@ -531,7 +488,7 @@ public final class InternalPlatform {
 
 	public IPath getStateLocation(Bundle bundle, boolean create) throws IllegalStateException {
 		assertInitialized();
-		IPath result = getMetaArea().getStateLocation(bundle);
+		IPath result = MetaDataKeeper.getMetaArea().getStateLocation(bundle);
 		if (create)
 			result.toFile().mkdirs();
 		return result;
@@ -572,10 +529,13 @@ public final class InternalPlatform {
 	}
 
 	public boolean isFragment(Bundle bundle) {
-		PackageAdmin packageAdmin = getBundleAdmin();
-		if (packageAdmin == null)
+		BundleRevisions bundleRevisions = bundle.adapt(BundleRevisions.class);
+		List<BundleRevision> revisions = bundleRevisions.getRevisions();
+		if (revisions.isEmpty()) {
+			// bundle is uninstalled and not current users; just return false
 			return false;
-		return (packageAdmin.getBundleType(bundle) & PackageAdmin.BUNDLE_TYPE_FRAGMENT) > 0;
+		}
+		return (revisions.get(0).getTypes() & BundleRevision.TYPE_FRAGMENT) != 0;
 	}
 
 	/*
@@ -619,16 +579,6 @@ public final class InternalPlatform {
 		return WS_LIST;
 	}
 
-	/**
-	 * Notifies all listeners of the platform log.  This includes the console log, if
-	 * used, and the platform log file.  All Plugin log messages get funnelled
-	 * through here as well.
-	 */
-	public void log(final IStatus status) {
-		// TODO: deprecate?
-		RuntimeLog.log(status);
-	}
-
 	private void processCommandLine(String[] args) {
 		if (args == null || args.length == 0)
 			return;
@@ -646,30 +596,6 @@ public final class InternalPlatform {
 			if (args[i - 1].equalsIgnoreCase(PASSWORD))
 				password = arg;
 		}
-	}
-
-	private URL[] readPluginPath(InputStream input) {
-		Properties ini = new Properties();
-		try {
-			ini.load(input);
-		} catch (IOException e) {
-			return null;
-		}
-		List<URL>result = new ArrayList<>(5);
-		for (Enumeration<?> groups = ini.propertyNames(); groups.hasMoreElements();) {
-			String group = (String) groups.nextElement();
-			for (StringTokenizer entries = new StringTokenizer(ini.getProperty(group), ";"); entries.hasMoreElements();) { //$NON-NLS-1$
-				String entry = (String) entries.nextElement();
-				if (!entry.equals("")) //$NON-NLS-1$
-					try {
-						result.add(new URL(entry));
-					} catch (MalformedURLException e) {
-						//intentionally ignore bad URLs
-						System.err.println("Ignoring plugin: " + entry); //$NON-NLS-1$
-					}
-			}
-		}
-		return result.toArray(new URL[result.size()]);
 	}
 
 	/**
@@ -695,29 +621,19 @@ public final class InternalPlatform {
 	 */
 	public void start(BundleContext runtimeContext) {
 		this.context = runtimeContext;
+		this.fwkWiring = runtimeContext.getBundle(Constants.SYSTEM_BUNDLE_LOCATION).adapt(FrameworkWiring.class);
 		openOSGiTrackers();
 		splashEnded = false;
 		processCommandLine(getEnvironmentInfoService().getNonFrameworkArgs());
 		initializeDebugFlags();
 		initialized = true;
-		getMetaArea();
 		initializeAuthorizationHandler();
 		startServices();
-
-		// See if need to activate rest of the runtime plugins. Plugins are "gently" activated by touching
-		// a class from the corresponding plugin(s).
-		boolean shouldActivate = !"false".equalsIgnoreCase(context.getProperty(PROP_ACTIVATE_PLUGINS)); //$NON-NLS-1$
-		if (shouldActivate) {
-			// activate Preferences plugin by creating a class from it:
-			new org.eclipse.core.runtime.preferences.DefaultScope();
-			// activate Jobs plugin by creating a class from it:
-			org.eclipse.core.runtime.jobs.Job.getJobManager();
-		}
 	}
 
 	/**
 	 * Shutdown runtime pieces in this order:
-	 * Content[auto shutdown] -> Preferences[auto shutdown] -> Registry -> Jobs
+	 * Content[auto shutdown] -&gt; Preferences[auto shutdown] -&gt; Registry -&gt; Jobs.
 	 * The "auto" shutdown takes place before this code is executed
 	 */
 	public void stop(BundleContext bundleContext) {
@@ -768,8 +684,8 @@ public final class InternalPlatform {
 		}
 
 		if (context != null) {
-			bundleTracker = new ServiceTracker<>(context, PackageAdmin.class, null);
-			bundleTracker.open();
+			platformTracker = new ServiceTracker<>(context, PlatformAdmin.class, null);
+			platformTracker.open();
 		}
 
 		if (context != null) {
@@ -806,9 +722,9 @@ public final class InternalPlatform {
 	private void startServices() {
 		// The check for getProduct() is relatively expensive (about 3% of the headless startup),
 		// so we don't want to enforce it here.
-		customPreferencesService = context.registerService(IProductPreferencesService.class, new ProductPreferencesService(), new Hashtable<String,String>());
+		customPreferencesService = context.registerService(IProductPreferencesService.class, new ProductPreferencesService(), new Hashtable<>());
 
-		legacyPreferencesService = context.registerService(ILegacyPreferences.class, new InitLegacyPreferences(), new Hashtable<String, String>());
+		legacyPreferencesService = context.registerService(ILegacyPreferences.class, new InitLegacyPreferences(), new Hashtable<>());
 	}
 
 	private void stopServices() {
@@ -822,10 +738,6 @@ public final class InternalPlatform {
 		}
 	}
 
-	private PackageAdmin getBundleAdmin() {
-		return bundleTracker == null ? null : bundleTracker.getService();
-	}
-
 	private DebugOptions getDebugOptions() {
 		return debugTracker == null ? null : debugTracker.getService();
 	}
@@ -833,55 +745,42 @@ public final class InternalPlatform {
 	private void closeOSGITrackers() {
 		if (preferencesTracker != null) {
 			preferencesTracker.close();
-			preferencesTracker = null;
 		}
 		if (contentTracker != null) {
 			contentTracker.close();
-			contentTracker = null;
 		}
 		if (debugTracker != null) {
 			debugTracker.close();
-			debugTracker = null;
 		}
-		if (bundleTracker != null) {
-			bundleTracker.close();
-			bundleTracker = null;
+		if (platformTracker != null) {
+			platformTracker.close();
 		}
 		if (logTracker != null) {
 			logTracker.close();
-			logTracker = null;
 		}
 		if (groupProviderTracker != null) {
 			groupProviderTracker.close();
-			groupProviderTracker = null;
 		}
 		if (environmentTracker != null) {
 			environmentTracker.close();
-			environmentTracker = null;
 		}
 		if (logReaderTracker != null) {
 			logReaderTracker.close();
-			logReaderTracker = null;
 		}
 		if (extendedLogTracker != null) {
 			extendedLogTracker.close();
-			extendedLogTracker = null;
 		}
 		if (installLocation != null) {
 			installLocation.close();
-			installLocation = null;
 		}
 		if (userLocation != null) {
 			userLocation.close();
-			userLocation = null;
 		}
 		if (configurationLocation != null) {
 			configurationLocation.close();
-			configurationLocation = null;
 		}
 		if (instanceLocation != null) {
 			instanceLocation.close();
-			instanceLocation = null;
 		}
 	}
 

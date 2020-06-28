@@ -128,7 +128,7 @@ public class MainClass extends Date implements Runnable, Printable {
 	 */
 	private static String invoke1(int x, Object o) {
 		if (o == null) {
-			return (new Integer(x)).toString();
+			return (Integer.valueOf(x)).toString();
 		} else {
 			return "";
 		}
@@ -388,7 +388,7 @@ public class MainClass extends Date implements Runnable, Printable {
 		fEventType = "";
 
 		/* Trigger event according to the field fEventType */
-		if (eventType.equals("")) {
+		if (eventType.isEmpty()) {
 			return;
 		} else if(eventType.equals("refclassload")) {
 			new RefClass();
@@ -397,7 +397,7 @@ public class MainClass extends Date implements Runnable, Printable {
 			foo();
 		}
 		else if(eventType.equals("argvalues")) {
-			argValues("teststr", 5, new Double(1.33));
+			argValues("teststr", 5, Double.valueOf(1.33));
 		}
 		else if(eventType.equals("forcereturn2")) {
 			printNumber(System.out, 1);

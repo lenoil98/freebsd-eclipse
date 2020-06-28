@@ -106,7 +106,7 @@ public class PointSelectionPage extends BaseWizardSelectionPage {
 		private String wMatch = "*"; //$NON-NLS-1$
 
 		protected void setMatchText(String match) {
-			if (match.indexOf("*") != 0 & match.indexOf("?") != 0 & match.indexOf(".") != 0) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			if (match.indexOf('*') != 0 & match.indexOf('?') != 0 & match.indexOf('.') != 0) {
 				match = "*" + match; //$NON-NLS-1$
 			}
 			wMatch = match + "*"; //$NON-NLS-1$
@@ -158,13 +158,11 @@ public class PointSelectionPage extends BaseWizardSelectionPage {
 				String id = plugin.getPluginBase().getId();
 				if (id.equals(fModel.getPluginBase().getId()))
 					continue;
-				for (IPluginExtensionPoint point : points)
-					extPoints.add(point);
+				Collections.addAll(extPoints, points);
 			}
 
 			IPluginExtensionPoint[] points = fModel.getPluginBase().getExtensionPoints();
-			for (IPluginExtensionPoint point : points)
-				extPoints.add(point);
+			Collections.addAll(extPoints, points);
 
 			return extPoints.toArray();
 		}
@@ -265,7 +263,7 @@ public class PointSelectionPage extends BaseWizardSelectionPage {
 		fFilterText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		fFilterText.addModifyListener(e -> {
 			fWildCardFilter.setMatchText(fFilterText.getText());
-			fPointListViewer.refresh();
+			refreshPointListViewer();
 		});
 		fFilterText.addKeyListener(new KeyListener() {
 			@Override
@@ -284,7 +282,7 @@ public class PointSelectionPage extends BaseWizardSelectionPage {
 		gd = new GridData(GridData.FILL_HORIZONTAL);
 		fFilterCheck.setLayoutData(gd);
 		fFilterCheck.setSelection(true);
-		fFilterCheck.addSelectionListener(widgetSelectedAdapter(e -> fPointListViewer.refresh()));
+		fFilterCheck.addSelectionListener(widgetSelectedAdapter(e -> refreshPointListViewer()));
 
 		fPointListViewer = new TableViewer(pointContainer, SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER);
 		fPointListViewer.setContentProvider(new PointContentProvider());
@@ -386,6 +384,16 @@ public class PointSelectionPage extends BaseWizardSelectionPage {
 		setControl(tabFolder);
 		Dialog.applyDialogFont(outerContainer);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(outerContainer.getParent(), IHelpContextIds.ADD_EXTENSIONS_SCHEMA_BASED);
+	}
+
+	private void refreshPointListViewer() {
+		Control control = fPointListViewer.getControl();
+		try {
+			control.setRedraw(false);
+			fPointListViewer.refresh();
+		} finally {
+			control.setRedraw(true);
+		}
 	}
 
 	private Control createWizardsPage(Composite parent) {

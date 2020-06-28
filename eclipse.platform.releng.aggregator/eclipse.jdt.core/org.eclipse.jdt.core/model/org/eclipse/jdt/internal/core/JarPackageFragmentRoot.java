@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,8 +14,10 @@
 package org.eclipse.jdt.internal.core;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +31,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IModuleDescription;
@@ -39,6 +42,7 @@ import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
+import org.eclipse.jdt.internal.core.JavaModelManager.PerProjectInfo;
 import org.eclipse.jdt.internal.core.nd.IReader;
 import org.eclipse.jdt.internal.core.nd.java.JavaIndex;
 import org.eclipse.jdt.internal.core.nd.java.NdResourceFile;
@@ -74,21 +78,38 @@ public class JarPackageFragmentRoot extends PackageFragmentRoot {
 	private boolean multiVersion;
 
 	/**
-	 * Constructs a package fragment root which is the root of the Java package directory hierarchy
-	 * based on a JAR file that is not contained in a <code>IJavaProject</code> and
-	 * does not have an associated <code>IResource</code>.
+	 * Reflects the extra attributes of the classpath entry declaring this root.
+	 * Caution, this field is used in hashCode() & equals() to avoid overzealous sharing.
+	 * Can be null, if lookup via the corresponding classpath entry failed.
 	 */
-	protected JarPackageFragmentRoot(IPath externalJarPath, JavaProject project) {
-		super(null, project);
-		this.jarPath = externalJarPath;
-	}
+	final protected IClasspathAttribute[] extraAttributes;
+
 	/**
 	 * Constructs a package fragment root which is the root of the Java package directory hierarchy
 	 * based on a JAR file.
 	 */
-	protected JarPackageFragmentRoot(IResource resource, JavaProject project) {
+	public JarPackageFragmentRoot(IResource resource, IPath externalJarPath, JavaProject project, IClasspathAttribute[] attributes) {
 		super(resource, project);
-		this.jarPath = resource.getFullPath();
+		this.jarPath = externalJarPath;
+		if (attributes == null) {
+			// attributes could either be
+			// (1) provided by the caller (particularly when creating from memento),
+			// (2) retrieved from the corresponding classpath entry (if a resolved classpath is available).
+			// These two cases should cover all normal scenarios, else extraAttributes will be null.
+			try {
+				PerProjectInfo perProjectInfo = project.getPerProjectInfo();
+				synchronized (perProjectInfo) {
+					if (perProjectInfo.resolvedClasspath != null && perProjectInfo.unresolvedEntryStatus == JavaModelStatus.VERIFIED_OK) {
+						IClasspathEntry classpathEntry = project.getClasspathEntryFor(externalJarPath);
+						if (classpathEntry != null)
+							attributes = classpathEntry.getExtraAttributes();
+					}
+				}
+			} catch (JavaModelException e) {
+				// ignore
+			}
+		}
+		this.extraAttributes = attributes;
 	}
 
 	/**
@@ -109,7 +130,7 @@ public class JarPackageFragmentRoot extends PackageFragmentRoot {
 			if (JavaIndex.isEnabled()) {
 				JavaIndex index = JavaIndex.getIndex();
 				try (IReader reader = index.getNd().acquireReadLock()) {
-					IPath resourcePath = JavaIndex.getLocationForElement(this); 
+					IPath resourcePath = JavaIndex.getLocationForElement(this);
 					if (!resourcePath.isEmpty()) {
 						NdResourceFile resourceFile = index.getResourceFile(resourcePath.toString().toCharArray());
 						if (index.isUpToDate(resourceFile)) {
@@ -121,9 +142,9 @@ public class JarPackageFragmentRoot extends PackageFragmentRoot {
 								String filename = next.getFileName().getString();
 								initRawPackageInfo(rawPackageInfo, filename, filename.endsWith("/"), compliance); //$NON-NLS-1$
 							}
-	
+
 							// Locate all the classfile entries
-							for (NdType type : resourceFile.getTypes()) {	
+							for (NdType type : resourceFile.getTypes()) {
 								String path = new String(type.getTypeId().getBinaryName()) + ".class"; //$NON-NLS-1$
 								initRawPackageInfo(rawPackageInfo, path, false, compliance);
 							}
@@ -157,7 +178,7 @@ public class JarPackageFragmentRoot extends PackageFragmentRoot {
 							}
 						}
 					}
-					
+
 					String[] supportedVersions = versions.toArray(new String[versions.size()]);
 					if (supportedVersions.length > 0) {
 						this.multiVersion = true;
@@ -247,7 +268,8 @@ public class JarPackageFragmentRoot extends PackageFragmentRoot {
 			return true;
 		if (o instanceof JarPackageFragmentRoot) {
 			JarPackageFragmentRoot other= (JarPackageFragmentRoot) o;
-			return this.jarPath.equals(other.jarPath);
+			return this.jarPath.equals(other.jarPath)
+					&& Arrays.equals(this.extraAttributes, other.extraAttributes);
 		}
 		return false;
 	}
@@ -356,7 +378,7 @@ public class JarPackageFragmentRoot extends PackageFragmentRoot {
 	}
 	@Override
 	public int hashCode() {
-		return this.jarPath.hashCode();
+		return this.jarPath.hashCode() + Arrays.hashCode(this.extraAttributes);
 	}
 	protected void initRawPackageInfo(HashtableOfArrayToObject rawPackageInfo, String entryName, boolean isDirectory, String compliance) {
 		int lastSeparator;
@@ -458,7 +480,7 @@ public class JarPackageFragmentRoot extends PackageFragmentRoot {
 	public URL getIndexPath() {
 		try {
 			IClasspathEntry entry = ((JavaProject) getParent()).getClasspathEntryFor(getPath());
-			if (entry != null) return ((ClasspathEntry)entry).getLibraryIndexLocation();	
+			if (entry != null) return ((ClasspathEntry)entry).getLibraryIndexLocation();
 		} catch (JavaModelException e) {
 			// ignore exception
 		}
@@ -471,8 +493,11 @@ public class JarPackageFragmentRoot extends PackageFragmentRoot {
 		try {
 			jar = getJar();
 			ZipEntry mfEntry = jar.getEntry(TypeConstants.META_INF_MANIFEST_MF);
-			if (mfEntry != null)
-				return new Manifest(jar.getInputStream(mfEntry));
+			if (mfEntry != null) {
+				try (InputStream is = jar.getInputStream(mfEntry)) {
+					return new Manifest(is);
+				}
+			}
 		} catch (CoreException | IOException e) {
 			// must do without manifest
 		} finally {

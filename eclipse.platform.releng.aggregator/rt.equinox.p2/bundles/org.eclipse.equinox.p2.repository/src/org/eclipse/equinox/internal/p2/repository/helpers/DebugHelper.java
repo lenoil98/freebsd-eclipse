@@ -21,7 +21,7 @@ import org.eclipse.equinox.internal.p2.repository.Activator;
 import org.eclipse.osgi.service.debug.DebugOptions;
 
 public class DebugHelper {
-	public static final String LINE_SEPARATOR = System.getProperty("line.separator"); //$NON-NLS-1$
+	public static final String LINE_SEPARATOR = System.lineSeparator();
 
 	public static final boolean DEBUG_REPOSITORY_CREDENTIALS;
 	public static final boolean DEBUG_REPOSITORY_TRANSPORT;
@@ -38,7 +38,7 @@ public class DebugHelper {
 	}
 
 	public static void debug(String name, String message) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append("["); //$NON-NLS-1$
 		buffer.append(Activator.ID + "-" + name); //$NON-NLS-1$
 		buffer.append("] "); //$NON-NLS-1$
@@ -54,16 +54,16 @@ public class DebugHelper {
 		if (keyValueArray == null || keyValueArray.length == 0)
 			debug(name, message);
 		else {
-			Map<Object, Object> params = new LinkedHashMap<Object, Object>(keyValueArray.length / 2);
+			Map<Object, Object> params = new LinkedHashMap<>(keyValueArray.length / 2);
 			for (int i = 0; i < keyValueArray.length; i += 2)
 				params.put(keyValueArray[i], keyValueArray[i + 1]);
-			StringBuffer buffer = new StringBuffer();
+			StringBuilder buffer = new StringBuilder();
 			buffer.append(message);
 			buffer.append(formatMap(params, true, true));
 			debug(name, buffer.toString());
 		}
 
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append("["); //$NON-NLS-1$
 		buffer.append(Activator.ID + "-" + name); //$NON-NLS-1$
 		buffer.append("] "); //$NON-NLS-1$
@@ -79,7 +79,7 @@ public class DebugHelper {
 		if (array == null || array.length == 0)
 			return "[]"; //$NON-NLS-1$
 
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append('[');
 		int i = 0;
 		for (;;) {
@@ -104,7 +104,7 @@ public class DebugHelper {
 		if (map == null || map.size() == 0)
 			return "[]"; //$NON-NLS-1$
 
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append('[');
 		for (Entry<?, ?> e : map.entrySet()) {
 			buffer.append(e.getKey());

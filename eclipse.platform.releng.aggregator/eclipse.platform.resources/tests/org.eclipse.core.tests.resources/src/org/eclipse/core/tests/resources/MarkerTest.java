@@ -17,8 +17,6 @@ package org.eclipse.core.tests.resources;
 import java.io.*;
 import java.io.File;
 import java.util.*;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.internal.resources.*;
 import org.eclipse.core.internal.watson.IPathRequestor;
 import org.eclipse.core.resources.*;
@@ -31,22 +29,6 @@ public class MarkerTest extends ResourceTest {
 
 	/** The collection of resources used for testing. */
 	IResource[] resources;
-
-	/**
-	 * Need a zero argument constructor to satisfy the test harness.
-	 * This constructor should not do any real work nor should it be
-	 * called by user code.
-	 */
-	public MarkerTest() {
-		super();
-	}
-
-	/**
-	 * Creates a new markers test.
-	 */
-	public MarkerTest(String name) {
-		super(name);
-	}
 
 	/**
 	 * Tests the appearance of marker changes in the resource delta.
@@ -157,9 +139,7 @@ public class MarkerTest extends ResourceTest {
 		try {
 			IMarker[] temp = getWorkspace().getRoot().findMarkers(null, true, IResource.DEPTH_INFINITE);
 			assertEquals("0.1", numMarkers, temp.length);
-			for (int i = 0; i < temp.length; i++) {
-				markers[i] = temp[i];
-			}
+			System.arraycopy(temp, 0, markers, 0, temp.length);
 		} catch (CoreException e) {
 			fail("0.2", e);
 		}
@@ -424,17 +404,6 @@ public class MarkerTest extends ResourceTest {
 		resources = createHierarchy();
 	}
 
-	/**
-	 * Configures the markers test suite.
-	 */
-	public static Test suite() {
-		return new TestSuite(MarkerTest.class);
-
-		//		TestSuite suite = new TestSuite();
-		//		suite.addTest(new MarkerTest("testMarkerChangesInDelta3"));
-		//		return suite;
-	}
-
 	@Override
 	public void tearDown() throws Exception {
 		super.tearDown();
@@ -597,8 +566,8 @@ public class MarkerTest extends ResourceTest {
 		} catch (CoreException e) {
 			fail("1.0", e);
 		}
-		for (int i = 0; i < markers.length; i++) {
-			assertTrue("1.1", !markers[i].exists());
+		for (IMarker marker : markers) {
+			assertTrue("1.1", !marker.exists());
 		}
 
 		// Check that an empty collection of markers can be removed.
@@ -642,25 +611,19 @@ public class MarkerTest extends ResourceTest {
 
 		// add more markers and do a search on all marker types
 		Vector<IMarker> allMarkers = new Vector<>(markers.length * 3);
-		for (IMarker marker : markers) {
-			allMarkers.add(marker);
-		}
+		Collections.addAll(allMarkers, markers);
 		try {
 			markers = createMarkers(resources, IMarker.BOOKMARK);
 		} catch (CoreException e) {
 			fail("3.0", e);
 		}
-		for (IMarker marker : markers) {
-			allMarkers.add(marker);
-		}
+		Collections.addAll(allMarkers, markers);
 		try {
 			markers = createMarkers(resources, IMarker.TASK);
 		} catch (CoreException e) {
 			fail("3.1", e);
 		}
-		for (IMarker marker : markers) {
-			allMarkers.add(marker);
-		}
+		Collections.addAll(allMarkers, markers);
 		try {
 			IMarker[] found = getWorkspace().getRoot().findMarkers(null, false, IResource.DEPTH_INFINITE);
 			assertEquals("3.2", allMarkers.toArray(new IMarker[allMarkers.size()]), found);
@@ -743,7 +706,7 @@ public class MarkerTest extends ResourceTest {
 			file = project.getFile("foo.txt");
 			file.create(getRandomContents(), true, null);
 			IMarker marker = file.createMarker(IMarker.PROBLEM);
-			marker.setAttributes(new HashMap<String, String>());
+			marker.setAttributes(new HashMap<>());
 			marker.setAttribute(IMarker.SEVERITY, testValue);
 			Object value = marker.getAttribute(IMarker.SEVERITY);
 			assertEquals("1.0." + file.getFullPath(), value, testValue);
@@ -1479,17 +1442,11 @@ public class MarkerTest extends ResourceTest {
 		try {
 			newMarkers = createMarkers(resources, IMarker.PROBLEM);
 			expected = new IMarker[newMarkers.length * 3];
-			for (int i = 0; i < newMarkers.length; i++) {
-				expected[i] = newMarkers[i];
-			}
+			System.arraycopy(newMarkers, 0, expected, 0, newMarkers.length);
 			newMarkers = createMarkers(resources, IMarker.BOOKMARK);
-			for (int i = 0; i < newMarkers.length; i++) {
-				expected[i + newMarkers.length] = newMarkers[i];
-			}
+			System.arraycopy(newMarkers, 0, expected, newMarkers.length, newMarkers.length);
 			newMarkers = createMarkers(resources, IMarker.TASK);
-			for (int i = 0; i < newMarkers.length; i++) {
-				expected[i + (newMarkers.length * 2)] = newMarkers[i];
-			}
+			System.arraycopy(newMarkers, 0, expected, newMarkers.length * 2, newMarkers.length);
 		} catch (CoreException e) {
 			fail("1.0", e);
 		}

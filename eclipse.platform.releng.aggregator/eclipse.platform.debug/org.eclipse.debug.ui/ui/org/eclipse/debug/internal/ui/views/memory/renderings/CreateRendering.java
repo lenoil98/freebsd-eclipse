@@ -83,18 +83,12 @@ public class CreateRendering extends AbstractMemoryRendering implements IMemoryR
 	class MemoryRenderingLabelProvider implements ILabelProvider
 	{
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.ILabelProvider#getImage(java.lang.Object)
-		 */
 		@Override
 		public Image getImage(Object element) {
 			return DebugUIPlugin.getImageDescriptorRegistry().get(
 					DebugPluginImages.getImageDescriptor(IInternalDebugUIConstants.IMG_ELCL_MONITOR_EXPRESSION));
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
-		 */
 		@Override
 		public String getText(Object element) {
 			if (element instanceof IMemoryRenderingType)
@@ -102,34 +96,22 @@ public class CreateRendering extends AbstractMemoryRendering implements IMemoryR
 				String label = ((IMemoryRenderingType)element).getLabel();
 				return label;
 			}
-            return element.toString();
+			return element.toString();
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IBaseLabelProvider#addListener(org.eclipse.jface.viewers.ILabelProviderListener)
-		 */
 		@Override
 		public void addListener(ILabelProviderListener listener) {
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IBaseLabelProvider#dispose()
-		 */
 		@Override
 		public void dispose() {
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IBaseLabelProvider#isLabelProperty(java.lang.Object, java.lang.String)
-		 */
 		@Override
 		public boolean isLabelProperty(Object element, String property) {
 			return false;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IBaseLabelProvider#removeListener(org.eclipse.jface.viewers.ILabelProviderListener)
-		 */
 		@Override
 		public void removeListener(ILabelProviderListener listener) {
 		}
@@ -139,35 +121,23 @@ public class CreateRendering extends AbstractMemoryRendering implements IMemoryR
 	class MemoryRenderingContentProvider implements IStructuredContentProvider
 	{
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-		 */
 		@Override
 		public Object[] getElements(Object inputElement) {
 			IMemoryRenderingType[] renderings = DebugUITools.getMemoryRenderingManager().getRenderingTypes((IMemoryBlock)inputElement);
 			return renderings;
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IContentProvider#dispose()
-		 */
 		@Override
 		public void dispose() {
 
 		}
 
-		/* (non-Javadoc)
-		 * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-		 */
 		@Override
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		}
 
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public Control createControl(Composite parent) {
 		fCanvas = new Composite(parent, SWT.NONE);
@@ -227,8 +197,9 @@ public class CreateRendering extends AbstractMemoryRendering implements IMemoryR
 		fViewer.getList().addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if (e.character == SWT.CR)
+				if (e.character == SWT.CR) {
 					addRenderings();
+				}
 			}});
 
 		Button addButton = new Button(fCanvas, SWT.NONE);
@@ -279,18 +250,17 @@ public class CreateRendering extends AbstractMemoryRendering implements IMemoryR
 		// ask for debug target and memory block retrieval
 		IMemoryBlockRetrieval standardMemRetrieval = MemoryViewUtil.getMemoryBlockRetrieval(getMemoryBlock());
 
-		if (standardMemRetrieval == null)
+		if (standardMemRetrieval == null) {
 			return;
+		}
 
 		// make a copy of the container, may be diposed when a rendering is added
 		IMemoryRenderingContainer container = fContainer;
 		// add memory renderings to Memory Rendering Manager
-		for (int i=0; i<renderings.length; i++)
-		{
-			if (renderings[i] instanceof IMemoryRenderingType)
-			{
+		for (Object r : renderings) {
+			if (r instanceof IMemoryRenderingType) {
 				try {
-					IMemoryRendering rendering = ((IMemoryRenderingType)renderings[i]).createRendering();
+					IMemoryRendering rendering = ((IMemoryRenderingType) r).createRendering();
 					if (rendering != null)
 					{
 						rendering.init(container, getMemoryBlock());
@@ -304,9 +274,6 @@ public class CreateRendering extends AbstractMemoryRendering implements IMemoryR
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.IMemoryRendering#dispose()
-	 */
 	@Override
 	public void dispose() {
 		fViewer = null;
@@ -316,17 +283,15 @@ public class CreateRendering extends AbstractMemoryRendering implements IMemoryR
 		DebugUITools.getMemoryRenderingManager().removeListener(this);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.memory.AbstractMemoryRendering#getControl()
-	 */
 	@Override
 	public Control getControl() {
 		return fCanvas;
 	}
 	@Override
 	public void memoryRenderingBindingsChanged() {
-		if (fViewer != null)
+		if (fViewer != null) {
 			fViewer.refresh();
+		}
 	}
 
 	@Override

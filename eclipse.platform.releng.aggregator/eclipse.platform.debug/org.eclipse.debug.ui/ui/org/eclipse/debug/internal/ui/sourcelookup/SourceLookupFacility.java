@@ -103,20 +103,12 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 			fEntryStack = new ArrayList<>();
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see java.util.HashMap#put(java.lang.Object, java.lang.Object)
-		 */
 		@Override
 		public SourceLookupResult put(Object key, SourceLookupResult value) {
 			shuffle(key);
 			return super.put(key, value);
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see java.util.HashMap#remove(java.lang.Object)
-		 */
 		@Override
 		public SourceLookupResult remove(Object key) {
 			SourceLookupResult oldResult = super.remove(key);
@@ -213,8 +205,7 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
 		IStackFrame frame = null;
-		for (int i = 0; i < events.length; i++) {
-			final DebugEvent event = events[i];
+		for (DebugEvent event : events) {
 			switch (event.getKind()) {
 				case DebugEvent.TERMINATE:
 				case DebugEvent.RESUME:
@@ -253,10 +244,6 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 			this.locator = locator;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#hashCode()
-		 */
 		@Override
 		public int hashCode() {
 			final int prime = 31;
@@ -267,10 +254,6 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 			return result;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
 		@Override
 		public boolean equals(Object obj) {
 			if (this == obj) {
@@ -390,15 +373,15 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 			}
 		}
 		return result;
-    }
+	}
 
-    /**
-     * Returns the model presentation for the given debug model, or <code>null</code>
-     * if none.
-     *
-     * @param id debug model id
-     * @return presentation for the model, or <code>null</code> if none.
-     */
+	/**
+	 * Returns the model presentation for the given debug model, or <code>null</code>
+	 * if none.
+	 *
+	 * @param id debug model id
+	 * @return presentation for the model, or <code>null</code> if none.
+	 */
 	protected IDebugModelPresentation getPresentation(String id) {
 		return ((DelegatingModelPresentation)DebugUIPlugin.getModelPresentation()).getPresentation(id);
 	}
@@ -409,32 +392,32 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 	 * @return an editor presentation
 	 */
 	protected IDebugEditorPresentation getEditorPresentation() {
-	    return (DelegatingModelPresentation)DebugUIPlugin.getModelPresentation();
+		return (DelegatingModelPresentation)DebugUIPlugin.getModelPresentation();
 	}
 
-    /**
-     * Opens an editor in the given workbench page for the given source lookup
-     * result. Has no effect if the result has an unknown editor id or editor input.
-     * The editor is opened, positioned, and annotated.
-     * <p>
-     * Honor's the user preference of whether to re-use editors when displaying source.
-     * </p>
-     * @param result source lookup result to display
-     * @param page the page to display the result in
-     */
-    public void display(ISourceLookupResult result, IWorkbenchPage page) {
+	/**
+	 * Opens an editor in the given workbench page for the given source lookup
+	 * result. Has no effect if the result has an unknown editor id or editor input.
+	 * The editor is opened, positioned, and annotated.
+	 * <p>
+	 * Honor's the user preference of whether to re-use editors when displaying source.
+	 * </p>
+	 * @param result source lookup result to display
+	 * @param page the page to display the result in
+	 */
+	public void display(ISourceLookupResult result, IWorkbenchPage page) {
 		IEditorPart editor= openEditor(result, page);
 		if (editor == null) {
 			return;
 		}
 		IStackFrame frame = null;
-        if (result.getArtifact() instanceof IStackFrame) {
-            frame = (IStackFrame) result.getArtifact();
-        }
+		if (result.getArtifact() instanceof IStackFrame) {
+			frame = (IStackFrame) result.getArtifact();
+		}
 		// position and annotate editor for stack frame
-        if (frame != null) {
+		if (frame != null) {
 			IDebugEditorPresentation editorPresentation = getEditorPresentation();
-            if (editorPresentation.addAnnotations(editor, frame)) {
+			if (editorPresentation.addAnnotations(editor, frame)) {
 				Decoration decoration = new StandardDecoration(editorPresentation, editor, frame.getThread());
 				DecorationManager.addDecoration(decoration);
 			} else {
@@ -455,7 +438,7 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 				}
 			}
 		}
-    }
+	}
 
 	/**
 	 * Opens the editor used to display the source for an element selected in
@@ -479,20 +462,20 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 				page.bringToTop(editor);
 			}
 			if (editor == null) {
-			    IEditorPart editorForPage = getEditor(page);
+				IEditorPart editorForPage = getEditor(page);
 				if (editorForPage == null || editorForPage.isDirty() || page.isEditorPinned(editorForPage)) {
-				    // open a new editor
+					// open a new editor
 					editor = openEditor(page, input, id);
 					editorForPage = editor;
 				} else if (editorForPage instanceof IReusableEditor && editorForPage.getSite().getId().equals(id)) {
-				    // re-use editor
+					// re-use editor
 					page.reuseEditor((IReusableEditor)editorForPage, input);
 					editor = editorForPage;
-                    if(!page.isPartVisible(editor)) {
-                        page.bringToTop(editor);
-                    }
+					if(!page.isPartVisible(editor)) {
+						page.bringToTop(editor);
+					}
 				} else {
-				    // close editor, open a new one
+					// close editor, open a new one
 					editor = openEditor(page, input, id);
 					page.closeEditor(editorForPage, false);
 					editorForPage = editor;
@@ -585,144 +568,108 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 		return false;
 	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPageListener#pageActivated(org.eclipse.ui.IWorkbenchPage)
-     */
-    @Override
+	@Override
 	public void pageActivated(IWorkbenchPage page) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPageListener#pageClosed(org.eclipse.ui.IWorkbenchPage)
-     */
-    @Override
+	@Override
 	public void pageClosed(IWorkbenchPage page) {
-        fEditorsByPage.remove(page);
-        page.removePartListener(this);
-    }
+		fEditorsByPage.remove(page);
+		page.removePartListener(this);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPageListener#pageOpened(org.eclipse.ui.IWorkbenchPage)
-     */
-    @Override
+	@Override
 	public void pageOpened(IWorkbenchPage page) {
-    	page.addPartListener(this);
-    }
+		page.addPartListener(this);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPartListener2#partActivated(org.eclipse.ui.IWorkbenchPartReference)
-     */
-    @Override
+	@Override
 	public void partActivated(IWorkbenchPartReference partRef) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPartListener2#partBroughtToTop(org.eclipse.ui.IWorkbenchPartReference)
-     */
-    @Override
+	@Override
 	public void partBroughtToTop(IWorkbenchPartReference partRef) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPartListener2#partClosed(org.eclipse.ui.IWorkbenchPartReference)
-     */
-    @Override
+	@Override
 	public void partClosed(IWorkbenchPartReference partRef) {
-        // clear the cached editor for the page if it has been closed
-        IWorkbenchPage page = partRef.getPage();
-        IEditorPart editor = getEditor(page);
-        IWorkbenchPart part = partRef.getPart(false);
+		// clear the cached editor for the page if it has been closed
+		IWorkbenchPage page = partRef.getPage();
+		IEditorPart editor = getEditor(page);
+		IWorkbenchPart part = partRef.getPart(false);
 		if (part != null && part.equals(editor)) {
 			fEditorsByPage.remove(page);
 		}
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPartListener2#partDeactivated(org.eclipse.ui.IWorkbenchPartReference)
-     */
-    @Override
+	@Override
 	public void partDeactivated(IWorkbenchPartReference partRef) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPartListener2#partOpened(org.eclipse.ui.IWorkbenchPartReference)
-     */
-    @Override
+	@Override
 	public void partOpened(IWorkbenchPartReference partRef) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPartListener2#partHidden(org.eclipse.ui.IWorkbenchPartReference)
-     */
-    @Override
+	@Override
 	public void partHidden(IWorkbenchPartReference partRef) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPartListener2#partVisible(org.eclipse.ui.IWorkbenchPartReference)
-     */
-    @Override
+	@Override
 	public void partVisible(IWorkbenchPartReference partRef) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.IPartListener2#partInputChanged(org.eclipse.ui.IWorkbenchPartReference)
-     */
-    @Override
+	@Override
 	public void partInputChanged(IWorkbenchPartReference partRef) {
-    }
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
-     */
-    @Override
+	@Override
 	public void propertyChange(PropertyChangeEvent event) {
-        String property = event.getProperty();
+		String property = event.getProperty();
 		if (property.equals(IDebugUIConstants.PREF_REUSE_EDITOR)) {
 			fReuseEditor = DebugUIPlugin.getDefault().getPreferenceStore().getBoolean(IDebugUIConstants.PREF_REUSE_EDITOR);
 		}
-    }
+	}
 
-    /**
-     * Returns the editor to use to display source in the given page, or
-     * <code>null</code> if a new editor should be opened.
-     *
-     * @param page workbench page
-     * @return the editor to use to display source in the given page, or
-     * <code>null</code> if a new editor should be opened
-     */
-    protected IEditorPart getEditor(IWorkbenchPage page) {
-        return fEditorsByPage.get(page);
-    }
+	/**
+	 * Returns the editor to use to display source in the given page, or
+	 * <code>null</code> if a new editor should be opened.
+	 *
+	 * @param page workbench page
+	 * @return the editor to use to display source in the given page, or
+	 * <code>null</code> if a new editor should be opened
+	 */
+	protected IEditorPart getEditor(IWorkbenchPage page) {
+		return fEditorsByPage.get(page);
+	}
 
-    /**
-     * Sets the editor to use to display source in the given page, or
-     * <code>null</code> if a new editor should be opened.
-     *
-     * @param page workbench page
-     * @return the editor to use to display source in the given page, or
-     * <code>null</code> if a new editor should be opened
-     */
-    protected void setEditor(IWorkbenchPage page, IEditorPart editorPart) {
-        if (editorPart == null) {
-            fEditorsByPage.remove(page);
-        } else {
-            fEditorsByPage.put(page, editorPart);
-        }
-        page.addPartListener(this);
-        page.getWorkbenchWindow().addPageListener(this);
-    }
+	/**
+	 * Sets the editor to use to display source in the given page, or
+	 * <code>null</code> if a new editor should be opened.
+	 *
+	 * @param page workbench page
+	 * @return the editor to use to display source in the given page, or
+	 * <code>null</code> if a new editor should be opened
+	 */
+	protected void setEditor(IWorkbenchPage page, IEditorPart editorPart) {
+		if (editorPart == null) {
+			fEditorsByPage.remove(page);
+		} else {
+			fEditorsByPage.put(page, editorPart);
+		}
+		page.addPartListener(this);
+		page.getWorkbenchWindow().addPageListener(this);
+	}
 
-    /**
-     * Performs cleanup.
-     */
-    protected void dispose() {
-        DebugUIPlugin.getDefault().getPreferenceStore().removePropertyChangeListener(this);
+	/**
+	 * Performs cleanup.
+	 */
+	protected void dispose() {
+		DebugUIPlugin.getDefault().getPreferenceStore().removePropertyChangeListener(this);
 		DebugPlugin.getDefault().removeDebugEventListener(this);
-        fEditorsByPage.clear();
-        fPresentation.dispose();
+		fEditorsByPage.clear();
+		fPresentation.dispose();
 		fLookupResults.clear();
-    }
+	}
 
 	/**
 	 * A job to perform source lookup on the currently selected stack frame.
@@ -749,11 +696,6 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 			// job, in order to avoid blocking nested jobs (bug 339542).
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see org.eclipse.core.runtime.jobs.Job#run(org.eclipse.core.runtime.
-		 * IProgressMonitor)
-		 */
 		@Override
 		protected IStatus run(IProgressMonitor monitor) {
 			if (!monitor.isCanceled()) {
@@ -767,10 +709,6 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 			return Status.OK_STATUS;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see org.eclipse.core.runtime.jobs.Job#belongsTo(java.lang.Object)
-		 */
 		@Override
 		public boolean belongsTo(Object family) {
 			// source lookup jobs are a family per workbench page
@@ -796,12 +734,6 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 			fPage = page;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see
-		 * org.eclipse.ui.progress.UIJob#runInUIThread(org.eclipse.core.runtime
-		 * .IProgressMonitor)
-		 */
 		@Override
 		public IStatus runInUIThread(IProgressMonitor monitor) {
 			if (!monitor.isCanceled() && fResult != null) {
@@ -818,10 +750,6 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 			return Status.OK_STATUS;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see org.eclipse.core.runtime.jobs.Job#belongsTo(java.lang.Object)
-		 */
 		@Override
 		public boolean belongsTo(Object family) {
 			// source display jobs are a family per workbench page
@@ -835,7 +763,6 @@ public class SourceLookupFacility implements IPageListener, IPartListener2, IPro
 	}
 
 	/*
-	 * (non-Javadoc)
 	 * @see
 	 * org.eclipse.debug.ui.contexts.ISourceDisplayAdapter#displaySource(java
 	 * .lang.Object, org.eclipse.ui.IWorkbenchPage, boolean)

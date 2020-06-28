@@ -69,7 +69,7 @@ public class KeyAssistDialog extends PopupDialog {
 	/**
 	 * The ordered list of command identifiers corresponding to the table.
 	 */
-	private List<Binding> bindings = new ArrayList<Binding>();
+	private List<Binding> bindings = new ArrayList<>();
 
 	/**
 	 * The table containing of the possible completions. This value is <code>null</code> until the
@@ -354,7 +354,7 @@ public class KeyAssistDialog extends PopupDialog {
 		/*
 		 * If you double-click on the table, it should execute the selected command.
 		 */
-		completionsTable.addListener(SWT.DefaultSelection, event -> executeKeyBinding(event));
+		completionsTable.addListener(SWT.DefaultSelection, this::executeKeyBinding);
 	}
 
 	/**
@@ -373,7 +373,7 @@ public class KeyAssistDialog extends PopupDialog {
 			} catch (CommandException e) {
 				// WorkbenchPlugin.log(binding.getParameterizedCommand().toString(), e);
 				// TODO we probably need to log something here.
-				System.err.println(binding.getParameterizedCommand().toString() + " : " + e); //$NON-NLS-1$
+				System.err.println(binding.getParameterizedCommand() + " : " + e); //$NON-NLS-1$
 			}
 		}
 	}
@@ -387,7 +387,7 @@ public class KeyAssistDialog extends PopupDialog {
 		Collection<Binding> matchesForCommand;
 		Collection<Binding> activeBindings = bindingService.getActiveBindings();
 		Collection<Binding> conflictBindings = bindingService.getAllConflicts();
-		Collection<Binding> sortedMatches = new TreeSet<Binding>((binding1, binding2) -> {
+		Collection<Binding> sortedMatches = new TreeSet<>((binding1, binding2) -> {
 			ParameterizedCommand cmdA = binding1.getParameterizedCommand();
 			ParameterizedCommand cmdB = binding2.getParameterizedCommand();
 			int result = 0;
@@ -477,7 +477,7 @@ public class KeyAssistDialog extends PopupDialog {
 	 * @since 3.3
 	 */
 	public int open(Collection<Binding> bindings) {
-		matches = new TreeSet<Binding>((a, b) -> {
+		matches = new TreeSet<>((a, b) -> {
 			Binding bindingA = a;
 			Binding bindingB = b;
 			ParameterizedCommand commandA = bindingA.getParameterizedCommand();

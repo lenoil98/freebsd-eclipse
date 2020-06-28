@@ -119,7 +119,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Sort working sets button.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private Button fSortWorkingSet;
@@ -134,14 +134,14 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Value of sorted state of working sets.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private boolean fIsSortingEnabled;
 
 	/**
 	 * The working set comparator.
-	 * 
+	 *
 	 * @since 3.5
 	 */
 	private WorkingSetComparator fComparator;
@@ -151,9 +151,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 		setTitle(WorkingSetMessages.WorkingSetConfigurationDialog_title);
 		setMessage(WorkingSetMessages.WorkingSetConfigurationDialog_message);
 		fAllWorkingSets= new ArrayList<>(allWorkingSets.length);
-		for (int i= 0; i < allWorkingSets.length; i++) {
-			fAllWorkingSets.add(allWorkingSets[i]);
-		}
+		fAllWorkingSets.addAll(Arrays.asList(allWorkingSets));
 		fIsSortingEnabled= isSortingEnabled;
 	}
 
@@ -226,7 +224,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 		fTableViewer.getTable().setLayoutData(data);
 
 		fTableViewer.setLabelProvider(new WorkingSetLabelProvider());
-		fTableViewer.setContentProvider(new ArrayContentProvider());
+		fTableViewer.setContentProvider(ArrayContentProvider.getInstance());
 		fTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
@@ -330,7 +328,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 		 * A check box that has persistence to sort the working sets alphabetically in the
 		 * WorkingSetConfigurationDialog. It restores the unsorted order of the working sets when
 		 * unchecked.
-		 * 
+		 *
 		 * @since 3.5
 		 */
 		fSortWorkingSet= new Button(parent, SWT.CHECK);
@@ -464,9 +462,8 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 				if (fAddedWorkingSets.contains(workingSet)) {
 					fAddedWorkingSets.remove(workingSet);
 				} else {
-					IWorkingSet[] recentWorkingSets= manager.getRecentWorkingSets();
-					for (int i= 0; i < recentWorkingSets.length; i++) {
-						if (workingSet.equals(recentWorkingSets[i])) {
+					for (IWorkingSet recentWorkingSet : manager.getRecentWorkingSets()) {
+						if (workingSet.equals(recentWorkingSet)) {
 							fRemovedMRUWorkingSets.add(workingSet);
 							break;
 						}
@@ -640,18 +637,18 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Returns the list of newly added working sets through this dialog.
-	 * 
+	 *
 	 * @return the list of newly added working sets
 	 * @since 3.5
 	 */
 	public List<IWorkingSet> getNewlyAddedWorkingSets() {
 		return fAddedWorkingSets;
-		
+
 	}
 
 	/**
 	 * Returns whether sorting is enabled for working sets.
-	 * 
+	 *
 	 * @return <code>true</code> if sorting is enabled, <code>false</code> otherwise
 	 * @since 3.5
 	 */
@@ -661,7 +658,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Returns the working set comparator.
-	 * 
+	 *
 	 * @return the working set comparator
 	 * @since 3.5
 	 */
@@ -674,7 +671,7 @@ public class WorkingSetConfigurationDialog extends SelectionDialog {
 
 	/**
 	 * Returns all the working sets.
-	 * 
+	 *
 	 * @return all the working sets
 	 * @since 3.7
 	 */

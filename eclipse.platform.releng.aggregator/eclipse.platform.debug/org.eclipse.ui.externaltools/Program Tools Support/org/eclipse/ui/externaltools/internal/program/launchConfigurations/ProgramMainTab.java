@@ -41,7 +41,7 @@ public class ProgramMainTab extends ExternalToolsMainTab {
 		}
 		Object file= result.getFirstElement();
 		if (file instanceof IFile) {
-			StringBuffer expression = new StringBuffer();
+			StringBuilder expression = new StringBuilder();
 			expression.append("${workspace_loc:"); //$NON-NLS-1$
 			expression.append(((IFile)file).getFullPath().toString());
 			expression.append("}"); //$NON-NLS-1$
@@ -50,9 +50,6 @@ public class ProgramMainTab extends ExternalToolsMainTab {
 	}
 
 
-   	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 		super.createControl(parent);

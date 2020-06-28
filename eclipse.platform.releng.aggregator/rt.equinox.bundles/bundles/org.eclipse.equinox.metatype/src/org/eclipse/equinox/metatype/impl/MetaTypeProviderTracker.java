@@ -22,7 +22,6 @@ import org.eclipse.osgi.util.NLS;
 import org.osgi.framework.*;
 import org.osgi.service.cm.ManagedService;
 import org.osgi.service.cm.ManagedServiceFactory;
-import org.osgi.service.log.LogService;
 import org.osgi.service.metatype.*;
 import org.osgi.util.tracker.ServiceTracker;
 
@@ -49,10 +48,11 @@ public class MetaTypeProviderTracker implements EquinoxMetaTypeInformation {
 			return new String[0]; // return none if not active
 		MetaTypeProviderWrapper[] wrappers = getMetaTypeProviders();
 		ArrayList<String> results = new ArrayList<String>();
-		for (int i = 0; i < wrappers.length; i++) {
+		for (MetaTypeProviderWrapper wrapper : wrappers) {
 			// return only the correct type of pids (regular or factory)
-			if (factory == wrappers[i].factory)
-				results.add(wrappers[i].pid);
+			if (factory == wrapper.factory) {
+				results.add(wrapper.pid);
+			}
 		}
 		return results.toArray(new String[results.size()]);
 	}
@@ -69,14 +69,16 @@ public class MetaTypeProviderTracker implements EquinoxMetaTypeInformation {
 		return _bundle;
 	}
 
+	@Override
 	public EquinoxObjectClassDefinition getObjectClassDefinition(String id, String locale) {
 		if (_bundle.getState() != Bundle.ACTIVE)
 			return null; // return none if not active
 		MetaTypeProviderWrapper[] wrappers = getMetaTypeProviders();
-		for (int i = 0; i < wrappers.length; i++) {
-			if (id.equals(wrappers[i].pid))
+		for (MetaTypeProviderWrapper wrapper : wrappers) {
+			if (id.equals(wrapper.pid)) {
 				// found a matching pid now call the actual provider
-				return wrappers[i].getObjectClassDefinition(id, locale);
+				return wrapper.getObjectClassDefinition(id, locale);
+			}
 		}
 		return null;
 	}
@@ -87,13 +89,15 @@ public class MetaTypeProviderTracker implements EquinoxMetaTypeInformation {
 		MetaTypeProviderWrapper[] wrappers = getMetaTypeProviders();
 		ArrayList<String> locales = new ArrayList<String>();
 		// collect all the unique locales from all providers we found
-		for (int i = 0; i < wrappers.length; i++) {
-			String[] wrappedLocales = wrappers[i].getLocales();
+		for (MetaTypeProviderWrapper wrapper : wrappers) {
+			String[] wrappedLocales = wrapper.getLocales();
 			if (wrappedLocales == null)
 				continue;
-			for (int j = 0; j < wrappedLocales.length; j++)
-				if (!locales.contains(wrappedLocales[j]))
-					locales.add(wrappedLocales[j]);
+			for (String wrappedLocale : wrappedLocales) {
+				if (!locales.contains(wrappedLocale)) {
+					locales.add(wrappedLocale);
+				}
+			}
 		}
 		return locales.toArray(new String[locales.size()]);
 	}
@@ -158,7 +162,7 @@ public class MetaTypeProviderTracker implements EquinoxMetaTypeInformation {
 				e = ase;
 			}
 		}
-		log.log(LogService.LOG_WARNING, NLS.bind(MetaTypeMsg.INVALID_PID_METATYPE_PROVIDER_IGNORED, new Object[] {_bundle.getSymbolicName(), _bundle.getBundleId(), name, value}), e);
+		log.log(LogTracker.LOG_WARNING, NLS.bind(MetaTypeMsg.INVALID_PID_METATYPE_PROVIDER_IGNORED, new Object[] {_bundle.getSymbolicName(), _bundle.getBundleId(), name, value}), e);
 		return new String[0];
 	}
 
@@ -214,14 +218,17 @@ public class MetaTypeProviderTracker implements EquinoxMetaTypeInformation {
 					return ocd.getIcon(size);
 				}
 
+				@Override
 				public Map<String, String> getExtensionAttributes(String schema) {
 					return Collections.<String, String> emptyMap();
 				}
 
+				@Override
 				public Set<String> getExtensionUris() {
 					return Collections.<String> emptySet();
 				}
 
+				@Override
 				public EquinoxAttributeDefinition[] getAttributeDefinitions(int filter) {
 					AttributeDefinition[] ads = ocd.getAttributeDefinitions(filter);
 					if (ads == null || ads.length == 0)
@@ -265,18 +272,22 @@ public class MetaTypeProviderTracker implements EquinoxMetaTypeInformation {
 								return ad.getDefaultValue();
 							}
 
+							@Override
 							public Map<String, String> getExtensionAttributes(String schema) {
 								return Collections.<String, String> emptyMap();
 							}
 
+							@Override
 							public Set<String> getExtensionUris() {
 								return Collections.<String> emptySet();
 							}
 
+							@Override
 							public String getMax() {
 								return null;
 							}
 
+							@Override
 							public String getMin() {
 								return null;
 							}

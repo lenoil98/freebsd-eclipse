@@ -16,13 +16,12 @@
  ******************************************************************************/
 package org.eclipse.core.internal.databinding.conversion;
 
+import java.text.DateFormat;
 import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.eclipse.core.internal.databinding.BindingMessages;
-
-import com.ibm.icu.text.DateFormat;
-import com.ibm.icu.text.SimpleDateFormat;
 
 /**
  * Base support for date/string conversion handling according to the default
@@ -50,8 +49,8 @@ public abstract class DateConversionSupport {
 			DateFormat.getDateTimeInstance(DATE_FORMAT, DateFormat.SHORT),
 			DateFormat.getDateInstance(DATE_FORMAT),
 			DateFormat.getTimeInstance(DateFormat.SHORT),
-            DateFormat.getDateTimeInstance(DATE_FORMAT,DateFormat.MEDIUM),
-            DateFormat.getTimeInstance(DateFormat.MEDIUM)
+			DateFormat.getDateTimeInstance(DATE_FORMAT,DateFormat.MEDIUM),
+			DateFormat.getTimeInstance(DateFormat.MEDIUM)
 	};
 
 	/**

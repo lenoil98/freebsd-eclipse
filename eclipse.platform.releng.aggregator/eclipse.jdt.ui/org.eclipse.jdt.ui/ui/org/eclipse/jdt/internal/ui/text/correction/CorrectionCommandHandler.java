@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.ui.text.correction;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -75,7 +74,7 @@ public class CorrectionCommandHandler extends AbstractHandler {
 
 	/**
 	 * Try to execute the correction command.
-	 * 
+	 *
 	 * @return <code>true</code> iff the correction could be started
 	 * @since 3.6
 	 */
@@ -113,11 +112,10 @@ public class CorrectionCommandHandler extends AbstractHandler {
 				return null;
 			}
 		}
-		for (Iterator<IJavaCompletionProposal> iter= proposals.iterator(); iter.hasNext();) {
-			Object curr= iter.next();
+		for (IJavaCompletionProposal curr : proposals) {
 			if (curr instanceof ICommandAccess) {
 				if (id.equals(((ICommandAccess) curr).getCommandId())) {
-					return (ICompletionProposal) curr;
+					return curr;
 				}
 			}
 		}

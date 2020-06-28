@@ -53,30 +53,20 @@ public class ViewContextManager implements IWindowListener {
 	private ViewContextManager() {
 		IWorkbench workbench = PlatformUI.getWorkbench();
 		IWorkbenchWindow[] workbenchWindows = workbench.getWorkbenchWindows();
-		for (int i = 0; i < workbenchWindows.length; i++) {
-			IWorkbenchWindow window = workbenchWindows[i];
+		for (IWorkbenchWindow window : workbenchWindows) {
 			windowOpened(window);
 		}
 		workbench.addWindowListener(this);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWindowListener#windowActivated(org.eclipse.ui.IWorkbenchWindow)
-	 */
 	@Override
 	public void windowActivated(IWorkbenchWindow window) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWindowListener#windowDeactivated(org.eclipse.ui.IWorkbenchWindow)
-	 */
 	@Override
 	public void windowDeactivated(IWorkbenchWindow window) {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWindowListener#windowClosed(org.eclipse.ui.IWorkbenchWindow)
-	 */
 	@Override
 	public void windowClosed(IWorkbenchWindow window) {
 		ViewContextService service = fWindowToService.get(window);
@@ -86,9 +76,6 @@ public class ViewContextManager implements IWindowListener {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWindowListener#windowOpened(org.eclipse.ui.IWorkbenchWindow)
-	 */
 	@Override
 	public void windowOpened(IWorkbenchWindow window) {
 		ViewContextService service = fWindowToService.get(window);

@@ -24,7 +24,6 @@ public interface IPropertyManager extends IManager {
 	 * Closes the property store for a resource
 	 *
 	 * @param target The resource to close the property store for
-	 * @exception CoreException
 	 */
 	void closePropertyStore(IResource target) throws CoreException;
 
@@ -39,9 +38,9 @@ public interface IPropertyManager extends IManager {
 	 * <p>
 	 * The subtree under the given resource is traversed to the supplied depth.
 	 * </p>
-	 * @param target
-	 * @param depth
-	 * @exception CoreException
+	 *
+	 * @param target the resource(tree) to delete properties from
+	 * @param depth  the max depth to delete properties from the resource(tree)
 	 */
 	void deleteProperties(IResource target, int depth) throws CoreException;
 
@@ -70,9 +69,9 @@ public interface IPropertyManager extends IManager {
 	void setProperty(IResource target, QualifiedName name, String value) throws CoreException;
 
 	/**
-	 * Returns a map (<propertyKey: QualifiedName -> value: String>) containing
-	 * all properties defined for the given resource. In case no properties can
-	 * be found, returns an empty map.
+	 * Returns a map {@literal (<propertyKey: QualifiedName -> value: String>)}
+	 * containing all properties defined for the given resource. In case no
+	 * properties can be found, returns an empty map.
 	 */
 	Map<QualifiedName, String> getProperties(IResource resource) throws CoreException;
 }

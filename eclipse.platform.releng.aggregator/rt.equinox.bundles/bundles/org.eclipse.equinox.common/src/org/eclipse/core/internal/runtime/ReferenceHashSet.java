@@ -60,7 +60,7 @@ public class ReferenceHashSet<T> {
 			Object referent = super.get();
 			if (referent == null)
 				return "[hashCode=" + this.hashCode + "] <referent was garbage collected>"; //$NON-NLS-1$  //$NON-NLS-2$
-			return "[hashCode=" + this.hashCode + "] " + referent.toString(); //$NON-NLS-1$ //$NON-NLS-2$
+			return "[hashCode=" + this.hashCode + "] " + referent; //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 
@@ -94,7 +94,7 @@ public class ReferenceHashSet<T> {
 			Object referent = super.get();
 			if (referent == null)
 				return "[hashCode=" + this.hashCode + "] <referent was garbage collected>"; //$NON-NLS-1$  //$NON-NLS-2$
-			return "[hashCode=" + this.hashCode + "] " + referent.toString(); //$NON-NLS-1$ //$NON-NLS-2$
+			return "[hashCode=" + this.hashCode + "] " + referent; //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 
@@ -269,8 +269,8 @@ public class ReferenceHashSet<T> {
 		ReferenceHashSet<T> newHashSet = new ReferenceHashSet<>(this.elementSize * 2); // double the number of expected elements
 		newHashSet.referenceQueue = this.referenceQueue;
 		HashedReference<T> currentValue;
-		for (int i = 0, length = this.values.length; i < length; i++)
-			if ((currentValue = this.values[i]) != null)
+		for (HashedReference<T> value : this.values)
+			if ((currentValue = value) != null)
 				newHashSet.addValue(currentValue);
 
 		this.values = newHashSet.values;
@@ -306,13 +306,12 @@ public class ReferenceHashSet<T> {
 
 	@Override
 	public String toString() {
-		StringBuffer buffer = new StringBuffer("{"); //$NON-NLS-1$
-		for (int i = 0, length = this.values.length; i < length; i++) {
-			HashedReference<T> value = this.values[i];
+		StringBuilder buffer = new StringBuilder("{"); //$NON-NLS-1$
+		for (HashedReference<T> value : this.values) {
 			if (value != null) {
 				Object ref = value.get();
 				if (ref != null) {
-					buffer.append(ref.toString());
+					buffer.append(ref);
 					buffer.append(", "); //$NON-NLS-1$
 				}
 			}
@@ -325,10 +324,11 @@ public class ReferenceHashSet<T> {
 		cleanupGarbageCollectedValues();
 		Object[] result = new Object[elementSize];
 		int resultSize = 0;
-		for (int i = 0; i < values.length; i++) {
-			if (values[i] == null)
+		for (HashedReference<T> value : values) {
+			if (value == null) {
 				continue;
-			Object tmp = values[i].get();
+			}
+			Object tmp = value.get();
 			if (tmp != null)
 				result[resultSize++] = tmp;
 		}

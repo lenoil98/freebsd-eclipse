@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright (c) 2016 vogella GmbH and others.
  *
- * This program
- * and the accompanying materials are made available under the terms of the
- * Eclipse Public License 2.0 which accompanies this distribution, and is
-t https://www.eclipse.org/legal/epl-2.0/
-t
-t SPDX-License-Identifier: EPL-2.0
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  * 	Simon Scholz <simon.scholz@vogella.com> - initial API and implementation;
@@ -81,7 +81,7 @@ public class FullScreenHandler extends AbstractHandler {
 		Optional<TriggerSequence> sequence = getKeybindingSequence(bindingService, commandService, bindingTableManager,
 				bindingContextService, FULL_SCREEN_COMMAND_ID);
 
-		String keybinding = sequence.map(t -> t.format()).orElse(""); //$NON-NLS-1$
+		String keybinding = sequence.map(TriggerSequence::format).orElse(""); //$NON-NLS-1$
 
 		shell.setFullScreen(!shell.getFullScreen());
 
@@ -91,8 +91,8 @@ public class FullScreenHandler extends AbstractHandler {
 				message = NLS.bind(WorkbenchMessages.ToggleFullScreenMode_ActivationPopup_Description, keybinding);
 			}
 			if (showInfoPopup) {
-				fullScreenInfoPopup = new FullScreenInfoPopup(shell, PopupDialog.HOVER_SHELLSTYLE, true, false,
-						false, false, false, null, null, message);
+				fullScreenInfoPopup = new FullScreenInfoPopup(shell, PopupDialog.HOVER_SHELLSTYLE, true, false, false,
+						false, false, null, null, message);
 				fullScreenInfoPopup.open();
 			}
 		} else {
@@ -105,9 +105,9 @@ public class FullScreenHandler extends AbstractHandler {
 	}
 
 	/**
-	 * Check if an event is duplicate, by recording and comparing the time of
-	 * the trigger event. Returns true if an event is triggered twice with an
-	 * event with the same time
+	 * Check if an event is duplicate, by recording and comparing the time of the
+	 * trigger event. Returns true if an event is triggered twice with an event with
+	 * the same time
 	 */
 	boolean checkDuplicatedEvent(ExecutionEvent event) {
 		if (event != null && event.getTrigger() != null && event.getTrigger() instanceof Event) {
@@ -167,7 +167,7 @@ public class FullScreenHandler extends AbstractHandler {
 			gd2.verticalIndent = PopupDialog.POPUP_VERTICALSPACING;
 			btnDoNotShow.setLayoutData(gd2);
 
-			composite.addDisposeListener((e) -> {
+			composite.addDisposeListener(e -> {
 				WorkbenchPlugin.getDefault().getPreferenceStore()
 						.setValue(FULL_SCREEN_COMMAND_DO_NOT_SHOW_INFO_AGAIN_PREF_ID, btnDoNotShow.getSelection());
 			});

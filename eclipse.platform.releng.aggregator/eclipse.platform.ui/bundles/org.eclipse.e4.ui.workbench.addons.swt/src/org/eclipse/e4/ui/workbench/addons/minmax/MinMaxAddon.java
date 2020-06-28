@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2018 IBM Corporation and others.
+ * Copyright (c) 2011, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,8 @@
  *     Lars Vogel (Lars.Vogel@gmail.com) - Bug 331690
  *     Dirk Fauth (dirk.fauth@googlemail.com) - Bug 459285
  *     Eugen Neufeld (eneufeld@eclipsesource.com) - Bug 432466, Bug 455568
+ *     Christoph Läubrich - Bug 365525
+ *     Pierre-Yves B. (pyvesdev@gmail.com) - Bug 562747
  ******************************************************************************/
 
 package org.eclipse.e4.ui.workbench.addons.minmax;
@@ -26,9 +28,8 @@ import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.core.services.events.IEventBroker;
 import org.eclipse.e4.ui.di.UIEventTopic;
 import org.eclipse.e4.ui.internal.workbench.swt.AbstractPartRenderer;
-import org.eclipse.e4.ui.internal.workbench.swt.AnimationEngine;
-import org.eclipse.e4.ui.internal.workbench.swt.FaderAnimationFeedback;
 import org.eclipse.e4.ui.model.application.MAddon;
+import org.eclipse.e4.ui.model.application.MApplication;
 import org.eclipse.e4.ui.model.application.ui.MUIElement;
 import org.eclipse.e4.ui.model.application.ui.SideValue;
 import org.eclipse.e4.ui.model.application.ui.advanced.MArea;
@@ -62,6 +63,8 @@ import org.osgi.service.event.Event;
  */
 public class MinMaxAddon {
 
+	private static final String DISABLE_MINMAX_ADDON = "DisableMinMaxAddon";
+
 	private static final String MIN_MAXIMIZEABLE_CHILDREN_AREA_TAG = IPresentationEngine.MIN_MAXIMIZEABLE_CHILDREN_AREA_TAG;
 
 	/**
@@ -73,9 +76,9 @@ public class MinMaxAddon {
 	private static final String GLOBAL_CACHE_ID = "Global"; //$NON-NLS-1$
 
 	// tags representing the min/max state (h
-	private static String MINIMIZED = IPresentationEngine.MINIMIZED;
-	private static String MAXIMIZED = IPresentationEngine.MAXIMIZED;
-	private static String MINIMIZED_BY_ZOOM = IPresentationEngine.MINIMIZED_BY_ZOOM;
+	private static final String MINIMIZED = IPresentationEngine.MINIMIZED;
+	private static final String MAXIMIZED = IPresentationEngine.MAXIMIZED;
+	private static final String MINIMIZED_BY_ZOOM = IPresentationEngine.MINIMIZED_BY_ZOOM;
 
 	@Inject
 	IEventBroker eventBroker;
@@ -91,6 +94,9 @@ public class MinMaxAddon {
 
 	@Inject
 	MAddon minMaxAddon;
+
+	@Inject
+	MApplication app;
 
 	private CTabFolder2Adapter CTFButtonListener = new CTabFolder2Adapter() {
 		private MUIElement getElementToChange(CTabFolderEvent event) {
@@ -175,17 +181,15 @@ public class MinMaxAddon {
 		public void mouseDoubleClick(MouseEvent e) {
 			// only maximize if the primary mouse button was used
 			if (e.button == 1) {
+
+				MUIElement elementToChange = getElementToChange(e);
 				CTabFolder ctf = (CTabFolder) e.widget;
-				if (!ctf.getMaximizeVisible()) {
-					return;
-				}
 
 				// Only fire if we're in the 'tab' area
 				if (e.y > ctf.getTabHeight()) {
 					return;
 				}
 
-				MUIElement elementToChange = getElementToChange(e);
 				if (!elementToChange.getTags().contains(MAXIMIZED)) {
 					setState(elementToChange, MAXIMIZED);
 				} else {
@@ -196,6 +200,9 @@ public class MinMaxAddon {
 	};
 
 	private void setState(MUIElement element, String state) {
+		if (element == null) {
+			return;
+		}
 		if (MINIMIZED.equals(state)) {
 			element.getTags().remove(MAXIMIZED);
 			element.getTags().add(MINIMIZED);
@@ -212,6 +219,11 @@ public class MinMaxAddon {
 	@Inject
 	@Optional
 	private void subscribeTopicWidget(@UIEventTopic(UIEvents.UIElement.TOPIC_WIDGET) Event event) {
+
+		if (app.getTags().contains(DISABLE_MINMAX_ADDON)) {
+			return;
+		}
+
 		final MUIElement changedElement = (MUIElement) event.getProperty(EventTags.ELEMENT);
 		if (!(changedElement instanceof MPartStack) && !(changedElement instanceof MArea)) {
 			return;
@@ -252,6 +264,11 @@ public class MinMaxAddon {
 	@Optional
 	private void subscribeTopicChildren(
 			@UIEventTopic(UIEvents.ElementContainer.TOPIC_CHILDREN) Event event) {
+
+		if (app.getTags().contains(DISABLE_MINMAX_ADDON)) {
+			return;
+		}
+
 		final MUIElement changedElement = (MUIElement) event.getProperty(EventTags.ELEMENT);
 		MWindow window = modelService.getTopLevelWindowFor(changedElement);
 
@@ -298,6 +315,11 @@ public class MinMaxAddon {
 	@Optional
 	private void subscribeTopicSelectedElement(
 			@UIEventTopic(UIEvents.ElementContainer.TOPIC_SELECTEDELEMENT) Event event) {
+
+		if (app.getTags().contains(DISABLE_MINMAX_ADDON)) {
+			return;
+		}
+
 		final MUIElement changedElement = (MUIElement) event.getProperty(EventTags.ELEMENT);
 		if (!(changedElement instanceof MPerspectiveStack)) {
 			return;
@@ -368,6 +390,10 @@ public class MinMaxAddon {
 			return;
 		}
 
+		if (app.getTags().contains(DISABLE_MINMAX_ADDON)) {
+			return;
+		}
+
 		Object changedObj = event.getProperty(EventTags.ELEMENT);
 
 		if (!(changedObj instanceof MUIElement)) {
@@ -405,6 +431,11 @@ public class MinMaxAddon {
 	@Optional
 	private void subscribeTopicElementId(
 			@UIEventTopic(UIEvents.ApplicationElement.TOPIC_ELEMENTID) Event event) {
+
+		if (app.getTags().contains(DISABLE_MINMAX_ADDON)) {
+			return;
+		}
+
 		Object changedObject = event.getProperty(EventTags.ELEMENT);
 
 		// Only care about MPerspective id changes
@@ -446,6 +477,11 @@ public class MinMaxAddon {
 	@Optional
 	private void subscribeTopicPerspSaved(
 			@UIEventTopic(UIEvents.UILifeCycle.PERSPECTIVE_SAVED) Event event) {
+
+		if (app.getTags().contains(DISABLE_MINMAX_ADDON)) {
+			return;
+		}
+
 		final MPerspective savedPersp = (MPerspective) event.getProperty(EventTags.ELEMENT);
 		String cache = getTrimCache(savedPersp);
 		minMaxAddon.getPersistedState().put(savedPersp.getElementId(), cache);
@@ -493,6 +529,11 @@ public class MinMaxAddon {
 	@Optional
 	private void subscribeTopicPerspReset(
 			@UIEventTopic(UIEvents.UILifeCycle.PERSPECTIVE_RESET) Event event) {
+
+		if (app.getTags().contains(DISABLE_MINMAX_ADDON)) {
+			return;
+		}
+
 		final MPerspective resetPersp = (MPerspective) event.getProperty(EventTags.ELEMENT);
 
 		// Find any minimized stacks and show their trim
@@ -512,6 +553,11 @@ public class MinMaxAddon {
 	@Optional
 	private void subscribeTopicPerspOpened(
 			@UIEventTopic(UIEvents.UILifeCycle.PERSPECTIVE_OPENED) Event event) {
+
+		if (app.getTags().contains(DISABLE_MINMAX_ADDON)) {
+			return;
+		}
+
 		final MPerspective openedPersp = (MPerspective) event.getProperty(EventTags.ELEMENT);
 
 		// Find any minimized stacks and show their trim
@@ -690,14 +736,7 @@ public class MinMaxAddon {
 		}
 
 		List<MUIElement> elementsToMinimize = getElementsToMinimize(element);
-		Shell hostShell = (Shell) modelService.getTopLevelWindowFor(element).getWidget();
 		MWindow win = MinMaxAddonUtil.getWindowFor(element);
-
-		if (hostShell != null) {
-			FaderAnimationFeedback fader = new FaderAnimationFeedback(hostShell);
-			AnimationEngine engine = new AnimationEngine(win.getContext(), fader, 300);
-			engine.schedule();
-		}
 
 		// Restore any currently maximized element
 		restoreMaximizedElement(element, win);
@@ -718,7 +757,12 @@ public class MinMaxAddon {
 	 */
 	private List<MUIElement> getElementsToMinimize(MUIElement element) {
 		MWindow win = MinMaxAddonUtil.getWindowFor(element);
-		MPerspective persp = modelService.getActivePerspective(win);
+		MPerspective persp;
+		if (win == null) {
+			persp = null;
+		} else {
+			persp = modelService.getActivePerspective(win);
+		}
 
 		List<MUIElement> elementsToMinimize = new ArrayList<>();
 		int loc = modelService.getElementLocation(element);
@@ -741,7 +785,7 @@ public class MinMaxAddon {
 			}
 			if (perspStack != null) {
 				if (perspStack.getElementId() == null || perspStack.getElementId().length() == 0)
-				 {
+				{
 					perspStack.setElementId("PerspectiveStack"); //$NON-NLS-1$
 				}
 
@@ -842,6 +886,9 @@ public class MinMaxAddon {
 	 */
 	private void restoreMaximizedElement(final MUIElement element, MWindow win) {
 		MPerspective elePersp = modelService.getPerspectiveFor(element);
+		if (elePersp == null) {
+			return;
+		}
 		List<String> maxTag = new ArrayList<>();
 		maxTag.add(MAXIMIZED);
 		List<MUIElement> curMax = modelService.findElements(win, null, MUIElement.class, maxTag);
@@ -876,13 +923,6 @@ public class MinMaxAddon {
 
 	void unzoom(final MUIElement element) {
 		MWindow win = MinMaxAddonUtil.getWindowFor(element);
-
-		Shell hostShell = (Shell) win.getWidget();
-		if (hostShell != null) {
-			FaderAnimationFeedback fader = new FaderAnimationFeedback(hostShell);
-			AnimationEngine engine = new AnimationEngine(win.getContext(), fader, 300);
-			engine.schedule();
-		}
 
 		List<MUIElement> elementsToRestore = getElementsToRestore(element);
 		for (MUIElement toRestore : elementsToRestore) {
@@ -1042,9 +1082,7 @@ public class MinMaxAddon {
 		if (persp != null) {
 			cacheId = persp.getElementId();
 		}
-		String cacheInfo = minMaxAddon.getPersistedState().get(cacheId);
-
-		return cacheInfo;
+		return minMaxAddon.getPersistedState().get(cacheId);
 	}
 
 	private int getCachedIndex(MUIElement element) {
@@ -1092,8 +1130,6 @@ public class MinMaxAddon {
 			int stackCenterX = stackBounds.x + (stackBounds.width / 2);
 			side = stackCenterX < winCenterX ? SideValue.LEFT : SideValue.RIGHT;
 		}
-		MTrimBar bar = modelService.getTrim(window, side);
-
-		return bar;
+		return modelService.getTrim(window, side);
 	}
 }

@@ -50,8 +50,8 @@ abstract public class AbstractTextRendering extends AbstractTableRendering {
 	 *
 	 * @param renderingId memory rendering type identifier
 	 * @param codePage the name of a supported
-     *  {@link java.nio.charset.Charset </code>charset<code>}, for
-     *  example <code>CP1252</code>
+	 *  {@link java.nio.charset.Charset </code>charset<code>}, for
+	 *  example <code>CP1252</code>
 	 */
 	public AbstractTextRendering(String renderingId, String codePage)
 	{
@@ -66,7 +66,7 @@ abstract public class AbstractTextRendering extends AbstractTableRendering {
 	 *
 	 * @param codePage the name of a supported
 	 * {@link java.nio.charset.Charset </code>charset<code>}, for
-     *  example <code>CP1252</code>
+	 *  example <code>CP1252</code>
 	 */
 	public void setCodePage(String codePage)
 	{
@@ -84,15 +84,13 @@ abstract public class AbstractTextRendering extends AbstractTableRendering {
 		return fCodePage;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.AbstractTableRendering#getString(java.lang.String, java.math.BigInteger, org.eclipse.debug.core.model.MemoryByte[])
-	 */
 	@Override
 	public String getString(String dataType, BigInteger address,  MemoryByte[] data) {
 		try {
 			String paddedStr = DebugUIPlugin.getDefault().getPreferenceStore().getString(IDebugUIConstants.PREF_PADDED_STR);
-			if(fCodePage == null)
+			if(fCodePage == null) {
 				return IInternalDebugCoreConstants.EMPTY_STRING;
+			}
 
 			boolean[] invalid = new boolean[data.length];
 			boolean hasInvalid = false;
@@ -109,13 +107,14 @@ abstract public class AbstractTextRendering extends AbstractTableRendering {
 
 			if (hasInvalid)
 			{
-				StringBuffer strBuf = new StringBuffer();
+				StringBuilder strBuf = new StringBuilder();
 				for (int i=0; i<data.length; i++)
 				{
-					if (invalid[i])
+					if (invalid[i]) {
 						strBuf.append(paddedStr);
-					else
+					} else {
 						strBuf.append(new String(new byte[]{byteArray[i]}, fCodePage));
+					}
 				}
 				return strBuf.toString();
 			}
@@ -127,16 +126,13 @@ abstract public class AbstractTextRendering extends AbstractTableRendering {
 		}
 	}
 
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.ui.memory.AbstractTableRendering#getBytes(java.lang.String, java.math.BigInteger, org.eclipse.debug.core.model.MemoryByte[], java.lang.String)
-	 */
 	@Override
 	public byte[] getBytes(String dataType, BigInteger address, MemoryByte[] currentValues, String data) {
 		try {
 
-			if (fCodePage == null)
+			if (fCodePage == null) {
 				return new byte[0];
+			}
 
 			byte[] bytes =  data.getBytes(fCodePage);
 			return bytes;

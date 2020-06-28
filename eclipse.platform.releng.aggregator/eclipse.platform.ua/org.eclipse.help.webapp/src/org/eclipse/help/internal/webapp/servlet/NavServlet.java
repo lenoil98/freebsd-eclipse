@@ -70,6 +70,7 @@ public class NavServlet extends HttpServlet {
 			return;
 		}
 
+		@SuppressWarnings("resource")
 		OutputStream out = resp.getOutputStream();
 		for (IFilter filter : filters) {
 			out = filter.filter(req, out);
@@ -84,25 +85,25 @@ public class NavServlet extends HttpServlet {
 	private void showPageNotFoundPage(HttpServletRequest req,
 			HttpServletResponse resp) {
 		String errorPage = MissingContentManager.getInstance().getPageNotFoundPage(req.getServletPath(), false);
-        if (errorPage != null && errorPage.length() > 0) {
-        	String href = req.getRequestURL().toString();
-        	int navIndex = href.indexOf("/nav"); //$NON-NLS-1$
-        	if (navIndex >= 0 ) {
-        		href = href.substring(0, navIndex);
-        		href += "/nftopic"; //$NON-NLS-1$
-        		if (errorPage.charAt(0) != '/') {
-        			href += '/';
-        		}
-        		href += errorPage;
-        		try {
+		if (errorPage != null && errorPage.length() > 0) {
+			String href = req.getRequestURL().toString();
+			int navIndex = href.indexOf("/nav"); //$NON-NLS-1$
+			if (navIndex >= 0 ) {
+				href = href.substring(0, navIndex);
+				href += "/nftopic"; //$NON-NLS-1$
+				if (errorPage.charAt(0) != '/') {
+					href += '/';
+				}
+				href += errorPage;
+				try {
 					resp.sendRedirect(href);
 					return;
 				} catch (IOException e) {
 					// Fall through
 				}
-        	}
-	    }
-	    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			}
+		}
+		resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
 	}
 
 	protected Locale getLocale (HttpServletRequest req, HttpServletResponse resp) {

@@ -37,76 +37,58 @@ import org.eclipse.ui.model.IWorkbenchAdapter;
 public class OtherBreakpointCategory extends PlatformObject implements IWorkbenchAdapter {
 
 	private static Map<IBreakpointOrganizer, IAdaptable[]> fOthers = new HashMap<>();
-    private IBreakpointOrganizer fOrganizer;
+	private IBreakpointOrganizer fOrganizer;
 
 
-    public static IAdaptable[] getCategories(IBreakpointOrganizer organizer) {
-        IAdaptable[] others = fOthers.get(organizer);
-        if (others == null) {
-            others = new IAdaptable[]{new OtherBreakpointCategory(organizer)};
-            fOthers.put(organizer, others);
-        }
-        return others;
-    }
+	public static IAdaptable[] getCategories(IBreakpointOrganizer organizer) {
+		IAdaptable[] others = fOthers.get(organizer);
+		if (others == null) {
+			others = new IAdaptable[]{new OtherBreakpointCategory(organizer)};
+			fOthers.put(organizer, others);
+		}
+		return others;
+	}
 
-    /**
-     * Constructs an 'other' category for the given organizer.
-     *
-     * @param organizer breakpoint organizer
-     */
-    private OtherBreakpointCategory(IBreakpointOrganizer organizer) {
-        fOrganizer = organizer;
-    }
+	/**
+	 * Constructs an 'other' category for the given organizer.
+	 *
+	 * @param organizer breakpoint organizer
+	 */
+	private OtherBreakpointCategory(IBreakpointOrganizer organizer) {
+		fOrganizer = organizer;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getChildren(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Object[] getChildren(Object o) {
-        return null;
-    }
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getImageDescriptor(java.lang.Object)
-     */
-    @Override
+	@Override
 	public ImageDescriptor getImageDescriptor(Object object) {
-        return DebugPluginImages.getImageDescriptor(IDebugUIConstants.IMG_VIEW_BREAKPOINTS);
-    }
+		return DebugPluginImages.getImageDescriptor(IDebugUIConstants.IMG_VIEW_BREAKPOINTS);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getLabel(java.lang.Object)
-     */
-    @Override
+	@Override
 	public String getLabel(Object o) {
-        return fOrganizer.getOthersLabel();
-    }
+		return fOrganizer.getOthersLabel();
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.ui.model.IWorkbenchAdapter#getParent(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Object getParent(Object o) {
-        return null;
-    }
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
+	@Override
 	public boolean equals(Object obj) {
-        if (obj instanceof OtherBreakpointCategory) {
-            OtherBreakpointCategory category = (OtherBreakpointCategory) obj;
-            return fOrganizer.equals(category.fOrganizer);
-        }
-        return false;
-    }
+		if (obj instanceof OtherBreakpointCategory) {
+			OtherBreakpointCategory category = (OtherBreakpointCategory) obj;
+			return fOrganizer.equals(category.fOrganizer);
+		}
+		return false;
+	}
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
+	@Override
 	public int hashCode() {
-        return fOrganizer.hashCode();
-    }
+		return fOrganizer.hashCode();
+	}
 }

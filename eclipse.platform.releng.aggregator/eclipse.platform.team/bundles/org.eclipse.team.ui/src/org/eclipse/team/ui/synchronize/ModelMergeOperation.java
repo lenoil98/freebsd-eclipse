@@ -76,8 +76,7 @@ public abstract class ModelMergeOperation extends ModelOperation {
 			ModelProvider[] providers = context.getScope().getModelProviders();
 			monitor.beginTask(null, 100 * providers.length);
 			List<IStatus> notOK = new ArrayList<>();
-			for (int i = 0; i < providers.length; i++) {
-				ModelProvider provider = providers[i];
+			for (ModelProvider provider : providers) {
 				IStatus status = validateMerge(provider, context, Policy.subMonitorFor(monitor, 100));
 				if (!status.isOK())
 					notOK.add(status);
@@ -200,7 +199,7 @@ public abstract class ModelMergeOperation extends ModelOperation {
 	 * method must return an instance of {@link IMergeContext}
 	 * that is fully initialized.
 	 * @param monitor a progress monitor
-	 * @throws CoreException
+	 * @throws CoreException if an error occurs
 	 */
 	protected abstract void initializeContext(IProgressMonitor monitor) throws CoreException;
 
@@ -213,16 +212,16 @@ public abstract class ModelMergeOperation extends ModelOperation {
 	 * @param status the status returned from the mergers that reported the validation failures
 	 */
 	protected void handleValidationFailure(final IStatus status) {
-    	final boolean[] result = new boolean[] { false };
-    	Runnable runnable = () -> {
+		final boolean[] result = new boolean[] { false };
+		Runnable runnable = () -> {
 			ErrorDialog dialog = new ErrorDialog(getShell(), TeamUIMessages.ModelMergeOperation_0, TeamUIMessages.ModelMergeOperation_1, status, IStatus.ERROR | IStatus.WARNING | IStatus.INFO) {
 				@Override
 				protected void createButtonsForButtonBar(Composite parent) {
-			        createButton(parent, IDialogConstants.YES_ID, IDialogConstants.YES_LABEL,
-			                false);
+					createButton(parent, IDialogConstants.YES_ID, IDialogConstants.YES_LABEL,
+							false);
 					createButton(parent, IDialogConstants.NO_ID, IDialogConstants.NO_LABEL,
 							true);
-			        createDetailsButton(parent);
+					createDetailsButton(parent);
 				}
 
 				@Override
@@ -288,8 +287,7 @@ public abstract class ModelMergeOperation extends ModelOperation {
 				try {
 					int ticks = 100;
 					monitor1.beginTask(null, ticks + ((providers.length - 1) * 10));
-					for (int i = 0; i < providers.length; i++) {
-						ModelProvider provider = providers[i];
+					for (ModelProvider provider : providers) {
 						IStatus status = performMerge(provider, Policy.subMonitorFor(monitor1, ticks));
 						ticks = 10;
 						if (!status.isOK()) {

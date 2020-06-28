@@ -16,7 +16,6 @@ package org.eclipse.jdt.internal.corext.refactoring.generics;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -291,8 +290,11 @@ public class InferTypeArgumentsConstraintCreator extends HierarchicalASTVisitor 
 			return;
 		if (expressionCv instanceof ImmutableTypeVariable2)
 			return;
-		if (! (expressionCv instanceof TypeVariable2 || expressionCv instanceof IndependentTypeVariable2 || expressionCv instanceof CollectionElementVariable2)
-				&& fTCModel.getElementVariables(expressionCv).size() == 0 && fTCModel.getArrayElementVariable(expressionCv) == null)
+		if (!(expressionCv instanceof TypeVariable2)
+				&& !(expressionCv instanceof IndependentTypeVariable2)
+				&& !(expressionCv instanceof CollectionElementVariable2)
+				&& fTCModel.getElementVariables(expressionCv).isEmpty()
+				&& fTCModel.getArrayElementVariable(expressionCv) == null)
 			return;
 
 		fTCModel.createAssignmentElementConstraints(typeCv, expressionCv);
@@ -426,16 +428,17 @@ public class InferTypeArgumentsConstraintCreator extends HierarchicalASTVisitor 
 
 	private void addConstraintsForOverriding(IMethodBinding methodBinding, ConstraintVariable2 returnTypeCv, ConstraintVariable2[] parameterTypeCvs) {
 		boolean hasParameterElementCvs= false;
-		for (int i= 0; i < parameterTypeCvs.length; i++)
-			if (parameterTypeCvs[i] != null)
+		for (ConstraintVariable2 parameterTypeCv : parameterTypeCvs) {
+			if (parameterTypeCv != null) {
 				hasParameterElementCvs= true;
+				break;
+			}
+		}
 
 		if (returnTypeCv == null && ! hasParameterElementCvs)
 			return;
 
-		ITypeBinding[] allSuperTypes= Bindings.getAllSuperTypes(methodBinding.getDeclaringClass());
-		for (int i= 0; i < allSuperTypes.length; i++) {
-			ITypeBinding superType= allSuperTypes[i];
+		for (ITypeBinding superType : Bindings.getAllSuperTypes(methodBinding.getDeclaringClass())) {
 			IMethodBinding superMethod= Bindings.findOverriddenMethodInType(superType, methodBinding);
 			if (superMethod == null)
 				continue;
@@ -513,8 +516,7 @@ public class InferTypeArgumentsConstraintCreator extends HierarchicalASTVisitor 
 			methodTypeVariables= Collections.emptyMap();
 		} else {
 			methodTypeVariables= new HashMap<>();
-			for (int i= 0; i < methodTypeParameters.length; i++) {
-				ITypeBinding methodTypeParameter= methodTypeParameters[i];
+			for (ITypeBinding methodTypeParameter : methodTypeParameters) {
 				//TODO: typeVariable does not need a type binding - only used in equality constraints
 				TypeVariable typeVariable= (TypeVariable) fTCModel.createTType(methodTypeParameter);
 				IndependentTypeVariable2 typeVariableCv= fTCModel.makeIndependentTypeVariable(typeVariable);
@@ -824,8 +826,7 @@ public class InferTypeArgumentsConstraintCreator extends HierarchicalASTVisitor 
 		setConstraintVariable(node, typeCv);
 
 		List<VariableDeclarationFragment> fragments= node.fragments();
-		for (Iterator<VariableDeclarationFragment> iter= fragments.iterator(); iter.hasNext();) {
-			VariableDeclarationFragment fragment= iter.next();
+		for (VariableDeclarationFragment fragment : fragments) {
 			ConstraintVariable2 fragmentCv= getConstraintVariable(fragment);
 			fTCModel.createElementEqualsConstraints(typeCv, fragmentCv);
 		}
@@ -852,8 +853,7 @@ public class InferTypeArgumentsConstraintCreator extends HierarchicalASTVisitor 
 		if (typeCv == null)
 			return;
 
-		for (Iterator<VariableDeclarationFragment> iter= list.iterator(); iter.hasNext();) {
-			VariableDeclarationFragment fragment= iter.next();
+		for (VariableDeclarationFragment fragment : list) {
 			ConstraintVariable2 fragmentCv= getConstraintVariable(fragment);
 			fTCModel.createElementEqualsConstraints(typeCv, fragmentCv);
 		}

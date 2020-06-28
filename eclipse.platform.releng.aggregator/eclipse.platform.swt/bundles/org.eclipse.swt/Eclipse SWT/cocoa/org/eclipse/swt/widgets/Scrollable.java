@@ -36,7 +36,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public abstract class Scrollable extends Control {
- 	NSScrollView scrollView;
+	NSScrollView scrollView;
 	ScrollBar horizontalBar, verticalBar;
 
 Scrollable () {
@@ -110,17 +110,11 @@ public Rectangle computeTrim (int x, int y, int width, int height) {
 		size.width = width;
 		size.height = height;
 		int border = hasBorder() ? OS.NSBezelBorder : OS.NSNoBorder;
-		if (OS.VERSION >= 0x1070) {
-			// Always include the scroll bar in the trim even when the scroll style is overlay
-			OS.objc_msgSend_stret(size, OS.class_NSScrollView,
-				OS.sel_frameSizeForContentSize_horizontalScrollerClass_verticalScrollerClass_borderType_controlSize_scrollerStyle_,
-				size,
-				(style & SWT.H_SCROLL) != 0 ? OS.class_NSScroller : 0,
-				(style & SWT.V_SCROLL) != 0 ? OS.class_NSScroller : 0,
-				border, OS.NSRegularControlSize, OS.NSScrollerStyleLegacy);
-		} else {
-			size = NSScrollView.frameSizeForContentSize(size, (style & SWT.H_SCROLL) != 0, (style & SWT.V_SCROLL) != 0, border);
-		}
+		// Always include the scroll bar in the trim even when the scroll style is overlay
+		size = NSScrollView.frameSizeForContentSize(size,
+			(style & SWT.H_SCROLL) != 0 ? OS.class_NSScroller : 0,
+			(style & SWT.V_SCROLL) != 0 ? OS.class_NSScroller : 0,
+			border, OS.NSRegularControlSize, OS.NSScrollerStyleLegacy);
 		width = (int)size.width;
 		height = (int)size.height;
 		NSRect frame = scrollView.contentView().frame();
@@ -137,7 +131,7 @@ ScrollBar createScrollBar (int style) {
 	bar.style = style;
 	bar.display = display;
 	NSScroller scroller;
-	long /*int*/ actionSelector;
+	long actionSelector;
 	NSRect rect = new NSRect();
 	if ((style & SWT.H_SCROLL) != 0) {
 		rect.width = 1;
@@ -250,8 +244,8 @@ public ScrollBar getHorizontalBar () {
 public int getScrollbarsMode () {
 	checkWidget();
 	int style = SWT.NONE;
-	if (scrollView != null && OS.VERSION >= 0x1070) {
-		if (OS.objc_msgSend (scrollView.id, OS.sel_scrollerStyle) == OS.NSScrollerStyleOverlay) {
+	if (scrollView != null) {
+		if (scrollView.scrollerStyle () == OS.NSScrollerStyleOverlay) {
 			style = SWT.SCROLLBAR_OVERLAY;
 		}
 	}
@@ -279,7 +273,7 @@ boolean hooksKeys () {
 }
 
 @Override
-boolean isEventView (long /*int*/ id) {
+boolean isEventView (long id) {
 	return id == eventView ().id;
 }
 
@@ -307,7 +301,7 @@ void redrawBackgroundImage () {
 }
 
 @Override
-void reflectScrolledClipView(long /*int*/ id, long /*int*/ sel, long /*int*/ aClipView) {
+void reflectScrolledClipView(long id, long sel, long aClipView) {
 	super.reflectScrolledClipView(id, sel, aClipView);
 	redrawBackgroundImage();
 }
@@ -346,7 +340,7 @@ void reskinChildren (int flags) {
 }
 
 @Override
-void scrollClipViewToPoint (long /*int*/ id, long /*int*/ sel, long /*int*/ clipView, NSPoint point) {
+void scrollClipViewToPoint (long id, long sel, long clipView, NSPoint point) {
 	if ((state & CANVAS) == 0 && scrollView != null) {
 		NSClipView clip = new NSClipView (clipView);
 		boolean oldCopies = clip.copiesOnScroll (), copies = oldCopies;

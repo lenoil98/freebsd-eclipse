@@ -45,7 +45,7 @@ public final class LegacyActionTools {
 
 	/**
 	 * Table of string representations of keys (key type: <code>Integer</code>,
-	 * value type: <code>String</code>); <code>null</code>> if not yet
+	 * value type: <code>String</code>); <code>null</code> if not yet
 	 * initialized.
 	 *
 	 * @see #findKeyString
@@ -96,7 +96,7 @@ public final class LegacyActionTools {
 	public static String convertAccelerator(final int keyCode) {
 		String modifier = getModifierString(keyCode);
 		String fullKey;
-		if (modifier.equals("")) { //$NON-NLS-1$
+		if (modifier.isEmpty()) {
 			fullKey = findKeyString(keyCode);
 		} else {
 			fullKey = modifier + "+" + findKeyString(keyCode); //$NON-NLS-1$
@@ -311,8 +311,7 @@ public final class LegacyActionTools {
 		if (result != null) {
 			return result;
 		}
-		result = new String(new char[] { (char) i });
-		return result;
+		return new String(new char[] { (char) i });
 	}
 
 	/**
@@ -447,7 +446,7 @@ public final class LegacyActionTools {
 		}
 
 		if ((keyCode & SWT.ALT) != 0) {
-			if (modString.equals("")) { //$NON-NLS-1$
+			if (modString.isEmpty()) {
 				modString = findModifierString(keyCode & SWT.ALT);
 			} else {
 				modString = modString
@@ -456,7 +455,7 @@ public final class LegacyActionTools {
 		}
 
 		if ((keyCode & SWT.SHIFT) != 0) {
-			if (modString.equals("")) { //$NON-NLS-1$
+			if (modString.isEmpty()) {
 				modString = findModifierString(keyCode & SWT.SHIFT);
 			} else {
 				modString = modString
@@ -465,7 +464,7 @@ public final class LegacyActionTools {
 		}
 
 		if ((keyCode & SWT.COMMAND) != 0) {
-			if (modString.equals("")) { //$NON-NLS-1$
+			if (modString.isEmpty()) {
 				modString = findModifierString(keyCode & SWT.COMMAND);
 			} else {
 				modString = modString
@@ -731,9 +730,12 @@ public final class LegacyActionTools {
 	 * <code>"Open"</code>.
 	 *
 	 * @param text the text
-	 * @return the text sans mnemonics
+	 * @return the text sans mnemonics, or empty string
 	 */
 	public static String removeMnemonics(final String text) {
+		if (text == null || text.isEmpty()) {
+			return ""; //$NON-NLS-1$
+		}
 		int index = text.indexOf('&');
 		if (index == -1) {
 			return text;

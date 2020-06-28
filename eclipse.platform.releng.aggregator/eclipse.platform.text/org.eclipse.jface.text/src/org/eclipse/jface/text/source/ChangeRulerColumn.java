@@ -422,7 +422,7 @@ public final class ChangeRulerColumn implements IChangeRulerColumn, IRevisionRul
 		if (fCanvas != null && !fCanvas.isDisposed()) {
 			Display d= fCanvas.getDisplay();
 			if (d != null) {
-				d.asyncExec(() -> redraw());
+				d.asyncExec(this::redraw);
 			}
 		}
 	}
@@ -494,12 +494,12 @@ public final class ChangeRulerColumn implements IChangeRulerColumn, IRevisionRul
 	}
 
 	/**
-     * Returns the revision selection provider.
-     *
-     * @return the revision selection provider
-     * @since 3.2
-     */
-    public ISelectionProvider getRevisionSelectionProvider() {
-    	return fRevisionPainter.getRevisionSelectionProvider();
-    }
+	 * Returns the revision selection provider.
+	 *
+	 * @return the revision selection provider
+	 * @since 3.2
+	 */
+	public ISelectionProvider getRevisionSelectionProvider() {
+		return fRevisionPainter.getRevisionSelectionProvider();
+	}
 }

@@ -22,29 +22,36 @@ import org.eclipse.ui.internal.views.bookmarkexplorer.BookmarkMessages;
 
 /**
  * Action to select all bookmarks.
+ *
+ * Marked for deletion, see Bug 550439
+ *
+ * @noreference
+ * @noinstantiate This class is not intended to be instantiated by clients.
+ * @noextend This class is not intended to be subclassed by clients.
  */
+@Deprecated
 class SelectAllAction extends BookmarkAction {
 
-    /**
-     * Create a new instance of this class.
-     *
-     * @param view the view
-     */
-    public SelectAllAction(BookmarkNavigator view) {
-        super(view, BookmarkMessages.SelectAll_text);
-        setToolTipText(BookmarkMessages.SelectAll_toolTip);
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(this,
-                IBookmarkHelpContextIds.SELECT_ALL_BOOKMARK_ACTION);
-        setEnabled(true);
-    }
+	/**
+	 * Create a new instance of this class.
+	 *
+	 * @param view the view
+	 */
+	public SelectAllAction(BookmarkNavigator view) {
+		super(view, BookmarkMessages.SelectAll_text);
+		setToolTipText(BookmarkMessages.SelectAll_toolTip);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(this,
+				IBookmarkHelpContextIds.SELECT_ALL_BOOKMARK_ACTION);
+		setEnabled(true);
+	}
 
-    @Override
+	@Override
 	public void run() {
-        Viewer viewer = getView().getViewer();
-        Control control = viewer.getControl();
-        if (control instanceof Table) {
-            ((Table) control).selectAll();
-            viewer.setSelection(viewer.getSelection(), false);
-        }
-    }
+		Viewer viewer = getView().getViewer();
+		Control control = viewer.getControl();
+		if (control instanceof Table) {
+			((Table) control).selectAll();
+			viewer.setSelection(viewer.getSelection(), false);
+		}
+	}
 }

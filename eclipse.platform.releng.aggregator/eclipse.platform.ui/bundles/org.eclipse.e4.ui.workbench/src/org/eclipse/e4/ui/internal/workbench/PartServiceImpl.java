@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2016 IBM Corporation and others.
+ * Copyright (c) 2009, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -341,7 +341,7 @@ public class PartServiceImpl implements EPartService {
 		if (application.getSelectedElement() != null)
 			return application.getSelectedElement();
 		List<MWindow> windows = application.getChildren();
-		if (windows.size() != 0)
+		if (!windows.isEmpty())
 			return windows.get(0);
 		return null;
 	}
@@ -516,8 +516,7 @@ public class PartServiceImpl implements EPartService {
 					null, EModelService.PRESENTATION);
 			return allPerspectiveElements.contains(element);
 		}
-		boolean inCurrentPerspective = persp == persp.getParent().getSelectedElement();
-		return inCurrentPerspective;
+		return persp == persp.getParent().getSelectedElement();
 	}
 
 	private boolean isInContainer(MUIElement element) {
@@ -859,17 +858,40 @@ public class PartServiceImpl implements EPartService {
 		// check for existing parts if necessary
 		boolean secondaryId = false;
 		String descId = id;
+		MElementContainer<MUIElement> sharedPlaceHolderParent = null;
 		if (!force) {
 			int colonIndex = id.indexOf(':');
 			if (colonIndex >= 0) {
-				secondaryId = true;
-				descId = id.substring(0, colonIndex);
-				descId += ":*"; //$NON-NLS-1$
+				String remId = ""; //$NON-NLS-1$
+				try {
+					remId = id.substring(colonIndex + 1);
+				} catch (StringIndexOutOfBoundsException e) {
+					// do nothing
+				}
+				if (!remId.trim().equals("*")) {//$NON-NLS-1$
+					for (MUIElement element : sharedWindow.getSharedElements()) {
+						if (element.getElementId().equals(descId)) {
+							sharedPart = (MPart) element;
+							MPlaceholder ph = sharedPart.getCurSharedRef();
+							if (ph != null) {
+								sharedPlaceHolderParent = ph.getParent();
+							}
+							break;
+						}
+					}
+				}
+				if (sharedPart == null) {
+					secondaryId = true;
+					descId = id.substring(0, colonIndex);
+					descId += ":*"; //$NON-NLS-1$
+				}
 			}
-			for (MUIElement element : sharedWindow.getSharedElements()) {
-				if (element.getElementId().equals(descId)) {
-					sharedPart = (MPart) element;
-					break;
+			if (sharedPart == null) {
+				for (MUIElement element : sharedWindow.getSharedElements()) {
+					if (element.getElementId().equals(descId)) {
+						sharedPart = (MPart) element;
+						break;
+					}
 				}
 			}
 		}
@@ -897,6 +919,7 @@ public class PartServiceImpl implements EPartService {
 				List<MPlaceholder> phs = modelService.findElements(parent, descId, MPlaceholder.class);
 				if (phs.size() == 1) {
 					MPlaceholder ph = phs.get(0);
+					sharedPlaceHolderParent = ph.getParent();
 					sharedPart.setCloseable(ph.isCloseable());
 					sharedPart.getTags().addAll(ph.getTags());
 				}
@@ -908,16 +931,19 @@ public class PartServiceImpl implements EPartService {
 			sharedWindow.getSharedElements().add(sharedPart);
 		}
 
-		return createSharedPart(sharedPart);
+		return createSharedPart(sharedPart, sharedPlaceHolderParent);
 	}
 
-	private MPlaceholder createSharedPart(MPart sharedPart) {
+	private MPlaceholder createSharedPart(MPart sharedPart, MElementContainer<MUIElement> sharedPlaceHolderParent) {
 		// Create and return a reference to the shared part
 		MPlaceholder sharedPartRef = modelService.createModelElement(MPlaceholder.class);
 		sharedPartRef.setElementId(sharedPart.getElementId());
 		sharedPartRef.setRef(sharedPart);
 		sharedPartRef.setCloseable(sharedPart.isCloseable());
 		sharedPartRef.getTags().addAll(sharedPart.getTags());
+		if (sharedPlaceHolderParent != null) {
+			sharedPartRef.setParent(sharedPlaceHolderParent);
+		}
 		return sharedPartRef;
 	}
 
@@ -1034,7 +1060,7 @@ public class PartServiceImpl implements EPartService {
 			// need to spawn another one as we don't want to reuse the same one and end up
 			// shifting that placeholder to the current container during the add operation
 					|| (placeholder.getParent() != null && !isInContainer(placeholder))) {
-				placeholder = createSharedPart(part);
+				placeholder = createSharedPart(part, null);
 				part.setCurSharedRef(placeholder);
 			}
 		}
@@ -1463,6 +1489,7 @@ public class PartServiceImpl implements EPartService {
 	 *      509868</a>
 	 */
 	@Deprecated
+	@Override
 	public Collection<MInputPart> getInputParts(String inputUri) {
 		Assert.isNotNull(inputUri, "Input uri must not be null"); //$NON-NLS-1$
 

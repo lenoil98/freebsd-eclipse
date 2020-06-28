@@ -31,7 +31,7 @@ import org.eclipse.jdt.internal.core.manipulation.util.Strings;
 /**
  * Class to annotate edits made by a quick fix/assist to be shown via the quick fix pop-up preview.
  * E.g. the added changes are shown in bold.
- * 
+ *
  * @since 3.8
  */
 public class EditAnnotator extends TextEditVisitor {
@@ -141,12 +141,16 @@ public class EditAnnotator extends TextEditVisitor {
 				}
 				for (int k= 0; k < content.length(); k++) {
 					char ch= content.charAt(k);
-					if (ch == '<') {
+					switch (ch) {
+					case '<':
 						fBuf.append("&lt;"); //$NON-NLS-1$
-					} else if (ch == '>') {
+						break;
+					case '>':
 						fBuf.append("&gt;"); //$NON-NLS-1$
-					} else {
+						break;
+					default:
 						fBuf.append(ch);
+						break;
 					}
 				}
 				if (to == end && to != endOffset) { // new line when at the end of the line, and not end of range

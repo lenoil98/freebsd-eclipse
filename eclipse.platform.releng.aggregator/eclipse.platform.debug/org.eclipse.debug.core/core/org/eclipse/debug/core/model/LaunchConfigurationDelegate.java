@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2018 IBM Corporation and others.
+ * Copyright (c) 2004, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,7 +14,9 @@
  *******************************************************************************/
 package org.eclipse.debug.core.model;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,7 +36,6 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
-import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.ILaunch;
@@ -43,8 +44,6 @@ import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.core.IStatusHandler;
 import org.eclipse.debug.internal.core.DebugCoreMessages;
 import org.eclipse.debug.internal.core.IInternalDebugCoreConstants;
-
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Default implementation of a launch configuration delegate. Provides
@@ -116,21 +115,12 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 
 	@Override
 	public boolean buildForLaunch(ILaunchConfiguration configuration, String mode, IProgressMonitor monitor) throws CoreException {
-		if (monitor != null) {
-			monitor.beginTask("", 1); //$NON-NLS-1$
+		IProject[] projects = getBuildOrder(configuration, mode);
+		if (projects == null) {
+			return true;
 		}
-		try {
-			IProject[] projects = getBuildOrder(configuration, mode);
-			if (projects == null) {
-				return true;
-			}
-			buildProjects(projects, new SubProgressMonitor(monitor, 1));
-			return false;
-		} finally {
-			if (monitor != null) {
-				monitor.done();
-			}
-		}
+		buildProjects(projects, SubMonitor.convert(monitor, 1));
+		return false;
 	}
 
 	/**
@@ -172,10 +162,10 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 
 			monitor.subTask(DebugCoreMessages.LaunchConfigurationDelegate_6);
 			List<IAdaptable> errors = new ArrayList<>();
-			for (int i = 0; i < projects.length; i++) {
-				monitor.subTask(MessageFormat.format(DebugCoreMessages.LaunchConfigurationDelegate_7, new Object[] { projects[i].getName() }));
-				if (existsProblems(projects[i])) {
-					errors.add(projects[i]);
+			for (IProject project : projects) {
+				monitor.subTask(MessageFormat.format(DebugCoreMessages.LaunchConfigurationDelegate_7, new Object[] { project.getName() }));
+				if (existsProblems(project)) {
+					errors.add(project);
 				}
 			}
 			if (!errors.isEmpty()) {
@@ -192,16 +182,15 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 		}
 	}
 
-	/* (non-Javadoc)
-	 *
-	 * If launching in run mode, and the configuration supports debug mode, check
-	 * if there are any breakpoints in the workspace, and ask the user if they'd
-	 * rather launch in debug mode.
-	 * <p>
-	 * Since 3.2, this check also performs saving of resources before launching.
-	 * </p>
-	 *
-	 * @see org.eclipse.debug.core.model.ILaunchConfigurationDelegate2#preLaunchCheck(org.eclipse.debug.core.ILaunchConfiguration, java.lang.String, org.eclipse.core.runtime.IProgressMonitor)
+	/*
+	 * If launching in run mode, and the configuration supports debug mode,
+	 * check if there are any breakpoints in the workspace, and ask the user if
+	 * they'd rather launch in debug mode. <p> Since 3.2, this check also
+	 * performs saving of resources before launching. </p>
+	 * @see
+	 * org.eclipse.debug.core.model.ILaunchConfigurationDelegate2#preLaunchCheck
+	 * (org.eclipse.debug.core.ILaunchConfiguration, java.lang.String,
+	 * org.eclipse.core.runtime.IProgressMonitor)
 	 */
 	@Override
 	public boolean preLaunchCheck(ILaunchConfiguration configuration, String mode, IProgressMonitor monitor) throws CoreException {
@@ -210,11 +199,11 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 		}
 		if (mode.equals(ILaunchManager.RUN_MODE) && configuration.supportsMode(ILaunchManager.DEBUG_MODE)) {
 			IBreakpoint[] breakpoints= getBreakpoints(configuration);
-            if (breakpoints == null) {
-                return true;
-            }
-			for (int i = 0; i < breakpoints.length; i++) {
-				if (breakpoints[i].isEnabled()) {
+			if (breakpoints == null) {
+				return true;
+			}
+			for (IBreakpoint breakpoint : breakpoints) {
+				if (breakpoint.isEnabled()) {
 					IStatusHandler prompter = DebugPlugin.getDefault().getStatusHandler(promptStatus);
 					if (prompter != null) {
 						boolean launchInDebugModeInstead = ((Boolean)prompter.handleStatus(switchToDebugPromptStatus, configuration)).booleanValue();
@@ -263,22 +252,22 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 		}
 	}
 
-    /**
-     * Returns the breakpoint collection that is relevant for this launch delegate.
-     * By default this is all the breakpoints registered with the Debug breakpoint manager.
-     *
-     * @param configuration the configuration to get associated breakpoints for
-     * @since 3.1
-     * @return the breakpoints that are relevant for this launch delegate
-     */
-    protected IBreakpoint[] getBreakpoints(ILaunchConfiguration configuration) {
-        IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
-        if (!breakpointManager.isEnabled()) {
-            // no need to check breakpoints individually.
-            return null;
-        }
-        return breakpointManager.getBreakpoints();
-    }
+	/**
+	 * Returns the breakpoint collection that is relevant for this launch delegate.
+	 * By default this is all the breakpoints registered with the Debug breakpoint manager.
+	 *
+	 * @param configuration the configuration to get associated breakpoints for
+	 * @since 3.1
+	 * @return the breakpoints that are relevant for this launch delegate
+	 */
+	protected IBreakpoint[] getBreakpoints(ILaunchConfiguration configuration) {
+		IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
+		if (!breakpointManager.isEnabled()) {
+			// no need to check breakpoints individually.
+			return null;
+		}
+		return breakpointManager.getBreakpoints();
+	}
 
 	/**
 	 * Returns an array of projects in their suggested build order
@@ -293,9 +282,9 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 	 */
 	protected IProject[] computeReferencedBuildOrder(IProject[] baseProjects) throws CoreException {
 		HashSet<IProject> unorderedProjects = new HashSet<>();
-		for(int i = 0; i< baseProjects.length; i++) {
-			unorderedProjects.add(baseProjects[i]);
-			addReferencedProjects(baseProjects[i], unorderedProjects);
+		for (IProject baseProject : baseProjects) {
+			unorderedProjects.add(baseProject);
+			addReferencedProjects(baseProject, unorderedProjects);
 		}
 		IProject[] projectSet = unorderedProjects.toArray(new IProject[unorderedProjects.size()]);
 		return computeBuildOrder(projectSet);
@@ -313,9 +302,7 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 	 */
 	protected void addReferencedProjects(IProject project, Set<IProject> references) throws CoreException {
 		if (project.isOpen()) {
-			IProject[] projects = project.getReferencedProjects();
-			for (int i = 0; i < projects.length; i++) {
-				IProject refProject= projects[i];
+			for (IProject refProject : project.getReferencedProjects()) {
 				if (refProject.exists() && !references.contains(refProject)) {
 					references.add(refProject);
 					addReferencedProjects(refProject, references);
@@ -338,12 +325,9 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 			List<IProject> orderedProjects = new ArrayList<>(projects.length);
 			//Projects may not be in the build order but should be built if selected
 			List<IProject> unorderedProjects = new ArrayList<>(projects.length);
-			for(int i = 0; i < projects.length; ++i) {
-				unorderedProjects.add(projects[i]);
-			}
+			Collections.addAll(unorderedProjects, projects);
 
-			for (int i = 0; i < orderedNames.length; i++) {
-				String projectName = orderedNames[i];
+			for (String projectName : orderedNames) {
 				for (Iterator<IProject> iterator = unorderedProjects.iterator(); iterator.hasNext();) {
 					IProject project = iterator.next();
 					if (project.getName().equals(projectName)) {
@@ -376,8 +360,8 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 	protected boolean existsProblems(IProject proj) throws CoreException {
 		IMarker[] markers = proj.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
 		if (markers.length > 0) {
-			for (int i = 0; i < markers.length; i++) {
-				if (isLaunchProblem(markers[i])) {
+			for (IMarker marker : markers) {
+				if (isLaunchProblem(marker)) {
 					return true;
 				}
 			}
@@ -412,20 +396,17 @@ public abstract class LaunchConfigurationDelegate implements ILaunchConfiguratio
 	 * @throws CoreException if an exception occurs while building
 	 */
 	protected void buildProjects(final IProject[] projects, IProgressMonitor monitor) throws CoreException {
-		IWorkspaceRunnable build = new IWorkspaceRunnable(){
-			@Override
-			public void run(IProgressMonitor pm) throws CoreException {
-				SubMonitor localmonitor = SubMonitor.convert(pm, DebugCoreMessages.LaunchConfigurationDelegate_scoped_incremental_build, projects.length);
-				try {
-					for (int i = 0; i < projects.length; i++ ) {
-						if (localmonitor.isCanceled()) {
-							throw new OperationCanceledException();
-						}
-						projects[i].build(IncrementalProjectBuilder.INCREMENTAL_BUILD, localmonitor.newChild(1));
+		IWorkspaceRunnable build = pm -> {
+			SubMonitor localmonitor = SubMonitor.convert(pm, DebugCoreMessages.LaunchConfigurationDelegate_scoped_incremental_build, projects.length);
+			try {
+				for (IProject project : projects) {
+					if (localmonitor.isCanceled()) {
+						throw new OperationCanceledException();
 					}
-				} finally {
-					localmonitor.done();
+					project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, localmonitor.newChild(1));
 				}
+			} finally {
+				localmonitor.done();
 			}
 		};
 		ResourcesPlugin.getWorkspace().run(build, monitor);

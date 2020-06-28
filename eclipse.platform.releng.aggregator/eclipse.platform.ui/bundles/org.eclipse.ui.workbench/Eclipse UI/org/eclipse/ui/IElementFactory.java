@@ -35,13 +35,13 @@ import org.eclipse.core.runtime.IAdaptable;
  * @see org.eclipse.ui.IWorkbench#getElementFactory
  */
 public interface IElementFactory {
-    /**
+	/**
 	 * Re-creates and returns an object from the state captured within the given
 	 * memento.
 	 * <p>
 	 * If the result is not null, it should be persistable; that is,
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * result.getAdapter(org.eclipse.ui.IPersistableElement.class)
 	 * </pre>
@@ -52,5 +52,5 @@ public interface IElementFactory {
 	 * @param memento a memento containing the state for the object
 	 * @return an object, or <code>null</code> if the element could not be created
 	 */
-    IAdaptable createElement(IMemento memento);
+	IAdaptable createElement(IMemento memento);
 }

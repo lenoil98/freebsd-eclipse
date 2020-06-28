@@ -15,6 +15,8 @@
 package org.eclipse.debug.ui.actions;
 
 
+import java.text.MessageFormat;
+
 import org.eclipse.core.commands.Command;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
@@ -47,8 +49,6 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
 
-import com.ibm.icu.text.MessageFormat;
-
 /**
  * Re-launches the last launch.
  *
@@ -62,9 +62,6 @@ import com.ibm.icu.text.MessageFormat;
 public abstract class RelaunchLastAction implements IWorkbenchWindowActionDelegate, IActionDelegate2 {
 
 	private class Listener implements IPreferenceChangeListener {
-		/* (non-Javadoc)
-		 * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener#preferenceChange(org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent)
-		 */
 		@Override
 		public void preferenceChange(PreferenceChangeEvent event) {
 			if(event.getKey().equals(IInternalDebugUIConstants.PREF_USE_CONTEXTUAL_LAUNCH)) {
@@ -77,9 +74,6 @@ public abstract class RelaunchLastAction implements IWorkbenchWindowActionDelega
 	private IWorkbenchWindow fWorkbenchWindow;
 	private IAction fAction;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWorkbenchWindowActionDelegate#dispose()
-	 */
 	@Override
 	public void dispose(){
 		IEclipsePreferences prefs = InstanceScope.INSTANCE.getNode(DebugUIPlugin.getUniqueIdentifier());
@@ -88,9 +82,6 @@ public abstract class RelaunchLastAction implements IWorkbenchWindowActionDelega
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWorkbenchWindowActionDelegate#init(org.eclipse.ui.IWorkbenchWindow)
-	 */
 	@Override
 	public void init(IWorkbenchWindow window){
 		fWorkbenchWindow = window;
@@ -100,11 +91,6 @@ public abstract class RelaunchLastAction implements IWorkbenchWindowActionDelega
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.ui.IActionDelegate2#init(org.eclipse.jface.action.IAction)
-	 */
 	/**
 	 * @since 3.12
 	 */
@@ -117,20 +103,10 @@ public abstract class RelaunchLastAction implements IWorkbenchWindowActionDelega
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		runInternal(false);
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * org.eclipse.ui.IActionDelegate2#runwithEvent(org.eclipse.jface.action.
-	 * IAction, org.eclipse.swt.widgets.Event)
-	 */
 
 	/**
 	 * @since 3.12
@@ -180,9 +156,6 @@ public abstract class RelaunchLastAction implements IWorkbenchWindowActionDelega
 		dialog.open();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection selection){
 		if (fAction == null) {
@@ -222,8 +195,7 @@ public abstract class RelaunchLastAction implements IWorkbenchWindowActionDelega
 	 */
 	private boolean existsConfigTypesForMode() {
 		ILaunchConfigurationType[] configTypes = DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurationTypes();
-		for (int i = 0; i < configTypes.length; i++) {
-			ILaunchConfigurationType configType = configTypes[i];
+		for (ILaunchConfigurationType configType : configTypes) {
 			if (configType.supportsMode(getMode())) {
 				return true;
 			}

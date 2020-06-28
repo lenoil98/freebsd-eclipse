@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2013 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,7 +16,10 @@ package org.eclipse.debug.internal.ui.actions.breakpoints;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -49,9 +52,6 @@ import org.eclipse.ui.PlatformUI;
 
 public class RemoveBreakpointAction extends AbstractSelectionActionDelegate {
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		IStructuredSelection selection = getSelection();
@@ -63,7 +63,7 @@ public class RemoveBreakpointAction extends AbstractSelectionActionDelegate {
 		IWorkspaceRunnable runnable= new IWorkspaceRunnable() {
 			@Override
 			public void run(IProgressMonitor monitor) {
-				ArrayList<IBreakpoint> breakpointsToDelete = new ArrayList<>();
+				Set<IBreakpoint> breakpointsToDelete = new LinkedHashSet<>();
 				ArrayList<IWorkingSet> groupsToDelete = new ArrayList<>();
 				boolean deleteAll = false;
 				boolean deleteContainer = false;
@@ -118,10 +118,8 @@ public class RemoveBreakpointAction extends AbstractSelectionActionDelegate {
 							}
 						}
 						if(deleteAll) {
-						    IBreakpoint[] breakpoints = bpc.getBreakpoints();
-						    for (int i = 0; i < breakpoints.length; i++) {
-                                breakpointsToDelete.add(breakpoints[i]);
-                            }
+							IBreakpoint[] breakpoints = bpc.getBreakpoints();
+							Collections.addAll(breakpointsToDelete, breakpoints);
 						}
 					}
 				}
@@ -131,22 +129,22 @@ public class RemoveBreakpointAction extends AbstractSelectionActionDelegate {
 					((BreakpointsView)getView()).preserveSelection(getSelection());
 				}
 				new Job(ActionMessages.RemoveBreakpointAction_2) {
-                    @Override
+					@Override
 					protected IStatus run(IProgressMonitor pmonitor) {
-                        try {
+						try {
 							Shell shell= getView() != null ? getView().getSite().getShell() : null;
 							DebugUITools.deleteBreakpoints(breakpoints, shell, pmonitor);
 
-                            for (int i = 0; i < sets.length; i++) {
-                            	PlatformUI.getWorkbench().getWorkingSetManager().removeWorkingSet(sets[i]);
+							for (IWorkingSet set : sets) {
+								PlatformUI.getWorkbench().getWorkingSetManager().removeWorkingSet(set);
 							}
-                            return Status.OK_STATUS;
-                        } catch (CoreException e) {
-                            DebugUIPlugin.log(e);
-                        }
-                        return Status.CANCEL_STATUS;
-                    }
-                }.schedule();
+							return Status.OK_STATUS;
+						} catch (CoreException e) {
+							DebugUIPlugin.log(e);
+						}
+						return Status.CANCEL_STATUS;
+					}
+				}.schedule();
 			}
 		};
 		try {
@@ -164,9 +162,6 @@ public class RemoveBreakpointAction extends AbstractSelectionActionDelegate {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.actions.AbstractSelectionActionDelegate#isEnabledFor(java.lang.Object)
-	 */
 	@Override
 	protected boolean isEnabledFor(Object element) {
 		if (element instanceof IBreakpointContainer) {

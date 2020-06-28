@@ -143,8 +143,7 @@ public class SecurePreferencesRoot extends SecurePreferences implements IStorage
 			properties.remove(KEY_FACTORY_KEY);
 		}
 
-		for (Iterator<Entry<Object, Object>> it = properties.entrySet().iterator(); it.hasNext();) {
-			Entry<Object, Object> entry = it.next();
+		for (Entry<Object, Object> entry : properties.entrySet()) {
 			Object externalKey = entry.getKey();
 			Object value = entry.getValue();
 			if (!(externalKey instanceof String))
@@ -286,10 +285,7 @@ public class SecurePreferencesRoot extends SecurePreferences implements IStorage
 						validPassword = true;
 						break;
 					}
-				} catch (IllegalBlockSizeException e) {
-					if (!moduleExt.changePassword(e, container))
-						break;
-				} catch (BadPaddingException e) {
+				} catch (IllegalBlockSizeException | BadPaddingException e) {
 					if (!moduleExt.changePassword(e, container))
 						break;
 				}
@@ -411,7 +407,7 @@ public class SecurePreferencesRoot extends SecurePreferences implements IStorage
 		long num1 = rand.nextInt(10000);
 		long num2 = rand.nextInt(10000);
 
-		StringBuffer tmp = new StringBuffer();
+		StringBuilder tmp = new StringBuilder();
 		tmp.append(num1);
 		tmp.append('\t');
 		tmp.append(num2);

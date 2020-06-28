@@ -131,10 +131,9 @@ public class LevelTreeContentProvider extends JavaSearchContentProvider implemen
 		super.initialize(result);
 		fChildrenMap= new HashMap<>();
 		if (result != null) {
-			Object[] elements= result.getElements();
-			for (int i= 0; i < elements.length; i++) {
-				if (getPage().getDisplayedMatchCount(elements[i]) > 0) {
-					insert(null, null, elements[i]);
+			for (Object element : result.getElements()) {
+				if (getPage().getDisplayedMatchCount(element) > 0) {
+					insert(null, null, element);
 				}
 			}
 		}
@@ -203,7 +202,7 @@ public class LevelTreeContentProvider extends JavaSearchContentProvider implemen
 
 	/**
 	 * Tries to remove the given element from the list of stored siblings.
-	 * 
+	 *
 	 * @param element potential child
 	 * @param parent potential parent
 	 * @return returns true if it really was a remove (i.e. element was a child of parent).
@@ -251,21 +250,22 @@ public class LevelTreeContentProvider extends JavaSearchContentProvider implemen
 		Set<Object> toRemove= new HashSet<>();
 		Set<Object> toUpdate= new HashSet<>();
 		Map<Object, Set<Object>> toAdd= new HashMap<>();
-		for (int i= 0; i < updatedElements.length; i++) {
-			if (getPage().getDisplayedMatchCount(updatedElements[i]) > 0)
-				insert(toAdd, toUpdate, updatedElements[i]);
-			else
-				remove(toRemove, toUpdate, updatedElements[i]);
+		for (Object updatedElement : updatedElements) {
+			if (getPage().getDisplayedMatchCount(updatedElement) > 0) {
+				insert(toAdd, toUpdate, updatedElement);
+			} else {
+				remove(toRemove, toUpdate, updatedElement);
+			}
 		}
 
 		viewer.remove(toRemove.toArray());
-		for (Iterator<Object> iter= toAdd.keySet().iterator(); iter.hasNext();) {
-			Object parent= iter.next();
-			HashSet<Object> children= (HashSet<Object>) toAdd.get(parent);
+		for (Map.Entry<Object, Set<Object>> entry : toAdd.entrySet()) {
+			Object parent = entry.getKey();
+			HashSet<Object> children= (HashSet<Object>) entry.getValue();
 			viewer.add(parent, children.toArray());
 		}
-		for (Iterator<Object> elementsToUpdate= toUpdate.iterator(); elementsToUpdate.hasNext();) {
-			viewer.refresh(elementsToUpdate.next());
+		for (Object object : toUpdate) {
+			viewer.refresh(object);
 		}
 
 	}

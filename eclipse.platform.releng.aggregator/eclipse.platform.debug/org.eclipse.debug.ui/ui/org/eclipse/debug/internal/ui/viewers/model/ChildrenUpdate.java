@@ -66,26 +66,26 @@ public class ChildrenUpdate extends ViewerUpdateMonitor implements IChildrenUpda
 					int viewIndex = provider.modelToViewIndex(elementPath, modelIndex);
 					if (provider.shouldFilter(elementPath, element)) {
 						if (provider.addFilteredIndex(elementPath, modelIndex, element)) {
-                            if (!updateFilterOnly) {
-                                if (DebugUIPlugin.DEBUG_CONTENT_PROVIDER && DebugUIPlugin.DEBUG_TEST_PRESENTATION_ID(getPresentationContext())) {
-                                	DebugUIPlugin.trace("REMOVE(" + getElement() + ", modelIndex: " + modelIndex + " viewIndex: " + viewIndex + ", " + element + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
-    							}
-							    viewer.remove(elementPath, viewIndex);
-                            }
+							if (!updateFilterOnly) {
+								if (DebugUIPlugin.DEBUG_CONTENT_PROVIDER && DebugUIPlugin.DEBUG_TEST_PRESENTATION_ID(getPresentationContext())) {
+									DebugUIPlugin.trace("REMOVE(" + getElement() + ", modelIndex: " + modelIndex + " viewIndex: " + viewIndex + ", " + element + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+								}
+								viewer.remove(elementPath, viewIndex);
+							}
 						}
 					} else {
 						if (provider.isFiltered(elementPath, modelIndex)) {
 							provider.clearFilteredChild(elementPath, modelIndex);
-                            if (!updateFilterOnly) {
+							if (!updateFilterOnly) {
 								int insertIndex = provider.modelToViewIndex(elementPath, modelIndex);
 								if (DebugUIPlugin.DEBUG_CONTENT_PROVIDER) {
 									DebugUIPlugin.trace("insert(" + getElement() + ", modelIndex: " + modelIndex + " insertIndex: " + insertIndex + ", " + element + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
 								}
 								viewer.insert(elementPath, element, insertIndex);
-                            }
+							}
 						} else if (!updateFilterOnly){
-		                    if (DebugUIPlugin.DEBUG_CONTENT_PROVIDER && DebugUIPlugin.DEBUG_TEST_PRESENTATION_ID(getPresentationContext())) {
-		                    	DebugUIPlugin.trace("replace(" + getElement() + ", modelIndex: " + modelIndex + " viewIndex: " + viewIndex + ", " + element + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+							if (DebugUIPlugin.DEBUG_CONTENT_PROVIDER && DebugUIPlugin.DEBUG_TEST_PRESENTATION_ID(getPresentationContext())) {
+								DebugUIPlugin.trace("replace(" + getElement() + ", modelIndex: " + modelIndex + " viewIndex: " + viewIndex + ", " + element + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
 							}
 							viewer.replace(elementPath, viewIndex, element);
 						}
@@ -107,19 +107,11 @@ public class ChildrenUpdate extends ViewerUpdateMonitor implements IChildrenUpda
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see org.eclipse.debug.ui.viewers.AsynchronousRequestMonitor#performUpdate()
-	 */
 	@Override
 	protected void performUpdate() {
 		performUpdate(false);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.provisional.IChildrenUpdate#setChild(java.lang.Object, int)
-	 */
 	@Override
 	public void setChild(Object child, int index) {
 		if (fElements == null) {
@@ -128,11 +120,9 @@ public class ChildrenUpdate extends ViewerUpdateMonitor implements IChildrenUpda
 		fElements[index - fIndex] = child;
 	}
 
-	/* (non-Javadoc)
-	 *
-	 * This method is public so the test suite has access - it should be default protection.
-	 *
-	 * @see org.eclipse.debug.internal.ui.viewers.model.ViewerUpdateMonitor#coalesce(org.eclipse.debug.internal.ui.viewers.model.ViewerUpdateMonitor)
+	/*
+	 * This method is public so the test suite has access - it should be default
+	 * protection.
 	 */
 	@Override
 	public synchronized boolean coalesce(ViewerUpdateMonitor request) {
@@ -148,7 +138,7 @@ public class ChildrenUpdate extends ViewerUpdateMonitor implements IChildrenUpda
 					end = Math.max(end, otherEnd);
 					fLength = end - fIndex;
 					if (DebugUIPlugin.DEBUG_CONTENT_PROVIDER && DebugUIPlugin.DEBUG_TEST_PRESENTATION_ID(getPresentationContext())) {
-						DebugUIPlugin.trace("coalesced: " + this.toString()); //$NON-NLS-1$
+						DebugUIPlugin.trace("coalesced: " + this); //$NON-NLS-1$
 					}
 					return true;
 				}
@@ -159,30 +149,19 @@ public class ChildrenUpdate extends ViewerUpdateMonitor implements IChildrenUpda
 
 	@Override
 	boolean containsUpdate(TreePath path) {
-        return getElementPath().equals(path);
-    }
+		return getElementPath().equals(path);
+	}
 
-
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.provisional.IChildrenUpdate#getLength()
-	 */
 	@Override
 	public int getLength() {
 		return fLength;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.provisional.IChildrenUpdate#getOffset()
-	 */
 	@Override
 	public int getOffset() {
 		return fIndex;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.ViewerUpdateMonitor#startRequest()
-	 */
 	@Override
 	void startRequest() {
 		getElementContentProvider().update(new IChildrenUpdate[]{this});
@@ -190,7 +169,7 @@ public class ChildrenUpdate extends ViewerUpdateMonitor implements IChildrenUpda
 
 	@Override
 	public String toString() {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append("IChildrenUpdate: "); //$NON-NLS-1$
 		buf.append(getElement());
 		buf.append(" {"); //$NON-NLS-1$
@@ -201,17 +180,11 @@ public class ChildrenUpdate extends ViewerUpdateMonitor implements IChildrenUpda
 		return buf.toString();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.ViewerUpdateMonitor#getPriority()
-	 */
 	@Override
 	int getPriority() {
 		return 3;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.internal.ui.viewers.model.ViewerUpdateMonitor#getSchedulingPath()
-	 */
 	@Override
 	TreePath getSchedulingPath() {
 		return getElementPath();
@@ -228,24 +201,24 @@ public class ChildrenUpdate extends ViewerUpdateMonitor implements IChildrenUpda
 	}
 
 	Object[] getElements() {
-	    return fElements;
+		return fElements;
 	}
 
-    @Override
+	@Override
 	protected boolean doEquals(ViewerUpdateMonitor update) {
-        return
-            update instanceof ChildrenUpdate &&
-            ((ChildrenUpdate)update).getOffset() == getOffset() &&
-            ((ChildrenUpdate)update).getLength() == getLength() &&
-            getViewerInput().equals(update.getViewerInput()) &&
-            getElementPath().equals(update.getElementPath());
-    }
+		return
+			update instanceof ChildrenUpdate &&
+			((ChildrenUpdate)update).getOffset() == getOffset() &&
+			((ChildrenUpdate)update).getLength() == getLength() &&
+			getViewerInput().equals(update.getViewerInput()) &&
+			getElementPath().equals(update.getElementPath());
+	}
 
-    @Override
+	@Override
 	protected int doHashCode() {
-        return (int)Math.pow(
-            (getClass().hashCode() + getViewerInput().hashCode() + getElementPath().hashCode()) * (getOffset() + 2),
-            getLength() + 2);
-    }
+		return (int)Math.pow(
+			(getClass().hashCode() + getViewerInput().hashCode() + getElementPath().hashCode()) * (getOffset() + 2),
+			getLength() + 2);
+	}
 
 }

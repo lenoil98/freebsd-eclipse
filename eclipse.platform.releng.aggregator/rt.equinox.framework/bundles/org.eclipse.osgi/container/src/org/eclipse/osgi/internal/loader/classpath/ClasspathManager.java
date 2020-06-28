@@ -51,10 +51,10 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.namespace.HostNamespace;
 
 /**
- * A helper class for {@link ModuleClassLoader} implementations.  This class will keep track of 
- * {@link ClasspathEntry} objects for the host bundle and any attached fragment bundles.  This 
+ * A helper class for {@link ModuleClassLoader} implementations.  This class will keep track of
+ * {@link ClasspathEntry} objects for the host bundle and any attached fragment bundles.  This
  * class takes care of searching the {@link ClasspathEntry} objects for a module class loader
- * implementation.  Additional behavior may be added to a classpath manager by configuring a 
+ * implementation.  Additional behavior may be added to a classpath manager by configuring a
  * {@link ClassLoaderHook}.
  * @see ModuleClassLoader
  * @see ClassLoaderHook
@@ -146,32 +146,34 @@ public class ClasspathManager {
 	 *
 	 */
 	public void close() {
-		for (int i = 0; i < entries.length; i++) {
-			if (entries[i] != null) {
+		for (ClasspathEntry entry : entries) {
+			if (entry != null) {
 				try {
-					entries[i].close();
-				} catch (IOException e) {
+					entry.close();
+				}catch (IOException e) {
 					generation.getBundleInfo().getStorage().getAdaptor().publishContainerEvent(ContainerEvent.ERROR, generation.getRevision().getRevisions().getModule(), e);
 				}
 			}
 		}
 		FragmentClasspath[] currentFragments = getFragmentClasspaths();
-		for (int i = 0; i < currentFragments.length; i++)
-			currentFragments[i].close();
+		for (FragmentClasspath currentFragment : currentFragments) {
+			currentFragment.close();
+		}
 	}
 
 	private ClasspathEntry[] buildClasspath(String[] cp, ClasspathManager hostloader, Generation source) {
 		ArrayList<ClasspathEntry> result = new ArrayList<>(cp.length);
 		// add the regular classpath entries.
-		for (int i = 0; i < cp.length; i++)
-			findClassPathEntry(result, cp[i], hostloader, source);
+		for (String cpEntry : cp) {
+			findClassPathEntry(result, cpEntry, hostloader, source);
+		}
 		return result.toArray(new ClasspathEntry[result.size()]);
 	}
 
 	/**
 	 * Finds all the ClasspathEntry objects for the requested classpath.  This method will first call all
 	 * the configured class loading hooks {@link ClassLoaderHook#addClassPathEntry(ArrayList, String, ClasspathManager, Generation)}
-	 * methods.  This allows class loading hooks to add additional ClasspathEntry objects to the result for the 
+	 * methods.  This allows class loading hooks to add additional ClasspathEntry objects to the result for the
 	 * requested classpath.  Then the local host classpath entries and attached fragment classpath entries are
 	 * searched.
 	 * @param result a list of ClasspathEntry objects.  This list is used to add new ClasspathEntry objects to.
@@ -219,8 +221,7 @@ public class ClasspathManager {
 		// only check for fragments if the generation is the host's generation.
 		if (hostManager.generation == generation) {
 			FragmentClasspath[] hostFrags = hostManager.getFragmentClasspaths();
-			for (int i = 0; i < hostFrags.length; i++) {
-				FragmentClasspath fragCP = hostFrags[i];
+			for (FragmentClasspath fragCP : hostFrags) {
 				element = hostManager.getClasspath(cp, fragCP.getGeneration());
 				if (element != null) {
 					result.add(element);
@@ -253,12 +254,12 @@ public class ClasspathManager {
 		if (var.equals("ws")) //$NON-NLS-1$
 			return ClasspathManager.addStandardClassPathEntry(cpEntries, "ws/" + configuration.getWS() + cp.substring(4), hostManager, source); //$NON-NLS-1$
 		if (var.equals("os")) //$NON-NLS-1$
-			return ClasspathManager.addStandardClassPathEntry(cpEntries, "os/" + configuration.getOS() + cp.substring(4), hostManager, source); //$NON-NLS-1$ 
+			return ClasspathManager.addStandardClassPathEntry(cpEntries, "os/" + configuration.getOS() + cp.substring(4), hostManager, source); //$NON-NLS-1$
 		if (var.equals("nl")) { //$NON-NLS-1$
 			cp = cp.substring(4);
 			List<String> NL_JAR_VARIANTS = source.getBundleInfo().getStorage().getConfiguration().ECLIPSE_NL_JAR_VARIANTS;
 			for (String nlVariant : NL_JAR_VARIANTS) {
-				if (ClasspathManager.addStandardClassPathEntry(cpEntries, "nl/" + nlVariant + cp, hostManager, source)) //$NON-NLS-1$ 
+				if (ClasspathManager.addStandardClassPathEntry(cpEntries, "nl/" + nlVariant + cp, hostManager, source)) //$NON-NLS-1$
 					return true;
 			}
 		}
@@ -349,8 +350,8 @@ public class ClasspathManager {
 
 	/**
 	 * Finds a local resource by searching the ClasspathEntry objects of the classpath manager.
-	 * This method will first call all the configured class loading hooks 
-	 * {@link ClassLoaderHook#preFindLocalResource(String, ClasspathManager)} methods.  Then it 
+	 * This method will first call all the configured class loading hooks
+	 * {@link ClassLoaderHook#preFindLocalResource(String, ClasspathManager)} methods.  Then it
 	 * will search for the resource.  Finally it will call all the configured class loading hooks
 	 * {@link ClassLoaderHook#postFindLocalResource(String, URL, ClasspathManager)} methods.
 	 * @param resource the requested resource name.
@@ -535,15 +536,15 @@ public class ClasspathManager {
 
 	/**
 	 * Finds a local class by searching the ClasspathEntry objects of the classpath manager.
-	 * This method will first call all the configured class loader hooks 
-	 * {@link ClassLoaderHook#preFindLocalClass(String, ClasspathManager)} methods.  Then it 
+	 * This method will first call all the configured class loader hooks
+	 * {@link ClassLoaderHook#preFindLocalClass(String, ClasspathManager)} methods.  Then it
 	 * will search for the class.  If a class is found then
 	 * <ol>
 	 *   <li>All configured class loader hooks
 	 *       {@link ClassLoaderHook#processClass(String, byte[], ClasspathEntry, BundleEntry, ClasspathManager)}
 	 *       methods will be called.</li>
-	 *   <li>The class is then defined.</li>  
-	 *   <li>Finally, all configured class loading 
+	 *   <li>The class is then defined.</li>
+	 *   <li>Finally, all configured class loading
 	 *       stats hooks {@link ClassLoaderHook#recordClassDefine(String, Class, byte[], ClasspathEntry, BundleEntry, ClasspathManager)}
 	 *       methods are called.</li>
 	 * </ol>
@@ -650,10 +651,10 @@ public class ClasspathManager {
 	}
 
 	/**
-	 * Defines the specified class.  This method will first call all the configured class loader hooks 
-	 * {@link ClassLoadingHook#processClass(String, byte[], ClasspathEntry, BundleEntry, ClasspathManager)} 
-	 * methods.  If any hook modifies the bytes the all configured hook 
-	 * {@link ClassLoaderHook#rejectTransformation(String, byte[], ClasspathEntry, BundleEntry, ClasspathManager)} 
+	 * Defines the specified class.  This method will first call all the configured class loader hooks
+	 * {@link ClassLoadingHook#processClass(String, byte[], ClasspathEntry, BundleEntry, ClasspathManager)}
+	 * methods.  If any hook modifies the bytes the all configured hook
+	 * {@link ClassLoaderHook#rejectTransformation(String, byte[], ClasspathEntry, BundleEntry, ClasspathManager)}
 	 * methods are called.  Then it will call the {@link ModuleClassLoader#defineClass(String, byte[], ClasspathEntry, BundleEntry)}
 	 * method to define the class. After that, the class loader hooks are called to announce the class
 	 * definition by calling {@link ClassLoaderHook#recordClassDefine(String, Class, byte[], ClasspathEntry, BundleEntry, ClasspathManager)}.
@@ -678,7 +679,7 @@ public class ClasspathManager {
 			// First call the hooks that do not handle recursion themselves
 			if (!hookRegistry.getContainer().isProcessClassRecursionSupportedByAll()) {
 				// One or more hooks do not support recursive class processing.
-				// We need to detect recursions for this set of hooks. 
+				// We need to detect recursions for this set of hooks.
 				if (context.currentlyProcessing.contains(name)) {
 					// Avoid recursion for the same class name for these hooks
 					recursionDetected = true;

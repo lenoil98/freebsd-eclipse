@@ -30,22 +30,7 @@ import org.eclipse.test.performance.PerformanceTestCase;
 import org.eclipse.ua.tests.plugin.UserAssistanceTestPlugin;
 import org.xml.sax.SAXException;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 public class TocAssemblePerformanceTest extends PerformanceTestCase {
-
-	/*
-	 * Returns an instance of this Test.
-	 */
-	public static Test suite() {
-		return new TestSuite(TocAssemblePerformanceTest.class);
-	}
-
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-	}
 
 	private TocContribution parse(TocFileParser parser, String tocFile)
 			throws IOException, SAXException, ParserConfigurationException {
@@ -85,14 +70,14 @@ public class TocAssemblePerformanceTest extends PerformanceTestCase {
 		for (int i=0; i < 100; ++i) {
 			boolean warmup = i < 2;
 			if (!warmup) {
-			    startMeasuring();
+				startMeasuring();
 			}
 			for (int j = 0; j < 20; j++) {
-			    assembleToc();
+				assembleToc();
 			}
 			if (!warmup) {
-			    stopMeasuring();
-		    }
+				stopMeasuring();
+			}
 		}
 
 		commitMeasurements();

@@ -18,7 +18,6 @@ package org.eclipse.ui.texteditor;
 
 import java.util.ResourceBundle;
 
-import org.eclipse.swt.events.HelpEvent;
 import org.eclipse.swt.events.HelpListener;
 
 import org.eclipse.jface.action.IAction;
@@ -46,12 +45,7 @@ public final class RetargetTextEditorAction extends ResourceAction {
 	 */
 	private HelpListener fLocalHelpListener;
 	/** The listener to pick up changes of the target action. */
-	private IPropertyChangeListener fListener= new IPropertyChangeListener() {
-		@Override
-		public void propertyChange(PropertyChangeEvent event) {
-			update(event);
-		}
-	};
+	private IPropertyChangeListener fListener= this::update;
 
 	/**
 	 * Creates a new action. The action configures its initial visual
@@ -64,7 +58,7 @@ public final class RetargetTextEditorAction extends ResourceAction {
 	 *   (described in <code>ResourceAction</code> constructor), or
 	 *   <code>null</code> if none
 	 * @param	style one of <code>IAction.AS_PUSH_BUTTON</code>, <code>IAction.AS_CHECK_BOX</code>,
- 	 *			and <code>IAction.AS_RADIO_BUTTON</code>.
+	 *			and <code>IAction.AS_RADIO_BUTTON</code>.
 	 *
 	 * @see ResourceAction#ResourceAction(ResourceBundle, String, int)
 	 * @see IAction#AS_CHECK_BOX
@@ -109,7 +103,7 @@ public final class RetargetTextEditorAction extends ResourceAction {
 	 *   (described in <code>ResourceAction</code> constructor), or <code>null</code> if none
 	 * @param actionId the action id
 	 * @param	style one of <code>IAction.AS_PUSH_BUTTON</code>, <code>IAction.AS_CHECK_BOX</code>,
- 	 *			and <code>IAction.AS_RADIO_BUTTON</code>.
+	 *			and <code>IAction.AS_RADIO_BUTTON</code>.
 	 *
 	 * @see ResourceAction#ResourceAction(ResourceBundle, String, int)
 	 * @see IAction#AS_CHECK_BOX
@@ -183,7 +177,7 @@ public final class RetargetTextEditorAction extends ResourceAction {
 
 			setEnabled(false);
 			if (getStyle() == AS_CHECK_BOX || getStyle() == AS_RADIO_BUTTON)
-			   setChecked(false);
+				setChecked(false);
 			setText(fDefaultText);
 			setToolTipText(""); //$NON-NLS-1$
 
@@ -191,7 +185,7 @@ public final class RetargetTextEditorAction extends ResourceAction {
 
 			setEnabled(fAction.isEnabled());
 			if (fAction.getStyle() == AS_CHECK_BOX || fAction.getStyle() ==  AS_RADIO_BUTTON)
-			   super.setChecked(fAction.isChecked());
+				super.setChecked(fAction.isChecked());
 			setText(fAction.getText());
 			setToolTipText(fAction.getToolTipText());
 			fAction.addPropertyChangeListener(fListener);
@@ -204,21 +198,18 @@ public final class RetargetTextEditorAction extends ResourceAction {
 	 * @since 2.1
 	 */
 	private void installHelpListener() {
-		super.setHelpListener(new HelpListener() {
-			@Override
-			public void helpRequested(HelpEvent e) {
-				HelpListener listener= null;
-				if (fAction != null) {
-					// if we have a handler, see if it has a help listener
-					listener= fAction.getHelpListener();
-					if (listener == null)
-						// use our own help listener
-						listener= fLocalHelpListener;
-				}
-				if (listener != null)
-					// pass on the event
-					listener.helpRequested(e);
+		super.setHelpListener(e -> {
+			HelpListener listener= null;
+			if (fAction != null) {
+				// if we have a handler, see if it has a help listener
+				listener= fAction.getHelpListener();
+				if (listener == null)
+					// use our own help listener
+					listener= fLocalHelpListener;
 			}
+			if (listener != null)
+				// pass on the event
+				listener.helpRequested(e);
 		});
 	}
 

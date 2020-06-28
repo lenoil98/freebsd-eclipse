@@ -16,8 +16,6 @@ package org.eclipse.core.tests.resources;
 
 import java.io.File;
 import java.net.URI;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.tests.harness.PerformanceTestRunner;
@@ -29,7 +27,7 @@ import org.eclipse.core.tests.harness.PerformanceTestRunner;
  * This test is meant to be run manually, and not integrated into the
  * automated test suite. Requires large project data (thousands of folders)
  * to be available on a slow file system (bigSiteLocation). Modify
- * bigSiteLocation to suit your needs, then run-as > JUnit Plug-in Test.
+ * bigSiteLocation to suit your needs, then run-as &gt; JUnit Plug-in Test.
  */
 public class ProjectSnapshotPerfManualTest extends ResourceTest {
 	/** big site default volume (windows) */
@@ -66,13 +64,6 @@ public class ProjectSnapshotPerfManualTest extends ResourceTest {
 			result++;
 		}
 		return result;
-	}
-
-	// this test should not be in AllTests because it is only a performance test
-	public static Test suite() {
-		TestSuite suite = new TestSuite(ProjectSnapshotPerfManualTest.class.getName());
-		suite.addTest(new ProjectSnapshotPerfManualTest("testSnapshotImportPerformance"));
-		return suite;
 	}
 
 	/**

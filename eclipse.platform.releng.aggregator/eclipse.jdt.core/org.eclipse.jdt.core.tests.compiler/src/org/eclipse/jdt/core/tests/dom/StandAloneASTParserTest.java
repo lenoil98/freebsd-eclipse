@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2018 IBM Corporation and others.
+ * Copyright (c) 2010, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -49,19 +50,22 @@ import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
+import org.eclipse.jdt.core.dom.SwitchExpression;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
+import org.eclipse.jdt.core.dom.YieldStatement;
 import org.eclipse.jdt.core.tests.compiler.regression.AbstractRegressionTest;
+import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 
 @SuppressWarnings({ "rawtypes" })
 public class StandAloneASTParserTest extends AbstractRegressionTest {
 	public StandAloneASTParserTest(String name) {
 		super(name);
 	}
-	
-	private static final int AST_JLS_LATEST = AST.JLS11;
+
+	private static final int AST_JLS_LATEST = AST.JLS14;
 
 	public ASTNode runConversion(
 			int astLevel,
@@ -81,9 +85,16 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		parser.setUnitName(unitName);
 		return parser.createAST(null);
 	}
+	protected File createFile(File dir, String fileName, String contents) throws IOException {
+		File file = new File(dir, fileName);
+		try (Writer writer = new BufferedWriter(new FileWriter(file))) {
+			writer.write(contents);
+		}
+		return file;
+	}
 	public void testBug529654_001() {
 		String contents =
-				"module m {\n" + 
+				"module m {\n" +
 				"}";
 		ASTParser parser = ASTParser.newParser(AST_JLS_LATEST);
 		parser.setSource(contents.toCharArray());
@@ -106,13 +117,13 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 	}
 	public void test1() {
 		String contents =
-				"package p;\n" + 
-				"public class X {\n" + 
-				"	public int i;\n" + 
-				"	public static void main(String[] args) {\n" + 
-				"		int length = args.length;\n" + 
-				"		System.out.println(length);\n" + 
-				"	}\n" + 
+				"package p;\n" +
+				"public class X {\n" +
+				"	public int i;\n" +
+				"	public static void main(String[] args) {\n" +
+				"		int length = args.length;\n" +
+				"		System.out.println(length);\n" +
+				"	}\n" +
 				"}";
 		ASTNode node = runConversion(AST_JLS_LATEST, contents, true, true, true, "p/X.java");
 		assertTrue("Should be a compilation unit", node instanceof CompilationUnit);
@@ -138,7 +149,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		MethodInvocation invocation = (MethodInvocation) expression;
 		Expression expression2 = invocation.getExpression();
 		assertNotNull("No binding", expression2.resolveTypeBinding());
-		
+
 		FieldDeclaration fieldDeclaration = (FieldDeclaration) typeDeclaration.bodyDeclarations().get(0);
 		VariableDeclarationFragment fragment2 = (VariableDeclarationFragment) fieldDeclaration.fragments().get(0);
 		IVariableBinding variableBinding2 = fragment2.resolveBinding();
@@ -187,15 +198,15 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		final IBinding[] bindings = new IBinding[1];
 
 		String contents =
-			"package p;\n" + 
-			"public class X extends Y {\n" + 
-			"	public int i;\n" + 
-			"	public static void main(String[] args) {\n" + 
-			"		int length = args.length;\n" + 
-			"		System.out.println(length);\n" + 
-			"	}\n" + 
+			"package p;\n" +
+			"public class X extends Y {\n" +
+			"	public int i;\n" +
+			"	public static void main(String[] args) {\n" +
+			"		int length = args.length;\n" +
+			"		System.out.println(length);\n" +
+			"	}\n" +
 			"}";
-		
+
 		File packageDir = new File(rootDir, "p");
 		packageDir.mkdir();
 		File file = new File(packageDir, "X.java");
@@ -214,7 +225,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		}
 
 		String contents2 =
-			"package p;\n" + 
+			"package p;\n" +
 			"public class Y {}";
 		File fileY = new File(packageDir, "Y.java");
 		Writer writer2 = null;
@@ -234,7 +245,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		try {
 			final String canonicalPath = file.getCanonicalPath();
 			final CompilationUnit[] units = new CompilationUnit[1];
-	
+
 			FileASTRequestor requestor = new FileASTRequestor() {
 				public void acceptBinding(String bindingKey, IBinding binding) {
 					if (key.equals(bindingKey)) {
@@ -247,11 +258,11 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 					}
 				}
 			};
-	
+
 			parser.setEnvironment(null, new String[] { rootDir.getCanonicalPath() }, null, true);
-	
+
 			parser.createASTs(new String[] {canonicalPath}, null, new String[] {key}, requestor, null);
-	
+
 			assertNotNull("No binding", bindings[0]);
 			assertEquals("Wrong type of binding", IBinding.TYPE, bindings[0].getKind());
 			ITypeBinding typeBinding = (ITypeBinding) bindings[0];
@@ -298,15 +309,15 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		final IBinding[] bindings = new IBinding[2];
 
 		String contents =
-			"package p;\n" + 
-			"public class X extends Y {\n" + 
-			"	public int i;\n" + 
-			"	public static void main(String[] args) {\n" + 
-			"		int length = args.length;\n" + 
-			"		System.out.println(length);\n" + 
-			"	}\n" + 
+			"package p;\n" +
+			"public class X extends Y {\n" +
+			"	public int i;\n" +
+			"	public static void main(String[] args) {\n" +
+			"		int length = args.length;\n" +
+			"		System.out.println(length);\n" +
+			"	}\n" +
 			"}";
-		
+
 		File packageDir = new File(rootDir, "p");
 		packageDir.mkdir();
 		File file = new File(packageDir, "X.java");
@@ -325,7 +336,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		}
 
 		String contents2 =
-			"package p;\n" + 
+			"package p;\n" +
 			"public class Y {}";
 		File fileY = new File(packageDir, "Y.java");
 		Writer writer2 = null;
@@ -345,7 +356,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		try {
 			final String canonicalPath = file.getCanonicalPath();
 			final CompilationUnit[] units = new CompilationUnit[1];
-	
+
 			FileASTRequestor requestor = new FileASTRequestor() {
 				public void acceptBinding(String bindingKey, IBinding binding) {
 					if (key.equals(bindingKey)) {
@@ -362,11 +373,11 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 					}
 				}
 			};
-	
+
 			parser.setEnvironment(null, new String[] { rootDir.getCanonicalPath() }, null, true);
-	
+
 			parser.createASTs(new String[] {canonicalPath}, null, new String[] {key}, requestor, null);
-	
+
 			assertNotNull("No binding", bindings[0]);
 			assertEquals("Wrong type of binding", IBinding.TYPE, bindings[0].getKind());
 			ITypeBinding typeBinding = (ITypeBinding) bindings[0];
@@ -385,7 +396,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 			fileY.delete();
 		}
 	}
-	
+
 	/**
 	 * @deprecated
 	 * @throws IOException
@@ -402,11 +413,11 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		final String key = "Lp/C;";
 		final IBinding[] bindings = new IBinding[2];
 
-		String contents = 
-			"package p;\n" + 
-			"public class A{}\n" + 
+		String contents =
+			"package p;\n" +
+			"public class A{}\n" +
 			"class B{}";
-		
+
 		File packageDir = new File(rootDir, "p");
 		packageDir.mkdir();
 		File file = new File(packageDir, "A.java");
@@ -425,7 +436,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		}
 
 		String contents2 =
-			"package p;\n" + 
+			"package p;\n" +
 			"public class C extends B {}";
 		File fileY = new File(packageDir, "C.java");
 		Writer writer2 = null;
@@ -445,7 +456,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		try {
 			final String canonicalPath = fileY.getCanonicalPath();
 			final CompilationUnit[] units = new CompilationUnit[1];
-	
+
 			FileASTRequestor requestor = new FileASTRequestor() {
 				public void acceptBinding(String bindingKey, IBinding binding) {
 					if (key.equals(bindingKey)) {
@@ -462,7 +473,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 					}
 				}
 			};
-	
+
 			parser.setEnvironment(null, new String[] { rootDir.getCanonicalPath() }, null, true);
 			org.eclipse.jdt.internal.core.builder.AbstractImageBuilder.MAX_AT_ONCE = 0;
 			parser.createASTs(new String[] {canonicalPath}, null, new String[] {key}, requestor, null);
@@ -491,11 +502,11 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		final String key = "Lp/C;";
 		final IBinding[] bindings = new IBinding[2];
 
-		String contents = 
-			"package p;\n" + 
-			"public class A{}\n" + 
+		String contents =
+			"package p;\n" +
+			"public class A{}\n" +
 			"class B{}";
-		
+
 		File packageDir = new File(rootDir, "p");
 		packageDir.mkdir();
 		File file = new File(packageDir, "A.java");
@@ -535,7 +546,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		try {
 			final String canonicalPath = fileY.getCanonicalPath();
 			final CompilationUnit[] units = new CompilationUnit[1];
-	
+
 			FileASTRequestor requestor = new FileASTRequestor() {
 				public void acceptBinding(String bindingKey, IBinding binding) {
 					if (key.equals(bindingKey)) {
@@ -552,7 +563,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 					}
 				}
 			};
-	
+
 			parser.setEnvironment(null, new String[] { rootDir.getCanonicalPath() }, null, true);
 			parser.createASTs(new String[] {canonicalPath}, null, new String[] {key}, requestor, null);
 			assertNotNull("No ast", units[0]);
@@ -569,11 +580,11 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		File rootDir = new File(System.getProperty("java.io.tmpdir"));
 
 		String contents =
-			"enum X {\n" + 
-			"              /** */\n" + 
-			"    FOO\n" + 
+			"enum X {\n" +
+			"              /** */\n" +
+			"    FOO\n" +
 			"}";
-		
+
 		File file = new File(rootDir, "X.java");
 		Writer writer = null;
 		try {
@@ -590,7 +601,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		}
 
 		String contents2 =
-			"package p;\n" + 
+			"package p;\n" +
 			"class Y {}";
 		File packageDir = new File(rootDir, "p");
 		packageDir.mkdir();
@@ -695,7 +706,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 	    			   "  public static final class if {\n"+
                        "    public static final if ËŠ = new if(null, null, null, null);\n"+
                        "  }\n" +
-                        "}";	    		
+                        "}";
 	    ASTParser parser = ASTParser.newParser(AST.JLS9);
 	    parser.setSource(input.toCharArray());
 		parser.setResolveBindings(true);
@@ -703,7 +714,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		parser.setBindingsRecovery(true);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setEnvironment(null, new String[] {null}, null, true);
-		
+
 		Hashtable<String, String> options1 = JavaCore.getDefaultOptions();
 		options1.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
 	    options1.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
@@ -714,7 +725,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 	@Deprecated
 	public void testBug526996_001() {
 		File rootDir = new File(System.getProperty("java.io.tmpdir"));
-		String contents = 
+		String contents =
 				"public class X {\n" +
 				"    public X() {\n" +
 				"        this.f16132b =\n" +
@@ -728,7 +739,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 				"            }\n" +
 				"        }\n" +
 				"\n";
-		
+
 		File file = new File(rootDir, "X.java");
 		Writer writer = null;
 		try {
@@ -807,7 +818,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 	}
 	public void testBug526996_002() {
 		File rootDir = new File(System.getProperty("java.io.tmpdir"));
-		String contents = 
+		String contents =
 						"public class zzei {\n"+
 						"    private final Context mContext;\n"+
 						"    private final String zzAg;\n"+
@@ -1210,7 +1221,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 						"        return com_google_android_gms_internal_zzei_zze;\n"+
 						"    }\n"+
 						"}\n";
-		
+
 		File file = new File(rootDir, "zzei.java");
 		Writer writer = null;
 		try {
@@ -1588,7 +1599,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 					super.acceptAST(sourceFilePath, ast);
 				}
 			};
-			ASTParser parser = ASTParser.newParser(AST.JLS11);
+			ASTParser parser = ASTParser.newParser(AST_JLS_LATEST);
 			parser.setResolveBindings(true);
 			parser.setStatementsRecovery(true);
 			parser.setBindingsRecovery(true);
@@ -1619,13 +1630,13 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 				"       for (var i = 0; i < 10; ++i) {}\n" +
 				"	}\n" +
 				"}";
-	    ASTParser parser = ASTParser.newParser(AST.JLS11);
+	    ASTParser parser = ASTParser.newParser(AST_JLS_LATEST);
 	    parser.setSource(contents.toCharArray());
 		parser.setStatementsRecovery(true);
 		parser.setBindingsRecovery(true);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setEnvironment(null, new String[] {null}, null, true);
-		parser.setResolveBindings(true);	
+		parser.setResolveBindings(true);
 		Map<String, String> options = getCompilerOptions();
 		options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_10);
 		options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_10);
@@ -1647,11 +1658,11 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		File rootDir = new File(System.getProperty("java.io.tmpdir"));
 
 		String contents =
-			"enum X {\n" + 
-			"              /** */\n" + 
-			"    FOO\n" + 
+			"enum X {\n" +
+			"              /** */\n" +
+			"    FOO\n" +
 			"}";
-		
+
 		File file = new File(rootDir, "X.java");
 		Writer writer = null;
 		try {
@@ -1678,11 +1689,11 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		String canonicalPath2 = fileY.getCanonicalPath();
 
 		contents =
-				"enum X {\n" + 
-				"              /** */\n" + 
-				"    FOO\n" + 
+				"enum X {\n" +
+				"              /** */\n" +
+				"    FOO\n" +
 				"}";
-			
+
 			File file2 = new File(rootDir, "X.java");
 			writer = null;
 			try {
@@ -1715,7 +1726,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 			fileY.delete();
 		}
 	}
-	
+
 	/*
 	 * To test isVar returning false for ast level 10 and compliance 9
 	 */
@@ -1723,7 +1734,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 		String contents =
 				"public class X {\n" +
 				"	public static void main(String[] args) {\n" +
-				"		var s = new Y();\n" + 
+				"		var s = new Y();\n" +
 				"	}\n" +
 				"}\n" +
 				"class Y {}";
@@ -1740,7 +1751,7 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 			options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_9);
 			options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_9);
 			parser.setCompilerOptions(options);
-	
+
 			ASTNode node = parser.createAST(null);
 			assertTrue("Should be a compilation unit", node instanceof CompilationUnit);
 			CompilationUnit cu = (CompilationUnit) node;
@@ -1755,5 +1766,119 @@ public class StandAloneASTParserTest extends AbstractRegressionTest {
 			SimpleName simpleName = (SimpleName) name;
 			assertFalse("A var", simpleName.isVar());
 	}
-	
+	// no longer a preview feature, test is not relevant
+	@Deprecated
+	public void _testBug545383_01() throws JavaModelException {
+		String contents =
+				"class X {\n"+
+				"	public static int foo(int i) {\n"+
+				"		int result = switch (i) {\n"+
+				"		case 1 -> {break 5;}\n"+
+				"		default -> 0;\n"+
+				"		};\n"+
+				"		return result;\n"+
+				"	}\n"+
+				"}\n";
+
+		ASTParser parser = ASTParser.newParser(AST_JLS_LATEST);
+		parser.setSource(contents.toCharArray());
+		parser.setEnvironment(null, null, null, true);
+		parser.setResolveBindings(false);
+		Map<String, String> options = getCompilerOptions();
+		options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_12);
+		options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_12);
+		options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_12);
+		options.put(CompilerOptions.OPTION_EnablePreviews, CompilerOptions.ENABLED);
+		options.put(CompilerOptions.OPTION_ReportPreviewFeatures, CompilerOptions.IGNORE);
+		parser.setCompilerOptions(options);
+
+		ASTNode node = parser.createAST(null);
+		assertTrue("Should be a compilation unit", node instanceof CompilationUnit);
+		CompilationUnit cu = (CompilationUnit) node;
+		IProblem[] problems = cu.getProblems();
+		assertTrue(problems.length > 0);
+		assertTrue(problems[0].toString().contains("preview"));
+	}
+	public void testBug547900_01() throws JavaModelException {
+		String contents =
+				"class X {\n"+
+				"	public static int foo(int i) {\n"+
+				"		int result = switch (i) {\n"+
+				"		case 1 -> {yield 5;}\n"+
+				"		default -> 0;\n"+
+				"		};\n"+
+				"		return result;\n"+
+				"	}\n"+
+				"}\n";
+
+		ASTParser parser = ASTParser.newParser(AST_JLS_LATEST);
+		parser.setSource(contents.toCharArray());
+		parser.setEnvironment(null, null, null, true);
+		parser.setResolveBindings(false);
+		Map<String, String> options = getCompilerOptions();
+		options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_14);
+		options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_14);
+		options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_14);
+		parser.setCompilerOptions(options);
+
+		ASTNode node = parser.createAST(null);
+		assertTrue("Should be a compilation unit", node instanceof CompilationUnit);
+		CompilationUnit cu = (CompilationUnit) node;
+		TypeDeclaration typeDeclaration = (TypeDeclaration) cu.types().get(0);
+		MethodDeclaration[] methods = typeDeclaration.getMethods();
+		MethodDeclaration methodDeclaration = methods[0];
+		VariableDeclarationStatement stmt = (VariableDeclarationStatement) methodDeclaration.getBody().statements().get(0);
+		VariableDeclarationFragment fragment = (VariableDeclarationFragment) stmt.fragments().get(0);
+		SwitchExpression se = (SwitchExpression) fragment.getInitializer();
+		YieldStatement yieldStatement = (YieldStatement) ((Block)se.statements().get(1)).statements().get(0);
+		assertNotNull("Expression null", yieldStatement.getExpression());
+	}
+	public void testBug558517() throws IOException {
+		File f1 = null, f2 = null, packDir = null;
+		try {
+			File rootDir = new File(System.getProperty("java.io.tmpdir"));
+			packDir = new File(rootDir, "P/src/x");
+			packDir.mkdirs();
+
+			String fileName1 = "EnsureImpl$1.java";
+			String fileName2 = "C9947f.java";
+			f1 = createFile(
+					packDir, fileName1,
+					"package x;\n" +
+					"\n" +
+					"class EnsureImpl$1 {\n" +
+					"}\n");
+			f2 = createFile(
+					packDir, fileName2,
+					"package x;\n" +
+					"public final class C9947f {\n" +
+					"    public C9947f() {\n" +
+					"        try {\n" +
+					"            new x.EnsureImpl$1();\n" +
+					"        } catch (Throwable unused) {\n" +
+					"        }\n" +
+					"    }\n" +
+					"}\n");
+			ASTParser parser = ASTParser.newParser(AST_JLS_LATEST);
+			parser.setResolveBindings(true);
+			Map<String, String> options = new HashMap<>();
+			JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
+			parser.setCompilerOptions(options );
+			parser.setEnvironment(null,
+					new String[] { rootDir + "/P/src" },
+					null,
+					true);
+			parser.createASTs(new String[] { packDir + "/" + fileName1, packDir + "/" + fileName2 },
+					null,
+					new String[] { "Lx/C9947f;" },
+					new FileASTRequestor() {
+					},
+					null);
+			// just ensure the above doesn't throw NPE
+		} finally {
+			f1.delete();
+			f2.delete();
+			packDir.delete();
+		}
+	}
 }

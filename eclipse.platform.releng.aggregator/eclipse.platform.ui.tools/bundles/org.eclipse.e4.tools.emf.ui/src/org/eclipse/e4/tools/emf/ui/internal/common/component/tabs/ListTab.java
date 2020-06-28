@@ -19,7 +19,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -466,7 +465,7 @@ public class ListTab implements IViewEObjects {
 				public void widgetSelected(SelectionEvent e) {
 					filterByItemName = null;
 					filterByAttrName = null;
-					tvResults.setFilters(new ViewerFilter[0]);
+					tvResults.setFilters();
 					filterByItem.setText(Messages.ListTab_filterByItem + ELIPSIS);
 					filterByAttribute.setText(Messages.ListTab_markAttribute + ELIPSIS);
 				}
@@ -725,7 +724,7 @@ public class ListTab implements IViewEObjects {
 			}
 		}
 		final ArrayList<String> sorted = new ArrayList<>(set);
-		Collections.sort(sorted);
+		sorted.sort(null);
 
 		// Select Attribute
 		final ILabelProvider renderer = new LabelProvider() {
@@ -762,7 +761,7 @@ public class ListTab implements IViewEObjects {
 		}
 
 		final ArrayList<String> sorted = new ArrayList<>(set);
-		Collections.sort(sorted);
+		sorted.sort(null);
 
 		final ILabelProvider renderer = new LabelProvider() {
 			@Override
@@ -896,7 +895,7 @@ public class ListTab implements IViewEObjects {
 				}
 
 			};
-			tvResults.setFilters(new ViewerFilter[] { viewerFilter });
+			tvResults.setFilters(viewerFilter);
 			filterByItem.setText(Messages.ListTab_filterByItem + ELIPSIS + "(" + filterByItemName + ")"); //$NON-NLS-1$//$NON-NLS-2$
 			filterByAttribute.setText(Messages.ListTab_filterByAttribute + ELIPSIS);
 		}
@@ -941,7 +940,7 @@ public class ListTab implements IViewEObjects {
 						}
 					}
 				};
-				tvResults.setFilters(new ViewerFilter[] { viewerFilter });
+				tvResults.setFilters(viewerFilter);
 				filterByAttribute.setText(Messages.ListTab_filterByAttribute + ELIPSIS + "(" + filterByAttrName + ")"); //$NON-NLS-1$//$NON-NLS-2$
 				filterByItem.setText(Messages.ListTab_filterByItem + ELIPSIS);
 

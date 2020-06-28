@@ -22,7 +22,13 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.tests.navigator.AbstractNavigatorTest;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+@RunWith(JUnit4.class)
+@Ignore
 public class ResourceMappingMarkersTest extends AbstractNavigatorTest {
 
 	/**
@@ -30,8 +36,8 @@ public class ResourceMappingMarkersTest extends AbstractNavigatorTest {
 	 *
 	 * @param testName
 	 */
-	public ResourceMappingMarkersTest(String testName) {
-		super(testName);
+	public ResourceMappingMarkersTest() {
+		super(ResourceMappingMarkersTest.class.getSimpleName());
 	}
 
 	/**
@@ -45,6 +51,7 @@ public class ResourceMappingMarkersTest extends AbstractNavigatorTest {
 		createTestFile();
 	}
 
+	@Test
 	public void testResourceMappings() {
 		IWorkbenchWindow window = PlatformUI.getWorkbench()
 				.getActiveWorkbenchWindow();
@@ -74,8 +81,7 @@ public class ResourceMappingMarkersTest extends AbstractNavigatorTest {
 			Job.getJobManager().join(
 					problemView.MARKERSVIEW_UPDATE_JOB_FAMILY,
 					new NullProgressMonitor());
-		} catch (OperationCanceledException e) {
-		} catch (InterruptedException e) {
+		} catch (OperationCanceledException | InterruptedException e) {
 		}
 
 		IMarker[] markers=problemView.getCurrentMarkers();

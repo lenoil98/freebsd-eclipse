@@ -29,7 +29,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.core.runtime.preferences.InstanceScope;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -40,7 +39,6 @@ import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.preferences.ScopedPreferenceStore;
 
 import org.eclipse.jdt.core.JavaCore;
 
@@ -74,31 +72,20 @@ public class JavaBasePreferencePage extends PreferencePage implements IWorkbench
 	private ArrayList<Button> fRadioButtons;
 	private ArrayList<Text> fTextControls;
 
-	private IPreferenceStore fJavaCorePreferences;
-	private static final String ENABLE_NEW_JAVA_INDEX= "enableNewJavaIndex"; //JavaIndex.ENABLE_NEW_JAVA_INDEX //$NON-NLS-1$
-
-
 	public JavaBasePreferencePage() {
 		super();
 		setPreferenceStore(JavaPlugin.getDefault().getPreferenceStore());
 		setDescription(PreferencesMessages.JavaBasePreferencePage_description);
 
-		fJavaCorePreferences = new ScopedPreferenceStore(InstanceScope.INSTANCE, JavaCore.PLUGIN_ID);
 		fRadioButtons= new ArrayList<>();
 		fCheckBoxes= new ArrayList<>();
 		fTextControls= new ArrayList<>();
 	}
 
-	/*
-	 * @see IWorkbenchPreferencePage#init(IWorkbench)
-	 */
 	@Override
 	public void init(IWorkbench workbench) {
 	}
 
-	/*
-	 * @see PreferencePage#createControl(Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 		super.createControl(parent);
@@ -195,7 +182,6 @@ public class JavaBasePreferencePage extends PreferencePage implements IWorkbench
 		group.setText(PreferencesMessages.JavaBasePreferencePage_search);
 
 		addCheckBox(group, PreferencesMessages.JavaBasePreferencePage_search_small_menu, null, PreferenceConstants.SEARCH_USE_REDUCED_MENU);
-		addCheckBox(group, PreferencesMessages.JavaBasePreferencePage_EnableNewJavaIndex, fJavaCorePreferences, ENABLE_NEW_JAVA_INDEX);
 
 		Button rebuildIndexButton= new Button(group, SWT.PUSH);
 		rebuildIndexButton.setText(PreferencesMessages.JavaBasePreferencePage_rebuildIndexButtonName);
@@ -256,20 +242,17 @@ public class JavaBasePreferencePage extends PreferencePage implements IWorkbench
 	 */
 	@Override
 	protected void performDefaults() {
-		for (int i= 0; i < fCheckBoxes.size(); i++) {
-			Button button= fCheckBoxes.get(i);
+		for (Button button : fCheckBoxes) {
 			String key= (String) button.getData();
 			IPreferenceStore buttonPreferenceStore = (IPreferenceStore) button.getData(PREFERENCE_STORE_KEY);
 			button.setSelection(buttonPreferenceStore.getDefaultBoolean(key));
 		}
 		IPreferenceStore store= getPreferenceStore();
-		for (int i= 0; i < fRadioButtons.size(); i++) {
-			Button button= fRadioButtons.get(i);
+		for (Button button : fRadioButtons) {
 			String[] info= (String[]) button.getData();
 			button.setSelection(info[1].equals(store.getDefaultString(info[0])));
 		}
-		for (int i= 0; i < fTextControls.size(); i++) {
-			Text text= fTextControls.get(i);
+		for (Text text : fTextControls) {
 			String key= (String) text.getData();
 			text.setText(store.getDefaultString(key));
 		}
@@ -281,22 +264,19 @@ public class JavaBasePreferencePage extends PreferencePage implements IWorkbench
 	 */
 	@Override
 	public boolean performOk() {
-		for (int i= 0; i < fCheckBoxes.size(); i++) {
-			Button button= fCheckBoxes.get(i);
+		for (Button button : fCheckBoxes) {
 			String key= (String) button.getData();
 			IPreferenceStore buttonPreferenceStore = (IPreferenceStore) button.getData(PREFERENCE_STORE_KEY);
 			buttonPreferenceStore.setValue(key, button.getSelection());
 		}
 		IPreferenceStore store= getPreferenceStore();
-		for (int i= 0; i < fRadioButtons.size(); i++) {
-			Button button= fRadioButtons.get(i);
+		for (Button button : fRadioButtons) {
 			if (button.getSelection()) {
 				String[] info= (String[]) button.getData();
 				store.setValue(info[0], info[1]);
 			}
 		}
-		for (int i= 0; i < fTextControls.size(); i++) {
-			Text text= fTextControls.get(i);
+		for (Text text : fTextControls) {
 			String key= (String) text.getData();
 			store.setValue(key, text.getText());
 		}

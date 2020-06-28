@@ -15,7 +15,9 @@ package org.eclipse.team.internal.ui.history;
 
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 
@@ -92,9 +94,6 @@ import org.eclipse.ui.OpenAndLinkWithEditorHelper;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.IPageSite;
 import org.eclipse.ui.progress.IProgressConstants;
-
-import com.ibm.icu.text.SimpleDateFormat;
-import com.ibm.icu.util.Calendar;
 
 public class LocalHistoryPage extends HistoryPage implements IHistoryCompareAdapter {
 	public static final int ON = 1;
@@ -272,7 +271,7 @@ public class LocalHistoryPage extends HistoryPage implements IHistoryCompareAdap
 			IResourceDelta root = event.getDelta();
 
 			if (file == null)
-				 return;
+				return;
 
 			IResourceDelta resourceDelta = root.findMember(file.getFullPath());
 			if (resourceDelta != null){
@@ -424,7 +423,7 @@ public class LocalHistoryPage extends HistoryPage implements IHistoryCompareAdap
 			}
 
 			//TODO: Doc help
-	        //PlatformUI.getWorkbench().getHelpSystem().setHelp(getContentsAction, );
+			//PlatformUI.getWorkbench().getHelpSystem().setHelp(getContentsAction, );
 
 			// Click Compare action
 			compareAction = createCompareAction();
@@ -633,11 +632,11 @@ public class LocalHistoryPage extends HistoryPage implements IHistoryCompareAdap
 		return null;
 	}
 
-    @Override
+	@Override
 	public void dispose() {
-    	shutdown = true;
+		shutdown = true;
 
-    	if (resourceListener != null){
+		if (resourceListener != null){
 			ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceListener);
 			resourceListener = null;
 		}
@@ -658,7 +657,7 @@ public class LocalHistoryPage extends HistoryPage implements IHistoryCompareAdap
 			currentFileRevision = new LocalFileRevision(file);
 
 		return currentFileRevision;
-    }
+	}
 
 	private Action getContextMenuAction(String title, final boolean needsProgressDialog, final IWorkspaceRunnable action) {
 		return new Action(title) {
@@ -743,9 +742,6 @@ public class LocalHistoryPage extends HistoryPage implements IHistoryCompareAdap
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.ui.history.IHistoryCompareAdapter#prepareInput(org.eclipse.compare.structuremergeviewer.ICompareInput, org.eclipse.compare.CompareConfiguration, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	public void prepareInput(ICompareInput input, CompareConfiguration configuration, IProgressMonitor monitor) {
 		Object right = input.getRight();
@@ -846,16 +842,16 @@ public class LocalHistoryPage extends HistoryPage implements IHistoryCompareAdap
 	private Object[] mapExpandedElements(AbstractHistoryCategory[] categories, Object[] expandedElements) {
 		// Store the names of the currently expanded categories in a set.
 		HashSet<String> names = new HashSet<>();
-		for (int i = 0; i < expandedElements.length; i++){
-			names.add(((DateHistoryCategory) expandedElements[i]).getName());
+		for (Object expandedElement : expandedElements) {
+			names.add(((DateHistoryCategory) expandedElement).getName());
 		}
 
 		//Go through the new categories and keep track of the previously expanded ones
 		ArrayList<AbstractHistoryCategory> expandable = new ArrayList<>();
-		for (int i = 0; i < categories.length; i++){
+		for (AbstractHistoryCategory category : categories) {
 			// Check to see if this category is currently expanded.
-			if (names.contains(categories[i].getName())){
-				expandable.add(categories[i]);
+			if (names.contains(category.getName())) {
+				expandable.add(category);
 			}
 		}
 		return expandable.toArray(new Object[expandable.size()]);
@@ -881,14 +877,15 @@ public class LocalHistoryPage extends HistoryPage implements IHistoryCompareAdap
 			//Everything before after week is previous
 			tempCategories[3] = new DateHistoryCategory(TeamUIMessages.HistoryPage_Previous, null, monthCal);
 
-			ArrayList<AbstractHistoryCategory> finalCategories = new ArrayList<AbstractHistoryCategory>();
-			for (int i = 0; i<tempCategories.length; i++){
-				tempCategories[i].collectFileRevisions(revisions, false);
-				if (tempCategories[i].hasRevisions())
-					finalCategories.add(tempCategories[i]);
+			ArrayList<AbstractHistoryCategory> finalCategories = new ArrayList<>();
+			for (DateHistoryCategory tempCategory : tempCategories) {
+				tempCategory.collectFileRevisions(revisions, false);
+				if (tempCategory.hasRevisions()) {
+					finalCategories.add(tempCategory);
+				}
 			}
 
-			if (finalCategories.size() == 0){
+			if (finalCategories.isEmpty()){
 				//no revisions found for the current mode, so add a message category
 				finalCategories.add(getErrorMessage());
 			}

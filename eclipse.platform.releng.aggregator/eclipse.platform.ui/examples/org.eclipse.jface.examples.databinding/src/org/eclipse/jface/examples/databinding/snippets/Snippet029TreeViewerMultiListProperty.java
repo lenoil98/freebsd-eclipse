@@ -20,7 +20,7 @@ import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.core.databinding.beans.BeanProperties;
+import org.eclipse.core.databinding.beans.typed.BeanProperties;
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.core.databinding.property.list.IListProperty;
 import org.eclipse.core.databinding.property.list.MultiListProperty;
@@ -36,46 +36,27 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
-/**
- * @since 3.2
- *
- */
 public class Snippet029TreeViewerMultiListProperty {
-	protected Shell shell;
 	private TreeViewer viewer;
 
-	/**
-	 * Launch the application
-	 *
-	 * @param args
-	 */
 	public static void main(String[] args) {
-		try {
-			Snippet029TreeViewerMultiListProperty window = new Snippet029TreeViewerMultiListProperty();
-			window.open();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Open the window
-	 */
-	public void open() {
 		final Display display = Display.getDefault();
+
 		Realm.runWithDefault(DisplayRealm.getRealm(display), () -> {
-			createContents();
-			shell.open();
-			shell.layout();
+			Shell shell = new Snippet029TreeViewerMultiListProperty().createShell();
+
 			while (!shell.isDisposed()) {
-				if (!display.readAndDispatch())
+				if (!display.readAndDispatch()) {
 					display.sleep();
+				}
 			}
 		});
+
+		display.dispose();
 	}
 
-	protected void createContents() {
-		shell = new Shell();
+	protected Shell createShell() {
+		Shell shell = new Shell();
 		shell.setSize(509, 375);
 		shell.setText("Snippet029TreeViewerMultiListProperty.java");
 		final GridLayout gridLayout = new GridLayout();
@@ -86,12 +67,14 @@ public class Snippet029TreeViewerMultiListProperty {
 		viewer = new TreeViewer(shell, SWT.FULL_SELECTION | SWT.MULTI | SWT.BORDER);
 
 		bindUI();
+
+		shell.open();
+		return shell;
 	}
 
-	// Minimal JavaBeans support
+	/** Helper class for implementing JavaBeans support. */
 	public static abstract class AbstractModelObject {
-		private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(
-				this);
+		private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
 		public void addPropertyChangeListener(PropertyChangeListener listener) {
 			propertyChangeSupport.addPropertyChangeListener(listener);
@@ -116,8 +99,8 @@ public class Snippet029TreeViewerMultiListProperty {
 
 	public static class Catalog extends AbstractModelObject {
 		private String name;
-		private List catalogs = new ArrayList();
-		private List items = new ArrayList();
+		private List<Catalog> catalogs = new ArrayList<>();
+		private List<CatalogItem> items = new ArrayList<>();
 
 		public Catalog(String name) {
 			this.name = name;
@@ -131,20 +114,19 @@ public class Snippet029TreeViewerMultiListProperty {
 			firePropertyChange("name", this.name, this.name = name);
 		}
 
-		public List getCatalogs() {
+		public List<Catalog> getCatalogs() {
 			return catalogs;
 		}
 
-		public void setCatalogs(List catalogs) {
-			firePropertyChange("catalogs", this.catalogs,
-					this.catalogs = catalogs);
+		public void setCatalogs(List<Catalog> catalogs) {
+			firePropertyChange("catalogs", this.catalogs, this.catalogs = catalogs);
 		}
 
-		public List getItems() {
+		public List<CatalogItem> getItems() {
 			return items;
 		}
 
-		public void setItems(List items) {
+		public void setItems(List<CatalogItem> items) {
 			firePropertyChange("items", this.items, this.items = items);
 		}
 	}
@@ -166,56 +148,56 @@ public class Snippet029TreeViewerMultiListProperty {
 	}
 
 	private void bindUI() {
-		List items;
+		List<CatalogItem> items;
 
 		Catalog fruits = new Catalog("Fruits");
-		items = new ArrayList();
+		items = new ArrayList<>();
 		items.add(new CatalogItem("Apple"));
 		items.add(new CatalogItem("Orange"));
-		fruits.setCatalogs(items);
+		fruits.setItems(items);
 
 		Catalog vegetables = new Catalog("Vegetables");
-		items = new ArrayList();
+		items = new ArrayList<>();
 		items.add(new CatalogItem("Peas"));
 		items.add(new CatalogItem("Carrots"));
 		items.add(new CatalogItem("Potatoes"));
 		vegetables.setItems(items);
 
 		Catalog foods = new Catalog("Foods");
-		items = new ArrayList();
-		items.add(fruits);
-		items.add(vegetables);
-		foods.setCatalogs(items);
+		List<Catalog> catalogs = new ArrayList<>();
+		catalogs.add(fruits);
+		catalogs.add(vegetables);
+		foods.setCatalogs(catalogs);
 
-		items = new ArrayList();
+		items = new ArrayList<>();
 		items.add(new CatalogItem("Own Hand"));
 		foods.setItems(items);
 
 		Catalog catalog = new Catalog("Main Catalog");
-		items = new ArrayList();
-		items.add(foods);
-		catalog.setCatalogs(items);
+		catalogs = new ArrayList<>();
+		catalogs.add(foods);
+		catalog.setCatalogs(catalogs);
 
-		IListProperty childrenProperty = new MultiListProperty(
-				new IListProperty[] { BeanProperties.list("catalogs"),
-						BeanProperties.list("items") });
+		IListProperty<AbstractModelObject, AbstractModelObject> childrenProperty = new MultiListProperty<>(
+				BeanProperties.list("catalogs"), BeanProperties.list("items"));
 
-		ObservableListTreeContentProvider contentProvider = new ObservableListTreeContentProvider(
+		ObservableListTreeContentProvider<AbstractModelObject> contentProvider = new ObservableListTreeContentProvider<>(
 				childrenProperty.listFactory(), null);
 		viewer.setContentProvider(contentProvider);
 
 		ObservableMapLabelProvider labelProvider = new ObservableMapLabelProvider(
-				BeanProperties.value("name").observeDetail(
-						contentProvider.getKnownElements())) {
+				BeanProperties.value("name").observeDetail(contentProvider.getKnownElements())) {
 			Image catalogImage = createCatalogImage();
 			Image catalogItemImage = createCatalogItemImage();
 
 			@Override
 			public Image getImage(Object element) {
-				if (element instanceof Catalog)
+				if (element instanceof Catalog) {
 					return catalogImage;
-				if (element instanceof CatalogItem)
+				}
+				if (element instanceof CatalogItem) {
 					return catalogItemImage;
+				}
 				return super.getImage(element);
 			}
 

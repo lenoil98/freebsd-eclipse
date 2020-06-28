@@ -51,15 +51,19 @@ class ProgressMonitorFocusJobDialog extends ProgressMonitorJobsDialog {
 	/**
 	 * Create a new instance of the receiver with progress reported on the job.
 	 *
-	 * @param parentShell
-	 *            The shell this is parented from.
+	 * @param parentShell            the shell this is patented from
+	 * @param progressService        service to do progress related work
+	 * @param progressManager        helper to manage progress
+	 * @param finishedJobs           the singleton to store finished jobs which
+	 *                               should kept
+	 * @param contentProviderFactory the content provider factory
 	 */
 	public ProgressMonitorFocusJobDialog(Shell parentShell,
-	        IProgressService progressService, ProgressManager progressManager,
-	        ContentProviderFactory contentProviderFactory, FinishedJobs finishedJobs) {
+			IProgressService progressService, ProgressManager progressManager,
+			ContentProviderFactory contentProviderFactory, FinishedJobs finishedJobs) {
 		super(parentShell == null ? ProgressManagerUtil.getNonModalShell()
-		        : parentShell, progressService, progressManager,
-		        contentProviderFactory, finishedJobs);
+				: parentShell, progressService, progressManager,
+				contentProviderFactory, finishedJobs);
 		this.progressManager = progressManager;
 		setShellStyle(getDefaultOrientation() | SWT.BORDER | SWT.TITLE
 				| SWT.RESIZE | SWT.MAX | SWT.MODELESS);
@@ -270,10 +274,9 @@ class ProgressMonitorFocusJobDialog extends ProgressMonitorJobsDialog {
 	/**
 	 * Opens this dialog for the duration that the given job is running.
 	 *
-	 * @param jobToWatch
-	 * @param originatingShell
-	 *            The shell this request was created from. Do not block on this
-	 *            shell.
+	 * @param jobToWatch       job to watch
+	 * @param originatingShell The shell this request was created from. Do not block
+	 *                         on this shell.
 	 */
 	public void show(Job jobToWatch, final Shell originatingShell) {
 		job = jobToWatch;
@@ -398,6 +401,6 @@ class ProgressMonitorFocusJobDialog extends ProgressMonitorJobsDialog {
 	}
 
 	protected Display getDisplay() {
-	    return Services.getInstance().getDisplay();
-    }
+		return Services.getInstance().getDisplay();
+	}
 }

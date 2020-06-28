@@ -101,11 +101,9 @@ then
   exit 1
 fi
 
+JAVA_11_HOME=${JAVA_11_HOME:-/opt/public/common/java/openjdk/jdk-11_x64-latest}
 
-JAVA_7_HOME=${JAVA_7_HOME:-/shared/common/jdk1.7.0-latest}
-JAVA_8_HOME=${JAVA_8_HOME:-/shared/common/jdk1.8.0_x64-latest}
-
-export JAVA_HOME=${JAVA_HOME:-${JAVA_8_HOME}}
+export JAVA_HOME=${JAVA_HOME:-${JAVA_11_HOME}}
 
 devJRE=$JAVA_HOME/jre/bin/java
 
@@ -135,8 +133,6 @@ fi
 ECLIPSE_EXE="${basebuilderDir}/eclipse"
 # somehow, seems like this is often not executable ... I guess launcher jar usually used.
 chmod -c +x $ECLIPSE_EXE
-
-export SWT_GTK3=2
 
 if [ ! -n ${ECLIPSE_EXE} -a -x ${ECLIPSE_EXE} ]
 then
@@ -219,8 +215,7 @@ then
   echo
   echo " = = First, installing derby"
   # make sure derby.core is installed in basebuilder
-  perfrepoLocation=http://build.eclipse.org/eclipse/buildtools/
-  #perfrepoLocation=file:///shared/eclipse/buildtools
+  perfrepoLocation=https://download.eclipse.org/eclipse/updates/buildtools/
   derby=org.apache.derby.core.feature.feature.group
   echo "   perfrepoLocation:   $perfrepoLocation"
   echo "   derby:              $derby"
@@ -235,7 +230,7 @@ then
 
   echo " = = Now run performance.ui app = ="
   devworkspace="${fromDir}/workspace-updatePerfResults"
-  eclipse_perf_dbloc_value=${eclipse_perf_dbloc_value:-//172.25.25.57:1527}
+  eclipse_perf_dbloc_value=${eclipse_perf_dbloc_value:-/shared/eclipse}
   vmargs="-Xmx1G -Declipse.perf.dbloc=${eclipse_perf_dbloc_value}"
   postingDirectory=$fromDir
   perfOutput=$postingDirectory/performance
@@ -314,7 +309,8 @@ then
   RAW_DATE_START=$( date -u +%s )
 
   # TODO: avoid this hard coding of baseline value
-  baselineCode="R-4.10-201812060815"
+  # NOTE: value must start with a letter match baselinePerfVersion in testScripts/configuration/streamSpecific.properties
+  baselineCode="R-4.15-202003050155"
   # to get time stamp, first remove initial IMN:
   baselineForBuildSuffix=${buildId/[IMN]/}
   #Then remove final '-' in build id
@@ -337,7 +333,7 @@ then
   echo "   siteDir:      $siteDir" #>>${PERF_OUTFILE}
   echo "   fromDir:      $fromDir" #>>${PERF_OUTFILE}
   echo "   devworkspace: $devworkspace" #>>${PERF_OUTFILE}
-  echo "   vmArgs:       $vmArgs" #>>${PERF_OUTFILE}
+  echo "   vmargs:       $vmargs" #>>${PERF_OUTFILE}
   echo "   devJRE:       $devJRE" #>>${PERF_OUTFILE}
   echo "   BUILDFILESTR: $BUILDFILESTR" #>> ${PERF_OUTFILE}
   echo "   JOB_NAME:     $JOB_NAME" #>> ${PERF_OUTFILE}
@@ -345,6 +341,14 @@ then
   echo "   XVFB_RUN_ARGS $XVFB_RUN_ARGS" #>> ${PERF_OUTFILE}
   echo "   current_prefix ${current_prefix}" #>> ${PERF_OUTFILE}
   echo #>> ${PERF_OUTFILE}
+
+  ${ECLIPSE_EXE} --launcher.suppressErrors -nosplash -consolelog -debug -data $devworkspace -application org.eclipse.test.performance.ui.importPerformanceData $perfOutput/*-perf-samples.dat -vm ${devJRE} -vmargs ${vmargs}
+  RC=$?
+  if [[ $RC != 0 ]]
+  then
+    echo "ERROR: eclipse returned non-zero return code from invoking performance data import, exiting with RC: $RC."
+    exit $RC
+  fi
 
   ${XVFB_RUN} ${XVFB_RUN_ARGS} ${ECLIPSE_EXE} --launcher.suppressErrors  -nosplash -consolelog -debug -data $devworkspace -application org.eclipse.test.performance.ui.resultGenerator -baseline ${baselineForCurrent} -current ${buildId} -jvm 8.0 -config linux.gtk.x86_64 -config.properties "linux.gtk.x86_64,SUSE Linux Enterprise Server 12 (x86_64)" -output $perfOutput -dataDir ${dataDir} ${current_prefix} -print -vm ${devJRE}  -vmargs ${vmargs}  #>> ${PERF_OUTFILE}
   RC=$?

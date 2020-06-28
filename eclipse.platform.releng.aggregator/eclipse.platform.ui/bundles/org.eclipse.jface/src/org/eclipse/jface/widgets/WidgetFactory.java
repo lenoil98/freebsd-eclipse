@@ -21,16 +21,10 @@ import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeColumn;
 
 /**
- * <p>
- * <strong>EXPERIMENTAL</strong>. This class has been added as part of a work in
- * progress. There is no guarantee that this API will work or that it will
- * remain the same. Feel free to use it and give feedback via
- * https://bugs.eclipse.org/bugs/buglist.cgi?component=UI&product=Platform, but
- * be aware that it might change.
- * </p>
- *
  * This class provides a convenient shorthand for creating and initializing
  * factories for SWT widgets. This offers several benefits over creating SWT
  * widgets with the low level SWT API
@@ -47,18 +41,18 @@ import org.eclipse.swt.widgets.Text;
  * <pre>
  * Button button = WidgetFactory.button(SWT.PUSH) //
  * 		.text("Click me!") //
- * 		.onSelect(event -> buttonClicked(event)) //
+ * 		.onSelect(event -&gt; buttonClicked(event)) //
  * 		.layoutData(gridData) //
  * 		.create(parent);
  * </pre>
  * <p>
  * The above example creates a push button with a text, registers a
  * SelectionListener and finally creates the button in "parent".
- * <p>
+ * </p>
  *
  * <pre>
  * GridDataFactory gridDataFactory = GridDataFactory.swtDefaults();
- * ButtonFactory buttonFactory = WidgetFactory.button(SWT.PUSH).onSelect(event -> buttonClicked(event))
+ * ButtonFactory buttonFactory = WidgetFactory.button(SWT.PUSH).onSelect(event -&gt; buttonClicked(event))
  * 		.layout(gridDataFactory::create);
  * buttonFactory.text("Button 1").create(parent);
  * buttonFactory.text("Button 2").create(parent);
@@ -68,7 +62,10 @@ import org.eclipse.swt.widgets.Text;
  * The above example creates three buttons using the same instance of
  * ButtonFactory. Note the layout method. A Supplier is used to create unique
  * GridData for every single button.
- * <p>
+ * </p>
+ *
+ * @since 3.18
+ *
  */
 public final class WidgetFactory {
 	private WidgetFactory() {
@@ -129,6 +126,15 @@ public final class WidgetFactory {
 	}
 
 	/**
+	 * @param style SWT style applicable for Tree. Refer to
+	 *              {@link Tree#Tree(Composite, int)} for supported styles.
+	 * @return TreeFactory
+	 */
+	public static TreeFactory tree(int style) {
+		return TreeFactory.newTree(style);
+	}
+
+	/**
 	 * @param style SWT style applicable for TableColumn. Refer to
 	 *              {@link TableColumn#TableColumn(Table, int)} for supported
 	 *              styles.
@@ -136,5 +142,14 @@ public final class WidgetFactory {
 	 */
 	public static TableColumnFactory tableColumn(int style) {
 		return TableColumnFactory.newTableColumn(style);
+	}
+
+	/**
+	 * @param style SWT style applicable for TreeColumn. Refer to
+	 *              {@link TreeColumn#TreeColumn(Tree, int)} for supported styles.
+	 * @return TreeColumnFactory
+	 */
+	public static TreeColumnFactory treeColumn(int style) {
+		return TreeColumnFactory.newTreeColumn(style);
 	}
 }

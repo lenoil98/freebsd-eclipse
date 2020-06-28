@@ -19,7 +19,6 @@ import java.io.StringReader;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -175,7 +174,7 @@ public class IUPersistenceTest extends AbstractProvisioningTest {
 
 	private final static String IU_TEST_TARGET = "installableUnitTest";
 
-	private final static Version IU_TEST_VERSION = Version.create("0.0.1");
+	final static Version IU_TEST_VERSION = Version.create("0.0.1");
 
 	// Randomly chose org.eclipse.osgi.services as the IU for testing persistence
 	// but 'enhanced' it for better coverage.
@@ -223,8 +222,7 @@ public class IUPersistenceTest extends AbstractProvisioningTest {
 
 	private static Map<String, String> createProperties(String[][] keyValuePairs) {
 		OrderedProperties props = new OrderedProperties(keyValuePairs.length);
-		for (int i = 0; i < keyValuePairs.length; i++) {
-			String[] nextPair = keyValuePairs[i];
+		for (String[] nextPair : keyValuePairs) {
 			props.put(nextPair[0], nextPair[1]);
 		}
 		return props;
@@ -251,8 +249,7 @@ public class IUPersistenceTest extends AbstractProvisioningTest {
 
 	private static ITouchpointData createTouchpointData(String[][] instructionData) {
 		Map<String, Object> map = new LinkedHashMap<>(instructionData.length);
-		for (int i = 0; i < instructionData.length; i++) {
-			String[] nextInstruction = instructionData[i];
+		for (String[] nextInstruction : instructionData) {
 			map.put(nextInstruction[0], nextInstruction[1]);
 		}
 		return MetadataFactory.createTouchpointData(map);
@@ -273,23 +270,23 @@ public class IUPersistenceTest extends AbstractProvisioningTest {
 	}
 
 	private static String[][] extractRequires(IInstallableUnit iu) {
-		Collection<IRequirement> requyres = iu.getRequirements();
-		String[][] tuples = new String[requyres.size()][4];
+		Collection<IRequirement> requirements = iu.getRequirements();
+		String[][] tuples = new String[requirements.size()][4];
 		int i = 0;
-		for (Iterator<IRequirement> iterator = requyres.iterator(); iterator.hasNext();) {
-			IRequiredCapability next = (IRequiredCapability) iterator.next();
-			tuples[i++] = new String[] {next.getNamespace(), next.getName(), next.getRange().toString(), Boolean.valueOf(next.getMin() == 0).toString()};
+		for (IRequirement requirement : requirements) {
+			IRequiredCapability capability = (IRequiredCapability) requirement;
+			tuples[i++] = new String[] {capability.getNamespace(), capability.getName(), capability.getRange().toString(), Boolean.valueOf(capability.getMin() == 0).toString()};
 		}
 		return tuples;
 	}
 
 	private static String[][] extractMetaRequires(IInstallableUnit iu) {
-		Collection<IRequirement> requyres = iu.getMetaRequirements();
-		String[][] tuples = new String[requyres.size()][4];
+		Collection<IRequirement> requirements = iu.getMetaRequirements();
+		String[][] tuples = new String[requirements.size()][4];
 		int i = 0;
-		for (IRequirement iRequirement : requyres) {
-			IRequiredCapability next = (IRequiredCapability) iRequirement;
-			tuples[i++] = new String[] {next.getNamespace(), next.getName(), next.getRange().toString(), Boolean.valueOf(next.getMin() == 0).toString()};
+		for (IRequirement requirement : requirements) {
+			IRequiredCapability capability = (IRequiredCapability) requirement;
+			tuples[i++] = new String[] {capability.getNamespace(), capability.getName(), capability.getRange().toString(), Boolean.valueOf(capability.getMin() == 0).toString()};
 		}
 		return tuples;
 	}

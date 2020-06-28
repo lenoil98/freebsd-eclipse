@@ -14,9 +14,10 @@
  *******************************************************************************/
 package org.eclipse.ui.tests.adaptable;
 
-import java.io.ByteArrayInputStream;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import junit.framework.TestSuite;
+import java.io.ByteArrayInputStream;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -31,13 +32,20 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.internal.decorators.DecoratorDefinition;
 import org.eclipse.ui.internal.decorators.DecoratorManager;
+import org.eclipse.ui.tests.harness.util.CloseTestWindowsRule;
 import org.eclipse.ui.tests.harness.util.UITestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  * @version 1.0
  */
-public class AdaptableDecoratorTestCase extends UITestCase implements
-		ILabelProviderListener {
+public class AdaptableDecoratorTestCase implements ILabelProviderListener {
+
+	@Rule
+	public CloseTestWindowsRule closeTestWindows = new CloseTestWindowsRule();
 
 	private DecoratorDefinition fullDefinition;
 
@@ -53,27 +61,8 @@ public class AdaptableDecoratorTestCase extends UITestCase implements
 
 	protected IFile testFile;
 
-	public static TestSuite suite() {
-		TestSuite ts = new TestSuite();
-		ts.addTest(new AdaptableDecoratorTestCase("testEnableDecorator"));
-		ts.addTest(new AdaptableDecoratorTestCase("testDisableDecorator"));
-		ts.addTest(new AdaptableDecoratorTestCase("testRefreshFullContributor"));
-		ts.addTest(new AdaptableDecoratorTestCase("testRefreshLightContributor"));
-		return ts;
-	}
-
-	/**
-	 * Constructor for DecoratorTestCase.
-	 *
-	 * @param testName
-	 */
-	public AdaptableDecoratorTestCase(String testName) {
-		super(testName);
-	}
-
-	@Override
-	protected void doSetUp() throws Exception {
-		super.doSetUp();
+	@Before
+	public void doSetUp() throws Exception {
 		createTestFile();
 		showAdaptedNav();
 
@@ -97,9 +86,8 @@ public class AdaptableDecoratorTestCase extends UITestCase implements
 		return WorkbenchPlugin.getDefault().getDecoratorManager();
 	}
 
-	@Override
-	protected void doTearDown() throws Exception {
-
+	@After
+	public void doTearDown() throws Exception {
 		if (testProject != null) {
 			try {
 				testProject.delete(true, null);
@@ -110,7 +98,6 @@ public class AdaptableDecoratorTestCase extends UITestCase implements
 			testFolder = null;
 			testFile = null;
 		}
-		super.doTearDown();
 
 		getDecoratorManager().removeListener(this);
 	}
@@ -118,6 +105,7 @@ public class AdaptableDecoratorTestCase extends UITestCase implements
 	/**
 	 * Test enabling the contributor
 	 */
+	@Test
 	public void testEnableDecorator() {
 		getDecoratorManager().updateForEnablementChange();
 		fullDefinition.setEnabled(true);
@@ -129,6 +117,7 @@ public class AdaptableDecoratorTestCase extends UITestCase implements
 	/**
 	 * Test disabling the contributor
 	 */
+	@Test
 	public void testDisableDecorator() {
 		getDecoratorManager().updateForEnablementChange();
 		fullDefinition.setEnabled(false);
@@ -139,8 +128,8 @@ public class AdaptableDecoratorTestCase extends UITestCase implements
 	/**
 	 * Refresh the full decorator.
 	 */
+	@Test
 	public void testRefreshFullContributor() {
-
 		updated = false;
 		getDecoratorManager().updateForEnablementChange();
 		fullDefinition.setEnabled(true);
@@ -148,14 +137,13 @@ public class AdaptableDecoratorTestCase extends UITestCase implements
 		getDecoratorManager().updateForEnablementChange();
 		assertTrue("Got an update", updated);
 		updated = false;
-
 	}
 
 	/**
 	 * Refresh the full decorator.
 	 */
+	@Test
 	public void testRefreshLightContributor() {
-
 		updated = false;
 		getDecoratorManager().updateForEnablementChange();
 		lightDefinition.setEnabled(true);
@@ -175,7 +163,7 @@ public class AdaptableDecoratorTestCase extends UITestCase implements
 	 * Shows the Adapted Resource Navigator in a new test window.
 	 */
 	protected void showAdaptedNav() throws PartInitException {
-		IWorkbenchWindow window = openTestWindow();
+		IWorkbenchWindow window = UITestCase.openTestWindow();
 		window.getActivePage().showView(ADAPTED_NAVIGATOR_ID);
 	}
 

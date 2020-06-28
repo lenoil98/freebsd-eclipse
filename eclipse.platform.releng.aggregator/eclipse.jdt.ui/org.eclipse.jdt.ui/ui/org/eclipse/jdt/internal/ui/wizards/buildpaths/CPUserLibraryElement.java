@@ -65,9 +65,7 @@ public class CPUserLibraryElement {
 		fChildren= new ArrayList<>();
 		if (container != null) {
 			IClasspathEntry[] entries= container.getClasspathEntries();
-			CPListElement[] res= new CPListElement[entries.length];
-			for (int i= 0; i < res.length; i++) {
-				IClasspathEntry curr= entries[i];
+			for (IClasspathEntry curr : entries) {
 				CPListElement elem= CPListElement.createFromExisting(this, curr, project);
 				//elem.setAttribute(CPListElement.SOURCEATTACHMENT, curr.getSourceAttachmentPath());
 				//elem.setAttribute(CPListElement.JAVADOC, JavaUI.getLibraryJavadocLocation(curr.getPath()));
@@ -82,7 +80,7 @@ public class CPUserLibraryElement {
 	/**
 	 * Creates a new user library element with the given name and children and sets itself as the
 	 * parent container to each given child element.
-	 * 
+	 *
 	 * @param name the name of the library element
 	 * @param isSystemLibrary <code>true</code> if the library is a system library,
 	 *            <code>false</code> otherwise
@@ -92,9 +90,9 @@ public class CPUserLibraryElement {
 		fName= name;
 		fChildren= new ArrayList<>();
 		if (children != null) {
-			for (int i= 0; i < children.length; i++) {
-				children[i].setParentContainer(this);
-				fChildren.add(children[i]);
+			for (CPListElement child : children) {
+				child.setParentContainer(this);
+				fChildren.add(child);
 			}
 		}
 		fIsSystemLibrary= isSystemLibrary;
@@ -126,8 +124,7 @@ public class CPUserLibraryElement {
 		int nElements= elements.size();
 		List<CPListElement> res= new ArrayList<>(nElements);
 		CPListElement floating= null;
-		for (int i= 0; i < nElements; i++) {
-			CPListElement curr= elements.get(i);
+		for (CPListElement curr : elements) {
 			if (move.contains(curr)) {
 				res.add(curr);
 			} else {
@@ -204,9 +201,8 @@ public class CPUserLibraryElement {
 	 * @return Returns a boolean
 	 */
 	public boolean hasMissingChildren() {
-		for (int i= 0; i < fChildren.size(); i++) {
-			Object curr= fChildren.get(i);
-			if (curr instanceof CPListElement && ((CPListElement) curr).isMissing()) {
+		for (CPListElement curr : fChildren) {
+			if (curr != null && curr.isMissing()) {
 				return true;
 			}
 		}

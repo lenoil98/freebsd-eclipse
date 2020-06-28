@@ -55,8 +55,8 @@ public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
 	}
 
 	int[] cases = {0, SWT.HORIZONTAL, SWT.VERTICAL};
-	for (int i = 0; i < cases.length; i++)
-		slider = new Slider(shell, cases[i]);
+	for (int style : cases)
+		slider = new Slider(shell, style);
 }
 
 @Test
@@ -115,8 +115,8 @@ public void test_getIncrement() {
 	int[] cases = {1, 10, 10000};
 	for (int i=0; i<cases.length; i++)
 	{
-	  slider.setIncrement(cases[i]);
-	  assertTrue("case: " + String.valueOf(i), slider.getIncrement()==cases[i]);
+		slider.setIncrement(cases[i]);
+		assertTrue("case: " + String.valueOf(i), slider.getIncrement()==cases[i]);
 	}
 }
 
@@ -153,8 +153,8 @@ public void test_getPageIncrement() {
 	int[] cases = {1, 10, 10000};
 	for (int i=0; i<cases.length; i++)
 	{
-	  slider.setPageIncrement(cases[i]);
-	  assertTrue("case: " + String.valueOf(i), slider.getPageIncrement()==cases[i]);
+		slider.setPageIncrement(cases[i]);
+		assertTrue("case: " + String.valueOf(i), slider.getPageIncrement()==cases[i]);
 	}
 }
 
@@ -179,8 +179,7 @@ public void test_setMaximumI() {
 
 	int [][] testValues = getSetMaximumValues();
 
-	for (int i = 0; i < testValues.length; i++) {
-		int[] intArray = testValues[i];
+	for (int[] intArray : testValues) {
 		setDefaults();
 		slider.setMaximum(intArray[0]);
 		String valueString = valueString(intArray);
@@ -193,8 +192,7 @@ public void test_setMinimumI() {
 
 	int [][] testValues = getSetMinimumValues();
 
-	for (int i = 0; i < testValues.length; i++) {
-		int[] intArray = testValues[i];
+	for (int[] intArray : testValues) {
 		setDefaults();
 		slider.setMinimum(intArray[0]);
 		String valueString = valueString(intArray);
@@ -204,15 +202,14 @@ public void test_setMinimumI() {
 
 @Test
 public void test_setPageIncrementI() {
-	 slider.setPageIncrement(3);
-	 assertTrue(":a:", slider.getPageIncrement()== 3);
+	slider.setPageIncrement(3);
+	assertTrue(":a:", slider.getPageIncrement()== 3);
 }
 
 @Test
 public void test_setSelectionI() {
 	int [][] testValues = getSetSelectionValues();
-	for (int i = 0; i < testValues.length; i++) {
-		int[] intArray = testValues[i];
+	for (int[] intArray : testValues) {
 		setDefaults();
 		slider.setSelection(intArray[0]);
 		String valueString = valueString(intArray);
@@ -225,8 +222,7 @@ public void test_setThumbI() {
 
 	int [][] testValues = getSetThumbValues();
 
-	for (int i = 0; i < testValues.length; i++) {
-		int[] intArray = testValues[i];
+	for (int[] intArray : testValues) {
 		setDefaults();
 		slider.setThumb(intArray[0]);
 		String valueString = valueString(intArray);
@@ -873,32 +869,32 @@ return new int[][] {
 
 @Test
 public void test_consistency_ArrowSelection() {
-    consistencyPrePackShell();
-    consistencyEvent(slider.getSize().x-10, 5, 1, 0, ConsistencyUtility.MOUSE_CLICK);
+	consistencyPrePackShell();
+	consistencyEvent(slider.getSize().x-10, 5, 1, 0, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Test
 public void test_consistency_KeySelection () {
-    consistencyEvent(0, SWT.ARROW_RIGHT, 0, 0, ConsistencyUtility.KEY_PRESS);
+	consistencyEvent(0, SWT.ARROW_RIGHT, 0, 0, ConsistencyUtility.KEY_PRESS);
 }
 
 @Test
 public void test_consistency_ThumbSelection () {
-    consistencyEvent(25, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK);
+	consistencyEvent(25, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Test
 public void test_consistency_TroughSelection () {
-    consistencyEvent(45, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK);
+	consistencyEvent(45, 10, 1, 0, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Test
 public void test_consistency_MenuDetect () {
-    consistencyEvent(27, 5, 3, 0, ConsistencyUtility.MOUSE_CLICK);
+	consistencyEvent(27, 5, 3, 0, ConsistencyUtility.MOUSE_CLICK);
 }
 
 @Test
 public void test_consistency_DragDetect () {
-    consistencyEvent(9, 5, 30, 10, ConsistencyUtility.MOUSE_DRAG);
+	consistencyEvent(9, 5, 30, 10, ConsistencyUtility.MOUSE_DRAG);
 }
 }

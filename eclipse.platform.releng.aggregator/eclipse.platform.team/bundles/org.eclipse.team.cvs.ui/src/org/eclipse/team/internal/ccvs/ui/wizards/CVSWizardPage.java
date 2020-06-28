@@ -31,6 +31,7 @@ import org.eclipse.swt.widgets.*;
 import org.eclipse.team.internal.ccvs.core.ICVSRemoteFolder;
 import org.eclipse.team.internal.ccvs.ui.CVSUIPlugin;
 import org.eclipse.team.internal.ccvs.ui.operations.RemoteProjectFolder;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.model.WorkbenchContentProvider;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.views.navigator.ResourceComparator;
@@ -40,7 +41,7 @@ import org.eclipse.ui.views.navigator.ResourceComparator;
  * for widget creation.
  */
 public abstract class CVSWizardPage extends WizardPage {
-    
+	
 	protected static final int LABEL_WIDTH_HINT = 400;
 	protected static final int LABEL_INDENT_WIDTH = 32;
 	protected static final int LIST_HEIGHT_HINT = 100;
@@ -233,7 +234,7 @@ public abstract class CVSWizardPage extends WizardPage {
 		tree.setLabelProvider(
 			new DecoratingLabelProvider(
 				new WorkbenchLabelProvider(), 
-				CVSUIPlugin.getPlugin().getWorkbench().getDecoratorManager().getLabelDecorator()));
+				PlatformUI.getWorkbench().getDecoratorManager().getLabelDecorator()));
 		tree.setComparator(new ResourceComparator(ResourceComparator.NAME));
 		
 		GridData data = new GridData(GridData.FILL_BOTH | GridData.GRAB_VERTICAL);
@@ -262,10 +263,10 @@ public abstract class CVSWizardPage extends WizardPage {
 	
 					//filter out the desired resource types
 					ArrayList<IResource> results = new ArrayList<>();
-					for (int i = 0; i < members.length; i++) {
+					for (IResource member : members) {
 						//And the test bits with the resource types to see if they are what we want
-						if ((members[i].getType() & resourceType) > 0) {
-							results.add(members[i]);
+						if ((member.getType() & resourceType) > 0) {
+							results.add(member);
 						}
 					}
 					return results.toArray();
@@ -293,9 +294,6 @@ public abstract class CVSWizardPage extends WizardPage {
 		this.wizard = wizard;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.wizard.WizardPage#getNextPage()
-	 */
 	@Override
 	public IWizardPage getNextPage() {
 		ICVSWizard w = getCVSWizard();
@@ -307,9 +305,6 @@ public abstract class CVSWizardPage extends WizardPage {
 		return super.getNextPage();
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.wizard.WizardPage#canFlipToNextPage()
-	 */
 	@Override
 	public boolean canFlipToNextPage() {
 		ICVSWizard w = getCVSWizard();

@@ -64,15 +64,16 @@ public final class TextLayout extends Resource {
 
 	static final int TAB_COUNT = 32;
 	static final int UNDERLINE_THICK = 1 << 16;
-	static final RGB LINK_FOREGROUND = new RGB (0, 51, 153);
 	int[] invalidOffsets;
 	private boolean ignoreSegments;
 	static final char LTR_MARK = '\u200E', RTL_MARK = '\u200F';
 
+	static NSColor linkForeground;
+
 	static class StyleItem {
 		TextStyle style;
 		int start;
-		long /*int*/ jniRef;
+		long jniRef;
 		NSCell cell;
 		@Override
 		public String toString () {
@@ -222,7 +223,7 @@ void computeRuns() {
 	}
 	attrStr.addAttribute(OS.NSParagraphStyleAttributeName, paragraph, range);
 	paragraph.release();
-	long /*int*/ textLength = attrStr.length();
+	long textLength = attrStr.length();
 	for (int i = 0; i < stylesCount - 1; i++) {
 		StyleItem run = styles[i];
 		if (run.style == null) continue;
@@ -235,12 +236,12 @@ void computeRuns() {
 			font.addTraits(attrStr, range);
 		}
 		Color foreground = style.foreground;
-		if (foreground != null) {
+		if (foreground != null && !foreground.isDisposed()) {
 			NSColor color = NSColor.colorWithDeviceRed(foreground.handle[0], foreground.handle[1], foreground.handle[2], 1);
 			attrStr.addAttribute(OS.NSForegroundColorAttributeName, color, range);
 		}
 		Color background = style.background;
-		if (background != null) {
+		if (background != null && !background.isDisposed()) {
 			NSColor color = NSColor.colorWithDeviceRed(background.handle[0], background.handle[1], background.handle[2], 1);
 			attrStr.addAttribute(OS.NSBackgroundColorAttributeName, color, range);
 		}
@@ -267,7 +268,7 @@ void computeRuns() {
 				case SWT.UNDERLINE_LINK: {
 					underlineStyle = OS.NSUnderlineStyleSingle;
 					if (foreground == null) {
-						NSColor color = NSColor.colorWithDeviceRed(LINK_FOREGROUND.red / 255f, LINK_FOREGROUND.green / 255f, LINK_FOREGROUND.blue / 255f, 1);
+						NSColor color = getLinkForeground();
 						attrStr.addAttribute(OS.NSForegroundColorAttributeName, color, range);
 					}
 					break;
@@ -331,13 +332,13 @@ void computeRuns() {
 
 	int numberOfLines;
 	layoutManager.glyphRangeForTextContainer(textContainer);
-	long /*int*/ numberOfGlyphs = layoutManager.numberOfGlyphs(), index;
-	long /*int*/ rangePtr = C.malloc(NSRange.sizeof);
+	long numberOfGlyphs = layoutManager.numberOfGlyphs(), index;
+	long rangePtr = C.malloc(NSRange.sizeof);
 	NSRange lineRange = new NSRange();
 	for (numberOfLines = 0, index = 0; index < numberOfGlyphs; numberOfLines++){
-	    layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
-	    OS.memmove(lineRange, rangePtr, NSRange.sizeof);
-	    index = lineRange.location + lineRange.length;
+		layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
+		OS.memmove(lineRange, rangePtr, NSRange.sizeof);
+		index = lineRange.location + lineRange.length;
 	}
 	if (numberOfLines == 0) numberOfLines++;
 	int[] offsets = new int[numberOfLines + 1];
@@ -345,9 +346,9 @@ void computeRuns() {
 	for (numberOfLines = 0, index = 0; index < numberOfGlyphs; numberOfLines++){
 		bounds[numberOfLines] = layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
 		if (numberOfLines < bounds.length - 1) bounds[numberOfLines].height -= spacing;
-	    OS.memmove(lineRange, rangePtr, NSRange.sizeof);
-	    offsets[numberOfLines] = (int)/*64*/lineRange.location;
-	    index = lineRange.location + lineRange.length;
+		OS.memmove(lineRange, rangePtr, NSRange.sizeof);
+		offsets[numberOfLines] = (int)lineRange.location;
+		index = lineRange.location + lineRange.length;
 	}
 	if (numberOfLines == 0) {
 		Font font = this.font != null ? this.font : device.systemFont;
@@ -356,7 +357,7 @@ void computeRuns() {
 		bounds[0].height = Math.max(layoutManager.defaultLineHeightForFont(nsFont), ascent + descent);
 	}
 	C.free(rangePtr);
-	offsets[numberOfLines] = (int)/*64*/textStorage.length();
+	offsets[numberOfLines] = (int)textStorage.length();
 	this.lineOffsets = offsets;
 	this.lineBounds = bounds;
 }
@@ -461,7 +462,7 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 		pt.x = x;
 		pt.y = y;
 		NSRange range = new NSRange();
-		long /*int*/ numberOfGlyphs = layoutManager.numberOfGlyphs();
+		long numberOfGlyphs = layoutManager.numberOfGlyphs();
 		if (numberOfGlyphs > 0) {
 			range.location = 0;
 			range.length = numberOfGlyphs;
@@ -476,8 +477,8 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 			if (hasSelection) {
 				range.location = translateOffset(selectionStart);
 				range.length = translateOffset(selectionEnd - selectionStart + 1);
-				long /*int*/ [] rectCount = new long /*int*/ [1];
-				long /*int*/ pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
+				long [] rectCount = new long [1];
+				long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
 				for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
 					OS.memmove(rect, pArray, NSRect.sizeof);
 					fixRect(rect);
@@ -502,7 +503,7 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 		if (numberOfGlyphs > 0) {
 			range.location = 0;
 			range.length = numberOfGlyphs;
-			double /*float*/ [] fg = gc.data.foreground;
+			double [] fg = gc.data.foreground;
 			boolean defaultFg = fg[0] == 0 && fg[1] == 0 && fg[2] == 0 && fg[3] == 1 && gc.data.alpha == 255;
 			if (!defaultFg) {
 				for (int i = 0; i < stylesCount - 1; i++) {
@@ -546,12 +547,12 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 							range.location = Math.max(lineStart, start);
 							range.length = Math.min(lineEnd, end) + 1 - range.location;
 							if (range.length > 0) {
-								long /*int*/ [] rectCount = new long /*int*/ [1];
-								long /*int*/ pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
+								long [] rectCount = new long [1];
+								long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
 								NSRect rect = new NSRect();
 								gc.handle.saveGraphicsState();
-								double /*float*/ baseline = layoutManager.typesetter().baselineOffsetInLayoutManager(layoutManager, lineStart);
-								double /*float*/ [] color = null;
+								double baseline = layoutManager.typesetter().baselineOffsetInLayoutManager(layoutManager, lineStart);
+								double [] color = null;
 								if (style.underlineColor != null) color = style.underlineColor.handle;
 								if (color == null && style.foreground != null) color = style.foreground.handle;
 								if (color != null) {
@@ -560,15 +561,15 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 								for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
 									OS.memmove(rect, pArray, NSRect.sizeof);
 									fixRect(rect);
-									double /*float*/ underlineX = pt.x + rect.x;
-									double /*float*/ underlineY = pt.y + rect.y + rect.height - baseline + 1;
+									double underlineX = pt.x + rect.x;
+									double underlineY = pt.y + rect.y + rect.height - baseline + 1;
 									NSBezierPath path = NSBezierPath.bezierPath();
 									switch (style.underlineStyle) {
 										case SWT.UNDERLINE_ERROR: {
 											path.setLineWidth(2f);
 											path.setLineCapStyle(OS.NSRoundLineCapStyle);
 											path.setLineJoinStyle(OS.NSRoundLineJoinStyle);
-											path.setLineDash(new double /*float*/ []{1, 3f}, 2, 0);
+											path.setLineDash(new double []{1, 3f}, 2, 0);
 											point.x = underlineX;
 											point.y = underlineY + 0.5f;
 											path.moveToPoint(point);
@@ -582,10 +583,10 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 											path.setLineWidth(1.0f);
 											path.setLineCapStyle(OS.NSButtLineCapStyle);
 											path.setLineJoinStyle(OS.NSMiterLineJoinStyle);
-											double /*float*/ lineBottom = pt.y + rect.y + rect.height;
+											double lineBottom = pt.y + rect.y + rect.height;
 											float squigglyThickness = 1;
 											float squigglyHeight = 2 * squigglyThickness;
-											double /*float*/ squigglyY = Math.min(underlineY - squigglyHeight / 2, lineBottom - squigglyHeight - 1);
+											double squigglyY = Math.min(underlineY - squigglyHeight / 2, lineBottom - squigglyHeight - 1);
 											float[] points = computePolyline((int)underlineX, (int)squigglyY, (int)(underlineX + rect.width), (int)(squigglyY + squigglyHeight));
 											point.x = points[0] + 0.5f;
 											point.y = points[1] + 0.5f;
@@ -614,11 +615,11 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 							range.location = Math.max(lineStart, start);
 							range.length = Math.min(lineEnd, end) + 1 - range.location;
 							if (range.length > 0) {
-								long /*int*/ [] rectCount = new long /*int*/ [1];
-								long /*int*/ pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
+								long [] rectCount = new long [1];
+								long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
 								NSRect rect = new NSRect();
 								gc.handle.saveGraphicsState();
-								double /*float*/ [] color = null;
+								double [] color = null;
 								if (style.borderColor != null) color = style.borderColor.handle;
 								if (color == null && style.foreground != null) color = style.foreground.handle;
 								if (color != null) {
@@ -631,9 +632,9 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 									case SWT.BORDER_DASH: dashes = width != 0 ? GC.LINE_DASH : GC.LINE_DASH_ZERO; break;
 									case SWT.BORDER_DOT: dashes = width != 0 ? GC.LINE_DOT : GC.LINE_DOT_ZERO; break;
 								}
-								double /*float*/ [] lengths = null;
+								double [] lengths = null;
 								if (dashes != null) {
-									lengths = new double /*float*/[dashes.length];
+									lengths = new double[dashes.length];
 									for (int k = 0; k < lengths.length; k++) {
 										lengths[k] = width == 0 ? dashes[k] : dashes[k] * width;
 									}
@@ -664,7 +665,7 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 }
 
 void fixRect(NSRect rect) {
-	double /*float*/ right = -1;
+	double right = -1;
 	for (int j = 0; j < lineBounds.length; j++) {
 		NSRect line = lineBounds[j];
 		if (rect.y <= line.y && line.y <= rect.y + rect.height) {
@@ -790,8 +791,8 @@ public Rectangle getBounds(int start, int end) {
 		NSRange range = new NSRange();
 		range.location = start;
 		range.length = end - start + 1;
-		long /*int*/ [] rectCount = new long /*int*/ [1];
-		long /*int*/ pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
+		long [] rectCount = new long [1];
+		long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
 		NSRect rect = new NSRect();
 		int left = 0x7FFFFFFF, right = 0;
 		int top = 0x7FFFFFFF, bottom = 0;
@@ -898,7 +899,7 @@ public int getLevel(int offset) {
 		int length = text.length();
 		if (!(0 <= offset && offset <= length)) SWT.error(SWT.ERROR_INVALID_RANGE);
 		offset = translateOffset(offset);
-		long /*int*/ glyphOffset = layoutManager.glyphIndexForCharacterAtIndex(offset);
+		long glyphOffset = layoutManager.glyphIndexForCharacterAtIndex(offset);
 		NSRange range  = new NSRange();
 		range.location = glyphOffset;
 		range.length = 1;
@@ -1059,6 +1060,20 @@ public FontMetrics getLineMetrics (int lineIndex) {
 	}
 }
 
+NSColor getLinkForeground() {
+	if (linkForeground == null) {
+		/*
+		 * Color used is same as SWT.COLOR_LINK_FOREGROUND computed in Display.getWidgetColorRGB()
+		 */
+		NSTextView textView = (NSTextView)new NSTextView().alloc();
+		textView.init ();
+		NSDictionary dict = textView.linkTextAttributes();
+		linkForeground = new NSColor(dict.valueForKey(OS.NSForegroundColorAttributeName));
+		textView.release ();
+	}
+	return linkForeground;
+}
+
 /**
  * Returns the location for the specified character offset. The
  * <code>trailing</code> argument indicates whether the offset
@@ -1089,7 +1104,7 @@ public Point getLocation(int offset, boolean trailing) {
 			return new Point((int)(rect.x + rect.width), (int)rect.y);
 		} else {
 			offset = translateOffset(offset);
-			long /*int*/ glyphIndex = layoutManager.glyphIndexForCharacterAtIndex(offset);
+			long glyphIndex = layoutManager.glyphIndexForCharacterAtIndex(offset);
 			NSRect rect = layoutManager.lineFragmentUsedRectForGlyphAtIndex(glyphIndex, 0);
 			NSPoint point = layoutManager.locationForGlyphAtIndex(glyphIndex);
 			boolean rtl = false;
@@ -1097,13 +1112,13 @@ public Point getLocation(int offset, boolean trailing) {
 			range.location = glyphIndex;
 			range.length = 1;
 			byte[] bidiLevels = new byte[1];
-			long /*int*/ result = layoutManager.getGlyphsInRange(range, 0, 0, 0, 0, bidiLevels);
+			long result = layoutManager.getGlyphsInRange(range, 0, 0, 0, 0, bidiLevels);
 			if (result > 0) {
 				rtl = (bidiLevels[0] & 1) != 0;
 			}
 			if (trailing != rtl) {
-				long /*int*/ [] rectCount = new long /*int*/ [1];
-				long /*int*/ pArray = layoutManager.rectArrayForGlyphRange(range, range, textContainer, rectCount);
+				long [] rectCount = new long [1];
+				long pArray = layoutManager.rectArrayForGlyphRange(range, range, textContainer, rectCount);
 				if (rectCount[0] > 0) {
 					NSRect bounds = new NSRect();
 					OS.memmove(bounds, pArray, NSRect.sizeof);
@@ -1174,18 +1189,18 @@ int _getOffset (int offset, int movement, boolean forward) {
 			break;
 		case SWT.MOVEMENT_WORD: {
 			offset = translateOffset(offset);
-			offset = (int)/*64*/textStorage.nextWordFromIndex(offset, forward);
+			offset = (int)textStorage.nextWordFromIndex(offset, forward);
 			return untranslateOffset(offset);
 		}
 		case SWT.MOVEMENT_WORD_END: {
 			offset = translateOffset(offset);
 			if (forward) {
-				offset = (int)/*64*/textStorage.nextWordFromIndex(offset, true);
+				offset = (int)textStorage.nextWordFromIndex(offset, true);
 			} else {
 				length = translateOffset(length);
 				int result = 0;
 				while (result < length) {
-					int wordEnd = (int)/*64*/textStorage.nextWordFromIndex(result, true);
+					int wordEnd = (int)textStorage.nextWordFromIndex(result, true);
 					if (wordEnd >= offset) {
 						offset = result;
 						break;
@@ -1200,7 +1215,7 @@ int _getOffset (int offset, int movement, boolean forward) {
 			if (forward) {
 				int result = translateOffset(length);
 				while (result > 0) {
-					int wordStart = (int)/*64*/textStorage.nextWordFromIndex(result, false);
+					int wordStart = (int)textStorage.nextWordFromIndex(result, false);
 					if (wordStart <= offset) {
 						offset = result;
 						break;
@@ -1208,7 +1223,7 @@ int _getOffset (int offset, int movement, boolean forward) {
 					result = wordStart;
 				}
 			} else {
-				offset = (int)/*64*/textStorage.nextWordFromIndex(offset, false);
+				offset = (int)textStorage.nextWordFromIndex(offset, false);
 			}
 			return untranslateOffset(offset);
 		}
@@ -1280,14 +1295,14 @@ public int getOffset(int x, int y, int[] trailing) {
 		NSPoint pt = new NSPoint();
 		pt.x = x;
 		pt.y =  y - getVerticalIndent();
-		double /*float*/[] partialFraction = new double /*float*/[1];
-		long /*int*/ glyphIndex = layoutManager.glyphIndexForPoint(pt, textContainer, partialFraction);
-		long /*int*/ charOffset = layoutManager.characterIndexForGlyphAtIndex(glyphIndex);
+		double[] partialFraction = new double[1];
+		long glyphIndex = layoutManager.glyphIndexForPoint(pt, textContainer, partialFraction);
+		long charOffset = layoutManager.characterIndexForGlyphAtIndex(glyphIndex);
 		if (textStorage.string().characterAtIndex(charOffset) == '\n') charOffset--;
-		int offset = (int)/*64*/charOffset;
+		int offset = (int)charOffset;
 		offset = Math.min(untranslateOffset(offset), length - 1);
 		if (trailing != null) {
-			trailing[0] = Math.round((float)/*64*/partialFraction[0]);
+			trailing[0] = Math.round((float)partialFraction[0]);
 			if (partialFraction[0] >= 0.5) {
 				char ch = text.charAt(offset);
 				if (0xD800 <= ch && ch <= 0xDBFF) {
@@ -1608,20 +1623,19 @@ void initClasses () {
 	if (OS.objc_lookUpClass(className) != 0) return;
 
 	textLayoutCallback2 = new Callback(getClass(), "textLayoutProc", 2);
-	long /*int*/ proc2 = textLayoutCallback2.getAddress();
-	if (proc2 == 0) SWT.error(SWT.ERROR_NO_MORE_CALLBACKS);
-	long /*int*/ cellBaselineOffsetProc = OS.CALLBACK_cellBaselineOffset(proc2);
-	long /*int*/ cellSizeProc = OS.CALLBACK_NSTextAttachmentCell_cellSize(proc2);
+	long proc2 = textLayoutCallback2.getAddress();
+	long cellBaselineOffsetProc = OS.CALLBACK_cellBaselineOffset(proc2);
+	long cellSizeProc = OS.CALLBACK_NSTextAttachmentCell_cellSize(proc2);
 
 	byte[] types = {'*','\0'};
 	int size = C.PTR_SIZEOF, align = C.PTR_SIZEOF == 4 ? 2 : 3;
-	long /*int*/ cls = OS.objc_allocateClassPair(OS.class_NSCell, className, 0);
+	long cls = OS.objc_allocateClassPair(OS.class_NSCell, className, 0);
 	OS.class_addIvar(cls, SWT_OBJECT, size, (byte)align, types);
 	OS.class_addProtocol(cls, OS.protocol_NSTextAttachmentCell);
 	OS.class_addMethod(cls, OS.sel_cellSize, cellSizeProc, "@:");
 	OS.class_addMethod(cls, OS.sel_cellBaselineOffset, cellBaselineOffsetProc, "@:");
-	if (OS.VERSION_MMB >= OS.VERSION_MMB(10, 11, 0)) {
-		long /*int*/ attachmentProc = OS.CALLBACK_NSTextAttachmentCell_attachment(proc2);
+	if (OS.VERSION >= OS.VERSION(10, 11, 0)) {
+		long attachmentProc = OS.CALLBACK_NSTextAttachmentCell_attachment(proc2);
 		OS.class_addMethod(cls, OS.sel_attachment, attachmentProc, "@:");
 	}
 	OS.objc_registerClassPair(cls);
@@ -2265,8 +2279,8 @@ public String toString () {
 	return "TextLayout {" + text + "}";
 }
 
-static long /*int*/ textLayoutProc(long /*int*/ id, long /*int*/ sel) {
-	long /*int*/ [] jniRef = new long /*int*/ [1];
+static long textLayoutProc(long id, long sel) {
+	long [] jniRef = new long [1];
 	OS.object_getInstanceVariable(id, SWT_OBJECT, jniRef);
 	if (jniRef[0] == 0) return 0;
 	StyleItem run = (StyleItem) OS.JNIGetObject(jniRef[0]);
@@ -2280,14 +2294,14 @@ static long /*int*/ textLayoutProc(long /*int*/ id, long /*int*/ sel) {
 		size.width = metrics.width;
 		size.height = metrics.ascent + metrics.descent;
 		/* NOTE that this is freed in C */
-		long /*int*/ result = C.malloc(NSSize.sizeof);
+		long result = C.malloc(NSSize.sizeof);
 		OS.memmove(result, size, NSSize.sizeof);
 		return result;
 	} else if (sel == OS.sel_cellBaselineOffset) {
 		NSPoint point = new NSPoint();
 		point.y = -metrics.descent;
 		/* NOTE that this is freed in C */
-		long /*int*/ result = C.malloc(NSPoint.sizeof);
+		long result = C.malloc(NSPoint.sizeof);
 		OS.memmove(result, point, NSPoint.sizeof);
 		return result;
 	} else if (sel == OS.sel_attachment) {
@@ -2361,7 +2375,7 @@ public void setDefaultTabWidth(int tabLength) {
 
 	checkLayout();
 	String oldString = getText();
-	StringBuffer tabBuffer = new StringBuffer(tabLength);
+	StringBuilder tabBuffer = new StringBuilder(tabLength);
 	for (int i = 0; i < tabLength; i++) {
 		tabBuffer.append(' ');
 	}

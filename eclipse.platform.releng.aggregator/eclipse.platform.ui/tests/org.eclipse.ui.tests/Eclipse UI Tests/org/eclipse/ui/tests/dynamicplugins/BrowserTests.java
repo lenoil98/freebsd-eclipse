@@ -15,56 +15,55 @@ package org.eclipse.ui.tests.dynamicplugins;
 
 import org.eclipse.ui.internal.browser.WorkbenchBrowserSupport;
 import org.eclipse.ui.internal.registry.IWorkbenchRegistryConstants;
+import org.junit.Test;
 
 /**
  * @since 3.1
  */
 public class BrowserTests extends DynamicTestCase {
 
-    /**
-     * @param testName
-     */
-    public BrowserTests(String testName) {
-        super(testName);
-    }
+	public BrowserTests() {
+		super(BrowserTests.class.getSimpleName());
+	}
 
-    public void testBrowserSupport() {
-        WorkbenchBrowserSupport support = (WorkbenchBrowserSupport) WorkbenchBrowserSupport.getInstance();
-        try {
-            support.setDesiredBrowserSupportId(getExtensionId());
-            assertFalse(support.hasNonDefaultBrowser());
+	@Test
+	public void testBrowserSupport() {
+		WorkbenchBrowserSupport support = (WorkbenchBrowserSupport) WorkbenchBrowserSupport.getInstance();
+		try {
+			support.setDesiredBrowserSupportId(getExtensionId());
+			assertFalse(support.hasNonDefaultBrowser());
 
-            getBundle();
-            support.setDesiredBrowserSupportId(getExtensionId());
-            assertTrue(support.hasNonDefaultBrowser());
+			getBundle();
+			support.setDesiredBrowserSupportId(getExtensionId());
+			assertTrue(support.hasNonDefaultBrowser());
 
-            removeBundle();
-            support.setDesiredBrowserSupportId(getExtensionId());
-            assertFalse(support.hasNonDefaultBrowser());
-        }
-        finally {
-            support.setDesiredBrowserSupportId(null);
-        }
-    }
+			removeBundle();
+			support.setDesiredBrowserSupportId(getExtensionId());
+			assertFalse(support.hasNonDefaultBrowser());
+		}
+		finally {
+			support.setDesiredBrowserSupportId(null);
+		}
+	}
 
-    @Override
+	@Override
 	protected String getExtensionId() {
-        return "newBrowser1.testDynamicBrowserAddition";
-    }
+		return "newBrowser1.testDynamicBrowserAddition";
+	}
 
-    @Override
+	@Override
 	protected String getExtensionPoint() {
-        return IWorkbenchRegistryConstants.PL_BROWSER_SUPPORT;
-    }
+		return IWorkbenchRegistryConstants.PL_BROWSER_SUPPORT;
+	}
 
-    @Override
+	@Override
 	protected String getInstallLocation() {
-        return "data/org.eclipse.newBrowser1";
-    }
+		return "data/org.eclipse.newBrowser1";
+	}
 
-    @Override
+	@Override
 	protected String getMarkerClass() {
-        return "org.eclipse.ui.dynamic.DynamicBrowserSupport";
-    }
+		return "org.eclipse.ui.dynamic.DynamicBrowserSupport";
+	}
 
 }

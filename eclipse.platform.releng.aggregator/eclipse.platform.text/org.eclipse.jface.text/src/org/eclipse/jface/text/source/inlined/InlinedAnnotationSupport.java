@@ -48,9 +48,11 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ISynchronizable;
 import org.eclipse.jface.text.ITextPresentationListener;
 import org.eclipse.jface.text.ITextViewerExtension4;
+import org.eclipse.jface.text.ITextViewerExtension5;
 import org.eclipse.jface.text.IViewportListener;
 import org.eclipse.jface.text.JFaceTextUtil;
 import org.eclipse.jface.text.Position;
+import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.TextPresentation;
 import org.eclipse.jface.text.source.Annotation;
 import org.eclipse.jface.text.source.AnnotationPainter;
@@ -101,14 +103,23 @@ public class InlinedAnnotationSupport {
 		@Override
 		public void applyTextPresentation(TextPresentation textPresentation) {
 			IAnnotationModel annotationModel= fViewer.getAnnotationModel();
+			if (annotationModel == null) {
+				return;
+			}
 			IRegion region= textPresentation.getExtent();
 			((IAnnotationModelExtension2) annotationModel)
 					.getAnnotationIterator(region.getOffset(), region.getLength(), true, true)
 					.forEachRemaining(annotation -> {
 						if (annotation instanceof LineContentAnnotation) {
 							LineContentAnnotation ann= (LineContentAnnotation) annotation;
-							StyleRange style= InlinedAnnotationDrawingStrategy.updateStyle(ann, null);
+							StyleRange style= ann.updateStyle(null);
 							if (style != null) {
+								if (fViewer instanceof ITextViewerExtension5) {
+									ITextViewerExtension5 projectionViewer= (ITextViewerExtension5) fViewer;
+									IRegion annotationRegion= projectionViewer.widgetRange2ModelRange(new Region(style.start, style.length));
+									style.start= annotationRegion.getOffset();
+									style.length= annotationRegion.getLength();
+								}
 								textPresentation.mergeStyleRange(style);
 							}
 						}
@@ -433,7 +444,7 @@ public class InlinedAnnotationSupport {
 			for (AbstractInlinedAnnotation ann : annotations) {
 				ann.setSupport(this);
 			}
-			if (annotationsToAdd.size() == 0 && annotationsToRemove.size() == 0) {
+			if (annotationsToAdd.isEmpty() && annotationsToRemove.isEmpty()) {
 				// None change, do nothing. Here the user could change position of codemining
 				// range
 				// (ex: user key press
@@ -626,8 +637,8 @@ public class InlinedAnnotationSupport {
 	 */
 	FontData[] getFontData(int style) {
 		FontData[] fontDatas= regularFont.getFontData();
-		for (int i= 0; i < fontDatas.length; i++) {
-			fontDatas[i].setStyle(style);
+		for (FontData fontData : fontDatas) {
+			fontData.setStyle(style);
 		}
 		return fontDatas;
 	}

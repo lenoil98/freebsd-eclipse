@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -75,6 +75,7 @@ public class BasePerformanceTest extends AbstractStateTest {
 		return state;
 	}
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		// uses a constant seed to prevent variation on results

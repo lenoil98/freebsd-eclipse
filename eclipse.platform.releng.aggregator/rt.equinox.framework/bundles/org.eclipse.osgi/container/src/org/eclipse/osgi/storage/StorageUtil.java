@@ -14,14 +14,23 @@
 
 package org.eclipse.osgi.storage;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Dictionary;
 import java.util.Hashtable;
-import java.util.concurrent.TimeUnit;
 import org.eclipse.osgi.internal.debug.Debug;
-import org.osgi.framework.*;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * A utility class with some generally useful static methods for adaptor hook implementations
@@ -42,9 +51,9 @@ public class StorageUtil {
 		String[] files = inDir.list();
 		if (files != null && files.length > 0) {
 			outDir.mkdir();
-			for (int i = 0; i < files.length; i++) {
-				File inFile = new File(inDir, files[i]);
-				File outFile = new File(outDir, files[i]);
+			for (String file : files) {
+				File inFile = new File(inDir, file);
+				File outFile = new File(outDir, file);
 				if (inFile.isDirectory()) {
 					copyDir(inFile, outFile);
 				} else {
@@ -154,34 +163,14 @@ public class StorageUtil {
 	 * @return the service registration object
 	 */
 	public static ServiceRegistration<?> register(String name, Object service, BundleContext context) {
-		Dictionary<String, Object> properties = new Hashtable<>(7);
-		Dictionary<String, String> headers = context.getBundle().getHeaders();
-		properties.put(Constants.SERVICE_VENDOR, headers.get(Constants.BUNDLE_VENDOR));
+		Dictionary<String, Object> properties = new Hashtable<>();
 		properties.put(Constants.SERVICE_RANKING, Integer.valueOf(Integer.MAX_VALUE));
 		properties.put(Constants.SERVICE_PID, context.getBundle().getBundleId() + "." + service.getClass().getName()); //$NON-NLS-1$
 		return context.registerService(name, service, properties);
 	}
 
 	public static boolean canWrite(File installDir) {
-		if (installDir.canWrite() == false)
-			return false;
-
-		if (!installDir.isDirectory())
-			return false;
-
-		File fileTest = null;
-		try {
-			// we use the .dll suffix to properly test on Vista virtual directories
-			// on Vista you are not allowed to write executable files on virtual directories like "Program Files"
-			fileTest = File.createTempFile("writableArea", ".dll", installDir); //$NON-NLS-1$ //$NON-NLS-2$
-		} catch (IOException e) {
-			//If an exception occured while trying to create the file, it means that it is not writtable
-			return false;
-		} finally {
-			if (fileTest != null)
-				fileTest.delete();
-		}
-		return true;
+		return installDir.isDirectory() && Files.isWritable(installDir.toPath());
 	}
 
 	public static URL encodeFileURL(File file) throws MalformedURLException {
@@ -230,58 +219,21 @@ public class StorageUtil {
 		return classbytes;
 	}
 
-	/**
-	 * To remain Java 6 compatible work around the unreliable renameTo() via
-	 * retries: http://bugs.java.com/view_bug.do?bug_id=6213298
-	 * 
-	 * @param from
-	 * @param to
-	 */
-	public static boolean move(File from, File to, boolean DEBUG) {
-		// Try several attempts with incremental sleep
-		final int maxTries = 10;
-		final int sleepStep = 200;
-		for (int tryCount = 0, sleep = sleepStep;; sleep += sleepStep, tryCount++) {
-			if (from.renameTo(to)) {
-				return true;
-			}
-
-			if (DEBUG) {
-				Debug.println("move: failed to rename " + from + " to " + to + " (" + (maxTries - tryCount) + " attempts remaining)"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-			}
-
-			if (tryCount >= maxTries) {
-				break;
-			}
-
-			try {
-				TimeUnit.MILLISECONDS.sleep(sleep);
-			} catch (InterruptedException e) {
-				// Ignore
-			}
-		}
-
-		// Try a copy
+	public static void move(File from, File to, boolean DEBUG) throws IOException {
 		try {
-			if (from.isDirectory()) {
-				copyDir(from, to);
-			} else {
-				readFile(new FileInputStream(from), to);
-			}
-
-			if (!rm(from, DEBUG)) {
-				Debug.println("move: failed to delete " + from + " after copy to " + to + ". Scheduling for delete on JVM exit."); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-				from.deleteOnExit();
-			}
-			return true;
+			Files.move(from.toPath(), to.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 		} catch (IOException e) {
 			if (DEBUG) {
-				Debug.println("move: failed to copy " + from + " to " + to); //$NON-NLS-1$ //$NON-NLS-2$
-				Debug.printStackTrace(e);
+				Debug.println("Failed to move atomically: " + from + " to " + to); //$NON-NLS-1$ //$NON-NLS-2$
 			}
-
-			// Give up
-			return false;
+			// remove in case it failed because the target to non-empty directory or
+			// the target type does not match the from
+			rm(to, DEBUG);
+			// also, try without atomic operation
+			Files.move(from.toPath(), to.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		}
+		if (DEBUG) {
+			Debug.println("Successfully moved file: " + from + " to " + to); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 }

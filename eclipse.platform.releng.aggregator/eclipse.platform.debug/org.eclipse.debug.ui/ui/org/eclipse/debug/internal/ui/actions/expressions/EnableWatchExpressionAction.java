@@ -38,17 +38,11 @@ public class EnableWatchExpressionAction implements IViewActionDelegate, IAction
 	private IAction fAction;
 	protected boolean fEnable= true;
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IViewActionDelegate#init(org.eclipse.ui.IViewPart)
-	 */
 	@Override
 	public void init(IViewPart view) {
 		DebugPlugin.getDefault().addDebugEventListener(this);
 	}
 
-	/**
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		if (fSelection instanceof IStructuredSelection) {
@@ -57,8 +51,8 @@ public class EnableWatchExpressionAction implements IViewActionDelegate, IAction
 			while (iter.hasNext()) {
 				expression= getWatchExpression(iter.next());
 				if (expression != null) {
-    				expression.setEnabled(fEnable);
-    				fireWatchExpressionChanged(expression);
+					expression.setEnabled(fEnable);
+					fireWatchExpressionChanged(expression);
 				}
 			}
 		} else if (fSelection instanceof IWatchExpression) {
@@ -76,9 +70,6 @@ public class EnableWatchExpressionAction implements IViewActionDelegate, IAction
 		DebugPlugin.getDefault().fireDebugEventSet(new DebugEvent[] {new DebugEvent(expression, DebugEvent.CHANGE)});
 	}
 
-	/**
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
 		fSelection= selection;
@@ -101,45 +92,32 @@ public class EnableWatchExpressionAction implements IViewActionDelegate, IAction
 	}
 
 	private IWatchExpression getWatchExpression(Object element) {
-	    if (element instanceof IWatchExpression) {
-	        return (IWatchExpression)element;
-	    } else if (element instanceof IAdaptable) {
-	        return ((IAdaptable)element).getAdapter(IWatchExpression.class);
-	    }
-	    return null;
+		if (element instanceof IWatchExpression) {
+			return (IWatchExpression)element;
+		} else if (element instanceof IAdaptable) {
+			return ((IAdaptable)element).getAdapter(IWatchExpression.class);
+		}
+		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#dispose()
-	 */
 	@Override
 	public void dispose() {
 		DebugPlugin.getDefault().removeDebugEventListener(this);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#init(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void init(IAction action) {
 		fAction = action;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#runWithEvent(org.eclipse.jface.action.IAction, org.eclipse.swt.widgets.Event)
-	 */
 	@Override
 	public void runWithEvent(IAction action, Event event) {
 		run(action);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.debug.core.IDebugEventSetListener#handleDebugEvents(org.eclipse.debug.core.DebugEvent[])
-	 */
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
-		for (int i = 0; i < events.length; i++) {
-			DebugEvent event = events[i];
+		for (DebugEvent event : events) {
 			if (event.getSource() instanceof IWatchExpression) {
 				if (event.getKind() == DebugEvent.CHANGE) {
 					selectionChanged(fAction, fSelection);

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2016 IBM Corporation and others.
+ * Copyright (c) 2006, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     George Suaridze <suag@1c.ru> (1C-Soft LLC) - Bug 560168
  *******************************************************************************/
 package org.eclipse.help.internal.index;
 
@@ -49,20 +50,20 @@ public class IndexFileProvider extends AbstractIndexProvider {
 				StringBuilder buffer = new StringBuilder(ERROR_READING_HELP_KEYWORD_INDEX_FILE);
 				buffer.append(getIndexFilePath(indexFile));
 				buffer.append("\" at line "); //$NON-NLS-1$
-			    buffer.append(spe.getLineNumber());
-			    buffer.append(". "); //$NON-NLS-1$
-	            buffer.append(spe.getMessage());
+				buffer.append(spe.getLineNumber());
+				buffer.append(". "); //$NON-NLS-1$
+				buffer.append(spe.getMessage());
 
-	            // Use the contained exception.
-	            Exception x = spe;
-	            if (spe.getException() != null)
-	                x = spe.getException();
-	            HelpPlugin.logError(buffer.toString(), x);
+				// Use the contained exception.
+				Exception x = spe;
+				if (spe.getException() != null)
+					x = spe.getException();
+				Platform.getLog(getClass()).error(buffer.toString(), x);
 
-	        }
+			}
 			catch (Throwable t) {
 				String msg = ERROR_READING_HELP_KEYWORD_INDEX_FILE + getIndexFilePath(indexFile) + "\" (skipping file)"; //$NON-NLS-1$
-				HelpPlugin.logError(msg, t);
+				Platform.getLog(getClass()).error(msg, t);
 			}
 		}
 		return contributions.toArray(new IIndexContribution[contributions.size()]);

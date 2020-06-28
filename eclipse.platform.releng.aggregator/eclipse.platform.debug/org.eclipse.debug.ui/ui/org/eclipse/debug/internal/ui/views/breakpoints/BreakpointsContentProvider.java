@@ -35,204 +35,180 @@ import org.eclipse.jface.viewers.Viewer;
  */
 public class BreakpointsContentProvider implements ITreeContentProvider, IPropertyChangeListener {
 
-    private IBreakpointOrganizer[] fOrganizers = null;
-    private BreakpointsViewer fViewer;
-    private Object[] fElements;
-    private boolean fDisposed = false;
+	private IBreakpointOrganizer[] fOrganizers = null;
+	private BreakpointsViewer fViewer;
+	private Object[] fElements;
+	private boolean fDisposed = false;
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Object[] getChildren(Object parentElement) {
-        if (parentElement.equals(DebugPlugin.getDefault().getBreakpointManager())) {
-        	return fElements;
-        } else if (parentElement instanceof BreakpointContainer) {
-        	return ((BreakpointContainer)parentElement).getChildren();
-        }
-        return new Object[0];
-    }
+		if (parentElement.equals(DebugPlugin.getDefault().getBreakpointManager())) {
+			return fElements;
+		} else if (parentElement instanceof BreakpointContainer) {
+			return ((BreakpointContainer)parentElement).getChildren();
+		}
+		return new Object[0];
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Object getParent(Object element) {
-        return null;
-    }
+		return null;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
-     */
-    @Override
+	@Override
 	public boolean hasChildren(Object element) {
-    	return getChildren(element).length > 0;
-    }
+		return getChildren(element).length > 0;
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
-     */
-    @Override
+	@Override
 	public Object[] getElements(Object inputElement) {
-        return getChildren(inputElement);
-    }
+		return getChildren(inputElement);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IContentProvider#dispose()
-     */
-    @Override
+	@Override
 	public void dispose() {
-        fDisposed = true;
-        fElements = null;
-        setOrganizers(null);
-    }
+		fDisposed = true;
+		fElements = null;
+		setOrganizers(null);
+	}
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-     */
-    @Override
+	@Override
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-    	fViewer = (BreakpointsViewer)viewer;
-        if (newInput != null) {
-            reorganize();
-        }
-    }
+		fViewer = (BreakpointsViewer)viewer;
+		if (newInput != null) {
+			reorganize();
+		}
+	}
 
-    /**
-     * Sets the nested order of breakpoint organizers, or <code>null</code>
-     * if none.
-     *
-     * @param organizers the nested order of breakpoint organizers, or <code>null</code>
-     * if none
-     */
-    public void setOrganizers(IBreakpointOrganizer[] organizers) {
-    	// remove previous listeners
-    	if (fOrganizers != null) {
-    		for (int i = 0; i < fOrganizers.length; i++) {
-				fOrganizers[i].removePropertyChangeListener(this);
+	/**
+	 * Sets the nested order of breakpoint organizers, or <code>null</code>
+	 * if none.
+	 *
+	 * @param organizers the nested order of breakpoint organizers, or <code>null</code>
+	 * if none
+	 */
+	public void setOrganizers(IBreakpointOrganizer[] organizers) {
+		// remove previous listeners
+		if (fOrganizers != null) {
+			for (IBreakpointOrganizer organizer : fOrganizers) {
+				organizer.removePropertyChangeListener(this);
 			}
-    	}
+		}
 		fOrganizers = organizers;
 		if (organizers != null && organizers.length == 0) {
 			fOrganizers = null;
 		}
-        // add listeners
-        if (fOrganizers != null) {
-        	for (int i = 0; i < fOrganizers.length; i++) {
-				fOrganizers[i].addPropertyChangeListener(this);
+		// add listeners
+		if (fOrganizers != null) {
+			for (IBreakpointOrganizer organizer : fOrganizers) {
+				organizer.addPropertyChangeListener(this);
 			}
-        }
-        if (!fDisposed) {
-            fViewer.getControl().setRedraw(false);
-            // maintain expansion based on visible breakpoints
-            IBreakpoint[] breakpoints = null;
-            if (isShowingGroups()) {
-                breakpoints = fViewer.getVisibleBreakpoints();
-            }
-            reorganize();
-            if (isShowingGroups() && breakpoints != null) {
-                // restore expansion
-                for (int i = 0; i < fElements.length; i++) {
-                    BreakpointContainer container = (BreakpointContainer) fElements[i];
-                    for (int j = 0; j < breakpoints.length; j++) {
-                        if (container.contains(breakpoints[j])) {
-                            fViewer.expandToLevel(container, AbstractTreeViewer.ALL_LEVELS);
-                            fViewer.updateCheckedState(container);
-                            break;
-                        }
-                    }
+		}
+		if (!fDisposed) {
+			fViewer.getControl().setRedraw(false);
+			// maintain expansion based on visible breakpoints
+			IBreakpoint[] breakpoints = null;
+			if (isShowingGroups()) {
+				breakpoints = fViewer.getVisibleBreakpoints();
+			}
+			reorganize();
+			if (isShowingGroups() && breakpoints != null) {
+				// restore expansion
+				for (Object element : fElements) {
+					BreakpointContainer container = (BreakpointContainer) element;
+					for (IBreakpoint breakpoint : breakpoints) {
+						if (container.contains(breakpoint)) {
+							fViewer.expandToLevel(container, AbstractTreeViewer.ALL_LEVELS);
+							fViewer.updateCheckedState(container);
+							break;
+						}
+					}
 
-                }
-            }
-            fViewer.getControl().setRedraw(true);
-        }
-    }
+				}
+			}
+			fViewer.getControl().setRedraw(true);
+		}
+	}
 
-    /**
-     * Returns the root containers containing the given breakpoint, or <code>null</code>
-     * if none
-     *
-     * @param breakpoint the breakpoint to get containers for
-     * @return root containers containing the given breakpoint or <code>null</code>
-     */
-    public BreakpointContainer[] getRoots(IBreakpoint breakpoint) {
-        if (isShowingGroups()) {
-			List<BreakpointContainer> list = new ArrayList<>();
-            for (int i = 0; i < fElements.length; i++) {
-                BreakpointContainer container = (BreakpointContainer) fElements[i];
-                if (container.contains(breakpoint)) {
-                    list.add(container);
-                }
-            }
-            return list.toArray(new BreakpointContainer[list.size()]);
-        }
-        return null;
-    }
-
-    /**
-     * Returns the nested order of breakpoint organizers being used, or <code>null</code>
-     * if none.
-     *
-     * @return the nested order of breakpoint organizers being used, or <code>null</code>
-     * if none
-     */
-    IBreakpointOrganizer[] getOrganizers() {
-        return fOrganizers;
-    }
-
-    /**
-     * Organizes the breakpoints based on nested categories, if any.
-     */
-    protected void reorganize() {
-        IBreakpoint[] breakpoints = DebugPlugin.getDefault().getBreakpointManager().getBreakpoints();
-        if (fOrganizers == null) {
-            fElements = breakpoints;
-        } else {
-            IBreakpointOrganizer organizer = fOrganizers[0];
-			Map<IAdaptable, BreakpointContainer> categoriesToContainers = new HashMap<>();
-            for (int i = 0; i < breakpoints.length; i++) {
-                IBreakpoint breakpoint = breakpoints[i];
-                IAdaptable[] categories = organizer.getCategories(breakpoint);
-                if (categories == null || categories.length == 0) {
-                	categories = OtherBreakpointCategory.getCategories(organizer);
-                }
-                for (int j = 0; j < categories.length; j++) {
-                    IAdaptable category = categories[j];
-                    BreakpointContainer container = categoriesToContainers.get(category);
-                    if (container == null) {
-                        IBreakpointOrganizer[] nesting = null;
-                        if (fOrganizers.length > 1) {
-                            nesting = new IBreakpointOrganizer[fOrganizers.length - 1];
-                            System.arraycopy(fOrganizers, 1, nesting, 0, nesting.length);
-                        }
-                        container = new BreakpointContainer(category, organizer, nesting);
-                        categoriesToContainers.put(category, container);
-                    }
-                    container.addBreakpoint(breakpoint);
-                }
-            }
-            // add empty categories
-            IAdaptable[] emptyCategories = organizer.getCategories();
-            if (emptyCategories != null) {
-                for (int i = 0; i < emptyCategories.length; i++) {
-                    IAdaptable category = emptyCategories[i];
-                    BreakpointContainer container = categoriesToContainers.get(category);
-                    if (container == null) {
-                        container = new BreakpointContainer(category, organizer, null);
-                        categoriesToContainers.put(category, container);
-                    }
-                }
-            }
-            fElements = categoriesToContainers.values().toArray();
-        }
-        fViewer.getControl().setRedraw(false);
-        fViewer.refresh();
-        fViewer.getControl().setRedraw(true);
-    }
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
+	/**
+	 * Returns the root containers containing the given breakpoint, or <code>null</code>
+	 * if none
+	 *
+	 * @param breakpoint the breakpoint to get containers for
+	 * @return root containers containing the given breakpoint or <code>null</code>
 	 */
+	public BreakpointContainer[] getRoots(IBreakpoint breakpoint) {
+		if (isShowingGroups()) {
+			List<BreakpointContainer> list = new ArrayList<>();
+			for (Object element : fElements) {
+				BreakpointContainer container = (BreakpointContainer) element;
+				if (container.contains(breakpoint)) {
+					list.add(container);
+				}
+			}
+			return list.toArray(new BreakpointContainer[list.size()]);
+		}
+		return null;
+	}
+
+	/**
+	 * Returns the nested order of breakpoint organizers being used, or <code>null</code>
+	 * if none.
+	 *
+	 * @return the nested order of breakpoint organizers being used, or <code>null</code>
+	 * if none
+	 */
+	IBreakpointOrganizer[] getOrganizers() {
+		return fOrganizers;
+	}
+
+	/**
+	 * Organizes the breakpoints based on nested categories, if any.
+	 */
+	protected void reorganize() {
+		IBreakpoint[] breakpoints = DebugPlugin.getDefault().getBreakpointManager().getBreakpoints();
+		if (fOrganizers == null) {
+			fElements = breakpoints;
+		} else {
+			IBreakpointOrganizer organizer = fOrganizers[0];
+			Map<IAdaptable, BreakpointContainer> categoriesToContainers = new HashMap<>();
+			for (IBreakpoint breakpoint : breakpoints) {
+				IAdaptable[] categories = organizer.getCategories(breakpoint);
+				if (categories == null || categories.length == 0) {
+					categories = OtherBreakpointCategory.getCategories(organizer);
+				}
+				for (IAdaptable category : categories) {
+					BreakpointContainer container = categoriesToContainers.get(category);
+					if (container == null) {
+						IBreakpointOrganizer[] nesting = null;
+						if (fOrganizers.length > 1) {
+							nesting = new IBreakpointOrganizer[fOrganizers.length - 1];
+							System.arraycopy(fOrganizers, 1, nesting, 0, nesting.length);
+						}
+						container = new BreakpointContainer(category, organizer, nesting);
+						categoriesToContainers.put(category, container);
+					}
+					container.addBreakpoint(breakpoint);
+				}
+			}
+			// add empty categories
+			IAdaptable[] emptyCategories = organizer.getCategories();
+			if (emptyCategories != null) {
+				for (IAdaptable emptyCategory : emptyCategories) {
+					BreakpointContainer container = categoriesToContainers.get(emptyCategory);
+					if (container == null) {
+						container = new BreakpointContainer(emptyCategory, organizer, null);
+						categoriesToContainers.put(emptyCategory, container);
+					}
+				}
+			}
+			fElements = categoriesToContainers.values().toArray();
+		}
+		fViewer.getControl().setRedraw(false);
+		fViewer.refresh();
+		fViewer.getControl().setRedraw(true);
+	}
+
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		if (event.getProperty().equals(IBreakpointOrganizerDelegate.P_CATEGORY_CHANGED)) {
@@ -241,41 +217,40 @@ public class BreakpointsContentProvider implements ITreeContentProvider, IProper
 		}
 	}
 
-    /**
-     * Returns the existing containers the given breakpoint is contained in, or <code>null</code>.
-     *
-     * @param breakpoint the breakpoint to get containers for
-     * @return the existing containers the given breakpoint is contained in, or <code>null</code>
-     */
-    protected BreakpointContainer[] getContainers(IBreakpoint breakpoint) {
-        if (isShowingGroups()) {
-            IAdaptable[] categories = fOrganizers[0].getCategories(breakpoint);
-            if (categories == null || categories.length == 0) {
-                categories = OtherBreakpointCategory.getCategories(fOrganizers[0]);
-            }
-            BreakpointContainer[] containers = new BreakpointContainer[categories.length];
-            int index = 0;
-            for (int i = 0; i < fElements.length; i++) {
-                BreakpointContainer container = (BreakpointContainer)fElements[i];
-                for (int j = 0; j < categories.length; j++) {
-                    IAdaptable category = categories[j];
-                    if (container.getCategory().equals(category)) {
-                        containers[index] = container;
-                        index++;
-                    }
-                }
-            }
-            return containers;
-        }
-        return null;
-    }
+	/**
+	 * Returns the existing containers the given breakpoint is contained in, or <code>null</code>.
+	 *
+	 * @param breakpoint the breakpoint to get containers for
+	 * @return the existing containers the given breakpoint is contained in, or <code>null</code>
+	 */
+	protected BreakpointContainer[] getContainers(IBreakpoint breakpoint) {
+		if (isShowingGroups()) {
+			IAdaptable[] categories = fOrganizers[0].getCategories(breakpoint);
+			if (categories == null || categories.length == 0) {
+				categories = OtherBreakpointCategory.getCategories(fOrganizers[0]);
+			}
+			BreakpointContainer[] containers = new BreakpointContainer[categories.length];
+			int index = 0;
+			for (Object element : fElements) {
+				BreakpointContainer container = (BreakpointContainer)element;
+				for (IAdaptable category : categories) {
+					if (container.getCategory().equals(category)) {
+						containers[index] = container;
+						index++;
+					}
+				}
+			}
+			return containers;
+		}
+		return null;
+	}
 
-    /**
-     * Returns whether content is grouped by categories.
-     *
-     * @return whether content is grouped by categories
-     */
-    protected boolean isShowingGroups() {
-        return fOrganizers != null;
-    }
+	/**
+	 * Returns whether content is grouped by categories.
+	 *
+	 * @return whether content is grouped by categories
+	 */
+	protected boolean isShowingGroups() {
+		return fOrganizers != null;
+	}
 }

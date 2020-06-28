@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -89,9 +89,6 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 		return mergeContext;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.subscribers.SubscriberMergeContext#getDiffFilter()
-	 */
 	@Override
 	protected DiffFilter getDiffFilter() {
 		final DiffFilter contentFilter = createContentFilter();
@@ -128,9 +125,6 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 		((IEclipsePreferences) CVSUIPlugin.getPlugin().getInstancePreferences().node("")).addPreferenceChangeListener(this); //$NON-NLS-1$
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.subscribers.SubscriberMergeContext#dispose()
-	 */
 	@Override
 	public void dispose() {
 		super.dispose();
@@ -153,16 +147,13 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 		if (isConsiderContents()) {
 			String pattern = CVSUIPlugin.getPlugin().getPreferenceStore().getString(
 					ICVSUIConstants.PREF_SYNCVIEW_REGEX_FILTER_PATTERN);
-			if (pattern != null && !pattern.equals("")) { //$NON-NLS-1$
+			if (pattern != null && !pattern.isEmpty()) {
 				return new RegexDiffFilter(pattern);
 			}
 		}
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener#preferenceChange(org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent)
-	 */
 	@Override
 	public void preferenceChange(PreferenceChangeEvent event) {
 		if (event.getKey().equals(ICVSUIConstants.PREF_CONSIDER_CONTENTS) || event.getKey().equals(ICVSUIConstants.PREF_SYNCVIEW_REGEX_FILTER_PATTERN)) {
@@ -183,8 +174,7 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 			DiffTree tree = ((DiffTree)getDiffTree());
 			try {
 				tree.beginInput();
-				for (int i = 0; i < nodes.length; i++) {
-					IDiff diff = nodes[i];
+				for (IDiff diff : nodes) {
 					tree.remove(diff.getPath());
 				}
 			} finally {
@@ -297,7 +287,7 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 	protected void ensureRemotesMatch(IResource resource, IDiff node, SyncInfo info) throws CVSException {
 		IResourceVariant variant = info.getRemote();
 		IFileRevision remote = getRemote(node);
-		if (variant != null && remote != null && remote instanceof IFileRevision) {
+		if (variant != null && remote != null) {
 			String ci1 = variant.getContentIdentifier();
 			String ci2 = remote.getContentIdentifier();
 			if (!ci1.equals(ci2)) {
@@ -319,9 +309,6 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.mapping.MergeContext#merge(org.eclipse.team.core.diff.IDiffNode, boolean, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	public IStatus merge(IDiff delta, boolean force, IProgressMonitor monitor) throws CoreException {
 		if (getMergeType() == ISynchronizationContext.TWO_WAY) {
@@ -374,17 +361,11 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 			cvsResources);
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.mapping.provider.MergeContext#getMergeType()
-	 */
 	@Override
 	public int getMergeType() {
 		return type;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.subscribers.SubscriberMergeContext#refresh(org.eclipse.core.resources.mapping.ResourceTraversal[], int, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	public void refresh(final ResourceTraversal[] traversals, int flags, IProgressMonitor monitor) throws CoreException {
 		SubscriberDiffTreeEventHandler handler = getHandler();
@@ -430,10 +411,10 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 			public ResourceTraversal[] getTraversals(ResourceMappingContext context, IProgressMonitor monitor) throws CoreException {
 				return traversals;
 			}
-		    @Override
+			@Override
 			public boolean contains(ResourceMapping mapping) {
-		    	return false;
-		    }
+				return false;
+			}
 			@Override
 			public String getModelProviderId() {
 				return ModelProvider.RESOURCE_MODEL_PROVIDER_ID;
@@ -484,8 +465,7 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 
 	private ResourceTraversal[] getTraversals(IDiff[] deltas) {
 		List<IResource> result = new ArrayList<>();
-		for (int i = 0; i < deltas.length; i++) {
-			IDiff diff = deltas[i];
+		for (IDiff diff : deltas) {
 			IResource resource = ResourceDiffTree.getResourceFor(diff);
 			if (resource != null) {
 				result.add(resource);
@@ -498,8 +478,7 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 
 	private IResourceDiffTree getDiffTree(IDiff[] deltas) {
 		ResourceDiffTree tree = new ResourceDiffTree();
-		for (int i = 0; i < deltas.length; i++) {
-			IDiff diff = deltas[i];
+		for (IDiff diff : deltas) {
 			tree.add(diff);
 		}
 		return tree;
@@ -512,12 +491,12 @@ public class WorkspaceSubscriberContext extends CVSSubscriberMergeContext implem
 			IFile file = (IFile) resource;
 			ICVSFile mFile = CVSWorkspaceRoot.getCVSFileFor(file);
 			try {
-	            // The file may have been set as read-only by a previous checkout/update
-	            if (mFile.isReadOnly()) mFile.setReadOnly(false);
-	        } catch (CVSException e) {
-	            // Just log and keep going
-	            CVSProviderPlugin.log(e);
-	        }
+				// The file may have been set as read-only by a previous checkout/update
+				if (mFile.isReadOnly()) mFile.setReadOnly(false);
+			} catch (CVSException e) {
+				// Just log and keep going
+				CVSProviderPlugin.log(e);
+			}
 		}
 		super.performReplace(diff, monitor);
 

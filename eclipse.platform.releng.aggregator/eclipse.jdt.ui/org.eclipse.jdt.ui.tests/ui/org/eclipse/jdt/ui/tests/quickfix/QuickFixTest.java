@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,13 +14,21 @@
  *******************************************************************************/
 package org.eclipse.jdt.ui.tests.quickfix;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
 import org.eclipse.jdt.testplugin.JavaProjectHelper;
 import org.eclipse.jdt.testplugin.StringAsserts;
@@ -40,8 +48,12 @@ import org.eclipse.ltk.core.refactoring.TextFileChange;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IProblemRequestor;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.WorkingCopyOwner;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
@@ -56,7 +68,6 @@ import org.eclipse.jdt.internal.corext.fix.LinkedProposalModel;
 import org.eclipse.jdt.internal.corext.fix.LinkedProposalPositionGroup;
 import org.eclipse.jdt.internal.corext.fix.LinkedProposalPositionGroup.Proposal;
 
-import org.eclipse.jdt.ui.tests.core.ProjectTestSetup;
 import org.eclipse.jdt.ui.text.java.IInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
@@ -74,70 +85,63 @@ import org.eclipse.jdt.internal.ui.text.correction.proposals.NewCUUsingWizardPro
 import org.eclipse.jdt.internal.ui.text.correction.proposals.RenameRefactoringProposal;
 import org.eclipse.jdt.internal.ui.text.template.contentassist.SurroundWithTemplateProposal;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 /**
  */
-public class QuickFixTest extends TestCase {
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+	QuickFixTest9.class,
+	QuickFixTest1d8.class,
+	QuickFixTest14.class,
+	SerialVersionQuickFixTest.class,
+	UtilitiesTest.class,
+	UnresolvedTypesQuickFixTest.class,
+	UnresolvedVariablesQuickFixTest.class,
+	UnresolvedMethodsQuickFixTest.class,
+	UnresolvedMethodsQuickFixTest1d8.class,
+	ReturnTypeQuickFixTest.class,
+	LocalCorrectionsQuickFixTest.class,
+	LocalCorrectionsQuickFixTest1d7.class,
+	LocalCorrectionsQuickFixTest1d8.class,
+	TypeMismatchQuickFixTests.class,
+	ReorgQuickFixTest.class,
+	ModifierCorrectionsQuickFixTest.class,
+	ModifierCorrectionsQuickFixTest1d7.class,
+	ModifierCorrectionsQuickFixTest9.class,
+	GetterSetterQuickFixTest.class,
+	AssistQuickFixTest.class,
+	AssistQuickFixTest1d7.class,
+	AssistQuickFixTest1d8.class,
+	AssistQuickFixTest12.class,
+	ChangeNonStaticToStaticTest.class,
+	MarkerResolutionTest.class,
+	JavadocQuickFixTest.class,
+	JavadocQuickFixTest9.class,
+	JavadocQuickFixTest14.class,
+	ConvertForLoopQuickFixTest.class,
+	ConvertIterableLoopQuickFixTest.class,
+	AdvancedQuickAssistTest.class,
+	AdvancedQuickAssistTest1d7.class,
+	AdvancedQuickAssistTest1d8.class,
+	CleanUpTestCase.class,
+	QuickFixEnablementTest.class,
+	SurroundWithTemplateTest.class,
+	TypeParameterMismatchTest.class,
+	PropertiesFileQuickAssistTest.class,
+	NullAnnotationsQuickFixTest.class,
+	NullAnnotationsQuickFixTest1d8.class,
+	NullAnnotationsQuickFixTest1d8Mix.class,
+	AnnotateAssistTest1d5.class,
+	AnnotateAssistTest1d8.class,
+	TypeAnnotationQuickFixTest.class
+})
 
-	public static Test suite() {
-		TestSuite suite= new TestSuite(QuickFixTest.class.getName());
-		suite.addTest(QuickFixTest9.suite());
-		suite.addTest(QuickFixTest18.suite());
-		suite.addTest(SerialVersionQuickFixTest.suite());
-		suite.addTest(UtilitiesTest.suite());
-		suite.addTest(UnresolvedTypesQuickFixTest.suite());
-		suite.addTest(UnresolvedVariablesQuickFixTest.suite());
-		suite.addTest(UnresolvedMethodsQuickFixTest.suite());
-		suite.addTest(UnresolvedMethodsQuickFixTest18.suite());
-		suite.addTest(ReturnTypeQuickFixTest.suite());
-		suite.addTest(LocalCorrectionsQuickFixTest.suite());
-		suite.addTest(LocalCorrectionsQuickFixTest17.suite());
-		suite.addTest(LocalCorrectionsQuickFixTest18.suite());
-		suite.addTest(TypeMismatchQuickFixTests.suite());
-		suite.addTest(ReorgQuickFixTest.suite());
-		suite.addTest(ModifierCorrectionsQuickFixTest.suite());
-		suite.addTest(ModifierCorrectionsQuickFixTest17.suite());
-		suite.addTest(ModifierCorrectionsQuickFixTest9.suite());
-		suite.addTest(GetterSetterQuickFixTest.suite());
-		suite.addTest(AssistQuickFixTest.suite());
-		suite.addTest(AssistQuickFixTest17.suite());
-		suite.addTest(AssistQuickFixTest18.suite());
-		suite.addTest(ChangeNonStaticToStaticTest.suite());
-		suite.addTest(MarkerResolutionTest.suite());
-		suite.addTest(JavadocQuickFixTest.suite());
-		suite.addTest(ConvertForLoopQuickFixTest.suite());
-		suite.addTest(ConvertIterableLoopQuickFixTest.suite());
-		suite.addTest(AdvancedQuickAssistTest.suite());
-		suite.addTest(AdvancedQuickAssistTest17.suite());
-		suite.addTest(AdvancedQuickAssistTest18.suite());
-		suite.addTest(CleanUpTestCase.suite());
-		suite.addTest(QuickFixEnablementTest.suite());
-		suite.addTest(SurroundWithTemplateTest.suite());
-		suite.addTest(TypeParameterMismatchTest.suite());
-		suite.addTest(PropertiesFileQuickAssistTest.suite());
-		suite.addTest(NullAnnotationsQuickFixTest.suite());
-		suite.addTest(NullAnnotationsQuickFixTest18.suite());
-		suite.addTest(NullAnnotationsQuickFixTest18Mix.suite());
-		suite.addTest(AnnotateAssistTest15.suite());
-		suite.addTest(AnnotateAssistTest18.suite());
-		suite.addTest(TypeAnnotationQuickFixTest.suite());
-
-		return new ProjectTestSetup(suite);
-	}
-
-
-	public QuickFixTest(String name) {
-		super(name);
-	}
+public class QuickFixTest {
 
 	public static void assertCorrectLabels(List<? extends ICompletionProposal> proposals) {
 		for (int i= 0; i < proposals.size(); i++) {
 			ICompletionProposal proposal= proposals.get(i);
 			String name= proposal.getDisplayString();
-			if (name == null || name.length() == 0 || name.charAt(0) == '!' || name.indexOf("{0}") != -1 || name.indexOf("{1}") != -1) {
+			if (name == null || name.length() == 0 || name.charAt(0) == '!' || name.contains("{0}") || name.contains("{1}")) {
 				assertTrue("wrong proposal label: " + name, false);
 			}
 			if (proposal.getImage() == null) {
@@ -202,8 +206,8 @@ public class QuickFixTest extends TestCase {
 
 	public static TypeDeclaration findTypeDeclaration(CompilationUnit astRoot, String simpleTypeName) {
 		List<AbstractTypeDeclaration> types= astRoot.types();
-		for (int i= 0; i < types.size(); i++) {
-			TypeDeclaration elem= (TypeDeclaration) types.get(i);
+		for (AbstractTypeDeclaration type : types) {
+			TypeDeclaration elem= (TypeDeclaration) type;
 			if (simpleTypeName.equals(elem.getName().getIdentifier())) {
 				return elem;
 			}
@@ -212,21 +216,18 @@ public class QuickFixTest extends TestCase {
 	}
 
 	public static MethodDeclaration findMethodDeclaration(TypeDeclaration typeDecl, String methodName) {
-		MethodDeclaration[] methods= typeDecl.getMethods();
-		for (int i= 0; i < methods.length; i++) {
-			if (methodName.equals(methods[i].getName().getIdentifier())) {
-				return methods[i];
+		for (MethodDeclaration method : typeDecl.getMethods()) {
+			if (methodName.equals(method.getName().getIdentifier())) {
+				return method;
 			}
 		}
 		return null;
 	}
 
 	public static VariableDeclarationFragment findFieldDeclaration(TypeDeclaration typeDecl, String fieldName) {
-		FieldDeclaration[] fields= typeDecl.getFields();
-		for (int i= 0; i < fields.length; i++) {
-			List<VariableDeclarationFragment> list= fields[i].fragments();
-			for (int k= 0; k < list.size(); k++) {
-				VariableDeclarationFragment fragment= list.get(k);
+		for (FieldDeclaration field : typeDecl.getFields()) {
+			List<VariableDeclarationFragment> list= field.fragments();
+			for (VariableDeclarationFragment fragment : list) {
 				if (fieldName.equals(fragment.getName().getIdentifier())) {
 					return fragment;
 				}
@@ -284,7 +285,7 @@ public class QuickFixTest extends TestCase {
 	protected static final ArrayList<ICompletionProposal> collectAllCorrections(ICompilationUnit cu, CompilationUnit astRoot, int nProblems) throws CoreException {
 		IProblem[] problems= astRoot.getProblems();
 		assertNumberOfProblems(nProblems, problems);
-		
+
 		ArrayList<ICompletionProposal> corrections= new ArrayList<>();
 		for (int i= 0; i < nProblems; i++) {
 			corrections.addAll(collectCorrections(cu, problems[i], null));
@@ -295,11 +296,11 @@ public class QuickFixTest extends TestCase {
 
 	protected static void assertNumberOfProblems(int nProblems, IProblem[] problems) {
 		if (problems.length != nProblems) {
-			StringBuffer buf= new StringBuffer("Wrong number of problems, is: ");
+			StringBuilder buf= new StringBuilder("Wrong number of problems, is: ");
 			buf.append(problems.length).append(", expected: ").append(nProblems).append('\n');
-			for (int i= 0; i < problems.length; i++) {
-				buf.append(problems[i]);
-				buf.append('[').append(problems[i].getSourceStart()).append(" ,").append(problems[i].getSourceEnd()).append(']');
+			for (IProblem problem : problems) {
+				buf.append(problem);
+				buf.append('[').append(problem.getSourceStart()).append(" ,").append(problem.getSourceEnd()).append(']');
 				buf.append('\n');
 			}
 			assertTrue(buf.toString(), false);
@@ -376,9 +377,7 @@ public class QuickFixTest extends TestCase {
 	public static void assertStatusOk(IStatus status) throws CoreException {
 		if (!status.isOK()) {
 			if (status.getException() == null) {  // find a status with an exception
-				IStatus[] children= status.getChildren();
-				for (int i= 0; i < children.length; i++) {
-					IStatus child= children[i];
+				for (IStatus child : status.getChildren()) {
 					if (child.getException() != null) {
 						throw new CoreException(child);
 					}
@@ -409,8 +408,8 @@ public class QuickFixTest extends TestCase {
 	}
 
 	private static boolean isFiltered(Object curr, Class<?>[] filteredTypes) {
-		for (int k = 0; k < filteredTypes.length; k++) {
-			if (filteredTypes[k].isInstance(curr)) {
+		for (Class<?> filteredType : filteredTypes) {
+			if (filteredType.isInstance(curr)) {
 				return true;
 			}
 		}
@@ -457,7 +456,7 @@ public class QuickFixTest extends TestCase {
 		}
 		return previewContent;
 	}
-	
+
 	private static String getSEFPreviewContent(SelfEncapsulateFieldProposal sefp) throws CoreException {
 		ICompilationUnit compilationUnit= sefp.getField().getCompilationUnit();
 		TextFileChange change= sefp.getChange((IFile) compilationUnit.getResource());
@@ -488,7 +487,7 @@ public class QuickFixTest extends TestCase {
 
 	protected static String[] getAllDisplayStrings(ArrayList<IJavaCompletionProposal> proposals) {
 		return proposals.stream()
-				.map(proposal -> proposal.getDisplayString())
+				.map(IJavaCompletionProposal::getDisplayString)
 				.filter(displayString -> displayString != null && !displayString.isEmpty())
 				.toArray(String[]::new);
 	}
@@ -507,7 +506,7 @@ public class QuickFixTest extends TestCase {
 		} else {
 			JavaProjectHelper.delete(parent);
 		}
-		StringBuffer res= new StringBuffer();
+		StringBuilder res= new StringBuilder();
 		IDocument doc= new Document(preview);
 		int nLines= doc.getNumberOfLines();
 		for (int i= 0; i < nLines; i++) {
@@ -566,10 +565,9 @@ public class QuickFixTest extends TestCase {
 	}
 
 	protected static void assertNoErrors(IInvocationContext context) {
-		IProblem[] problems= context.getASTRoot().getProblems();
-		for (int i= 0; i < problems.length; i++) {
-			if (problems[i].isError()) {
-				assertTrue("source has error: " + problems[i].getMessage(), false);
+		for (IProblem problem : context.getASTRoot().getProblems()) {
+			if (problem.isError()) {
+				assertTrue("source has error: " + problem.getMessage(), false);
 			}
 		}
 	}
@@ -623,19 +621,26 @@ public class QuickFixTest extends TestCase {
 		int last= curr.length() - 1;
 		for (int k= 0; k <= last ; k++) {
 			char ch= curr.charAt(k);
-			if (ch == '\n') {
+			switch (ch) {
+			case '\n':
 				buf.append("\\n\");\n");
 				if (k < last) {
 					buf.append("buf.append(\"");
 				}
-			} else if (ch == '\r') {
-				// ignore
-			} else if (ch == '\t') {
+				break;
+			// ignore
+			case '\r':
+				break;
+			case '\t':
 				buf.append("    "); // 4 spaces
-			} else if (ch == '"' || ch == '\\') {
+				break;
+			case '"':
+			case '\\':
 				buf.append('\\').append(ch);
-			} else {
+				break;
+			default:
 				buf.append(ch);
+				break;
 			}
 		}
 		if (buf.length() > 0 && buf.charAt(buf.length() - 1) != '\n') {
@@ -659,5 +664,34 @@ public class QuickFixTest extends TestCase {
 		for (int i=0; i<expectedChoices.length; i++) {
 			assertEquals("Unexpected choice", expectedChoices[i], sortedChoices.get(i));
 		}
+	}
+/**
+ * Computes the number of warnings the java file "filename" has.
+ * Then check if the "preview" source code has the same number of warnings.
+ * Throw error if the number changes.
+ *
+ * @param pack
+ * @param preview
+ * @param className
+ * @param filename
+ * @param fSourceFolder
+ * @throws JavaModelException
+ */
+	protected void assertNoAdditionalProblems(IPackageFragment pack, String preview, String className, String filename, IPackageFragmentRoot fSourceFolder) throws JavaModelException {
+		Hashtable<String, String> options= JavaCore.getOptions();
+		options.put(JavaCore.COMPILER_PB_UNUSED_LOCAL, JavaCore.ERROR);
+		JavaCore.setOptions(options);
+
+		ICompilationUnit cu= pack.getCompilationUnit(filename);
+		CompilationUnit astRoot= getASTRoot(cu);
+		IProblem[] problems= astRoot.getProblems();
+		int nrofproblems= problems.length;
+
+		pack.delete(true, null);
+		pack= fSourceFolder.createPackageFragment(className, false, null);
+		cu= pack.createCompilationUnit(filename, preview, false, null);
+		astRoot= getASTRoot(cu);
+		problems= astRoot.getProblems();
+		assertNumberOfProblems(nrofproblems, problems);
 	}
 }

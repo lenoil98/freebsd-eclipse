@@ -81,7 +81,7 @@ public class WorkingSetScope extends AbstractHelpScope {
 				if (parent instanceof AdaptableHelpResource) {
 					adaptable = (AdaptableHelpResource) parent;
 				} else {
-				    adaptable = null;
+					adaptable = null;
 				}
 			}
 		}
@@ -132,7 +132,7 @@ public class WorkingSetScope extends AbstractHelpScope {
 	private Map<String, Set<String>> getCriteriaInfo(ICriteria[] criteria) {
 		Map<String, Set<String>> criteriaMap = new HashMap<>();
 		CriteriaUtilities.addCriteriaToMap(criteriaMap, criteria);
-	    return criteriaMap;
+		return criteriaMap;
 	}
 
 	@Override
@@ -157,7 +157,7 @@ public class WorkingSetScope extends AbstractHelpScope {
 					return isHrefInScope(topic.getHref());
 				} else {
 					if (uae instanceof ITopic) {
-					    topics.add(uae);
+						topics.add(uae);
 					}
 					uae = uae.getParentElement();
 				}
@@ -194,8 +194,7 @@ public class WorkingSetScope extends AbstractHelpScope {
 			anchorlessHref = href;
 		}
 
-		for (int i = 0; i < elements.length; i++) {
-			AdaptableHelpResource adaptable = elements[i];
+		for (AdaptableHelpResource adaptable : elements) {
 			if (adaptable.getTopic(anchorlessHref) != null) {
 				return true;
 			}

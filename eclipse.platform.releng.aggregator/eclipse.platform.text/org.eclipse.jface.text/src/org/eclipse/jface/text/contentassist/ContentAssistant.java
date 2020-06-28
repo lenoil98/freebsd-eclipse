@@ -804,10 +804,11 @@ public class ContentAssistant implements IContentAssistant, IContentAssistantExt
 		@Override
 		public void verifyKey(VerifyEvent e) {
 			IContentAssistListener[] listeners= fListeners.clone();
-			for (int i= 0; i < listeners.length; i++) {
-				if (listeners[i] != null) {
-					if (!listeners[i].verifyKey(e) || !e.doit)
+			for (IContentAssistListener listener : listeners) {
+				if (listener != null) {
+					if (!listener.verifyKey(e) || !e.doit) {
 						break;
+					}
 				}
 			}
 			if (fAutoAssistListener != null)
@@ -2113,9 +2114,16 @@ public class ContentAssistant implements IContentAssistant, IContentAssistantExt
 		if (processors == null || processors.isEmpty()) {
 			return null;
 		}
-		// pick first one, arbitrary
-		IContentAssistProcessor p = processors.iterator().next();
-		return p != null ? p.getContextInformationValidator() : null;
+		IContextInformationValidator[] validators= processors.stream()
+				.map(IContentAssistProcessor::getContextInformationValidator)
+				.filter(Objects::nonNull)
+				.toArray(IContextInformationValidator[]::new);
+		if (validators.length == 0) {
+			return null;
+		} else if (validators.length == 1) {
+			return validators[0];
+		}
+		return new CompositeContextInformationValidator(validators);
 	}
 
 	/**
@@ -2134,9 +2142,16 @@ public class ContentAssistant implements IContentAssistant, IContentAssistantExt
 		if (processors == null || processors.isEmpty()) {
 			return null;
 		}
-		// pick first one, arbitrary
-		IContentAssistProcessor p = processors.iterator().next();
-		return p != null ? p.getContextInformationValidator() : null;
+		IContextInformationValidator[] validators= processors.stream()
+				.map(IContentAssistProcessor::getContextInformationValidator)
+				.filter(Objects::nonNull)
+				.toArray(IContextInformationValidator[]::new);
+		if (validators.length == 0) {
+			return null;
+		} else if (validators.length == 1) {
+			return validators[0];
+		}
+		return new CompositeContextInformationValidator(validators);
 	}
 
 	/**
@@ -2464,12 +2479,12 @@ public class ContentAssistant implements IContentAssistant, IContentAssistantExt
 	/**
 	 * Returns the prefix completion state.
 	 *
-     * @return <code>true</code> if prefix completion is enabled, <code>false</code> otherwise
-     * @since 3.2
-     */
-    boolean isPrefixCompletionEnabled() {
-	    return fIsPrefixCompletionEnabled;
-    }
+	 * @return <code>true</code> if prefix completion is enabled, <code>false</code> otherwise
+	 * @since 3.2
+	 */
+	boolean isPrefixCompletionEnabled() {
+		return fIsPrefixCompletionEnabled;
+	}
 
 	/**
 	 * Returns whether the content assistant proposal popup has the focus.
@@ -2732,7 +2747,7 @@ public class ContentAssistant implements IContentAssistant, IContentAssistantExt
 	 * @since 3.4
 	 */
 	boolean isColoredLabelsSupportEnabled() {
-	    return fIsColoredLabelsSupportEnabled;
+		return fIsColoredLabelsSupportEnabled;
 	}
 
 	/**

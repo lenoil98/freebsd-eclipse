@@ -27,17 +27,16 @@ import org.eclipse.ui.internal.Workbench;
 import org.eclipse.ui.internal.dialogs.WorkbenchPreferenceNode;
 
 /**
- *  Instances access the registry that is provided at creation time in order
- *  to determine the contributed preference pages
+ * Instances access the registry that is provided at creation time in order to
+ * determine the contributed preference pages
  */
 public class PreferencePageRegistryReader extends CategorizedPageRegistryReader {
 
 	private static final String TAG_PAGE = "page"; //$NON-NLS-1$
 
-	private List nodes;
+	private List<WorkbenchPreferenceNode> nodes;
 
 	private IWorkbench workbench;
-
 
 	class PreferencesCategoryNode extends CategoryNode {
 
@@ -45,11 +44,11 @@ public class PreferencePageRegistryReader extends CategorizedPageRegistryReader 
 
 		/**
 		 * Create a new instance of the receiver.
+		 *
 		 * @param reader
 		 * @param nodeToCategorize
 		 */
-		public PreferencesCategoryNode(CategorizedPageRegistryReader reader,
-				WorkbenchPreferenceNode nodeToCategorize) {
+		public PreferencesCategoryNode(CategorizedPageRegistryReader reader, WorkbenchPreferenceNode nodeToCategorize) {
 			super(reader);
 			this.node = nodeToCategorize;
 		}
@@ -81,8 +80,7 @@ public class PreferencePageRegistryReader extends CategorizedPageRegistryReader 
 
 	@Override
 	Object findNode(String id) {
-		for (int i = 0; i < nodes.size(); i++) {
-			WorkbenchPreferenceNode node = (WorkbenchPreferenceNode) nodes.get(i);
+		for (WorkbenchPreferenceNode node : nodes) {
 			if (node.getId().equals(id)) {
 				return node;
 			}
@@ -120,27 +118,27 @@ public class PreferencePageRegistryReader extends CategorizedPageRegistryReader 
 	@Override
 	protected String invalidCategoryNodeMessage(CategoryNode categoryNode) {
 		WorkbenchPreferenceNode wpn = (WorkbenchPreferenceNode) categoryNode.getNode();
-		return "Invalid preference category path: " + wpn.getCategory() + " (bundle: " + wpn.getPluginId() + ", page: " + wpn.getLocalId() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		return "Invalid preference category path: " + wpn.getCategory() + " (bundle: " + wpn.getPluginId() + ", page: " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				+ wpn.getLocalId() + ")"; //$NON-NLS-1$
 	}
 
 	@Override
-	Collection getNodes() {
+	Collection<?> getNodes() {
 		return nodes;
 	}
 
 	/**
-	 * Load the preference page contirbutions from the registry and
-	 * organize preference node contributions by category into hierarchies
-	 * If there is no page for a given node in the hierarchy then a blank
-	 * page will be created.
-	 * If no category has been specified or category information
-	 * is incorrect, page will appear at the root level. workbench
-	 * log entry will be created for incorrect category information.
+	 * Load the preference page contributions from the registry and organize
+	 * preference node contributions by category into hierarchies If there is no
+	 * page for a given node in the hierarchy then a blank page will be created. If
+	 * no category has been specified or category information is incorrect, page
+	 * will appear at the root level. workbench log entry will be created for
+	 * incorrect category information.
 	 *
 	 * @param registry the extension registry
 	 */
 	public void loadFromRegistry(IExtensionRegistry registry) {
-		nodes = new ArrayList();
+		nodes = new ArrayList<>();
 
 		readRegistry(registry, PlatformUI.PLUGIN_ID, IWorkbenchRegistryConstants.PL_PREFERENCES);
 
@@ -159,8 +157,7 @@ public class PreferencePageRegistryReader extends CategorizedPageRegistryReader 
 		WorkbenchPreferenceNode node = createNode(element);
 		if (node != null) {
 			if (workbench instanceof Workbench) {
-				if (node.getId().equals(
-						((Workbench) workbench).getMainPreferencePageId()))
+				if (node.getId().equals(((Workbench) workbench).getMainPreferencePageId()))
 					node.setPriority(-1);
 			}
 			nodes.add(node);
@@ -170,6 +167,7 @@ public class PreferencePageRegistryReader extends CategorizedPageRegistryReader 
 
 	/**
 	 * Create a workbench preference node.
+	 *
 	 * @param element
 	 * @return WorkbenchPreferenceNode
 	 */
@@ -192,16 +190,16 @@ public class PreferencePageRegistryReader extends CategorizedPageRegistryReader 
 			return null;
 		}
 
-		WorkbenchPreferenceNode node = new WorkbenchPreferenceNode(id, element);
-		return node;
+		return new WorkbenchPreferenceNode(id, element);
 	}
 
 	/**
 	 * Return the top level IPreferenceNodes, minus the one which fail the
 	 * Expression check.
-	 * @return  Collection of IPreferenceNode.
+	 *
+	 * @return Collection of IPreferenceNode.
 	 */
-	public Collection getTopLevelNodes() {
-		return WorkbenchActivityHelper.restrictCollection(topLevelNodes, new ArrayList());
+	public Collection<?> getTopLevelNodes() {
+		return WorkbenchActivityHelper.restrictCollection(topLevelNodes, new ArrayList<>());
 	}
 }

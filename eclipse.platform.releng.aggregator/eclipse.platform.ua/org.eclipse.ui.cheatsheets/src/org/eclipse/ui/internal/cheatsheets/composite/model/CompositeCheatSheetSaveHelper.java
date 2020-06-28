@@ -57,12 +57,12 @@ public class CompositeCheatSheetSaveHelper {
 		if (readMemento == null) {
 			return Status.OK_STATUS;
 		}
-        taskMementoMap = createTaskMap(readMemento);
-        loadTaskState(taskMementoMap, (AbstractTask)model.getRootTask());
-        loadCheatsheetManagerData(readMemento, model.getCheatSheetManager());
-        loadLayoutData(readMemento, layoutData);
-        model.sendTaskChangeEvents();
-        return Status.OK_STATUS;
+		taskMementoMap = createTaskMap(readMemento);
+		loadTaskState(taskMementoMap, (AbstractTask)model.getRootTask());
+		loadCheatsheetManagerData(readMemento, model.getCheatSheetManager());
+		loadLayoutData(readMemento, layoutData);
+		model.sendTaskChangeEvents();
+		return Status.OK_STATUS;
 	}
 
 	private Map<String, IMemento> createTaskMap(XMLMemento readMemento) {
@@ -129,8 +129,8 @@ public class CompositeCheatSheetSaveHelper {
 		if (stateManager instanceof NoSaveStateManager) return Status.OK_STATUS;
 		XMLMemento writeMemento = XMLMemento.createWriteRoot(ICompositeCheatsheetTags.COMPOSITE_CHEATSHEET_STATE);
 		writeMemento.putString(IParserTags.ID, model.getId());
-        saveTaskState(writeMemento, (AbstractTask)model.getRootTask());
-        saveCheatSheetManagerData(writeMemento, model.getCheatSheetManager());
+		saveTaskState(writeMemento, (AbstractTask)model.getRootTask());
+		saveCheatSheetManagerData(writeMemento, model.getCheatSheetManager());
 		taskMementoMap = createTaskMap(writeMemento);
 		if (layoutData != null) {
 			saveMap(writeMemento, layoutData, ICompositeCheatsheetTags.LAYOUT_DATA);
@@ -147,8 +147,9 @@ public class CompositeCheatSheetSaveHelper {
 	}
 
 	private void saveMap(XMLMemento writeMemento, Map<String, String> data, String tag) {
-		for (String key : data.keySet()) {
-			String value = data.get(key);
+		for (Map.Entry<String, String> entry : data.entrySet()) {
+			String key = entry.getKey();
+			String value = entry.getValue();
 			IMemento childMemento = writeMemento.createChild(tag);
 			childMemento.putString(ICompositeCheatsheetTags.KEY, key);
 			childMemento.putString(ICompositeCheatsheetTags.VALUE, value);
@@ -182,9 +183,9 @@ public class CompositeCheatSheetSaveHelper {
 	}
 
 	private TaskEditor getEditor(AbstractTask task) {
-        if (task instanceof EditableTask) {
-        	return ((EditableTask)task).getEditor();
-        }
+		if (task instanceof EditableTask) {
+			return ((EditableTask)task).getEditor();
+		}
 		return null;
 	}
 
@@ -193,10 +194,10 @@ public class CompositeCheatSheetSaveHelper {
 			return null;
 		}
 		IMemento childMemento = taskMementoMap.get(id);
-	    if (childMemento == null) {
-	    	return  null;
-	    }
-	    return childMemento.getChild(ICompositeCheatsheetTags.TASK_DATA);
+		if (childMemento == null) {
+			return  null;
+		}
+		return childMemento.getChild(ICompositeCheatsheetTags.TASK_DATA);
 	}
 
 	public void clearTaskMementos() {

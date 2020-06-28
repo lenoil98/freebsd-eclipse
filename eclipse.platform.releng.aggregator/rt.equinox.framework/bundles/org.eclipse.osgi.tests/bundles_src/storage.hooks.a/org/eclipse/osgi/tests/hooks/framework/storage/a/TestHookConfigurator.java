@@ -13,16 +13,25 @@
  *******************************************************************************/
 package org.eclipse.osgi.tests.hooks.framework.storage.a;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import org.eclipse.osgi.container.Module;
 import org.eclipse.osgi.container.ModuleContainerAdaptor.ModuleEvent;
 import org.eclipse.osgi.container.ModuleRevisionBuilder;
+import org.eclipse.osgi.container.ModuleRevisionBuilder.GenericInfo;
 import org.eclipse.osgi.internal.hookregistry.ActivatorHookFactory;
 import org.eclipse.osgi.internal.hookregistry.HookConfigurator;
 import org.eclipse.osgi.internal.hookregistry.HookRegistry;
@@ -91,11 +100,19 @@ public class TestHookConfigurator implements HookConfigurator {
 					// try setting the ID to something which is checked during the test
 					builder.setId(5678);
 					Map<String, String> dirs = Collections.emptyMap();
-					Map<String, Object> attrs = new HashMap<String, Object>();
+					Map<String, Object> attrs = new HashMap<>();
 					attrs.put("test.file.path", getGeneration().getContent().getPath() + " - " + adaptCount.getAndIncrement());
 					attrs.put("test.operation", operation.toString());
 					attrs.put("test.origin", origin.getLocation());
 					builder.addCapability("test.file.path", dirs, attrs);
+				}
+				if (TestHookConfigurator.adaptCapabilityAttribute) {
+					for (GenericInfo c : builder.getCapabilities()) {
+						if (BundleNamespace.BUNDLE_NAMESPACE.equals(c.getNamespace())) {
+							c.getAttributes().put("matching.attribute", "testAttribute");
+							c.getDirectives().put("matching.directive", "testDirective");
+						}
+					}
 				}
 				return builder;
 			}
@@ -112,10 +129,39 @@ public class TestHookConfigurator implements HookConfigurator {
 		@Override
 		protected TestStorageHook createStorageHook(Generation generation) {
 			createStorageHookCalled = true;
+			if (returnNullStorageHook) {
+				return null;
+			}
 			Class<?> factoryClass = TestStorageHookFactory.class;
 			if (invalidFactoryClass)
 				factoryClass = StorageHookFactory.class;
 			return new TestStorageHook(generation, factoryClass);
+		}
+
+		@Override
+		public URLConnection handleContentConnection(Module module, String location, InputStream in) throws IOException {
+			if (handleContentConnection) {
+				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				Manifest manifest = new Manifest();
+				Attributes attrs = manifest.getMainAttributes();
+				attrs.putValue("Manifest-Version", "1.0"); //$NON-NLS-1$ //$NON-NLS-2$
+				attrs.putValue(Constants.BUNDLE_MANIFESTVERSION, "2");
+				attrs.putValue(Constants.BUNDLE_SYMBOLICNAME, "testHandleContentConnection");
+				JarOutputStream jos = new JarOutputStream(baos, manifest);
+				jos.close();
+				return new URLConnection(null) {
+					@Override
+					public void connect() {
+						connected = true;
+					}
+
+					@Override
+					public InputStream getInputStream() {
+						return new ByteArrayInputStream(baos.toByteArray());
+					}
+				};
+			}
+			return super.handleContentConnection(module, location, in);
 		}
 	}
 
@@ -126,7 +172,10 @@ public class TestHookConfigurator implements HookConfigurator {
 	public static volatile boolean validateCalled;
 	public static volatile boolean deletingGenerationCalled;
 	public static volatile boolean adaptManifest;
+	public static volatile boolean adaptCapabilityAttribute;
 	public static volatile boolean replaceModuleBuilder;
+	public static volatile boolean handleContentConnection;
+	public static volatile boolean returnNullStorageHook;
 
 	public void addHooks(HookRegistry hookRegistry) {
 		hookRegistry.addStorageHookFactory(new TestStorageHookFactory());

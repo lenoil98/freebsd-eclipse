@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -310,7 +311,7 @@ public class Utils {
 			if (!shell.isDisposed())
 				return shell;
 		}
-		IWorkbench workbench = TeamUIPlugin.getPlugin().getWorkbench();
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		if (workbench != null) {
 			IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
 			if (window != null) {
@@ -573,7 +574,7 @@ public class Utils {
 		if (relPath != null && !relPath.equals(imageKey) && relPath.trim().length() > 0) {
 			String dPath;
 			String ePath;
-			if (relPath.indexOf("/") >= 0) { //$NON-NLS-1$
+			if (relPath.contains("/")) { //$NON-NLS-1$
 				String path = relPath.substring(1);
 				dPath = 'd' + path;
 				ePath = 'e' + path;
@@ -590,15 +591,15 @@ public class Utils {
 		}
 	}
 
-    public static String getString(String key, ResourceBundle b) {
-        try {
-            return b.getString(key);
-        } catch (MissingResourceException e) {
-            return key;
-        } catch (NullPointerException e) {
-            return "!" + key + "!"; //$NON-NLS-1$ //$NON-NLS-2$
-        }
-    }
+	public static String getString(String key, ResourceBundle b) {
+		try {
+			return b.getString(key);
+		} catch (MissingResourceException e) {
+			return key;
+		} catch (NullPointerException e) {
+			return "!" + key + "!"; //$NON-NLS-1$ //$NON-NLS-2$
+		}
+	}
 
 	public static String modeToString(int mode) {
 		switch (mode) {
@@ -623,47 +624,46 @@ public class Utils {
 	private static IResource[] getResources(Object[] elements, List<Object> nonResources,
 			boolean isContributed, boolean includeMappingResources) {
 		List<IResource> resources = new ArrayList<>();
-		for (int i = 0; i < elements.length; i++) {
-			Object element = elements[i];
+		for (Object element : elements) {
 			boolean isResource = false;
 			if (element instanceof IResource) {
 				resources.add((IResource) element);
-                isResource = true;
+				isResource = true;
 			} else if (element instanceof ISynchronizeModelElement){
-                IResource resource = ((ISynchronizeModelElement) element).getResource();
-                if (resource != null) {
-                    resources.add(resource);
-                    isResource = true;
-                }
-            } else if (element instanceof ResourceMapping) {
-            	if (includeMappingResources) {
-	                isResource = true;
-	                getResources((ResourceMapping)element, resources);
-            	}
+				IResource resource = ((ISynchronizeModelElement) element).getResource();
+				if (resource != null) {
+					resources.add(resource);
+					isResource = true;
+				}
+			} else if (element instanceof ResourceMapping) {
+				if (includeMappingResources) {
+					isResource = true;
+					getResources((ResourceMapping)element, resources);
+				}
 			} else if (element != null) {
-                Object adapted;
-                if (isContributed) {
-                    adapted = getResource(element);
-                } else {
-                    adapted = Adapters.adapt(element, IResource.class);
-                }
-                if (adapted instanceof IResource) {
-                    IResource resource = (IResource) adapted;
-                    isResource = true;
-                    if (resource.getType() != IResource.ROOT) {
-                        resources.add(resource);
-                    }
-                } else {
-                    if (isContributed) {
-                        adapted = getResourceMapping(element);
-                    } else {
-                        adapted = Adapters.adapt(element, ResourceMapping.class);
-                    }
-                    if (adapted instanceof ResourceMapping && includeMappingResources) {
-                        isResource = true;
-                        getResources((ResourceMapping) adapted, resources);
-                    }
-                }
+				Object adapted;
+				if (isContributed) {
+					adapted = getResource(element);
+				} else {
+					adapted = Adapters.adapt(element, IResource.class);
+				}
+				if (adapted instanceof IResource) {
+					IResource resource = (IResource) adapted;
+					isResource = true;
+					if (resource.getType() != IResource.ROOT) {
+						resources.add(resource);
+					}
+				} else {
+					if (isContributed) {
+						adapted = getResourceMapping(element);
+					} else {
+						adapted = Adapters.adapt(element, ResourceMapping.class);
+					}
+					if (adapted instanceof ResourceMapping && includeMappingResources) {
+						isResource = true;
+						getResources((ResourceMapping) adapted, resources);
+					}
+				}
 			}
 			if (!isResource) {
 				if (nonResources != null)
@@ -673,21 +673,17 @@ public class Utils {
 		return resources.toArray(new IResource[resources.size()]);
 	}
 
-    private static void getResources(ResourceMapping element, List<IResource> resources) {
-        try {
-            ResourceTraversal[] traversals = element.getTraversals(ResourceMappingContext.LOCAL_CONTEXT, null);
-            for (int k = 0; k < traversals.length; k++) {
-                ResourceTraversal traversal = traversals[k];
-                IResource[] resourceArray = traversal.getResources();
-                for (int j = 0; j < resourceArray.length; j++) {
-                    IResource resource = resourceArray[j];
-                    resources.add(resource);
-                }
-            }
-        } catch (CoreException e) {
-            TeamUIPlugin.log(new Status(IStatus.ERROR, TeamUIPlugin.ID, 0, "Error traversing resource mapping", e)); //$NON-NLS-1$
-        }
-    }
+	private static void getResources(ResourceMapping element, List<IResource> resources) {
+		try {
+			ResourceTraversal[] traversals = element.getTraversals(ResourceMappingContext.LOCAL_CONTEXT, null);
+			for (ResourceTraversal traversal : traversals) {
+				IResource[] resourceArray = traversal.getResources();
+				Collections.addAll(resources, resourceArray);
+			}
+		} catch (CoreException e) {
+			TeamUIPlugin.log(new Status(IStatus.ERROR, TeamUIPlugin.ID, 0, "Error traversing resource mapping", e)); //$NON-NLS-1$
+		}
+	}
 
 	public static Object[] getNonResources(Object[] elements) {
 		List<Object> nonResources = new ArrayList<>();
@@ -699,9 +695,9 @@ public class Utils {
 		return getResources(element, null, false /* isContributed */, false /* includeMappingResources */);
 	}
 
-    public static IResource[] getContributedResources(Object[] elements) {
-        return getResources(elements, null, true /* isContributed */, true /* isIncudeMappings */);
-    }
+	public static IResource[] getContributedResources(Object[] elements) {
+		return getResources(elements, null, true /* isContributed */, true /* isIncudeMappings */);
+	}
 
 	/**
 	 * Return whether any sync nodes in the given selection or their
@@ -731,8 +727,7 @@ public class Utils {
 			}
 		}
 		IDiffElement[] children = element.getChildren();
-		for (int i = 0; i < children.length; i++) {
-			IDiffElement child = children[i];
+		for (IDiffElement child : children) {
 			if (child instanceof ISynchronizeModelElement) {
 				if (hasMatchingDescendant((ISynchronizeModelElement)child, filter)) {
 					return true;
@@ -751,8 +746,7 @@ public class Utils {
 	 */
 	public static IDiffElement[] getDiffNodes(Object[] selected) {
 		Set<IDiffElement> result = new HashSet<>();
-		for (int i = 0; i < selected.length; i++) {
-			Object object = selected[i];
+		for (Object object : selected) {
 			if(object instanceof IDiffElement) {
 				collectAllNodes((IDiffElement)object, result);
 			}
@@ -766,8 +760,8 @@ public class Utils {
 		}
 		if(element instanceof IDiffContainer) {
 			IDiffElement[] children = ((IDiffContainer)element).getChildren();
-			for (int i = 0; i < children.length; i++) {
-				collectAllNodes(children[i], nodes);
+			for (IDiffElement c : children) {
+				collectAllNodes(c, nodes);
 			}
 		}
 	}
@@ -820,7 +814,7 @@ public class Utils {
 	}
 
 	public static String getKey(String id, String secondaryId) {
-	    return secondaryId == null ? id : id + '/' + secondaryId;
+		return secondaryId == null ? id : id + '/' + secondaryId;
 	}
 
 	public static String convertSelection(IResource[] resources) {
@@ -850,7 +844,7 @@ public class Utils {
 		int subStrLen = (maxWidth - ellipsis.length()) / 2;
 		int addtl = (maxWidth - ellipsis.length()) % 2;
 
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder(maxWidth);
 		sb.append(textValue.substring(0, subStrLen));
 		sb.append(ellipsis);
 		sb.append(textValue.substring(length - subStrLen - addtl));
@@ -862,21 +856,21 @@ public class Utils {
 		return manager.getParticipantDescriptor(participant.getId()).getName();
 	}
 
-    /**
-     * The viewer will only be updated if the viewer is not null, the control is not disposed, and
-     * this code is being run from the UI thread.
-     * @param viewer the viewer to be updated
-     * @return whether it is safe to update the viewer
-     */
-    public static boolean canUpdateViewer(StructuredViewer viewer) {
+	/**
+	 * The viewer will only be updated if the viewer is not null, the control is not disposed, and
+	 * this code is being run from the UI thread.
+	 * @param viewer the viewer to be updated
+	 * @return whether it is safe to update the viewer
+	 */
+	public static boolean canUpdateViewer(StructuredViewer viewer) {
 		if(viewer == null || viewer.getControl().isDisposed()) return false;
 		Display display = viewer.getControl().getDisplay();
 		if (display == null) return false;
 		if (display.getThread() != Thread.currentThread ()) return false;
 		return true;
-    }
+	}
 
-    public static void asyncExec(final Runnable r, StructuredViewer v) {
+	public static void asyncExec(final Runnable r, StructuredViewer v) {
 		if(v == null) return;
 		final Control ctrl = v.getControl();
 		if (ctrl != null && !ctrl.isDisposed()) {
@@ -888,11 +882,11 @@ public class Utils {
 		}
 	}
 
-    public static void syncExec(final Runnable r, StructuredViewer v) {
+	public static void syncExec(final Runnable r, StructuredViewer v) {
 		if(v == null) return;
 		final Control ctrl = v.getControl();
 		syncExec(r, ctrl);
-    }
+	}
 
 	public static void syncExec(final Runnable r, final Control ctrl) {
 		if (ctrl != null && !ctrl.isDisposed()) {
@@ -914,12 +908,12 @@ public class Utils {
 		}
 	}
 
-    public static SyncInfo getSyncInfo(ISynchronizeModelElement node) {
-        if (node instanceof IAdaptable) {
-            return ((IAdaptable) node).getAdapter(SyncInfo.class);
-        }
-        return null;
-    }
+	public static SyncInfo getSyncInfo(ISynchronizeModelElement node) {
+		if (node instanceof IAdaptable) {
+			return ((IAdaptable) node).getAdapter(SyncInfo.class);
+		}
+		return null;
+	}
 
 	public static ISynchronizationCompareAdapter getCompareAdapter(Object element) {
 		ModelProvider provider = getModelProvider(element);
@@ -985,8 +979,7 @@ public class Utils {
 
 	public static ResourceMapping[] getResourceMappings(Object[] objects) {
 		List<ResourceMapping> result = new ArrayList<>();
-		for (int i = 0; i < objects.length; i++) {
-			Object object = objects[i];
+		for (Object object : objects) {
 			ResourceMapping mapping = getResourceMapping(object);
 			if (mapping != null)
 				result.add(mapping);
@@ -1033,8 +1026,7 @@ public class Utils {
 	public static String convertSelection(ResourceMapping[] mappings) {
 		StringBuilder  buffer = new StringBuilder();
 		boolean hadOne = false;
-		for (int i = 0; i < mappings.length; i++) {
-			ResourceMapping resourceMapping = mappings[i];
+		for (ResourceMapping resourceMapping : mappings) {
 			String label = getLabel(resourceMapping);
 			if (label != null) {
 				if(hadOne) buffer.append(", "); //$NON-NLS-1$
@@ -1047,8 +1039,7 @@ public class Utils {
 
 	public static ResourceTraversal[] getTraversals(Object[] elements) throws CoreException {
 		CompoundResourceTraversal traversal = new CompoundResourceTraversal();
-		for (int i = 0; i < elements.length; i++) {
-			Object object = elements[i];
+		for (Object object : elements) {
 			ResourceMapping mapping = getResourceMapping(object);
 			if (mapping != null) {
 				traversal.addTraversals(mapping.getTraversals(ResourceMappingContext.LOCAL_CONTEXT, null));
@@ -1224,15 +1215,15 @@ public class Utils {
 			Class[] editorInputClasses) {
 		IEditorReference[] editorRefs = page.getEditorReferences();
 		// first loop looking for an editor with the same input
-		for (int i = 0; i < editorRefs.length; i++) {
-			IEditorPart part = editorRefs[i].getEditor(false);
+		for (IEditorReference editorRef : editorRefs) {
+			IEditorPart part = editorRef.getEditor(false);
 			if (part != null && part instanceof IReusableEditor) {
-				for (int j = 0; j < editorInputClasses.length; j++) {
+				for (Class editorInputClasse : editorInputClasses) {
 					// check if the editor input type
 					// complies with the types given by the caller
-					if (editorInputClasses[j].isInstance(part.getEditorInput())
-							&& part.getEditorInput().equals(input))
+					if (editorInputClasse.isInstance(part.getEditorInput()) && part.getEditorInput().equals(input)) {
 						return part;
+					}
 				}
 			}
 		}
@@ -1240,8 +1231,8 @@ public class Utils {
 		// a non-dirty editor
 		if (TeamUIPlugin.getPlugin().getPreferenceStore()
 				.getBoolean(IPreferenceIds.REUSE_OPEN_COMPARE_EDITOR)) {
-			for (int i = 0; i < editorRefs.length; i++) {
-				IEditorPart part = editorRefs[i].getEditor(false);
+			for (IEditorReference editorRef : editorRefs) {
+				IEditorPart part = editorRef.getEditor(false);
 				if (part != null
 						&& (part.getEditorInput() instanceof SaveableCompareEditorInput)
 						&& part instanceof IReusableEditor && !part.isDirty()) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2018 IBM Corporation and others.
+ * Copyright (c) 2004, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -75,6 +75,7 @@ public class BundleLoader extends ModuleLoader {
 	public final static String JAVA_PACKAGE = "java."; //$NON-NLS-1$
 
 	public final static ClassContext CLASS_CONTEXT = AccessController.doPrivileged(new PrivilegedAction<ClassContext>() {
+		@Override
 		public ClassContext run() {
 			return new ClassContext();
 		}
@@ -188,7 +189,7 @@ public class BundleLoader extends ModuleLoader {
 		List<ModuleCapability> moduleDatas = wiring.getRevision().getModuleCapabilities(EquinoxModuleDataNamespace.MODULE_DATA_NAMESPACE);
 		@SuppressWarnings("unchecked")
 		List<String> buddyList = (List<String>) (moduleDatas.isEmpty() ? null : moduleDatas.get(0).getAttributes().get(EquinoxModuleDataNamespace.CAPABILITY_BUDDY_POLICY));
-		policy = buddyList != null ? new PolicyHandler(this, buddyList, container.getPackageAdmin()) : null;
+		policy = buddyList != null ? new PolicyHandler(this, buddyList, container.getPackageAdmin(), container.getBootLoader()) : null;
 		if (policy != null) {
 			Module systemModule = container.getStorage().getModuleContainer().getModule(0);
 			Bundle systemBundle = systemModule.getBundle();
@@ -212,7 +213,7 @@ public class BundleLoader extends ModuleLoader {
 					if (!exportNames.contains(name)) {
 						// must force filtered and reexport sources to be created early
 						// to prevent lazy normal package source creation.
-						// We only do this for the first export of a package name. 
+						// We only do this for the first export of a package name.
 						sources.createPackageSource(export, true);
 					}
 				}
@@ -238,11 +239,13 @@ public class BundleLoader extends ModuleLoader {
 		if (sources.length == 1)
 			return sources[0];
 		List<SingleSourcePackage> sourceList = new ArrayList<>(sources.length);
-		for (int i = 0; i < sources.length; i++) {
-			SingleSourcePackage[] innerSources = sources[i].getSuppliers();
-			for (int j = 0; j < innerSources.length; j++)
-				if (!sourceList.contains(innerSources[j]))
-					sourceList.add(innerSources[j]);
+		for (PackageSource source : sources) {
+			SingleSourcePackage[] innerSources = source.getSuppliers();
+			for (SingleSourcePackage innerSource : innerSources) {
+				if (!sourceList.contains(innerSource)) {
+					sourceList.add(innerSource);
+				}
+			}
 		}
 		return new MultiSourcePackage(packageName, sourceList.toArray(new SingleSourcePackage[sourceList.size()]));
 	}
@@ -367,9 +370,9 @@ public class BundleLoader extends ModuleLoader {
 	}
 
 	/**
-	 * This method gets a resource from the bundle.  The resource is searched 
-	 * for in the same manner as it would if it was being loaded from a bundle 
-	 * (i.e. all hosts, fragments, import, required bundles and 
+	 * This method gets a resource from the bundle.  The resource is searched
+	 * for in the same manner as it would if it was being loaded from a bundle
+	 * (i.e. all hosts, fragments, import, required bundles and
 	 * local resources are searched).
 	 *
 	 * @param name the name of the desired resource.
@@ -383,7 +386,7 @@ public class BundleLoader extends ModuleLoader {
 	 * Finds a class local to this bundle.  Only the classloader for this bundle is searched.
 	 * @param name The name of the class to find.
 	 * @return The loaded Class or null if the class is not found.
-	 * @throws ClassNotFoundException 
+	 * @throws ClassNotFoundException
 	 */
 	public Class<?> findLocalClass(String name) throws ClassNotFoundException {
 		long start = 0;
@@ -411,24 +414,20 @@ public class BundleLoader extends ModuleLoader {
 	 * Finds the class for a bundle.  This method is used for delegation by the bundle's classloader.
 	 */
 	public Class<?> findClass(String name) throws ClassNotFoundException {
-		return findClass(name, true);
-	}
 
-	Class<?> findClass(String name, boolean checkParent) throws ClassNotFoundException {
-		if (checkParent && parent != null && name.startsWith(JAVA_PACKAGE))
+		if (parent != null && name.startsWith(JAVA_PACKAGE)) {
 			// 1) if startsWith "java." delegate to parent and terminate search
 			// we want to throw ClassNotFoundExceptions if a java.* class cannot be loaded from the parent.
 			return parent.loadClass(name);
-		return findClassInternal(name, checkParent);
-	}
+		}
 
-	private Class<?> findClassInternal(String name, boolean checkParent) throws ClassNotFoundException {
 		if (debug.DEBUG_LOADER)
-			Debug.println("BundleLoader[" + this + "].findClassInternal(" + name + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			Debug.println("BundleLoader[" + this + "].findClass(" + name + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
 		String pkgName = getPackageName(name);
 		boolean bootDelegation = false;
 		// follow the OSGi delegation model
-		if (checkParent && parent != null && container.isBootDelegationPackage(pkgName)) {
+		if (parent != null && container.isBootDelegationPackage(pkgName)) {
 			// 2) if part of the bootdelegation list then delegate to parent and continue of failure
 			try {
 				return parent.loadClass(name);
@@ -455,6 +454,11 @@ public class BundleLoader extends ModuleLoader {
 			}
 			// 3) found import source terminate search at the source
 			result = source.loadClass(name);
+			if (result == null) {
+				// last ditch find loaded check in case something is reflectively
+				// calling defineClass on our loader.
+				result = getModuleClassLoader().publicFindLoaded(name);
+			}
 			if (result != null)
 				return result;
 			throw new ClassNotFoundException(name + " cannot be found by " + this); //$NON-NLS-1$
@@ -500,7 +504,8 @@ public class BundleLoader extends ModuleLoader {
 			return result;
 		// hack to support backwards compatibility for bootdelegation
 		// or last resort; do class context trick to work around VM bugs
-		if (parent != null && !bootDelegation && ((checkParent && container.getConfiguration().compatibilityBootDelegation) || isRequestFromVM())) {
+		if (parent != null && !bootDelegation
+				&& ((container.getConfiguration().compatibilityBootDelegation) || isRequestFromVM())) {
 			// we don't need to continue if a CNFE is thrown here.
 			try {
 				return parent.loadClass(name);
@@ -590,6 +595,7 @@ public class BundleLoader extends ModuleLoader {
 		if (System.getSecurityManager() == null)
 			return clazz.getClassLoader();
 		return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+			@Override
 			public ClassLoader run() {
 				return clazz.getClassLoader();
 			}
@@ -891,6 +897,7 @@ public class BundleLoader extends ModuleLoader {
 	 * Return a string representation of this loader.
 	 * @return String
 	 */
+	@Override
 	public final String toString() {
 		ModuleRevision revision = wiring.getRevision();
 		String name = revision.getSymbolicName();
@@ -920,15 +927,19 @@ public class BundleLoader extends ModuleLoader {
 
 			/* match against specific names */
 			if (dynamicImportPackages != null)
-				for (int i = 0; i < dynamicImportPackages.length; i++)
-					if (pkgname.equals(dynamicImportPackages[i]))
+				for (String dynamicImportPackage : dynamicImportPackages) {
+					if (pkgname.equals(dynamicImportPackage)) {
 						return true;
+					}
+				}
 
 			/* match against names with trailing wildcards */
 			if (dynamicImportPackageStems != null)
-				for (int i = 0; i < dynamicImportPackageStems.length; i++)
-					if (pkgname.startsWith(dynamicImportPackageStems[i]))
+				for (String dynamicImportPackageStem : dynamicImportPackageStems) {
+					if (pkgname.startsWith(dynamicImportPackageStem)) {
 						return true;
+					}
+				}
 		}
 		return false;
 	}
@@ -949,7 +960,7 @@ public class BundleLoader extends ModuleLoader {
 		for (ModuleWire bundleWire : requiredBundleWires) {
 			if (local != null || BundleNamespace.VISIBILITY_REEXPORT.equals(bundleWire.getRequirement().getDirectives().get(BundleNamespace.REQUIREMENT_VISIBILITY_DIRECTIVE))) {
 				// always add required bundles first if we locally provide the package
-				// This allows a bundle to provide a package from a required bundle without 
+				// This allows a bundle to provide a package from a required bundle without
 				// re-exporting the whole required bundle.
 				BundleLoader loader = getProviderLoader(bundleWire);
 				if (loader != null) {
@@ -1049,8 +1060,8 @@ public class BundleLoader extends ModuleLoader {
 				stems = new ArrayList<>(size);
 			} else {
 				stems = new ArrayList<>(size + dynamicImportPackageStems.length);
-				for (int i = 0; i < dynamicImportPackageStems.length; i++) {
-					stems.add(dynamicImportPackageStems[i]);
+				for (String dynamicImportPackageStem : dynamicImportPackageStems) {
+					stems.add(dynamicImportPackageStem);
 				}
 			}
 
@@ -1059,8 +1070,8 @@ public class BundleLoader extends ModuleLoader {
 				names = new ArrayList<>(size);
 			} else {
 				names = new ArrayList<>(size + dynamicImportPackages.length);
-				for (int i = 0; i < dynamicImportPackages.length; i++) {
-					names.add(dynamicImportPackages[i]);
+				for (String dynamicImportPackage : dynamicImportPackages) {
+					names.add(dynamicImportPackage);
 				}
 			}
 
@@ -1103,8 +1114,7 @@ public class BundleLoader extends ModuleLoader {
 		StringBuilder importSpec = new StringBuilder();
 		for (ManifestElement dynamicImportElement : packages) {
 			String[] names = dynamicImportElement.getValueComponents();
-			for (String name : names)
-				dynamicImports.add(name);
+			Collections.addAll(dynamicImports, names);
 			if (importSpec.length() > 0) {
 				importSpec.append(',');
 			}
@@ -1137,7 +1147,7 @@ public class BundleLoader extends ModuleLoader {
 		PackageSource result = findImportedSource(pkgName, null);
 		if (result != null)
 			return result;
-		// Note that dynamic imports are not checked to avoid aggressive wiring (bug 105779)  
+		// Note that dynamic imports are not checked to avoid aggressive wiring (bug 105779)
 		return findRequiredSource(pkgName, null);
 	}
 
@@ -1215,7 +1225,7 @@ public class BundleLoader extends ModuleLoader {
 			// so we do not have to do the search again for this package.
 			source = NullPackageSource.getNullPackageSource(pkgName);
 		} else if (result.size() == 1) {
-			// if there is just one source, remember just the single source 
+			// if there is just one source, remember just the single source
 			source = result.get(0);
 		} else {
 			// if there was more than one source, build a multisource and cache that.
@@ -1230,7 +1240,7 @@ public class BundleLoader extends ModuleLoader {
 
 	/*
 	 * Gets the package source for the pkgName.  This will include the local package source
-	 * if the bundle exports the package.  This is used to compare the PackageSource of a 
+	 * if the bundle exports the package.  This is used to compare the PackageSource of a
 	 * package from two different bundles.
 	 */
 	public final PackageSource getPackageSource(String pkgName) {
@@ -1248,6 +1258,7 @@ public class BundleLoader extends ModuleLoader {
 
 	static final class ClassContext extends SecurityManager {
 		// need to make this method public
+		@Override
 		public Class<?>[] getClassContext() {
 			return super.getClassContext();
 		}

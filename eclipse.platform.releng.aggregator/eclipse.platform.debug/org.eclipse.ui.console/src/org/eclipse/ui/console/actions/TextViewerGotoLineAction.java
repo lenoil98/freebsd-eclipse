@@ -14,6 +14,8 @@
 package org.eclipse.ui.console.actions;
 
 
+import java.text.MessageFormat;
+
 import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.text.BadLocationException;
@@ -25,7 +27,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.internal.console.ConsoleMessages;
 
-import com.ibm.icu.text.MessageFormat;
 
 /**
  * Action to position a text viewer to a specific line.
@@ -64,7 +65,10 @@ public class TextViewerGotoLineAction extends TextViewerAction {
 	protected ITextViewer fTextViewer;
 
 	/**
-	 * Constructs a goto line action for the viewer using the provided resource bundle
+	 * Constructs a goto line action for the viewer using the provided resource
+	 * bundle.
+	 *
+	 * @param viewer the viewer to jump in
 	 */
 	public TextViewerGotoLineAction(ITextViewer viewer) {
 		super(viewer, -1);
@@ -83,6 +87,8 @@ public class TextViewerGotoLineAction extends TextViewerAction {
 
 	/**
 	 * Jumps to the line.
+	 *
+	 * @param line the target line. First line is line <code>0</code>.
 	 */
 	protected void gotoLine(int line) {
 
@@ -97,9 +103,6 @@ public class TextViewerGotoLineAction extends TextViewerAction {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public void run() {
 		try {

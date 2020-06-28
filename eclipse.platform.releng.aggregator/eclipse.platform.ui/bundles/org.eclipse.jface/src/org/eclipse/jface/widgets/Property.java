@@ -16,10 +16,22 @@ package org.eclipse.jface.widgets;
 import org.eclipse.swt.widgets.Widget;
 
 /**
- * Class which implement this interface can apply a property (like a text,
- * enabled, image, ...) to the given widget.
+ * Represents a property for widgets, like text, enabled state, image, ...
  *
- * @param <T>
+ * Used to apply the property to the given widget in the {@link #apply(Widget)}
+ * methods.
+ *
+ * <p>
+ * This is a <a href="package-summary.html">functional interface</a> whose
+ * functional method is {@link #apply(Widget)}.
+ * </p>
+ *
+ * @param <T> the type of the widget the property is used for
+ *
+ * @noimplement this interface is not intended to be implemented by clients.
+ * @noextend this class is not intended to be subclassed by clients.
+ *
+ * @since 3.18
  *
  */
 @FunctionalInterface

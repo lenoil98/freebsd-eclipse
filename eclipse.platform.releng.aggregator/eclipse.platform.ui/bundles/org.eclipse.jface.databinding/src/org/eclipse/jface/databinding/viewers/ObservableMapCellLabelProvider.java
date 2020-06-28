@@ -20,7 +20,6 @@ import java.util.Set;
 
 import org.eclipse.core.databinding.observable.map.IMapChangeListener;
 import org.eclipse.core.databinding.observable.map.IObservableMap;
-import org.eclipse.core.databinding.observable.map.MapChangeEvent;
 import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.LabelProviderChangedEvent;
 import org.eclipse.jface.viewers.ViewerCell;
@@ -42,25 +41,21 @@ public class ObservableMapCellLabelProvider extends CellLabelProvider {
 	 *
 	 * @since 1.4
 	 */
-	protected IObservableMap[] attributeMaps;
+	protected IObservableMap<Object, Object>[] attributeMaps;
 
-	private IMapChangeListener mapChangeListener = new IMapChangeListener() {
-		@Override
-		public void handleMapChange(MapChangeEvent event) {
-			Set affectedElements = event.diff.getChangedKeys();
-			LabelProviderChangedEvent newEvent = new LabelProviderChangedEvent(
-					ObservableMapCellLabelProvider.this, affectedElements
-							.toArray());
-			fireLabelProviderChanged(newEvent);
-		}
+	private IMapChangeListener<Object, Object> mapChangeListener = event -> {
+		Set<?> affectedElements = event.diff.getChangedKeys();
+		LabelProviderChangedEvent newEvent = new LabelProviderChangedEvent(ObservableMapCellLabelProvider.this,
+				affectedElements.toArray());
+		fireLabelProviderChanged(newEvent);
 	};
 
 	/**
 	 * Creates a new label provider that tracks changes to one attribute.
 	 *
-	 * @param attributeMap
+	 * @param attributeMap attribute map to track
 	 */
-	public ObservableMapCellLabelProvider(IObservableMap attributeMap) {
+	public ObservableMapCellLabelProvider(IObservableMap<?, ?> attributeMap) {
 		this(new IObservableMap[] { attributeMap });
 	}
 
@@ -69,20 +64,20 @@ public class ObservableMapCellLabelProvider extends CellLabelProvider {
 	 * attribute. This constructor should be used by subclasses that override
 	 * {@link #update(ViewerCell)} and make use of more than one attribute.
 	 *
-	 * @param attributeMaps
+	 * @param attributeMaps attribute maps to track
 	 */
-	protected ObservableMapCellLabelProvider(IObservableMap[] attributeMaps) {
-		System.arraycopy(attributeMaps, 0,
-				this.attributeMaps = new IObservableMap[attributeMaps.length],
-				0, attributeMaps.length);
-		for (IObservableMap attributeMap : attributeMaps) {
+	@SuppressWarnings("unchecked")
+	protected ObservableMapCellLabelProvider(IObservableMap<?, ?>[] attributeMaps) {
+		System.arraycopy(attributeMaps, 0, this.attributeMaps = new IObservableMap[attributeMaps.length], 0,
+				attributeMaps.length);
+		for (IObservableMap<?, ?> attributeMap : attributeMaps) {
 			attributeMap.addMapChangeListener(mapChangeListener);
 		}
 	}
 
 	@Override
 	public void dispose() {
-		for (IObservableMap attributeMap : attributeMaps) {
+		for (IObservableMap<?, ?> attributeMap : attributeMaps) {
 			attributeMap.removeMapChangeListener(mapChangeListener);
 		}
 		super.dispose();
@@ -93,7 +88,7 @@ public class ObservableMapCellLabelProvider extends CellLabelProvider {
 	/**
 	 * Updates the label of the cell with the value for the cell element. Note:
 	 * The value for the first map is always used, for all columns.
-	 * 
+	 *
 	 * @param cell
 	 *            The cell to be updated.
 	 */

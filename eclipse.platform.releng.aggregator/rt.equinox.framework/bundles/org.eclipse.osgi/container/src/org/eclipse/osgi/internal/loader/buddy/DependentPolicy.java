@@ -24,7 +24,7 @@ import org.osgi.framework.namespace.BundleNamespace;
 import org.osgi.framework.namespace.PackageNamespace;
 
 /**
- * DependentPolicy is an implementation of a buddy policy. 
+ * DependentPolicy is an implementation of a buddy policy.
  * It is responsible for looking up a class in the dependents of the bundle
  * to which this policy is attached to.
  */
@@ -44,6 +44,7 @@ public class DependentPolicy implements IBuddyPolicy {
 			allDependents = null;
 	}
 
+	@Override
 	public Class<?> loadClass(String name) {
 		if (allDependents == null)
 			return null;
@@ -72,6 +73,7 @@ public class DependentPolicy implements IBuddyPolicy {
 		}
 	}
 
+	@Override
 	public URL loadResource(String name) {
 		if (allDependents == null)
 			return null;
@@ -91,6 +93,7 @@ public class DependentPolicy implements IBuddyPolicy {
 		return result;
 	}
 
+	@Override
 	public Enumeration<URL> loadResources(String name) {
 		if (allDependents == null)
 			return null;

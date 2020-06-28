@@ -34,6 +34,7 @@ public class GlobalPolicy implements IBuddyPolicy {
 		this.admin = admin;
 	}
 
+	@Override
 	public Class<?> loadClass(String name) {
 		ExportedPackage pkg = admin.getExportedPackage(BundleLoader.getPackageName(name));
 		if (pkg == null)
@@ -45,6 +46,7 @@ public class GlobalPolicy implements IBuddyPolicy {
 		}
 	}
 
+	@Override
 	public URL loadResource(String name) {
 		//get all exported packages that match the resource's package
 		ExportedPackage pkg = admin.getExportedPackage(BundleLoader.getResourcePackageName(name));
@@ -53,6 +55,7 @@ public class GlobalPolicy implements IBuddyPolicy {
 		return pkg.getExportingBundle().getResource(name);
 	}
 
+	@Override
 	public Enumeration<URL> loadResources(String name) {
 		//get all exported packages that match the resource's package
 		ExportedPackage[] pkgs = admin.getExportedPackages(BundleLoader.getResourcePackageName(name));
@@ -61,10 +64,10 @@ public class GlobalPolicy implements IBuddyPolicy {
 
 		//get all matching resources for each package
 		Enumeration<URL> results = null;
-		for (int i = 0; i < pkgs.length; i++) {
+		for (ExportedPackage pkg : pkgs) {
 			try {
-				results = BundleLoader.compoundEnumerations(results, pkgs[i].getExportingBundle().getResources(name));
-			} catch (IOException e) {
+				results = BundleLoader.compoundEnumerations(results, pkg.getExportingBundle().getResources(name));
+			}catch (IOException e) {
 				//ignore IO problems and try next package
 			}
 		}

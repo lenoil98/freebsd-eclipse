@@ -20,31 +20,6 @@
 
 #include "swt.h"
 
-#if defined (_WIN32) || defined (_WIN32_WCE)
-#include "windows.h"
-#define RETURN_TYPE LRESULT CALLBACK
-#define RETURN_CAST (LRESULT)
-#endif
-
-#if defined COCOA
-#import <Foundation/Foundation.h>
-#endif
-
-#ifndef RETURN_TYPE
-#define RETURN_TYPE jintLong
-#endif
-
-#ifndef RETURN_CAST
-#define RETURN_CAST
-#endif
-
-/*
-* Note that only x86 assembler is supported
-*/
-#if !(defined(__i386__) || defined(_M_IX86) || defined(_X86_))
-#undef USE_ASSEMBLER
-#endif
-
 #ifdef REDUCED_CALLBACKS
 #define MAX_CALLBACKS 16
 #else
@@ -58,13 +33,21 @@
 #define MAX_ARGS 12
 
 typedef struct CALLBACK_DATA {
-    jobject callback;
-    jmethodID methodID;
-  	jobject object;
+	jobject callback;
+	jmethodID methodID;
+	jobject object;
 	jboolean isStatic;
 	jboolean isArrayBased; 
 	jint argCount;
-	jintLong errorResult;
+	jlong errorResult;
+
+#if   defined(COCOA)
+	int arg_Selector;
+#elif defined(GTK)
+	int arg_GObject;
+	int arg_GdkEvent;
+	int arg_SwtSignalID;
+#endif
 } CALLBACK_DATA;
 
 #endif /* ifndef INC_callback_H */

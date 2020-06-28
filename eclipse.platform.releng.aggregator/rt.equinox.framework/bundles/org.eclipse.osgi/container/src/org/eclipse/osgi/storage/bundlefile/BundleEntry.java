@@ -61,7 +61,7 @@ public abstract class BundleEntry {
 
 	/**
 	 * Get a URL to the bundle entry that uses a common protocol (i.e. file:
-	 * jar: or http: etc.).  
+	 * jar: or http: etc.).
 	 * @return a URL to the bundle entry that uses a common protocol
 	 */
 	public abstract URL getLocalURL();
@@ -79,6 +79,7 @@ public abstract class BundleEntry {
 	 *
 	 * @return String representation of this BundleEntry.
 	 */
+	@Override
 	public String toString() {
 		return (getName());
 	}

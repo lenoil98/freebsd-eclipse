@@ -46,9 +46,6 @@ public class MergeSubscriberContext extends CVSSubscriberMergeContext {
 		super(subscriber, manager);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.team.core.mapping.IMergeContext#markAsMerged(org.eclipse.team.core.diff.IDiffNode, boolean, org.eclipse.core.runtime.IProgressMonitor)
-	 */
 	@Override
 	public void markAsMerged(final IDiff diff, boolean inSyncHint, IProgressMonitor monitor) throws CoreException {
 		run(monitor1 -> ((CVSMergeSubscriber) getSubscriber())
@@ -60,8 +57,7 @@ public class MergeSubscriberContext extends CVSSubscriberMergeContext {
 	public void markAsMerged(final IDiff[] diffs, boolean inSyncHint, IProgressMonitor monitor) throws CoreException {
 		run(monitor1 -> {
 			List<IResource> result = new ArrayList<>();
-			for (int i = 0; i < diffs.length; i++) {
-				IDiff diff = diffs[i];
+			for (IDiff diff : diffs) {
 				result.add(getDiffTree().getResource(diff));
 			}
 			((CVSMergeSubscriber) getSubscriber()).merged(result.toArray(new IResource[result.size()]));
@@ -118,7 +114,7 @@ public class MergeSubscriberContext extends CVSSubscriberMergeContext {
 	
 	boolean equals(IThreeWayDiff currentDiff, IThreeWayDiff diffTreeDiff) {
 		return currentDiff != null 
-		    && currentDiff.getKind() == diffTreeDiff.getKind() 
+			&& currentDiff.getKind() == diffTreeDiff.getKind() 
 			&& currentDiff.getDirection() == diffTreeDiff.getDirection();
 	}
 }

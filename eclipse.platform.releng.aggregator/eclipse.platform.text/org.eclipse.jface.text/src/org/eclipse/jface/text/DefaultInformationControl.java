@@ -121,7 +121,7 @@ public class DefaultInformationControl extends AbstractInformationControl implem
 	/**
 	 * Additional styles to use for the text control.
 	 * @since 3.4, previously called <code>fTextStyle</code>
-     */
+	 */
 	private final int fAdditionalTextStyles;
 
 	/**
@@ -411,12 +411,7 @@ public class DefaultInformationControl extends AbstractInformationControl implem
 
 	@Override
 	public IInformationControlCreator getInformationPresenterControlCreator() {
-		return new IInformationControlCreator() {
-			@Override
-			public IInformationControl createInformationControl(Shell parent) {
-				return new DefaultInformationControl(parent, (ToolBarManager) null, fPresenter);
-			}
-		};
+		return parent -> new DefaultInformationControl(parent, (ToolBarManager) null, fPresenter);
 	}
 
 }

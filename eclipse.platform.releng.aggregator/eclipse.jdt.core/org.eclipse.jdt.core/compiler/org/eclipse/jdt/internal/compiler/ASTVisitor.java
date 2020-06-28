@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -104,6 +104,9 @@ public abstract class ASTVisitor {
 		// do nothing by default
 	}
 	public void endVisit(Clinit clinit, ClassScope scope) {
+		// do nothing by default
+	}
+	public void endVisit(CompactConstructorDeclaration ccd, ClassScope scope) {
 		// do nothing by default
 	}
 	public void endVisit(
@@ -487,6 +490,9 @@ public abstract class ASTVisitor {
 			ClassScope scope) {
 		// do nothing by default
 	}
+	public void endVisit(YieldStatement yieldStatement, BlockScope scope) {
+		// do nothing by default
+	}
 	public void endVisit(WhileStatement whileStatement, BlockScope scope) {
 		// do nothing by default
 	}
@@ -500,13 +506,19 @@ public abstract class ASTVisitor {
 		// do nothing by default
 	}
 	public void endVisit(ReferenceExpression referenceExpression, BlockScope blockScope) {
-		// do nothing by default	
+		// do nothing by default
 	}
 	public void endVisit(IntersectionCastTypeReference intersectionCastTypeReference, ClassScope scope) {
 		// do nothing by default
 	}
 	public void endVisit(IntersectionCastTypeReference intersectionCastTypeReference, BlockScope scope) {
 		// do nothing by default
+	}
+	public void endVisit(SwitchExpression switchExpression,	BlockScope scope) {
+		// do nothing by default
+	}
+	public void endVisit(RecordComponent recordComponent, BlockScope scope) {
+		// do nothing by default, keep traversing
 	}
 	public boolean visit(
     		AllocationExpression allocationExpression,
@@ -589,6 +601,9 @@ public abstract class ASTVisitor {
 	}
 	public boolean visit(ModuleDeclaration module, CompilationUnitScope scope) {
 		return true;
+	}
+	public boolean visit(CompactConstructorDeclaration ccd, ClassScope scope) {
+		return true; // do nothing by default, keep traversing
 	}
 	public boolean visit(
 		CompilationUnitDeclaration compilationUnitDeclaration,
@@ -978,6 +993,9 @@ public abstract class ASTVisitor {
 			ClassScope scope) {
 		return true; // do nothing by default, keep traversing
 	}
+	public boolean visit(YieldStatement yieldStatement, BlockScope scope) {
+		return true; // do nothing by default, keep traversing
+	}
 	public boolean visit(WhileStatement whileStatement, BlockScope scope) {
 		return true; // do nothing by default, keep traversing
 	}
@@ -997,6 +1015,12 @@ public abstract class ASTVisitor {
 		return true; // do nothing by default, keep traversing
 	}
 	public boolean visit(IntersectionCastTypeReference intersectionCastTypeReference, BlockScope scope) {
+		return true; // do nothing by default, keep traversing
+	}
+	public boolean visit(SwitchExpression switchExpression, BlockScope blockScope) {
+		return true; // do nothing by default, keep traversing
+	}
+	public  boolean visit(RecordComponent recordComponent, BlockScope scope) {
 		return true; // do nothing by default, keep traversing
 	}
 }

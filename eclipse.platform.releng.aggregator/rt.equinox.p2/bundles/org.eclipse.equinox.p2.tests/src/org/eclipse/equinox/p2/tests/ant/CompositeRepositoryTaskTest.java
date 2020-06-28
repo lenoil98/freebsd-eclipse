@@ -446,12 +446,15 @@ public class CompositeRepositoryTaskTest extends AbstractAntProvisioningTest {
 	 */
 	protected ICompositeRepository getCompositeRepository(String type) {
 		try {
-			if (type == TYPE_ARTIFACT) {
-				return (ICompositeRepository) getArtifactRepositoryManager().loadRepository(compositeSite, null);
-			} else if (type == TYPE_METADATA)
-				return (ICompositeRepository) getMetadataRepositoryManager().loadRepository(compositeSite, null);
-			else
-				fail("No type specified");
+			if (null == type) fail("No type specified"); else switch (type) {
+				case TYPE_ARTIFACT:
+					return (ICompositeRepository) getArtifactRepositoryManager().loadRepository(compositeSite, null);
+				case TYPE_METADATA:
+					return (ICompositeRepository) getMetadataRepositoryManager().loadRepository(compositeSite, null);
+				default:
+					fail("No type specified");
+					break;
+			}
 		} catch (ProvisionException e) {
 			fail("Failed to load repository", e);
 		} catch (ClassCastException e) {
@@ -466,8 +469,9 @@ public class CompositeRepositoryTaskTest extends AbstractAntProvisioningTest {
 	 */
 	protected AntTaskElement createRemoveElement(String type, URI[] addresses) {
 		AntTaskElement add = new AntTaskElement(REMOVE_ELEMENT);
-		for (int i = 0; i < addresses.length; i++)
-			add.addElement(getRepositoryElement(addresses[i], type));
+		for (URI address : addresses) {
+			add.addElement(getRepositoryElement(address, type));
+		}
 		return add;
 	}
 
@@ -476,8 +480,9 @@ public class CompositeRepositoryTaskTest extends AbstractAntProvisioningTest {
 	 */
 	protected AntTaskElement createAddElement(String type, URI[] addresses) {
 		AntTaskElement add = new AntTaskElement(ADD_ELEMENT);
-		for (int i = 0; i < addresses.length; i++)
-			add.addElement(getRepositoryElement(addresses[i], type));
+		for (URI address : addresses) {
+			add.addElement(getRepositoryElement(address, type));
+		}
 		return add;
 	}
 

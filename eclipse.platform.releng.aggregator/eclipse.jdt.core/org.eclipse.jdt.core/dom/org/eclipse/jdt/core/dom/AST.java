@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,6 +17,8 @@ package org.eclipse.jdt.core.dom;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -69,6 +71,7 @@ import org.eclipse.text.edits.TextEdit;
  * Compilation units created by <code>ASTParser</code> from a
  * source document can be serialized after arbitrary modifications
  * with minimal loss of original formatting. Here is an example:
+ * </p>
  * <pre>
  * Document doc = new Document("import java.util.List;\nclass X {}\n");
  * ASTParser parser = ASTParser.newParser(AST.JLS3);
@@ -82,12 +85,13 @@ import org.eclipse.text.edits.TextEdit;
  * TextEdit edits = cu.rewrite(document, null);
  * UndoEdit undo = edits.apply(document);
  * </pre>
+ * <p>
  * See also {@link org.eclipse.jdt.core.dom.rewrite.ASTRewrite} for
  * an alternative way to describe and serialize changes to a
  * read-only AST.
  * </p>
  * <p>
- * Clients may create instances of this class using {@link #newAST(int)},
+ * Clients may create instances of this class using {@link #newAST(int, boolean)},
  * but this class is not intended to be subclassed.
  * </p>
  *
@@ -117,7 +121,7 @@ public final class AST {
      * </p>
      *
 	 * @since 3.0
-	 * @deprecated Clients should use the {@link #JLS11} AST API instead.
+	 * @deprecated Clients should use the  {@link #JLS_Latest} AST API instead.
 	 */
 	public static final int JLS2 = 2;
 
@@ -127,7 +131,7 @@ public final class AST {
 	 * @since 3.1
 	 */
 	/*package*/ static final int JLS2_INTERNAL = JLS2;
-	
+
 	/**
 	 * Constant for indicating the AST API that handles JLS3.
 	 * <p>
@@ -141,10 +145,10 @@ public final class AST {
      * </p>
      *
 	 * @since 3.1
-	 * @deprecated Clients should use the {@link #JLS11} AST API instead.
+	 * @deprecated Clients should use the {@link #JLS_Latest} AST API instead.
 	 */
 	public static final int JLS3 = 3;
-	
+
 	/**
 	 * Internal synonym for {@link #JLS3}. Use to alleviate
 	 * deprecation warnings.
@@ -165,17 +169,17 @@ public final class AST {
 	 * </p>
 	 *
 	 * @since 3.7.1
-	 * @deprecated Clients should use the {@link #JLS11} AST API instead.
+	 * @deprecated Clients should use the {@link #JLS_Latest} AST API instead.
 	 */
 	public static final int JLS4 = 4;
-	
+
 	/**
 	 * Internal synonym for {@link #JLS4}. Use to alleviate
 	 * deprecation warnings.
 	 * @since 3.10
 	 */
 	/*package*/ static final int JLS4_INTERNAL = JLS4;
-	
+
 	/**
 	 * Constant for indicating the AST API that handles JLS8.
 	 * <p>
@@ -189,7 +193,7 @@ public final class AST {
 	 * </p>
 	 *
 	 * @since 3.10
-	 * @deprecated Clients should use the {@link #JLS11} AST API instead.
+	 * @deprecated Clients should use the {@link #JLS_Latest} AST API instead.
 	 */
 	public static final int JLS8 = 8;
 
@@ -199,7 +203,7 @@ public final class AST {
 	 * @since 3.14
 	 */
 	/*package*/ static final int JLS8_INTERNAL = JLS8;
-	
+
 	/**
 	 * Constant for indicating the AST API that handles JLS9.
 	 * <p>
@@ -213,7 +217,7 @@ public final class AST {
 	 * </p>
 	 *
 	 * @since 3.14
-	 * @deprecated Clients should use the {@link #JLS11} AST API instead.
+	 * @deprecated Clients should use the {@link #JLS_Latest} AST API instead.
 	 */
 	public static final int JLS9 = 9;
 
@@ -223,7 +227,7 @@ public final class AST {
 	 * @since 3.14
 	 */
 	/*package*/ static final int JLS9_INTERNAL = JLS9;
-	
+
 	/**
 	 * Constant for indicating the AST API that handles JLS10.
 	 * <p>
@@ -237,7 +241,7 @@ public final class AST {
 	 * </p>
 	 *
 	 * @since 3.14
-	 * @deprecated Clients should use the {@link #JLS11} AST API instead.
+	 * @deprecated Clients should use the {@link #JLS_Latest} AST API instead.
 	 */
 	public static final int JLS10 = 10;
 
@@ -260,6 +264,7 @@ public final class AST {
 	 * up to and including Java SE 11 (aka JDK 11).
 	 * </p>
 	 *
+	 * @deprecated Clients should use the {@link #JLS_Latest} AST API instead.
 	 * @since 3.16
 	 */
 	public static final int JLS11 = 11;
@@ -267,14 +272,91 @@ public final class AST {
 	/**
 	 * Internal synonym for {@link #JLS11}. Use to alleviate
 	 * deprecation warnings once JLS11 is deprecated
-	 * @since 3.14 
+	 * @since 3.14
 	 */
 	/*package*/ static final int JLS11_INTERNAL = JLS11;
+
+	/**
+	 * Constant for indicating the AST API that handles JLS12.
+	 * <p>
+	 * This API is capable of handling all constructs in the
+	 * Java language as described in the Java Language
+	 * Specification, Java SE 12 Edition (JLS12).
+	 * JLS12 is a superset of all earlier versions of the
+	 * Java language, and the JLS12 API can be used to manipulate
+	 * programs written in all versions of the Java language
+	 * up to and including Java SE 12 (aka JDK 12).
+	 * </p>
+	 * @deprecated Clients should use the {@link #JLS_Latest} AST API instead.
+	 * @since 3.18
+	 */
+	public static final int JLS12 = 12;
+	/**
+	 * Internal synonym for {@link #JLS12}. Use to alleviate
+	 * deprecation warnings once JLS12 is deprecated
+	 * @since 3.18
+	 */
+	static final int JLS12_INTERNAL = JLS12;
+
+	/**
+	 * Constant for indicating the AST API that handles JLS13.
+	 * <p>
+	 * This API is capable of handling all constructs in the
+	 * Java language as described in the Java Language
+	 * Specification, Java SE 13 Edition (JLS13).
+	 * JLS13 is a superset of all earlier versions of the
+	 * Java language, and the JLS13 API can be used to manipulate
+	 * programs written in all versions of the Java language
+	 * up to and including Java SE 13 (aka JDK 13).
+	 * </p>
+	 *
+	 * @since 3.20
+	 * @deprecated Clients should use the {@link #JLS_Latest} AST API instead.
+	 */
+	public static final int JLS13 = 13;
+
+	/**
+	 * Internal synonym for {@link #JLS13}. Use to alleviate
+	 * deprecation warnings once JLS13 is deprecated
+	 * @since 3.20
+	 */
+	static final int JLS13_INTERNAL = JLS13;
+
+	/**
+	 * Constant for indicating the AST API that handles JLS14.
+	 * <p>
+	 * This API is capable of handling all constructs in the
+	 * Java language as described in the Java Language
+	 * Specification, Java SE 14 Edition (JLS14).
+	 * JLS14 is a superset of all earlier versions of the
+	 * Java language, and the JLS14 API can be used to manipulate
+	 * programs written in all versions of the Java language
+	 * up to and including Java SE 14(aka JDK 14).
+	 * </p>
+	 *
+	 * @since 3.22
+	 */
+	public static final int JLS14 = 14;
+
+	/**
+	 * Internal synonym for {@link #JLS14}. Use to alleviate
+	 * deprecation warnings once JLS14 is deprecated
+	 * @since 3.22
+	 */
+	static final int JLS14_INTERNAL = JLS14;
+
+	@SuppressWarnings("unused")
+	/* Used for Java doc only*/
+	private static final int JLS_Latest = JLS14;
 
 	/*
 	 * Must not collide with a value for ICompilationUnit constants
 	 */
 	static final int RESOLVED_BINDINGS = 0x80000000;
+
+	private static Map<String, Long> jdkLevelMap = getLevelMapTable();
+
+	private static Map<String, Integer> apiLevelMap = getApiLevelMapTable();
 
 	/**
 	 * Internal method.
@@ -335,7 +417,7 @@ public final class AST {
 		IProgressMonitor monitor) {
 
 		ASTConverter converter = new ASTConverter(options, isResolved, monitor);
-		AST ast = AST.newAST(level);
+		AST ast = AST.newAST(level, JavaCore.ENABLED.equals(options.get(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES)));
 		String sourceModeSetting = (String) options.get(JavaCore.COMPILER_SOURCE);
 		long sourceLevel = CompilerOptions.versionToJdkLevel(sourceModeSetting);
 		if (sourceLevel == 0) {
@@ -350,6 +432,7 @@ public final class AST {
 			complianceLevel = sourceLevel;
 		}
 		ast.scanner.complianceLevel = complianceLevel;
+		ast.scanner.previewEnabled = JavaCore.ENABLED.equals(options.get(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES));
 		int savedDefaultNodeFlag = ast.getDefaultNodeFlag();
 		ast.setDefaultNodeFlag(ASTNode.ORIGINAL);
 		BindingResolver resolver = null;
@@ -375,7 +458,7 @@ public final class AST {
 	 * Creates a new Java abstract syntax tree
      * (AST) following the specified set of API rules.
      * <p>
-     * Clients should use this method specifying {@link #JLS11} as the
+     * Clients should use this method specifying {@link #JLS12} as the
      * AST level in all cases, even when dealing with source of earlier JDK versions like 1.3 or 1.4.
      * </p>
      *
@@ -385,12 +468,65 @@ public final class AST {
 	 * <ul>
 	 * <li>the API level is not one of the <code>JLS*</code> level constants</li>
 	 * </ul>
+	 * @deprecated Clients should port their code to use the latest JLS* AST API and call
+	 *    {@link #newAST(int, boolean) AST.newAST(AST.JLS12, false)} instead of using this constructor.
      * @since 3.0
 	 */
 	public static AST newAST(int level) {
-		return new AST(level);
+		return new AST(level, false);
 	}
 
+		/**
+	 * Creates a new Java abstract syntax tree
+     * (AST) following the specified set of API rules.
+     * <p>
+     * Clients should use this method specifying {@link #JLS12} as the
+     * AST level in all cases, even when dealing with source of earlier JDK versions like 1.3 or 1.4.
+     * </p>
+     *
+ 	 * @param level the API level; one of the <code>JLS*</code> level constants
+ 	 * @param previewEnabled <code>true</code> if preview feature is enabled else <code>false</code>
+	 * @return new AST instance following the specified set of API rules.
+	 * @exception IllegalArgumentException if:
+	 * <ul>
+	 * <li>the API level is not one of the <code>JLS*</code> level constants</li>
+	 * </ul>
+     * @since 3.19
+	 */
+	public static AST newAST(int level, boolean previewEnabled) {
+		return new AST(level, previewEnabled);
+	}
+
+	/**
+	 * Creates a new Java abstract syntax tree
+	 * Following option keys are significant:
+	 * <ul>
+	 * <li><code>"org.eclipse.jdt.core.compiler.source"</code>
+	 *    indicates the api level and source compatibility mode (as per <code>JavaCore</code>) - defaults to 1.3
+	 *    <ul>
+	 *    	<li>
+	 *    	<code>"1.3"</code> means the source code is as per JDK 1.3 and api level {@link #JLS3}.</li>
+	 *    	<li><code>"1.4", "1.5", "1.6", "1.7" "1.8"</code> implies the respective source JDK levels 1.4, 1.5, 1.6, 1.7 and api level {@link #JLS4}.</li>
+	 *    	<li><code>"1.8"</code> implies the respective source JDK level 1.8 and api level {@link #JLS8}.</li>
+	 *    	<li><code>"9", "10", "11", "12" and "13"</code> implies the respective JDK levels 9, 10, 11, 12 and 13
+	 *     	and api levels {@link #JLS9}, {@link #JLS10}, {@link #JLS11}, {@link #JLS12} and {@link #JLS13}.</li>
+	 *    	<li>Additional legal values may be added later.</li>
+	 *    </ul>
+	 * </li>
+	 * <li><code>"org.eclipse.jdt.core.compiler.problem.enablePreviewFeatures"</code> -
+	 *    indicates whether the preview is enabled or disabled
+	 *    legal values are <code>"enabled"</code> and  <code>"disabled"</code> implying preview enabled and disabled respectively.
+	 *    preview enabling has an effect only with the latest ast level.
+	 * </li>
+	 * </ul>
+	 *
+	 * @param options the table of options
+	 * @see JavaCore#getDefaultOptions()
+     * @since 3.20
+	 */
+	public static AST newAST(Map<String, String> options) {
+		return new AST(options);
+	}
 	/**
 	 * Parses the given string as a Java compilation unit and creates and
 	 * returns a corresponding abstract syntax tree.
@@ -678,6 +814,8 @@ public final class AST {
 	 */
 	int apiLevel;
 
+	private boolean previewEnabled;
+
 	/**
 	 * Tag bit value. This represents internal state of the tree.
 	 */
@@ -756,7 +894,7 @@ public final class AST {
 	 *
 	 * @see JavaCore#getDefaultOptions()
 	 * @deprecated Clients should port their code to use the latest JLS* AST API and call
-	 *    {@link #newAST(int) AST.newAST(AST.JLS9)} instead of using this constructor.
+	 *    {@link #newAST(int, boolean) AST.newAST(AST.JLS12, false)} instead of using this constructor.
 	 */
 	public AST() {
 		this(JavaCore.getDefaultOptions());
@@ -769,7 +907,8 @@ public final class AST {
  	 * @param level the API level; one of the <code>JLS*</code> level constants
      * @since 3.0
 	 */
-	private AST(int level) {
+	private AST(int level, boolean previewEnabled) {
+		this.previewEnabled = previewEnabled;
 		switch(level) {
 			case JLS2_INTERNAL :
 			case JLS3_INTERNAL :
@@ -783,7 +922,8 @@ public final class AST {
 						ClassFileConstants.JDK1_5 /*complianceLevel*/,
 						null/*taskTag*/,
 						null/*taskPriorities*/,
-						true/*taskCaseSensitive*/);
+						true/*taskCaseSensitive*/,
+						false/*isPreviewEnabled*/);
 				break;
 			case JLS4_INTERNAL :
 				this.apiLevel = level;
@@ -796,7 +936,8 @@ public final class AST {
 						ClassFileConstants.JDK1_7 /*complianceLevel*/,
 						null/*taskTag*/,
 						null/*taskPriorities*/,
-						true/*taskCaseSensitive*/);
+						true/*taskCaseSensitive*/,
+						false/*isPreviewEnabled*/);
 				break;
 			case JLS8_INTERNAL :
 				this.apiLevel = level;
@@ -809,8 +950,9 @@ public final class AST {
 						ClassFileConstants.JDK1_8 /*complianceLevel*/,
 						null/*taskTag*/,
 						null/*taskPriorities*/,
-						true/*taskCaseSensitive*/);
-				break;	
+						true/*taskCaseSensitive*/,
+						false/*isPreviewEnabled*/);
+				break;
 			case JLS9_INTERNAL :
 				this.apiLevel = level;
 				// initialize a scanner
@@ -822,8 +964,9 @@ public final class AST {
 						ClassFileConstants.JDK9 /*complianceLevel*/,
 						null/*taskTag*/,
 						null/*taskPriorities*/,
-						true/*taskCaseSensitive*/);
-				break;	
+						true/*taskCaseSensitive*/,
+						false/*isPreviewEnabled*/);
+				break;
 			case JLS10_INTERNAL :
 				this.apiLevel = level;
 				// initialize a scanner
@@ -835,8 +978,9 @@ public final class AST {
 						ClassFileConstants.JDK10 /*complianceLevel*/,
 						null/*taskTag*/,
 						null/*taskPriorities*/,
-						true/*taskCaseSensitive*/);
-				break;	
+						true/*taskCaseSensitive*/,
+						false/*isPreviewEnabled*/);
+				break;
 			case JLS11_INTERNAL :
 				this.apiLevel = level;
 				// initialize a scanner
@@ -849,58 +993,105 @@ public final class AST {
 						compliance /*complianceLevel*/,
 						null/*taskTag*/,
 						null/*taskPriorities*/,
-						true/*taskCaseSensitive*/);
-				break;	
+						true/*taskCaseSensitive*/,
+						false/*isPreviewEnabled*/);
+				break;
+			case JLS12_INTERNAL :
+				this.apiLevel = level;
+				// initialize a scanner
+				compliance = ClassFileConstants.getComplianceLevelForJavaVersion(ClassFileConstants.MAJOR_VERSION_12);
+				this.scanner = new Scanner(
+						true /*comment*/,
+						true /*whitespace*/,
+						false /*nls*/,
+						compliance /*sourceLevel*/,
+						compliance /*complianceLevel*/,
+						null/*taskTag*/,
+						null/*taskPriorities*/,
+						true/*taskCaseSensitive*/,
+						previewEnabled);
+				break;
+			case JLS13_INTERNAL :
+				this.apiLevel = level;
+				// initialize a scanner
+				compliance = ClassFileConstants.getComplianceLevelForJavaVersion(ClassFileConstants.MAJOR_VERSION_13);
+				this.scanner = new Scanner(
+						true /*comment*/,
+						true /*whitespace*/,
+						false /*nls*/,
+						compliance /*sourceLevel*/,
+						compliance /*complianceLevel*/,
+						null/*taskTag*/,
+						null/*taskPriorities*/,
+						true/*taskCaseSensitive*/,
+						previewEnabled);
+				break;
+			case JLS14_INTERNAL :
+				this.apiLevel = level;
+				// initialize a scanner
+				compliance = ClassFileConstants.getComplianceLevelForJavaVersion(ClassFileConstants.MAJOR_VERSION_14);
+				this.scanner = new Scanner(
+						true /*comment*/,
+						true /*whitespace*/,
+						false /*nls*/,
+						compliance /*sourceLevel*/,
+						compliance /*complianceLevel*/,
+						null/*taskTag*/,
+						null/*taskPriorities*/,
+						true/*taskCaseSensitive*/,
+						previewEnabled);
+				break;
 			default:
 				throw new IllegalArgumentException("Unsupported JLS level"); //$NON-NLS-1$
 		}
 	}
 
 	/**
-	 * Creates a new, empty abstract syntax tree using the given options.
-	 * <p>
+	 * Creates a new Java abstract syntax tree
 	 * Following option keys are significant:
 	 * <ul>
-	 * <li><code>"org.eclipse.jdt.core.compiler.source"</code> -
-	 *    indicates source compatibility mode (as per <code>JavaCore</code>);
-	 *    <code>"1.3"</code> means the source code is as per JDK 1.3;
-	 *    <code>"1.4"</code> means the source code is as per JDK 1.4
-	 *    (<code>"assert"</code> is now a keyword);
-	 *    <code>"1.5"</code> means the source code is as per JDK 1.5
-	 *    (<code>"enum"</code> is now a keyword);
-	 *    <code>"1.7"</code> means the source code is as per JDK 1.7;
-	 *    additional legal values may be added later. </li>
-	 * </ul>
-	 * Options other than the above are ignored.
-	 * </p>
+	 * <li><code>"org.eclipse.jdt.core.compiler.source"</code>
+	 *    indicates the api level and source compatibility mode (as per <code>JavaCore</code>) - defaults to 1.3
+	 *    <ul>
+	 *    	<li>
+	 *    	<code>"1.3"</code> means the source code is as per JDK 1.3 and api level {@link #JLS3}.</li>
+	 *    	<li><code>"1.4", "1.5", "1.6", "1.7" "1.8"</code> implies the respective source JDK levels 1.4, 1.5, 1.6, 1.7 and api level {@link #JLS4}.</li>
+	 *    	<li><code>"1.8"</code> implies the respective source JDK level 1.8 and api level {@link #JLS8}.</li>
+	 *    	<li><code>"9", "10", "11", "12" and "13"</code> implies the respective JDK levels 9, 10, 11, 12 and 13
+	 *     	and api levels {@link #JLS9}, {@link #JLS10}, {@link #JLS11}, {@link #JLS12} and {@link #JLS13}.</li>
+	 *    	<li>Additional legal values may be added later.</li>
+	 *    </ul>
+	 * 	<li><code>"org.eclipse.jdt.core.compiler.problem.enablePreviewFeatures"</code> -
+	 *    	indicates whether the preview is enabled or disabled
+	 *    	legal values are <code>"enabled"</code> and  <code>"disabled"</code> implying preview enabled and disabled respectively.
+	 *    	preview enabling has an effect only with the latest ast level.
+	 *  </li>
+	 * 	</ul>
 	 *
 	 * @param options the table of options (key type: <code>String</code>;
 	 *    value type: <code>String</code>)
 	 * @see JavaCore#getDefaultOptions()
-	 * @deprecated Clients should port their code to use the latest JLS* AST API and call
-	 *    {@link #newAST(int) AST.newAST(AST.JLS9)} instead of using this constructor.
 	 */
 	public AST(Map options) {
-		this(JLS2);
-		Object sourceLevelOption = options.get(JavaCore.COMPILER_SOURCE);
-		long sourceLevel = ClassFileConstants.JDK1_3;
-		if (JavaCore.VERSION_1_4.equals(sourceLevelOption)) {
-			sourceLevel = ClassFileConstants.JDK1_4;
-		} else if (JavaCore.VERSION_1_5.equals(sourceLevelOption)) {
-			sourceLevel = ClassFileConstants.JDK1_5;
-		} else if (JavaCore.VERSION_1_7.equals(sourceLevelOption)) {
-			sourceLevel = ClassFileConstants.JDK1_7;
+		this(apiLevelMap.get(options.get(JavaCore.COMPILER_SOURCE)),
+				JavaCore.ENABLED.equals(options.get(JavaCore.COMPILER_PB_ENABLE_PREVIEW_FEATURES)));
+
+		long sourceLevel;
+		long complianceLevel;
+		switch(this.apiLevel) {
+			case JLS2_INTERNAL :
+			case JLS3_INTERNAL :
+				sourceLevel = ClassFileConstants.JDK1_3;
+				complianceLevel = ClassFileConstants.JDK1_5;
+				break;
+			case JLS4_INTERNAL :
+				sourceLevel = ClassFileConstants.JDK1_7;
+				complianceLevel = ClassFileConstants.JDK1_7;
+				break;
+			default :
+				sourceLevel = AST.jdkLevelMap.get(options.get(JavaCore.COMPILER_SOURCE));
+				complianceLevel = sourceLevel;
 		}
-		Object complianceLevelOption = options.get(JavaCore.COMPILER_COMPLIANCE);
-		long complianceLevel = ClassFileConstants.JDK1_3;
-		if (JavaCore.VERSION_1_4.equals(complianceLevelOption)) {
-			complianceLevel = ClassFileConstants.JDK1_4;
-		} else if (JavaCore.VERSION_1_5.equals(complianceLevelOption)) {
-			complianceLevel = ClassFileConstants.JDK1_5;
-		} else if (JavaCore.VERSION_1_7.equals(complianceLevelOption)) {
-			complianceLevel = ClassFileConstants.JDK1_7;
-		}
-		// override scanner if 1.4 or 1.5 asked for
 		this.scanner = new Scanner(
 			true /*comment*/,
 			true /*whitespace*/,
@@ -909,9 +1100,46 @@ public final class AST {
 			complianceLevel /*complianceLevel*/,
 			null/*taskTag*/,
 			null/*taskPriorities*/,
-			true/*taskCaseSensitive*/);
+			true/*taskCaseSensitive*/,
+			this.previewEnabled /* isPreviewEnabled*/);
 	}
 
+	private static Map<String, Long> getLevelMapTable() {
+        Map<String, Long> t = new HashMap<>();
+        t.put(null, ClassFileConstants.JDK1_2);
+        t.put(JavaCore.VERSION_1_2, ClassFileConstants.JDK1_2);
+        t.put(JavaCore.VERSION_1_3, ClassFileConstants.JDK1_3);
+        t.put(JavaCore.VERSION_1_4, ClassFileConstants.JDK1_4);
+        t.put(JavaCore.VERSION_1_5, ClassFileConstants.JDK1_5);
+        t.put(JavaCore.VERSION_1_6, ClassFileConstants.JDK1_6);
+        t.put(JavaCore.VERSION_1_7, ClassFileConstants.JDK1_7);
+        t.put(JavaCore.VERSION_1_8, ClassFileConstants.JDK1_8);
+        t.put(JavaCore.VERSION_9, ClassFileConstants.JDK9);
+        t.put(JavaCore.VERSION_10, ClassFileConstants.JDK10);
+        t.put(JavaCore.VERSION_11, ClassFileConstants.JDK11);
+        t.put(JavaCore.VERSION_12, ClassFileConstants.JDK12);
+        t.put(JavaCore.VERSION_13, ClassFileConstants.JDK13);
+        t.put(JavaCore.VERSION_14, ClassFileConstants.JDK14);
+        return Collections.unmodifiableMap(t);
+	}
+	private static Map<String, Integer> getApiLevelMapTable() {
+        Map<String, Integer> t = new HashMap<>();
+        t.put(null, JLS2_INTERNAL);
+        t.put(JavaCore.VERSION_1_2, JLS2_INTERNAL);
+        t.put(JavaCore.VERSION_1_3, JLS3_INTERNAL);
+        t.put(JavaCore.VERSION_1_4, JLS4_INTERNAL);
+        t.put(JavaCore.VERSION_1_5, JLS4_INTERNAL);
+        t.put(JavaCore.VERSION_1_6, JLS4_INTERNAL);
+        t.put(JavaCore.VERSION_1_7, JLS4_INTERNAL);
+        t.put(JavaCore.VERSION_1_8, JLS8_INTERNAL);
+        t.put(JavaCore.VERSION_9, JLS9_INTERNAL);
+        t.put(JavaCore.VERSION_10, JLS10_INTERNAL);
+        t.put(JavaCore.VERSION_11, JLS11_INTERNAL);
+        t.put(JavaCore.VERSION_12, JLS12_INTERNAL);
+        t.put(JavaCore.VERSION_13, JLS13_INTERNAL);
+        t.put(JavaCore.VERSION_14, JLS14_INTERNAL);
+        return Collections.unmodifiableMap(t);
+	}
 	/**
 	 * Return the API level supported by this AST.
 	 *
@@ -943,15 +1171,7 @@ public final class AST {
 			Constructor c = nodeClass.getDeclaredConstructor(AST_CLASS);
 			Object result = c.newInstance(this.THIS_AST);
 			return (ASTNode) result;
-		} catch (NoSuchMethodException e) {
-			// all AST node classes have a Foo(AST) constructor
-			// therefore nodeClass is not legit
-			throw new IllegalArgumentException(e);
-		} catch (InstantiationException e) {
-			// all concrete AST node classes can be instantiated
-			// therefore nodeClass is not legit
-			throw new IllegalArgumentException(e);
-		} catch (IllegalAccessException e) {
+		} catch (NoSuchMethodException | InstantiationException | IllegalAccessException e) {
 			// all AST node classes have an accessible Foo(AST) constructor
 			// therefore nodeClass is not legit
 			throw new IllegalArgumentException(e);
@@ -1087,9 +1307,10 @@ public final class AST {
 	 * <li>removing a child from a node owned by this AST,</li>
 	 * <li>setting a non-node attribute of a node owned by this AST.</li>
 	 * </ul>
-	 * </p>
+	 * <p>
 	 * Operations which do not entail creating or modifying existing nodes
 	 * do not increase the modification count.
+	 * </p>
 	 * <p>
 	 * N.B. This method may be called several times in the course
 	 * of a single client operation. The only promise is that the modification
@@ -1114,7 +1335,6 @@ public final class AST {
 	 * <li>removing a child from a node owned by this AST</li>
 	 * <li>setting a non-node attribute of a node owned by this AST</li>.
 	 * </ul>
-	 * </p>
 	 * <p>
 	 * N.B. This method may be called several times in the course
 	 * of a single client operation.
@@ -1199,8 +1419,8 @@ public final class AST {
 	 * array initializer.
 	 * <p>
 	 * Examples:
-	 * <code>
 	 * <pre>
+	 * <code>
 	 * // new String[len]
 	 * ArrayCreation ac1 = ast.newArrayCreation();
 	 * ac1.setType(
@@ -1225,9 +1445,8 @@ public final class AST {
 	 * ac3.setInitializer(ai);
 	 * ai.expressions().add(ast.newNumberLiteral("1"));
 	 * ai.expressions().add(ast.newNumberLiteral("2"));
-	 * </pre>
 	 * </code>
-	 * </p>
+	 * </pre>
 	 *
 	 * @return a new unparented array creation expression node
 	 */
@@ -1253,6 +1472,7 @@ public final class AST {
 	 * By default, the array type has one non-annotated dimension.
 	 * <p>
 	 * For JLS4 and before, the given component type may be another array type.
+	 * </p>
 	 *
 	 * @param elementType element type for API level JLS8 and later, or the
 	 * component type (possibly another array type) for levels less than JLS8
@@ -1391,14 +1611,13 @@ public final class AST {
 	 * <p>
 	 * For example, the assignment expression <code>foo = true</code>
 	 * is generated by the following snippet:
-	 * <code>
 	 * <pre>
+	 * <code>
 	 * Assignment e= ast.newAssignment();
 	 * e.setLeftHandSide(ast.newSimpleName("foo"));
 	 * e.setRightHandSide(ast.newBooleanLiteral(true));
-	 * </pre>
 	 * </code>
-	 * </p>
+	 * </pre>
 	 *
 	 * @param value the boolean value
 	 * @return a new unparented boolean literal node
@@ -1411,7 +1630,7 @@ public final class AST {
 
 	/**
 	 * Creates an unparented break statement node owned by this AST.
-	 * The break statement has no label.
+	 * The break statement has no label/identifier/expression and is not implicit.
 	 *
 	 * @return a new unparented break statement node
 	 */
@@ -1520,7 +1739,7 @@ public final class AST {
 	/**
 	 * Creates an unparented creation reference node owned by this AST.
 	 * By default, the type is unspecified (but legal), and there are no type arguments.
-	 * 
+	 *
 	 * @return a new unparented creation reference expression node
 	 * @exception UnsupportedOperationException if this operation is used in a JLS2, JLS3 or JLS4 AST
 	 * @since 3.10
@@ -1809,7 +2028,7 @@ public final class AST {
 	 * Creates an unparented lambda expression node owned by this AST.
 	 * By default, the new lambda expression has parentheses enabled, contains an empty argument
 	 * list, and the body is an empty block.
-	 * 
+	 *
 	 * @return a new unparented lambda expression node
 	 * @exception UnsupportedOperationException if this operation is used in a JLS2, JLS3 or JLS4 AST
 	 * @since 3.10
@@ -2539,15 +2758,28 @@ public final class AST {
 	}
 
 	/**
+	 * Creates and returns a new unparented switch expression node
+	 * owned by this AST. By default, the expression is unspecified, but legal,
+	 * and there are no statements or switch cases.
+	 *
+	 * @return a new unparented labeled switch expression node
+	 * @since 3.18
+	 */
+	public SwitchExpression newSwitchExpression() {
+		SwitchExpression result = new SwitchExpression(this);
+		return result;
+	}
+
+	/**
 	 * Creates a new unparented switch case statement node owned by
-	 * this AST. By default, the expression is unspecified, but legal.
+	 * this AST. By default, the node has no expression, but legal, and
+	 * switchLabeledRule is false which indicates ":".
 	 *
 	 * @return a new unparented switch case node
 	 */
 	public SwitchCase newSwitchCase() {
 		return new SwitchCase(this);
 	}
-
 
 	/**
 	 * Creates a new unparented switch statement node owned by this AST.
@@ -2585,6 +2817,18 @@ public final class AST {
 	public TagElement newTagElement() {
 		TagElement result = new TagElement(this);
 		return result;
+	}
+
+	/**
+	 * Creates an unparented yield statement node owned by this AST. The yield statement has no
+	 * label/identifier/expression and is not implicit.
+	 *
+	 * @return a new unparented yield statement node
+	 * @since 3.20
+	 * @noreference This method is not intended to be referenced by clients.
+	 */
+	public TextBlock newTextBlock() {
+		return new TextBlock(this);
 	}
 
 	/**
@@ -2722,7 +2966,7 @@ public final class AST {
 	 * Creates an unparented type method reference node owned by this AST.
 	 * By default, the type and method name are unspecified (but legal),
 	 * and there are no type arguments.
-	 * 
+	 *
 	 * @return a new unparented type method reference node
 	 * @exception UnsupportedOperationException if this operation is used in a JLS2, JLS3 or JLS4 AST
 	 * @since 3.10
@@ -2885,6 +3129,18 @@ public final class AST {
 	public WildcardType newWildcardType() {
 		WildcardType result = new WildcardType(this);
 		return result;
+	}
+
+	/**
+	 * Creates an unparented yield statement node owned by this AST. The yield statement has no
+	 * label/identifier/expression and is not implicit.
+	 *
+	 * @return a new unparented yield statement node
+	 * @since 3.20
+	 * @noreference This method is not intended to be referenced by clients.
+	 */
+	public YieldStatement newYieldStatement() {
+		return new YieldStatement(this);
 	}
 
 	/**
@@ -3262,7 +3518,6 @@ public final class AST {
 	 * <li><code>"java.lang.Void"</code> (since 3.1)</li>
 	 * <li><code>"java.io.Serializable"</code></li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @param name the name of a well known type
 	 * @return the corresponding type binding, or <code>null</code> if the
@@ -3381,5 +3636,27 @@ public final class AST {
 	  	throw new UnsupportedOperationException("Operation not supported in JLS2 AST"); //$NON-NLS-1$
 	  }
 	}
-}
 
+
+	/**
+	 *
+	 * @return If previewEnabled flag is set to <code>true</code>, return <code>true</code> else <code>false</code>
+	 * @since 3.21
+	 * @noreference This method is not intended to be referenced by clients.
+	 */
+	public boolean isPreviewEnabledSet() {
+		return this.previewEnabled;
+	}
+
+	/**
+	 *
+	 * @return If preview is enabled and apiLevel is latest, return <code>true</code> else <code>false</code>
+	 * @since 3.19
+	 */
+	public boolean isPreviewEnabled() {
+		if (this.apiLevel == AST.JLS_Latest && this.previewEnabled) {
+				return true;
+		}
+		return false;
+	}
+}

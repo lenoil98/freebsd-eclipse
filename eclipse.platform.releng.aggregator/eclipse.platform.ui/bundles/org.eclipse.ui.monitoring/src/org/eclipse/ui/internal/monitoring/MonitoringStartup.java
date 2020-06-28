@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2014, 2015 Google Inc and others.
+ * Copyright (C) 2014, 2019 Google Inc and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,12 +12,15 @@
  *     Steve Foreman (Google) - initial API and implementation
  *     Marcus Eng (Google)
  *     Sergey Prigogin (Google)
+ *     Christoph Läubrich - change to new preference store API
  *******************************************************************************/
 package org.eclipse.ui.internal.monitoring;
 
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IStartup;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.monitoring.preferences.MonitoringPreferenceListener;
 import org.eclipse.ui.monitoring.PreferenceConstants;
 
@@ -33,8 +36,8 @@ public class MonitoringStartup implements IStartup {
 			return;
 		}
 
-		IPreferenceStore preferences = MonitoringPlugin.getDefault().getPreferenceStore();
-		if (preferences.getBoolean(PreferenceConstants.MONITORING_ENABLED)) {
+		IPreferenceStore preferences = MonitoringPlugin.getPreferenceStore();
+		if (preferences.getBoolean(PreferenceConstants.MONITORING_ENABLED) && !Platform.inDevelopmentMode()) {
 			monitoringThread = createAndStartMonitorThread();
 		}
 
@@ -56,7 +59,7 @@ public class MonitoringStartup implements IStartup {
 		}
 
 		final EventLoopMonitorThread thread = temporaryThread;
-		final Display display = MonitoringPlugin.getDefault().getWorkbench().getDisplay();
+		final Display display = PlatformUI.getWorkbench().getDisplay();
 		// Final setup and start asynchronously on the display thread.
 		display.asyncExec(() -> {
 			// If we're still running when display gets disposed, shutdown the thread.
@@ -68,7 +71,7 @@ public class MonitoringStartup implements IStartup {
 	}
 
 	private static EventLoopMonitorThread.Parameters loadPreferences() {
-		IPreferenceStore preferences = MonitoringPlugin.getDefault().getPreferenceStore();
+		IPreferenceStore preferences = MonitoringPlugin.getPreferenceStore();
 		EventLoopMonitorThread.Parameters args = new EventLoopMonitorThread.Parameters();
 
 		args.longEventWarningThreshold =

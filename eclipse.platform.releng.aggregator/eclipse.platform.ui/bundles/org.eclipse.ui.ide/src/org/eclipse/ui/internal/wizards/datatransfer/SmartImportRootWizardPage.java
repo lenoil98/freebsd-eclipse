@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2018 Red Hat Inc., and others
+ * Copyright (c) 2014, 2020 Red Hat Inc., and others
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -45,12 +45,9 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.jface.layout.GridLayoutFactory;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.CellLabelProvider;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
-import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ICheckStateProvider;
 import org.eclipse.jface.viewers.IColorProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -82,6 +79,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
@@ -114,12 +112,21 @@ public class SmartImportRootWizardPage extends WizardPage {
 
 	static final String IMPORTED_SOURCES = SmartImportRootWizardPage.class.getName() + ".knownSources"; //$NON-NLS-1$
 
+	private static final String STORE_HIDE_ALREADY_OPEN = "SmartImportRootWizardPage.STORE_HIDE_ALREADY_OPEN"; //$NON-NLS-1$
+
+	private static final String STORE_NESTED_PROJECTS = "SmartImportRootWizardPage.STORE_NESTED_PROJECTS"; //$NON-NLS-1$
+
+	private static final String STORE_CLOSE_IMPORTED = "SmartImportRootWizardPage.STORE_CLOSE_IMPORTED"; //$NON-NLS-1$
+
+	private static final String STORE_CONFIGURE_NATURES = "SmartImportRootWizardPage.STORE_CONFIGURE_NATURES"; //$NON-NLS-1$
+
 	// Root
 	private File selection;
 	private Combo rootDirectoryText;
 	private ControlDecoration rootDirectoryTextDecorator;
 	// Proposal part
 	private CheckboxTreeViewer tree;
+	private boolean hideAlreadyOpen = false;
 	private ControlDecoration proposalSelectionDecorator;
 	private Set<File> directoriesToImport;
 	private Label selectionSummary;
@@ -284,6 +291,8 @@ public class SmartImportRootWizardPage extends WizardPage {
 		setTitle(DataTransferMessages.SmartImportWizardPage_importProjectsInFolderTitle);
 		setDescription(DataTransferMessages.SmartImportWizardPage_importProjectsInFolderDescription);
 		initializeDialogUnits(parent);
+		loadWidgetStates();
+
 		Composite res = new Composite(parent, SWT.NONE);
 		GridLayoutFactory.swtDefaults().margins(10, 10).numColumns(4).equalWidth(false).applyTo(res);
 
@@ -386,14 +395,10 @@ public class SmartImportRootWizardPage extends WizardPage {
 
 			private void expandSelectedArchive() {
 				try {
-					getContainer().run(true, true, new IRunnableWithProgress() {
-						@Override
-						public void run(IProgressMonitor monitor)
-								throws InvocationTargetException, InterruptedException {
-							getWizard().expandArchive(selection, monitor);
-							if (monitor.isCanceled()) {
-								throw new InterruptedException();
-							}
+					getContainer().run(true, true, monitor -> {
+						getWizard().expandArchive(selection, monitor);
+						if (monitor.isCanceled()) {
+							throw new InterruptedException();
 						}
 					});
 				} catch (Exception ex) {
@@ -494,7 +499,7 @@ public class SmartImportRootWizardPage extends WizardPage {
 				message.append('\n');
 				List<String> extensionsLabels = new ArrayList<>(
 						ProjectConfiguratorExtensionManager.getAllExtensionLabels());
-				Collections.sort(extensionsLabels);
+				extensionsLabels.sort(null);
 				for (String extensionLabel : extensionsLabels) {
 					message.append("* "); //$NON-NLS-1$
 					message.append(extensionLabel);
@@ -516,6 +521,7 @@ public class SmartImportRootWizardPage extends WizardPage {
 				refreshProposals();
 			}
 		});
+
 		final Button configureProjectsCheckbox = new Button(parent, SWT.CHECK);
 		configureProjectsCheckbox.setText(DataTransferMessages.SmartImportWizardPage_configureProjects);
 		configureProjectsCheckbox.setLayoutData(layoutData);
@@ -541,7 +547,9 @@ public class SmartImportRootWizardPage extends WizardPage {
 		FilteredTree filterTree = new FilteredTree(res, SWT.BORDER | SWT.CHECK, patternFilter, true) {
 			@Override
 			public CheckboxTreeViewer doCreateTreeViewer(Composite treeParent, int style) {
-				return new CheckboxTreeViewer(treeParent, style);
+				CheckboxTreeViewer checkboxTreeViewer = new CheckboxTreeViewer(treeParent, style);
+				checkboxTreeViewer.setUseHashlookup(true);
+				return checkboxTreeViewer;
 			}
 		};
 		tree = (CheckboxTreeViewer) filterTree.getViewer();
@@ -588,21 +596,17 @@ public class SmartImportRootWizardPage extends WizardPage {
 				return SmartImportRootWizardPage.this.directoriesToImport.contains(element);
 			}
 		});
-		tree.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				if (isExistingProject((File) event.getElement())
-						|| isExistingProjectName((File) event.getElement())) {
-					tree.setChecked(event.getElement(), false);
-					return;
-				}
-				if (event.getChecked()) {
-					SmartImportRootWizardPage.this.directoriesToImport.add((File) event.getElement());
-				} else {
-					SmartImportRootWizardPage.this.directoriesToImport.remove(event.getElement());
-				}
-				proposalsSelectionChanged();
+		tree.addCheckStateListener(event -> {
+			if (isExistingProject((File) event.getElement()) || isExistingProjectName((File) event.getElement())) {
+				tree.setChecked(event.getElement(), false);
+				return;
 			}
+			if (event.getChecked()) {
+				SmartImportRootWizardPage.this.directoriesToImport.add((File) event.getElement());
+			} else {
+				SmartImportRootWizardPage.this.directoriesToImport.remove(event.getElement());
+			}
+			proposalsSelectionChanged();
 		});
 
 		tree.getTree().setHeaderVisible(true);
@@ -675,7 +679,8 @@ public class SmartImportRootWizardPage extends WizardPage {
 			public void widgetSelected(SelectionEvent e) {
 				ViewerFilter[] currentFilters = tree.getFilters();
 				ViewerFilter[] newFilters = null;
-				if (((Button) e.widget).getSelection()) {
+				hideAlreadyOpen = ((Button) e.widget).getSelection();
+				if (hideAlreadyOpen) {
 					newFilters = new ViewerFilter[currentFilters.length + 1];
 					System.arraycopy(currentFilters, 0, newFilters, 0, currentFilters.length);
 					newFilters[newFilters.length - 1] = existingProjectsFilter;
@@ -692,15 +697,14 @@ public class SmartImportRootWizardPage extends WizardPage {
 				tree.setFilters(newFilters);
 			}
 		});
+		hideProjectsAlreadyInWorkspace.setSelection(hideAlreadyOpen);
+		// to trigger initial selection -> adds viewerfilter when hideAlreadyOpen = true
+		hideProjectsAlreadyInWorkspace.notifyListeners(SWT.Selection, new Event());
 		tree.setInput(Collections.emptyMap());
 
 		return res;
 	}
 
-	/**
-	 * @param element
-	 * @return
-	 */
 	protected boolean isExistingProject(File element) {
 		for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
 			IPath location = project.getLocation();
@@ -712,7 +716,8 @@ public class SmartImportRootWizardPage extends WizardPage {
 	}
 
 	protected boolean isExistingProjectName(File element) {
-		return ResourcesPlugin.getWorkspace().getRoot().getProject(element.getName()).exists();
+		String name = element.getName();
+		return !name.isEmpty() && ResourcesPlugin.getWorkspace().getRoot().getProject(name).exists();
 	}
 
 	protected void validatePage() {
@@ -774,14 +779,9 @@ public class SmartImportRootWizardPage extends WizardPage {
 	public Set<IWorkingSet> getSelectedWorkingSets() {
 		this.workingSets = new HashSet<>();
 		// workingSetsGroup doesn't support listeners...
-		Runnable workingSetsRetriever = new Runnable() {
-			@Override
-			public void run() {
-				for (IWorkingSet workingSet : SmartImportRootWizardPage.this.workingSetsGroup
-						.getSelectedWorkingSets()) {
-					SmartImportRootWizardPage.this.workingSets.add(workingSet);
-				}
-			}
+		Runnable workingSetsRetriever = () -> {
+			java.util.Collections.addAll(SmartImportRootWizardPage.this.workingSets, SmartImportRootWizardPage.this.workingSetsGroup
+					.getSelectedWorkingSets());
 		};
 		if (Display.getCurrent() == null) {
 			getContainer().getShell().getDisplay().syncExec(workingSetsRetriever);
@@ -946,9 +946,38 @@ public class SmartImportRootWizardPage extends WizardPage {
 
 	@Override
 	public void dispose() {
+		saveWidgetStates();
 		stopAndDisconnectCurrentWork();
 		getStopButton(wizardProgressMonitor.get()).removeSelectionListener(this.cancelWorkListener);
 		super.dispose();
+	}
+
+	/**
+	 * Load widget states from DialogSettings
+	 */
+	private void loadWidgetStates() {
+		IDialogSettings dialogSettings = getDialogSettings();
+
+		// only load settings if there is a key available to preserve default values
+		if (dialogSettings != null && dialogSettings.get(STORE_HIDE_ALREADY_OPEN) != null) {
+			hideAlreadyOpen = dialogSettings.getBoolean(STORE_HIDE_ALREADY_OPEN);
+			closeProjectsAfterImport = dialogSettings.getBoolean(STORE_CLOSE_IMPORTED);
+			detectNestedProjects = dialogSettings.getBoolean(STORE_NESTED_PROJECTS);
+			configureProjects = dialogSettings.getBoolean(STORE_CONFIGURE_NATURES);
+		}
+	}
+
+	/**
+	 * Save widget states to DialogSettings
+	 */
+	private void saveWidgetStates() {
+		IDialogSettings dialogSettings = getDialogSettings();
+		if (dialogSettings != null) {
+			dialogSettings.put(STORE_HIDE_ALREADY_OPEN, hideAlreadyOpen);
+			dialogSettings.put(STORE_CLOSE_IMPORTED, closeProjectsAfterImport);
+			dialogSettings.put(STORE_NESTED_PROJECTS, detectNestedProjects);
+			dialogSettings.put(STORE_CONFIGURE_NATURES, configureProjects);
+		}
 	}
 
 	/**
@@ -961,5 +990,14 @@ public class SmartImportRootWizardPage extends WizardPage {
 		return this.wizardProgressMonitor.get();
 	}
 
+	/**
+	 * Public for tests.
+	 *
+	 * @param closeProjectsAfterImport whether projects should be closed after being
+	 *                                 imported
+	 */
+	public void setCloseProjectsAfterImport(boolean closeProjectsAfterImport) {
+		this.closeProjectsAfterImport = closeProjectsAfterImport;
+	}
 }
 

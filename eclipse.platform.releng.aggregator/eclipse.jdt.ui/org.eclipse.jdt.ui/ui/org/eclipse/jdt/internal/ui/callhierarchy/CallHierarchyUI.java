@@ -256,15 +256,14 @@ public class CallHierarchyUI {
 
 	/**
 	 * Finds the first Call Hierarchy view part instance that is not pinned.
-	 * 
+	 *
 	 * @param page the active page
 	 * @return the Call Hierarchy view part to open or <code>null</code> if none found
 	 * @since 3.7
 	 */
 	private CallHierarchyViewPart findLRUCallHierarchyViewPart(IWorkbenchPage page) {
 		boolean viewFoundInPage= false;
-		for (Iterator<CallHierarchyViewPart> iter= fLRUCallHierarchyViews.iterator(); iter.hasNext();) {
-			CallHierarchyViewPart view= iter.next();
+		for (CallHierarchyViewPart view : fLRUCallHierarchyViews) {
 			if (page.equals(view.getSite().getPage())) {
 				if (!view.isPinned()) {
 					return view;
@@ -274,9 +273,7 @@ public class CallHierarchyUI {
 		}
 		if (!viewFoundInPage) {
 			// find unresolved views
-			IViewReference[] viewReferences= page.getViewReferences();
-			for (int i= 0; i < viewReferences.length; i++) {
-				IViewReference curr= viewReferences[i];
+			for (IViewReference curr : page.getViewReferences()) {
 				if (CallHierarchyViewPart.ID_CALL_HIERARCHY.equals(curr.getId()) && page.equals(curr.getPage())) {
 					CallHierarchyViewPart view= (CallHierarchyViewPart)curr.getView(true);
 					if (view != null && !view.isPinned()) {
@@ -290,7 +287,7 @@ public class CallHierarchyUI {
 
 	/**
 	 * Adds the activated view part to the head of the list.
-	 * 
+	 *
 	 * @param view the Call Hierarchy view part
 	 * @since 3.7
 	 */
@@ -301,7 +298,7 @@ public class CallHierarchyUI {
 
 	/**
 	 * Removes the closed view part from the list.
-	 * 
+	 *
 	 * @param view the closed view part
 	 * @since 3.7
 	 */
@@ -346,12 +343,11 @@ public class CallHierarchyUI {
 
 	/**
 	 * Clears the history and updates all the open views.
-	 * 
+	 *
 	 * @since 3.7
 	 */
 	void clearHistory() {
-		for (Iterator<CallHierarchyViewPart> iter= fLRUCallHierarchyViews.iterator(); iter.hasNext();) {
-			CallHierarchyViewPart part= iter.next();
+		for (CallHierarchyViewPart part : fLRUCallHierarchyViews) {
 			part.setHistoryEntries(new IMember[0][]);
 			part.setInputElements(null);
 		}
@@ -359,7 +355,7 @@ public class CallHierarchyUI {
 
 	/**
 	 * Returns the method history.
-	 * 
+	 *
 	 * @return the method history
 	 * @since 3.7
 	 */

@@ -14,13 +14,14 @@
 
 package org.eclipse.help.internal.webapp.servlet;
 
-import java.io.*;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServletRequest;
 
-import org.eclipse.help.internal.webapp.data.*;
+import org.eclipse.help.internal.webapp.data.UrlUtil;
 import org.eclipse.help.webapp.IFilter;
 
 /**
@@ -29,8 +30,8 @@ import org.eclipse.help.webapp.IFilter;
  */
 public class FramesetFilter implements IFilter {
 	private static final String scriptPart1 = "<script type=\"text/javascript\">\nif( self == top ){" //$NON-NLS-1$
-		    + "\n  var  anchorParam = location.hash.length > 0 ? '"  //$NON-NLS-1$
-		    + UrlUtil.JavaScriptEncode("&") + "anchor=' + location.hash.substr(1) : '';" //$NON-NLS-1$ //$NON-NLS-2$
+			+ "\n  var  anchorParam = location.hash.length > 0 ? '"  //$NON-NLS-1$
+			+ UrlUtil.JavaScriptEncode("&") + "anchor=' + location.hash.substr(1) : '';" //$NON-NLS-1$ //$NON-NLS-2$
 			+ "\n  window.location.replace( \""; //$NON-NLS-1$
 	private static final String scriptPart3 = "\" + anchorParam);\n}\n</script>"; //$NON-NLS-1$
 
@@ -77,6 +78,7 @@ public class FramesetFilter implements IFilter {
 			// Bug 317055 -  [webapp] URLEncode url requests from local users
 			url = URLEncoder.encode(url, "UTF-8"); //$NON-NLS-1$
 			if ( query != null ) {
+				query = URLEncoder.encode(query, "UTF-8"); //$NON-NLS-1$
 				url = url + UrlUtil.JavaScriptEncode("&")  + query;  //$NON-NLS-1$
 			}
 			script.append(url);

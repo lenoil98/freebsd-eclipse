@@ -223,7 +223,7 @@ public final class WizardActionGroup extends ActionGroup {
 	 */
 	private synchronized Map/*<String, SortedSet<IAction>>*/<String, SortedSet>  findGroups() {
 		IAction action = null;
-		Map<String, SortedSet> groups = new TreeMap<String, SortedSet>();
+		Map<String, SortedSet> groups = new TreeMap<>();
 		SortedSet<IAction> sortedWizards = null;
 		String menuGroupId = null;
 		for (CommonWizardDescriptor descriptor : descriptors) {
@@ -278,7 +278,7 @@ public final class WizardActionGroup extends ActionGroup {
 	 */
 	protected Map<String, IAction> getActions() {
 		if (actions == null) {
-			actions = new HashMap<String, IAction>();
+			actions = new HashMap<>();
 		}
 		return actions;
 	}

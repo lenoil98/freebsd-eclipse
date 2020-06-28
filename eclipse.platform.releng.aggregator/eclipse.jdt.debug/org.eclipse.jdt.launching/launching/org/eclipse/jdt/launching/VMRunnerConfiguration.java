@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+ * Copyright (c) 2000, 2019 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -38,8 +38,10 @@ public class VMRunnerConfiguration {
 	private String fModuleDescription;
 	private String fWorkingDirectory;
 	private String fOverrideDependencies;
+	private Boolean fPreviewEnabled = false;
 	private Map<String, Object> fVMSpecificAttributesMap;
 	private boolean fResume = true;
+	private boolean fMergeOutput = false;
 
 	private static final String[] fgEmpty= new String[0];
 
@@ -177,7 +179,6 @@ public class VMRunnerConfiguration {
 	 * <li>ATTR_BOOTPATH_APPEND</li>
 	 * <li>ATTR_BOOTPATH</li>
 	 * </ul>
-	 * </p>
 	 * @return The boot classpath. An empty array indicates an empty
 	 *  bootpath and <code>null</code> indicates a default bootpath.
 	 * @see #setBootClassPath(String[])
@@ -315,7 +316,7 @@ public class VMRunnerConfiguration {
 
 	/**
 	 * Gets the fOverrideDependencies.
-	 * 
+	 *
 	 * @return the fOverrideDependencies
 	 * @since 3.10
 	 */
@@ -325,7 +326,7 @@ public class VMRunnerConfiguration {
 
 	/**
 	 * Sets the fOverrideDependencies.
-	 * 
+	 *
 	 * @param fOverrideDependencies
 	 *            the fOverrideDependencies to set
 	 * @since 3.10
@@ -334,4 +335,45 @@ public class VMRunnerConfiguration {
 		this.fOverrideDependencies = fOverrideDependencies;
 	}
 
+	/**
+	 * Gets the fPreviewEnabled.
+	 *
+	 * @return the fPreviewEnabled
+	 * @since 3.14
+	 */
+	public boolean isPreviewEnabled() {
+		return fPreviewEnabled;
+	}
+
+	/**
+	 * Sets the fPreviewEnabled.
+	 *
+	 * @param fPreviewEnabled
+	 *            the fPreviewEnabled to set
+	 * @since 3.14
+	 */
+	public void setPreviewEnabled(boolean fPreviewEnabled) {
+		this.fPreviewEnabled = fPreviewEnabled;
+	}
+
+	/**
+	 * Gets the fMergeOutput.
+	 *
+	 * @return the fMergeOutput
+	 * @since 3.15
+	 */
+	public boolean isMergeOutput() {
+		return fMergeOutput;
+	}
+
+	/**
+	 * Sets the fMergeOutput. If <code>true</code> the VM will be run with redirectErrorStream(true) to merge error and standard output.
+	 *
+	 * @param fMergeOutput
+	 *            the fMergeOutput to set
+	 * @since 3.15
+	 */
+	public void setMergeOutput(boolean fMergeOutput) {
+		this.fMergeOutput = fMergeOutput;
+	}
 }

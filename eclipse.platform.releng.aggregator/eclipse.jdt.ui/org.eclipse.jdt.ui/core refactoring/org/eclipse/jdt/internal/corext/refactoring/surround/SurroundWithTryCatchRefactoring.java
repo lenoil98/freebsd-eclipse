@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+ * Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -65,21 +65,20 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.TypeLocation;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 
+import org.eclipse.jdt.internal.core.manipulation.StubUtility;
+import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
+import org.eclipse.jdt.internal.core.manipulation.util.Strings;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.dom.CodeScopeBuilder;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.internal.corext.dom.Selection;
 import org.eclipse.jdt.internal.corext.fix.LinkedProposalModel;
 import org.eclipse.jdt.internal.corext.refactoring.Checks;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.ResourceUtil;
 import org.eclipse.jdt.internal.corext.refactoring.util.SelectionAwareSourceRangeComputer;
-import org.eclipse.jdt.internal.core.manipulation.StubUtility;
-import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
-import org.eclipse.jdt.internal.core.manipulation.util.Strings;
-
-import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
-import org.eclipse.jdt.internal.corext.dom.Selection;
 
 import org.eclipse.jdt.internal.ui.text.correction.QuickAssistProcessor;
 
@@ -192,7 +191,7 @@ public class SurroundWithTryCatchRefactoring extends Refactoring {
 	public RefactoringStatus checkFinalConditions(IProgressMonitor pm) throws CoreException {
 		return Checks.validateModifiesFiles(
 			ResourceUtil.getFiles(new ICompilationUnit[]{fCUnit}),
-			getValidationContext());
+			getValidationContext(), pm);
 	}
 
 	/* non Java-doc
@@ -299,8 +298,7 @@ public class SurroundWithTryCatchRefactoring extends Refactoring {
 		ListRewrite statements= fRewriter.getListRewrite(tryStatement.getBody(), Block.STATEMENTS_PROPERTY);
 		boolean selectedNodeRemoved= false;
 		ASTNode expressionStatement= null;
-		for (int i= 0; i < fSelectedNodes.length; i++) {
-			ASTNode node= fSelectedNodes[i];
+		for (ASTNode node : fSelectedNodes) {
 			if (node instanceof VariableDeclarationStatement && variableDeclarations.contains(node)) {
 				AST ast= getAST();
 				VariableDeclarationStatement statement= (VariableDeclarationStatement)node;
@@ -314,8 +312,7 @@ public class SurroundWithTryCatchRefactoring extends Refactoring {
 					}
 				}
 				List<VariableDeclarationFragment> fragments= copy.fragments();
-				for (Iterator<VariableDeclarationFragment> iter= fragments.iterator(); iter.hasNext();) {
-					VariableDeclarationFragment fragment= iter.next();
+				for (VariableDeclarationFragment fragment : fragments) {
 					fragment.setInitializer(null);
 				}
 
@@ -343,8 +340,7 @@ public class SurroundWithTryCatchRefactoring extends Refactoring {
 				fragments= statement.fragments();
 				if (!fragments.isEmpty()) {
 					List<ExpressionStatement> newExpressionStatements= new ArrayList<>();
-					for (Iterator<VariableDeclarationFragment> iter= fragments.iterator(); iter.hasNext();) {
-						VariableDeclarationFragment fragment= iter.next();
+					for (VariableDeclarationFragment fragment : fragments) {
 						Expression initializer= fragment.getInitializer();
 						if (initializer != null) {
 							Assignment assignment= ast.newAssignment();
@@ -428,8 +424,7 @@ public class SurroundWithTryCatchRefactoring extends Refactoring {
 
 		for (Iterator<ITypeBinding> subtypeIterator= filteredExceptions.iterator(); subtypeIterator.hasNext();) {
 			ITypeBinding iTypeBinding= subtypeIterator.next();
-			for (Iterator<ITypeBinding> supertypeIterator= filteredExceptions.iterator(); supertypeIterator.hasNext();) {
-				ITypeBinding superTypeBinding= supertypeIterator.next();
+			for (ITypeBinding superTypeBinding : filteredExceptions) {
 				if (!iTypeBinding.equals(superTypeBinding) && iTypeBinding.isSubTypeCompatible(superTypeBinding)) {
 					subtypeIterator.remove();
 					break;
@@ -441,9 +436,8 @@ public class SurroundWithTryCatchRefactoring extends Refactoring {
 
 	private List<ASTNode> getSpecialVariableDeclarationStatements() {
 		List<ASTNode> result= new ArrayList<>(3);
-		VariableDeclaration[] locals= fAnalyzer.getAffectedLocals();
-		for (int i= 0; i < locals.length; i++) {
-			ASTNode parent= locals[i].getParent();
+		for (VariableDeclaration local : fAnalyzer.getAffectedLocals()) {
+			ASTNode parent= local.getParent();
 			if (parent instanceof VariableDeclarationStatement && !result.contains(parent))
 				result.add(parent);
 		}

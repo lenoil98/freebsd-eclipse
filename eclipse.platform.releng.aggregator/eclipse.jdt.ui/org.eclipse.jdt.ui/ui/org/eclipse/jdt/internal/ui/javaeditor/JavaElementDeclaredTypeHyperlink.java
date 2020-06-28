@@ -45,7 +45,7 @@ import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 
 /**
  * Java element declared type hyperlink for variables.
- * 
+ *
  * @since 3.7
  */
 public class JavaElementDeclaredTypeHyperlink implements IHyperlink {
@@ -55,10 +55,10 @@ public class JavaElementDeclaredTypeHyperlink implements IHyperlink {
 	private final IJavaElement fElement;
 	private final String fTypeSig;
 	private final boolean fQualify;
-	
+
 	/**
 	 * Creates a new Java element declared type hyperlink for variables.
-	 * 
+	 *
 	 * @param region the region of the link
 	 * @param openAction the action to use to open the Java elements
 	 * @param element the Java element to open
@@ -71,7 +71,7 @@ public class JavaElementDeclaredTypeHyperlink implements IHyperlink {
 
 	/**
 	 * Creates a new Java element declared type hyperlink for variables.
-	 * 
+	 *
 	 * @param region the region of the link
 	 * @param openAction the action to use to open the Java elements
 	 * @param element the Java element to open
@@ -128,27 +128,32 @@ public class JavaElementDeclaredTypeHyperlink implements IHyperlink {
 			}
 		}
 		int kind= Signature.getTypeSignatureKind(typeSignature);
-		if (kind == Signature.ARRAY_TYPE_SIGNATURE) {
-			typeSignature= Signature.getElementType(typeSignature);
-		} else if (kind == Signature.CLASS_TYPE_SIGNATURE) {
-			typeSignature= Signature.getTypeErasure(typeSignature);
-		} else if (kind == Signature.UNION_TYPE_SIGNATURE) {
-			String[] typeBounds= Signature.getUnionTypeBounds(typeSignature);
-			ArrayList<IType> types= new ArrayList<>();
-			for (int i= 0; i < typeBounds.length; i++) {
-				String typeErasure= Signature.getTypeErasure(typeBounds[i]);
-				IType type= getType(typeErasure);
-				if (type != null) {
-					types.add(type);
+		switch (kind) {
+			case Signature.ARRAY_TYPE_SIGNATURE:
+				typeSignature= Signature.getElementType(typeSignature);
+				break;
+			case Signature.CLASS_TYPE_SIGNATURE:
+				typeSignature= Signature.getTypeErasure(typeSignature);
+				break;
+			case Signature.UNION_TYPE_SIGNATURE:
+				ArrayList<IType> types= new ArrayList<>();
+				for (String typeBound : Signature.getUnionTypeBounds(typeSignature)) {
+					String typeErasure= Signature.getTypeErasure(typeBound);
+					IType type= getType(typeErasure);
+					if (type != null) {
+						types.add(type);
+					}
 				}
-			}
-			if (types.size() > 0) {
-				IJavaElement element= SelectionConverter.selectJavaElement(types.toArray(new IType[types.size()]), fOpenAction.getShell(), ActionMessages.OpenAction_error_title, ActionMessages.OpenAction_select_element);
-				if (element != null) {
-					fOpenAction.run(new StructuredSelection(element));
+				if (types.size() > 0) {
+					IJavaElement element= SelectionConverter.selectJavaElement(types.toArray(new IType[types.size()]), fOpenAction.getShell(), ActionMessages.OpenAction_error_title, ActionMessages.OpenAction_select_element);
+					if (element != null) {
+						fOpenAction.run(new StructuredSelection(element));
+					}
+					return;
 				}
-				return;
-			}
+				break;
+			default:
+				break;
 		}
 
 		IType type= getType(typeSignature);
@@ -187,11 +192,11 @@ public class JavaElementDeclaredTypeHyperlink implements IHyperlink {
 	private void openElementAndShowErrorInStatusLine() {
 		try {
 			IEditorPart editor= JavaUI.openInEditor(fElement);
-			
+
 			editor.getSite().getShell().getDisplay().beep();
 			if (editor instanceof JavaEditor)
 				((JavaEditor)editor).setStatusLineErrorMessage(JavaEditorMessages.JavaElementDeclaredTypeHyperlink_error_msg);
-			
+
 		} catch (PartInitException e) {
 			JavaPlugin.log(e);
 		} catch (CoreException e) {

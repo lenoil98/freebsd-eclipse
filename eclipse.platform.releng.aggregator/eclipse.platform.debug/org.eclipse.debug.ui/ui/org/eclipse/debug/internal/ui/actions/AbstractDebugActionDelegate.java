@@ -74,26 +74,20 @@ public abstract class AbstractDebugActionDelegate implements IViewActionDelegate
 	 */
 	public AbstractDebugActionDelegate() {}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IWorkbenchWindowActionDelegate#dispose()
-	 */
 	@Override
 	public void dispose(){
-        fSelection= null;
+		fSelection= null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action){
-	    if (action.isEnabled()) {
+		if (action.isEnabled()) {
 			IStructuredSelection selection = getSelection();
 			// disable the action so it cannot be run again until an event or selection change
 			// updates the enablement
 			action.setEnabled(false);
 			runInForeground(selection, false);
-	    }
+		}
 	}
 
 	/**
@@ -102,7 +96,7 @@ public abstract class AbstractDebugActionDelegate implements IViewActionDelegate
 	 */
 	private void runInForeground(final IStructuredSelection selection, boolean isShift) {
 		fIsShift = isShift;
-	    final MultiStatus status=
+		final MultiStatus status=
 			new MultiStatus(DebugUIPlugin.getUniqueIdentifier(), DebugException.REQUEST_FAILED, getStatusMessage(), null);
 		BusyIndicator.showWhile(Display.getCurrent(), () -> {
 			Iterator<?> selectionIter = selection.iterator();
@@ -138,9 +132,6 @@ public abstract class AbstractDebugActionDelegate implements IViewActionDelegate
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction, org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection s) {
 		boolean wasInitialized= initialize(action, s);
@@ -211,9 +202,6 @@ public abstract class AbstractDebugActionDelegate implements IViewActionDelegate
 		return IInternalDebugCoreConstants.EMPTY_STRING;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IViewActionDelegate#init(org.eclipse.ui.IViewPart)
-	 */
 	@Override
 	public void init(IViewPart view) {
 		fViewPart = view;
@@ -335,9 +323,6 @@ public abstract class AbstractDebugActionDelegate implements IViewActionDelegate
 		return fIsShift;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#runWithEvent(org.eclipse.jface.action.IAction, org.eclipse.swt.widgets.Event)
-	 */
 	@Override
 	public void runWithEvent(IAction action, Event event) {
 		if (action.isEnabled()) {
@@ -350,9 +335,6 @@ public abstract class AbstractDebugActionDelegate implements IViewActionDelegate
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate2#init(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void init(IAction action) {
 		fAction = action;

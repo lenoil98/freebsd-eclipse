@@ -86,6 +86,7 @@ public class ImportTest extends EclipseTest {
 	
 	// Assert that the two projects have equal contents ignoreing the project name
 	// and the .vcm_meta file
+	@Override
 	protected void assertEquals(IProject container1, IProject container2) throws CoreException {
 		List<IResource> members1 = new ArrayList<>();
 		members1.addAll(Arrays.asList(container1.members()));
@@ -136,19 +137,19 @@ public class ImportTest extends EclipseTest {
 		assertEquals(project, copy, true, true);
 		
 		// 1. Delete the project but not it's contents and checkout the project again
-        waitForDecorator();
+		waitForDecorator();
 		project.delete(false, false, DEFAULT_MONITOR);
 		project = checkoutProject(project, null, null);
 		assertEquals(project, copy, true, true);
 		
 		// 2. Delete the project and its contents and use the module name instead of the project
-        waitForDecorator();
+		waitForDecorator();
 		project.delete(true, false, DEFAULT_MONITOR);
 		project = checkoutProject(null, project.getName(), null);
 		assertEquals(project, copy, true, true);
 		
 		// 3. Create a project in a custom location and check out over it
-        waitForDecorator();
+		waitForDecorator();
 		project.delete(true, false, DEFAULT_MONITOR);
 		IProjectDescription desc = ResourcesPlugin.getWorkspace().newProjectDescription(project.getName());
 		//desc.setLocation(new Path("C:\\temp\\project"));
@@ -157,7 +158,7 @@ public class ImportTest extends EclipseTest {
 		assertEquals(project, copy, true, true);
 		
 		// 4. Checkout something that doesn't contain a .project
-        waitForDecorator();
+		waitForDecorator();
 		project.delete(true, false, DEFAULT_MONITOR);
 		project = checkoutProject(null, project.getName() + "/folder1", null);
 		//assertEquals(project, copy.getFolder("folder1"));

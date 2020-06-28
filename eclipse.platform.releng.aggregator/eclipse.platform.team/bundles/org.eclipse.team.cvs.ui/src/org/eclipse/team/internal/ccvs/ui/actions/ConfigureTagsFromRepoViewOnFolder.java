@@ -60,9 +60,6 @@ public class ConfigureTagsFromRepoViewOnFolder extends CVSAction {
 		return new ICVSRemoteFolder[0];
 	}
 
-	/*
-	 * @see CVSAction@execute(IAction)
-	 */
 	@Override
 	public void execute(IAction action) throws InvocationTargetException, InterruptedException {
 		run((IRunnableWithProgress) monitor -> {
@@ -70,25 +67,18 @@ public class ConfigureTagsFromRepoViewOnFolder extends CVSAction {
 			final Shell shell = getShell();
 			shell.getDisplay().syncExec(() -> {
 				ICVSFolder[] cvsFolders = new ICVSFolder[roots.length];
-				for (int i = 0; i < roots.length; i++) {
-					cvsFolders[i] = roots[i];
-				}
+				System.arraycopy(roots, 0, cvsFolders, 0, roots.length);
 				TagConfigurationDialog d = new TagConfigurationDialog(shell, TagSource.create(cvsFolders));
 				d.open();
 			});
 		}, false /* cancelable */, PROGRESS_BUSYCURSOR);
 	}
 
-	/*
-	 * @see TeamAction#isEnabled()
-	 */
 	@Override
 	public boolean isEnabled() {
 		return true;
 	}
-	/**
-	 * @see org.eclipse.team.internal.ccvs.ui.actions.CVSAction#getErrorTitle()
-	 */
+
 	@Override
 	protected String getErrorTitle() {
 		return CVSUIMessages.ConfigureTagsFromRepoViewConfigure_Tag_Error_1; 

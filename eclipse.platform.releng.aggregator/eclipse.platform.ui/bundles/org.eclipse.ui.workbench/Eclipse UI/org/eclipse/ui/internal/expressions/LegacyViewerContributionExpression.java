@@ -15,7 +15,6 @@
 package org.eclipse.ui.internal.expressions;
 
 import java.util.Collection;
-
 import org.eclipse.core.expressions.EvaluationResult;
 import org.eclipse.core.expressions.Expression;
 import org.eclipse.core.expressions.ExpressionInfo;
@@ -39,14 +38,12 @@ import org.eclipse.ui.IWorkbenchWindow;
  * @see ISources#ACTIVE_MENU_NAME
  * @since 3.2
  */
-public final class LegacyViewerContributionExpression extends
-		WorkbenchWindowExpression {
+public final class LegacyViewerContributionExpression extends WorkbenchWindowExpression {
 
 	/**
 	 * The seed for the hash code for all schemes.
 	 */
-	private static final int HASH_INITIAL = LegacyViewerContributionExpression.class
-			.getName().hashCode();
+	private static final int HASH_INITIAL = LegacyViewerContributionExpression.class.getName().hashCode();
 
 	/**
 	 * The child expression for this viewer contribution. This value may be
@@ -55,27 +52,24 @@ public final class LegacyViewerContributionExpression extends
 	private final Expression expression;
 
 	/**
-	 * The identifier of the menu to which this viewer contribution applies.
-	 * This value is never <code>null</code>.
+	 * The identifier of the menu to which this viewer contribution applies. This
+	 * value is never <code>null</code>.
 	 */
 	private final String targetId;
 
 	/**
 	 * Constructs a new {@link LegacyViewerContributionExpression}.
 	 *
-	 * @param targetId
-	 *            The identifier of the menu to which this viewer contribution
-	 *            applies; never <code>null</code>.
-	 * @param window
-	 *            The workbench window which must be active for this expression
-	 *            to evaluate to <code>true</code>; may be <code>null</code>
-	 *            if the window should be disregarded.
-	 * @param childExpression
-	 *            The child expression for this viewer contribution; may be
-	 *            <code>null</code>.
+	 * @param targetId        The identifier of the menu to which this viewer
+	 *                        contribution applies; never <code>null</code>.
+	 * @param window          The workbench window which must be active for this
+	 *                        expression to evaluate to <code>true</code>; may be
+	 *                        <code>null</code> if the window should be disregarded.
+	 * @param childExpression The child expression for this viewer contribution; may
+	 *                        be <code>null</code>.
 	 */
-	public LegacyViewerContributionExpression(final String targetId,
-			final IWorkbenchWindow window, final Expression childExpression) {
+	public LegacyViewerContributionExpression(final String targetId, final IWorkbenchWindow window,
+			final Expression childExpression) {
 		super(window);
 
 		if (targetId == null) {
@@ -98,16 +92,14 @@ public final class LegacyViewerContributionExpression extends
 	protected int computeHashCode() {
 		int hashCode = HASH_INITIAL * HASH_FACTOR + hashCode(getWindow());
 		hashCode = hashCode * HASH_FACTOR + hashCode(expression);
-		hashCode = hashCode * HASH_FACTOR + hashCode(targetId);
-		return hashCode;
+		return hashCode * HASH_FACTOR + hashCode(targetId);
 	}
 
 	@Override
 	public boolean equals(final Object object) {
 		if (object instanceof LegacyViewerContributionExpression) {
 			final LegacyViewerContributionExpression that = (LegacyViewerContributionExpression) object;
-			return equals(this.targetId, that.targetId)
-					&& equals(this.expression, that.expression)
+			return equals(this.targetId, that.targetId) && equals(this.expression, that.expression)
 					&& equals(this.getWindow(), that.getWindow());
 		}
 
@@ -115,8 +107,7 @@ public final class LegacyViewerContributionExpression extends
 	}
 
 	@Override
-	public EvaluationResult evaluate(final IEvaluationContext context)
-			throws CoreException {
+	public EvaluationResult evaluate(final IEvaluationContext context) throws CoreException {
 		final EvaluationResult result = super.evaluate(context);
 		if (result == EvaluationResult.FALSE) {
 			return result;
@@ -132,8 +123,8 @@ public final class LegacyViewerContributionExpression extends
 
 				return expression.evaluate(context);
 			}
-		} else if (value instanceof Collection) {
-			final Collection menuIds = (Collection) value;
+		} else if (value instanceof Collection<?>) {
+			final Collection<?> menuIds = (Collection<?>) value;
 			if (menuIds.contains(targetId)) {
 				if (expression == null) {
 					return EvaluationResult.TRUE;

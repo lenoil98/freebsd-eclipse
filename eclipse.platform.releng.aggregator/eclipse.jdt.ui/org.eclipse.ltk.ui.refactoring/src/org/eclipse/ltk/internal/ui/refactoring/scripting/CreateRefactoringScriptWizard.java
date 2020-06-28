@@ -26,6 +26,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,14 +37,12 @@ import org.eclipse.swt.dnd.Transfer;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.wizard.IWizardContainer;
 import org.eclipse.jface.wizard.Wizard;
 
@@ -143,10 +142,8 @@ public final class CreateRefactoringScriptWizard extends Wizard {
 						stream= new BufferedInputStream(new FileInputStream(file));
 						final RefactoringDescriptorProxy[] existing= RefactoringCore.getHistoryService().readRefactoringHistory(stream, RefactoringDescriptor.NONE).getDescriptors();
 						final Set<RefactoringDescriptorProxy> set= new HashSet<>();
-						for (int index= 0; index < existing.length; index++)
-							set.add(existing[index]);
-						for (int index= 0; index < fRefactoringDescriptors.length; index++)
-							set.add(fRefactoringDescriptors[index]);
+						set.addAll(Arrays.asList(existing));
+						set.addAll(Arrays.asList(fRefactoringDescriptors));
 						writable= new RefactoringDescriptorProxy[set.size()];
 						set.toArray(writable);
 					} catch (FileNotFoundException exception) {
@@ -311,15 +308,11 @@ public final class CreateRefactoringScriptWizard extends Wizard {
 	private void writeRefactoringDescriptorProxies(final RefactoringDescriptorProxy[] writable, final OutputStream stream) throws CoreException {
 		RefactoringHistoryManager.sortRefactoringDescriptorsAscending(writable);
 		try {
-			getContainer().run(false, false, new IRunnableWithProgress() {
-
-				@Override
-				public void run(final IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-					try {
-						RefactoringCore.getHistoryService().writeRefactoringDescriptors(writable, stream, RefactoringDescriptor.NONE, false, monitor);
-					} catch (CoreException exception) {
-						throw new InvocationTargetException(exception);
-					}
+			getContainer().run(false, false, monitor -> {
+				try {
+					RefactoringCore.getHistoryService().writeRefactoringDescriptors(writable, stream, RefactoringDescriptor.NONE, false, monitor);
+				} catch (CoreException exception) {
+					throw new InvocationTargetException(exception);
 				}
 			});
 		} catch (InvocationTargetException exception) {

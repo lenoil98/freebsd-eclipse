@@ -121,15 +121,12 @@ public class RestoreFromRepositoryFileSelectionPage extends CVSWizardPage {
 		super(pageName, title, titleImage, description);
 	}
 
-	/**
-	 * @see org.eclipse.jface.dialogs.IDialogPage#createControl(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public void createControl(Composite parent) {
 		Composite composite= createComposite(parent, 1, false);
 		setControl(composite);
 		
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, IHelpContextIds.RESTORE_FROM_REPOSITORY_FILE_SELECTION_PAGE);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, IHelpContextIds.RESTORE_FROM_REPOSITORY_FILE_SELECTION_PAGE);
 		
 		// Top and bottom panes: top is the two selection panes, bottom is the file content viewer
 		Splitter vsplitter= new Splitter(composite,  SWT.VERTICAL);
@@ -168,7 +165,7 @@ public class RestoreFromRepositoryFileSelectionPage extends CVSWizardPage {
 
 		initializeValues();
 		updateWidgetEnablements();
-        Dialog.applyDialogFont(parent);
+		Dialog.applyDialogFont(parent);
 	}
 
 	protected CheckboxTableViewer createRevisionSelectionTable(CompareViewerPane composite, HistoryTableProvider tableProvider) {
@@ -225,7 +222,7 @@ public class RestoreFromRepositoryFileSelectionPage extends CVSWizardPage {
 						return text;
 					}
 				},
-				CVSUIPlugin.getPlugin().getWorkbench().getDecoratorManager().getLabelDecorator()));
+				PlatformUI.getWorkbench().getDecoratorManager().getLabelDecorator()));
 		tree.setComparator(new ResourceComparator(ResourceComparator.NAME));
 		tree.setInput(treeInput);
 		
@@ -358,8 +355,7 @@ public class RestoreFromRepositoryFileSelectionPage extends CVSWizardPage {
 			revisionsTable.setChecked(selectedEntry, true);
 		}
 		// Disable entries that represent deletions since they can't be loaded
-		for (int i = 0; i < entries.length; i++) {
-			ILogEntry entry = entries[i];
+		for (ILogEntry entry : entries) {
 			if (entry.isDeletion()) {
 				revisionsTable.setGrayed(entry, true);
 			}
